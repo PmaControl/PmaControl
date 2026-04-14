@@ -944,13 +944,18 @@ $catIcons = [
                 <div id="sv-ba-file-labels" style="display:flex;font-size:9px;color:#94a3b8;margin-top:2px"></div>
             </div>
 
+            <!-- Parallelism chart -->
+            <div style="position:relative;height:360px;margin-bottom:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px">
+                <canvas id="sv-ba-parallel-chart"></canvas>
+            </div>
+
             <!-- Treemaps: Databases (left) + Tables (right) -->
             <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">
                 <div style="flex:1;min-width:280px">
                     <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:4px">
                         <i class="fa fa-database"></i> <?= __('DML by Database') ?>
                     </div>
-                    <div style="position:relative;height:220px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:4px">
+                    <div style="position:relative;height:440px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:4px">
                         <canvas id="sv-ba-treemap-db"></canvas>
                     </div>
                 </div>
@@ -958,15 +963,10 @@ $catIcons = [
                     <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:4px">
                         <i class="fa fa-table"></i> <?= __('DML by Table') ?>
                     </div>
-                    <div style="position:relative;height:220px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:4px">
+                    <div style="position:relative;height:440px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:4px">
                         <canvas id="sv-ba-treemap-tbl"></canvas>
                     </div>
                 </div>
-            </div>
-
-            <!-- Parallelism chart -->
-            <div style="position:relative;height:180px;margin-bottom:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px">
-                <canvas id="sv-ba-parallel-chart"></canvas>
             </div>
 
             <!-- Stats summary -->
@@ -1454,8 +1454,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             return colors[ctx.dataIndex % colors.length];
                         },
                         borderColor: '#fff',
-                        borderWidth: 2,
-                        spacing: 1
+                        borderWidth: 1,
+                        spacing: 1,
+                        borderColor: 'rgba(255,255,255,0.3)'
                     }]
                 },
                 options: {
