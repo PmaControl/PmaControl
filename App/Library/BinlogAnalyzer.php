@@ -1199,9 +1199,12 @@ class BinlogAnalyzer
                     $pos = (int) $m[5];
                     $txnPerSec[$fullTs] = ($txnPerSec[$fullTs] ?? 0) + 1;
 
-                    // Estimate bytes from pos delta
+                    // Estimate bytes from pos delta (skip negative = new binlog file boundary)
                     if (isset($lastPos[$fullTs])) {
-                        $volumePerSec[$fullTs] = ($volumePerSec[$fullTs] ?? 0) + ($pos - $lastPos[$fullTs]);
+                        $delta = $pos - $lastPos[$fullTs];
+                        if ($delta > 0) {
+                            $volumePerSec[$fullTs] = ($volumePerSec[$fullTs] ?? 0) + $delta;
+                        }
                     } else {
                         $volumePerSec[$fullTs] = ($volumePerSec[$fullTs] ?? 0);
                     }
