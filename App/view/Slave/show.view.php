@@ -1455,7 +1455,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         },
                         borderColor: '#fff',
                         borderWidth: 1,
-                        spacing: 1,
+                        spacing: 0,
                         borderColor: 'rgba(255,255,255,0.3)'
                     }]
                 },
