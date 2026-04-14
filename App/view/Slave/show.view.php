@@ -1449,7 +1449,7 @@ document.addEventListener('DOMContentLoaded', function() {
                       '#7c3aed','#a78bfa','#c084fc','#db2777','#f472b6','#ea580c','#f97316','#fbbf24',
                       '#84cc16','#22c55e','#06b6d4','#6366f1'];
 
-        function buildTreemap(canvasId, data, existing) {
+        function buildTreemap(canvasId, data, existing, colorSmall, colorLarge) {
             var canvas = document.getElementById(canvasId);
             if (existing) existing.destroy();
             if (!data.length) return null;
@@ -1466,10 +1466,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             if (!ctx.raw || !ctx.raw._data) return '#cbd5e1';
                             var maxVal = data[0] ? data[0].value : 1;
                             var ratio = Math.min(1, ctx.raw._data.value / maxVal);
-                            // Gradient: small = #06b6d4 (cyan), large = #7c3aed (purple)
-                            var r = Math.round(6 + ratio * (124 - 6));
-                            var g = Math.round(182 + ratio * (58 - 182));
-                            var b = Math.round(212 + ratio * (237 - 212));
+                            var r = Math.round(colorSmall[0] + ratio * (colorLarge[0] - colorSmall[0]));
+                            var g = Math.round(colorSmall[1] + ratio * (colorLarge[1] - colorSmall[1]));
+                            var b = Math.round(colorSmall[2] + ratio * (colorLarge[2] - colorSmall[2]));
                             return 'rgb(' + r + ',' + g + ',' + b + ')';
                         },
                         borderColor: '#fff',
@@ -1503,8 +1502,10 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        baTreemapDb = buildTreemap('sv-ba-treemap-db', dbData, baTreemapDb);
-        baTreemapTbl = buildTreemap('sv-ba-treemap-tbl', tblData, baTreemapTbl);
+        // Databases: green (small) → deep blue (large)
+        baTreemapDb = buildTreemap('sv-ba-treemap-db', dbData, baTreemapDb, [34,197,94], [30,58,138]);
+        // Tables: amber (small) → red (large)
+        baTreemapTbl = buildTreemap('sv-ba-treemap-tbl', tblData, baTreemapTbl, [251,191,36], [185,28,28]);
     }
 
     // ---- Chart.js bar+line chart ----
