@@ -2675,6 +2675,33 @@ var chart = new Chart(ctx, {
                         }
                     }
                 }
+                // Fetch threads_running for master and slave
+                $trVarRes = $db->sql_query(
+                    "SELECT id FROM ts_variable WHERE name = 'threads_running' AND radical = 'general' LIMIT 1"
+                );
+                $trVarId = 0;
+                if ($trVarRes && $trRow = $db->sql_fetch_array($trVarRes, MYSQLI_ASSOC)) {
+                    $trVarId = (int) $trRow['id'];
+                }
+
+                if ($trVarId > 0) {
+                    $masterId = (int) $row['id_mysql_server__master'];
+                    foreach (['master' => $masterId, 'slave' => $slaveId] as $role => $srvId) {
+                        $trSql = "SELECT date, value FROM ts_value_general_int
+                                  WHERE id_mysql_server = $srvId
+                                  AND id_ts_variable = $trVarId
+                                  AND date BETWEEN '$timeStart' AND '$timeEnd'
+                                  ORDER BY date";
+                        $trRes = $db->sql_query_silent($trSql);
+                        $key = 'threads_running_' . $role;
+                        $row[$key] = [];
+                        if ($trRes) {
+                            while ($tr = $db->sql_fetch_array($trRes, MYSQLI_ASSOC)) {
+                                $row[$key][] = ['ts' => $tr['date'], 'value' => (int) $tr['value']];
+                            }
+                        }
+                    }
+                }
             } catch (\Throwable $e) {}
             ob_end_clean();
         }

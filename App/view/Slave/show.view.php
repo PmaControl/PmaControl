@@ -1418,62 +1418,98 @@ document.addEventListener('DOMContentLoaded', function() {
         var min = parseInt(d.min_txn_per_sec) || 0;
         var peak = parseInt(d.peak_txn_per_sec) || 0;
 
-        baParallelChart = new Chart(canvas.getContext('2d'), {
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        type: 'bar',
-                        label: 'Txn/s',
-                        data: txnCounts,
-                        backgroundColor: txnCounts.map(function(v) {
-                            if (v <= 1) return 'rgba(239,68,68,0.6)';   // red = sequential
-                            if (v <= avg) return 'rgba(251,191,36,0.6)'; // yellow = below avg
-                            return 'rgba(16,185,129,0.6)';               // green = above avg
-                        }),
-                        borderWidth: 0,
-                        order: 2
-                    },
-                    {
-                        type: 'line',
-                        label: 'Avg (' + avg.toFixed(1) + ')',
-                        data: txnCounts.map(function() { return avg; }),
-                        borderColor: '#f59e0b',
-                        borderWidth: 2,
-                        borderDash: [6, 3],
-                        pointRadius: 0,
-                        fill: false,
-                        order: 1
-                    },
-                    {
-                        type: 'line',
-                        label: 'Max (' + peak + ')',
-                        data: txnCounts.map(function() { return peak; }),
-                        borderColor: '#ef4444',
-                        borderWidth: 1,
-                        borderDash: [3, 3],
-                        pointRadius: 0,
-                        fill: false,
-                        order: 1
-                    }
-                ]
+        var trMaster = d.threads_running_master || [];
+        var trSlave = d.threads_running_slave || [];
+
+        var datasets = [
+            {
+                type: 'bar',
+                label: 'Txn/s',
+                data: txnCounts,
+                backgroundColor: txnCounts.map(function(v) {
+                    if (v <= 1) return 'rgba(239,68,68,0.6)';
+                    if (v <= avg) return 'rgba(251,191,36,0.6)';
+                    return 'rgba(16,185,129,0.6)';
+                }),
+                borderWidth: 0,
+                yAxisID: 'y',
+                order: 3
             },
+            {
+                type: 'line',
+                label: 'Avg (' + avg.toFixed(1) + ')',
+                data: txnCounts.map(function() { return avg; }),
+                borderColor: '#f59e0b',
+                borderWidth: 2,
+                borderDash: [6, 3],
+                pointRadius: 0,
+                fill: false,
+                yAxisID: 'y',
+                order: 2
+            }
+        ];
+
+        if (trMaster.length > 0) {
+            datasets.push({
+                type: 'line',
+                label: 'Threads Running (master)',
+                data: trMaster.map(function(v) { return { x: v.ts, y: v.value }; }),
+                borderColor: '#7c3aed',
+                backgroundColor: 'rgba(124,58,237,0.05)',
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0.3,
+                fill: false,
+                yAxisID: 'yTr',
+                order: 1
+            });
+        }
+
+        if (trSlave.length > 0) {
+            datasets.push({
+                type: 'line',
+                label: 'Threads Running (slave)',
+                data: trSlave.map(function(v) { return { x: v.ts, y: v.value }; }),
+                borderColor: '#0891b2',
+                backgroundColor: 'rgba(8,145,178,0.05)',
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0.3,
+                fill: false,
+                yAxisID: 'yTr',
+                order: 1
+            });
+        }
+
+        var hasTr = trMaster.length > 0 || trSlave.length > 0;
+        var scales = {
+            x: {
+                type: 'time',
+                time: { parser: 'YYYY-MM-DD HH:mm:ss', tooltipFormat: 'HH:mm:ss', displayFormats: { second: 'HH:mm:ss', minute: 'HH:mm' } },
+                ticks: { maxRotation: 45, font: { size: 8 } }
+            },
+            y: { position: 'left', beginAtZero: true, title: { display: true, text: 'Txn/s' } }
+        };
+
+        if (hasTr) {
+            scales.yTr = {
+                position: 'right',
+                beginAtZero: true,
+                title: { display: true, text: 'Threads Running', color: '#7c3aed' },
+                ticks: { color: '#7c3aed' },
+                grid: { drawOnChartArea: false }
+            };
+        }
+
+        baParallelChart = new Chart(canvas.getContext('2d'), {
+            data: { labels: labels, datasets: datasets },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
                 plugins: {
-                    title: { display: true, text: 'Parallelism — Transactions per second (min=' + min + ' avg=' + avg.toFixed(1) + ' max=' + peak + ')', font: { size: 12, weight: 'bold' }, padding: 4 },
-                    legend: { display: true, position: 'top', labels: { font: { size: 10 } } }
-                },
-                scales: {
-                    x: {
-                        type: 'time',
-                        time: { parser: 'YYYY-MM-DD HH:mm:ss', tooltipFormat: 'HH:mm:ss', displayFormats: { second: 'HH:mm:ss', minute: 'HH:mm' } },
-                        ticks: { maxRotation: 45, font: { size: 8 } }
-                    },
-                    y: { beginAtZero: true, title: { display: true, text: 'Txn/s (parallelism potential)' } }
-                },
-                plugins: {
+                    title: { display: true, text: 'Parallelism — Txn/s + Threads Running (min=' + min + ' avg=' + avg.toFixed(1) + ' max=' + peak + ')', font: { size: 12, weight: 'bold' }, padding: 4 },
+                    legend: { display: true, position: 'top', labels: { font: { size: 10 } } },
                     zoom: {
                         zoom: {
                             drag: { enabled: true, backgroundColor: 'rgba(16,185,129,0.15)', borderColor: '#10b981', borderWidth: 1 },
@@ -1481,7 +1517,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             onZoomComplete: function(ctx) { syncZoom(ctx.chart, baChart); }
                         }
                     }
-                }
+                },
+                scales: scales
             }
         });
     }
