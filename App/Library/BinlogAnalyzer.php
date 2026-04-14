@@ -504,18 +504,35 @@ class BinlogAnalyzer
     //  mysqlbinlog binary selection
     // ------------------------------------------------------------------
 
-    private const BINLOG_DIR = '/srv/www/pmacontrol/bin/mysqlbinlog/';
+    private const BINLOG_BASE_DIR = '/srv/www/pmacontrol/bin/mysqlbinlog/';
+
+    /**
+     * Get the binary directory for the current platform architecture.
+     * Layout: bin/mysqlbinlog/{x86_64,aarch64}/mysqlbinlog-{version}
+     */
+    private static function getBinlogDir(): string
+    {
+        $arch = php_uname('m'); // x86_64, aarch64, arm64
+        if ($arch === 'arm64') $arch = 'aarch64';
+        $dir = self::BINLOG_BASE_DIR . $arch . '/';
+        if (is_dir($dir)) {
+            return $dir;
+        }
+        // Fallback to base dir (legacy flat layout)
+        return self::BINLOG_BASE_DIR;
+    }
 
     /**
      * Select the right mysqlbinlog binary based on the master's MySQL/MariaDB version.
-     * Binaries are stored as: mysqlbinlog-8.0, mysqlbinlog-8.4, mysqlbinlog-mariadb, etc.
+     * Binaries are stored as: bin/mysqlbinlog/{arch}/mysqlbinlog-{version}
      */
     private function getMysqlbinlogBinary(string $version): string
     {
+        $dir = self::getBinlogDir();
         $vLower = strtolower($version);
 
         if (strpos($vLower, 'mariadb') !== false) {
-            $bin = self::BINLOG_DIR . 'mysqlbinlog-mariadb';
+            $bin = $dir . 'mysqlbinlog-mariadb';
             if (file_exists($bin)) return $bin;
             throw new \Exception("mysqlbinlog binary for MariaDB not found at $bin");
         }
@@ -525,11 +542,11 @@ class BinlogAnalyzer
             $majorMinor = $m[1];
 
             // Exact match first
-            $bin = self::BINLOG_DIR . 'mysqlbinlog-' . $majorMinor;
+            $bin = $dir . 'mysqlbinlog-' . $majorMinor;
             if (file_exists($bin)) return $bin;
 
-            // Fallback: try closest compatible version (8.4 can read 8.0, 9.x, etc.)
-            $available = glob(self::BINLOG_DIR . 'mysqlbinlog-*');
+            // Fallback: try closest compatible version
+            $available = glob($dir . 'mysqlbinlog-*');
             $candidates = [];
             foreach ($available as $path) {
                 $name = basename($path);
@@ -553,16 +570,16 @@ class BinlogAnalyzer
         }
 
         // Ultimate fallback
-        $fallback = self::BINLOG_DIR . 'mysqlbinlog-8.4';
+        $fallback = $dir . 'mysqlbinlog-8.4';
         if (file_exists($fallback)) return $fallback;
 
-        throw new \Exception("No suitable mysqlbinlog binary found in " . self::BINLOG_DIR . " for version $version");
+        throw new \Exception("No suitable mysqlbinlog binary found in $dir for version $version (arch: " . php_uname('m') . ")");
     }
 
     private function ensureBinary(string $binary): void
     {
         if (!file_exists($binary)) {
-            throw new \Exception("mysqlbinlog binary not found: $binary — run: ls -la " . self::BINLOG_DIR);
+            throw new \Exception("mysqlbinlog binary not found: $binary — run: ls -la " . self::getBinlogDir());
         }
         if (!is_executable($binary)) {
             // Try PHP chmod first (works if www-data owns the file)
@@ -572,7 +589,7 @@ class BinlogAnalyzer
                 @shell_exec("chmod +x " . escapeshellarg($binary) . " 2>/dev/null");
             }
             if (!is_executable($binary)) {
-                throw new \Exception("mysqlbinlog binary exists but is not executable: $binary — run: chmod +x " . self::BINLOG_DIR . "*");
+                throw new \Exception("mysqlbinlog binary exists but is not executable: $binary — run: chmod +x " . self::getBinlogDir() . "*");
             }
         }
     }
