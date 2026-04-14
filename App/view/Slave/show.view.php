@@ -1460,7 +1460,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     datasets: [{
                         tree: data,
                         key: 'value',
-                        labels: { display: true, formatter: function(ctx) { return ctx.raw._data ? ctx.raw._data.label : ''; }, font: { size: 11, weight: 'bold' }, color: '#fff' },
+                        labels: {
+                            display: true,
+                            formatter: function(ctx) { return ctx.raw._data ? ctx.raw._data.label : ''; },
+                            font: function(ctx) {
+                                var w = ctx.raw.w || 0;
+                                var h = ctx.raw.h || 0;
+                                var area = w * h;
+                                var size = area > 15000 ? 13 : area > 5000 ? 11 : area > 1500 ? 9 : 7;
+                                return { size: size, weight: area > 5000 ? 'bold' : 'normal' };
+                            },
+                            color: '#fff',
+                            overflow: 'hidden'
+                        },
                         captions: { display: false },
                         backgroundColor: function(ctx) {
                             if (!ctx.raw || !ctx.raw._data) return '#cbd5e1';
