@@ -795,9 +795,16 @@ class BinlogAnalyzer
     private function parseGtidEvents(): array
     {
         $analysis = $this->getAnalysis();
-        $isMariaDB = (stripos($analysis['mysql_version'] ?? '', 'mariadb') !== false);
+        $version = $analysis['mysql_version'] ?? '';
+        $isMariaDB = (stripos($version, 'mariadb') !== false);
 
         if ($isMariaDB) {
+            return $this->parseGtidEventsMariaDB();
+        }
+
+        // MySQL 5.x doesn't have transaction_length/last_committed — use MariaDB-style Xid parsing
+        $numericVersion = preg_replace('/[^0-9.]/', '', $version);
+        if (version_compare($numericVersion, '8.0', '<')) {
             return $this->parseGtidEventsMariaDB();
         }
 
@@ -1016,7 +1023,11 @@ class BinlogAnalyzer
 
         $cmd = $this->buildBinlogCmd(false);
 
-        if (!$isMariaDB) {
+        // MySQL 8+ has transaction_length in GTID events; MySQL 5.x and MariaDB don't
+        $version = $analysis['mysql_version'] ?? '';
+        $hasTxnLength = !$isMariaDB && version_compare(preg_replace('/[^0-9.]/', '', $version), '8.0', '>=');
+
+        if ($hasTxnLength) {
             // MySQL 8+: use transaction_length from GTID events
             $cmdTs = $cmd . " 2>/dev/null | grep -aP 'transaction_length=\\d+' | grep -aoP '^#\\d{6}\\s+\\d+:\\d+:\\d+.*transaction_length=\\d+'";
             $output = shell_exec($cmdTs . " 2>/dev/null") ?: '';
