@@ -1035,6 +1035,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var masterId = <?= (int) ($data['master_id'] ?? 0) ?>;
     var LINK = <?= json_encode(LINK) ?>;
     var baChart = null;
+    var _baVolData = null, _baTopTables = null, _baAnalysis = null;
     var pollTimer = null;
 
     // ---- Enable launch button when both dates are set ----
@@ -1335,6 +1336,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         document.getElementById('sv-ba-recs-list').innerHTML = recsHtml;
 
+        // Store refs for zoom-based treemap rebuild
+        _baVolData = d.volume_per_second || [];
+        _baTopTables = d.top_tables || [];
+        _baAnalysis = d;
+
         // Binlog file timeline
         renderFileTimeline(d.binlog_file_ranges || []);
 
@@ -1598,7 +1604,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         zoom: {
                             drag: { enabled: true, backgroundColor: 'rgba(33,150,243,0.15)', borderColor: '#2196F3', borderWidth: 1 },
                             mode: 'x',
-                            onZoomComplete: function(ctx) { syncZoom(ctx.chart, baParallelChart); }
+                            onZoomComplete: function(ctx) { syncZoom(ctx.chart, baParallelChart); rebuildTreemapsFromZoom(ctx.chart); }
                         }
                     }
                 }
@@ -1724,7 +1730,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         zoom: {
                             drag: { enabled: true, backgroundColor: 'rgba(16,185,129,0.15)', borderColor: '#10b981', borderWidth: 1 },
                             mode: 'x',
-                            onZoomComplete: function(ctx) { syncZoom(ctx.chart, baChart); }
+                            onZoomComplete: function(ctx) { syncZoom(ctx.chart, baChart); rebuildTreemapsFromZoom(baChart); }
                         }
                     }
                 },
@@ -1734,6 +1740,46 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ---- Lag chart ----
+
+    // ---- Rebuild treemaps from zoom window ----
+    function rebuildTreemapsFromZoom(chart) {
+        if (!_baTopTables || !_baTopTables.length || !_baVolData || !_baVolData.length) return;
+
+        // null chart = reset zoom → use full data
+        if (!chart || !chart.scales || !chart.scales.x) {
+            renderTreemaps(_baTopTables);
+            return;
+        }
+
+        var xMin = chart.scales.x.min;
+        var xMax = chart.scales.x.max;
+
+        // Count volume bytes in zoom window vs total
+        var totalBytes = 0, windowBytes = 0;
+        _baVolData.forEach(function(v) {
+            var t = new Date(v.ts).getTime();
+            totalBytes += Math.max(0, v.bytes);
+            if (t >= xMin && t <= xMax) {
+                windowBytes += Math.max(0, v.bytes);
+            }
+        });
+
+        var ratio = totalBytes > 0 ? windowBytes / totalBytes : 1;
+
+        // Scale top_tables proportionally
+        var scaled = _baTopTables.map(function(t) {
+            return {
+                table: t.table,
+                inserts: Math.round((t.inserts || 0) * ratio),
+                updates: Math.round((t.updates || 0) * ratio),
+                deletes: Math.round((t.deletes || 0) * ratio)
+            };
+        }).filter(function(t) {
+            return (t.inserts + t.updates + t.deletes) > 0;
+        });
+
+        renderTreemaps(scaled);
+    }
 
     // ---- Load past analyses ----
     function loadHistory() {
@@ -1788,6 +1834,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('sv-ba-reset-zoom').addEventListener('click', function() {
         if (baChart) { baChart.resetZoom(); }
         if (baParallelChart) { baParallelChart.resetZoom(); }
+        rebuildTreemapsFromZoom(null);
     });
 
     // ---- Init: load history on page load ----
