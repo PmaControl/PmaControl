@@ -930,11 +930,6 @@ $catIcons = [
                 <small style="color:#94a3b8;margin-left:8px"><?= __('Drag to zoom, scroll to zoom, double-click to reset') ?></small>
             </div>
 
-            <!-- Chart -->
-            <div style="position:relative;height:250px;margin-bottom:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px">
-                <canvas id="sv-ba-chart"></canvas>
-            </div>
-
             <!-- Binlog file timeline -->
             <div id="sv-ba-file-timeline" style="margin-bottom:16px;display:none">
                 <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:4px">
@@ -942,6 +937,11 @@ $catIcons = [
                 </div>
                 <div id="sv-ba-file-bar" style="display:flex;height:28px;border-radius:4px;overflow:hidden;border:1px solid #e2e8f0"></div>
                 <div id="sv-ba-file-labels" style="display:flex;font-size:9px;color:#94a3b8;margin-top:2px"></div>
+            </div>
+
+            <!-- Chart -->
+            <div style="position:relative;height:250px;margin-bottom:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px">
+                <canvas id="sv-ba-chart"></canvas>
             </div>
 
             <!-- Parallelism chart -->
