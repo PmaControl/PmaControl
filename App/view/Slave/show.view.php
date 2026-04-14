@@ -1386,13 +1386,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 plugins: {
                     zoom: {
                         zoom: {
-                            wheel: { enabled: true },
-                            pinch: { enabled: true },
-                            drag: { enabled: true, backgroundColor: 'rgba(33,150,243,0.1)', borderColor: '#2196F3', borderWidth: 1 },
+                            drag: { enabled: true, backgroundColor: 'rgba(33,150,243,0.15)', borderColor: '#2196F3', borderWidth: 1 },
                             mode: 'x',
-                            onZoom: function(ctx) { syncZoom(ctx.chart, baParallelChart); }
-                        },
-                        pan: { enabled: true, mode: 'x', onPan: function(ctx) { syncZoom(ctx.chart, baParallelChart); } }
+                            onZoomComplete: function(ctx) { syncZoom(ctx.chart, baParallelChart); }
+                        }
                     }
                 }
             }
@@ -1402,6 +1399,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function syncZoom(source, target) {
         if (!target) return;
         var srcX = source.scales.x;
+        if (!srcX) return;
         target.options.scales.x.min = srcX.min;
         target.options.scales.x.max = srcX.max;
         target.update('none');
@@ -1478,13 +1476,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 plugins: {
                     zoom: {
                         zoom: {
-                            wheel: { enabled: true },
-                            pinch: { enabled: true },
-                            drag: { enabled: true, backgroundColor: 'rgba(16,185,129,0.1)', borderColor: '#10b981', borderWidth: 1 },
+                            drag: { enabled: true, backgroundColor: 'rgba(16,185,129,0.15)', borderColor: '#10b981', borderWidth: 1 },
                             mode: 'x',
-                            onZoom: function(ctx) { syncZoom(ctx.chart, baChart); }
-                        },
-                        pan: { enabled: true, mode: 'x', onPan: function(ctx) { syncZoom(ctx.chart, baChart); } }
+                            onZoomComplete: function(ctx) { syncZoom(ctx.chart, baChart); }
+                        }
                     }
                 }
             }
