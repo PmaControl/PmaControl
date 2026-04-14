@@ -1512,10 +1512,10 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        // Databases: green (largest) → deep blue (smallest)
-        baTreemapDb = buildTreemap('sv-ba-treemap-db', dbData, baTreemapDb, [34,197,94], [30,58,138]);
-        // Tables: amber (largest) → red (smallest)
-        baTreemapTbl = buildTreemap('sv-ba-treemap-tbl', tblData, baTreemapTbl, [251,191,36], [185,28,28]);
+        // Databases: deep blue (largest) → light green (smallest)
+        baTreemapDb = buildTreemap('sv-ba-treemap-db', dbData, baTreemapDb, [30,58,138], [134,239,172]);
+        // Tables: dark red (largest) → light amber (smallest)
+        baTreemapTbl = buildTreemap('sv-ba-treemap-tbl', tblData, baTreemapTbl, [153,27,27], [253,224,138]);
     }
 
     // ---- Chart.js bar+line chart ----
@@ -1747,7 +1747,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ---- Rebuild treemaps from zoom window ----
     function rebuildTreemapsFromZoom(chart) {
-        if (!_baTopTables || !_baTopTables.length || !_baVolData || !_baVolData.length) return;
+        if (!_baAnalysis) return;
 
         // null chart = reset zoom → use full data
         if (!chart || !chart.scales || !chart.scales.x) {
@@ -1757,32 +1757,40 @@ document.addEventListener('DOMContentLoaded', function() {
 
         var xMin = chart.scales.x.min;
         var xMax = chart.scales.x.max;
+        var ranges = _baAnalysis.binlog_file_ranges || [];
 
-        // Count volume bytes in zoom window vs total
-        var totalBytes = 0, windowBytes = 0;
-        _baVolData.forEach(function(v) {
-            var t = new Date(v.ts).getTime();
-            totalBytes += Math.max(0, v.bytes);
-            if (t >= xMin && t <= xMax) {
-                windowBytes += Math.max(0, v.bytes);
+        if (!ranges.length || !ranges[0].tables) {
+            // No per-file DML data — fall back to full
+            renderTreemaps(_baTopTables);
+            return;
+        }
+
+        // Find which binlog files overlap the zoom window
+        var merged = {};
+        ranges.forEach(function(fr) {
+            var fStart = new Date(fr.start).getTime();
+            var fEnd = new Date(fr.end).getTime();
+            // File overlaps zoom window?
+            if (fEnd >= xMin && fStart <= xMax) {
+                (fr.tables || []).forEach(function(t) {
+                    if (!merged[t.table]) {
+                        merged[t.table] = { table: t.table, inserts: 0, updates: 0, deletes: 0 };
+                    }
+                    merged[t.table].inserts += (t.inserts || 0);
+                    merged[t.table].updates += (t.updates || 0);
+                    merged[t.table].deletes += (t.deletes || 0);
+                });
             }
         });
 
-        var ratio = totalBytes > 0 ? windowBytes / totalBytes : 1;
+        var result = Object.keys(merged).map(function(k) { return merged[k]; })
+            .filter(function(t) { return (t.inserts + t.updates + t.deletes) > 0; });
 
-        // Scale top_tables proportionally
-        var scaled = _baTopTables.map(function(t) {
-            return {
-                table: t.table,
-                inserts: Math.round((t.inserts || 0) * ratio),
-                updates: Math.round((t.updates || 0) * ratio),
-                deletes: Math.round((t.deletes || 0) * ratio)
-            };
-        }).filter(function(t) {
-            return (t.inserts + t.updates + t.deletes) > 0;
-        });
-
-        renderTreemaps(scaled);
+        if (result.length === 0) {
+            renderTreemaps(_baTopTables);
+        } else {
+            renderTreemaps(result);
+        }
     }
 
     // ---- Load past analyses ----

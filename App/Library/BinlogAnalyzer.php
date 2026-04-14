@@ -318,10 +318,6 @@ class BinlogAnalyzer
                     'end'   => $last,
                 ];
             }
-            $this->db->sql_query("UPDATE binlog_analysis SET binlog_file_ranges = '"
-                . $this->db->sql_real_escape_string(json_encode($fileRanges))
-                . "' WHERE id = " . $this->analysisId);
-            $this->invalidateAnalysisCache();
             $this->updateLastStep(count($fileRanges) . " file(s) probed");
 
             // Step 8 — Parse: transaction metadata (GTID events)
@@ -343,6 +339,16 @@ class BinlogAnalyzer
                 'done',
                 ['total_rows' => $totalRows]
             );
+
+            // Enrich file ranges with per-file DML data and store
+            foreach ($fileRanges as &$fr) {
+                $fr['tables'] = $dmlStats['dml_per_file'][$fr['name']] ?? [];
+            }
+            unset($fr);
+            $this->db->sql_query("UPDATE binlog_analysis SET binlog_file_ranges = '"
+                . $this->db->sql_real_escape_string(json_encode($fileRanges))
+                . "' WHERE id = " . $this->analysisId);
+            $this->invalidateAnalysisCache();
 
             // Step 10 — Parse: volume per second
             $this->addStep('parse_volume', "Computing volume per second (timestamps + transaction_length)...");
@@ -1137,34 +1143,57 @@ class BinlogAnalyzer
 
     private function parseDmlEvents(): array
     {
-        $cmd = $this->buildBinlogCmd(true);
-        $cmdDml = $cmd . " 2>/dev/null | grep -aoP '### (INSERT INTO|UPDATE|DELETE FROM) \`[^\`]+\`\.\`[^\`]+\`'";
-
-        $output = shell_exec($cmdDml . " 2>/dev/null") ?: '';
+        $analysis = $this->getAnalysis();
+        $version = $analysis['mysql_version'] ?? '';
+        $binary = $this->getMysqlbinlogBinary($version);
 
         $inserts = 0;
         $updates = 0;
         $deletes = 0;
         $tableDml = [];
         $databases = [];
+        $dmlPerFile = [];
 
-        foreach (explode("\n", trim($output)) as $line) {
-            if (preg_match('/### (INSERT INTO|UPDATE|DELETE FROM) `([^`]+)`\.`([^`]+)`/', trim($line), $m)) {
-                $op = $m[1];
-                $db = $m[2];
-                $tbl = $m[3];
-                $key = "`$db`.`$tbl`";
-                $databases[$db] = true;
+        // Parse each file individually for per-file DML breakdown
+        $files = glob($this->tmpDir . '/*');
+        sort($files);
+        foreach ($files as $f) {
+            if (preg_match('/\.(json|log|txt|md)$/i', $f)) continue;
+            $fileName = basename($f);
 
-                if (!isset($tableDml[$key])) {
-                    $tableDml[$key] = ['table' => $key, 'inserts' => 0, 'updates' => 0, 'deletes' => 0];
-                }
-                switch ($op) {
-                    case 'INSERT INTO': $tableDml[$key]['inserts']++; $inserts++; break;
-                    case 'UPDATE':      $tableDml[$key]['updates']++; $updates++; break;
-                    case 'DELETE FROM': $tableDml[$key]['deletes']++; $deletes++; break;
+            $cmd = escapeshellarg($binary) . " -v --base64-output=DECODE-ROWS"
+                 . " --start-datetime=" . escapeshellarg($analysis['time_start'])
+                 . " --stop-datetime=" . escapeshellarg($analysis['time_end'])
+                 . " " . escapeshellarg($f)
+                 . " 2>/dev/null | grep -aoP '### (INSERT INTO|UPDATE|DELETE FROM) \`[^\`]+\`\.\`[^\`]+\`'";
+
+            $output = shell_exec($cmd . " 2>/dev/null") ?: '';
+
+            $fileDml = [];
+
+            foreach (explode("\n", trim($output)) as $line) {
+                if (preg_match('/### (INSERT INTO|UPDATE|DELETE FROM) `([^`]+)`\.`([^`]+)`/', trim($line), $m)) {
+                    $op = $m[1];
+                    $db = $m[2];
+                    $tbl = $m[3];
+                    $key = "`$db`.`$tbl`";
+                    $databases[$db] = true;
+
+                    if (!isset($tableDml[$key])) {
+                        $tableDml[$key] = ['table' => $key, 'inserts' => 0, 'updates' => 0, 'deletes' => 0];
+                    }
+                    if (!isset($fileDml[$key])) {
+                        $fileDml[$key] = ['table' => $key, 'inserts' => 0, 'updates' => 0, 'deletes' => 0];
+                    }
+                    switch ($op) {
+                        case 'INSERT INTO': $tableDml[$key]['inserts']++; $fileDml[$key]['inserts']++; $inserts++; break;
+                        case 'UPDATE':      $tableDml[$key]['updates']++; $fileDml[$key]['updates']++; $updates++; break;
+                        case 'DELETE FROM': $tableDml[$key]['deletes']++; $fileDml[$key]['deletes']++; $deletes++; break;
+                    }
                 }
             }
+
+            $dmlPerFile[$fileName] = array_values($fileDml);
         }
 
         usort($tableDml, function ($a, $b) {
@@ -1175,8 +1204,9 @@ class BinlogAnalyzer
             'inserts'    => $inserts,
             'updates'    => $updates,
             'deletes'    => $deletes,
-            'top_tables' => array_slice($tableDml, 0, 30),
-            'db_count'   => count($databases),
+            'top_tables'   => array_slice($tableDml, 0, 30),
+            'db_count'     => count($databases),
+            'dml_per_file' => $dmlPerFile,
         ];
     }
 
