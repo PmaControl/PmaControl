@@ -1475,10 +1475,11 @@ document.addEventListener('DOMContentLoaded', function() {
                             for (var j = 0; j < n; j++) {
                                 if (data[j].label === ctx.raw._data.label) { idx = j; break; }
                             }
-                            // Equidistant hue across the spectrum per treemap
-                            var hueStart = colorSmall[0]; // reuse first element as hue offset
-                            var hue = (hueStart + (idx / Math.max(1, n)) * 360) % 360;
-                            return 'hsl(' + Math.round(hue) + ',65%,50%)';
+                            var ratio = n > 1 ? idx / (n - 1) : 0;
+                            var r = Math.round(colorSmall[0] + ratio * (colorLarge[0] - colorSmall[0]));
+                            var g = Math.round(colorSmall[1] + ratio * (colorLarge[1] - colorSmall[1]));
+                            var b = Math.round(colorSmall[2] + ratio * (colorLarge[2] - colorSmall[2]));
+                            return 'rgb(' + r + ',' + g + ',' + b + ')';
                         },
                         borderColor: '#fff',
                         borderWidth: 1,
@@ -1511,10 +1512,10 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        // Databases: hue starting at 200 (blue range)
-        baTreemapDb = buildTreemap('sv-ba-treemap-db', dbData, baTreemapDb, [200,0,0]);
-        // Tables: hue starting at 0 (red/warm range)
-        baTreemapTbl = buildTreemap('sv-ba-treemap-tbl', tblData, baTreemapTbl, [20,0,0]);
+        // Databases: green (largest) → deep blue (smallest)
+        baTreemapDb = buildTreemap('sv-ba-treemap-db', dbData, baTreemapDb, [34,197,94], [30,58,138]);
+        // Tables: amber (largest) → red (smallest)
+        baTreemapTbl = buildTreemap('sv-ba-treemap-tbl', tblData, baTreemapTbl, [251,191,36], [185,28,28]);
     }
 
     // ---- Chart.js bar+line chart ----
