@@ -271,18 +271,22 @@ class BinlogAnalyzer
             // Step 7 — Fetch binlogs (with persistent cache)
             $this->initCache($masterId);
             self::purgeCacheOlderThan();
+
+            // Get binlog sizes from master for dynamic timeout
+            $binlogSizes = $this->getBinlogSizes($mysqlCreds, $binlogFiles);
+
             @mkdir($this->tmpDir, 0755, true);
             foreach ($binlogFiles as $idx => $binlogName) {
                 $this->addStep('fetch', "Fetching $binlogName (" . ($idx + 1) . "/" . count($binlogFiles) . ")...");
                 $cachedPath = $this->getCachedBinlog($binlogName);
                 if ($cachedPath) {
-                    // Use cached copy — symlink into tmpDir for parsing
                     $localPath = $this->tmpDir . '/' . $binlogName;
                     @symlink($cachedPath, $localPath);
                     $sizeMb = round(filesize($cachedPath) / 1048576, 1);
                     $this->updateLastStep("Cache hit: $binlogName — $sizeMb MB (cached)");
                 } else {
-                    $this->fetchBinlogRemote($binary, $mysqlCreds, $master, $binlogName, $analysis['time_start'], $analysis['time_end']);
+                    $expectedSize = $binlogSizes[$binlogName] ?? 0;
+                    $this->fetchBinlogRemote($binary, $mysqlCreds, $master, $binlogName, $analysis['time_start'], $analysis['time_end'], $expectedSize);
                     $localPath = $this->tmpDir . '/' . $binlogName;
                     $localSize = file_exists($localPath) ? filesize($localPath) : 0;
                     $sizeMb = round($localSize / 1048576, 1);
@@ -663,8 +667,9 @@ class BinlogAnalyzer
      */
     private function probeBinlogTimestamp(string $binary, string $connArgs, string $binlogName): ?int
     {
+        // 8192 bytes covers Format Description + Previous GTIDs + first real event
         $cmd = escapeshellarg($binary) . " --read-from-remote-server $connArgs"
-             . " --stop-position=500 " . escapeshellarg($binlogName)
+             . " --stop-position=8192 " . escapeshellarg($binlogName)
              . " 2>/dev/null | grep -aoP '^#\\d{6}\\s+\\d+:\\d+:\\d+' | head -1";
         $firstTs = trim(shell_exec($cmd) ?: '');
 
@@ -691,7 +696,7 @@ class BinlogAnalyzer
      * We use --raw WITHOUT datetime filters — the time filtering is done
      * later during the parse phase.
      */
-    private function fetchBinlogRemote(string $binary, array $creds, array $master, string $binlogName, string $timeStart, string $timeEnd): void
+    private function fetchBinlogRemote(string $binary, array $creds, array $master, string $binlogName, string $timeStart, string $timeEnd, int $expectedSizeBytes = 0): void
     {
         $connArgs = $this->buildRemoteArgs($creds);
         $localPath = $this->tmpDir . '/' . $binlogName;
@@ -703,11 +708,14 @@ class BinlogAnalyzer
              . " " . escapeshellarg($binlogName)
              . " 2>&1";
 
-        // Set a timeout: max 120s per file to avoid infinite hangs
-        $output = shell_exec("timeout 120 " . $cmd);
+        // Dynamic timeout: 15s per MB, minimum 300s, maximum 1800s
+        $sizeMb = max(1, $expectedSizeBytes / 1048576);
+        $timeout = (int) min(1800, max(300, $sizeMb * 15));
+
+        $output = shell_exec("timeout $timeout " . $cmd);
 
         if (!file_exists($localPath) || filesize($localPath) < 4) {
-            throw new \Exception("Failed to fetch $binlogName via --read-from-remote-server: " . substr($output ?? '', 0, 300));
+            throw new \Exception("Failed to fetch $binlogName via --read-from-remote-server (timeout={$timeout}s): " . substr($output ?? '', 0, 300));
         }
     }
 
@@ -1358,6 +1366,32 @@ class BinlogAnalyzer
     // ------------------------------------------------------------------
     //  Helpers
     // ------------------------------------------------------------------
+
+    /**
+     * Query SHOW BINARY LOGS on the master to get file sizes for timeout calculation.
+     * Returns [filename => size_bytes]. Silently returns empty on failure.
+     */
+    private function getBinlogSizes(array $creds, array $binlogFiles): array
+    {
+        $sizes = [];
+        try {
+            $link = new \mysqli($creds['host'], $creds['user'], $creds['password'], '', $creds['port']);
+            if ($link->connect_error) return $sizes;
+            $res = $link->query("SHOW BINARY LOGS");
+            if ($res) {
+                $wanted = array_flip($binlogFiles);
+                while ($row = $res->fetch_assoc()) {
+                    $name = $row['Log_name'] ?? '';
+                    if (isset($wanted[$name])) {
+                        $sizes[$name] = (int)($row['File_size'] ?? 0);
+                    }
+                }
+                $res->free();
+            }
+            $link->close();
+        } catch (\Throwable $e) {}
+        return $sizes;
+    }
 
     private function detectVersionFromLink(\mysqli $link): string
     {
