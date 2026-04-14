@@ -1464,7 +1464,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         captions: { display: false },
                         backgroundColor: function(ctx) {
                             if (!ctx.raw || !ctx.raw._data) return '#cbd5e1';
-                            return colors[ctx.dataIndex % colors.length];
+                            var maxVal = data[0] ? data[0].value : 1;
+                            var ratio = Math.min(1, ctx.raw._data.value / maxVal);
+                            // Gradient: small = #06b6d4 (cyan), large = #7c3aed (purple)
+                            var r = Math.round(6 + ratio * (124 - 6));
+                            var g = Math.round(182 + ratio * (58 - 182));
+                            var b = Math.round(212 + ratio * (237 - 212));
+                            return 'rgb(' + r + ',' + g + ',' + b + ')';
                         },
                         borderColor: '#fff',
                         borderWidth: 1,
