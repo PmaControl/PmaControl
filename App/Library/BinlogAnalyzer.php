@@ -301,6 +301,29 @@ class BinlogAnalyzer
                 }
             }
 
+            // Step 7b — Probe time range per binlog file
+            $this->addStep('file_ranges', "Probing time boundaries for each binlog file...");
+            $fileRanges = [];
+            foreach ($binlogFiles as $binlogName) {
+                $localPath = $this->tmpDir . '/' . $binlogName;
+                $realPath = is_link($localPath) ? readlink($localPath) : $localPath;
+                if (!file_exists($realPath)) continue;
+                $size = filesize($realPath);
+                $first = $this->probeLocalBinlogTimestamp($realPath, $binary, 'first');
+                $last = $this->probeLocalBinlogTimestamp($realPath, $binary, 'last');
+                $fileRanges[] = [
+                    'name'  => $binlogName,
+                    'size'  => $size,
+                    'start' => $first,
+                    'end'   => $last,
+                ];
+            }
+            $this->db->sql_query("UPDATE binlog_analysis SET binlog_file_ranges = '"
+                . $this->db->sql_real_escape_string(json_encode($fileRanges))
+                . "' WHERE id = " . $this->analysisId);
+            $this->invalidateAnalysisCache();
+            $this->updateLastStep(count($fileRanges) . " file(s) probed");
+
             // Step 8 — Parse: transaction metadata (GTID events)
             $this->addStep('parse_gtid', "Parsing transaction metadata (GTID, sizes, parallelism)...");
             $gtidStats = $this->parseGtidEvents();
@@ -1467,6 +1490,31 @@ class BinlogAnalyzer
             $link->close();
         } catch (\Throwable $e) {}
         return $sizes;
+    }
+
+    /**
+     * Probe the first or last event timestamp from a LOCAL binlog file.
+     */
+    private function probeLocalBinlogTimestamp(string $filePath, string $binary, string $which = 'first'): ?string
+    {
+        if ($which === 'last') {
+            // Get last timestamp: parse all timestamps and take the last one
+            $cmd = escapeshellarg($binary) . " --start-datetime='2000-01-01' "
+                 . escapeshellarg($filePath)
+                 . " 2>/dev/null | grep -aoP '^#\\d{6}\\s+\\d+:\\d+:\\d+' | tail -1";
+        } else {
+            $cmd = escapeshellarg($binary) . " --stop-position=8192 "
+                 . escapeshellarg($filePath)
+                 . " 2>/dev/null | grep -aoP '^#\\d{6}\\s+\\d+:\\d+:\\d+' | head -1";
+        }
+
+        $ts = trim(shell_exec($cmd) ?: '');
+        if (empty($ts)) return null;
+
+        if (preg_match('/^#(\d{2})(\d{2})(\d{2})\s+(\d+:\d+:\d+)$/', $ts, $m)) {
+            return (2000 + (int)$m[1]) . '-' . $m[2] . '-' . $m[3] . ' ' . $m[4];
+        }
+        return null;
     }
 
     private function isProcessAlive(int $pid): bool

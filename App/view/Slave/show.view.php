@@ -935,6 +935,15 @@ $catIcons = [
                 <canvas id="sv-ba-chart"></canvas>
             </div>
 
+            <!-- Binlog file timeline -->
+            <div id="sv-ba-file-timeline" style="margin-bottom:16px;display:none">
+                <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:4px">
+                    <i class="fa fa-files-o"></i> <?= __('Binlog Files Timeline') ?>
+                </div>
+                <div id="sv-ba-file-bar" style="display:flex;height:28px;border-radius:4px;overflow:hidden;border:1px solid #e2e8f0"></div>
+                <div id="sv-ba-file-labels" style="display:flex;font-size:9px;color:#94a3b8;margin-top:2px"></div>
+            </div>
+
             <!-- Parallelism chart -->
             <div style="position:relative;height:180px;margin-bottom:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px">
                 <canvas id="sv-ba-parallel-chart"></canvas>
@@ -1293,9 +1302,70 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         document.getElementById('sv-ba-recs-list').innerHTML = recsHtml;
 
+        // Binlog file timeline
+        renderFileTimeline(d.binlog_file_ranges || []);
+
         // Chart
         renderChart(d.volume_per_second || [], d.lag_data || []);
         renderParallelismChart(d.volume_per_second || [], d);
+    }
+
+    // ---- Binlog file timeline ----
+    function renderFileTimeline(ranges) {
+        var wrap = document.getElementById('sv-ba-file-timeline');
+        var bar = document.getElementById('sv-ba-file-bar');
+        var labels = document.getElementById('sv-ba-file-labels');
+        if (!ranges || !ranges.length) { wrap.style.display = 'none'; return; }
+        wrap.style.display = '';
+
+        // Calculate total time span
+        var allStarts = ranges.map(function(r) { return new Date(r.start).getTime(); }).filter(function(t) { return !isNaN(t); });
+        var allEnds = ranges.map(function(r) { return new Date(r.end).getTime(); }).filter(function(t) { return !isNaN(t); });
+        if (!allStarts.length || !allEnds.length) { wrap.style.display = 'none'; return; }
+
+        var globalStart = Math.min.apply(null, allStarts);
+        var globalEnd = Math.max.apply(null, allEnds);
+        var totalMs = Math.max(1, globalEnd - globalStart);
+
+        // Color gradient: short-lived files are green, long-lived are blue/purple
+        var durations = ranges.map(function(r) {
+            var s = new Date(r.start).getTime();
+            var e = new Date(r.end).getTime();
+            return Math.max(1, e - s);
+        });
+        var maxDur = Math.max.apply(null, durations);
+
+        // HSL gradient: 145 (green) → 260 (purple) based on duration
+        function durationColor(durMs) {
+            var ratio = Math.min(1, durMs / maxDur);
+            var hue = 145 + ratio * 115; // green → purple
+            var sat = 60 + ratio * 15;
+            var light = 50 - ratio * 10;
+            return 'hsl(' + Math.round(hue) + ',' + Math.round(sat) + '%,' + Math.round(light) + '%)';
+        }
+
+        var barHtml = '';
+        var labelsHtml = '';
+
+        ranges.forEach(function(r, i) {
+            var s = new Date(r.start).getTime();
+            var e = new Date(r.end).getTime();
+            if (isNaN(s) || isNaN(e)) return;
+
+            var leftPct = ((s - globalStart) / totalMs * 100).toFixed(2);
+            var widthPct = Math.max(0.5, ((e - s) / totalMs * 100)).toFixed(2);
+            var durSec = Math.round((e - s) / 1000);
+            var sizeMb = (r.size / 1048576).toFixed(1);
+            var shortName = r.name.replace(/.*\./, '');
+            var clr = durationColor(e - s);
+
+            barHtml += '<div style="width:' + widthPct + '%;background:' + clr + ';border-right:1px solid rgba(255,255,255,0.5);position:relative;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,.4);overflow:hidden;white-space:nowrap" title="' + escHtml(r.name) + '\n' + r.start + ' → ' + r.end + '\n' + durSec + 's — ' + sizeMb + ' MB">' + shortName + '</div>';
+
+            labelsHtml += '<div style="width:' + widthPct + '%;text-align:center;overflow:hidden;white-space:nowrap">' + (durSec > 0 ? durSec + 's' : '') + '</div>';
+        });
+
+        bar.innerHTML = barHtml;
+        labels.innerHTML = labelsHtml;
     }
 
     // ---- Chart.js bar+line chart ----
