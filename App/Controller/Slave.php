@@ -2631,40 +2631,42 @@ var chart = new Chart(ctx, {
         $row['parallelism_per_second'] = json_decode($row['parallelism_per_second'] ?? '[]', true);
         $row['progress'] = json_decode($row['progress'] ?? '[]', true);
 
-        // Add replication lag data for the analysis time range
+        // Add replication lag data: raw time-series from ts_value_slave_int
+        $row['lag_data'] = [];
         if ($row['status'] === 'done' && !empty($row['time_start']) && !empty($row['time_end'])) {
             ob_start();
             try {
-                $lagSlaves = Extraction::extract(
-                    $this->getReplicationLagVariables(),
-                    array((int)$row['id_mysql_server']),
-                    array($row['time_start'], $row['time_end']),
-                    false,
-                    true
+                $slaveId = (int) $row['id_mysql_server'];
+                $cn = $db->sql_real_escape_string($row['connection_name'] ?? '');
+                $timeStart = $db->sql_real_escape_string($row['time_start']);
+                $timeEnd = $db->sql_real_escape_string($row['time_end']);
+
+                // Find the ts_variable IDs for lag metrics
+                $varRes = $db->sql_query(
+                    "SELECT id, name FROM ts_variable WHERE name IN ('seconds_behind_master','seconds_behind_source') AND radical = 'slave'"
                 );
-            } catch (\Throwable $e) {
-                $lagSlaves = [];
-            }
-            ob_end_clean();
-            $lagSlaves = $this->normalizeReplicationLagGraphRows($lagSlaves ?: []);
-            $cn = $row['connection_name'] ?? '';
-            foreach ($lagSlaves as $s) {
-                if (($s['connection_name'] ?? '') === $cn && !empty($s['graph'])) {
-                    // Convert JS format {x:new Date('ts'),y:val} to JSON [{ts,lag}]
-                    $jsGraph = $s['graph'];
-                    $lagData = [];
-                    if (preg_match_all("/new Date\('([^']+)'\),y:(\d+(?:\.\d+)?)/", $jsGraph, $matches, PREG_SET_ORDER)) {
-                        foreach ($matches as $m) {
-                            $lagData[] = ['ts' => $m[1], 'lag' => (float)$m[2]];
+                $varIds = [];
+                while ($vr = $db->sql_fetch_array($varRes, MYSQLI_ASSOC)) {
+                    $varIds[] = (int) $vr['id'];
+                }
+
+                if (!empty($varIds)) {
+                    $varIdList = implode(',', $varIds);
+                    $lagSql = "SELECT date, value FROM ts_value_slave_int
+                               WHERE id_mysql_server = $slaveId
+                               AND id_ts_variable IN ($varIdList)
+                               AND connection_name = '$cn'
+                               AND date BETWEEN '$timeStart' AND '$timeEnd'
+                               ORDER BY date";
+                    $lagRes = $db->sql_query_silent($lagSql);
+                    if ($lagRes) {
+                        while ($lr = $db->sql_fetch_array($lagRes, MYSQLI_ASSOC)) {
+                            $row['lag_data'][] = ['ts' => $lr['date'], 'lag' => (int) $lr['value']];
                         }
                     }
-                    $row['lag_data'] = $lagData;
-                    break;
                 }
-            }
-        }
-        if (!isset($row['lag_data'])) {
-            $row['lag_data'] = [];
+            } catch (\Throwable $e) {}
+            ob_end_clean();
         }
 
         echo json_encode($row);
