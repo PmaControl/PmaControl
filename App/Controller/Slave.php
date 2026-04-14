@@ -865,20 +865,30 @@ $(document).ready(function() {
         btn.prop("disabled", true).html("<i class=\"fa fa-spinner fa-spin\"></i> '.__('Loading').'...");
 
         $.get(GLIAL_LINK + "slave/showGraphDay/" + server + "/" + newDay + "/" + encodeURIComponent(replName) + "/ajax:true/", function(html) {
-            var $parts = $($.parseHTML(html, document, true));
-            var scripts = [];
-            $parts.each(function() {
-                if (this.nodeName === "SCRIPT") {
-                    scripts.push(this.textContent);
+            var trimmed = $.trim(html.replace(/<script[\s\S]*?<\/script>/gi, ""));
+            if (trimmed.length > 10) {
+                var $parts = $($.parseHTML(html, document, true));
+                var scripts = [];
+                $parts.each(function() {
+                    if (this.nodeName === "SCRIPT") {
+                        scripts.push(this.textContent);
+                    }
+                });
+                $parts.not("script").prependTo("#slave-graphs-container");
+                for (var i = 0; i < scripts.length; i++) {
+                    $.globalEval(scripts[i]);
                 }
-            });
-            $parts.not("script").prependTo("#slave-graphs-container");
-            for (var i = 0; i < scripts.length; i++) {
-                $.globalEval(scripts[i]);
+            } else {
+                // No data for this day — show placeholder
+                var placeholder = $("<div class=\"sv-chart-wrap\" style=\"display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:12px;border:1px dashed #e2e8f0;border-radius:6px;margin-bottom:4px\">" + newDay + " — '.__('no data').'</div>");
+                placeholder.prependTo("#slave-graphs-container");
             }
+            // Always decrement date so next click goes further back
             btn.data("oldest", newDay);
             btn.prop("disabled", false).html("<i class=\"fa fa-plus\"></i> '.__('Load previous day').'");
         }).fail(function() {
+            // Network error — still decrement so user can retry next day
+            btn.data("oldest", newDay);
             btn.prop("disabled", false).html("<i class=\"fa fa-plus\"></i> '.__('Load previous day').'");
         });
     });
