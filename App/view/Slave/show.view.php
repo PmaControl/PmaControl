@@ -1005,12 +1005,12 @@ $catIcons = [
             </div>
 
             <!-- DDL Details -->
-            <div class="sv-collapse-head" id="sv-ba-ddl-head" aria-expanded="false" style="display:none" onclick="var e=this.getAttribute('aria-expanded')==='true'?'false':'true';this.setAttribute('aria-expanded',e);document.getElementById('sv-ba-ddl-body').style.display=e==='true'?'':'none'">
+            <div class="sv-collapse-head" id="sv-ba-ddl-head" aria-expanded="true" style="display:none" onclick="var e=this.getAttribute('aria-expanded')==='true'?'false':'true';this.setAttribute('aria-expanded',e);document.getElementById('sv-ba-ddl-body').style.display=e==='true'?'':'none'">
                 <i class="fa fa-chevron-right"></i> <?= __("DDL Statements") ?> <span class="badge" id="sv-ba-ddl-count">0</span>
             </div>
-            <div class="sv-collapse-body" id="sv-ba-ddl-body" style="display:none;padding:0">
-                <table class="table table-condensed table-striped" style="font-size:11px;margin:0">
-                    <thead><tr><th><?= __("Datetime") ?></th><th><?= __("Type") ?></th><th><?= __("Database") ?></th><th><?= __("Table") ?></th><th><?= __("Statement") ?></th></tr></thead>
+            <div class="sv-collapse-body" id="sv-ba-ddl-body" style="padding:0">
+                <table class="table table-condensed" style="font-size:11px;margin:0;background:#0f172a;color:#cbd5e1">
+                    <thead><tr style="background:#1e293b;color:#94a3b8"><th><?= __("Datetime") ?></th><th><?= __("Type") ?></th><th><?= __("Database") ?></th><th><?= __("Table") ?></th><th><?= __("Statement") ?></th></tr></thead>
                     <tbody id="sv-ba-ddl-tbody"></tbody>
                 </table>
             </div>
@@ -1301,11 +1301,24 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('sv-ba-ddl-count').textContent = ddls.length;
             var ddlHtml = '';
             ddls.forEach(function(dd) {
-                ddlHtml += '<tr><td style="white-space:nowrap;color:#64748b"><small>' + escHtml(dd.datetime || '') + '</small></td>'
-                    + '<td><b>' + escHtml(dd.type || '') + '</b></td>'
-                    + '<td><code>' + escHtml(dd.database || '') + '</code></td>'
-                    + '<td><code>' + escHtml(dd.table || '') + '</code></td>'
-                    + '<td style="font-size:10px;max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + escHtml(dd.statement || '') + '">'
+                var tp = (dd.type || '').toUpperCase();
+                var rowStyle = '';
+                var typeColor = '#cbd5e1';
+                if (tp.indexOf('ALTER') >= 0) { rowStyle = 'background:rgba(245,158,11,0.1)'; typeColor = '#f59e0b'; }
+                else if (tp.indexOf('DROP') >= 0) { rowStyle = 'background:rgba(239,68,68,0.1)'; typeColor = '#ef4444'; }
+                else if (tp.indexOf('CREATE') >= 0) { typeColor = '#10b981'; }
+                else if (tp.indexOf('TRUNCATE') >= 0) { rowStyle = 'background:rgba(239,68,68,0.05)'; typeColor = '#f87171'; }
+
+                var dt = dd.datetime || '';
+                var dtDisplay = dt ? dt.substring(11, 19) || dt : '';
+                var dtFull = dt;
+
+                ddlHtml += '<tr style="' + rowStyle + '">'
+                    + '<td style="white-space:nowrap"><small title="' + escHtml(dtFull) + '">' + escHtml(dtDisplay) + '</small></td>'
+                    + '<td style="color:' + typeColor + ';font-weight:700">' + escHtml(tp) + '</td>'
+                    + '<td><code style="color:#60a5fa">' + escHtml(dd.database || '') + '</code></td>'
+                    + '<td><code style="color:#e2e8f0">' + escHtml(dd.table || '') + '</code></td>'
+                    + '<td style="font-size:10px;max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#94a3b8" title="' + escHtml(dd.statement || '') + '">'
                     + escHtml(dd.statement || '') + '</td></tr>';
             });
             document.getElementById('sv-ba-ddl-tbody').innerHTML = ddlHtml;
