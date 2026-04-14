@@ -83,7 +83,7 @@ class BinlogAnalyzer
             if (!$analysis) {
                 throw new \Exception("Analysis record not found");
             }
-            $masterId = (int) $analysis['id_mysql_server_master'];
+            $masterId = (int) $analysis['id_mysql_server__master'];
             $this->updateLastStep("Analysis #" . $this->analysisId . " — slave=" . $analysis['id_mysql_server'] . " master=$masterId range=[" . $analysis['time_start'] . " → " . $analysis['time_end'] . "]");
 
             // Step 2 — Get master server info

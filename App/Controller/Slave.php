@@ -2584,7 +2584,7 @@ var chart = new Chart(ctx, {
             return;
         }
 
-        $sql = "INSERT INTO binlog_analysis (id_mysql_server, id_mysql_server_master, connection_name, status, time_start, time_end, created_at)
+        $sql = "INSERT INTO binlog_analysis (id_mysql_server, id_mysql_server__master, connection_name, status, time_start, time_end, created_at)
                 VALUES (" . $id_mysql_server . ", " . (int) $master_id . ", '" . $db->sql_real_escape_string($connection_name) . "',
                 'pending', '" . $db->sql_real_escape_string($time_start) . "', '" . $db->sql_real_escape_string($time_end) . "', NOW())";
         $db->sql_query($sql);
@@ -2687,7 +2687,7 @@ var chart = new Chart(ctx, {
                     mm.display_name AS master_name, mm.ip AS master_ip
              FROM binlog_analysis ba
              JOIN mysql_server ms ON ba.id_mysql_server = ms.id
-             JOIN mysql_server mm ON ba.id_mysql_server_master = mm.id
+             JOIN mysql_server mm ON ba.id_mysql_server__master = mm.id
              WHERE ba.id = $analysisId"
         );
         $a = $db->sql_fetch_array($res, MYSQLI_ASSOC);

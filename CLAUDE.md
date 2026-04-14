@@ -22,6 +22,14 @@ rm -f /srv/www/pmacontrol/tmp/acl/acl.ser
 
 Without this the new route returns a 404 or permission error until the cache rebuilds.
 
+## Database conventions
+
+See [`doc/database_conventions.md`](doc/database_conventions.md) for full naming rules. Key points:
+- FK columns: `id_{table}` (single ref) or `id_{table}__{role}` (double underscore for role)
+- Join tables: `link__a__b`
+- Booleans: `is_{flag}` (int 0/1)
+- No FK constraints on partitioned or system-versioned tables (MariaDB limitation)
+
 ## AJAX endpoints (Glial framework)
 
 - URLs must include `/ajax:true` in the path so the Router sets `$_GET['ajax'] = 'true'`.

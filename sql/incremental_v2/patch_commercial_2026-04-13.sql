@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS `ts_file` (
 CREATE TABLE IF NOT EXISTS `binlog_analysis` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `id_mysql_server` int(11) NOT NULL COMMENT 'slave server id',
-  `id_mysql_server_master` int(11) NOT NULL COMMENT 'master server id',
+  `id_mysql_server__master` int(11) NOT NULL COMMENT 'master server id',
   `connection_name` varchar(100) NOT NULL DEFAULT '' COMMENT 'replication channel name',
   `status` enum('pending','running','done','error') NOT NULL DEFAULT 'pending',
   `progress` text DEFAULT NULL COMMENT 'JSON array of step updates',
@@ -103,7 +103,7 @@ CREATE TABLE IF NOT EXISTS `binlog_analysis` (
   `completed_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `idx_slave` (`id_mysql_server`),
-  KEY `idx_master` (`id_mysql_server_master`),
+  KEY `idx_master` (`id_mysql_server__master`),
   KEY `idx_status` (`status`),
   KEY `idx_created` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
