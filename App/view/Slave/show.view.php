@@ -1306,31 +1306,16 @@ document.addEventListener('DOMContentLoaded', function() {
         var txnCounts = volData.map(function(v) { return v.txn; });
 
         baChart = new Chart(canvas.getContext('2d'), {
+            type: 'bar',
             data: {
                 labels: labels,
                 datasets: [
                     {
-                        type: 'bar',
                         label: 'Volume (KB/s)',
                         data: bytesKB,
                         backgroundColor: 'rgba(33,150,243,0.6)',
                         borderColor: 'rgba(33,150,243,0.8)',
-                        borderWidth: 1,
-                        yAxisID: 'y',
-                        order: 2
-                    },
-                    {
-                        type: 'line',
-                        label: 'Transactions/s',
-                        data: txnCounts,
-                        borderColor: '#FF5722',
-                        backgroundColor: 'rgba(255,87,34,0.1)',
-                        borderWidth: 2,
-                        pointRadius: 1,
-                        fill: false,
-                        tension: 0.2,
-                        yAxisID: 'y1',
-                        order: 1
+                        borderWidth: 1
                     }
                 ]
             },
@@ -1341,24 +1326,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Binlog Volume — second by second',
+                        text: 'Binlog Volume (KB/s)',
                         padding: 4,
                         font: { size: 13, weight: 'bold' }
                     },
-                    legend: { display: true, position: 'top', labels: { font: { size: 11 } } },
-                    tooltip: {
-                        mode: 'index', intersect: false,
-                        callbacks: {
-                            afterBody: function(ctx) {
-                                if (!baLagChart || !baLagChart.data) return [];
-                                var lagDs = baLagChart.data.datasets[0];
-                                if (!lagDs) return [];
-                                var idx = ctx[0].dataIndex;
-                                if (lagDs.data[idx] !== undefined) return ['Lag: ' + lagDs.data[idx] + 's'];
-                                return [];
-                            }
-                        }
-                    }
+                    legend: { display: false }
                 },
                 scales: {
                     x: {
@@ -1373,17 +1345,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                     y: {
                         type: 'linear',
-                        position: 'left',
-                        title: { display: true, text: 'KB/s', color: '#2196F3' },
-                        ticks: { color: '#2196F3' },
-                        beginAtZero: true
-                    },
-                    y1: {
-                        type: 'linear',
-                        position: 'right',
-                        title: { display: true, text: 'Txn/s', color: '#FF5722' },
-                        ticks: { color: '#FF5722' },
-                        grid: { drawOnChartArea: false },
+                        title: { display: true, text: 'KB/s' },
                         beginAtZero: true
                     }
                 }
