@@ -108,6 +108,21 @@ class MysqlServer extends Controller
         return 'Connect Error ('.mysqli_connect_errno().') '.mysqli_connect_error();
     }
 
+    private static function shouldUsePerfSchemaProcesslist($db, bool $hasPerfThreads): bool
+    {
+        if (!$hasPerfThreads) {
+            return false;
+        }
+
+        if (stripos((string) $db->getServerType(), 'mariadb') !== false) {
+            return false;
+        }
+
+        return $db->checkVersion(['MySQL' => '8.0'])
+            || $db->checkVersion(['Percona Server' => '8.0'])
+            || $db->checkVersion(['Percona' => '8.0']);
+    }
+
 /**
  * Retrieve mysql server state through `getProcesslistConnectionMetrics`.
  *
@@ -468,7 +483,7 @@ class MysqlServer extends Controller
             {
                 $sql = "SHOW FULL PROCESSLIST";
             }
-            else if ($db->checkVersion(array('MySQL' => '8.0')) && $has_perf_threads)
+            else if (self::shouldUsePerfSchemaProcesslist($db, $has_perf_threads))
             {
                 if ($has_innodb_trx) {
                     $sql = "SELECT /* pmacontrol-processlist */
