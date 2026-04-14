@@ -533,8 +533,12 @@ class BinlogAnalyzer
 
         if (strpos($vLower, 'mariadb') !== false) {
             $bin = $dir . 'mysqlbinlog-mariadb';
-            if (file_exists($bin)) return $bin;
-            throw new \Exception("mysqlbinlog binary for MariaDB not found at $bin");
+            if (file_exists($bin) && filesize($bin) > 1024) return $bin;
+            // Fallback: system-installed mariadb-binlog (common on ARM64)
+            foreach (['/usr/bin/mariadb-binlog', '/usr/bin/mysqlbinlog'] as $sysBin) {
+                if (is_executable($sysBin)) return $sysBin;
+            }
+            throw new \Exception("mysqlbinlog binary for MariaDB not found at $bin — install mariadb-client or copy mariadb-binlog to $bin");
         }
 
         // MySQL Oracle: extract major.minor  "8.0.44" → "8.0"

@@ -149,6 +149,13 @@ class Slave extends Controller
         $db->sql_query("SET PERSIST enforce_gtid_consistency = OFF;");
     }
 
+    private static function getMySQLParallelWorkersVariable($db): string
+    {
+        return version_compare((string) $db->getVersion(), '8.0.26', '>=')
+            ? 'replica_parallel_workers'
+            : 'slave_parallel_workers';
+    }
+
     private function normalizeReplicationLagGraphRows($rows): array
     {
         if (empty($rows)) {
@@ -539,15 +546,10 @@ new Chart(ctx, {
                     $data['parallel_mode'] = $row_pm['val'];
                 }
             } else {
-                // MySQL 8.0.26+ renamed slave_parallel_workers → replica_parallel_workers
-                $res_pt = $link_slave->sql_query_silent("SELECT @@GLOBAL.replica_parallel_workers AS val");
+                $var_name = self::getMySQLParallelWorkersVariable($link_slave);
+                $res_pt = $link_slave->sql_query_silent("SELECT @@GLOBAL.$var_name AS val");
                 if ($res_pt && $row_pt = $link_slave->sql_fetch_array($res_pt, MYSQLI_ASSOC)) {
                     $data['parallel_threads'] = (int)$row_pt['val'];
-                } else {
-                    $res_pt = $link_slave->sql_query_silent("SELECT @@GLOBAL.slave_parallel_workers AS val");
-                    if ($res_pt && $row_pt = $link_slave->sql_fetch_array($res_pt, MYSQLI_ASSOC)) {
-                        $data['parallel_threads'] = (int)$row_pt['val'];
-                    }
                 }
             }
         }
@@ -1297,7 +1299,7 @@ var chart = new Chart(ctx, {
                 }
                 $db->sql_query("START SLAVE $connClause;");
             } else {
-                $var_name = 'replica_parallel_workers';
+                $var_name = version_compare((string) $db->getVersion(), '8.0.26', '>=') ? 'replica_parallel_workers' : 'slave_parallel_workers';
                 $channelClause = !empty($connection_name) ? " FOR CHANNEL '$connection_name'" : "";
                 $db->sql_query("STOP REPLICA $channelClause;");
                 $db->sql_query("SET GLOBAL $var_name = $threads;");
