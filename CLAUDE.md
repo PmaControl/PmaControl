@@ -70,7 +70,7 @@ Legacy `Chart.bundle.js` (v2) still exists but should not be used for new code.
 
 ## GeoIP
 
-Country/city lookups are served from `data_geoip` and `data_geoip_city`, which mirror the full GeoLite2 IPv4 network ranges in MySQL. Lookups are range queries on `varbinary(16)` bounds (`INET6_ATON`), so no `.mmdb` access at request time.
+Country/city lookups are served from `data_geoip` and `data_geoip_city`, which mirror the full GeoLite2 IPv4 + IPv6 network ranges in MySQL. Lookups are range queries on `varbinary(16)` bounds (`INET6_ATON`), so no `.mmdb` access at request time. Both IPv4 and IPv6 server addresses are resolved.
 
 - **Tables**: `data_geoip` (~650k rows) and `data_geoip_city` (~3.7M rows). Both use `network_start`/`network_end` varbinary(16) + `country_iso`, `country_name`; the city table also has `region_*`, `city`, `postal`, `latitude`, `longitude`, `time_zone`.
 - **Populate**:

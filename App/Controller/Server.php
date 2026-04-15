@@ -469,12 +469,12 @@ class Server extends Controller
 
         $data['processing'] = $this->getDaemonRunning(['mysql']);
 
-        // GeoIP: lookup country for each server IP via range join
+        // GeoIP: lookup country for each server IP (IPv4 + IPv6) via range join
         $data['geoip'] = [];
         if (!empty($data['servers'])) {
             $ips = [];
             foreach ($data['servers'] as $s) {
-                if (filter_var($s['ip'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+                if (filter_var($s['ip'], FILTER_VALIDATE_IP)) {
                     $ips[$s['ip']] = true;
                 }
             }
@@ -582,9 +582,69 @@ class Server extends Controller
             $count += count($batch);
         }
 
+        // ── Pass 2: IPv6 global unicast (2000::/3) ──
+        echo "Loading GeoLite2 IPv6 ranges (2000::/3)...\n";
+        $v6count = 0;
+
+        // Iterate top-level /16 blocks: 2000:: to 3fff::
+        for ($hi = 0x20; $hi <= 0x3f; $hi++) {
+            for ($lo = 0; $lo <= 0xff; $lo++) {
+                $prefix = sprintf('%02x%02x::', $hi, $lo);
+                $ipStr = $prefix;
+                $packed = @inet_pton($ipStr);
+                if ($packed === false) continue;
+
+                try {
+                    [$record, $prefixLen] = $reader->getWithPrefixLen($ipStr);
+                } catch (\Exception $e) {
+                    continue;
+                }
+
+                if ($prefixLen <= 0 || $prefixLen > 128) continue;
+                if ($record === null || empty($record['country']['iso_code'])) continue;
+
+                // Compute network start/end from prefix + prefixLen
+                $startBin = $packed;
+                // End = start with all host bits set to 1
+                $endBin = $startBin;
+                $byteArr = array_values(unpack('C16', $endBin));
+                $fullBytes = intdiv($prefixLen, 8);
+                $remainBits = $prefixLen % 8;
+                if ($remainBits > 0) {
+                    $byteArr[$fullBytes] |= (0xFF >> $remainBits);
+                    $fullBytes++;
+                }
+                for ($b = $fullBytes; $b < 16; $b++) {
+                    $byteArr[$b] = 0xFF;
+                }
+                $endBin = pack('C16', ...$byteArr);
+
+                $iso = $record['country']['iso_code'];
+                $name = $record['country']['names']['en'] ?? '';
+                $startHex = bin2hex($startBin);
+                $endHex = bin2hex($endBin);
+                $batch[] = "(UNHEX('$startHex'),UNHEX('$endHex'),'"
+                    .$db->sql_real_escape_string($iso)."','"
+                    .$db->sql_real_escape_string($name)."')";
+
+                if (count($batch) >= $batchSize) {
+                    $db->sql_query("INSERT INTO data_geoip (network_start,network_end,country_iso,country_name) VALUES ".implode(',', $batch));
+                    $v6count += count($batch);
+                    $batch = [];
+                }
+            }
+        }
+
+        if (!empty($batch)) {
+            $db->sql_query("INSERT INTO data_geoip (network_start,network_end,country_iso,country_name) VALUES ".implode(',', $batch));
+            $v6count += count($batch);
+            $batch = [];
+        }
+
+        $count += $v6count;
         $reader->close();
         $elapsed = round(microtime(true) - $startTime, 1);
-        echo "Loaded $count network ranges in {$elapsed}s\n";
+        echo "Loaded $count network ranges ($v6count IPv6) in {$elapsed}s\n";
     }
 
     /**
@@ -682,9 +742,79 @@ class Server extends Controller
             $count += count($batch);
         }
 
+        // ── Pass 2: IPv6 global unicast (2000::/3) ──
+        echo "Loading GeoLite2-City IPv6 ranges (2000::/3)...\n";
+        $v6count = 0;
+
+        for ($hi = 0x20; $hi <= 0x3f; $hi++) {
+            for ($lo = 0; $lo <= 0xff; $lo++) {
+                $prefix = sprintf('%02x%02x::', $hi, $lo);
+                $packed = @inet_pton($prefix);
+                if ($packed === false) continue;
+
+                try {
+                    [$record, $prefixLen] = $reader->getWithPrefixLen($prefix);
+                } catch (\Exception $e) {
+                    continue;
+                }
+
+                if ($prefixLen <= 0 || $prefixLen > 128) continue;
+                if ($record === null || empty($record['country']['iso_code'])) continue;
+
+                $startBin = $packed;
+                $byteArr = array_values(unpack('C16', $packed));
+                $fullBytes = intdiv($prefixLen, 8);
+                $remainBits = $prefixLen % 8;
+                if ($remainBits > 0) {
+                    $byteArr[$fullBytes] |= (0xFF >> $remainBits);
+                    $fullBytes++;
+                }
+                for ($b = $fullBytes; $b < 16; $b++) {
+                    $byteArr[$b] = 0xFF;
+                }
+                $endBin = pack('C16', ...$byteArr);
+
+                $iso = $record['country']['iso_code'];
+                $name = $record['country']['names']['en'] ?? '';
+                $regionIso = $record['subdivisions'][0]['iso_code'] ?? '';
+                $regionName = $record['subdivisions'][0]['names']['en'] ?? '';
+                $city = $record['city']['names']['en'] ?? '';
+                $postal = $record['postal']['code'] ?? '';
+                $lat = $record['location']['latitude'] ?? null;
+                $lng = $record['location']['longitude'] ?? null;
+                $tz = $record['location']['time_zone'] ?? '';
+                $latSql = $lat === null ? 'NULL' : (float)$lat;
+                $lngSql = $lng === null ? 'NULL' : (float)$lng;
+
+                $startHex = bin2hex($startBin);
+                $endHex = bin2hex($endBin);
+                $batch[] = "(UNHEX('$startHex'),UNHEX('$endHex'),"
+                    ."'".$db->sql_real_escape_string($iso)."',"
+                    ."'".$db->sql_real_escape_string($name)."',"
+                    ."'".$db->sql_real_escape_string($regionIso)."',"
+                    ."'".$db->sql_real_escape_string($regionName)."',"
+                    ."'".$db->sql_real_escape_string($city)."',"
+                    ."'".$db->sql_real_escape_string($postal)."',"
+                    .$latSql.",".$lngSql.","
+                    ."'".$db->sql_real_escape_string($tz)."')";
+
+                if (count($batch) >= $batchSize) {
+                    $db->sql_query("INSERT INTO data_geoip_city (network_start,network_end,country_iso,country_name,region_iso,region_name,city,postal,latitude,longitude,time_zone) VALUES ".implode(',', $batch));
+                    $v6count += count($batch);
+                    $batch = [];
+                }
+            }
+        }
+
+        if (!empty($batch)) {
+            $db->sql_query("INSERT INTO data_geoip_city (network_start,network_end,country_iso,country_name,region_iso,region_name,city,postal,latitude,longitude,time_zone) VALUES ".implode(',', $batch));
+            $v6count += count($batch);
+        }
+
+        $count += $v6count;
         $reader->close();
         $elapsed = round(microtime(true) - $startTime, 1);
-        echo "Loaded $count city ranges in {$elapsed}s\n";
+        echo "Loaded $count city ranges ($v6count IPv6) in {$elapsed}s\n";
     }
 
     public function database()
