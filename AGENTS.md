@@ -30,5 +30,10 @@ All new logic requires PHPUnit coverage under `tests/`, mirroring the namespace 
 ## Commit & Pull Request Guidelines
 Commits in this repo use short, imperative descriptions (`add schema history`, `patch ProxySQL for IPv6`). Group related changes per commit and avoid WIP messages. Pull requests must describe the intent, list the commands/tests you ran, link to any tracked issues, and include screenshots for UI tweaks. Mention configuration or schema changes explicitly so operators can rehearse upgrades.
 
+## Tooling Visibility
+Do not leave any trace of AI tooling in user-visible artifacts. Never mention `ChatGPT`, `Codex`, `Claude`, `connector`, `assistant`, or the fact that an automated tool helped produce the change in commit messages, pull requests, GitHub issues/comments, changelogs, release notes, screenshots, or functional documentation.
+
+When a change fixes a GitHub ticket, add the exact commit URL to the ticket after pushing so the issue is explicitly linked to the delivered fix.
+
 ## Security & Configuration Tips
 Never commit concrete credentials from `config_sample/`; create environment-specific copies under `configuration/` and rely on `.gitignore`. Treat `data/`, `tmp/`, and backup outputs as ephemeral. When touching SSH or backup code, validate permissions inside `bin/` scripts and document any new required Linux capabilities in the PR.

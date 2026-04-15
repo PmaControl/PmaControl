@@ -152,6 +152,12 @@ MySQL is accessible without password from localhost (`mysql pmacontrol -e "..."`
 
 Short, imperative descriptions: `add schema history`, `fix ProxySQL IPv6`. Group related changes per commit. Never commit credentials or `configuration/` files. **Do NOT add `Co-Authored-By` trailers.**
 
+## Tooling visibility
+
+Do not leave any trace of AI tooling in user-visible artifacts. Never mention `ChatGPT`, `Codex`, `Claude`, `connector`, `assistant`, or the fact that an automated tool produced the change in commit messages, pull requests, GitHub issues/comments, release notes, screenshots, or functional documentation.
+
+When a pushed commit fixes a GitHub ticket, add the exact commit URL on the ticket so the delivered fix is explicitly linked.
+
 ## AJAX endpoints — both flags required
 
 For JSON/API endpoints that return no HTML, set **both** flags:
