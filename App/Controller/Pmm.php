@@ -67,6 +67,14 @@ class Pmm extends Controller
     public function export()
     {
         $this->view = false;
+        $this->layout = false;
+        $this->layout_name = false;
+
+        if (!defined('IS_CLI') || IS_CLI !== true) {
+            header('HTTP/1.1 403 Forbidden');
+            echo "This action is available in CLI mode only.\n";
+            return;
+        }
 
         $db = SGBD::sql(DB_DEFAULT);
 
