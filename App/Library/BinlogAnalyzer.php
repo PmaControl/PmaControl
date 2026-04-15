@@ -1630,9 +1630,11 @@ class BinlogAnalyzer
     private function probeLocalBinlogTimestamp(string $filePath, string $binary, string $which = 'first'): ?string
     {
         if ($which === 'last') {
-            // Get last timestamp: parse all timestamps and take the last one
-            $cmd = escapeshellarg($binary) . " --start-datetime='2000-01-01' "
-                 . escapeshellarg($filePath)
+            // Read only the last 64KB of the file to find the last timestamp
+            $size = @filesize($filePath) ?: 0;
+            $startPos = max(4, $size - 65536);
+            $cmd = escapeshellarg($binary) . " --start-position=" . $startPos
+                 . " " . escapeshellarg($filePath)
                  . " 2>/dev/null | grep -aoP '^#\\d{6}\\s+\\d+:\\d+:\\d+' | tail -1";
         } else {
             $cmd = escapeshellarg($binary) . " --stop-position=8192 "
