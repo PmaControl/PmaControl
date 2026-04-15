@@ -93,6 +93,7 @@ class Mysqlsys extends Controller {
             //Debug::debug($link_name);
 
             if (!empty($link_name)) {
+                $id_mysql_server = (int)($_GET['mysql_server']['id'] ?? 0);
 
                 $remote = Sgbd::sql($link_name);
                 $sql = "select TABLE_NAME from information_schema.tables "
