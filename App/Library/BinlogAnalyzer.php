@@ -1459,34 +1459,136 @@ class BinlogAnalyzer
     private function generateRecommendations(array $gtid, array $dml, array $volume, int $duration): array
     {
         $recs = [];
+        $analysis = $this->getAnalysis();
+        $slaveId = (int)($analysis['id_mysql_server'] ?? 0);
+        $masterId = (int)($analysis['id_mysql_server__master'] ?? 0);
+        $version = $analysis['mysql_version'] ?? '';
+        $isMariaDB = (stripos($version, 'mariadb') !== false);
 
-        if ($volume['peak_txn'] > 200) {
-            $recs[] = "High write throughput (peak " . number_format($volume['peak_txn']) . " txn/s). Ensure replica_parallel_workers >= 8.";
+        // Fetch master + slave config for context-aware recommendations
+        $masterVars = Extraction2::display(array(
+            'variables::binlog_format', 'variables::binlog_row_image',
+            'variables::sync_binlog', 'variables::innodb_flush_log_at_trx_commit',
+            'variables::binlog_transaction_dependency_tracking',
+            'variables::slave_parallel_workers', 'variables::replica_parallel_workers',
+            'variables::slave_parallel_threads',
+            'variables::slave_parallel_type', 'variables::slave_parallel_mode',
+            'variables::log_slave_updates',
+            'variables::binlog_expire_logs_seconds', 'variables::expire_logs_days',
+            'variables::max_binlog_size',
+        ), array($masterId));
+        $mv = $masterVars[$masterId] ?? [];
+
+        $slaveVars = Extraction2::display(array(
+            'variables::slave_parallel_workers', 'variables::replica_parallel_workers',
+            'variables::slave_parallel_threads', 'variables::slave_parallel_mode',
+            'variables::slave_parallel_type',
+            'variables::log_slave_updates',
+            'variables::relay_log_space_limit',
+        ), array($slaveId));
+        $sv = $slaveVars[$slaveId] ?? [];
+
+        $totalRows = $dml['inserts'] + $dml['updates'] + $dml['deletes'];
+
+        // ── Parallelism recommendations ──
+
+        $slaveWorkers = (int)($sv['replica_parallel_workers'] ?? $sv['slave_parallel_workers'] ?? $sv['slave_parallel_threads'] ?? 0);
+
+        if ($volume['peak_txn'] > 200 && $slaveWorkers < 8) {
+            $recs[] = "Peak " . number_format($volume['peak_txn']) . " txn/s but slave has only $slaveWorkers parallel workers. Increase to >= 8.";
+        } elseif ($volume['peak_txn'] > 200) {
+            $recs[] = "High write throughput (peak " . number_format($volume['peak_txn']) . " txn/s). Slave has $slaveWorkers workers — monitor lag.";
         }
 
         if ($gtid['sequential_pct'] > 25) {
-            $recs[] = "Sequential transaction ratio is " . $gtid['sequential_pct'] . "%. Consider binlog_transaction_dependency_tracking = WRITESET.";
+            $tracking = $mv['binlog_transaction_dependency_tracking'] ?? '';
+            if (strtolower($tracking) !== 'writeset' && !$isMariaDB) {
+                $recs[] = "Sequential ratio " . $gtid['sequential_pct'] . "%. Set binlog_transaction_dependency_tracking=WRITESET on master to improve parallelism.";
+            } elseif ($isMariaDB) {
+                $mode = $sv['slave_parallel_mode'] ?? 'conservative';
+                if (strtolower($mode) === 'conservative') {
+                    $recs[] = "Sequential ratio " . $gtid['sequential_pct'] . "%. Consider slave_parallel_mode=optimistic for better parallelism.";
+                }
+            }
         }
 
         if ($gtid['max_parallelism'] < 4 && $gtid['total_transactions'] > 100) {
-            $recs[] = "Max parallelism is only " . $gtid['max_parallelism'] . " txn/group. MTS workers will be underutilized.";
+            $recs[] = "Max parallelism only " . $gtid['max_parallelism'] . " txn/group. Workers > " . $gtid['max_parallelism'] . " will idle.";
         }
+
+        if ($slaveWorkers > 0 && $gtid['max_parallelism'] > 0 && $slaveWorkers < $gtid['max_parallelism']) {
+            $recs[] = "Slave has $slaveWorkers workers but binlogs show up to " . $gtid['max_parallelism'] . " parallel txn. Increase workers to match.";
+        }
+
+        // ── Transaction size ──
 
         if ($gtid['large_500k'] > 0) {
-            $recs[] = $gtid['large_500k'] . " transaction(s) > 500 KB. Large transactions block the SQL applier thread.";
-        }
-
-        if ($gtid['large_100k'] > 10) {
+            $maxMb = round($gtid['max_size'] / 1048576, 1);
+            $recs[] = $gtid['large_500k'] . " transaction(s) > 500 KB (max {$maxMb} MB). Large txn block the SQL applier and increase lag.";
+        } elseif ($gtid['large_100k'] > 10) {
             $recs[] = $gtid['large_100k'] . " transactions > 100 KB. Consider splitting batch operations.";
         }
 
-        $totalRows = $dml['inserts'] + $dml['updates'] + $dml['deletes'];
+        // ── Binlog config ──
+
+        $binlogFormat = strtoupper($mv['binlog_format'] ?? '');
+        if ($binlogFormat === 'STATEMENT') {
+            $recs[] = "Master uses binlog_format=STATEMENT. Row-based (ROW) is safer for replication and required for WRITESET tracking.";
+        } elseif ($binlogFormat === 'MIXED') {
+            $recs[] = "Master uses binlog_format=MIXED. Consider ROW for consistent parallel replication.";
+        }
+
+        $rowImage = strtoupper($mv['binlog_row_image'] ?? 'FULL');
+        if ($rowImage === 'FULL' && $totalRows > 100000) {
+            $recs[] = "binlog_row_image=FULL — every column is logged for UPDATE/DELETE. MINIMAL reduces binlog size significantly for wide tables.";
+        }
+
+        // ── Durability ──
+
+        $syncBinlog = (int)($mv['sync_binlog'] ?? 1);
+        $innoFlush = (int)($mv['innodb_flush_log_at_trx_commit'] ?? 1);
+        if ($syncBinlog !== 1 || $innoFlush !== 1) {
+            $recs[] = "Master durability: sync_binlog=$syncBinlog, innodb_flush_log_at_trx_commit=$innoFlush. Values != 1 risk data loss on crash.";
+        }
+
+        // ── Throughput ──
+
         if ($duration > 0 && $totalRows / $duration > 3000) {
             $recs[] = "Row throughput ~" . number_format($totalRows / $duration) . " rows/s. Sustained high-volume writes.";
         }
 
+        // ── Multi-tenant ──
+
         if ($dml['db_count'] > 50) {
-            $recs[] = $dml['db_count'] . " databases modified. Multi-tenant pattern may cause replication hot-spots.";
+            $recs[] = $dml['db_count'] . " databases modified. Multi-tenant pattern — consider database-level filtering (replicate_do_db).";
+        } elseif ($dml['db_count'] > 10) {
+            $recs[] = $dml['db_count'] . " databases modified during this window.";
+        }
+
+        // ── DDL impact ──
+
+        $ddlCount = (int)($analysis['total_ddl'] ?? 0);
+        if ($ddlCount > 0) {
+            $recs[] = "$ddlCount DDL statement(s) detected. DDL in binlogs blocks the SQL applier (single-threaded for DDL).";
+        }
+
+        // ── Binlog rotation ──
+
+        $binlogFiles = json_decode($analysis['binlog_files'] ?? '[]', true);
+        $fileCount = count($binlogFiles);
+        if ($fileCount > 1 && $duration > 0) {
+            $rotationInterval = round($duration / $fileCount);
+            if ($rotationInterval < 30) {
+                $recs[] = "Binlog rotates every ~{$rotationInterval}s ($fileCount files in {$duration}s). Very high write volume — consider increasing max_binlog_size.";
+            }
+        }
+
+        // ── log_slave_updates ──
+
+        $masterLSU = strtoupper($mv['log_slave_updates'] ?? '');
+        $slaveLSU = strtoupper($sv['log_slave_updates'] ?? '');
+        if ($slaveLSU === 'OFF' || $slaveLSU === '0') {
+            $recs[] = "Slave has log_slave_updates=OFF. Cascading replication (slave of slave) won't work. Enable if this slave has downstream replicas.";
         }
 
         return $recs;
