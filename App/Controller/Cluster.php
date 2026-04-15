@@ -558,7 +558,10 @@ class Cluster extends Controller
         $row = $db->sql_fetch_array($res, MYSQLI_ASSOC);
 
         if (empty($row)) {
-            throw new \Exception("No DOT graph found for this server");
+            $data['empty'] = true;
+            $data['id_mysql_server'] = $id_mysql_server;
+            $this->set('data', $data);
+            return;
         }
 
         $sourceDot = (string) ($row['dot'] ?? '');

@@ -3,6 +3,13 @@
 use \Glial\Synapse\FactoryController;
 use \App\Library\Graphviz;
 
+if (!empty($data['empty'])) {
+    echo '<div class="alert alert-info"><i class="fa fa-info-circle"></i> '
+        . __('No topology snapshot available yet for this server. The Dot3 daemon will generate one shortly.')
+        . ' <a href="' . LINK . 'Cluster/svg/">' . __('Back to cluster list') . '</a></div>';
+    return;
+}
+
 $idMysqlServer = (int) ($data['id_mysql_server'] ?? 0);
 $dot = (string) ($data['dot'] ?? '');
 $svg = (string) ($data['svg'] ?? '');
