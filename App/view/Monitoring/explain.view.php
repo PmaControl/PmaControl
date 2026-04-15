@@ -1,4 +1,5 @@
 <?php
+use App\Library\SysTooltips;
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -23,7 +24,7 @@ if (!empty($data['table'])) {
             echo '<th>'.__("Top").'</th>';
             $j = 0;
             foreach ($line as $var => $val) {
-                echo '<th>'.$var.'</th>';
+                echo SysTooltips::th($var);
 
                 if ($var == 'SQL_TEXT') {
                     $id_sql = $j;

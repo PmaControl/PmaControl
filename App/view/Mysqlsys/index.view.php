@@ -6,6 +6,7 @@
  */
 
 use Glial\Html\Form\Form;
+use App\Library\SysTooltips;
 
 echo '<div class="well">';
 
@@ -100,7 +101,7 @@ if (!empty($_GET['mysql_server']['id'])) {
 
                             echo '<th>' . __("Top") . '</th>';
                             foreach ($line as $var => $val) {
-                                echo '<th>' . $var . '</th>';
+                                echo SysTooltips::th($var);
                             }
                             echo '</tr>';
                         }
