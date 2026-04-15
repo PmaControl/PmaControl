@@ -1616,21 +1616,7 @@ class Graphviz
             $hostgroup = 0;
             $i = 0;
 
-            if (! empty($server['mysql_galera_hostgroups']))
-            {
-                $correspondance_hg = Dot3::getHostGroup($server['mysql_galera_hostgroups']);
-            }
-
-            if(! empty($server['mysql_replication_hostgroups']))
-            {
-                $correspondance_hg = Dot3::getHostGroup($server['mysql_replication_hostgroups']);
-
-            }
-            
-            if (! empty($server['mysql_group_replication_hostgroups']))
-            {
-                $correspondance_hg = Dot3::getHostGroup($server['mysql_group_replication_hostgroups']);
-            }
+            $correspondance_hg = Dot3::getProxySqlHostGroupMap($server);
 
             //Debug::debug($correspondance_hg, "HG");
             
@@ -1644,23 +1630,18 @@ class Graphviz
                 $i++;
                 
 
-                if (empty($correspondance_hg[$link['hostgroup_id']]))
-                {
-                    //$this->logger->warning("Impossible to link this hostgroup : ".$link['hostgroup_id']);
-                    continue;
-                }
-
+                $hostgroupLabel = $correspondance_hg[$link['hostgroup_id']] ?? (string) $link['hostgroup_id'];
 
                 if ($hostgroup != $link['hostgroup_id'])
                 {
                     $max = "";
-                    if ($correspondance_hg[$link['hostgroup_id']] === "writer" && ! empty($max_writer))
+                    if ($hostgroupLabel === "writer" && ! empty($max_writer))
                     {
                         $max = " (max : ". $max_writer.")";
                     }
 
                     $port = crc32($link['hostgroup_id'].'::');
-                    $return .= '<tr><td colspan="2" port="'.$port.'" bgcolor="#aaaaaa" align="left"><font color="#000000">'.__('Host group').' : <b>'.$correspondance_hg[$link['hostgroup_id']].'</b> '.$max.'</font></td></tr>'.PHP_EOL;
+                    $return .= '<tr><td colspan="2" port="'.$port.'" bgcolor="#aaaaaa" align="left"><font color="#000000">'.__('Host group').' : <b>'.$hostgroupLabel.'</b> '.$max.'</font></td></tr>'.PHP_EOL;
                 }
                 //⛯ PmaControl
                 $hostgroup = $link['hostgroup_id'];

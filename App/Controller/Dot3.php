@@ -3407,11 +3407,10 @@ class Dot3 extends Controller
                     
                 }
 
-                $writer = $server['mysql_replication_hostgroups'][0]['writer_hostgroup'] ?? null;
-                $reader = $server['mysql_replication_hostgroups'][0]['reader_hostgroup'] ?? null;
+                $hostGroupMap = self::getProxySqlHostGroupMap($server);
+                $hostGroupRole = $hostGroupMap[$hostgroup['hostgroup_id']] ?? '';
 
-
-                if (in_array($hostgroup['hostgroup_id'], [$reader]))
+                if (strpos($hostGroupRole, 'reader') !== false)
                 {
                     $tmp['options']['style'] = "filled";
                     $tmp['options']['color'] = "#32CD32";
@@ -4648,6 +4647,38 @@ class Dot3 extends Controller
         }
         $data[100] = "mirroring";
        //Debug::debug($data, "HOSTGROUP FLIP");
+
+        return $data;
+    }
+
+    static public function getProxySqlHostGroupMap(array $server): array
+    {
+        $data = array();
+        $keys = array(
+            'mysql_galera_hostgroups',
+            'mysql_replication_hostgroups',
+            'mysql_group_replication_hostgroups',
+        );
+
+        foreach ($keys as $key) {
+            if (empty($server[$key]) || ! is_array($server[$key])) {
+                continue;
+            }
+
+            foreach (self::getHostGroup($server[$key]) as $idHostgroup => $label) {
+                if (! isset($data[$idHostgroup])) {
+                    $data[$idHostgroup] = $label;
+                    continue;
+                }
+
+                $labels = array_map('trim', explode(' / ', $data[$idHostgroup]));
+                if (! in_array($label, $labels, true)) {
+                    $labels[] = $label;
+                }
+
+                $data[$idHostgroup] = implode(' / ', $labels);
+            }
+        }
 
         return $data;
     }

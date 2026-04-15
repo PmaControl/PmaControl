@@ -741,11 +741,11 @@ class Extraction2
         FROM ts_max_date b
         JOIN ts_variable c ON b.id_ts_file = c.id_ts_file
         WHERE c.id in (".$list_id_variable.")
-        AND b.date != b.date_p4
+        AND (b.date_p4 IS NULL OR b.date != b.date_p4)
         AND date > '".$max_date."' AND b.id_mysql_server IN (".implode(',', self::$server).")
         GROUP BY c.id;";
 
-        // AND b.date != b.date_p4 => empeche de ramener unitilement la premiere partition dans le cas ou il y a jamais eu de données.
+        // Keep rows where date_p4 is NULL, otherwise fresh metrics never reach Dot3 snapshots.
 
         //Debug::debug($sql, "PARTITIONS");
         $res = $db->sql_query($sql);
