@@ -3210,22 +3210,19 @@ class Dot3 extends Controller
 
         self::$build_server[$placeholderId] = array(
             'id_mysql_server' => $placeholderId,
-            'display_name' => 'Unknow server',
+            'display_name' => $ip . ':' . $port,
             'color' => '#9e9e9e',
-            'version' => $version,
-            'version_comment' => $versionComment,
-            'version_label_override' => $versionLabel,
+            'version' => '',
+            'version_comment' => '',
+            'version_label_override' => 'Not monitored',
             'is_unknown_proxysql' => '1',
-            'is_proxysql' => '1',
+            'is_proxysql' => '0',
+            'is_proxy' => '0',
             'ip_real' => $ip,
             'port_real' => $port,
             'ip' => $ip,
             'port' => $port,
-            'mysql_available' => '1',
-            'mysql_servers' => array(),
-            'mysql_galera_hostgroups' => array(),
-            'mysql_replication_hostgroups' => array(),
-            'mysql_group_replication_hostgroups' => array(),
+            'mysql_available' => '0',
         );
 
         $this->logger->warning(

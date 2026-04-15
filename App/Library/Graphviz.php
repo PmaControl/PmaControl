@@ -1310,10 +1310,19 @@ class Graphviz
             $server['color'] = self::OFFLINE_RED;
         }
 
+        $isUnknownNode = !empty($server['is_unknown_proxysql']);
 
-        //
-        $return .= '  "'.$server['id_mysql_server'].'"[ href="'.LINK.'MysqlServer/processlist/'.$server['id_mysql_server'].'/"';
-        $return .= 'tooltip="'.$server['display_name'].'"'.PHP_EOL;
+        if ($isUnknownNode) {
+            $server['color'] = '#9e9e9e';
+            $forground_color = '#FFFFFF';
+            $addIp = htmlspecialchars($server['ip_real'] ?? $server['ip'] ?? '', ENT_QUOTES);
+            $addPort = htmlspecialchars($server['port_real'] ?? $server['port'] ?? '3306', ENT_QUOTES);
+            $return .= '  "'.$server['id_mysql_server'].'"[ href="'.LINK.'Server/add/ip:'.$addIp.'/port:'.$addPort.'/"';
+            $return .= 'tooltip="'.__('Not monitored').' — '.__('Click to add').'"'.PHP_EOL;
+        } else {
+            $return .= '  "'.$server['id_mysql_server'].'"[ href="'.LINK.'MysqlServer/processlist/'.$server['id_mysql_server'].'/"';
+            $return .= 'tooltip="'.$server['display_name'].'"'.PHP_EOL;
+        }
         $return .= self::openHtmlLikeLabel(Dot3::TARGET, $server['color']);
         $return .= self::htmlRow([
             '<td PORT="title" colspan="2" bgcolor="'.$server['color'].'"><font color="'.$forground_color.'"><b>'.$server['display_name'].'</b></font></td>',
@@ -1353,6 +1362,14 @@ class Graphviz
         $return .= self::htmlRow([
             '<td bgcolor="lightgrey" width="100" align="left">' . $displayAddress . '</td>',
         ]);
+
+        if ($isUnknownNode) {
+            $return .= self::htmlRow([
+                '<td colspan="2" bgcolor="#bdbdbd" align="center"><font color="#424242"><b>' . __('Add to monitoring') . '</b></font></td>',
+            ]);
+            $return .= self::closeHtmlLikeLabel();
+            return $return;
+        }
 
         //$return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Since')." : ".$server['date'].'</td></tr>'.PHP_EOL;
 
