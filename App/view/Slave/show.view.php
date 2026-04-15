@@ -930,13 +930,6 @@ $catIcons = [
                 <small style="color:#94a3b8;margin-left:8px"><?= __('Drag to zoom, scroll to zoom, double-click to reset') ?></small>
             </div>
 
-            <!-- Binlog file timeline (Chart.js — same x-axis as charts below) -->
-            <div id="sv-ba-file-timeline" style="margin-bottom:8px;display:none">
-                <div style="position:relative;height:60px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:4px">
-                    <canvas id="sv-ba-file-chart"></canvas>
-                </div>
-            </div>
-
             <!-- Chart -->
             <div style="position:relative;height:250px;margin-bottom:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px">
                 <canvas id="sv-ba-chart"></canvas>
@@ -1339,102 +1332,12 @@ document.addEventListener('DOMContentLoaded', function() {
         _baTopTables = d.top_tables || [];
         _baAnalysis = d;
 
-        // Binlog file timeline
-        renderFileTimeline(d.binlog_file_ranges || []);
-
         // Treemaps
         renderTreemaps(d.top_tables || []);
 
         // Chart
         renderChart(d.volume_per_second || [], d.lag_data || []);
         renderParallelismChart(d.volume_per_second || [], d);
-    }
-
-    // ---- Binlog file timeline (Chart.js floating bars) ----
-    var baFileChart = null;
-    function renderFileTimeline(ranges) {
-        var wrap = document.getElementById('sv-ba-file-timeline');
-        if (!ranges || !ranges.length) { wrap.style.display = 'none'; return; }
-
-        // Filter valid ranges
-        var valid = ranges.filter(function(r) { return r.start && r.end; });
-        if (!valid.length) { wrap.style.display = 'none'; return; }
-        wrap.style.display = '';
-
-        var canvas = document.getElementById('sv-ba-file-chart');
-        if (baFileChart) { baFileChart.destroy(); baFileChart = null; }
-
-        // HSL gradient: green (short) → purple (long)
-        var durations = valid.map(function(r) { return new Date(r.end) - new Date(r.start); });
-        var maxDur = Math.max.apply(null, durations);
-
-        // Build floating bar data: each bar = [start_timestamp, end_timestamp] on y=0
-        var barData = valid.map(function(r, i) {
-            return { x: [r.start, r.end], y: 0 };
-        });
-
-        var colors = valid.map(function(r, i) {
-            var ratio = durations[i] / Math.max(1, maxDur);
-            var hue = 145 + ratio * 115;
-            return 'hsl(' + Math.round(hue) + ',65%,' + Math.round(48 - ratio * 8) + '%)';
-        });
-
-        var fileLabels = valid.map(function(r) { return r.name.replace(/.*\./, ''); });
-
-        baFileChart = new Chart(canvas, {
-            type: 'bar',
-            data: {
-                datasets: [{
-                    data: valid.map(function(r) {
-                        return { x: [new Date(r.start).getTime(), new Date(r.end).getTime()], y: 1 };
-                    }),
-                    backgroundColor: colors,
-                    borderWidth: 0,
-                    barPercentage: 1,
-                    categoryPercentage: 1
-                }]
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    title: { display: true, text: '<?= __("Binlog Files Timeline") ?>', font: { size: 11 }, padding: 2 },
-                    tooltip: {
-                        callbacks: {
-                            title: function(ctx) { return valid[ctx[0].dataIndex] ? valid[ctx[0].dataIndex].name : ''; },
-                            label: function(ctx) {
-                                var r = valid[ctx.dataIndex];
-                                if (!r) return '';
-                                var dur = Math.round((new Date(r.end) - new Date(r.start)) / 1000);
-                                var mb = (r.size / 1048576).toFixed(1);
-                                return [r.start + ' → ' + r.end, dur + 's — ' + mb + ' MB'];
-                            }
-                        }
-                    },
-                    zoom: {
-                        zoom: {
-                            drag: { enabled: true, backgroundColor: 'rgba(16,185,129,0.15)', borderColor: '#10b981', borderWidth: 1 },
-                            mode: 'x',
-                            onZoomComplete: function(ctx) { syncZoom(ctx.chart, baChart); syncZoom(ctx.chart, baParallelChart); rebuildTreemapsFromZoom(baChart); }
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        type: 'time',
-                        time: {
-                            parser: 'YYYY-MM-DD HH:mm:ss',
-                            tooltipFormat: 'YYYY-MM-DD HH:mm:ss',
-                            displayFormats: { second: 'HH:mm:ss', minute: 'HH:mm' }
-                        },
-                        ticks: { font: { size: 9 }, maxRotation: 0 }
-                    },
-                    y: { display: false }
-                }
-            }
-        });
     }
 
     // ---- Treemaps: databases + tables ----
@@ -1635,7 +1538,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         zoom: {
                             drag: { enabled: true, backgroundColor: 'rgba(33,150,243,0.15)', borderColor: '#2196F3', borderWidth: 1 },
                             mode: 'x',
-                            onZoomComplete: function(ctx) { syncZoom(ctx.chart, baParallelChart); syncZoom(ctx.chart, baFileChart); rebuildTreemapsFromZoom(ctx.chart); }
+                            onZoomComplete: function(ctx) { syncZoom(ctx.chart, baParallelChart); rebuildTreemapsFromZoom(ctx.chart); }
                         }
                     }
                 }
@@ -1761,7 +1664,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         zoom: {
                             drag: { enabled: true, backgroundColor: 'rgba(16,185,129,0.15)', borderColor: '#10b981', borderWidth: 1 },
                             mode: 'x',
-                            onZoomComplete: function(ctx) { syncZoom(ctx.chart, baChart); syncZoom(ctx.chart, baFileChart); rebuildTreemapsFromZoom(baChart); }
+                            onZoomComplete: function(ctx) { syncZoom(ctx.chart, baChart); rebuildTreemapsFromZoom(baChart); }
                         }
                     }
                 },
@@ -1873,7 +1776,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('sv-ba-reset-zoom').addEventListener('click', function() {
         if (baChart) { baChart.resetZoom(); }
         if (baParallelChart) { baParallelChart.resetZoom(); }
-        if (baFileChart) { baFileChart.resetZoom(); }
         rebuildTreemapsFromZoom(null);
     });
 
