@@ -312,6 +312,7 @@ class Aspirateur extends Controller
  * @psalm-var array<int|string,mixed>
  */
     static $cache = array();
+    static $database_list_cache = array();
 
 
 /**
@@ -358,6 +359,24 @@ class Aspirateur extends Controller
         self::$primary_key['main']['runtime_global_variables']['val'] = "variable_value";
     }
 
+    private function getSchemaQuery(string $version = '', string $versionComment = ''): string
+    {
+        $isMariaDB = (stripos($version, 'MariaDB') !== false) || (stripos($versionComment, 'MariaDB') !== false);
+        $numVersion = preg_replace('/[^0-9.].*/', '', $version);
+
+        // SCHEMA_COMMENT exists only in MariaDB >= 10.5
+        $hasSchemaComment = $isMariaDB && version_compare($numVersion, '10.5.0', '>=');
+
+        return "SELECT
+            SCHEMA_NAME AS schema_name,
+            DEFAULT_CHARACTER_SET_NAME AS default_character_set_name,
+            DEFAULT_COLLATION_NAME AS default_collation_name,
+            CATALOG_NAME AS catalog_name,
+            SQL_PATH AS sql_path"
+            . ($hasSchemaComment ? ",\n            SCHEMA_COMMENT AS schema_comment" : "")
+            . "\n        FROM information_schema.schemata;";
+    }
+
     /**
      * (PmaControl 0.8)<br/>
      * @example ./glial aspirateur tryMysqlConnection name id_mysql_server
@@ -396,17 +415,6 @@ class Aspirateur extends Controller
                 1002
             );
         }
-
-        // Vérifier que le serveur existe dans le fichier de config
-        $configServers = parse_ini_file(CONFIG.'db.config.ini.php', true);
-        $serverFound = false;
-        foreach ($configServers as $section => $values) {
-            if ($section === $name_server) {
-                $serverFound = true;
-                break;
-            }
-        }
-
 
         Debug::checkPoint('Init');
 
@@ -685,12 +693,21 @@ class Aspirateur extends Controller
         Debug::debug($data['slave'], "SLAVE");
 
         // Group Replication: collect MEMBER_ROLE and MEMBER_STATE from performance_schema
-        $grRes = $mysql_tested->sql_query_silent(
-            "SELECT MEMBER_ROLE, MEMBER_STATE FROM performance_schema.replication_group_members WHERE MEMBER_ID = @@server_uuid"
-        );
-        if ($grRes && $grRow = $mysql_tested->sql_fetch_array($grRes, MYSQLI_ASSOC)) {
-            $data['status']['gr_member_role'] = $grRow['MEMBER_ROLE'] ?? '';
-            $data['status']['gr_member_state'] = $grRow['MEMBER_STATE'] ?? '';
+        // Only applicable to MySQL (not MariaDB) with server_uuid (>= 5.6) and GR (>= 5.7.17)
+        $isMariaDB = (stripos($detectedVersion, 'MariaDB') !== false) || (stripos($detectedVersionComment, 'MariaDB') !== false);
+        $numVer = preg_replace('/[^0-9.].*/', '', $detectedVersion);
+        if (!$isMariaDB && version_compare($numVer, '5.7.17', '>=')) {
+            // MEMBER_ROLE column added in MySQL 8.0.2
+            if (version_compare($numVer, '8.0.2', '>=')) {
+                $grSql = "SELECT MEMBER_ROLE, MEMBER_STATE FROM performance_schema.replication_group_members WHERE MEMBER_ID = @@server_uuid";
+            } else {
+                $grSql = "SELECT '' AS MEMBER_ROLE, MEMBER_STATE FROM performance_schema.replication_group_members WHERE MEMBER_ID = @@server_uuid";
+            }
+            $grRes = $mysql_tested->sql_query_silent($grSql);
+            if ($grRes && $grRow = $mysql_tested->sql_fetch_array($grRes, MYSQLI_ASSOC)) {
+                $data['status']['gr_member_role'] = $grRow['MEMBER_ROLE'] ?? '';
+                $data['status']['gr_member_state'] = $grRow['MEMBER_STATE'] ?? '';
+            }
         }
 
         $this->exportData($id_mysql_server, "mysql_global", $data, false);
@@ -705,8 +722,8 @@ class Aspirateur extends Controller
         }*/
 
         //SHOW SLAVE HOSTS; => add in glial
-        $data = array();
         $isSingleStore = !empty($var['variables']['is_single_store']) && (int)$var['variables']['is_single_store'] === 1;
+        $data = array();
         $data['mysql_processlist']['processlist'] = json_encode($this->getProcesslist($mysql_tested, $isSingleStore));
         $this->exportData($id_mysql_server, "mysql_processlist", $data);
 
@@ -728,7 +745,8 @@ class Aspirateur extends Controller
     
         if ((time()+$id_mysql_server)%(10*$refresh) < $refresh)
         {
-            if (!$isSingleStore) {
+            // INNODB_METRICS exists since MySQL 5.6 / MariaDB 10.0
+            if (!$isSingleStore && version_compare($numVer, '5.6.0', '>=')) {
                 $data = array();
                 $data['innodb_metrics'] = $this->getInnodbMetrics($name_server);
                 $this->exportData($id_mysql_server, "mysql_innodb_metrics", $data, false);
@@ -737,7 +755,7 @@ class Aspirateur extends Controller
 
 
         // if performance_schema == ON
-        if ($var['variables']['performance_schema'] == "ON") {
+        if (!empty($var['variables']['performance_schema']) && $var['variables']['performance_schema'] == "ON") {
 
             /*
             if ((time()+$id_mysql_server)%(20*$refresh) < $refresh)
@@ -3239,7 +3257,7 @@ class Aspirateur extends Controller
         
         Debug::sql($sql);
 
-        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($mysql_tested, $sql, $id_mysql_server, __METHOD__);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($mysql_tested, $sql, null, __METHOD__);
         if ($res) {
             if ($mysql_tested->sql_num_rows($res) > 0) {
                 $dbs = array();
@@ -3576,14 +3594,38 @@ GROUP BY C.ID, C.INFO;";
         $mysql_tested = Mysql::getDbLink($id_mysql_server);
         $schemas = array();
 
-        // SingleStore / environnements restreints : testAccess() peut retourner false
-        // alors que SHOW DATABASES reste autorisé. On tente donc d'abord schemata,
-        // puis fallback sur SHOW DATABASES.
-        $res = Mysql::sqlQuerySilentCompat($mysql_tested, "SELECT * FROM information_schema.schemata");
+        $srvVersion = '';
+        $srvComment = '';
+
+        // Get version from connection handshake first (no SQL, always available).
+        // Fall back to SELECT @@version if needed.
+        if (isset($mysql_tested->link) && $mysql_tested->link instanceof \mysqli) {
+            $srvVersion = $mysql_tested->link->server_info ?? '';
+        }
+        if ($srvVersion === '') {
+            $resV = Mysql::sqlQuerySilentCompat($mysql_tested, "SELECT @@version AS v");
+            if ($resV && $rowV = $mysql_tested->sql_fetch_array($resV, MYSQLI_ASSOC)) {
+                $srvVersion = $rowV['v'] ?? '';
+            }
+        }
+
+        // @@version_comment exists since MySQL 5.0.1
+        $numV = preg_replace('/[^0-9.].*/', '', $srvVersion);
+        if ($numV !== '' && version_compare($numV, '5.0.1', '>=')) {
+            $resC = Mysql::sqlQuerySilentCompat($mysql_tested, "SELECT @@version_comment AS c");
+            if ($resC && $rowC = $mysql_tested->sql_fetch_array($resC, MYSQLI_ASSOC)) {
+                $srvComment = $rowC['c'] ?? '';
+            }
+        }
+
+        // information_schema exists since MySQL 5.0; skip schemata query on older servers.
+        $res = false;
+        if ($numV === '' || version_compare($numV, '5.0.0', '>=')) {
+            $res = Mysql::sqlQuerySilentCompat($mysql_tested, $this->getSchemaQuery($srvVersion, $srvComment));
+        }
 
         if ($res) {
             while ($arr = $mysql_tested->sql_fetch_array($res, MYSQLI_ASSOC)) {
-                $arr = array_change_key_case($arr);
                 $schemas[] = [
                     'schema_name'                => $arr['schema_name'] ?? '',
                     'default_character_set_name' => $arr['default_character_set_name'] ?? '',
@@ -3600,8 +3642,7 @@ GROUP BY C.ID, C.INFO;";
 
             if ($res) {
                 while ($arr = $mysql_tested->sql_fetch_array($res, MYSQLI_ASSOC)) {
-                    $arr = array_change_key_case($arr);
-                    $schemaName = $arr['database'] ?? reset($arr) ?: '';
+                    $schemaName = reset($arr) ?: '';
 
                     if ($schemaName === '') {
                         continue;
@@ -4522,8 +4563,24 @@ GROUP BY C.ID, C.INFO;";
 
         $mysql_tested = ($id_mysql_server == (int) $id_mysql_server) ? Mysql::getDbLink($id_mysql_server) : Sgbd::sql($id_mysql_server);
 
+        // information_schema doesn't exist before MySQL 5.0
+        $numVer = '';
+        if (isset($mysql_tested->link) && $mysql_tested->link instanceof \mysqli) {
+            $numVer = preg_replace('/[^0-9.].*/', '', $mysql_tested->link->server_info ?? '');
+        }
+
+        if ($numVer !== '' && version_compare($numVer, '5.0.0', '<')) {
+            $db_esc = $mysql_tested->sql_real_escape_string($database);
+            $tbl_esc = $mysql_tested->sql_real_escape_string($table);
+            $res = Mysql::sqlQuerySilentCompat($mysql_tested,
+                "SHOW TABLES FROM `" . $db_esc . "` LIKE '" . $tbl_esc . "'");
+            $found = ($res && $mysql_tested->sql_num_rows($res) > 0);
+            self::$cache[$id_mysql_server][$database][$table] = $found;
+            return $found;
+        }
+
         $sql = "SELECT count(1) AS cpt
-        FROM information_schema.tables 
+        FROM information_schema.tables
         WHERE TABLE_SCHEMA = '".$database."' AND TABLE_NAME = '".$table."';";
 
         $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($mysql_tested, $sql, $id_mysql_server, __METHOD__);
@@ -4741,8 +4798,6 @@ GROUP BY C.ID, C.INFO;";
             }
             else if ($db_link->checkVersion(array('MySQL' => '8.0')))
             {
-                //$this->logger->alert("PROVIDER : ".$db_link->getVersion() ." - VERSION : ".$db_link->getServerType() );
-
                 $sql  = "SELECT p.*,
                 IFNULL(t.trx_rows_locked, '0')        AS trx_rows_locked,
                 IFNULL(t.trx_state, '')               AS trx_state,
@@ -4818,6 +4873,11 @@ GROUP BY C.ID, C.INFO;";
 
     private function getDatabaseList($db, $includeSystemSchemas = false)
     {
+        $cacheKey = spl_object_hash($db) . ':' . (int) $includeSystemSchemas;
+        if (isset(self::$database_list_cache[$cacheKey])) {
+            return self::$database_list_cache[$cacheKey];
+        }
+
         $ret = array();
         $systemSchemas = array('information_schema', 'performance_schema', 'mysql', 'sys');
 
@@ -4835,6 +4895,8 @@ GROUP BY C.ID, C.INFO;";
 
             $ret[] = $database;
         }
+
+        self::$database_list_cache[$cacheKey] = $ret;
 
         return $ret;
     }

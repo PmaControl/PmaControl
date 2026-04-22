@@ -412,14 +412,31 @@ class Mysql
             return;
         }
 
-        foreach (['utf8mb4', 'utf8'] as $charset) {
+        // Detect server version from the connection handshake (no SQL query)
+        // to avoid logging errors for unsupported charsets on legacy servers.
+        $charsets = ['utf8mb4', 'utf8'];
+        if (isset($db->link) && $db->link instanceof \mysqli) {
+            $serverInfo = $db->link->server_info ?? '';
+            $numVer = preg_replace('/[^0-9.].*/', '', $serverInfo);
+            if ($numVer !== '' && version_compare($numVer, '5.5.3', '<')) {
+                $charsets = ['utf8'];
+            }
+        }
+
+        foreach ($charsets as $charset) {
             try {
-                $db->sql_query("SET NAMES '".$charset."'");
-                $db->sql_query(
+                $res = $db->sql_query("SET NAMES '".$charset."'");
+                if ($res === false) {
+                    continue;
+                }
+                $res2 = $db->sql_query(
                     "SET character_set_results = '".$charset."', "
                     ."character_set_client = '".$charset."', "
                     ."character_set_connection = '".$charset."'"
                 );
+                if ($res2 === false) {
+                    continue;
+                }
                 self::$db_link_charset[$key] = $charset;
                 return;
             } catch (\Throwable $e) {
