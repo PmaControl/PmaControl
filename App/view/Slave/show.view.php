@@ -5,10 +5,17 @@ use App\Library\Display;
 
 // -- helpers ------------------------------------------------------------------
 
+$isMariaDB = isset($data['server_type']) && stripos($data['server_type'], 'mariadb') !== false;
+$isMySQLNewSyntax = !$isMariaDB && isset($data['server_version']) && version_compare((string)$data['server_version'], '8.0.22', '>=');
+
 if (empty($data['replication_name'])) {
-    $show = 'SHOW SLAVE STATUS;';
-} else {
+    $show = $isMySQLNewSyntax ? 'SHOW REPLICA STATUS;' : 'SHOW SLAVE STATUS;';
+} elseif ($isMariaDB) {
     $show = 'SHOW SLAVE \''.$data['replication_name'].'\' STATUS;';
+} elseif ($isMySQLNewSyntax) {
+    $show = 'SHOW REPLICA STATUS FOR CHANNEL \''.$data['replication_name'].'\';';
+} else {
+    $show = 'SHOW SLAVE STATUS FOR CHANNEL \''.$data['replication_name'].'\';';
 }
 
 // Key variable extraction (MySQL 5/MariaDB + MySQL 8 compat)

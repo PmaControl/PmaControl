@@ -495,6 +495,7 @@ new Chart(ctx, {
             }
 
             $data['server_type'] = $link_slave->getServerType();
+            $data['server_version'] = $link_slave->getVersion();
 
             if ($replication_name === '__new__') {
                 $data['slave'] = [];
@@ -1764,9 +1765,12 @@ var chart = new Chart(ctx, {
         $old_master = getDbLink($id_mysql_server__old_master);
         $new_master = getDbLink($id_mysql_server__new_master);
 
-        $sql = "SHOW MASTER STATUS";
+        if ($new_master->checkVersion(array('MySQL' => '8.4', 'Percona Server' => '8.4'))) {
+            $sql = "SHOW BINARY LOG STATUS";
+        } else {
+            $sql = "SHOW MASTER STATUS";
+        }
         Debug::debug($sql);
-
         $res = $new_master->sql_query($sql);
 
         while ($arr = $new_master->sql_fetch_array($res, MYSQLI_ASSOC)) {

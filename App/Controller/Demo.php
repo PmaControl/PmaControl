@@ -413,7 +413,11 @@ class Demo extends Controller {
         $db_master = Sgbd::sql($mysql_server[$id_mysql_server__master]['name']);
         $db_slave = Sgbd::sql($mysql_server[$id_mysql_server__slave]['name']);
 
-        $res = $db_master->sql_query("SHOW MASTER STATUS");
+        if ($db_master->checkVersion(array('MySQL' => '8.4', 'Percona Server' => '8.4'))) {
+            $res = $db_master->sql_query("SHOW BINARY LOG STATUS");
+        } else {
+            $res = $db_master->sql_query("SHOW MASTER STATUS");
+        }
         while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)){
             Debug::debug($arr);
             $FILE = $arr['File'];
