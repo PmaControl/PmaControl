@@ -833,7 +833,8 @@ public function integrateAll($param)
     $this->logger->info('[END] IntegrateAll ' . $date_end . ' duration=' . $duration_ms . 'ms');
 
 
-    $loop = explode(':', $loop)[1];
+    $parts = explode(':', $loop);
+    $loop = $parts[1] ?? 0;
 
     // INSERT EXEC TIME
     $sql = "INSERT INTO integrate_all_run_time 
