@@ -153,7 +153,7 @@ class Agent extends Controller {
             $this->logger->debug("CMD : " . $cmd);
             $this->logger->info('Started daemon with pid : ' . $pid);
 
-            $sql = "UPDATE daemon_main SET pid ='" . $pid . "' WHERE id = " . $id_daemon . ";";
+            $sql = "UPDATE daemon_main SET pid ='" . $pid . "', is_enabled = 1 WHERE id = " . $id_daemon . ";";
             $db->sql_query($sql);
             $msg = I18n::getTranslation(__("The daemon ")."(id=" . $id_daemon . ") ".__("successfully started with pid:") . " " . $pid);
             $title = I18n::getTranslation(__("Success"));
@@ -215,7 +215,7 @@ class Agent extends Controller {
             shell_exec($cmd);
             //shell_exec("echo '[" . date("Y-m-d H:i:s") . "] DAEMON STOPPED !' >> " . $ob->log_file);
 
-            $sql = "UPDATE daemon_main SET pid ='0' WHERE id = '" . $id_daemon . "'";
+            $sql = "UPDATE daemon_main SET pid ='0', is_enabled = 0 WHERE id = '" . $id_daemon . "'";
             $db->sql_query($sql);
 
             $this->logger->info('Stopped daemon (id=' . $id_daemon . ') with the pid : ' . $ob->pid);
@@ -225,7 +225,7 @@ class Agent extends Controller {
                 $this->logger->info('Impossible to find the daemon (id=' . $id_daemon . ') with the pid : ' . $pid);
             }
 
-            $sql = "UPDATE daemon_main SET pid ='0' WHERE id = '" . $id_daemon . "'";
+            $sql = "UPDATE daemon_main SET pid ='0', is_enabled = 0 WHERE id = '" . $id_daemon . "'";
             $db->sql_query($sql);
 
             $msg = I18n::getTranslation(__("Impossible to find the daemon (id=" . $id_daemon . ") with the pid : ") . "'" . $ob->pid . "'");
@@ -304,7 +304,7 @@ class Agent extends Controller {
             while ($ob = $db->sql_fetch_object($res)) {
 
                 $php = explode(" ", shell_exec("whereis php"))[1];
-                $cmd = $php . " " . GLIAL_INDEX . " " . $ob->class . " " . $ob->method . " " . $ob->params . " loop:" . $id_loop . " " . $debug . " 2>&1 >> " . $this->log_file . " & echo $!";
+                $cmd = $php . " " . GLIAL_INDEX . " " . $ob->class . " " . $ob->method . " '" . $ob->params . "' loop:" . $id_loop . " " . $debug . " 2>&1 >> " . $this->log_file . " & echo $!";
 
                 //FactoryController::addNode($ob->class, $ob->method, explode(',',$ob->params));
                 //$pid=43563456375635673;
@@ -629,12 +629,12 @@ class Agent extends Controller {
 
         $this->view = false;
         $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT id, name, pid FROM daemon_main WHERE pid != 0";
+        $sql = "SELECT id, name, pid FROM daemon_main WHERE is_enabled = 1";
 
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
-            if (!System::isRunningPid($ob->pid)) {
+            if ($ob->pid == "0" || !System::isRunningPid($ob->pid)) {
 
                 $php = explode(" ", shell_exec("whereis php"))[1];
 

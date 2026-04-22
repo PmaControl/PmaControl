@@ -18,6 +18,7 @@ echo '<th>'.__('Date').'</th>';
 echo '<th>'.__("Refresh time").'</th>';
 //echo '<th>'.__("Queue number").'</th>';
 //echo '<th>'.__("Queue msg").'</th>';
+echo '<th>'.__("Enabled").'</th>';
 echo '<th>'.__("Path").'</th>';
 echo '<th>'.__("Command").'</th>';
 echo '</tr>';
@@ -34,6 +35,11 @@ foreach ($data['daemon'] as $daemon) {
     echo '<td class="line-edit" data-name="refresh_time" data-pk="'.$daemon['id'].'" data-type="text" data-url="'.LINK.'daemon/update" data-title="Enter class">'.$daemon['refresh_time'].'</td>';
   //  echo '<td class="line-edit" data-name="queue_number" data-pk="'.$daemon['id'].'" data-type="text" data-url="'.LINK.'daemon/update" data-title="Enter class">'.$daemon['queue_number'].'</td>';
   //  echo '<td>'.$daemon['nb_msg'].'</td>';
+    if ($daemon['is_enabled']) {
+        echo '<td><span class="label label-success">Enabled</span></td>';
+    } else {
+        echo '<td><span class="label label-default">Disabled</span></td>';
+    }
     echo '<td>'.$daemon['class'].'/'.$daemon['method'].' '.$daemon['params'].'</td>';
     echo '<td>';
 

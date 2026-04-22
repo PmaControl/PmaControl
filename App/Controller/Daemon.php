@@ -135,7 +135,19 @@ class Daemon extends Controller
     public function startAll($param)
     {
         Debug::parseDebug($param);
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $db->sql_query("UPDATE daemon_main SET is_enabled = 1");
+
         $this->manageDaemon("start");
+
+        if (!IS_CLI) {
+            $msg   = I18n::getTranslation(__("All the daemon was successfully started"));
+            $title = I18n::getTranslation(__("Success"));
+            set_flash("success", $title, $msg);
+            header("location: ".LINK.$this->getClass()."/index");
+            exit;
+        }
     }
 
 /**
@@ -162,7 +174,19 @@ class Daemon extends Controller
     public function stopAll($param)
     {
         Debug::parseDebug($param);
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $db->sql_query("UPDATE daemon_main SET is_enabled = 0");
+
         $this->manageDaemon("stop");
+
+        if (!IS_CLI) {
+            $msg   = I18n::getTranslation(__("All the daemon was successfully stopped"));
+            $title = I18n::getTranslation(__("Success"));
+            set_flash("success", $title, $msg);
+            header("location: ".LINK.$this->getClass()."/index");
+            exit;
+        }
     }
 
 /**
@@ -188,49 +212,31 @@ class Daemon extends Controller
  */
     private function manageDaemon($commande)
     {
-
-        if ($commande == "start") {
-            $order = "ASC";
-        }
-        else{
-            $order = "DESC";
-        }
-
         $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT * FROM daemon_main ORDER BY id $order";
-        $res = $db->sql_query($sql);
-
-        $daemon = array();
-        while($ob = $db->sql_fetch_object($res)) {
-            $daemon[] = $ob->id;
-        }
-
-        foreach ($daemon as $id_daemon) {
-            $php = explode(" ", shell_exec("whereis php"))[1];
-            $cmd = $php." ".GLIAL_INDEX." Agent ".$commande." ".$id_daemon;
-            Debug::debug($cmd);
-            $pid = shell_exec($cmd);
-        }
+        $php = explode(" ", shell_exec("whereis php"))[1];
 
         if ($commande === "stop") {
-            $php = explode(" ", shell_exec("whereis php"))[1];
+            // Stop all daemons directly (kill + reset pid).
+            // Does NOT change is_enabled — callers decide that.
+            $res = $db->sql_query("SELECT id, pid FROM daemon_main ORDER BY id DESC");
+            while ($ob = $db->sql_fetch_object($res)) {
+                if (!empty($ob->pid) && $ob->pid !== "0") {
+                    shell_exec("kill " . intval($ob->pid));
+                }
+                $db->sql_query("UPDATE daemon_main SET pid = '0' WHERE id = " . intval($ob->id));
+            }
+
             $cmd = $php." ".GLIAL_INDEX." Worker killAll";
             Debug::debug($cmd);
-            $pid = shell_exec($cmd);
-
-            //test all pid before
-
-            $msg   = I18n::getTranslation(__("All the daemon was successfully stopped"));
-            $title = I18n::getTranslation(__("Success"));
+            shell_exec($cmd);
         } else {
-            $msg   = I18n::getTranslation(__("All the daemon was successfully started"));
-            $title = I18n::getTranslation(__("Success"));
-        }
-
-        if (!IS_CLI) {
-            set_flash("success", $title, $msg);
-            header("location: ".LINK.$this->getClass()."/index");
-            exit;
+            // Start only enabled daemons
+            $res = $db->sql_query("SELECT id FROM daemon_main WHERE is_enabled = 1 ORDER BY id ASC");
+            while ($ob = $db->sql_fetch_object($res)) {
+                $cmd = $php." ".GLIAL_INDEX." Agent start ".$ob->id;
+                Debug::debug($cmd);
+                shell_exec($cmd);
+            }
         }
     }
 
@@ -306,22 +312,18 @@ class Daemon extends Controller
             $debug = "";
         }
 
+        // Stop all daemons without changing is_enabled
+        $this->manageDaemon("stop");
+
         $php = explode(" ", shell_exec("whereis php"))[1];
-        $cmd = $php." ".GLIAL_INDEX." ".$this->getClass()." stopAll".$debug;
-        Debug::debug($cmd);
-        $pid = shell_exec($cmd);
-
-        //$this->purgeLock(array());
-
         $cmd = $php." ".GLIAL_INDEX." control service".$debug;
         Debug::debug($cmd);
-        $pid = shell_exec($cmd);
+        shell_exec($cmd);
 
         usleep(5000);
 
-        $cmd = $php." ".GLIAL_INDEX." ".$this->getClass()." startAll".$debug;
-        Debug::debug($cmd);
-        $pid = shell_exec($cmd);
+        // Restart only daemons that were enabled before the refresh
+        $this->manageDaemon("start");
 
         if (!IS_CLI) {
             $msg   = I18n::getTranslation(__("All lock/pid/md5 has been deleted and partions has been updated"));
