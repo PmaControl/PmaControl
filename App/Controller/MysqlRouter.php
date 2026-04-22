@@ -199,8 +199,6 @@ class MysqlRouter extends Controller
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlErr = curl_error($ch);
-        curl_close($ch);
-
         if ($response === false) {
             throw new \Exception("[PMACONTROL-2002] cURL error when contacting MySQL Router at {$url}: {$curlErr}");
         }

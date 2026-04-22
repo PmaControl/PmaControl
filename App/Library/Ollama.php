@@ -97,8 +97,6 @@ final class OllamaClient
         if ($response === false) {
             throw new RuntimeException('Ollama error: ' . curl_error($ch));
         }
-        curl_close($ch);
-
         $json = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
 
         if (!isset($json['response'])) {

@@ -312,12 +312,10 @@ class Telegram extends Controller
 
         if ($response === false) {
             $error = curl_error($ch);
-            curl_close($ch);
             return I18n::getTranslation(__("Unable to contact Telegram API: ")) . $error;
         }
 
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
 
         $json = json_decode($response, true);
 
@@ -447,7 +445,6 @@ class Telegram extends Controller
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 10);
         $response = curl_exec($ch);
-        curl_close($ch);
 
         Debug::debug($response, "TELEGRAM_RAW_RESPONSE");
 

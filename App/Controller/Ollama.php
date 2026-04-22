@@ -96,8 +96,6 @@ class Ollama extends Controller
             echo "Réponse : " . ($result['response'] ?? "Aucune réponse");
         }
 
-        // Fermeture
-        curl_close($ch);
     }
 
 

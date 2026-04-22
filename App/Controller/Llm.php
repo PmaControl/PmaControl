@@ -201,8 +201,6 @@ class Llm extends Controller{
             Debug::debug(curl_error($ch));
             return null;
         }
-        curl_close($ch);
-
         $json = json_decode($response, true);
         return $json['response'] ?? null;
     }
