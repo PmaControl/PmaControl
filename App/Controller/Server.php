@@ -470,11 +470,13 @@ class Server extends Controller
         $data['processing'] = $this->getDaemonRunning(['mysql']);
 
         // GeoIP: lookup country for each server IP (IPv4 + IPv6) via range join
+        // Skip loopback / private / reserved ranges — they are never in the GeoIP table
+        // and the range scan is expensive.
         $data['geoip'] = [];
         if (!empty($data['servers'])) {
             $ips = [];
             foreach ($data['servers'] as $s) {
-                if (filter_var($s['ip'], FILTER_VALIDATE_IP)) {
+                if (filter_var($s['ip'], FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
                     $ips[$s['ip']] = true;
                 }
             }
