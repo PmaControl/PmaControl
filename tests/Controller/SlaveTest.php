@@ -424,14 +424,20 @@ final class SlaveTest extends TestCase
     }
 
     // ── buildReplicationCmd ──
+    //
+    // Signature : (verb, isMariaDB, useReplica, connectionName='')
+    // useReplica est ignoré quand isMariaDB=true (MariaDB n'a jamais REPLICA).
+    // Sur MySQL, useReplica vaut true ssi version >= 8.0.22 (gh#144).
 
     public function testBuildReplicationCmdMariaDBNoChannel(): void
     {
         $method = new ReflectionMethod(Slave::class, 'buildReplicationCmd');
         $method->setAccessible(true);
 
-        $this->assertSame('STOP SLAVE', $method->invoke(null, 'STOP', true, ''));
-        $this->assertSame('START SLAVE', $method->invoke(null, 'START', true, ''));
+        // useReplica ignoré sur MariaDB
+        $this->assertSame('STOP SLAVE', $method->invoke(null, 'STOP', true, false, ''));
+        $this->assertSame('START SLAVE', $method->invoke(null, 'START', true, false, ''));
+        $this->assertSame('STOP SLAVE', $method->invoke(null, 'STOP', true, true, ''));
     }
 
     public function testBuildReplicationCmdMariaDBWithChannel(): void
@@ -439,26 +445,80 @@ final class SlaveTest extends TestCase
         $method = new ReflectionMethod(Slave::class, 'buildReplicationCmd');
         $method->setAccessible(true);
 
-        $this->assertSame("STOP SLAVE 'production_fr'", $method->invoke(null, 'STOP', true, 'production_fr'));
-        $this->assertSame("START SLAVE 'chan-1'", $method->invoke(null, 'START', true, 'chan-1'));
+        $this->assertSame("STOP SLAVE 'production_fr'", $method->invoke(null, 'STOP', true, false, 'production_fr'));
+        $this->assertSame("START SLAVE 'chan-1'", $method->invoke(null, 'START', true, false, 'chan-1'));
     }
 
-    public function testBuildReplicationCmdMySQLNoChannel(): void
+    public function testBuildReplicationCmdMySQLModernNoChannel(): void
+    {
+        // MySQL >= 8.0.22 : REPLICA
+        $method = new ReflectionMethod(Slave::class, 'buildReplicationCmd');
+        $method->setAccessible(true);
+
+        $this->assertSame('STOP REPLICA', $method->invoke(null, 'STOP', false, true, ''));
+        $this->assertSame('START REPLICA', $method->invoke(null, 'START', false, true, ''));
+    }
+
+    public function testBuildReplicationCmdMySQLModernWithChannel(): void
     {
         $method = new ReflectionMethod(Slave::class, 'buildReplicationCmd');
         $method->setAccessible(true);
 
-        $this->assertSame('STOP REPLICA', $method->invoke(null, 'STOP', false, ''));
-        $this->assertSame('START REPLICA', $method->invoke(null, 'START', false, ''));
+        $this->assertSame("STOP REPLICA FOR CHANNEL 'pmacontrol'", $method->invoke(null, 'STOP', false, true, 'pmacontrol'));
+        $this->assertSame("START REPLICA FOR CHANNEL 'chan.test'", $method->invoke(null, 'START', false, true, 'chan.test'));
     }
 
-    public function testBuildReplicationCmdMySQLWithChannel(): void
+    public function testBuildReplicationCmdMySQLLegacyKeepsSlaveSyntax(): void
     {
+        // gh#144 — MySQL 5.7 et MySQL 8.0.0-8.0.21 ne connaissent que SLAVE
         $method = new ReflectionMethod(Slave::class, 'buildReplicationCmd');
         $method->setAccessible(true);
 
-        $this->assertSame("STOP REPLICA FOR CHANNEL 'pmacontrol'", $method->invoke(null, 'STOP', false, 'pmacontrol'));
-        $this->assertSame("START REPLICA FOR CHANNEL 'chan.test'", $method->invoke(null, 'START', false, 'chan.test'));
+        $this->assertSame('STOP SLAVE', $method->invoke(null, 'STOP', false, false, ''));
+        $this->assertSame('START SLAVE', $method->invoke(null, 'START', false, false, ''));
+        $this->assertSame("STOP SLAVE FOR CHANNEL 'legacy_57'", $method->invoke(null, 'STOP', false, false, 'legacy_57'));
+        $this->assertSame("START SLAVE FOR CHANNEL 'legacy_57'", $method->invoke(null, 'START', false, false, 'legacy_57'));
+    }
+
+    // ── usesReplicaSyntax ──
+
+    public function testUsesReplicaSyntaxMariaDBAlwaysFalse(): void
+    {
+        $method = new ReflectionMethod(Slave::class, 'usesReplicaSyntax');
+        $method->setAccessible(true);
+
+        $this->assertFalse($method->invoke(null, $this->fakeDb('mariadb', '10.11.6')));
+        $this->assertFalse($method->invoke(null, $this->fakeDb('MariaDB', '11.4.2')));
+    }
+
+    public function testUsesReplicaSyntaxMySQLPre8022False(): void
+    {
+        // gh#144 — MySQL 5.7 et 8.0.0-8.0.21 doivent rester en SLAVE
+        $method = new ReflectionMethod(Slave::class, 'usesReplicaSyntax');
+        $method->setAccessible(true);
+
+        $this->assertFalse($method->invoke(null, $this->fakeDb('MySQL', '5.7.44')));
+        $this->assertFalse($method->invoke(null, $this->fakeDb('mysql', '8.0.0')));
+        $this->assertFalse($method->invoke(null, $this->fakeDb('mysql', '8.0.21')));
+    }
+
+    public function testUsesReplicaSyntaxMySQL8022PlusTrue(): void
+    {
+        $method = new ReflectionMethod(Slave::class, 'usesReplicaSyntax');
+        $method->setAccessible(true);
+
+        $this->assertTrue($method->invoke(null, $this->fakeDb('mysql', '8.0.22')));
+        $this->assertTrue($method->invoke(null, $this->fakeDb('mysql', '8.0.36')));
+        $this->assertTrue($method->invoke(null, $this->fakeDb('MySQL', '8.4.0')));
+    }
+
+    private function fakeDb(string $serverType, string $version): object
+    {
+        return new class($serverType, $version) {
+            public function __construct(private string $serverType, private string $version) {}
+            public function getServerType(): string { return $this->serverType; }
+            public function getVersion(): string { return $this->version; }
+        };
     }
 
     // ── getReplicationLagVariables ──

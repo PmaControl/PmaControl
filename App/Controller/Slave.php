@@ -67,20 +67,43 @@ class Slave extends Controller
 
     /**
      * Build the SQL for STOP/START replication, fork-aware.
-     * MariaDB: STOP SLAVE 'conn_name'
-     * MySQL 8+: STOP REPLICA FOR CHANNEL 'conn_name'
+     * MariaDB:                STOP SLAVE 'conn_name'
+     * MySQL  < 8.0.22:        STOP SLAVE FOR CHANNEL 'conn_name'
+     * MySQL >= 8.0.22:        STOP REPLICA FOR CHANNEL 'conn_name'
+     *
+     * REPLICA terminology (gh#144) was added in MySQL 8.0.22 ; older MySQL
+     * (5.7.x and 8.0.0-8.0.21) only understand SLAVE.
      */
-    private static function buildReplicationCmd(string $verb, bool $isMariaDB, string $connectionName = ''): string
+    private static function buildReplicationCmd(string $verb, bool $isMariaDB, bool $useReplica, string $connectionName = ''): string
     {
         // verb = 'STOP' or 'START'
-        $keyword = $isMariaDB ? 'SLAVE' : 'REPLICA';
+        if ($isMariaDB) {
+            if (empty($connectionName)) {
+                return "$verb SLAVE";
+            }
+            return "$verb SLAVE '$connectionName'";
+        }
+
+        $keyword = $useReplica ? 'REPLICA' : 'SLAVE';
         if (empty($connectionName)) {
             return "$verb $keyword";
         }
-        if ($isMariaDB) {
-            return "$verb SLAVE '$connectionName'";
+        return "$verb $keyword FOR CHANNEL '$connectionName'";
+    }
+
+    /**
+     * Returns true iff the server expects the new MySQL "REPLICA" replication
+     * terminology (added in MySQL 8.0.22). MariaDB and pre-8.0.22 MySQL must
+     * keep using SLAVE / SHOW SLAVE STATUS / RESET SLAVE / START SLAVE UNTIL.
+     *
+     * @param mixed $db Glial DB handle exposing getServerType() and getVersion()
+     */
+    private static function usesReplicaSyntax($db): bool
+    {
+        if (stripos($db->getServerType(), 'mariadb') !== false) {
+            return false;
         }
-        return "$verb REPLICA FOR CHANNEL '$connectionName'";
+        return version_compare((string) $db->getVersion(), '8.0.22', '>=');
     }
 
     /**
@@ -1295,6 +1318,7 @@ var chart = new Chart(ctx, {
 
         $db = Mysql::getDbLink($id_mysql_server);
         $isMariaDB = (stripos($db->getServerType(), 'mariadb') !== false);
+        $useReplica = self::usesReplicaSyntax($db);
         $connection_name = self::sanitizeConnectionName($connection_name);
 
         try {
@@ -1312,10 +1336,11 @@ var chart = new Chart(ctx, {
             } else {
                 $var_name = version_compare((string) $db->getVersion(), '8.0.26', '>=') ? 'replica_parallel_workers' : 'slave_parallel_workers';
                 $channelClause = !empty($connection_name) ? " FOR CHANNEL '$connection_name'" : "";
-                $db->sql_query("STOP REPLICA $channelClause;");
+                $kw = $useReplica ? 'REPLICA' : 'SLAVE';
+                $db->sql_query("STOP $kw $channelClause;");
                 $db->sql_query("SET GLOBAL $var_name = $threads;");
                 $msg = "SET GLOBAL $var_name = $threads";
-                $db->sql_query("START REPLICA $channelClause;");
+                $db->sql_query("START $kw $channelClause;");
             }
             set_flash("success", __("Success"), $msg);
         } catch (\Exception $e) {
@@ -1355,9 +1380,10 @@ var chart = new Chart(ctx, {
 
         $db = Mysql::getDbLink($id_mysql_server);
         $isMariaDB = (stripos($db->getServerType(), 'mariadb') !== false);
+        $useReplica = self::usesReplicaSyntax($db);
 
         try {
-            $sql = self::buildReplicationCmd('START', $isMariaDB, $connection_name);
+            $sql = self::buildReplicationCmd('START', $isMariaDB, $useReplica, $connection_name);
             $db->sql_query("$sql;");
             set_flash("success", __("Success"), $sql);
         } catch (\Exception $e) {
@@ -1399,9 +1425,10 @@ var chart = new Chart(ctx, {
 
         $db = Mysql::getDbLink($id_mysql_server);
         $isMariaDB = (stripos($db->getServerType(), 'mariadb') !== false);
+        $useReplica = self::usesReplicaSyntax($db);
 
         try {
-            $sql = self::buildReplicationCmd('STOP', $isMariaDB, $connection_name);
+            $sql = self::buildReplicationCmd('STOP', $isMariaDB, $useReplica, $connection_name);
             $db->sql_query("$sql;");
             set_flash("success", __("Success"), $sql);
         } catch (\Exception $e) {
@@ -1530,13 +1557,18 @@ var chart = new Chart(ctx, {
 
         $db_target = Mysql::getDbLink($id_mysql_server__target);
         $isMariaDB_target = (stripos($db_target->getServerType(), 'mariadb') !== false);
+        $useReplica_target = self::usesReplicaSyntax($db_target);
 
-        $stop = self::buildReplicationCmd('STOP', $isMariaDB_target);
-        $start = self::buildReplicationCmd('START', $isMariaDB_target);
+        $stop = self::buildReplicationCmd('STOP', $isMariaDB_target, $useReplica_target);
+        $start = self::buildReplicationCmd('START', $isMariaDB_target, $useReplica_target);
 
         Debug::sql("$stop;");
         $db_target->sql_query("$stop;");
-        $resetCmd = $isMariaDB_target ? "RESET SLAVE ALL" : "RESET REPLICA ALL";
+        if ($isMariaDB_target || !$useReplica_target) {
+            $resetCmd = "RESET SLAVE ALL";
+        } else {
+            $resetCmd = "RESET REPLICA ALL";
+        }
         Debug::sql("$resetCmd;");
         $db_target->sql_query("$resetCmd;");
 
@@ -1556,7 +1588,8 @@ var chart = new Chart(ctx, {
                     $sql = "CHANGE REPLICATION SOURCE TO SOURCE_HOST='".$source->ip."',SOURCE_USER='".$slave_user."', SOURCE_PASSWORD='".$slave_password."', SOURCE_LOG_FILE='".$master_info['master_log_file']."', SOURCE_LOG_POS=".$master_info['master_log_pos'].";";
                 }
             } else {
-                if ($isMariaDB_target) {
+                if ($isMariaDB_target || !$useReplica_target) {
+                    // MariaDB et MySQL <8.0.22 : START SLAVE UNTIL avec MASTER_LOG_FILE
                     $sql = "START SLAVE UNTIL MASTER_LOG_FILE='".$master_info['master_log_file']."', MASTER_LOG_POS=".$master_info['master_log_pos'].";";
                 } else {
                     $sql = "START REPLICA UNTIL SOURCE_LOG_FILE='".$master_info['master_log_file']."', SOURCE_LOG_POS=".$master_info['master_log_pos'].";";
@@ -1828,6 +1861,7 @@ var chart = new Chart(ctx, {
 
         $db = Mysql::getDbLink($id_mysql_server);
         $isMariaDB = (stripos($db->getServerType(), 'mariadb') !== false);
+        $useReplica = self::usesReplicaSyntax($db);
 
         try {
             if ($isMariaDB) {
@@ -1886,7 +1920,7 @@ var chart = new Chart(ctx, {
                         ") FOR CHANNEL '$escapedCn';");
                 }
 
-                $db->sql_query(self::buildReplicationCmd('START', false, $connection_name).";");
+                $db->sql_query(self::buildReplicationCmd('START', false, $useReplica, $connection_name).";");
             }
 
             set_flash("success", __("Success"), __("Replication source created and started").": $connection_name");
@@ -1927,13 +1961,14 @@ var chart = new Chart(ctx, {
 
         $db = Mysql::getDbLink($id_mysql_server);
         $isMariaDB = (stripos($db->getServerType(), 'mariadb') !== false);
+        $useReplica = self::usesReplicaSyntax($db);
 
         try {
             if ($isMariaDB) {
-                $db->sql_query(self::buildReplicationCmd('STOP', true, $connection_name).";");
+                $db->sql_query(self::buildReplicationCmd('STOP', true, false, $connection_name).";");
                 $connClause = !empty($connection_name) ? " '$connection_name' " : "";
                 $db->sql_query("CHANGE MASTER $connClause TO MASTER_USE_GTID = slave_pos;");
-                $db->sql_query(self::buildReplicationCmd('START', true, $connection_name).";");
+                $db->sql_query(self::buildReplicationCmd('START', true, false, $connection_name).";");
             } else {
                 // MySQL: enable GTID on master first, then slave, using SET PERSIST for durability
                 $id_master = Mysql::getMaster($id_mysql_server, $connection_name);
@@ -1945,9 +1980,9 @@ var chart = new Chart(ctx, {
                 self::enableMySQLGtid($db);
 
                 $channelClause = !empty($connection_name) ? " FOR CHANNEL '$connection_name'" : "";
-                $db->sql_query(self::buildReplicationCmd('STOP', false, $connection_name).";");
+                $db->sql_query(self::buildReplicationCmd('STOP', false, $useReplica, $connection_name).";");
                 $db->sql_query("CHANGE REPLICATION SOURCE TO SOURCE_AUTO_POSITION = 1 $channelClause;");
-                $db->sql_query(self::buildReplicationCmd('START', false, $connection_name).";");
+                $db->sql_query(self::buildReplicationCmd('START', false, $useReplica, $connection_name).";");
             }
             set_flash("success", __("Success"), __("GTID Activated"));
         } catch (\Exception $e) {
@@ -1988,16 +2023,17 @@ var chart = new Chart(ctx, {
 
         $db = Mysql::getDbLink($id_mysql_server);
         $isMariaDB = (stripos($db->getServerType(), 'mariadb') !== false);
+        $useReplica = self::usesReplicaSyntax($db);
 
         try {
             if ($isMariaDB) {
-                $db->sql_query(self::buildReplicationCmd('STOP', true, $connection_name).";");
+                $db->sql_query(self::buildReplicationCmd('STOP', true, false, $connection_name).";");
                 $connClause = !empty($connection_name) ? " '$connection_name' " : "";
                 $db->sql_query("CHANGE MASTER $connClause TO MASTER_USE_GTID = no;");
-                $db->sql_query(self::buildReplicationCmd('START', true, $connection_name).";");
+                $db->sql_query(self::buildReplicationCmd('START', true, false, $connection_name).";");
             } else {
                 $channelClause = !empty($connection_name) ? " FOR CHANNEL '$connection_name'" : "";
-                $db->sql_query(self::buildReplicationCmd('STOP', false, $connection_name).";");
+                $db->sql_query(self::buildReplicationCmd('STOP', false, $useReplica, $connection_name).";");
                 $db->sql_query("CHANGE REPLICATION SOURCE TO SOURCE_AUTO_POSITION = 0 $channelClause;");
 
                 // Disable GTID on slave, then master
@@ -2009,7 +2045,7 @@ var chart = new Chart(ctx, {
                     self::disableMySQLGtid($db_master);
                 }
 
-                $db->sql_query(self::buildReplicationCmd('START', false, $connection_name).";");
+                $db->sql_query(self::buildReplicationCmd('START', false, $useReplica, $connection_name).";");
             }
             set_flash("success", __("Success"), __("GTID Deactivated"));
         } catch (\Exception $e) {
@@ -2049,13 +2085,14 @@ var chart = new Chart(ctx, {
 
         $db = Mysql::getDbLink($id_mysql_server);
         $isMariaDB = (stripos($db->getServerType(), 'mariadb') !== false);
+        $useReplica = self::usesReplicaSyntax($db);
 
         try {
             if ($isMariaDB) {
                 // MariaDB: sql_slave_skip_counter works with or without GTID
-                $db->sql_query(self::buildReplicationCmd('STOP', true, $connection_name).";");
+                $db->sql_query(self::buildReplicationCmd('STOP', true, false, $connection_name).";");
                 $db->sql_query("SET GLOBAL sql_slave_skip_counter=1;");
-                $db->sql_query(self::buildReplicationCmd('START', true, $connection_name).";");
+                $db->sql_query(self::buildReplicationCmd('START', true, false, $connection_name).";");
             } else {
                 // MySQL: check if GTID is enabled
                 $res = $db->sql_query("SELECT @@GLOBAL.gtid_mode AS val");
@@ -2064,7 +2101,7 @@ var chart = new Chart(ctx, {
                     $gtidMode = strtoupper($row['val']);
                 }
 
-                $db->sql_query(self::buildReplicationCmd('STOP', false, $connection_name).";");
+                $db->sql_query(self::buildReplicationCmd('STOP', false, $useReplica, $connection_name).";");
 
                 if ($gtidMode === 'ON') {
                     // With GTID: inject an empty transaction for the next pending GTID
@@ -2081,7 +2118,7 @@ var chart = new Chart(ctx, {
                     $db->sql_query("SET GLOBAL sql_slave_skip_counter=1;");
                 }
 
-                $db->sql_query(self::buildReplicationCmd('START', false, $connection_name).";");
+                $db->sql_query(self::buildReplicationCmd('START', false, $useReplica, $connection_name).";");
             }
             set_flash("success", __("Success"), __("Skipped 1 transaction"));
         } catch (\Exception $e) {
@@ -2124,8 +2161,9 @@ var chart = new Chart(ctx, {
             }
         }
 
-        // Fallback: get Source_UUID and Executed_Gtid_Set from SHOW REPLICA STATUS
-        $showSql = "SHOW REPLICA STATUS";
+        // Fallback: get Source_UUID and Executed_Gtid_Set from SHOW {SLAVE|REPLICA} STATUS
+        // (REPLICA syntax requires MySQL >= 8.0.22, see gh#144)
+        $showSql = self::usesReplicaSyntax($db) ? "SHOW REPLICA STATUS" : "SHOW SLAVE STATUS";
         if (!empty($connectionName)) {
             $showSql .= " FOR CHANNEL '$channelFilter'";
         }
@@ -2340,10 +2378,12 @@ var chart = new Chart(ctx, {
 
 
 
-        // Detect fork for proper SQL syntax
+        // Detect fork + REPLICA-vs-SLAVE syntax (gh#144) for the slave
         $isMariaDB_slave = true;
+        $useReplica_slave = false;
         if ($DRY_RUN === false && is_object($slave)) {
             $isMariaDB_slave = (stripos($slave->getServerType(), 'mariadb') !== false);
+            $useReplica_slave = self::usesReplicaSyntax($slave);
         }
         $isMariaDB_master = true;
         if ($DRY_RUN === false && is_object($master)) {
@@ -2366,7 +2406,7 @@ var chart = new Chart(ctx, {
             if ($i === 1) {
                 $databases .= $elem['db_names'];
 
-                $sql = $isMariaDB_slave ? "RESET SLAVE ALL;" : "RESET REPLICA ALL;";
+                $sql = ($isMariaDB_slave || !$useReplica_slave) ? "RESET SLAVE ALL;" : "RESET REPLICA ALL;";
                 execute($sql, $slave, $DRY_RUN);
 
                 if ($isMariaDB_slave) {
@@ -2385,7 +2425,7 @@ var chart = new Chart(ctx, {
             } else {
                 $databases .= ",".$elem['db_names'];
 
-                if ($isMariaDB_slave) {
+                if ($isMariaDB_slave || !$useReplica_slave) {
                     $sql = "START SLAVE UNTIL MASTER_LOG_FILE='".$elem['binlog_file']."', MASTER_LOG_POS=".$elem['binlog_pos'].";";
                 } else {
                     $sql = "START REPLICA UNTIL SOURCE_LOG_FILE='".$elem['binlog_file']."', SOURCE_LOG_POS=".$elem['binlog_pos'].";";
@@ -2395,18 +2435,18 @@ var chart = new Chart(ctx, {
                 if ($DRY_RUN === false) {
                     $this->waitForSlavePosition([$id_mysql_server__slave, $elem['binlog_file'], $elem['binlog_pos']]);
                 }
-                execute(self::buildReplicationCmd('STOP', $isMariaDB_slave).";", $slave, $DRY_RUN);
+                execute(self::buildReplicationCmd('STOP', $isMariaDB_slave, $useReplica_slave).";", $slave, $DRY_RUN);
 
                 $sql = "SET GLOBAL replicate_do_db='".$databases."';";
                 execute($sql, $slave, $DRY_RUN);
             }
         }
 
-        execute(self::buildReplicationCmd('STOP', $isMariaDB_slave).";", $slave, $DRY_RUN);
+        execute(self::buildReplicationCmd('STOP', $isMariaDB_slave, $useReplica_slave).";", $slave, $DRY_RUN);
 
         $sql = "SET GLOBAL replicate_do_db='';";
         execute($sql, $slave, $DRY_RUN);
-        execute(self::buildReplicationCmd('START', $isMariaDB_slave).";", $slave, $DRY_RUN);
+        execute(self::buildReplicationCmd('START', $isMariaDB_slave, $useReplica_slave).";", $slave, $DRY_RUN);
 
         
     }
@@ -2474,15 +2514,15 @@ var chart = new Chart(ctx, {
         
         while (true) {
             $db = Mysql::getDbLink($id_mysql_server, "SLAVE");
-            $isMariaDB = (stripos($db->getServerType(), 'mariadb') !== false);
+            $useReplica = self::usesReplicaSyntax($db);
 
             // Vérification du timeout
             if (time() - $startTime > $timeout) {
                 return false;
             }
 
-            // Exécution de SHOW SLAVE/REPLICA STATUS
-            $showCmd = $isMariaDB ? "SHOW SLAVE STATUS" : "SHOW REPLICA STATUS";
+            // Exécution de SHOW SLAVE/REPLICA STATUS (gh#144)
+            $showCmd = $useReplica ? "SHOW REPLICA STATUS" : "SHOW SLAVE STATUS";
             $result = $db->sql_query($showCmd);
             if (!$result) {
                 throw new \Exception("Erreur lors de l'exécution de $showCmd : " . $db->sql_error());
