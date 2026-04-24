@@ -241,122 +241,64 @@ if (IS_CLI) {
 //demarre l'application
 $html = FactoryController::rootNode($_SYSTEM['controller'], $_SYSTEM['action'], $_SYSTEM['param']);
 
-if ((DEBUG && (!IS_CLI) && (!IS_AJAX))) {
-    $debug = FactoryController::addNode("Debug", "toolbar", array(TIME_START), FactoryController::EXPORT);
-    //$html  = str_replace("[GLIAL_DEBUG_TOOLBAR]", $debug, $html);
-}
-
 echo $html;
-
-
-$i = 10;
 
 (DEBUG) ? $_DEBUG->save("Layout loaded") : "";
 
 
-if ((DEBUG && (!IS_CLI) && (!IS_AJAX)) && empty($_GET['ajax'])) {//ENVIRONEMENT
-    echo "<hr />";
-
-    $time_end = microtime(true);
+if ((DEBUG && (!IS_CLI) && (!IS_AJAX)) && empty($_GET['ajax'])) {
+    $time_end       = microtime(true);
     $execution_time = $time_end - $TIME_START;
+    $query_count    = Sgbd::sql(DB_DEFAULT)->get_count_query();
+    $queries        = Sgbd::sql(DB_DEFAULT)->getQuery();
+    $file_list      = get_included_files();
 
-    echo "Temps d'exéution de la page : " . round($execution_time, 5) . " seconds";
-    echo "<br />Nombre de requette : " . Sgbd::sql(DB_DEFAULT)->get_count_query();
-    $file_list = get_included_files();
-    echo "<br />Nombre de fichier loaded : <b>" . count($file_list) . "</b><br />";
-    
-
-    $queries = Sgbd::sql(DB_DEFAULT)->getQuery();
-    
     $maxTimeEntry = array_reduce($queries, function ($carry, $item) {
         return ($carry === null || $item["time"] > $carry["time"]) ? $item : $carry;
     });
+    $maxtime = $maxTimeEntry['time'] ?? 0;
 
-    $maxtime = $maxTimeEntry['time'];
-    
-    
-    //debug($queries);    
-    echo '<table class="display-tab table table-condensed" width="100%">';
-    echo '<tr>';
-    echo '<th>Cumulate</th>';
-    echo '<th>Query</th>';
-    echo '<th>time</th>';
-    echo '<th>File</th>';
-    echo '<th>Line</th>';
-    echo '<th>Rows</th>';
-    echo '<th>Last_is</th>';
-    echo '</tr>';
+    echo '<div id="glial-debug-footer" style="margin:20px 15px; padding:15px; border-top:2px solid #888; background:#f8f8f8; font-family:monospace; font-size:12px;">';
+    echo '<h3 style="margin-top:0">Debug</h3>';
+    echo '<ul style="list-style:none; padding:0; margin:0 0 10px 0;">';
+    echo '<li><b>Generation time :</b> '.round($execution_time, 5).' s</li>';
+    echo '<li><b>Queries :</b> '.(int) $query_count.'</li>';
+    echo '<li><b>Included files :</b> '.count($file_list).'</li>';
+    echo '</ul>';
 
-
-    
-
-
-    foreach($queries as $query)
-    {
-        $percent = round($query['time'] / $maxtime * 100);
-
-
+    if (!empty($queries)) {
+        echo '<table class="display-tab table table-condensed" width="100%">';
         echo '<tr>';
-        
-        echo '<td>'.$query['cumulate'].'</td>';
-        echo '<td style="max-width:1200px; overflow:auto">'.SqlFormatter::highlight($query['query']).'<b>';
-        
-        echo '<div class="glial-progress-bar">
-        <div class="glial-progress" style="width: '.$percent.'%;"></div>
-        </div>';
-
-
-        echo '</td>';
-        echo '<td>'.$query['time'].'</td>';
-        echo '<td>'.$query['file'].'</td>';
-        echo '<td>'.$query['line'].'</td>';
-        echo '<td>'.$query['rows'].'</td>';
-        echo '<td>'.$query['last_id'].'</td>';
+        echo '<th>Cumulate</th>';
+        echo '<th>Query</th>';
+        echo '<th>Time</th>';
+        echo '<th>File</th>';
+        echo '<th>Line</th>';
+        echo '<th>Rows</th>';
+        echo '<th>Last_id</th>';
         echo '</tr>';
-    }
-    echo '</table>';
 
-    debug($file_list);
+        foreach ($queries as $query) {
+            $percent = $maxtime > 0 ? round($query['time'] / $maxtime * 100) : 0;
+
+            echo '<tr>';
+            echo '<td>'.$query['cumulate'].'</td>';
+            echo '<td style="max-width:1200px; overflow:auto">'.SqlFormatter::highlight($query['query']);
+            echo '<div class="glial-progress-bar"><div class="glial-progress" style="width: '.$percent.'%;"></div></div>';
+            echo '</td>';
+            echo '<td>'.$query['time'].'</td>';
+            echo '<td>'.$query['file'].'</td>';
+            echo '<td>'.$query['line'].'</td>';
+            echo '<td>'.$query['rows'].'</td>';
+            echo '<td>'.$query['last_id'].'</td>';
+            echo '</tr>';
+        }
+        echo '</table>';
+    }
 
     $_DEBUG->print_table();
 
-    
-     // echo $_DEBUG->graph();
-     // echo $_DEBUG->graph2();
-     
-
-    //debug(get_declared_classes());
-
-    echo "SESSION ";
-    debug($_SESSION);
-    echo "GET ";
-    debug($_GET);
-    echo "POST ";
-    debug($_POST);
-    echo "COOKIE ";
-    debug($_COOKIE);
-    echo "REQUEST ";
-    debug($_REQUEST);
-    echo "SERVER ";
-    debug($_SERVER);
-
-    //debug($_SITE);
-
-
-    echo "CONSTANTES : <br />";
-
-
-    $display = false;
-    $constantes = get_defined_constants();
-    foreach ($constantes as $constante => $valeur) {
-        if ($constante == "TIME_START") {
-            $display = true;
-        }
-
-        if ($display) {
-            echo 'Constante: <b>' . $constante . '</b> Valeur: ' . $valeur . '<br/>';
-        }
-    }
+    echo '</div>';
 }
     
 
