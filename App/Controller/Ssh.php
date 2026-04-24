@@ -420,6 +420,49 @@ class Ssh extends Controller
         $this->di['js']->code_javascript('
 (function(){
   new Clipboard(".copy-button");
+
+  // #164 — formatte un nombre de secondes en "12s" / "1m 23s" / "1h 02m".
+  function fmtElapsed(s){
+    s = Math.max(0, parseInt(s, 10) || 0);
+    if (s < 60) return s + "s";
+    if (s < 3600) {
+      var m = Math.floor(s/60), r = s%60;
+      return m + "m " + (r<10?"0":"") + r + "s";
+    }
+    var h = Math.floor(s/3600), m2 = Math.floor((s%3600)/60);
+    return h + "h " + (m2<10?"0":"") + m2 + "m";
+  }
+
+  // tick local : met à jour le compteur toutes les secondes sans hitter le serveur
+  function tickElapsed(){
+    var now = Math.floor(Date.now()/1000);
+    document.querySelectorAll(".associate-running").forEach(function(el){
+      var startedAt = parseInt(el.getAttribute("data-started-at"), 10);
+      if (!startedAt) return;
+      var span = el.querySelector(".associate-elapsed");
+      if (span) span.textContent = fmtElapsed(now - startedAt);
+    });
+  }
+
+  // poll serveur toutes les 5s : reload dès que le lock disparaît
+  function pollAssociateStatus(){
+    document.querySelectorAll(".associate-running").forEach(function(el){
+      var id = el.getAttribute("data-key-id");
+      if (!id) return;
+      fetch("'.LINK.'ssh/associate_status/" + id, {credentials:"same-origin"})
+        .then(function(r){ return r.json(); })
+        .then(function(j){
+          if (j && j.running === false) { window.location.reload(); return; }
+          if (j && j.started_at) { el.setAttribute("data-started-at", j.started_at); }
+        })
+        .catch(function(){});
+    });
+  }
+
+  if (document.querySelectorAll(".associate-running").length > 0){
+    setInterval(tickElapsed, 1000);
+    setInterval(pollAssociateStatus, 5000);
+  }
 })();
 
 ');
@@ -450,6 +493,14 @@ class Ssh extends Controller
 
 
         $data['ssh_supported'] = array('rsa', 'dsa', 'RSA', 'DSA', 'ED25519');
+
+        $data['running'] = array();
+        foreach ($data['keys'] as $k) {
+            $started_at = self::getAssociateStartedAt($k['id']);
+            if ($started_at !== null) {
+                $data['running'][$k['id']] = $started_at;
+            }
+        }
 
         $this->set('data', $data);
     }
@@ -520,7 +571,36 @@ class Ssh extends Controller
         Debug::parseDebug($param);
 
 
-        $id_ssh_key = $param[0];
+        $id_ssh_key = (int) ($param[0] ?? 0);
+
+        if ($id_ssh_key <= 0) {
+            if (!IS_CLI) {
+                header("location: ".LINK.$this->getClass()."/index");
+            }
+            return;
+        }
+
+        // #163 — détache l'orchestration de la requête HTTP : la page doit revenir
+        // immédiatement à /index, le pipeline d'association continue en CLI background.
+        if (!IS_CLI) {
+            $php_bin = trim(explode(" ", shell_exec("whereis php"))[1] ?? PHP_BINARY);
+            $log     = TMP."log/associate_orchestrator_".$id_ssh_key.".log";
+            $cmd     = $php_bin." ".GLIAL_INDEX." Ssh associate ".$id_ssh_key." >> ".$log." 2>&1 &";
+            shell_exec($cmd);
+            header("location: ".LINK.$this->getClass()."/index");
+            return;
+        }
+
+        // #164 — pose un lock que la vue lit pour afficher "association en cours"
+        // et empêcher tout double-lancement.
+        $lock_file = TMP."lock".DS."ssh_associate_".$id_ssh_key.".lock";
+        if (!is_dir(dirname($lock_file))) {
+            mkdir(dirname($lock_file), 0775, true);
+        }
+        file_put_contents($lock_file, getmypid()."\n".date('c')."\n");
+        register_shutdown_function(static function () use ($lock_file) {
+            @unlink($lock_file);
+        });
 
         $keys = $this->getSshKeys($id_ssh_key);
 
@@ -628,17 +708,14 @@ AND b.id NOT IN (select id from z)";
 
 
 // attend la fin des worker
-// on attend d'avoir vider la file d'attente
-        do {
-            $msg_qnum = msg_stat_queue($queue)['msg_qnum'];
-
-
-            sleep(2); // la queue est vide mais il faut prendre le temps de traité les msg
+// poll rapide tant que la queue contient des messages, puis grace finale
+// pour laisser les workers terminer leur dernier handshake SSH (timeout 3s + marge)
+        while (($msg_qnum = msg_stat_queue($queue)['msg_qnum']) > 0) {
             Debug::debug("Nombre de msg en attente : ".$msg_qnum);
-            if ($msg_qnum == 0) {
-                break;
-            }
-        } while (true);
+            usleep(200000);
+        }
+        Debug::debug("Queue vide — grace period 4s pour finaliser les workers");
+        sleep(4);
 
 // kill des workers !
         foreach ($pids as $pid) {
@@ -646,10 +723,72 @@ AND b.id NOT IN (select id from z)";
             $cmd = "kill ".$pid;
             shell_exec($cmd);
         }
-        
+
         if (!IS_CLI) {
             header("location: ".LINK.$this->getClass()."/index");
         }
+    }
+
+/**
+ * Returns whether an associate orchestrator is currently running for a given
+ * SSH key id. Consumed by the index view (badge "association en cours") and by
+ * a small AJAX poller. Output is JSON: `{"running": true|false}`.
+ */
+    public function associate_status($param)
+    {
+        $this->view        = false;
+        $this->layout_name = false;
+
+        $id_ssh_key = (int) ($param[0] ?? 0);
+        $started_at = $id_ssh_key > 0 ? self::getAssociateStartedAt($id_ssh_key) : null;
+        $running    = $started_at !== null;
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'running'    => $running,
+            'id'         => $id_ssh_key,
+            'started_at' => $started_at,
+            'elapsed'    => $running ? max(0, time() - (int) $started_at) : null,
+        ]);
+    }
+
+/**
+ * Returns the unix timestamp at which the associate orchestrator for the
+ * given key started, or null if no live orchestrator is running. Stale
+ * locks (PID no longer alive) are removed as a side effect.
+ */
+    public static function getAssociateStartedAt($id_ssh_key)
+    {
+        $lock = TMP."lock".DS."ssh_associate_".((int) $id_ssh_key).".lock";
+        if (!is_file($lock)) {
+            return null;
+        }
+
+        $lines = explode("\n", (string) file_get_contents($lock));
+        $pid   = (int) trim($lines[0] ?? '0');
+        $iso   = trim($lines[1] ?? '');
+
+        if ($pid <= 0 || !file_exists("/proc/".$pid)) {
+            @unlink($lock);
+            return null;
+        }
+
+        $ts = $iso !== '' ? strtotime($iso) : false;
+        if ($ts === false) {
+            // pas de date dans le lock : on retombe sur mtime du fichier
+            $ts = (int) @filemtime($lock);
+        }
+        return (int) $ts;
+    }
+
+/**
+ * Returns true if a non-stale associate lock file exists for the given key.
+ * A lock is considered stale if its referenced PID is no longer alive — in
+ * that case the lock is removed and false is returned.
+ */
+    public static function isAssociateRunning($id_ssh_key)
+    {
+        return self::getAssociateStartedAt($id_ssh_key) !== null;
     }
 
 /**
@@ -755,8 +894,16 @@ AND b.id NOT IN (select id from z)";
 
         $ip_port = $server['ip'].':'.$server['ssh_port'];
 
+        $fp = @fsockopen($server['ip'], (int) $server['ssh_port'], $errno, $errstr, 1.0);
+        if ($fp === false) {
+            $ret = "Connection to server (".$server['display_name']." ".$ip_port.") : TCP unreachable (".$errno." ".$errstr.")";
+            $this->logger->info($ret);
+            Debug::debug($ip_port, "TCP unreachable — skip");
+            return;
+        }
+        fclose($fp);
 
-        $ssh = new SSH2($server['ip'], $server['ssh_port']);
+        $ssh = new SSH2($server['ip'], $server['ssh_port'], 3);
         //$rsa = new RSA();
 
 
