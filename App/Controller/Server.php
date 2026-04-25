@@ -1827,7 +1827,9 @@ var myChart = new Chart(ctx, {
  */
     public function show($param)
     {
-        $db = Sgbd::sql(DB_DEFAULT);
+        $this->layout_name = false;
+        $this->layout = false;
+        $this->view = false;
     }
 
 /**
