@@ -5,10 +5,68 @@ DEV_MOD=0
 VERSION_MARIADB="11.8"
 VERSION_PHP="8.5"
 GIT_BRANCH="commercial"
+SSH_KEY_DIR=""
+SSH_PRIVATE_KEY_FILE=""
+SSH_PUBLIC_KEY_FILE=""
 
-password=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
-pwd_pmacontrol=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
-pwd_admin=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
+generate_password()
+{
+    local generated=""
+
+    if command -v openssl >/dev/null 2>&1; then
+        generated=$(openssl rand -base64 48 | tr -d '/+=' | tr -d '\n' | head -c 32 || true)
+    fi
+
+    if [[ ${#generated} -lt 32 ]]; then
+        generated=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 || true)
+    fi
+
+    if [[ ${#generated} -lt 32 ]]; then
+        echo "Unable to generate a secure password." >&2
+        exit 1
+    fi
+
+    printf '%s\n' "${generated}"
+}
+
+cleanup_install_ssh_key()
+{
+    if [[ -n "${SSH_KEY_DIR}" && -d "${SSH_KEY_DIR}" ]]; then
+        rm -rf "${SSH_KEY_DIR}"
+    fi
+}
+
+trap cleanup_install_ssh_key EXIT
+
+json_escape_string()
+{
+    printf '%s' "$1" | jq -Rs .
+}
+
+json_escape_file()
+{
+    jq -Rs . < "$1"
+}
+
+generate_install_ssh_key()
+{
+    local hostname_value
+
+    cleanup_install_ssh_key
+    SSH_KEY_DIR=$(mktemp -d /tmp/pmacontrol-install-ssh.XXXXXX)
+    chmod 700 "${SSH_KEY_DIR}"
+    SSH_PRIVATE_KEY_FILE="${SSH_KEY_DIR}/id_rsa"
+    SSH_PUBLIC_KEY_FILE="${SSH_PRIVATE_KEY_FILE}.pub"
+    hostname_value=$(hostname -f 2>/dev/null || hostname)
+
+    ssh-keygen -q -t rsa -b 4096 -m PEM -N "" -C "pmacontrol@${hostname_value}" -f "${SSH_PRIVATE_KEY_FILE}"
+    chmod 600 "${SSH_PRIVATE_KEY_FILE}"
+    chmod 644 "${SSH_PUBLIC_KEY_FILE}"
+}
+
+pwd_pmacontrol=""
+pwd_admin=""
+pwd_webservice=""
 
 while getopts 'hp:v:dP:' flag; do
   case "${flag}" in
@@ -27,6 +85,12 @@ while getopts 'hp:v:dP:' flag; do
     *) echo "Unexpected option ${flag}"; exit 1 ;;
   esac
 done
+
+pwd_pmacontrol=$(generate_password)
+if [[ -z "${pwd_admin}" ]]; then
+    pwd_admin=$(generate_password)
+fi
+pwd_webservice=$(generate_password)
 
 export DEBIAN_FRONTEND=noninteractive
 export UCF_FORCE_CONFOLD=1
@@ -78,7 +142,8 @@ install_base_packages()
         sysbench \
         skopeo \
         jq \
-        sudo
+        sudo \
+        openssh-client
 }
 
 install_php_sury()
@@ -194,13 +259,28 @@ configure_mysql()
 
 write_install_config()
 {
+    local empty_json
+    local mysql_password_json
+    local ssh_private_key_json
+    local ssh_public_key_json
+    local admin_password_json
+    local webservice_password_json
+
+    generate_install_ssh_key
+    empty_json=$(json_escape_string "")
+    mysql_password_json=$(json_escape_string "${pwd_pmacontrol}")
+    ssh_private_key_json=$(json_escape_file "${SSH_PRIVATE_KEY_FILE}")
+    ssh_public_key_json=$(json_escape_file "${SSH_PUBLIC_KEY_FILE}")
+    admin_password_json=$(json_escape_string "${pwd_admin}")
+    webservice_password_json=$(json_escape_string "${pwd_webservice}")
+
     cat > /tmp/config.json <<EOF
 {
   "mysql": {
     "ip": "127.0.0.1",
     "port": 3306,
     "user": "pmacontrol",
-    "password": "${pwd_pmacontrol}",
+    "password": ${mysql_password_json},
     "database": "pmacontrol"
   },
   "organization": [
@@ -209,12 +289,12 @@ write_install_config()
   "webroot": "/pmacontrol/",
   "ldap": {
     "enabled": false,
-    "url": "pmacontrol.68koncept.com",
+    "url": "",
     "port": 389,
-    "bind dn": "CN=pmacontrol-auth,OU=Utilisateurs,OU=No_delegation,DC=intra,DC=pmacontrol",
-    "bind passwd": "secret_password",
-    "user base": "OU=pmacontrol.com,DC=intra,DC=pmacontrol",
-    "group base": "OU=pmacontrol.com,DC=intra,DC=pmacontrol",
+    "bind dn": "",
+    "bind passwd": ${empty_json},
+    "user base": "",
+    "group base": "",
     "mapping group": {
       "Member": "CN=",
       "Administrator": "CN=",
@@ -232,20 +312,20 @@ write_install_config()
         "country": "France",
         "city": "Paris",
         "login": "admin",
-        "password": "${pwd_admin}"
+        "password": ${admin_password_json}
       }
     ]
   },
   "webservice": [{
     "user": "webservice",
     "host": "%",
-    "password": "QDRWSHGqdrtwhqetrHthTH",
+    "password": ${webservice_password_json},
     "organization": "68Koncept"
   }],
   "ssh": [{
     "user": "pmacontrol",
-    "private key": "-----BEGIN RSA PRIVATE KEY-----\nMIIJKQIBAAKCAgEAsLxsW/pqk8VkCh/eUuhXusDLyG72sWz7uJk6Y1V/3lQRXbCX\n8orlGSlpcBwtMnVOAMUdul4/NQ9swDJqfSYMx5+s4hgswiDwqliwNmu8KGP7gseq\ntpB1apOsIGKby8KVkqwpmxyFs4W+dKwcxmPlw+1b5w5aro6keIbcomKAFNqq1nzR\nARBfL+AUEEZKjkK1o3vfzEhYL8nO+zpMzv2TMcbTumw+jjHC+DzKtUILBo/LjjkC\nwyWKva6QArS125itvIMT5pUW6X72RgWByKIUzCJrR+HzWO9zl8FQQeRlZjtCp+9C\n7HwMPiKH4upN2FfwWXSEa+NyYFUuNyjOCdbrRpgX0FfChE4XFklSNhMXdKMu\n-----END RSA PRIVATE KEY-----\n",
-    "public key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCwvGxb+mqTxWQKH95S6Fe6wMvIbvaxbPu4mTpjVX/eVBFdsJfyiuUZKWlwHC0ydU4AxR26Xj81D2zAMmp9JgzHn6ziGCzCIPCqWLA2a7woY/uCx6q2kHVqk6wgYpvLwpWSrCmbHIWzhb50rBzGY+XD7VvnDlqujqR4htyiYoAU2qrWfNEs5NseGEcQaiRMHe57lw2UTXGbj3Ked+h+n/XngRLV4D01DzaQZ8k45dREe32rUmJZJ3hvE3FI57ICEnVtnrQ8+lQrAoYP0jnYT7eXcIvjHDgyMXKc7fEAyp3b2QG+4J/HxL6K+elFJErLQ2yQlDR9afadnTsBJxFBA2/6yx42Lrp0pMprxKOvhSiMKNiDrP73Jt7d8Z5Z89YN+414Vo2M9713O54IB5H2r88qtdY4fuLzK4d4V39vz6ii5H2aEXIJVsbafLCn/qzbjp7IpoqvuB/3Smp2XW2RnWcZB1NY6diTQkS3MKpblDJILv5UtKN9RCyhRmRHFIM5RyTN21Euuei5bX6WhvEsL7jGo6JDmnXi3tzdAeTUbhPgOd2lX4LECBg9wbhzsezN47S6IGf+72sD/6BCJewKCZ8iheM34pEewDJdUSrg06LDLOr1TrRfaoV1qSsWNDtJVrfae/NTo4oKggxNkkDFkfeHm1pBej37dbMqzDVsKcNoCw=="
+    "private key": ${ssh_private_key_json},
+    "public key": ${ssh_public_key_json}
   }]
 }
 EOF
@@ -279,6 +359,10 @@ print_credentials()
     echo "# Account SuperAdmin on PmaControl"
     echo "Login : admin"
     echo "Password : ${pwd_admin}"
+    echo "#########################################################"
+    echo "# Account Webservice on PmaControl"
+    echo "Login : webservice"
+    echo "Password : ${pwd_webservice}"
     echo "#########################################################"
 }
 
