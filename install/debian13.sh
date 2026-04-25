@@ -97,9 +97,69 @@ EOF
     apt-get update
 }
 
+install_mariadb_repository()
+{
+    local repo_setup_script
+    repo_setup_script=$(mktemp)
+
+    if ! curl -fsSL https://r.mariadb.com/downloads/mariadb_repo_setup -o "${repo_setup_script}"; then
+        rm -f "${repo_setup_script}"
+        echo "Unable to download MariaDB repository setup script."
+        exit 1
+    fi
+
+    if ! bash "${repo_setup_script}" --mariadb-server-version="mariadb-${VERSION_MARIADB}"; then
+        rm -f "${repo_setup_script}"
+        echo "Unable to configure MariaDB ${VERSION_MARIADB} repository."
+        exit 1
+    fi
+
+    rm -f "${repo_setup_script}"
+    apt-get update
+}
+
+resolve_mariadb_package_version()
+{
+    apt-cache madison mariadb-server \
+        | awk -v requested="${VERSION_MARIADB}" '
+            BEGIN {
+                gsub(/\./, "\\.", requested)
+                pattern = "(^|:)" requested "([.-]|$)"
+            }
+            $3 ~ pattern { print $3; exit }
+        '
+}
+
 install_mariadb()
 {
-    apt-get install -y mariadb-server mariadb-client mariadb-plugin-rocksdb
+    local mariadb_package_version
+    local installed_mariadb_version
+
+    install_mariadb_repository
+    mariadb_package_version=$(resolve_mariadb_package_version)
+
+    if [[ -z "${mariadb_package_version}" ]]; then
+        echo "MariaDB ${VERSION_MARIADB} is not available in the configured APT repositories."
+        echo "Configure a repository that provides MariaDB ${VERSION_MARIADB} or choose an available version with -v."
+        exit 1
+    fi
+
+    apt-get install -y \
+        "mariadb-server=${mariadb_package_version}" \
+        "mariadb-client=${mariadb_package_version}" \
+        "mariadb-plugin-rocksdb=${mariadb_package_version}"
+
+    if command -v mariadb >/dev/null 2>&1; then
+        installed_mariadb_version=$(mariadb --version)
+    else
+        installed_mariadb_version=$(mysql --version)
+    fi
+
+    if [[ "${installed_mariadb_version}" != *"${VERSION_MARIADB}"* ]]; then
+        echo "Installed MariaDB version does not match requested version ${VERSION_MARIADB}: ${installed_mariadb_version}"
+        exit 1
+    fi
+
     systemctl enable mariadb
     systemctl restart mariadb
 }
