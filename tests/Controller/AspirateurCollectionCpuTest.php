@@ -5,13 +5,16 @@ namespace Tests\Controller;
 use App\Controller\Aspirateur;
 use PHPUnit\Framework\TestCase;
 
+if (!defined('TMP')) {
+    define('TMP', __DIR__ . '/../../tmp/');
+}
+
 class AspirateurCollectionCpuTest extends TestCase
 {
     private function invokePrivate(object $object, string $method, array $arguments = [])
     {
         $reflection = new \ReflectionClass($object);
         $instanceMethod = $reflection->getMethod($method);
-        $instanceMethod->setAccessible(true);
 
         return $instanceMethod->invokeArgs($object, $arguments);
     }
@@ -26,6 +29,17 @@ class AspirateurCollectionCpuTest extends TestCase
     protected function tearDown(): void
     {
         Aspirateur::$database_list_cache = [];
+    }
+
+    public function testLastRunCacheFileUsesApplicationCacheDirectory(): void
+    {
+        $aspirateur = $this->newAspirateur();
+
+        $cacheFile = $this->invokePrivate($aspirateur, 'getLastRunCacheFile', [245, 'digest/../bad key']);
+
+        $this->assertStringStartsWith(TMP . 'cache' . DIRECTORY_SEPARATOR . 'last_run' . DIRECTORY_SEPARATOR, $cacheFile);
+        $this->assertStringEndsWith('pmacontrol_last_run_digest_.._bad_key_245', $cacheFile);
+        $this->assertNotSame('/tmp/pmacontrol_last_run_digest_245', $cacheFile);
     }
 
     public function testGetDatabaseListCachesRepeatedShowDatabasesCallsForSameConnection(): void
