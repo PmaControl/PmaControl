@@ -45,4 +45,12 @@ class PmmDashboardCatalogTest extends TestCase
         $this->assertSame('2026-03-20T00:00', $range['start_value']);
         $this->assertSame('2026-03-20T06:00', $range['end_value']);
     }
+
+    public function testBuildRouteUrlUsesProvidedApplicationBase(): void
+    {
+        $url = PmmDashboardCatalog::buildRouteUrl('/custom/fr/', 'Pmm/system/12');
+
+        $this->assertSame('/custom/fr/Pmm/system/12/', $url);
+        $this->assertStringNotContainsString('/pmacontrol/en/', $url);
+    }
 }
