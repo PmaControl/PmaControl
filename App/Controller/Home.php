@@ -73,17 +73,10 @@ class Home extends Controller {
         }
 
         $avail = Extraction2::display(array("mysql_available", "mysql_error"));
-        foreach ($avail as $id => $row) {
-            if (!isset($monitoredIds[(int)$id])) {
-                continue;
-            }
-            if (($row['mysql_available'] ?? '') === '1') {
-                $data['available']++;
-            } else {
-                $data['unavailable']++;
-                $data['unavailable_servers'][$id] = $row['mysql_error'] ?? 'Unknown';
-            }
-        }
+        $availability = self::buildAvailabilitySummary($monitoredIds, $avail);
+        $data['available'] = $availability['available'];
+        $data['unavailable'] = $availability['unavailable'];
+        $data['unavailable_servers'] = $availability['unavailable_servers'];
 
         // Map unavailable server IDs to display names
         if (!empty($data['unavailable_servers'])) {
@@ -189,5 +182,31 @@ class Home extends Controller {
         $sql = "SELECT * FROM mysql_server ORDER BY ip";
         $data['server'] = $db->sql_fetch_yield($sql);
         $this->set('data', $data);
+    }
+
+    public static function buildAvailabilitySummary(array $monitoredIds, array $availabilityRows): array
+    {
+        $summary = [
+            'available' => 0,
+            'unavailable' => 0,
+            'unavailable_servers' => [],
+        ];
+
+        foreach ($monitoredIds as $id => $_enabled) {
+            $id = (int) $id;
+            $row = $availabilityRows[$id] ?? $availabilityRows[(string) $id] ?? null;
+
+            if (is_array($row) && (string) ($row['mysql_available'] ?? '') === '1') {
+                $summary['available']++;
+                continue;
+            }
+
+            $summary['unavailable']++;
+            $summary['unavailable_servers'][$id] = is_array($row)
+                ? ($row['mysql_error'] ?? 'Unknown')
+                : (\function_exists('__') ? \__('No metric reported') : 'No metric reported');
+        }
+
+        return $summary;
     }
 }
