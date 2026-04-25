@@ -69,6 +69,32 @@ final class IntegrateTest extends TestCase
 
         $this->assertNull($controller->exposeNormalizeSlaveMetricRow('status', ['threads_running' => 1]));
     }
+
+    public function testSortExistingPivotFilesByMtimeSkipsMissingFiles(): void
+    {
+        $controller = new TestableIntegrate('Controller', 'View', []);
+        $dir = sys_get_temp_dir().'/pmacontrol-integrate-sort-'.getmypid();
+        @mkdir($dir, 0775, true);
+
+        $older = $dir.'/100::mysql_global';
+        $newer = $dir.'/200::mysql_global';
+        $missing = $dir.'/300::mysql_global';
+
+        file_put_contents($older, 'older');
+        file_put_contents($newer, 'newer');
+        touch($older, 100);
+        touch($newer, 200);
+
+        try {
+            $sorted = $controller->exposeSortExistingPivotFilesByMtime([$missing, $newer, $older]);
+
+            $this->assertSame([$older, $newer], $sorted);
+        } finally {
+            @unlink($older);
+            @unlink($newer);
+            @rmdir($dir);
+        }
+    }
 }
 
 final class TestableIntegrate extends Integrate
@@ -76,5 +102,10 @@ final class TestableIntegrate extends Integrate
     public function exposeNormalizeSlaveMetricRow(string $typeMetrics, $value): ?array
     {
         return $this->normalizeSlaveMetricRow($typeMetrics, $value);
+    }
+
+    public function exposeSortExistingPivotFilesByMtime(array $files): array
+    {
+        return $this->sortExistingPivotFilesByMtime($files);
     }
 }
