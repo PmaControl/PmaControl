@@ -8,6 +8,7 @@ Au lieu de stocker une ligne par serveur (cache par IP), on stocke **l'integrali
 SELECT country_iso FROM data_geoip
 WHERE network_start <= INET6_ATON('89.30.104.134')
   AND network_end   >= INET6_ATON('89.30.104.134')
+ORDER BY network_start DESC
 LIMIT 1;
 ```
 
@@ -60,6 +61,7 @@ Les IPs privees (10.x, 172.16-31.x, 192.168.x, 127.x) ne ressortent pas : elles 
 SELECT country_iso, country_name FROM data_geoip
 WHERE network_start <= INET6_ATON('89.30.104.134')
   AND network_end   >= INET6_ATON('89.30.104.134')
+ORDER BY network_start DESC
 LIMIT 1;
 
 -- Ville d'une IP
@@ -91,6 +93,7 @@ foreach (array_keys($uniqueIps) as $ip) {
     $sqlGeo = "SELECT country_iso FROM data_geoip
                WHERE network_start <= INET6_ATON('$ip')
                AND   network_end   >= INET6_ATON('$ip')
+               ORDER BY network_start DESC
                LIMIT 1";
     // ... fetch et stockage
 }
