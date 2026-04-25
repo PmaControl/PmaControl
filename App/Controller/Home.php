@@ -5,6 +5,7 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
 use App\Library\Extraction2;
+use App\Library\Format;
 
 class Home extends Controller {
 
@@ -143,18 +144,8 @@ class Home extends Controller {
         $data['versions'] = [];
         $versionData = Extraction2::display(array("version", "version_comment"));
         foreach ($versionData as $id => $row) {
-            $v = $row['version'] ?? '';
-            $comment = $row['version_comment'] ?? '';
-            if ($v === '') continue;
-            $fork = 'MySQL';
-            if (stripos($v, 'mariadb') !== false || stripos($comment, 'mariadb') !== false) $fork = 'MariaDB';
-            elseif (stripos($comment, 'percona') !== false) $fork = 'Percona';
-            elseif (stripos($comment, 'proxysql') !== false) $fork = 'ProxySQL';
-            elseif (stripos($comment, 'maxscale') !== false) $fork = 'MaxScale';
-            elseif (stripos($comment, 'router') !== false) $fork = 'MySQL Router';
-            $major = explode('.', explode('-', $v)[0]);
-            $shortVersion = ($major[0] ?? '?').'.'.($major[1] ?? '?');
-            $key = $fork.' '.$shortVersion;
+            $key = self::buildVersionDistributionKey($row['version'] ?? '', $row['version_comment'] ?? '');
+            if ($key === null) continue;
             $data['versions'][$key] = ($data['versions'][$key] ?? 0) + 1;
         }
         arsort($data['versions']);
@@ -189,5 +180,41 @@ class Home extends Controller {
         $sql = "SELECT * FROM mysql_server ORDER BY ip";
         $data['server'] = $db->sql_fetch_yield($sql);
         $this->set('data', $data);
+    }
+
+    public static function buildVersionDistributionKey($version, $comment): ?string
+    {
+        $version = trim((string) $version);
+        if ($version === '') {
+            return null;
+        }
+
+        $parsed = Format::getMySQLNumVersion($version, (string) $comment);
+        $fork = self::normalizeVersionForkLabel($parsed['fork'] ?? 'MySQL');
+        $number = (string) ($parsed['number'] ?? $version);
+        $major = explode('.', explode('-', $number)[0]);
+        $shortVersion = ($major[0] ?? '?').'.'.($major[1] ?? '?');
+
+        return $fork.' '.$shortVersion;
+    }
+
+    private static function normalizeVersionForkLabel($fork): string
+    {
+        switch (strtolower((string) $fork)) {
+            case 'mariadb':
+                return 'MariaDB';
+            case 'percona':
+                return 'Percona';
+            case 'proxysql':
+                return 'ProxySQL';
+            case 'maxscale':
+                return 'MaxScale';
+            case 'mysql router':
+                return 'MySQL Router';
+            case 'singlestore':
+                return 'SingleStore';
+            default:
+                return 'MySQL';
+        }
     }
 }
