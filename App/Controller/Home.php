@@ -107,19 +107,12 @@ class Home extends Controller {
         // ── 5. Replication summary ──
         $data['replication'] = ['ok' => 0, 'lag' => 0, 'error' => 0, 'stopped' => 0, 'total' => 0];
         $slaveData = Extraction2::display(array("slave::slave_io_running", "slave::slave_sql_running",
-            "slave::seconds_behind_master", "slave::last_io_error", "slave::last_sql_error"));
+            "slave::seconds_behind_master", "slave::seconds_behind_source", "slave::last_io_error", "slave::last_sql_error"));
         foreach ($slaveData as $id => $row) {
             if (!isset($row['@slave'])) continue;
             foreach ($row['@slave'] as $cn => $s) {
                 $data['replication']['total']++;
-                $io = $s['slave_io_running'] ?? 'No';
-                $sql_r = $s['slave_sql_running'] ?? 'No';
-                $lag = $s['seconds_behind_master'] ?? null;
-                $err = !empty($s['last_io_error'] ?? '') || !empty($s['last_sql_error'] ?? '');
-                if ($io !== 'Yes' && $sql_r !== 'Yes') { $data['replication']['stopped']++; }
-                elseif ($io !== 'Yes' || $sql_r !== 'Yes' || $err) { $data['replication']['error']++; }
-                elseif ($lag !== null && $lag !== 'NULL' && (int)$lag > 0) { $data['replication']['lag']++; }
-                else { $data['replication']['ok']++; }
+                $data['replication'][self::classifyReplicationChannel($s)]++;
             }
         }
 
@@ -189,5 +182,48 @@ class Home extends Controller {
         $sql = "SELECT * FROM mysql_server ORDER BY ip";
         $data['server'] = $db->sql_fetch_yield($sql);
         $this->set('data', $data);
+    }
+
+    public static function classifyReplicationChannel(array $channel): string
+    {
+        $io = $channel['replica_io_running'] ?? $channel['slave_io_running'] ?? 'No';
+        $sql = $channel['replica_sql_running'] ?? $channel['slave_sql_running'] ?? 'No';
+        $err = !empty($channel['last_io_error'] ?? '') || !empty($channel['last_sql_error'] ?? '');
+
+        if ($io !== 'Yes' && $sql !== 'Yes') {
+            return 'stopped';
+        }
+
+        if ($io !== 'Yes' || $sql !== 'Yes' || $err) {
+            return 'error';
+        }
+
+        $lag = self::getReplicationLag($channel);
+        if ($lag !== null && $lag > 0) {
+            return 'lag';
+        }
+
+        return 'ok';
+    }
+
+    public static function getReplicationLag(array $channel): ?int
+    {
+        $sourceLag = self::normalizeReplicationLagValue($channel['seconds_behind_source'] ?? null);
+        if ($sourceLag !== null) {
+            return $sourceLag;
+        }
+
+        return self::normalizeReplicationLagValue($channel['seconds_behind_master'] ?? null);
+    }
+
+    private static function normalizeReplicationLagValue($lag): ?int
+    {
+        $lag = trim((string) $lag);
+
+        if ($lag === '' || strtoupper($lag) === 'NULL') {
+            return null;
+        }
+
+        return (int) $lag;
     }
 }
