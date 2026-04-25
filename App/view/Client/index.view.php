@@ -165,11 +165,14 @@ if (!empty($data['client'])) {
                    class="btn btn-default" title="<?= __('View servers') ?>">
                     <i class="fa fa-server"></i> <?= $total ?>
                 </a>
-                <a href="<?= LINK ?>client/delete/<?= (int)$client['id'] ?>"
-                   class="btn btn-danger"
-                   onclick="return confirm('<?= __('Delete this client? All servers will be orphaned.') ?>')">
-                    <i class="fa fa-trash"></i>
-                </a>
+                <form method="post"
+                      action="<?= LINK ?>client/delete/<?= (int)$client['id'] ?>"
+                      style="display:inline"
+                      onsubmit="return confirm('<?= __('Delete this client? All servers will be orphaned.') ?>')">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                </form>
             </div>
         </div>
     </div>
