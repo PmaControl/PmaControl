@@ -49,26 +49,70 @@ class System
 
         $pid = intval($pid);
 
-        $res = shell_exec("ps -p $pid | tail -n +2");
-        if (!empty($res)) {
-            //process with a pid = $pid is running
+        $commandLine = self::readProcessCommandLine($pid);
+        if (trim($commandLine) === '') {
+            return false;
+        }
 
+        $parts = preg_split('/\s+/', self::normalizeCommandLine($commandLine));
+        $binary = basename((string) ($parts[0] ?? ''));
 
-            $elems = explode(" ", $res);
+        return substr($binary, 0, 3) === "php";
+    }
 
-            $cmd = end($elems);
+    static public function resolveDaemonStatus(array $daemon, ?string $commandLine = null): string
+    {
+        $pid = (int) ($daemon['pid'] ?? 0);
+        if ($pid <= 0) {
+            return 'stopped';
+        }
 
-            //test si un process à été récupérer par autre chose que php
-            if (substr($cmd, 0, 3) === "php") {
-                //echo $cmd;
-                return true;
-            } else {
-                return false;
+        $commandLine = $commandLine ?? self::readProcessCommandLine($pid);
+        if (trim($commandLine) === '') {
+            return 'error';
+        }
+
+        return self::isExpectedDaemonCommand($daemon, $commandLine) ? 'running' : 'error';
+    }
+
+    static public function isExpectedDaemonCommand(array $daemon, string $commandLine): bool
+    {
+        $id = (int) ($daemon['id'] ?? 0);
+        if ($id <= 0) {
+            return false;
+        }
+
+        $commandLine = self::normalizeCommandLine($commandLine);
+        $parts = preg_split('/\s+/', $commandLine);
+        $binary = basename((string) ($parts[0] ?? ''));
+
+        if (substr($binary, 0, 3) !== "php") {
+            return false;
+        }
+
+        if (strpos($commandLine, 'App/Webroot/index.php') === false) {
+            return false;
+        }
+
+        return preg_match('/(?:^|\s)Agent\s+launch\s+'.preg_quote((string) $id, '/').'(?:\s|$)/i', $commandLine) === 1;
+    }
+
+    static public function readProcessCommandLine(int $pid): string
+    {
+        $cmdlinePath = '/proc/'.$pid.'/cmdline';
+        if (is_readable($cmdlinePath)) {
+            $commandLine = str_replace("\0", ' ', (string) @file_get_contents($cmdlinePath));
+            if (trim($commandLine) !== '') {
+                return $commandLine;
             }
         }
 
+        return (string) @shell_exec('ps -p '.$pid.' -o args=');
+    }
 
-        return false;
+    static private function normalizeCommandLine(string $commandLine): string
+    {
+        return trim((string) preg_replace('/\s+/', ' ', str_replace("\0", ' ', $commandLine)));
     }
     /*
      *
