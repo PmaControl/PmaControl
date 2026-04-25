@@ -69,6 +69,28 @@ final class WorkerUpdateSecurityTest extends TestCase
         $this->assertSame('Invalid CSRF token', $missingToken['body']);
     }
 
+    public function testExternalPostWouldPassLegacyPostGateButIsRejectedBeforeSql(): void
+    {
+        $session = [];
+        $token = Csrf::issueToken($session, 'worker.update');
+        $post = [Csrf::DEFAULT_FIELD => $token, 'name' => 'nb_worker', 'value' => '9', 'pk' => '7'];
+        $server = [
+            'REQUEST_METHOD' => 'POST',
+            'HTTPS' => 'on',
+            'HTTP_HOST' => 'pmacontrol.test',
+            'HTTP_ORIGIN' => 'https://attacker.test',
+        ];
+
+        $this->assertTrue(strtoupper($server['REQUEST_METHOD']) === 'POST');
+        $this->assertSame('UPDATE worker_queue SET `nb_worker` = 9 WHERE id = 7', Worker::buildWorkerUpdateSql($post));
+
+        $outcome = Worker::evaluateUpdateRequest($post, $server, $session);
+
+        $this->assertSame(403, $outcome['status']);
+        $this->assertSame('Invalid request origin', $outcome['body']);
+        $this->assertNull($outcome['sql']);
+    }
+
     public function testWorkerUpdateSqlIsRestrictedToKnownIntegerFields(): void
     {
         $this->assertSame(
