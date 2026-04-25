@@ -692,22 +692,13 @@ class Aspirateur extends Controller
         }
         Debug::debug($data['slave'], "SLAVE");
 
-        // Group Replication: collect MEMBER_ROLE and MEMBER_STATE from performance_schema
-        // Only applicable to MySQL (not MariaDB) with server_uuid (>= 5.6) and GR (>= 5.7.17)
-        $isMariaDB = (stripos($detectedVersion, 'MariaDB') !== false) || (stripos($detectedVersionComment, 'MariaDB') !== false);
-        $numVer = preg_replace('/[^0-9.].*/', '', $detectedVersion);
-        if (!$isMariaDB && version_compare($numVer, '5.7.17', '>=')) {
-            // MEMBER_ROLE column added in MySQL 8.0.2
-            if (version_compare($numVer, '8.0.2', '>=')) {
-                $grSql = "SELECT MEMBER_ROLE, MEMBER_STATE FROM performance_schema.replication_group_members WHERE MEMBER_ID = @@server_uuid";
-            } else {
-                $grSql = "SELECT '' AS MEMBER_ROLE, MEMBER_STATE FROM performance_schema.replication_group_members WHERE MEMBER_ID = @@server_uuid";
-            }
-            $grRes = $mysql_tested->sql_query_silent($grSql);
-            if ($grRes && $grRow = $mysql_tested->sql_fetch_array($grRes, MYSQLI_ASSOC)) {
-                $data['status']['gr_member_role'] = $grRow['MEMBER_ROLE'] ?? '';
-                $data['status']['gr_member_state'] = $grRow['MEMBER_STATE'] ?? '';
-            }
+        $groupReplicationStatus = $this->getGroupReplicationStatusFromConnection(
+            $mysql_tested,
+            $detectedVersion,
+            $detectedVersionComment
+        );
+        if (!empty($groupReplicationStatus)) {
+            $data['status'] = array_merge($data['status'], $groupReplicationStatus);
         }
 
         $this->exportData($id_mysql_server, "mysql_global", $data, false);
@@ -4108,6 +4099,197 @@ GROUP BY C.ID, C.INFO;";
         }
 
         return $data;
+    }
+
+    private function getGroupReplicationStatusFromConnection(
+        $db,
+        string $version,
+        string $versionComment = ''
+    ): array {
+        $capabilities = $this->getGroupReplicationCapabilities($db, $version, $versionComment);
+        if (empty($capabilities['supported'])) {
+            return array();
+        }
+
+        $serverUuid = (string)($capabilities['server_uuid'] ?? '');
+        if ($serverUuid === '') {
+            return array();
+        }
+
+        $hasMemberRole = !empty($capabilities['has_member_role']);
+
+        $memberRoleSql = $hasMemberRole ? "MEMBER_ROLE" : "'' AS MEMBER_ROLE";
+        $serverUuidSql = "'".$db->sql_real_escape_string($serverUuid)."'";
+        $sql = "SELECT ".$memberRoleSql.", MEMBER_STATE
+        FROM performance_schema.replication_group_members
+        WHERE MEMBER_ID = ".$serverUuidSql;
+
+        $res = Mysql::sqlQuerySilentCompat($db, $sql);
+        if ($res === false) {
+            return array();
+        }
+
+        $row = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+        if (!is_array($row)) {
+            return array();
+        }
+
+        return array(
+            'gr_member_role' => $row['MEMBER_ROLE'] ?? '',
+            'gr_member_state' => $row['MEMBER_STATE'] ?? '',
+        );
+    }
+
+    private function getGroupReplicationCapabilities($db, string $version, string $versionComment = ''): array
+    {
+        $unsupported = array(
+            'supported' => false,
+            'server_uuid' => '',
+            'has_member_role' => false,
+        );
+
+        if (!$this->shouldProbeGroupReplication($version, $versionComment)) {
+            return $unsupported;
+        }
+
+        $cacheKey = $this->getGroupReplicationCapabilityCacheKey($db, $version, $versionComment);
+        if (isset(self::$cache['group_replication_capabilities'][$cacheKey])) {
+            return self::$cache['group_replication_capabilities'][$cacheKey];
+        }
+
+        $tableExists = $this->remoteInformationSchemaRowExists(
+            $db,
+            'tables',
+            array(
+                'table_schema' => 'performance_schema',
+                'table_name' => 'replication_group_members',
+            )
+        );
+        if ($tableExists !== true) {
+            if ($tableExists === false) {
+                self::$cache['group_replication_capabilities'][$cacheKey] = $unsupported;
+            }
+
+            return $unsupported;
+        }
+
+        $memberStateExists = $this->remoteInformationSchemaRowExists(
+            $db,
+            'columns',
+            array(
+                'table_schema' => 'performance_schema',
+                'table_name' => 'replication_group_members',
+                'column_name' => 'MEMBER_STATE',
+            )
+        );
+        if ($memberStateExists !== true) {
+            if ($memberStateExists === false) {
+                self::$cache['group_replication_capabilities'][$cacheKey] = $unsupported;
+            }
+
+            return $unsupported;
+        }
+
+        $serverUuid = $this->getRemoteServerUuid($db);
+        if ($serverUuid === null) {
+            return $unsupported;
+        }
+
+        if ($serverUuid === '') {
+            self::$cache['group_replication_capabilities'][$cacheKey] = $unsupported;
+
+            return $unsupported;
+        }
+
+        $hasMemberRole = $this->remoteInformationSchemaRowExists(
+            $db,
+            'columns',
+            array(
+                'table_schema' => 'performance_schema',
+                'table_name' => 'replication_group_members',
+                'column_name' => 'MEMBER_ROLE',
+            )
+        );
+        if ($hasMemberRole === null) {
+            return $unsupported;
+        }
+
+        $capabilities = array(
+            'supported' => true,
+            'server_uuid' => $serverUuid,
+            'has_member_role' => $hasMemberRole,
+        );
+
+        self::$cache['group_replication_capabilities'][$cacheKey] = $capabilities;
+
+        return $capabilities;
+    }
+
+    private function getGroupReplicationCapabilityCacheKey($db, string $version, string $versionComment): string
+    {
+        $connectionKey = is_object($db) ? spl_object_hash($db) : gettype($db);
+
+        return $connectionKey.':'.$version.':'.$versionComment;
+    }
+
+    private function shouldProbeGroupReplication(string $version, string $versionComment = ''): bool
+    {
+        if (stripos($version, 'MariaDB') !== false || stripos($versionComment, 'MariaDB') !== false) {
+            return false;
+        }
+
+        if (stripos($version, 'SingleStore') !== false || stripos($versionComment, 'SingleStore') !== false) {
+            return false;
+        }
+
+        $numVer = preg_replace('/[^0-9.].*/', '', $version);
+        if ($numVer === '') {
+            return false;
+        }
+
+        return version_compare($numVer, '5.7.17', '>=');
+    }
+
+    private function remoteInformationSchemaRowExists($db, string $table, array $filters): ?bool
+    {
+        $allowedTables = array('tables', 'columns');
+        if (!in_array($table, $allowedTables, true)) {
+            return false;
+        }
+
+        $where = array();
+        foreach ($filters as $column => $value) {
+            $where[] = $column." = '".$db->sql_real_escape_string((string)$value)."'";
+        }
+
+        if (empty($where)) {
+            return false;
+        }
+
+        $sql = "SELECT 1 FROM information_schema.".$table." WHERE ".implode(' AND ', $where)." LIMIT 1";
+        $res = Mysql::sqlQuerySilentCompat($db, $sql);
+        if ($res === false) {
+            return null;
+        }
+
+        $row = $db->sql_fetch_array($res, MYSQLI_NUM);
+
+        return !empty($row);
+    }
+
+    private function getRemoteServerUuid($db): ?string
+    {
+        $res = Mysql::sqlQuerySilentCompat($db, "SHOW VARIABLES LIKE 'server_uuid'");
+        if ($res === false) {
+            return null;
+        }
+
+        $row = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+        if (!is_array($row)) {
+            return '';
+        }
+
+        return trim((string)($row['Value'] ?? $row['VALUE'] ?? ''));
     }
 
 /**
