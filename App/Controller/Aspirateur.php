@@ -731,10 +731,15 @@ class Aspirateur extends Controller
         // toutes les 10 secs si refresh =1 (toutes les 10* $refresh)
         if ((time()+$id_mysql_server)%(10*$refresh) < $refresh)
         {
-            if ($var['variables']['log_bin'] === "ON") {
+            if (($var['variables']['log_bin'] ?? '') === "ON") {
                 $data = array();
                 $data['mysql_binlog'] = $this->binaryLog(array($id_mysql_server));
-                $data['master_status'] = $mysql_tested->isMaster();
+                $data['master_status'] = $this->getMasterStatusFromConnection(
+                    $mysql_tested,
+                    $detectedVersion,
+                    $detectedVersionComment,
+                    $isSingleStore
+                );
                 //Debug::debug($data);
                 $this->exportData($id_mysql_server, "mysql_binlog", $data);
             }
@@ -4108,6 +4113,53 @@ GROUP BY C.ID, C.INFO;";
         }
 
         return $data;
+    }
+
+    private function getMasterStatusFromConnection(
+        $db,
+        string $version,
+        string $versionComment = '',
+        bool $isSingleStore = false
+    ): array {
+        $sql = $this->getMasterStatusCommand($version, $versionComment, $isSingleStore);
+        if ($sql === null) {
+            return array();
+        }
+
+        $res = Mysql::sqlQuerySilentCompat($db, $sql);
+        if ($res === false || (int)$db->sql_num_rows($res) === 0) {
+            return array();
+        }
+
+        $row = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+
+        return is_array($row) ? $row : array();
+    }
+
+    private function getMasterStatusCommand(
+        string $version,
+        string $versionComment = '',
+        bool $isSingleStore = false
+    ): ?string {
+        if (
+            $isSingleStore
+            || stripos($version, 'SingleStore') !== false
+            || stripos($versionComment, 'SingleStore') !== false
+        ) {
+            return null;
+        }
+
+        $numVer = preg_replace('/[^0-9.].*/', '', $version);
+        if ($numVer === '') {
+            return null;
+        }
+
+        $isMariaDB = (stripos($version, 'MariaDB') !== false) || (stripos($versionComment, 'MariaDB') !== false);
+        if (!$isMariaDB && version_compare($numVer, '8.4.0', '>=')) {
+            return "SHOW BINARY LOG STATUS";
+        }
+
+        return "SHOW MASTER STATUS";
     }
 
 /**
