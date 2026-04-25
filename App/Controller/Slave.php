@@ -185,14 +185,38 @@ class Slave extends Controller
             return [];
         }
 
+        return $this->normalizeReplicationLagRows(
+            $rows,
+            static function (array $row): string {
+                // Include day in key when present (groupbyday mode) so that
+                // multi-day extractions keep one series per channel per day.
+                $day = $row['day'] ?? '';
+                return $row['id_mysql_server'].'|'.($row['connection_name'] ?? '').'|'.$day;
+            }
+        );
+    }
+
+    private function normalizeReplicationLagPointRows(array $rows): array
+    {
+        if (empty($rows)) {
+            return [];
+        }
+
+        return $this->normalizeReplicationLagRows(
+            $rows,
+            static function (array $row): string {
+                return $row['id_mysql_server'].'|'.($row['connection_name'] ?? '').'|'.($row['date'] ?? '');
+            }
+        );
+    }
+
+    private function normalizeReplicationLagRows(array $rows, callable $buildKey): array
+    {
         $normalized = [];
 
         foreach ($rows as $row) {
-            // Include day in key when present (groupbyday mode) so that
-            // multi-day extractions keep one series per channel per day.
-            $day = $row['day'] ?? '';
-            $key = $row['id_mysql_server'].'|'.($row['connection_name'] ?? '').'|'.$day;
-            $metricName = Extraction::$variable[$row['id_ts_variable']]['name'] ?? '';
+            $key = $buildKey($row);
+            $metricName = $this->getReplicationLagMetricName((int)($row['id_ts_variable'] ?? 0));
 
             if (!isset($normalized[$key])) {
                 $normalized[$key] = $row;
@@ -204,13 +228,29 @@ class Slave extends Controller
                 continue;
             }
 
-            $existingMetricName = Extraction::$variable[$normalized[$key]['id_ts_variable']]['name'] ?? '';
+            $existingMetricName = $this->getReplicationLagMetricName((int)($normalized[$key]['id_ts_variable'] ?? 0));
             if ($existingMetricName !== 'seconds_behind_source') {
                 $normalized[$key] = $row;
             }
         }
 
         return array_values($normalized);
+    }
+
+    private function getReplicationLagMetricName(int $idTsVariable): string
+    {
+        return Extraction::$variable[$idTsVariable]['name'] ?? '';
+    }
+
+    private function buildBinlogAnalysisLagData(array $lagRows): array
+    {
+        $lagData = [];
+
+        foreach ($this->normalizeReplicationLagPointRows($lagRows) as $lagRow) {
+            $lagData[] = ['ts' => $lagRow['date'], 'lag' => (int) $lagRow['value']];
+        }
+
+        return $lagData;
     }
 
 /**
@@ -2702,22 +2742,32 @@ var chart = new Chart(ctx, {
                 );
                 $varIds = [];
                 while ($vr = $db->sql_fetch_array($varRes, MYSQLI_ASSOC)) {
-                    $varIds[] = (int) $vr['id'];
+                    $varId = (int) $vr['id'];
+                    $varIds[] = $varId;
+                    Extraction::$variable[$varId]['name'] = $vr['name'];
                 }
 
                 if (!empty($varIds)) {
                     $varIdList = implode(',', $varIds);
-                    $lagSql = "SELECT date, value FROM ts_value_slave_int
+                    $lagSql = "SELECT id_ts_variable, date, value FROM ts_value_slave_int
                                WHERE id_mysql_server = $slaveId
                                AND id_ts_variable IN ($varIdList)
                                AND connection_name = '$cn'
                                AND date BETWEEN '$timeStart' AND '$timeEnd'
-                               ORDER BY date";
+                               ORDER BY date, id_ts_variable";
                     $lagRes = $db->sql_query_silent($lagSql);
                     if ($lagRes) {
+                        $lagRows = [];
                         while ($lr = $db->sql_fetch_array($lagRes, MYSQLI_ASSOC)) {
-                            $row['lag_data'][] = ['ts' => $lr['date'], 'lag' => (int) $lr['value']];
+                            $lagRows[] = [
+                                'id_mysql_server' => $slaveId,
+                                'connection_name' => $row['connection_name'] ?? '',
+                                'id_ts_variable' => (int) $lr['id_ts_variable'],
+                                'date' => $lr['date'],
+                                'value' => $lr['value'],
+                            ];
                         }
+                        $row['lag_data'] = $this->buildBinlogAnalysisLagData($lagRows);
                     }
                 }
                 // Fetch threads_running for master and slave
