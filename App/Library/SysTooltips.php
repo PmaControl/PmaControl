@@ -75,6 +75,9 @@ class SysTooltips
         'object_schema'            => 'Database containing the table.',
         'object_name'              => 'Table containing the unused index.',
         'index_name'               => 'Name of the index that has not been used since last restart.',
+        'table_rows'               => 'Estimated row count from information_schema.TABLES.',
+        'table_index_size'         => 'Total index space reported for this table by information_schema.TABLES.',
+        'estimated_gain'           => 'Estimated reclaimable space for this unused index: table index size divided by secondary index count.',
 
         // ── sys.memory_by_thread_by_current_bytes ──
         'thread_id'                => 'Performance Schema internal thread identifier.',
