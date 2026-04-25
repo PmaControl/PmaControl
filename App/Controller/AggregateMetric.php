@@ -14,6 +14,13 @@ class AggregateMetric extends Controller
 {
     private const RAW_CHUNK_SIZE = 32;
     private const ROLLUP_CHUNK_SIZE = 64;
+    private const FUTURE_PARTITION_DAYS = 3;
+    private const RETENTION_DAYS = [
+        'aggregate_metric_10s' => 14,
+        'aggregate_metric_1m' => 180,
+        'aggregate_metric_10m' => 365,
+        'aggregate_metric_1h' => 365 * 5,
+    ];
 
     private Logger $logger;
 
@@ -250,21 +257,205 @@ ON DUPLICATE KEY UPDATE
 
     private function purgeRetention($db): void
     {
-        $retentionDays = [
-            'aggregate_metric_10s' => 14,
-            'aggregate_metric_1m' => 180,
-            'aggregate_metric_10m' => 365,
-            'aggregate_metric_1h' => 365 * 5,
-        ];
-
-        foreach ($retentionDays as $table => $days) {
+        foreach (self::RETENTION_DAYS as $table => $days) {
             if (!$this->tableExists($db, $table)) {
                 continue;
             }
 
-            $sql = "DELETE FROM `".$table."` WHERE `bucket_start` < DATE_SUB(NOW(), INTERVAL ".$days." DAY)";
-            $db->sql_query($sql);
+            $this->ensureFuturePartitions($db, $table);
+
+            if ($this->purgeRetentionByPartitions($db, $table, $days)) {
+                continue;
+            }
+
+            $db->sql_query($this->buildRetentionDeleteSql($table, $days));
         }
+    }
+
+    private function purgeRetentionByPartitions($db, string $table, int $days): bool
+    {
+        $partitions = $this->getPartitionMetadata($db, $table);
+        if (!$this->hasNumericPartitions($partitions)) {
+            return false;
+        }
+
+        $cutoffDate = date('Y-m-d', strtotime('-'.$days.' days'));
+        $cutoffPartition = $this->resolveToDays($db, $cutoffDate);
+        $expiredPartitions = $this->getExpiredPartitionNames($partitions, $cutoffPartition);
+
+        foreach (array_chunk($expiredPartitions, 50) as $partitionChunk) {
+            $db->sql_query($this->buildDropPartitionsSql($table, $partitionChunk));
+        }
+
+        return true;
+    }
+
+    private function ensureFuturePartitions($db, string $table): void
+    {
+        $partitions = $this->getPartitionMetadata($db, $table);
+        if (!$this->hasNumericPartitions($partitions)) {
+            return;
+        }
+
+        $existingPartitions = array_fill_keys(
+            array_map(static fn (array $row): string => (string) ($row['PARTITION_NAME'] ?? ''), $partitions),
+            true
+        );
+        $maxValuePartition = $this->getMaxValuePartitionName($partitions);
+
+        for ($offset = 0; $offset < self::FUTURE_PARTITION_DAYS; $offset++) {
+            $date = date('Y-m-d', strtotime('+'.$offset.' days'));
+            $partitionNumber = $this->resolveToDays($db, $date);
+            $partitionName = 'p'.$partitionNumber;
+
+            if (isset($existingPartitions[$partitionName])) {
+                continue;
+            }
+
+            if ($maxValuePartition !== null) {
+                $db->sql_query($this->buildReorganizeMaxValuePartitionSql($table, $maxValuePartition, $partitionNumber));
+            } else {
+                $db->sql_query($this->buildAddPartitionSql($table, $partitionNumber));
+            }
+
+            $existingPartitions[$partitionName] = true;
+        }
+    }
+
+    /**
+     * @return array<int,array<string,string|null>>
+     */
+    private function getPartitionMetadata($db, string $table): array
+    {
+        $sql = "SELECT `PARTITION_NAME`, `PARTITION_DESCRIPTION`
+FROM information_schema.PARTITIONS
+WHERE TABLE_SCHEMA = DATABASE()
+  AND TABLE_NAME = ".$this->quoteString($db, $table)."
+  AND `PARTITION_NAME` IS NOT NULL
+ORDER BY `PARTITION_ORDINAL_POSITION`";
+        $res = $db->sql_query($sql);
+        $partitions = [];
+
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $partitions[] = $row;
+        }
+
+        return $partitions;
+    }
+
+    /**
+     * @param array<int,array<string,string|null>> $partitions
+     */
+    private function hasNumericPartitions(array $partitions): bool
+    {
+        foreach ($partitions as $partition) {
+            if ($this->isNumericPartitionDescription($partition['PARTITION_DESCRIPTION'] ?? null)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param array<int,array<string,string|null>> $partitions
+     * @return array<int,string>
+     */
+    private function getExpiredPartitionNames(array $partitions, int $cutoffPartition): array
+    {
+        $expired = [];
+
+        foreach ($partitions as $partition) {
+            $description = $partition['PARTITION_DESCRIPTION'] ?? null;
+            if (!$this->isNumericPartitionDescription($description)) {
+                continue;
+            }
+
+            if ((int) $description > $cutoffPartition) {
+                continue;
+            }
+
+            $partitionName = (string) ($partition['PARTITION_NAME'] ?? '');
+            if ($this->isSafeIdentifier($partitionName)) {
+                $expired[] = $partitionName;
+            }
+        }
+
+        return $expired;
+    }
+
+    /**
+     * @param array<int,array<string,string|null>> $partitions
+     */
+    private function getMaxValuePartitionName(array $partitions): ?string
+    {
+        foreach ($partitions as $partition) {
+            if (strtoupper((string) ($partition['PARTITION_DESCRIPTION'] ?? '')) !== 'MAXVALUE') {
+                continue;
+            }
+
+            $partitionName = (string) ($partition['PARTITION_NAME'] ?? '');
+            if ($this->isSafeIdentifier($partitionName)) {
+                return $partitionName;
+            }
+        }
+
+        return null;
+    }
+
+    private function resolveToDays($db, string $date): int
+    {
+        $res = $db->sql_query("SELECT TO_DAYS(".$this->quoteString($db, $date).") AS `partition_number`");
+        $row = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+
+        return (int) ($row['partition_number'] ?? 0);
+    }
+
+    /**
+     * @param array<int,string> $partitionNames
+     */
+    private function buildDropPartitionsSql(string $table, array $partitionNames): string
+    {
+        $quotedPartitions = array_map(fn (string $partitionName): string => $this->quoteIdentifier($partitionName), $partitionNames);
+
+        return "ALTER TABLE ".$this->quoteIdentifier($table)." DROP PARTITION ".implode(',', $quotedPartitions);
+    }
+
+    private function buildAddPartitionSql(string $table, int $partitionNumber): string
+    {
+        return "ALTER TABLE ".$this->quoteIdentifier($table)." ADD PARTITION (PARTITION ".$this->quoteIdentifier('p'.$partitionNumber)." VALUES LESS THAN (".$partitionNumber."))";
+    }
+
+    private function buildReorganizeMaxValuePartitionSql(string $table, string $maxValuePartition, int $partitionNumber): string
+    {
+        return "ALTER TABLE ".$this->quoteIdentifier($table)." REORGANIZE PARTITION ".$this->quoteIdentifier($maxValuePartition)." INTO (".
+            "PARTITION ".$this->quoteIdentifier('p'.$partitionNumber)." VALUES LESS THAN (".$partitionNumber."),".
+            "PARTITION ".$this->quoteIdentifier($maxValuePartition)." VALUES LESS THAN MAXVALUE".
+            ")";
+    }
+
+    private function buildRetentionDeleteSql(string $table, int $days): string
+    {
+        return "DELETE FROM ".$this->quoteIdentifier($table)." WHERE `bucket_start` < DATE_SUB(NOW(), INTERVAL ".$days." DAY)";
+    }
+
+    private function isNumericPartitionDescription($description): bool
+    {
+        return $description !== null && ctype_digit((string) $description);
+    }
+
+    private function quoteIdentifier(string $identifier): string
+    {
+        if (!$this->isSafeIdentifier($identifier)) {
+            throw new \InvalidArgumentException("Unsafe SQL identifier: ".$identifier);
+        }
+
+        return "`".$identifier."`";
+    }
+
+    private function isSafeIdentifier(string $identifier): bool
+    {
+        return preg_match('/^[A-Za-z0-9_]+$/', $identifier) === 1;
     }
 
     private function resolveStartTime($db, string $table, int $idMysqlServer, int $bootstrapLookback, int $overlap): string
