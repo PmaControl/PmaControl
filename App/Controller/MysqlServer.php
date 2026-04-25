@@ -626,7 +626,18 @@ class MysqlServer extends Controller
                 $sql = "SHOW FULL PROCESSLIST";
             }
 
-            $res = $db->sql_query($sql);
+            $processlistQuery = self::executeProcesslistQuery($db, $sql, (int)$id_mysql_server);
+            $res = $processlistQuery['result'];
+            $processlistDb = $processlistQuery['db'];
+            $sql = $processlistQuery['sql'];
+
+            if (!empty($processlistQuery['fallback_reason']) && !empty($this->logger)) {
+                $this->logger->warning(
+                    'Processlist query recovered through fallback for id_mysql_server='
+                    . (int)$id_mysql_server . ' reason=' . $processlistQuery['fallback_reason']
+                );
+            }
+
             if (!$res) {
                 continue;
             }
@@ -639,7 +650,7 @@ class MysqlServer extends Controller
             }
 
             if ($sql === "SHOW FULL PROCESSLIST") {
-                while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                while ($arr = $processlistDb->sql_fetch_array($res, MYSQLI_ASSOC)) {
                     $command = $arr['Command'] ?? $arr['COMMAND'] ?? '';
                     $info = $arr['Info'] ?? $arr['INFO'] ?? '';
 
@@ -671,7 +682,7 @@ class MysqlServer extends Controller
                 continue;
             }
 
-            while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
+            while($arr = $processlistDb->sql_fetch_array($res, MYSQLI_ASSOC))
             {
                 $queryText = (string)($arr['query'] ?? '');
 
@@ -4628,6 +4639,59 @@ class MysqlServer extends Controller
         }
 
         return $data;
+    }
+
+    private static function executeProcesslistQuery($db, string $sql, int $idMysqlServer, ?callable $processlistConnectionFactory = null): array
+    {
+        $query = array(
+            'result' => false,
+            'db' => $db,
+            'sql' => $sql,
+            'fallback_reason' => '',
+        );
+
+        try {
+            $query['result'] = $db->sql_query($sql);
+            return $query;
+        } catch (\Throwable $e) {
+            if (!self::isProxySqlHostgroupLockError($e->getMessage()) || $sql === "SHOW FULL PROCESSLIST") {
+                throw $e;
+            }
+
+            $query['fallback_reason'] = 'primary_hostgroup_lock: ' . $e->getMessage();
+        }
+
+        if ($processlistConnectionFactory === null) {
+            $processlistConnectionFactory = static function (int $idMysqlServer) {
+                return Mysql::getDbLink($idMysqlServer, 'processlist');
+            };
+        }
+
+        try {
+            $fresh = $processlistConnectionFactory($idMysqlServer);
+            $result = $fresh->sql_query($sql);
+            if ($result) {
+                $query['result'] = $result;
+                $query['db'] = $fresh;
+                return $query;
+            }
+
+            $query['fallback_reason'] .= ' ; processlist_connection_returned_false';
+        } catch (\Throwable $e) {
+            $query['fallback_reason'] .= ' ; processlist_connection_failed: ' . $e->getMessage();
+        }
+
+        $query['sql'] = "SHOW FULL PROCESSLIST";
+        $query['db'] = $db;
+        $query['result'] = $db->sql_query($query['sql']);
+
+        return $query;
+    }
+
+    private static function isProxySqlHostgroupLockError(string $message): bool
+    {
+        return stripos($message, 'ProxySQL Error: connection is locked to hostgroup') !== false
+            && stripos($message, 'trying to reach hostgroup') !== false;
     }
 
 }
