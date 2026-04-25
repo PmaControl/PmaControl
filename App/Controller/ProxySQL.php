@@ -2014,11 +2014,18 @@ class ProxySQL extends Controller
     public function addLine($param)
     {
         Debug::parseDebug($param);
+        $this->view = false;
 
         $id_proxysql_server = $param[0] ?? "";
         $current = $param[1] ?? "MYSQL_SERVERS";
 
         if (empty($id_proxysql_server)) {
+            if (! IS_CLI) {
+                set_flash("warning", __("Warning"), __('ProxySQL server id is required'));
+                header("location: " . LINK . "ProxySQL/index/");
+                return;
+            }
+
             throw new \Exception(__FUNCTION__ . ' should have id_proxysql_server in parameter');
         }
 

@@ -1,5 +1,21 @@
 <?php
 
+$data = $data ?? array();
+if (!is_array($data) || empty($data)) {
+    echo '<div class="alert alert-warning">'.__('ProxySQL context is missing').'</div>';
+    return;
+}
+
+$data += array(
+    'param' => array(),
+    'current' => 'MYSQL_SERVERS',
+    'id_proxysql_server' => '',
+    'menu' => array(),
+    'columns' => array(),
+    'post' => array(),
+    'table_name' => '',
+);
+
 \Glial\Synapse\FactoryController::addNode("ProxySQL", "menu", $data['param']);
 
 $current_human = str_replace('_', ' ', $data['current']);
