@@ -171,6 +171,51 @@ class Integrate extends Controller
         $this->logger = $monolog;
     }
 
+    protected function getIntegratePayloadLockPath(string $file): string
+    {
+        $fileName = basename($file);
+        $parts = explode(EngineV4::SEPERATOR, $fileName, 2);
+        $scope = $parts[1] ?? $fileName;
+        $baseName = preg_replace('/[^A-Za-z0-9_.:-]/', '_', $scope);
+
+        return EngineV4::PATH_LOCK.'integrate_payload/'.$baseName.'.lock';
+    }
+
+    protected function acquireIntegratePayloadLock(string $file): ?array
+    {
+        $lockPath = $this->getIntegratePayloadLockPath($file);
+        $lockDir = dirname($lockPath);
+
+        if (!is_dir($lockDir) && !@mkdir($lockDir, 0775, true) && !is_dir($lockDir)) {
+            return null;
+        }
+
+        $handle = @fopen($lockPath, 'c');
+        if (!is_resource($handle)) {
+            return null;
+        }
+
+        if (!@flock($handle, LOCK_EX | LOCK_NB)) {
+            fclose($handle);
+            return null;
+        }
+
+        ftruncate($handle, 0);
+        fwrite($handle, (string)getmypid()."\n".date('c')."\n".$file."\n");
+
+        return array('handle' => $handle, 'path' => $lockPath);
+    }
+
+    protected function releaseIntegratePayloadLock(?array $lock): void
+    {
+        if (empty($lock['handle']) || !is_resource($lock['handle'])) {
+            return;
+        }
+
+        @flock($lock['handle'], LOCK_UN);
+        fclose($lock['handle']);
+    }
+
     /**
      * (PmaControl) <br/>
      * @example ./glial integrate show 1772662469::vip
@@ -483,6 +528,18 @@ class Integrate extends Controller
         }
     }
 
+    protected function buildTimeSeriesInsertSql(string $table, array $columns, array $values): string
+    {
+        $quotedColumns = array();
+        foreach ($columns as $column) {
+            $quotedColumns[] = '`'.$column.'`';
+        }
+
+        return "INSERT INTO `".$table."` (".implode(',', $quotedColumns).") VALUES "
+            . implode(",\n", $values)
+            . " ON DUPLICATE KEY UPDATE `value` = VALUES(`value`);";
+    }
+
 /**
  * Handle integrate state through `insert_value`.
  *
@@ -520,7 +577,11 @@ class Integrate extends Controller
 
             $time_start = microtime(true);
 
-            $sql = "INSERT INTO `ts_value_general_" . strtolower($type) . "` (`id_mysql_server`,`id_ts_variable`,`date`, `value`) VALUES " . implode(",", $elems) . ";";
+            $sql = $this->buildTimeSeriesInsertSql(
+                "ts_value_general_" . strtolower($type),
+                array('id_mysql_server', 'id_ts_variable', 'date', 'value'),
+                $elems
+            );
             //Debug::debug(count($elems), "type : $type");
             $db->sql_query($sql);
 
@@ -588,9 +649,11 @@ class Integrate extends Controller
                     break;
             }
 
-            $sql = "INSERT INTO `ts_value_" . $val . "_" . strtolower($type) . "` 
-            (`id_mysql_server`,`".$extra_field."` ,`id_ts_variable`,`date`, `value`) 
-            VALUES " . implode(",\n", $elems) . ";";
+            $sql = $this->buildTimeSeriesInsertSql(
+                "ts_value_" . $val . "_" . strtolower($type),
+                array('id_mysql_server', $extra_field, 'id_ts_variable', 'date', 'value'),
+                $elems
+            );
 
             Debug::sql($sql);
 
@@ -949,6 +1012,7 @@ public function integrateAll($param)
 
             $files = array_merge($files, $part_file);
         }
+        $files = array_values(array_filter($files, 'is_file'));
 
         Debug::debug($files, "FILES BEFORE");
         
@@ -975,6 +1039,19 @@ public function integrateAll($param)
         foreach ($files as $file) {
 
             Debug::debug($file);
+            $fileLock = $this->acquireIntegratePayloadLock($file);
+            if ($fileLock === null) {
+                if ($this->logger instanceof Logger) {
+                    $this->logger->info('[Skip] Integrate payload already locked or lock unavailable: '.$file);
+                }
+                continue;
+            }
+
+            try {
+            if (!is_file($file)) {
+                continue;
+            }
+
             $elems = explode('/', $file);
             $file_name = end($elems);
 
@@ -1201,11 +1278,9 @@ public function integrateAll($param)
 
             Debug::checkPoint("before insert file : " . $file);
 
-            if (file_exists($file)) {
-                unlink($file);
-            } else {
-                $this->logger->emergency('Two process in same time for integrate the same data, please remove one');
-                throw new Exception("PMACTRL-647 : deux intégrateurs lancés en même temps (supprimer le mauvais)");
+            if (!@unlink($file) && file_exists($file)) {
+                $this->logger->emergency('Unable to remove locked integrate payload: '.$file);
+                throw new Exception("PMACTRL-647 : impossible de supprimer le fichier intégré verrouillé");
             }
 
             /*
@@ -1215,6 +1290,9 @@ public function integrateAll($param)
 
             if ($file_parsed >= self::MAX_FILE_AT_ONCE) {
                 break;
+            }
+            } finally {
+                $this->releaseIntegratePayloadLock($fileLock);
             }
 
         }
