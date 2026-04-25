@@ -5,13 +5,12 @@ namespace App\Controller;
 
 use Exception;
 use \Glial\Synapse\Controller;
-use Fuz\Component\SharedMemory\Storage\StorageFile;
-use Fuz\Component\SharedMemory\SharedMemory;
 use \App\Library\Debug;
 use \App\Controller\Aspirateur;
 use \App\Library\Microsecond;
 use \App\Library\EngineV4;
 use \App\Library\Mysql;
+use \App\Library\SharedMemoryReader;
 use \Glial\Sgbd\Sgbd;
 use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
@@ -196,9 +195,10 @@ class Integrate extends Controller
             throw new Exception("Fichier introuvable : ".$filePath);
         }
 
-        $storage = new StorageFile($filePath);
-        $data    = new SharedMemory($storage);
-        $elems   = $data->getData();
+        $elems = SharedMemoryReader::read($filePath, $reason);
+        if ($elems === null) {
+            throw new Exception("Lecture impossible du fichier ".$filePath." (".$reason.")");
+        }
 
         $payload = $this->normalizeSharedMemoryPayload($elems);
 
@@ -993,11 +993,21 @@ public function integrateAll($param)
             }
 
             Debug::debug("$id_ts_file => $file");
-            $file_parsed++;
 
-            $storage = new StorageFile($file);
-            $data    = new SharedMemory($storage);
-            $elems   = $data->getData();
+            $elems = SharedMemoryReader::read($file, $reason);
+            if ($elems === null) {
+                $this->logger?->warning("[integrate] skip $file: $reason");
+                @unlink($file);
+                continue;
+            }
+
+            $file_parsed++;
+            $elems = $this->normalizeSharedMemoryPayload($elems);
+            if (!is_iterable($elems)) {
+                $this->logger?->warning('[Integrate] Ignoring invalid pivot payload: '.$file);
+                @unlink($file);
+                continue;
+            }
 
             foreach ($elems as $elem) {
                 foreach ($elem as $date => $server) {
