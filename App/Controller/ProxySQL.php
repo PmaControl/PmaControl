@@ -439,14 +439,14 @@ class ProxySQL extends Controller
                 $arr['servers'] = $proxysql[$arr['id_mysql_server']]['mysql_servers'];
             }
 
+            $arr['mysql_available'] = "";
+            $arr['mysql_error'] = "";
             if (!empty($arr['id_mysql_server'])) {
-                
                 $var = Extraction::display(array('mysql_server::mysql_available', 'mysql_server::mysql_error'), array($arr['id_mysql_server']));
-                $arr['mysql_available'] = $var[$arr['id_mysql_server']]['']['mysql_available'];
-
+                $server_state = $var[$arr['id_mysql_server']][''] ?? [];
+                $arr['mysql_available'] = $server_state['mysql_available'] ?? "";
+                $arr['mysql_error'] = $server_state['mysql_error'] ?? "";
             }
-
-            $arr['mysql_error'] = $var[$arr['id_mysql_server']]['']['mysql_error'] ?? "";
 
             $data['proxysql_error'] = [];
             //$data['proxysql_error'] = $this->getErrorConnect(array($arr['id']));
