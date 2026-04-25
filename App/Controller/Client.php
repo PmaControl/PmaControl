@@ -243,16 +243,71 @@ class Client extends Controller
         $this->view        = false;
         $this->layout_name = false;
 
-        if ($param[1] === "true") {
-            $result = 1;
-        } else {
-            $result = 0;
+        if (!self::isPostRequest($_SERVER)) {
+            $this->respondMonitoringToggleJson([
+                'success' => false,
+                'error' => 'Method not allowed',
+            ], 405);
         }
 
+        try {
+            $payload = self::normalizeMonitoringTogglePayload(is_array($param) ? $param : [], $_POST);
+        } catch (\InvalidArgumentException $exception) {
+            $this->respondMonitoringToggleJson([
+                'success' => false,
+                'error' => $exception->getMessage(),
+            ], 400);
+        }
 
         $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "UPDATE client SET `is_monitored` = '".$result."' WHERE id = ".intval($param[0])."";
+        $sql = "UPDATE client SET `is_monitored` = ".$payload['is_monitored']." WHERE id = ".$payload['id'];
         $db->sql_query($sql);
+
+        $this->respondMonitoringToggleJson([
+            'success' => true,
+            'id' => $payload['id'],
+            'is_monitored' => $payload['is_monitored'],
+        ]);
+    }
+
+    public static function isPostRequest(array $server): bool
+    {
+        return strtoupper((string) ($server['REQUEST_METHOD'] ?? 'GET')) === 'POST';
+    }
+
+    public static function normalizeMonitoringTogglePayload(array $param, array $post): array
+    {
+        $id = $post['id'] ?? $param[0] ?? null;
+        $isMonitored = $post['is_monitored'] ?? $param[1] ?? null;
+
+        if (!is_numeric($id) || (int) $id <= 0) {
+            throw new \InvalidArgumentException('Invalid client id');
+        }
+
+        if ($isMonitored === null || $isMonitored === '') {
+            throw new \InvalidArgumentException('Invalid monitoring status');
+        }
+
+        $normalizedStatus = filter_var($isMonitored, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        if ($normalizedStatus === null) {
+            throw new \InvalidArgumentException('Invalid monitoring status');
+        }
+
+        return [
+            'id' => (int) $id,
+            'is_monitored' => $normalizedStatus ? 1 : 0,
+        ];
+    }
+
+    private function respondMonitoringToggleJson(array $payload, int $statusCode = 200): void
+    {
+        if (!headers_sent()) {
+            http_response_code($statusCode);
+            header('Content-Type: application/json; charset=UTF-8');
+        }
+
+        echo json_encode($payload);
+        exit;
     }
 
 /**
