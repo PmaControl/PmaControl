@@ -208,6 +208,21 @@ class Graphviz
         return [self::SYMBOL_DOWN_RED, '#ffffff'];
     }
 
+    public static function tableNodeId(string $schema, string $table): string
+    {
+        return 'table_'.substr(sha1($schema."\0".$table), 0, 16);
+    }
+
+    public static function tableNodeRef(string $schema, string $table, string $port = ''): string
+    {
+        $ref = '"'.self::tableNodeId($schema, $table).'"';
+        if ($port !== '') {
+            $ref .= ':'.$port;
+        }
+
+        return $ref;
+    }
+
 /**
  * Handle graphviz state through `generateTable`.
  *
@@ -306,6 +321,7 @@ class Graphviz
         $return = '';
         // define color
         $return = "node[shape=none fontsize=8 ranksep=0 splines=true overlap=true];".PHP_EOL;
+        $nodeId = self::tableNodeId($table_schema, $table_name);
         
 
         $forground_color = '#000000';
@@ -314,7 +330,7 @@ class Graphviz
         }
 
         //
-        $return .= '  "'.$table_name.'"[ href="'.LINK.'table/mpd/'.$id_mysql_server.'/'.$table_schema.'/'.$table_name.'/"';
+        $return .= '  "'.$nodeId.'"[ href="'.LINK.'table/mpd/'.$id_mysql_server.'/'.$table_schema.'/'.$table_name.'/"';
         $return .= 'tooltip="'.$table_schema.'.'.$table_name.'" 
         label =<<table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4"><tr><td bgcolor="'.$color.'">
         <table BGCOLOR="#fafafa" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">';

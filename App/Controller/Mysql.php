@@ -844,10 +844,11 @@ class Mysql extends Controller
 
                 //fwrite($fp, "\t edge [color=\"".$color."\"];".PHP_EOL);
                 fwrite($fp, "\t node [color=\"".$color."\" href=\"".LINK."table/mpd/".$id_mysql_server."/".$database."/".$table['TABLE_NAME']."/\" style=filled shape=box fontsize=8 ranksep=0 concentrate=true splines=true overlap=true];".PHP_EOL);
+                $nodeId = Graphviz::tableNodeId($database, $table['TABLE_NAME']);
 
 // shape=Mrecord
                 fwrite($fp,
-                    '  "'.$table['TABLE_NAME'].'" [style="" penwidth="3" fillcolor="yellow" fontname="arial" label =<<table border="0" cellborder="0" cellspacing="0" cellpadding="2" bgcolor="white"><tr><td colspan="2" bgcolor="black" color="white" align="center"><font color="white">'.$table['TABLE_NAME'].'</font></td></tr>');
+                    '  "'.$nodeId.'" [style="" penwidth="3" fillcolor="yellow" fontname="arial" label =<<table border="0" cellborder="0" cellspacing="0" cellpadding="2" bgcolor="white"><tr><td colspan="2" bgcolor="black" color="white" align="center"><font color="white">'.$table['TABLE_NAME'].'</font></td></tr>');
                 fwrite($fp, '<tr><td colspan="2" bgcolor="grey" align="left">'.$table['ENGINE'].' ('.$table['ROW_FORMAT'].')</td></tr>'.PHP_EOL);
                 fwrite($fp, '<tr><td colspan="2" bgcolor="grey" align="left">total of '.$table['TABLE_ROWS'].'</td></tr>');
 
@@ -930,7 +931,7 @@ class Mysql extends Controller
                      */
 
                     fwrite($fp,
-                        "\"".$contraint['TABLE_NAME']."\" -> \"".$contraint['REFERENCED_TABLE_NAME']."\""
+                        Graphviz::tableNodeRef($database, $contraint['TABLE_NAME'])." -> ".Graphviz::tableNodeRef($database, $contraint['REFERENCED_TABLE_NAME'])
                         .'[ arrowsize="1.5" penwidth="2" fontname="arial" fontsize=8 color="'.$color.'"
                           tooltip="'.$contraint['TABLE_NAME'].'.'.$contraint['COLUMN_NAME'].' => '.$contraint['REFERENCED_TABLE_NAME'].'.'.$contraint['REFERENCED_COLUMN_NAME'].'" edgeURL=""];'.PHP_EOL);
                 }
