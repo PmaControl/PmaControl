@@ -49,18 +49,45 @@ final class IntegrateTest extends TestCase
             'Replica_IO_Running' => 'Yes',
             'Replica_SQL_Running' => 'Yes',
             'Seconds_Behind_Source' => '3',
+            'Source_SSL_Allowed' => 'Yes',
+            'Source_SSL_Cipher' => 'TLS_AES_256_GCM_SHA384',
+            'Source_TLS_Version' => 'TLSv1.3',
         ]);
 
         $this->assertSame('mysql-primary.example.net', $normalized['master_host']);
         $this->assertSame(3310, $normalized['master_port']);
         $this->assertSame('mysql-primary.example.net', $normalized['source_host']);
         $this->assertSame(3310, $normalized['source_port']);
+        $this->assertSame('Yes', $normalized['master_ssl_allowed']);
+        $this->assertSame('Yes', $normalized['source_ssl_allowed']);
+        $this->assertSame('TLS_AES_256_GCM_SHA384', $normalized['master_ssl_cipher']);
+        $this->assertSame('TLS_AES_256_GCM_SHA384', $normalized['source_ssl_cipher']);
+        $this->assertSame('TLSv1.3', $normalized['master_tls_version']);
+        $this->assertSame('TLSv1.3', $normalized['source_tls_version']);
         $this->assertSame('3', $normalized['seconds_behind_master']);
         $this->assertSame('3', $normalized['seconds_behind_source']);
         $this->assertSame('Yes', $normalized['slave_io_running']);
         $this->assertSame('Yes', $normalized['slave_sql_running']);
         $this->assertSame('Yes', $normalized['replica_io_running']);
         $this->assertSame('Yes', $normalized['replica_sql_running']);
+    }
+
+    public function testNormalizeSlaveMetricRowMapsLegacySslStateToSourceField(): void
+    {
+        $controller = new TestableIntegrate('Controller', 'View', []);
+
+        $normalized = $controller->exposeNormalizeSlaveMetricRow('slave', [
+            'Master_SSL_Allowed' => 'No',
+            'Master_SSL_Cipher' => 'DHE-RSA-AES256-SHA',
+            'Master_TLS_Version' => 'TLSv1.2',
+        ]);
+
+        $this->assertSame('No', $normalized['master_ssl_allowed']);
+        $this->assertSame('No', $normalized['source_ssl_allowed']);
+        $this->assertSame('DHE-RSA-AES256-SHA', $normalized['master_ssl_cipher']);
+        $this->assertSame('DHE-RSA-AES256-SHA', $normalized['source_ssl_cipher']);
+        $this->assertSame('TLSv1.2', $normalized['master_tls_version']);
+        $this->assertSame('TLSv1.2', $normalized['source_tls_version']);
     }
 
     public function testNormalizeSlaveMetricRowReturnsNullForNonSlaveMetrics(): void

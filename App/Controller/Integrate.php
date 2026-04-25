@@ -110,6 +110,32 @@ class Integrate extends Controller
             $value['source_port'] = $value['master_port'];
         }
 
+        $sslFields = [
+            'ssl_allowed',
+            'ssl_ca_file',
+            'ssl_ca_path',
+            'ssl_cert',
+            'ssl_cipher',
+            'ssl_key',
+            'ssl_verify_server_cert',
+            'ssl_crl',
+            'ssl_crlpath',
+            'tls_version',
+        ];
+
+        foreach ($sslFields as $sslField) {
+            $masterKey = 'master_'.$sslField;
+            $sourceKey = 'source_'.$sslField;
+
+            if (!isset($value[$masterKey]) && isset($value[$sourceKey])) {
+                $value[$masterKey] = $value[$sourceKey];
+            }
+
+            if (!isset($value[$sourceKey]) && isset($value[$masterKey])) {
+                $value[$sourceKey] = $value[$masterKey];
+            }
+        }
+
         if (!isset($value['slave_io_running']) && isset($value['replica_io_running'])) {
             $value['slave_io_running'] = $value['replica_io_running'];
         }
