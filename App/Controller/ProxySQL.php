@@ -1308,10 +1308,19 @@ class ProxySQL extends Controller
     {
         Debug::parseDebug($param);
 
-        $id_proxysql_server = $param[0] ?? "";
-        $from = $param[1];
-        $table = $param[2];
-        $to = $param[3];
+        $this->view        = false;
+        $this->layout_name = false;
+
+        $id_proxysql_server = (string) ($param[0] ?? "");
+        $from = $param[1] ?? "";
+        $table = $param[2] ?? "";
+        $to = $param[3] ?? "";
+
+        if (! self::isUpdateRequestAllowed(IS_CLI, $_SERVER['REQUEST_METHOD'] ?? null)) {
+            set_flash("error", __("Error"), __("ProxySQL update commands must be submitted with POST."));
+            header("location: " . self::getUpdateRedirectTarget($id_proxysql_server, (string) $table, $_SERVER['HTTP_REFERER'] ?? null, null, $_SERVER['HTTP_HOST'] ?? null), true, 303);
+            return;
+        }
 
      
         $restrict[0] = array('SAVE','LOAD');
@@ -1350,9 +1359,61 @@ class ProxySQL extends Controller
         }
         finally{
             if (! IS_CLI) {
-                header("location: " . $_SERVER['HTTP_REFERER']);
+                header("location: " . self::getUpdateRedirectTarget($id_proxysql_server, (string) $table, $_SERVER['HTTP_REFERER'] ?? null, null, $_SERVER['HTTP_HOST'] ?? null), true, 303);
             }
         }
+    }
+
+    public static function isUpdateRequestAllowed(bool $isCli, ?string $requestMethod): bool
+    {
+        return $isCli || strtoupper((string) $requestMethod) === 'POST';
+    }
+
+    public static function getUpdateRedirectTarget(
+        string $idProxysqlServer,
+        string $table,
+        ?string $httpReferer = null,
+        ?string $baseLink = null,
+        ?string $httpHost = null
+    ): string {
+        if (self::isSafeUpdateReferer($httpReferer, $httpHost)) {
+            return $httpReferer;
+        }
+
+        $base = rtrim($baseLink ?? (defined('LINK') ? LINK : '/'), '/') . '/';
+
+        return $base . 'ProxySQL/config/' . rawurlencode($idProxysqlServer) . '/' . rawurlencode($table) . '/';
+    }
+
+    public static function isSafeUpdateReferer(?string $httpReferer, ?string $httpHost): bool
+    {
+        if (empty($httpReferer)) {
+            return false;
+        }
+
+        $parts = parse_url($httpReferer);
+        if ($parts === false) {
+            return false;
+        }
+
+        if (empty($parts['host'])) {
+            return str_starts_with($httpReferer, '/') && ! str_starts_with($httpReferer, '//');
+        }
+
+        if (empty($httpHost)) {
+            return false;
+        }
+
+        $current = parse_url('http://' . $httpHost);
+        if ($current === false || empty($current['host'])) {
+            return false;
+        }
+
+        if (strcasecmp((string) $parts['host'], (string) $current['host']) !== 0) {
+            return false;
+        }
+
+        return (int)($parts['port'] ?? 0) === (int)($current['port'] ?? 0);
     }
 
 
