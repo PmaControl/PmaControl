@@ -12,6 +12,7 @@ use App\Library\EngineV4;
 use App\Library\Csrf;
 use \App\Library\Debug;
 use App\Library\Extraction2;
+use App\Library\HttpRequest;
 use App\Library\Microsecond;
 use \App\Library\System;
 use \App\Library\Log;
@@ -1185,35 +1186,47 @@ class Worker extends Controller
         $this->view        = false;
         $this->layout_name = false;
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            if (!Csrf::isSameSiteRequest($_SERVER)) {
-                self::sendWorkerUpdateError(403, "Invalid request origin");
-                return;
-            }
-
-            if (!Csrf::validateToken($_POST, $_SESSION, self::WORKER_UPDATE_CSRF_SCOPE)) {
-                self::sendWorkerUpdateError(403, "Invalid CSRF token");
-                return;
-            }
-
-            $sql = self::buildWorkerUpdateSql($_POST);
-            if ($sql === null) {
-                self::sendWorkerUpdateError(400, "Invalid worker update payload");
-                return;
-            }
-
-            $db = Sgbd::sql(DB_DEFAULT);
-            $db->sql_query($sql);
-
-            if ($db->sql_affected_rows() === 1) {
-                echo "OK";
-            } else {
-                self::sendWorkerUpdateError(503, "Worker queue not updated");
-            }
+        $outcome = self::evaluateUpdateRequest($_POST, $_SERVER, $_SESSION);
+        if ($outcome['status'] !== 200) {
+            self::sendWorkerUpdateError($outcome['status'], $outcome['body'], $outcome['headers']);
             return;
         }
 
-        self::sendWorkerUpdateError(405, "Method Not Allowed");
+        $db = Sgbd::sql(DB_DEFAULT);
+        $db->sql_query($outcome['sql']);
+
+        if ($db->sql_affected_rows() === 1) {
+            echo "OK";
+        } else {
+            self::sendWorkerUpdateError(503, "Worker queue not updated");
+        }
+    }
+
+    public static function evaluateUpdateRequest(array $post, array $server, array $session): array
+    {
+        if (!HttpRequest::isMethod($server, "POST")) {
+            return self::buildWorkerUpdateOutcome(405, "Method Not Allowed", ['Allow' => 'POST']);
+        }
+
+        if (!HttpRequest::isSameSite($server)) {
+            return self::buildWorkerUpdateOutcome(403, "Invalid request origin");
+        }
+
+        if (!Csrf::validateToken($post, $session, self::WORKER_UPDATE_CSRF_SCOPE)) {
+            return self::buildWorkerUpdateOutcome(403, "Invalid CSRF token");
+        }
+
+        $sql = self::buildWorkerUpdateSql($post);
+        if ($sql === null) {
+            return self::buildWorkerUpdateOutcome(400, "Invalid worker update payload");
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'sql' => $sql,
+        ];
     }
 
     public static function buildWorkerUpdateSql(array $post): ?string
@@ -1238,9 +1251,22 @@ class Worker extends Controller
         );
     }
 
-    private static function sendWorkerUpdateError(int $statusCode, string $message): void
+    private static function buildWorkerUpdateOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'sql' => null,
+        ];
+    }
+
+    private static function sendWorkerUpdateError(int $statusCode, string $message, array $headers = []): void
     {
         http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
         header('Content-Type: text/plain; charset=UTF-8');
         echo $message;
     }

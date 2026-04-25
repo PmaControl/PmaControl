@@ -3,10 +3,72 @@
 declare(strict_types=1);
 
 use App\Controller\Worker;
+use App\Library\Csrf;
 use PHPUnit\Framework\TestCase;
 
 final class WorkerUpdateSecurityTest extends TestCase
 {
+    public function testWorkerUpdateRequestAcceptsValidPost(): void
+    {
+        $session = [];
+        $token = Csrf::issueToken($session, 'worker.update');
+
+        $outcome = Worker::evaluateUpdateRequest(
+            ['csrf_token' => $token, 'name' => 'nb_worker', 'value' => '4', 'pk' => '7'],
+            [
+                'REQUEST_METHOD' => 'POST',
+                'HTTPS' => 'on',
+                'HTTP_HOST' => 'pmacontrol.test',
+                'HTTP_ORIGIN' => 'https://pmacontrol.test',
+            ],
+            $session
+        );
+
+        $this->assertSame(200, $outcome['status']);
+        $this->assertSame('UPDATE worker_queue SET `nb_worker` = 4 WHERE id = 7', $outcome['sql']);
+    }
+
+    public function testWorkerUpdateRequestRejectsNonPost(): void
+    {
+        $outcome = Worker::evaluateUpdateRequest([], ['REQUEST_METHOD' => 'GET'], []);
+
+        $this->assertSame(405, $outcome['status']);
+        $this->assertSame('POST', $outcome['headers']['Allow']);
+    }
+
+    public function testWorkerUpdateRequestRejectsExternalSourceAndMissingToken(): void
+    {
+        $session = [];
+        $token = Csrf::issueToken($session, 'worker.update');
+
+        $external = Worker::evaluateUpdateRequest(
+            ['csrf_token' => $token, 'name' => 'nb_worker', 'value' => '4', 'pk' => '7'],
+            [
+                'REQUEST_METHOD' => 'POST',
+                'HTTPS' => 'on',
+                'HTTP_HOST' => 'pmacontrol.test',
+                'HTTP_ORIGIN' => 'https://attacker.test',
+            ],
+            $session
+        );
+
+        $missingToken = Worker::evaluateUpdateRequest(
+            ['name' => 'nb_worker', 'value' => '4', 'pk' => '7'],
+            [
+                'REQUEST_METHOD' => 'POST',
+                'HTTPS' => 'on',
+                'HTTP_HOST' => 'pmacontrol.test',
+                'HTTP_ORIGIN' => 'https://pmacontrol.test',
+            ],
+            $session
+        );
+
+        $this->assertSame(403, $external['status']);
+        $this->assertSame('Invalid request origin', $external['body']);
+        $this->assertSame(403, $missingToken['status']);
+        $this->assertSame('Invalid CSRF token', $missingToken['body']);
+    }
+
     public function testWorkerUpdateSqlIsRestrictedToKnownIntegerFields(): void
     {
         $this->assertSame(
@@ -43,9 +105,10 @@ final class WorkerUpdateSecurityTest extends TestCase
         $this->assertIsString($daemon);
 
         $this->assertStringContainsString('use App\\Library\\Csrf;', $controller);
+        $this->assertStringContainsString('use App\\Library\\HttpRequest;', $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::WORKER_UPDATE_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('Csrf::isSameSiteRequest($_SERVER)', $controller);
-        $this->assertStringContainsString('Csrf::validateToken($_POST, $_SESSION, self::WORKER_UPDATE_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('HttpRequest::isSameSite($server)', $controller);
+        $this->assertStringContainsString('Csrf::validateToken($post, $session, self::WORKER_UPDATE_CSRF_SCOPE)', $controller);
         $this->assertStringNotContainsString('isWorkerUpdateSourceSameSite', $controller);
 
         $this->assertStringContainsString('data-csrf-token="', $view);
