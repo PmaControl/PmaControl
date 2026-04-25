@@ -119,20 +119,21 @@ if (!empty($_GET['mysql_server']['id'])) {
                             }
 
                             if ($var == "query") {
+                                $query = (string)($val ?? '');
 
                                 echo '<button class="btn btn-default btn-xs" type="button" data-toggle="collapse" data-target="#collapseExample' . $i . '">'
                                 . '<i class="fa fa-plus"></i></button>';
                                 echo ' <span>';
 
-                                echo '<div class="collapse" id="collapseExample' . $i . '">' . SqlFormatter::format($val) . '</div>';
+                                echo '<div class="collapse" id="collapseExample' . $i . '">' . SqlFormatter::format($query) . '</div>';
 
-                                $nb_length = intval(strlen($val));
+                                $nb_length = strlen($query);
 
                                 if ($nb_length > 64) {
 
-                                    echo substr($val, 0, 32) . "..." . substr($val, -32);
+                                    echo substr($query, 0, 32) . "..." . substr($query, -32);
                                 } else {
-                                    echo $val;
+                                    echo $query;
                                 }
                                 echo '</span>';
 
