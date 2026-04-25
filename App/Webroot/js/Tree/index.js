@@ -36,9 +36,10 @@ $.fn.editable.defaults.mode = 'inline';
             $element.editable({
                 params: function (params) {
                     var csrfToken = $(this).data('csrf-token');
+                    var csrfField = $(this).data('csrf-field') || '_csrf_token';
 
                     if (csrfToken) {
-                        params.csrf_token = csrfToken;
+                        params[csrfField] = csrfToken;
                     }
 
                     return params;

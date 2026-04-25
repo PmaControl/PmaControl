@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Controller\Worker;
-use App\Library\Csrf;
+use Glial\Security\Csrf;
 use PHPUnit\Framework\TestCase;
 
 final class WorkerUpdateSecurityTest extends TestCase
@@ -14,7 +14,7 @@ final class WorkerUpdateSecurityTest extends TestCase
         $token = Csrf::issueToken($session, 'worker.update');
 
         $outcome = Worker::evaluateUpdateRequest(
-            ['csrf_token' => $token, 'name' => 'nb_worker', 'value' => '4', 'pk' => '7'],
+            [Csrf::DEFAULT_FIELD => $token, 'name' => 'nb_worker', 'value' => '4', 'pk' => '7'],
             [
                 'REQUEST_METHOD' => 'POST',
                 'HTTPS' => 'on',
@@ -42,7 +42,7 @@ final class WorkerUpdateSecurityTest extends TestCase
         $token = Csrf::issueToken($session, 'worker.update');
 
         $external = Worker::evaluateUpdateRequest(
-            ['csrf_token' => $token, 'name' => 'nb_worker', 'value' => '4', 'pk' => '7'],
+            [Csrf::DEFAULT_FIELD => $token, 'name' => 'nb_worker', 'value' => '4', 'pk' => '7'],
             [
                 'REQUEST_METHOD' => 'POST',
                 'HTTPS' => 'on',
@@ -104,16 +104,17 @@ final class WorkerUpdateSecurityTest extends TestCase
         $this->assertIsString($javascript);
         $this->assertIsString($daemon);
 
-        $this->assertStringContainsString('use App\\Library\\Csrf;', $controller);
-        $this->assertStringContainsString('use App\\Library\\HttpRequest;', $controller);
+        $this->assertStringContainsString('use Glial\\Security\\Csrf;', $controller);
+        $this->assertStringContainsString('use Glial\\Http\\Request;', $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::WORKER_UPDATE_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('HttpRequest::isSameSite($server)', $controller);
+        $this->assertStringContainsString('Request::isSameSite($server)', $controller);
         $this->assertStringContainsString('Csrf::validateToken($post, $session, self::WORKER_UPDATE_CSRF_SCOPE)', $controller);
         $this->assertStringNotContainsString('isWorkerUpdateSourceSameSite', $controller);
 
+        $this->assertStringContainsString('data-csrf-field="', $view);
         $this->assertStringContainsString('data-csrf-token="', $view);
         $this->assertStringContainsString('worker/update', $view);
-        $this->assertStringContainsString('params.csrf_token = csrfToken;', $javascript);
+        $this->assertStringContainsString("params[csrfField] = csrfToken;", $javascript);
         $this->assertStringContainsString('window.pmacontrolInitLineEdit', $javascript);
         $this->assertStringContainsString('window.pmacontrolInitLineEdit(this);', $daemon);
     }

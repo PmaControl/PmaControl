@@ -9,14 +9,14 @@ namespace App\Controller;
 
 use App\Library\EngineV4;
 
-use App\Library\Csrf;
 use \App\Library\Debug;
 use App\Library\Extraction2;
-use App\Library\HttpRequest;
 use App\Library\Microsecond;
 use \App\Library\System;
 use \App\Library\Log;
 
+use Glial\Http\Request;
+use Glial\Security\Csrf;
 use \Glial\Synapse\Controller;
 use \Glial\I18n\I18n;
 use \Glial\Sgbd\Sgbd;
@@ -528,6 +528,7 @@ class Worker extends Controller
         $db = Sgbd::sql(DB_DEFAULT);
         $data = [
             'worker' => [],
+            'worker_update_csrf_field' => Csrf::DEFAULT_FIELD,
             'worker_update_csrf_token' => Csrf::issueToken($_SESSION, self::WORKER_UPDATE_CSRF_SCOPE),
         ];
 
@@ -1204,11 +1205,11 @@ class Worker extends Controller
 
     public static function evaluateUpdateRequest(array $post, array $server, array $session): array
     {
-        if (!HttpRequest::isMethod($server, "POST")) {
+        if (!Request::isMethod($server, "POST")) {
             return self::buildWorkerUpdateOutcome(405, "Method Not Allowed", ['Allow' => 'POST']);
         }
 
-        if (!HttpRequest::isSameSite($server)) {
+        if (!Request::isSameSite($server)) {
             return self::buildWorkerUpdateOutcome(403, "Invalid request origin");
         }
 

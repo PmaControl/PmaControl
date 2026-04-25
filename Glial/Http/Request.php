@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Library;
+namespace Glial\Http;
 
-class HttpRequest
+class Request
 {
     public static function isMethod(array $server, string $expected): bool
     {
