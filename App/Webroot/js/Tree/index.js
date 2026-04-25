@@ -21,7 +21,35 @@
  });*/
 $.fn.editable.defaults.mode = 'inline';
 
+(function () {
+    function initLineEdit(context) {
+        var $context = context ? $(context) : $(document);
+        var $elements = $context.is('.line-edit') ? $context : $context.find('.line-edit');
 
-$(document).ready(function () {
-    $('.line-edit').editable();
-});
+        $elements.each(function () {
+            var $element = $(this);
+
+            if ($element.data('editable')) {
+                return;
+            }
+
+            $element.editable({
+                params: function (params) {
+                    var csrfToken = $(this).data('csrf-token');
+
+                    if (csrfToken) {
+                        params.csrf_token = csrfToken;
+                    }
+
+                    return params;
+                }
+            });
+        });
+    }
+
+    window.pmacontrolInitLineEdit = initLineEdit;
+
+    $(document).ready(function () {
+        initLineEdit(document);
+    });
+})();

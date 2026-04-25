@@ -9,6 +9,7 @@ namespace App\Controller;
 
 use App\Library\EngineV4;
 
+use App\Library\Csrf;
 use \App\Library\Debug;
 use App\Library\Extraction2;
 use App\Library\Microsecond;
@@ -39,6 +40,8 @@ use \Monolog\Handler\StreamHandler;
  */
 class Worker extends Controller
 {
+    private const WORKER_UPDATE_CSRF_SCOPE = 'worker.update';
+    private const WORKER_UPDATE_FIELDS = ['nb_worker', 'queue_number'];
 
 /**
  * Stores `$timestamp_config_file` for timestamp config file.
@@ -522,9 +525,16 @@ class Worker extends Controller
         Debug::parseDebug($param);
 
         $db = Sgbd::sql(DB_DEFAULT);
+        $data = [
+            'worker' => [],
+            'worker_update_csrf_token' => Csrf::issueToken($_SESSION, self::WORKER_UPDATE_CSRF_SCOPE),
+        ];
 
         if (!empty($_GET['ajax']) && $_GET['ajax'] === "true") {
             $this->layout_name = false;
+        }
+        else {
+            $this->di['js']->addJavascript(array('bootstrap-editable.min.js', 'Tree/index.js'));
         }
 
 
@@ -1176,17 +1186,63 @@ class Worker extends Controller
         $this->layout_name = false;
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            $db = Sgbd::sql(DB_DEFAULT);
+            if (!Csrf::isSameSiteRequest($_SERVER)) {
+                self::sendWorkerUpdateError(403, "Invalid request origin");
+                return;
+            }
 
-            $sql = "UPDATE worker_queue SET `".$_POST['name']."` = '".$_POST['value']."' WHERE id = ".$db->sql_real_escape_string($_POST['pk'])."";
+            if (!Csrf::validateToken($_POST, $_SESSION, self::WORKER_UPDATE_CSRF_SCOPE)) {
+                self::sendWorkerUpdateError(403, "Invalid CSRF token");
+                return;
+            }
+
+            $sql = self::buildWorkerUpdateSql($_POST);
+            if ($sql === null) {
+                self::sendWorkerUpdateError(400, "Invalid worker update payload");
+                return;
+            }
+
+            $db = Sgbd::sql(DB_DEFAULT);
             $db->sql_query($sql);
 
             if ($db->sql_affected_rows() === 1) {
                 echo "OK";
             } else {
-                header("HTTP/1.0 503 Internal Server Error");
+                self::sendWorkerUpdateError(503, "Worker queue not updated");
             }
+            return;
         }
+
+        self::sendWorkerUpdateError(405, "Method Not Allowed");
+    }
+
+    public static function buildWorkerUpdateSql(array $post): ?string
+    {
+        $field = (string) ($post['name'] ?? '');
+        $value = (string) ($post['value'] ?? '');
+        $id = (string) ($post['pk'] ?? '');
+
+        if (! in_array($field, self::WORKER_UPDATE_FIELDS, true)) {
+            return null;
+        }
+
+        if (! ctype_digit($value) || ! ctype_digit($id) || (int) $id < 1) {
+            return null;
+        }
+
+        return sprintf(
+            'UPDATE worker_queue SET `%s` = %d WHERE id = %d',
+            $field,
+            (int) $value,
+            (int) $id
+        );
+    }
+
+    private static function sendWorkerUpdateError(int $statusCode, string $message): void
+    {
+        http_response_code($statusCode);
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
 /**
@@ -1620,4 +1676,3 @@ class Worker extends Controller
         $db->sql_query($sql);
     }
 }
-
