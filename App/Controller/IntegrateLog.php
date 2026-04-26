@@ -4,8 +4,7 @@ namespace App\Controller;
 
 use App\Library\EngineV4;
 use App\Library\MysqlLogCollector;
-use Fuz\Component\SharedMemory\SharedMemory;
-use Fuz\Component\SharedMemory\Storage\StorageFile;
+use App\Library\SharedMemoryReader;
 use Glial\Sgbd\Sgbd;
 use Glial\Synapse\Controller;
 use Monolog\Formatter\LineFormatter;
@@ -59,9 +58,14 @@ class IntegrateLog extends Controller
         array_multisort(array_map('filemtime', $files), SORT_NUMERIC, SORT_ASC, $files);
 
         foreach ($files as $file) {
-            $storage = new StorageFile($file);
-            $data = new SharedMemory($storage);
-            $payload = $this->normalizeSharedMemoryPayload($data->getData());
+            $rawPayload = SharedMemoryReader::read($file, $reason);
+            if ($rawPayload === null) {
+                $this->logger?->warning("[integrate-log] skip $file: $reason");
+                @unlink($file);
+                continue;
+            }
+
+            $payload = $this->normalizeSharedMemoryPayload($rawPayload);
 
             [$events, $cursorUpdates] = $this->extractPayload($payload);
 

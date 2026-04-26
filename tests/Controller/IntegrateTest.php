@@ -2,7 +2,13 @@
 
 declare(strict_types=1);
 
+if (!defined('TMP')) {
+    define('TMP', sys_get_temp_dir().'/');
+}
+
 use App\Controller\Integrate;
+use App\Library\SharedMemoryReader;
+use Fuz\Component\SharedMemory\Entity\StoredEntity;
 use PHPUnit\Framework\TestCase;
 
 final class IntegrateTest extends TestCase
@@ -50,12 +56,21 @@ final class IntegrateTest extends TestCase
             'Replica_IO_Running' => 'Yes',
             'Replica_SQL_Running' => 'Yes',
             'Seconds_Behind_Source' => '3',
+            'Source_SSL_Allowed' => 'Yes',
+            'Source_SSL_Cipher' => 'TLS_AES_256_GCM_SHA384',
+            'Source_TLS_Version' => 'TLSv1.3',
         ]);
 
         $this->assertSame('mysql-primary.example.net', $normalized['master_host']);
         $this->assertSame(3310, $normalized['master_port']);
         $this->assertSame('mysql-primary.example.net', $normalized['source_host']);
         $this->assertSame(3310, $normalized['source_port']);
+        $this->assertSame('Yes', $normalized['master_ssl_allowed']);
+        $this->assertSame('Yes', $normalized['source_ssl_allowed']);
+        $this->assertSame('TLS_AES_256_GCM_SHA384', $normalized['master_ssl_cipher']);
+        $this->assertSame('TLS_AES_256_GCM_SHA384', $normalized['source_ssl_cipher']);
+        $this->assertSame('TLSv1.3', $normalized['master_tls_version']);
+        $this->assertSame('TLSv1.3', $normalized['source_tls_version']);
         $this->assertSame('3', $normalized['seconds_behind_master']);
         $this->assertSame('3', $normalized['seconds_behind_source']);
         $this->assertSame('Yes', $normalized['slave_io_running']);
@@ -100,11 +115,152 @@ final class IntegrateTest extends TestCase
         $this->assertArrayNotHasKey('seconds_behind_source', $normalized);
     }
 
+    public function testNormalizeSlaveMetricRowMapsLegacySslStateToSourceField(): void
+    {
+        $controller = new TestableIntegrate('Controller', 'View', []);
+
+        $normalized = $controller->exposeNormalizeSlaveMetricRow('slave', [
+            'Master_SSL_Allowed' => 'No',
+            'Master_SSL_Cipher' => 'DHE-RSA-AES256-SHA',
+            'Master_TLS_Version' => 'TLSv1.2',
+        ]);
+
+        $this->assertSame('No', $normalized['master_ssl_allowed']);
+        $this->assertSame('No', $normalized['source_ssl_allowed']);
+        $this->assertSame('DHE-RSA-AES256-SHA', $normalized['master_ssl_cipher']);
+        $this->assertSame('DHE-RSA-AES256-SHA', $normalized['source_ssl_cipher']);
+        $this->assertSame('TLSv1.2', $normalized['master_tls_version']);
+        $this->assertSame('TLSv1.2', $normalized['source_tls_version']);
+    }
+
     public function testNormalizeSlaveMetricRowReturnsNullForNonSlaveMetrics(): void
     {
         $controller = new TestableIntegrate('Controller', 'View', []);
 
         $this->assertNull($controller->exposeNormalizeSlaveMetricRow('status', ['threads_running' => 1]));
+    }
+
+    public function testSharedMemoryReaderReadsSerializedStoredEntityWithoutWriteAccess(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'pmacontrol-integrate-pivot-');
+        $this->assertIsString($file);
+
+        $data = new stdClass();
+        $data->mysql_server = ['ok' => true];
+
+        $entity = new StoredEntity();
+        $entity->setData($data);
+
+        try {
+            file_put_contents($file, serialize($entity));
+            chmod($file, 0444);
+
+            $payload = SharedMemoryReader::read($file, $reason);
+
+            $this->assertNull($reason);
+            $this->assertInstanceOf(stdClass::class, $payload);
+            $this->assertSame(['ok' => true], $payload->mysql_server);
+        } finally {
+            if (is_file($file)) {
+                chmod($file, 0644);
+                unlink($file);
+            }
+        }
+    }
+
+    public function testSharedMemoryReaderIgnoresCorruptFileWithoutPhpWarning(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'pmacontrol-integrate-pivot-');
+        $this->assertIsString($file);
+
+        try {
+            file_put_contents($file, 'not serialized');
+
+            set_error_handler(static function (int $severity, string $message, string $sourceFile, int $line): bool {
+                throw new ErrorException($message, 0, $severity, $sourceFile, $line);
+            });
+
+            try {
+                $this->assertNull(SharedMemoryReader::read($file, $reason));
+            } finally {
+                restore_error_handler();
+            }
+
+            $this->assertIsString($reason);
+            $this->assertStringContainsString('invalid stored entity', $reason);
+            $this->assertFileExists($file);
+        } finally {
+            if (is_file($file)) {
+                unlink($file);
+            }
+        }
+    }
+
+    public function testPayloadLockPreventsSecondOwnerForSameFile(): void
+    {
+        $controller = new TestableIntegrate('Controller', 'View', []);
+        $file = sys_get_temp_dir().'/pmacontrol-integrate-test::phpunit_integrate_lock_'.getmypid();
+
+        $firstLock = $controller->exposeAcquireIntegratePayloadLock($file);
+        $this->assertIsArray($firstLock);
+
+        try {
+            $secondLock = $controller->exposeAcquireIntegratePayloadLock($file);
+            $this->assertNull($secondLock);
+        } finally {
+            $controller->exposeReleaseIntegratePayloadLock($firstLock);
+        }
+
+        $thirdLock = $controller->exposeAcquireIntegratePayloadLock($file);
+        $this->assertIsArray($thirdLock);
+        $controller->exposeReleaseIntegratePayloadLock($thirdLock);
+        @unlink($thirdLock['path']);
+    }
+
+    public function testBuildTimeSeriesInsertSqlIsIdempotentOnPrimaryKeyCollision(): void
+    {
+        $controller = new TestableIntegrate('Controller', 'View', []);
+
+        $sql = $controller->exposeBuildTimeSeriesInsertSql(
+            'ts_value_general_int',
+            ['id_mysql_server', 'id_ts_variable', 'date', 'value'],
+            ['(4499,238,"2026-04-15 23:03:31","1")']
+        );
+
+        $this->assertStringStartsWith(
+            'INSERT INTO `ts_value_general_int` (`id_mysql_server`,`id_ts_variable`,`date`,`value`) VALUES ',
+            $sql
+        );
+        $this->assertStringContainsString(
+            'ON DUPLICATE KEY UPDATE `value` = VALUES(`value`);',
+            $sql
+        );
+    }
+
+    public function testSortExistingPivotFilesByMtimeSkipsMissingFiles(): void
+    {
+        $controller = new TestableIntegrate('Controller', 'View', []);
+        $dir = sys_get_temp_dir().'/pmacontrol-integrate-sort-'.getmypid();
+        @mkdir($dir, 0775, true);
+
+        $older = $dir.'/100::mysql_global';
+        $newer = $dir.'/200::mysql_global';
+        $missing = $dir.'/300::mysql_global';
+
+        file_put_contents($older, 'older');
+        file_put_contents($newer, 'newer');
+        touch($older, 100);
+        touch($newer, 200);
+
+        try {
+            $sorted = $controller->exposeSortExistingPivotFilesByMtime([$missing, $newer, $older]);
+
+            $this->assertSame([$older, $newer], $sorted);
+        } finally {
+            @unlink($older);
+            @unlink($newer);
+            @rmdir($dir);
+        }
     }
 }
 
@@ -113,5 +269,25 @@ final class TestableIntegrate extends Integrate
     public function exposeNormalizeSlaveMetricRow(string $typeMetrics, $value): ?array
     {
         return $this->normalizeSlaveMetricRow($typeMetrics, $value);
+    }
+
+    public function exposeAcquireIntegratePayloadLock(string $file): ?array
+    {
+        return $this->acquireIntegratePayloadLock($file);
+    }
+
+    public function exposeReleaseIntegratePayloadLock(?array $lock): void
+    {
+        $this->releaseIntegratePayloadLock($lock);
+    }
+
+    public function exposeBuildTimeSeriesInsertSql(string $table, array $columns, array $values): string
+    {
+        return $this->buildTimeSeriesInsertSql($table, $columns, $values);
+    }
+
+    public function exposeSortExistingPivotFilesByMtime(array $files): array
+    {
+        return $this->sortExistingPivotFilesByMtime($files);
     }
 }

@@ -2384,18 +2384,20 @@ var myChart = new Chart(ctx, {
                     $loop = 1;
                     do {
 
-                        $sql = "SELECT ".$primary_key." FROM `".$this->schema_to_purge."`.`".$table_name."` a
-                        INNER JOIN `".$this->schema_delete."`.`".$this->prefix.$fk['REFERENCED_TABLE_NAME']."` b ON b.`".$fk['REFERENCED_COLUMN_NAME']."` = a.`".$fk['COLUMN_NAME']."`";
+                        $missing_rows_filter = $this->getMissingCleanerRowsFilter($table_name, $pri);
+                        $sql = "SELECT DISTINCT ".$primary_key." FROM `".$this->schema_to_purge."`.`".$table_name."` a
+                        INNER JOIN `".$this->schema_delete."`.`".$this->prefix.$fk['REFERENCED_TABLE_NAME']."` b ON b.`".$fk['REFERENCED_COLUMN_NAME']."` = a.`".$fk['COLUMN_NAME']."`
+                        ".$missing_rows_filter['join'];
 
                         if ($circular) {
-                            $sql .= " WHERE b.`".self::FIELD_LOOP."` = ".($loop - 1).";";
+                            $sql .= " WHERE b.`".self::FIELD_LOOP."` = ".($loop - 1)." AND ".$missing_rows_filter['where'].";";
 
                             $circular_field = ",`".self::FIELD_LOOP."`";
                             $circular_data  = ",".$loop;
                         } else {
                             $circular_field = "";
                             $circular_data  = "";
-                            $sql            .= ";";
+                            $sql            .= " WHERE ".$missing_rows_filter['where'].";";
                         }
 
                         Debug::sql($sql);
@@ -2462,6 +2464,22 @@ var myChart = new Chart(ctx, {
         }
 
         Debug::checkPoint("Feed delete tables from FKs");
+    }
+
+    private function getMissingCleanerRowsFilter($table_name, $primary_keys)
+    {
+        $join = array();
+        $where = array();
+
+        foreach ($primary_keys as $primary_key) {
+            $join[] = "c.`".$primary_key."` = a.`".$primary_key."`";
+            $where[] = "c.`".$primary_key."` IS NULL";
+        }
+
+        return array(
+            'join' => "LEFT JOIN `".$this->schema_delete."`.`".$this->prefix.$table_name."` c ON ".implode(" AND ", $join),
+            'where' => implode(" AND ", $where),
+        );
     }
 
 /**

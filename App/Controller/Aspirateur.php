@@ -423,8 +423,10 @@ class Aspirateur extends Controller
         // To know if we use a proxy like PROXYSQL / MAXSCALE
         $IS_PROXY = 0;
         $IS_VIP = 0;
+        $IS_MYSQL_ROUTER_ENDPOINT = false;
         $vipConnectionHost = '';
         $vipConnectionPort = 3306;
+        $detectedServerBanner = '';
 
         $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT is_proxy, is_vip, ip, port FROM mysql_server WHERE id=".$id_mysql_server;
@@ -436,6 +438,7 @@ class Aspirateur extends Controller
             $vipConnectionHost = trim((string)($ob->ip ?? ''));
             $vipConnectionPort = (int)($ob->port ?? 3306);
         }
+        $IS_MYSQL_ROUTER_ENDPOINT = $this->isKnownMysqlRouterEndpoint((int)$id_mysql_server);
         $db->sql_close();
         //end of case of HA proxy & Maxscale
 
@@ -464,14 +467,25 @@ class Aspirateur extends Controller
                 return false;
             }
 
+            $detectedServerBanner = $this->readMysqlServerBanner($mysql_tested);
+            if (!$IS_MYSQL_ROUTER_ENDPOINT && $this->isMysqlRouterSignature($detectedServerBanner)) {
+                $IS_MYSQL_ROUTER_ENDPOINT = true;
+            }
+
             // only if REAL server => should make test if Galera if select 1 => not ready to use too
             if (empty($IS_PROXY) && empty($IS_VIP)) {
 
 
             }
-            else if (!empty($IS_PROXY)){
+            else if ($this->shouldRunProxyTransactionProbe((int)$IS_PROXY, (int)$IS_VIP, $IS_MYSQL_ROUTER_ENDPOINT)){
                 // need try one case if hostgroup 2 ok but hostgroup 1 ko
                 $error_ori = '';
+                $isMaxScaleReadWriteSplit = $this->isKnownMaxScaleReadWriteSplitEndpoint(
+                    (int)$id_mysql_server,
+                    (string)$vipConnectionHost,
+                    (int)$vipConnectionPort
+                );
+                $skipBrokenMaxScaleSession = false;
                 try{
                     // hack to force read to switch back online after shunned in case of no query on proxy (reader)
                     $mysql_tested->sql_query("SELECT 1;");
@@ -501,12 +515,24 @@ class Aspirateur extends Controller
                 finally
                 {
                     $available = empty($error_ori) ? 1 : 2; // 2 => cas read only
+                    if (!empty($error_ori)
+                        && $isMaxScaleReadWriteSplit
+                        && $this->isTransientProxySessionLoss($error_ori)) {
+                        $available = 1;
+                        $skipBrokenMaxScaleSession = true;
+                    }
                     $this->setService($id_mysql_server, $ping, $error_filter, $available, 'mysql');
 
                     if ($available === 0 && $available === 2) {
                         $mysql_tested->sql_close();
                         return false;
                     }
+                }
+
+                if ($skipBrokenMaxScaleSession) {
+                    $this->exportMaxScaleProxyVariables((int)$id_mysql_server);
+                    $mysql_tested->sql_close();
+                    return true;
                 }
             }
 
@@ -603,29 +629,7 @@ class Aspirateur extends Controller
 
         $detectedVersion = (string) ($var['variables']['version'] ?? '');
         $detectedVersionComment = (string) ($var['variables']['version_comment'] ?? '');
-        $detectedServerBanner = '';
-
-        if (!empty($mysql_tested->link)) {
-            try {
-                $detectedServerBanner = (string) mysqli_get_server_info($mysql_tested->link);
-            } catch (\Throwable $e) {
-                $detectedServerBanner = '';
-            }
-        }
-
-        $isMysqlRouter = false;
-
-        if ($detectedServerBanner !== '' && stripos($detectedServerBanner, '-router') !== false) {
-            $isMysqlRouter = true;
-        }
-
-        if (!$isMysqlRouter && $detectedVersion !== '' && stripos($detectedVersion, '-router') !== false) {
-            $isMysqlRouter = true;
-        }
-
-        if (!$isMysqlRouter && $detectedVersionComment !== '' && stripos($detectedVersionComment, 'router') !== false) {
-            $isMysqlRouter = true;
-        }
+        $isMysqlRouter = $this->isMysqlRouterSignature($detectedServerBanner, $detectedVersion, $detectedVersionComment);
 
         if (empty($var['variables']['is_proxysql']) && $IS_PROXY == "1" && $isMysqlRouter)
         {
@@ -642,15 +646,7 @@ class Aspirateur extends Controller
         // cas maxscale
         if (empty($var['variables']['is_proxysql']) && $IS_PROXY == "1")
         {
-
-            $var_temp = array();
-            $var_temp['variables']['is_proxy']     = "1";
-            $var_temp['variables']['is_maxscale']     = "1";
-
-            $var_temp['variables']['version']         = MaxScale::getVersion(array($id_mysql_server));
-            $var_temp['variables']['version_comment'] = "MaxScale";
-
-            $this->exportData($id_mysql_server,"mysql_global_variable", $var_temp);
+            $this->exportMaxScaleProxyVariables((int)$id_mysql_server);
             $mysql_tested->sql_close();
             return true;
         }
@@ -692,22 +688,13 @@ class Aspirateur extends Controller
         }
         Debug::debug($data['slave'], "SLAVE");
 
-        // Group Replication: collect MEMBER_ROLE and MEMBER_STATE from performance_schema
-        // Only applicable to MySQL (not MariaDB) with server_uuid (>= 5.6) and GR (>= 5.7.17)
-        $isMariaDB = (stripos($detectedVersion, 'MariaDB') !== false) || (stripos($detectedVersionComment, 'MariaDB') !== false);
-        $numVer = preg_replace('/[^0-9.].*/', '', $detectedVersion);
-        if (!$isMariaDB && version_compare($numVer, '5.7.17', '>=')) {
-            // MEMBER_ROLE column added in MySQL 8.0.2
-            if (version_compare($numVer, '8.0.2', '>=')) {
-                $grSql = "SELECT MEMBER_ROLE, MEMBER_STATE FROM performance_schema.replication_group_members WHERE MEMBER_ID = @@server_uuid";
-            } else {
-                $grSql = "SELECT '' AS MEMBER_ROLE, MEMBER_STATE FROM performance_schema.replication_group_members WHERE MEMBER_ID = @@server_uuid";
-            }
-            $grRes = $mysql_tested->sql_query_silent($grSql);
-            if ($grRes && $grRow = $mysql_tested->sql_fetch_array($grRes, MYSQLI_ASSOC)) {
-                $data['status']['gr_member_role'] = $grRow['MEMBER_ROLE'] ?? '';
-                $data['status']['gr_member_state'] = $grRow['MEMBER_STATE'] ?? '';
-            }
+        $groupReplicationStatus = $this->getGroupReplicationStatusFromConnection(
+            $mysql_tested,
+            $detectedVersion,
+            $detectedVersionComment
+        );
+        if (!empty($groupReplicationStatus)) {
+            $data['status'] = array_merge($data['status'], $groupReplicationStatus);
         }
 
         $this->exportData($id_mysql_server, "mysql_global", $data, false);
@@ -731,10 +718,15 @@ class Aspirateur extends Controller
         // toutes les 10 secs si refresh =1 (toutes les 10* $refresh)
         if ((time()+$id_mysql_server)%(10*$refresh) < $refresh)
         {
-            if ($var['variables']['log_bin'] === "ON") {
+            if (($var['variables']['log_bin'] ?? '') === "ON") {
                 $data = array();
                 $data['mysql_binlog'] = $this->binaryLog(array($id_mysql_server));
-                $data['master_status'] = $mysql_tested->isMaster();
+                $data['master_status'] = $this->getMasterStatusFromConnection(
+                    $mysql_tested,
+                    $detectedVersion,
+                    $detectedVersionComment,
+                    $isSingleStore
+                );
                 //Debug::debug($data);
                 $this->exportData($id_mysql_server, "mysql_binlog", $data);
             }
@@ -943,108 +935,59 @@ class Aspirateur extends Controller
         }
 
         try {
-            $db->sql_query("START TRANSACTION;");
+            $actualSql = "NULL";
+            $actualDateSql = "NULL";
+            $actualUpdateSql = "";
 
-            $sql = "SELECT id, id_mysql_server__actual
-            FROM vip_server PARTITION (pn)
-            WHERE id_mysql_server = ".(int)$id_mysql_server."
-            FOR UPDATE;";
+            if ($newActual > 0) {
+                $actualSql = (string)(int)$newActual;
+                $actualDateSql = "NOW()";
 
-            $res = $db->sql_query($sql);
-
-            $rowExists = false;
-            $currentActualRaw = null;
-
-            while ($ob = $db->sql_fetch_object($res)) {
-                $rowExists = true;
-                if (
-                    isset($ob->id_mysql_server__actual)
-                    && $ob->id_mysql_server__actual !== null
-                    && $ob->id_mysql_server__actual !== ''
-                ) {
-                    $currentActualRaw = (int)$ob->id_mysql_server__actual;
-                }
-                break;
+                // vip_server is system-versioned: avoid locking reads,
+                // which MariaDB rejects on versioned tables.
+                $actualUpdateSql = ",
+                id_mysql_server__previous = CASE
+                    WHEN id_mysql_server__actual IS NOT NULL
+                        AND id_mysql_server__actual > 0
+                        AND id_mysql_server__actual <> ".$actualSql."
+                    THEN id_mysql_server__actual
+                    ELSE id_mysql_server__previous
+                END,
+                date__previous = CASE
+                    WHEN id_mysql_server__actual IS NOT NULL
+                        AND id_mysql_server__actual > 0
+                        AND id_mysql_server__actual <> ".$actualSql."
+                    THEN NOW()
+                    ELSE date__previous
+                END,
+                date__actual = CASE
+                    WHEN id_mysql_server__actual IS NULL
+                        OR id_mysql_server__actual <= 0
+                        OR id_mysql_server__actual <> ".$actualSql."
+                    THEN NOW()
+                    ELSE date__actual
+                END,
+                id_mysql_server__actual = CASE
+                    WHEN id_mysql_server__actual IS NULL
+                        OR id_mysql_server__actual <= 0
+                        OR id_mysql_server__actual <> ".$actualSql."
+                    THEN ".$actualSql."
+                    ELSE id_mysql_server__actual
+                END";
             }
 
-            if (!$rowExists) {
-                if ($newActual > 0) {
-                    $sql = "INSERT INTO vip_server
-                    (`id_mysql_server`, `dns`, `ip`, `id_mysql_server__actual`, `date__actual`)
-                    VALUES
-                    (".(int)$id_mysql_server.", ".$dnsSql.", ".$ipSql.", ".(int)$newActual.", NOW());";
-                } else {
-                    $sql = "INSERT INTO vip_server
-                    (`id_mysql_server`, `dns`, `ip`)
-                    VALUES
-                    (".(int)$id_mysql_server.", ".$dnsSql.", ".$ipSql.");";
-                }
-
-                $db->sql_query($sql);
-                $db->sql_query("COMMIT;");
-                return true;
-            }
-
-            $currentActual = (int)$currentActualRaw;
-
-            if ($newActual <= 0 || $newActual === $currentActual) {
-                // Aucun changement de destination (ou destination inconnue)
-                // => on ne touche qu'à dns/ip.
-                $sql = "UPDATE vip_server
-                SET dns = ".$dnsSql.",
-                    ip = ".$ipSql."
-                WHERE id_mysql_server = ".(int)$id_mysql_server.";";
-
-                $db->sql_query($sql);
-                $db->sql_query("COMMIT;");
-                return true;
-            }
-
-            if ($currentActual <= 0) {
-                // Première destination détectée sur une ligne déjà existante
-                // (créée précédemment sans destination).
-                $sql = "UPDATE vip_server
-                SET dns = ".$dnsSql.",
-                    ip = ".$ipSql.",
-                    id_mysql_server__actual = ".(int)$newActual.",
-                    date__actual = NOW()
-                WHERE id_mysql_server = ".(int)$id_mysql_server.";";
-
-                $db->sql_query($sql);
-                $db->sql_query("COMMIT;");
-                return true;
-            }
-
-            $previousActualSql = "NULL";
-            if ($currentActualRaw !== null && (int)$currentActualRaw > 0) {
-                $previousActualSql = (int)$currentActualRaw;
-            }
-
-            // Changement de cible :
-            // 1) previous = actual
-            // 2) date__previous = NOW()
-            // 3) actual = newActual
-            // 4) date__actual = NOW()
-            $sql = "UPDATE vip_server
-            SET dns = ".$dnsSql.",
-                ip = ".$ipSql.",
-                id_mysql_server__previous = ".$previousActualSql.",
-                date__previous = NOW(),
-                id_mysql_server__actual = ".(int)$newActual.",
-                date__actual = NOW()
-            WHERE id_mysql_server = ".(int)$id_mysql_server.";";
+            $sql = "INSERT INTO vip_server
+            (`id_mysql_server`, `dns`, `ip`, `id_mysql_server__actual`, `date__actual`)
+            VALUES
+            (".(int)$id_mysql_server.", ".$dnsSql.", ".$ipSql.", ".$actualSql.", ".$actualDateSql.")
+            ON DUPLICATE KEY UPDATE
+                dns = VALUES(dns),
+                ip = VALUES(ip)".$actualUpdateSql.";";
 
             $db->sql_query($sql);
-            $db->sql_query("COMMIT;");
 
             return true;
         } catch (\Throwable $e) {
-            try {
-                $db->sql_query("ROLLBACK;");
-            } catch (\Throwable $e2) {
-                // ignore rollback error
-            }
-
             $this->logger->error(
                 '[VIP] Failed to upsert vip_server route for id_mysql_server:'
                 .$id_mysql_server.' message:'.$e->getMessage()
@@ -3514,6 +3457,159 @@ GROUP BY C.ID, C.INFO;";
         }
     }
 
+    private function isKnownMaxScaleReadWriteSplitEndpoint(int $id_mysql_server, string $host, int $port): bool
+    {
+        try {
+            $data = Extraction2::display(
+                array("is_maxscale", "version_comment", "maxscale::maxscale_listeners", "maxscale::maxscale_services"),
+                array($id_mysql_server)
+            );
+        } catch (\Throwable $e) {
+            return false;
+        }
+
+        return $this->isMaxScaleReadWriteSplitEndpointData($data[$id_mysql_server] ?? array(), $host, $port);
+    }
+
+    private function isMaxScaleReadWriteSplitEndpointData(array $data, string $host, int $port): bool
+    {
+        $isMaxScale = ((string)($data['is_maxscale'] ?? '') === '1')
+            || (strcasecmp((string)($data['version_comment'] ?? ''), 'MaxScale') === 0);
+
+        if (!$isMaxScale) {
+            return false;
+        }
+
+        $readWriteSplitServices = array();
+        foreach (($data['maxscale_services']['data'] ?? array()) as $service) {
+            if (!is_array($service)) {
+                continue;
+            }
+
+            $serviceId = (string)($service['id'] ?? '');
+            $router = strtolower((string)($service['attributes']['router'] ?? ''));
+            if ($serviceId !== '' && $router === 'readwritesplit') {
+                $readWriteSplitServices[$serviceId] = true;
+            }
+        }
+
+        if (empty($readWriteSplitServices)) {
+            return false;
+        }
+
+        $listeners = $data['maxscale_listeners']['data'] ?? array();
+        if (empty($listeners)) {
+            return true;
+        }
+
+        foreach ($listeners as $listener) {
+            if (!is_array($listener) || !$this->maxScaleListenerMatchesEndpoint($listener, $host, $port)) {
+                continue;
+            }
+
+            foreach (($listener['relationships']['services']['data'] ?? array()) as $serviceRef) {
+                $serviceId = (string)($serviceRef['id'] ?? '');
+                if ($serviceId !== '' && isset($readWriteSplitServices[$serviceId])) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private function maxScaleListenerMatchesEndpoint(array $listener, string $host, int $port): bool
+    {
+        $listenerPort = (int)($listener['attributes']['parameters']['port'] ?? 0);
+        if ($listenerPort !== $port) {
+            return false;
+        }
+
+        $listenerHost = trim((string)($listener['attributes']['parameters']['address'] ?? ''));
+        if ($listenerHost === '' || $listenerHost === '0.0.0.0' || $listenerHost === '::') {
+            return true;
+        }
+
+        return MaxScale::normalizeEndpointHost($listenerHost) === MaxScale::normalizeEndpointHost($host);
+    }
+
+    private function isTransientProxySessionLoss(string $error): bool
+    {
+        $patterns = array(
+            'gone away',
+            'lost connection',
+            '(2006)',
+            '(2013)',
+            'failed to route query',
+            'closing connection',
+        );
+        $error = strtolower($error);
+
+        foreach ($patterns as $pattern) {
+            if (strpos($error, $pattern) !== false) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function exportMaxScaleProxyVariables(int $id_mysql_server): void
+    {
+        $var_temp = array();
+        $var_temp['variables']['is_proxy'] = "1";
+        $var_temp['variables']['is_maxscale'] = "1";
+        $var_temp['variables']['version'] = MaxScale::getVersion(array($id_mysql_server));
+        $var_temp['variables']['version_comment'] = "MaxScale";
+
+        $this->exportData($id_mysql_server, "mysql_global_variable", $var_temp);
+    }
+
+    private function isKnownMysqlRouterEndpoint(int $id_mysql_server): bool
+    {
+        try {
+            $db = Sgbd::sql(DB_DEFAULT);
+            $sql = "SELECT 1 FROM mysqlrouter_server__mysql_server WHERE id_mysql_server=" . $id_mysql_server . " LIMIT 1";
+            $res = Mysql::sqlQuerySilentCompat($db, $sql);
+            if ($res === false) {
+                $db->sql_close();
+                return false;
+            }
+
+            $isKnown = $db->sql_num_rows($res) > 0;
+            $db->sql_close();
+
+            return $isKnown;
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    private function shouldRunProxyTransactionProbe(int $isProxy, int $isVip, bool $isMysqlRouterEndpoint): bool
+    {
+        return !empty($isProxy) && empty($isVip) && !$isMysqlRouterEndpoint;
+    }
+
+    private function readMysqlServerBanner($mysql): string
+    {
+        if (empty($mysql->link)) {
+            return '';
+        }
+
+        try {
+            return (string) mysqli_get_server_info($mysql->link);
+        } catch (\Throwable $e) {
+            return '';
+        }
+    }
+
+    private function isMysqlRouterSignature(string $serverBanner, string $version = '', string $versionComment = ''): bool
+    {
+        return ($serverBanner !== '' && stripos($serverBanner, '-router') !== false)
+            || ($version !== '' && stripos($version, '-router') !== false)
+            || ($versionComment !== '' && stripos($versionComment, 'router') !== false);
+    }
+
 
     /*
      * available = 0 : server down
@@ -4110,6 +4206,244 @@ GROUP BY C.ID, C.INFO;";
         return $data;
     }
 
+    private function getMasterStatusFromConnection(
+        $db,
+        string $version,
+        string $versionComment = '',
+        bool $isSingleStore = false
+    ): array {
+        $sql = $this->getMasterStatusCommand($version, $versionComment, $isSingleStore);
+        if ($sql === null) {
+            return array();
+        }
+
+        $res = Mysql::sqlQuerySilentCompat($db, $sql);
+        if ($res === false || (int)$db->sql_num_rows($res) === 0) {
+            return array();
+        }
+
+        $row = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+
+        return is_array($row) ? $row : array();
+    }
+
+    private function getMasterStatusCommand(
+        string $version,
+        string $versionComment = '',
+        bool $isSingleStore = false
+    ): ?string {
+        if (
+            $isSingleStore
+            || stripos($version, 'SingleStore') !== false
+            || stripos($versionComment, 'SingleStore') !== false
+        ) {
+            return null;
+        }
+
+        $numVer = preg_replace('/[^0-9.].*/', '', $version);
+        if ($numVer === '') {
+            return null;
+        }
+
+        $isMariaDB = (stripos($version, 'MariaDB') !== false) || (stripos($versionComment, 'MariaDB') !== false);
+        if (!$isMariaDB && version_compare($numVer, '8.4.0', '>=')) {
+            return "SHOW BINARY LOG STATUS";
+        }
+
+        return "SHOW MASTER STATUS";
+    }
+
+    private function getGroupReplicationStatusFromConnection(
+        $db,
+        string $version,
+        string $versionComment = ''
+    ): array {
+        $capabilities = $this->getGroupReplicationCapabilities($db, $version, $versionComment);
+        if (empty($capabilities['supported'])) {
+            return array();
+        }
+
+        $serverUuid = (string)($capabilities['server_uuid'] ?? '');
+        if ($serverUuid === '') {
+            return array();
+        }
+
+        $hasMemberRole = !empty($capabilities['has_member_role']);
+
+        $memberRoleSql = $hasMemberRole ? "MEMBER_ROLE" : "'' AS MEMBER_ROLE";
+        $serverUuidSql = "'".$db->sql_real_escape_string($serverUuid)."'";
+        $sql = "SELECT ".$memberRoleSql.", MEMBER_STATE
+        FROM performance_schema.replication_group_members
+        WHERE MEMBER_ID = ".$serverUuidSql;
+
+        $res = Mysql::sqlQuerySilentCompat($db, $sql);
+        if ($res === false) {
+            return array();
+        }
+
+        $row = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+        if (!is_array($row)) {
+            return array();
+        }
+
+        return array(
+            'gr_member_role' => $row['MEMBER_ROLE'] ?? '',
+            'gr_member_state' => $row['MEMBER_STATE'] ?? '',
+        );
+    }
+
+    private function getGroupReplicationCapabilities($db, string $version, string $versionComment = ''): array
+    {
+        $unsupported = array(
+            'supported' => false,
+            'server_uuid' => '',
+            'has_member_role' => false,
+        );
+
+        if (!$this->shouldProbeGroupReplication($version, $versionComment)) {
+            return $unsupported;
+        }
+
+        $cacheKey = $this->getGroupReplicationCapabilityCacheKey($db, $version, $versionComment);
+        if (isset(self::$cache['group_replication_capabilities'][$cacheKey])) {
+            return self::$cache['group_replication_capabilities'][$cacheKey];
+        }
+
+        $tableExists = $this->remoteInformationSchemaRowExists(
+            $db,
+            'tables',
+            array(
+                'table_schema' => 'performance_schema',
+                'table_name' => 'replication_group_members',
+            )
+        );
+        if ($tableExists !== true) {
+            if ($tableExists === false) {
+                self::$cache['group_replication_capabilities'][$cacheKey] = $unsupported;
+            }
+
+            return $unsupported;
+        }
+
+        $memberStateExists = $this->remoteInformationSchemaRowExists(
+            $db,
+            'columns',
+            array(
+                'table_schema' => 'performance_schema',
+                'table_name' => 'replication_group_members',
+                'column_name' => 'MEMBER_STATE',
+            )
+        );
+        if ($memberStateExists !== true) {
+            if ($memberStateExists === false) {
+                self::$cache['group_replication_capabilities'][$cacheKey] = $unsupported;
+            }
+
+            return $unsupported;
+        }
+
+        $serverUuid = $this->getRemoteServerUuid($db);
+        if ($serverUuid === null) {
+            return $unsupported;
+        }
+
+        if ($serverUuid === '') {
+            self::$cache['group_replication_capabilities'][$cacheKey] = $unsupported;
+
+            return $unsupported;
+        }
+
+        $hasMemberRole = $this->remoteInformationSchemaRowExists(
+            $db,
+            'columns',
+            array(
+                'table_schema' => 'performance_schema',
+                'table_name' => 'replication_group_members',
+                'column_name' => 'MEMBER_ROLE',
+            )
+        );
+        if ($hasMemberRole === null) {
+            return $unsupported;
+        }
+
+        $capabilities = array(
+            'supported' => true,
+            'server_uuid' => $serverUuid,
+            'has_member_role' => $hasMemberRole,
+        );
+
+        self::$cache['group_replication_capabilities'][$cacheKey] = $capabilities;
+
+        return $capabilities;
+    }
+
+    private function getGroupReplicationCapabilityCacheKey($db, string $version, string $versionComment): string
+    {
+        $connectionKey = is_object($db) ? spl_object_hash($db) : gettype($db);
+
+        return $connectionKey.':'.$version.':'.$versionComment;
+    }
+
+    private function shouldProbeGroupReplication(string $version, string $versionComment = ''): bool
+    {
+        if (stripos($version, 'MariaDB') !== false || stripos($versionComment, 'MariaDB') !== false) {
+            return false;
+        }
+
+        if (stripos($version, 'SingleStore') !== false || stripos($versionComment, 'SingleStore') !== false) {
+            return false;
+        }
+
+        $numVer = preg_replace('/[^0-9.].*/', '', $version);
+        if ($numVer === '') {
+            return false;
+        }
+
+        return version_compare($numVer, '5.7.17', '>=');
+    }
+
+    private function remoteInformationSchemaRowExists($db, string $table, array $filters): ?bool
+    {
+        $allowedTables = array('tables', 'columns');
+        if (!in_array($table, $allowedTables, true)) {
+            return false;
+        }
+
+        $where = array();
+        foreach ($filters as $column => $value) {
+            $where[] = $column." = '".$db->sql_real_escape_string((string)$value)."'";
+        }
+
+        if (empty($where)) {
+            return false;
+        }
+
+        $sql = "SELECT 1 FROM information_schema.".$table." WHERE ".implode(' AND ', $where)." LIMIT 1";
+        $res = Mysql::sqlQuerySilentCompat($db, $sql);
+        if ($res === false) {
+            return null;
+        }
+
+        $row = $db->sql_fetch_array($res, MYSQLI_NUM);
+
+        return !empty($row);
+    }
+
+    private function getRemoteServerUuid($db): ?string
+    {
+        $res = Mysql::sqlQuerySilentCompat($db, "SHOW VARIABLES LIKE 'server_uuid'");
+        if ($res === false) {
+            return null;
+        }
+
+        $row = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+        if (!is_array($row)) {
+            return '';
+        }
+
+        return trim((string)($row['Value'] ?? $row['VALUE'] ?? ''));
+    }
+
 /**
  * Retrieve aspirateur state through `getInnodbMetrics`.
  *
@@ -4134,10 +4468,25 @@ GROUP BY C.ID, C.INFO;";
     public function getInnodbMetrics($name_server)
     {
         $db = Sgbd::sql($name_server);
+
+        return $this->collectInnodbMetricsFromConnection($db);
+    }
+
+    private function collectInnodbMetricsFromConnection($db): array
+    {
+        $data = array();
+
+        if (!$this->informationSchemaTableExists($db, 'INNODB_METRICS')) {
+            return $data;
+        }
+
         $sql = "SELECT * FROM `INFORMATION_SCHEMA`.`INNODB_METRICS`;";
 
-        $res = $db->sql_query($sql);
-        $data = array();
+        $res = Mysql::sqlQuerySilentCompat($db, $sql);
+        if ($res === false) {
+            return $data;
+        }
+
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             if (empty($arr['ENABLED'])) {
                 continue;
@@ -4150,6 +4499,19 @@ GROUP BY C.ID, C.INFO;";
         }
         return $data;
 
+    }
+
+    private function informationSchemaTableExists($db, string $table): bool
+    {
+        $tableSql = $db->sql_real_escape_string($table);
+        $sql = "SHOW TABLES FROM `INFORMATION_SCHEMA` LIKE '".$tableSql."';";
+        $res = Mysql::sqlQuerySilentCompat($db, $sql);
+
+        if ($res === false) {
+            return false;
+        }
+
+        return $db->sql_num_rows($res) > 0;
     }
 
 
@@ -4220,6 +4582,41 @@ GROUP BY C.ID, C.INFO;";
  * @since 5.0
  * @version 1.0
  */
+    private function discoverProxySqlWriterHostgroup($db): ?int
+    {
+        $candidates = array(
+            "SELECT writer_hostgroup FROM mysql_galera_hostgroups WHERE active=1 ORDER BY writer_hostgroup ASC LIMIT 1",
+            "SELECT writer_hostgroup FROM mysql_group_replication_hostgroups WHERE active=1 ORDER BY writer_hostgroup ASC LIMIT 1",
+            "SELECT writer_hostgroup FROM mysql_replication_hostgroups ORDER BY writer_hostgroup ASC LIMIT 1",
+            "SELECT writer_hostgroup FROM mysql_aws_aurora_hostgroups WHERE active=1 ORDER BY writer_hostgroup ASC LIMIT 1",
+        );
+
+        foreach ($candidates as $sql) {
+            $res = Mysql::sqlQuerySilentCompat($db, $sql);
+            if ($res === false) {
+                continue;
+            }
+
+            while ($ob = $db->sql_fetch_object($res)) {
+                if (isset($ob->writer_hostgroup) && $ob->writer_hostgroup !== null) {
+                    return (int)$ob->writer_hostgroup;
+                }
+            }
+        }
+
+        $sql = "SELECT hostgroup_id FROM runtime_mysql_servers WHERE status='ONLINE' ORDER BY hostgroup_id ASC LIMIT 1";
+        $res = Mysql::sqlQuerySilentCompat($db, $sql);
+        if ($res !== false) {
+            while ($ob = $db->sql_fetch_object($res)) {
+                if (isset($ob->hostgroup_id) && $ob->hostgroup_id !== null) {
+                    return (int)$ob->hostgroup_id;
+                }
+            }
+        }
+
+        return null;
+    }
+
     public function tryProxySqlConnection($param)
     {
         Debug::parseDebug($param);
@@ -4321,19 +4718,12 @@ GROUP BY C.ID, C.INFO;";
 
                     Debug::debug($e->getMessage(), "dfgdgf");
 
-                    // Resolve the writer hostgroup once, before walking runtime_mysql_servers.
-                    // Previously we inserted pmacontrol with `default_hostgroup = <first HG found>`,
-                    // and because runtime_mysql_servers can transiently contain Galera's
-                    // offline_hostgroup (or HG 0), sessions landed in an empty hostgroup and
-                    // timed out after 10s. Reading the writer_hostgroup from the relationship
-                    // tables guarantees we route client sessions to a populated hostgroup.
-                    $writer_hostgroup = $this->discoverWriterHostgroup($db);
+                    $writer_hostgroup = $this->discoverProxySqlWriterHostgroup($db);
+                    $user_inserted = false;
 
-                    $sql = "SELECT DISTINCT hostgroup_id,hostname,port FROM runtime_mysql_servers;";
+                    $sql = "SELECT DISTINCT hostgroup_id,hostname,port FROM runtime_mysql_servers WHERE status='ONLINE' ORDER BY hostgroup_id ASC, hostname ASC, port ASC;";
                     $res = $db->sql_query($sql);
                     Debug::sql($sql);
-
-                    $user_inserted = false;
 
                     while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
                     {
@@ -4342,46 +4732,47 @@ GROUP BY C.ID, C.INFO;";
                         $mysql_server_hostname = $arr['hostname'];
                         $mysql_server_port = $arr['port'];
                         $hostgroup_id = $arr['hostgroup_id'];
+                        $default_hostgroup = $writer_hostgroup ?? (int)$hostgroup_id;
 
                         $name_server = Mysql::getNameMysqlServerFromIpPort($mysql_server_hostname,$mysql_server_port);
 
                         $mysql_to_link = Sgbd::sql($name_server);
 
-                        $sql3 = "SELECT password as password FROM mysql.user WHERE user='$user'";
+                        $user_mysql_sql = $mysql_to_link->sql_real_escape_string((string)$user);
+                        $sql3 = "SELECT password as password FROM mysql.user WHERE user='".$user_mysql_sql."'";
                         $res3 = $mysql_to_link->sql_query($sql3);
+                        $password_hash = null;
                         while ($ob = $mysql_to_link->sql_fetch_object($res3)){
                             Debug::debug($ob, "password");
                             // il faut recupérer le bon
                             $password_hash = $ob->password;
                         }
 
-                        if (!$user_inserted) {
-                            $sql2 = "SELECT count(1) as cpt FROM runtime_mysql_users WHERE username= '$user'";
-                            Debug::sql($sql2);
-                            $res2 = $db->sql_query($sql2);
+                        $user_sql = $db->sql_real_escape_string((string)$user);
+                        $sql2 = "SELECT count(1) as cpt FROM runtime_mysql_users WHERE username= '".$user_sql."'";
+                        Debug::sql($sql2);
+                        $res2 = $db->sql_query($sql2);
 
-                            while($ob2 = $db->sql_fetch_object($res2))
-                            {
-                                //uniquement si l'user n'est pas presént pour eviter des effet de bord
-                                if ($ob2->cpt == "0") {
+                        while($ob2 = $db->sql_fetch_object($res2))
+                        {
+                            //uniquement si l'user n'est pas presént pour eviter des effet de bord
+                            if ($ob2->cpt == "0" && $user_inserted === false && $password_hash !== null) {
 
-                                    $sql5 = "LOAD MYSQL USERS FROM DISK;";
-                                    Debug::sql($sql5);
-                                    $db->sql_query($sql5);
+                                $sql5 = "LOAD MYSQL USERS FROM DISK;";
+                                Debug::sql($sql5);
+                                $db->sql_query($sql5);
 
-                                    $effective_hostgroup = ($writer_hostgroup !== null) ? $writer_hostgroup : (int)$hostgroup_id;
+                                $password_hash_sql = $db->sql_real_escape_string((string)$password_hash);
+                                $sql4 = "INSERT INTO mysql_users(username,password,default_hostgroup,default_schema) 
+                                VALUES ('".$user_sql."','".$password_hash_sql."',".$default_hostgroup.",'');";
+                                Debug::sql($sql4);
+                                $db->sql_query($sql4);
+                                $user_inserted = true;
 
-                                    $sql4 = "INSERT INTO mysql_users(username,password,default_hostgroup,default_schema)
-                                    VALUES ('".$user."','".$password_hash."',".$effective_hostgroup.",'');";
-                                    Debug::sql($sql4);
-                                    $db->sql_query($sql4);
-
-                                    $sql6 = "LOAD MYSQL USERS TO RUNTIME;";
-                                    Debug::sql($sql6);
-                                    $db->sql_query($sql6);
-                                }
+                                $sql6 = "LOAD MYSQL USERS TO RUNTIME;";
+                                Debug::sql($sql6);
+                                $db->sql_query($sql6);
                             }
-                            $user_inserted = true;
                         }
 
                         //try connection
@@ -5722,6 +6113,26 @@ GROUP BY C.ID, C.INFO;";
  * @since 5.0
  * @version 1.0
  */
+    private function getLastRunCacheFile(int $id_mysql_server, string $file_key): string
+    {
+        $safe_file_key = preg_replace('/[^A-Za-z0-9_.-]/', '_', $file_key);
+        if ($safe_file_key === null || $safe_file_key === '') {
+            $safe_file_key = 'default';
+        }
+
+        return TMP . 'cache' . DIRECTORY_SEPARATOR . 'last_run' . DIRECTORY_SEPARATOR . 'pmacontrol_last_run_' . $safe_file_key . '_' . $id_mysql_server;
+    }
+
+    private function openLastRunCacheFile(string $cache_file)
+    {
+        $cache_dir = dirname($cache_file);
+        if (!is_dir($cache_dir) && !@mkdir($cache_dir, 0775, true) && !is_dir($cache_dir)) {
+            return false;
+        }
+
+        return @fopen($cache_file, 'c+');
+    }
+
     private function runEachMinuteAtBalancedSecond(int $id_mysql_server, int $interval, string $file_key, callable $callback): bool
     {
         $offset = crc32((string)$id_mysql_server) % $interval;
@@ -5735,13 +6146,17 @@ GROUP BY C.ID, C.INFO;";
             return false;
         }
 
-        $cache_file = "/tmp/pmacontrol_last_run_{$file_key}_{$id_mysql_server}";
-        $fp = fopen($cache_file, 'c+');
-        if ($fp === false) {
+        $cache_file = $this->getLastRunCacheFile($id_mysql_server, $file_key);
+        $fp = $this->openLastRunCacheFile($cache_file);
+        if ($fp === false || !flock($fp, LOCK_EX)) {
+            if ($fp !== false) {
+                fclose($fp);
+                $fp = false;
+            }
             $last_bucket_run = null;
         } else {
-            flock($fp, LOCK_EX);
-            $last_bucket_run = trim(stream_get_contents($fp));
+            $contents = stream_get_contents($fp);
+            $last_bucket_run = is_string($contents) ? trim($contents) : null;
         }
 
         if ((string)$last_bucket_run === (string)$bucket) {

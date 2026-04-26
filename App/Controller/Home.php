@@ -5,6 +5,8 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
 use App\Library\Extraction2;
+use App\Library\Format;
+use App\Library\System;
 
 class Home extends Controller {
 
@@ -73,17 +75,10 @@ class Home extends Controller {
         }
 
         $avail = Extraction2::display(array("mysql_available", "mysql_error"));
-        foreach ($avail as $id => $row) {
-            if (!isset($monitoredIds[(int)$id])) {
-                continue;
-            }
-            if (($row['mysql_available'] ?? '') === '1') {
-                $data['available']++;
-            } else {
-                $data['unavailable']++;
-                $data['unavailable_servers'][$id] = $row['mysql_error'] ?? 'Unknown';
-            }
-        }
+        $availability = self::buildAvailabilitySummary($monitoredIds, $avail);
+        $data['available'] = $availability['available'];
+        $data['unavailable'] = $availability['unavailable'];
+        $data['unavailable_servers'] = $availability['unavailable_servers'];
 
         // Map unavailable server IDs to display names
         if (!empty($data['unavailable_servers'])) {
@@ -107,19 +102,12 @@ class Home extends Controller {
         // ── 5. Replication summary ──
         $data['replication'] = ['ok' => 0, 'lag' => 0, 'error' => 0, 'stopped' => 0, 'total' => 0];
         $slaveData = Extraction2::display(array("slave::slave_io_running", "slave::slave_sql_running",
-            "slave::seconds_behind_master", "slave::last_io_error", "slave::last_sql_error"));
+            "slave::seconds_behind_master", "slave::seconds_behind_source", "slave::last_io_error", "slave::last_sql_error"));
         foreach ($slaveData as $id => $row) {
             if (!isset($row['@slave'])) continue;
             foreach ($row['@slave'] as $cn => $s) {
                 $data['replication']['total']++;
-                $io = $s['slave_io_running'] ?? 'No';
-                $sql_r = $s['slave_sql_running'] ?? 'No';
-                $lag = $s['seconds_behind_master'] ?? null;
-                $err = !empty($s['last_io_error'] ?? '') || !empty($s['last_sql_error'] ?? '');
-                if ($io !== 'Yes' && $sql_r !== 'Yes') { $data['replication']['stopped']++; }
-                elseif ($io !== 'Yes' || $sql_r !== 'Yes' || $err) { $data['replication']['error']++; }
-                elseif ($lag !== null && $lag !== 'NULL' && (int)$lag > 0) { $data['replication']['lag']++; }
-                else { $data['replication']['ok']++; }
+                $data['replication'][self::classifyReplicationChannel($s)]++;
             }
         }
 
@@ -129,11 +117,7 @@ class Home extends Controller {
         $res = $db->sql_query($sql);
         while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['daemons']['total']++;
-            $status = 'stopped';
-            if (!empty($row['pid'])) {
-                $alive = @shell_exec("ps -p ".(int)$row['pid']." -o pid=");
-                $status = (trim($alive ?? '') !== '') ? 'running' : 'error';
-            }
+            $status = System::resolveDaemonStatus($row);
             $data['daemons'][$status]++;
             $row['status'] = $status;
             $data['daemons']['list'][] = $row;
@@ -143,18 +127,8 @@ class Home extends Controller {
         $data['versions'] = [];
         $versionData = Extraction2::display(array("version", "version_comment"));
         foreach ($versionData as $id => $row) {
-            $v = $row['version'] ?? '';
-            $comment = $row['version_comment'] ?? '';
-            if ($v === '') continue;
-            $fork = 'MySQL';
-            if (stripos($v, 'mariadb') !== false || stripos($comment, 'mariadb') !== false) $fork = 'MariaDB';
-            elseif (stripos($comment, 'percona') !== false) $fork = 'Percona';
-            elseif (stripos($comment, 'proxysql') !== false) $fork = 'ProxySQL';
-            elseif (stripos($comment, 'maxscale') !== false) $fork = 'MaxScale';
-            elseif (stripos($comment, 'router') !== false) $fork = 'MySQL Router';
-            $major = explode('.', explode('-', $v)[0]);
-            $shortVersion = ($major[0] ?? '?').'.'.($major[1] ?? '?');
-            $key = $fork.' '.$shortVersion;
+            $key = self::buildVersionDistributionKey($row['version'] ?? '', $row['version_comment'] ?? '');
+            if ($key === null) continue;
             $data['versions'][$key] = ($data['versions'][$key] ?? 0) + 1;
         }
         arsort($data['versions']);
@@ -189,5 +163,110 @@ class Home extends Controller {
         $sql = "SELECT * FROM mysql_server ORDER BY ip";
         $data['server'] = $db->sql_fetch_yield($sql);
         $this->set('data', $data);
+    }
+
+    public static function buildVersionDistributionKey($version, $comment): ?string
+    {
+        $version = trim((string) $version);
+        if ($version === '') {
+            return null;
+        }
+
+        $parsed = Format::getMySQLNumVersion($version, (string) $comment);
+        $fork = self::normalizeVersionForkLabel($parsed['fork'] ?? 'MySQL');
+        $number = (string) ($parsed['number'] ?? $version);
+        $major = explode('.', explode('-', $number)[0]);
+        $shortVersion = ($major[0] ?? '?').'.'.($major[1] ?? '?');
+
+        return $fork.' '.$shortVersion;
+    }
+
+    private static function normalizeVersionForkLabel($fork): string
+    {
+        switch (strtolower((string) $fork)) {
+            case 'mariadb':
+                return 'MariaDB';
+            case 'percona':
+                return 'Percona';
+            case 'proxysql':
+                return 'ProxySQL';
+            case 'maxscale':
+                return 'MaxScale';
+            case 'mysql router':
+                return 'MySQL Router';
+            case 'singlestore':
+                return 'SingleStore';
+            default:
+                return 'MySQL';
+        }
+    }
+
+    public static function classifyReplicationChannel(array $channel): string
+    {
+        $io = $channel['replica_io_running'] ?? $channel['slave_io_running'] ?? 'No';
+        $sql = $channel['replica_sql_running'] ?? $channel['slave_sql_running'] ?? 'No';
+        $err = !empty($channel['last_io_error'] ?? '') || !empty($channel['last_sql_error'] ?? '');
+
+        if ($io !== 'Yes' && $sql !== 'Yes') {
+            return 'stopped';
+        }
+
+        if ($io !== 'Yes' || $sql !== 'Yes' || $err) {
+            return 'error';
+        }
+
+        $lag = self::getReplicationLag($channel);
+        if ($lag !== null && $lag > 0) {
+            return 'lag';
+        }
+
+        return 'ok';
+    }
+
+    public static function getReplicationLag(array $channel): ?int
+    {
+        $sourceLag = self::normalizeReplicationLagValue($channel['seconds_behind_source'] ?? null);
+        if ($sourceLag !== null) {
+            return $sourceLag;
+        }
+
+        return self::normalizeReplicationLagValue($channel['seconds_behind_master'] ?? null);
+    }
+
+    private static function normalizeReplicationLagValue($lag): ?int
+    {
+        $lag = trim((string) $lag);
+
+        if ($lag === '' || strtoupper($lag) === 'NULL') {
+            return null;
+        }
+
+        return (int) $lag;
+    }
+
+    public static function buildAvailabilitySummary(array $monitoredIds, array $availabilityRows): array
+    {
+        $summary = [
+            'available' => 0,
+            'unavailable' => 0,
+            'unavailable_servers' => [],
+        ];
+
+        foreach ($monitoredIds as $id => $_enabled) {
+            $id = (int) $id;
+            $row = $availabilityRows[$id] ?? $availabilityRows[(string) $id] ?? null;
+
+            if (is_array($row) && (string) ($row['mysql_available'] ?? '') === '1') {
+                $summary['available']++;
+                continue;
+            }
+
+            $summary['unavailable']++;
+            $summary['unavailable_servers'][$id] = is_array($row)
+                ? ($row['mysql_error'] ?? 'Unknown')
+                : (\function_exists('__') ? \__('No metric reported') : 'No metric reported');
+        }
+
+        return $summary;
     }
 }

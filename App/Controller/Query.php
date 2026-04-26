@@ -2727,42 +2727,84 @@ SELECT
     WHERE 
       VARIABLE_NAME = 'WSREP_LOCAL_RECV_QUEUE'
   ) wsrep_local_recv_queue, 
-  @@wsrep_desync wsrep_desync, 
-  @@wsrep_reject_queries wsrep_reject_queries, 
-  @@wsrep_sst_donor_rejects_queries wsrep_sst_donor_rejects_queries, 
   (
-    SELECT 
-      VARIABLE_VALUE 
-    FROM 
-      INFORMATION_SCHEMA.GLOBAL_STATUS 
-    WHERE 
+    SELECT
+      VARIABLE_VALUE
+    FROM
+      INFORMATION_SCHEMA.GLOBAL_VARIABLES
+    WHERE
+      VARIABLE_NAME = 'WSREP_DESYNC'
+  ) wsrep_desync,
+  (
+    SELECT
+      VARIABLE_VALUE
+    FROM
+      INFORMATION_SCHEMA.GLOBAL_VARIABLES
+    WHERE
+      VARIABLE_NAME = 'WSREP_REJECT_QUERIES'
+  ) wsrep_reject_queries,
+  (
+    SELECT
+      VARIABLE_VALUE
+    FROM
+      INFORMATION_SCHEMA.GLOBAL_VARIABLES
+    WHERE
+      VARIABLE_NAME = 'WSREP_SST_DONOR_REJECTS_QUERIES'
+  ) wsrep_sst_donor_rejects_queries,
+  (
+    SELECT
+      VARIABLE_VALUE
+    FROM
+      INFORMATION_SCHEMA.GLOBAL_STATUS
+    WHERE
       VARIABLE_NAME = 'WSREP_CLUSTER_STATUS'
-  ) wsrep_cluster_status, 
+  ) wsrep_cluster_status,
   (
-    SELECT 
+    SELECT
       'DISABLED'
-  ) pxc_maint_mode | 
-SELECT 
+  ) pxc_maint_mode |
+SELECT
   (
-    SELECT 
-      `VARIABLE_VALUE` 
-    FROM 
-      `INFORMATION_SCHEMA`.`GLOBAL_STATUS` 
-    WHERE 
+    SELECT
+      `VARIABLE_VALUE`
+    FROM
+      `INFORMATION_SCHEMA`.`GLOBAL_STATUS`
+    WHERE
       `VARIABLE_NAME` = ?
-  ) `wsrep_local_state`, 
-  @@READ_ONLY READ_ONLY, 
+  ) `wsrep_local_state`,
+  @@READ_ONLY READ_ONLY,
   (
-    SELECT 
-      `VARIABLE_VALUE` 
-    FROM 
-      `INFORMATION_SCHEMA`.`GLOBAL_STATUS` 
-    WHERE 
+    SELECT
+      `VARIABLE_VALUE`
+    FROM
+      `INFORMATION_SCHEMA`.`GLOBAL_STATUS`
+    WHERE
       `VARIABLE_NAME` = ?
-  ) `wsrep_local_recv_queue`, 
-  @@ `wsrep_desync` `wsrep_desync`, 
-  @@ `wsrep_reject_queries` `wsrep_reject_queries`, 
-  @@ `wsrep_sst_donor_rejects_queries` `wsrep_sst_donor_rejects_queries`, 
+  ) `wsrep_local_recv_queue`,
+  (
+    SELECT
+      `VARIABLE_VALUE`
+    FROM
+      `INFORMATION_SCHEMA`.`GLOBAL_VARIABLES`
+    WHERE
+      `VARIABLE_NAME` = ?
+  ) `wsrep_desync`,
+  (
+    SELECT
+      `VARIABLE_VALUE`
+    FROM
+      `INFORMATION_SCHEMA`.`GLOBAL_VARIABLES`
+    WHERE
+      `VARIABLE_NAME` = ?
+  ) `wsrep_reject_queries`,
+  (
+    SELECT
+      `VARIABLE_VALUE`
+    FROM
+      `INFORMATION_SCHEMA`.`GLOBAL_VARIABLES`
+    WHERE
+      `VARIABLE_NAME` = ?
+  ) `wsrep_sst_donor_rejects_queries`,
   (
     SELECT 
       `VARIABLE_VALUE` 

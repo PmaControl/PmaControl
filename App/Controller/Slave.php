@@ -185,14 +185,38 @@ class Slave extends Controller
             return [];
         }
 
+        return $this->normalizeReplicationLagRows(
+            $rows,
+            static function (array $row): string {
+                // Include day in key when present (groupbyday mode) so that
+                // multi-day extractions keep one series per channel per day.
+                $day = $row['day'] ?? '';
+                return $row['id_mysql_server'].'|'.($row['connection_name'] ?? '').'|'.$day;
+            }
+        );
+    }
+
+    private function normalizeReplicationLagPointRows(array $rows): array
+    {
+        if (empty($rows)) {
+            return [];
+        }
+
+        return $this->normalizeReplicationLagRows(
+            $rows,
+            static function (array $row): string {
+                return $row['id_mysql_server'].'|'.($row['connection_name'] ?? '').'|'.($row['date'] ?? '');
+            }
+        );
+    }
+
+    private function normalizeReplicationLagRows(array $rows, callable $buildKey): array
+    {
         $normalized = [];
 
         foreach ($rows as $row) {
-            // Include day in key when present (groupbyday mode) so that
-            // multi-day extractions keep one series per channel per day.
-            $day = $row['day'] ?? '';
-            $key = $row['id_mysql_server'].'|'.($row['connection_name'] ?? '').'|'.$day;
-            $metricName = Extraction::$variable[$row['id_ts_variable']]['name'] ?? '';
+            $key = $buildKey($row);
+            $metricName = $this->getReplicationLagMetricName((int)($row['id_ts_variable'] ?? 0));
 
             if (!isset($normalized[$key])) {
                 $normalized[$key] = $row;
@@ -204,13 +228,29 @@ class Slave extends Controller
                 continue;
             }
 
-            $existingMetricName = Extraction::$variable[$normalized[$key]['id_ts_variable']]['name'] ?? '';
+            $existingMetricName = $this->getReplicationLagMetricName((int)($normalized[$key]['id_ts_variable'] ?? 0));
             if ($existingMetricName !== 'seconds_behind_source') {
                 $normalized[$key] = $row;
             }
         }
 
         return array_values($normalized);
+    }
+
+    private function getReplicationLagMetricName(int $idTsVariable): string
+    {
+        return Extraction::$variable[$idTsVariable]['name'] ?? '';
+    }
+
+    private function buildBinlogAnalysisLagData(array $lagRows): array
+    {
+        $lagData = [];
+
+        foreach ($this->normalizeReplicationLagPointRows($lagRows) as $lagRow) {
+            $lagData[] = ['ts' => $lagRow['date'], 'lag' => (int) $lagRow['value']];
+        }
+
+        return $lagData;
     }
 
 /**
@@ -2608,7 +2648,7 @@ var chart = new Chart(ctx, {
         header('Content-Type: application/json');
 
         $id_mysql_server = (int) $param[0];
-        $connection_name = $_POST['connection_name'] ?? '';
+        $connection_name = self::sanitizeConnectionName($_POST['connection_name'] ?? '');
         $time_start      = $_POST['time_start'] ?? '';
         $time_end        = $_POST['time_end'] ?? '';
 
@@ -2640,17 +2680,89 @@ var chart = new Chart(ctx, {
             return;
         }
 
-        $sql = "INSERT INTO binlog_analysis (id_mysql_server, id_mysql_server__master, connection_name, status, time_start, time_end, created_at)
-                VALUES (" . $id_mysql_server . ", " . (int) $master_id . ", '" . $db->sql_real_escape_string($connection_name) . "',
-                'pending', '" . $db->sql_real_escape_string($time_start) . "', '" . $db->sql_real_escape_string($time_end) . "', NOW())";
-        $db->sql_query($sql);
-        $analysisId = $db->sql_insert_id();
+        $criteria = self::buildInFlightBinlogAnalysisCriteria(
+            $id_mysql_server,
+            (int) $master_id,
+            $connection_name,
+            $time_start,
+            $time_end
+        );
+        $lockName = self::buildBinlogAnalysisLockName($criteria);
+        $escapedLockName = $db->sql_real_escape_string($lockName);
+        $lockResult = $db->sql_query("SELECT GET_LOCK('" . $escapedLockName . "', 5) AS acquired");
+        $lockRow = $lockResult ? $db->sql_fetch_array($lockResult, MYSQLI_ASSOC) : false;
+        if (!$lockRow || (int) $lockRow['acquired'] !== 1) {
+            echo json_encode(['error' => 'Cannot acquire binlog analysis lock']);
+            return;
+        }
+
+        $analysisId = 0;
+        try {
+            $statusList = "'" . implode("','", array_map([$db, 'sql_real_escape_string'], $criteria['statuses'])) . "'";
+            $lookupSql = "SELECT id, status
+                    FROM binlog_analysis
+                    WHERE id_mysql_server = " . $criteria['id_mysql_server'] . "
+                      AND id_mysql_server__master = " . $criteria['id_mysql_server__master'] . "
+                      AND connection_name = '" . $db->sql_real_escape_string($criteria['connection_name']) . "'
+                      AND time_start = '" . $db->sql_real_escape_string($criteria['time_start']) . "'
+                      AND time_end = '" . $db->sql_real_escape_string($criteria['time_end']) . "'
+                      AND status IN (" . $statusList . ")
+                    ORDER BY id ASC
+                    LIMIT 1";
+            $existing = $db->sql_query($lookupSql);
+            if ($existingRow = $db->sql_fetch_array($existing, MYSQLI_ASSOC)) {
+                echo json_encode([
+                    'id' => (int) $existingRow['id'],
+                    'status' => $existingRow['status'],
+                    'reused' => true,
+                ]);
+                return;
+            }
+
+            $sql = "INSERT INTO binlog_analysis (id_mysql_server, id_mysql_server__master, connection_name, status, time_start, time_end, created_at)
+                    VALUES (" . $id_mysql_server . ", " . (int) $master_id . ", '" . $db->sql_real_escape_string($connection_name) . "',
+                    'pending', '" . $db->sql_real_escape_string($time_start) . "', '" . $db->sql_real_escape_string($time_end) . "', NOW())";
+            $db->sql_query($sql);
+            $analysisId = $db->sql_insert_id();
+        } finally {
+            $db->sql_query("SELECT RELEASE_LOCK('" . $escapedLockName . "')");
+        }
 
         // Launch background process via Glial CLI
         $cmd = "cd " . escapeshellarg(ROOT) . " && php App/Webroot/index.php slave runBinlogAnalysisCli " . (int) $analysisId . " > /tmp/binlog_analysis_{$analysisId}.log 2>&1 &";
         exec($cmd);
 
         echo json_encode(['id' => $analysisId, 'status' => 'pending']);
+    }
+
+    public static function buildInFlightBinlogAnalysisCriteria(
+        int $idMysqlServer,
+        int $idMaster,
+        string $connectionName,
+        string $timeStart,
+        string $timeEnd
+    ): array {
+        return [
+            'id_mysql_server' => $idMysqlServer,
+            'id_mysql_server__master' => $idMaster,
+            'connection_name' => $connectionName,
+            'time_start' => $timeStart,
+            'time_end' => $timeEnd,
+            'statuses' => ['pending', 'running'],
+        ];
+    }
+
+    public static function buildBinlogAnalysisLockName(array $criteria): string
+    {
+        $parts = [
+            $criteria['id_mysql_server'] ?? '',
+            $criteria['id_mysql_server__master'] ?? '',
+            $criteria['connection_name'] ?? '',
+            $criteria['time_start'] ?? '',
+            $criteria['time_end'] ?? '',
+        ];
+
+        return 'pmacontrol:ba:' . sha1(implode("\0", array_map('strval', $parts)));
     }
 
     /**
@@ -2702,22 +2814,32 @@ var chart = new Chart(ctx, {
                 );
                 $varIds = [];
                 while ($vr = $db->sql_fetch_array($varRes, MYSQLI_ASSOC)) {
-                    $varIds[] = (int) $vr['id'];
+                    $varId = (int) $vr['id'];
+                    $varIds[] = $varId;
+                    Extraction::$variable[$varId]['name'] = $vr['name'];
                 }
 
                 if (!empty($varIds)) {
                     $varIdList = implode(',', $varIds);
-                    $lagSql = "SELECT date, value FROM ts_value_slave_int
+                    $lagSql = "SELECT id_ts_variable, date, value FROM ts_value_slave_int
                                WHERE id_mysql_server = $slaveId
                                AND id_ts_variable IN ($varIdList)
                                AND connection_name = '$cn'
                                AND date BETWEEN '$timeStart' AND '$timeEnd'
-                               ORDER BY date";
+                               ORDER BY date, id_ts_variable";
                     $lagRes = $db->sql_query_silent($lagSql);
                     if ($lagRes) {
+                        $lagRows = [];
                         while ($lr = $db->sql_fetch_array($lagRes, MYSQLI_ASSOC)) {
-                            $row['lag_data'][] = ['ts' => $lr['date'], 'lag' => (int) $lr['value']];
+                            $lagRows[] = [
+                                'id_mysql_server' => $slaveId,
+                                'connection_name' => $row['connection_name'] ?? '',
+                                'id_ts_variable' => (int) $lr['id_ts_variable'],
+                                'date' => $lr['date'],
+                                'value' => $lr['value'],
+                            ];
                         }
+                        $row['lag_data'] = $this->buildBinlogAnalysisLagData($lagRows);
                     }
                 }
                 // Fetch threads_running for master and slave

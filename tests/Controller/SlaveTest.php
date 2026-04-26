@@ -124,6 +124,47 @@ final class SlaveTest extends TestCase
         $this->assertSame(11, $normalized[0]['id_ts_variable']);
     }
 
+    public function testBuildBinlogAnalysisLagDataDeduplicatesTimestampAndPrefersSourceMetric(): void
+    {
+        $method = new ReflectionMethod(Slave::class, 'buildBinlogAnalysisLagData');
+        $method->setAccessible(true);
+
+        Extraction::$variable[10]['name'] = 'seconds_behind_master';
+        Extraction::$variable[11]['name'] = 'seconds_behind_source';
+
+        $lagData = $method->invoke($this->slave, [
+            [
+                'id_mysql_server' => 1,
+                'connection_name' => 'channel_a',
+                'id_ts_variable' => 10,
+                'date' => '2026-04-15 10:00:00',
+                'value' => '12',
+            ],
+            [
+                'id_mysql_server' => 1,
+                'connection_name' => 'channel_a',
+                'id_ts_variable' => 11,
+                'date' => '2026-04-15 10:00:00',
+                'value' => '3',
+            ],
+            [
+                'id_mysql_server' => 1,
+                'connection_name' => 'channel_a',
+                'id_ts_variable' => 10,
+                'date' => '2026-04-15 10:00:01',
+                'value' => '9',
+            ],
+        ]);
+
+        $this->assertSame(
+            [
+                ['ts' => '2026-04-15 10:00:00', 'lag' => 3],
+                ['ts' => '2026-04-15 10:00:01', 'lag' => 9],
+            ],
+            $lagData
+        );
+    }
+
     public function testSanitizeConnectionNameRemovesInjectionChars(): void
     {
         $method = new ReflectionMethod(Slave::class, 'sanitizeConnectionName');
@@ -137,6 +178,56 @@ final class SlaveTest extends TestCase
         $this->assertSame('testOR11', $method->invoke(null, "test' OR '1'='1"));
         $this->assertSame('nascriptme', $method->invoke(null, 'na<script>me'));
         $this->assertSame('ab', $method->invoke(null, "a\x00b"));
+    }
+
+    public function testBuildInFlightBinlogAnalysisCriteriaMatchesDuplicateWindow(): void
+    {
+        $criteria = Slave::buildInFlightBinlogAnalysisCriteria(
+            12,
+            34,
+            'production_fr',
+            '2026-04-15 10:00:00',
+            '2026-04-15 11:00:00'
+        );
+
+        $this->assertSame(12, $criteria['id_mysql_server']);
+        $this->assertSame(34, $criteria['id_mysql_server__master']);
+        $this->assertSame('production_fr', $criteria['connection_name']);
+        $this->assertSame('2026-04-15 10:00:00', $criteria['time_start']);
+        $this->assertSame('2026-04-15 11:00:00', $criteria['time_end']);
+        $this->assertSame(['pending', 'running'], $criteria['statuses']);
+    }
+
+    public function testBuildBinlogAnalysisLockNameIsStableAndBounded(): void
+    {
+        $criteria = Slave::buildInFlightBinlogAnalysisCriteria(
+            12,
+            34,
+            'production_fr',
+            '2026-04-15 10:00:00',
+            '2026-04-15 11:00:00'
+        );
+        $sameCriteria = Slave::buildInFlightBinlogAnalysisCriteria(
+            12,
+            34,
+            'production_fr',
+            '2026-04-15 10:00:00',
+            '2026-04-15 11:00:00'
+        );
+        $differentWindow = Slave::buildInFlightBinlogAnalysisCriteria(
+            12,
+            34,
+            'production_fr',
+            '2026-04-15 10:30:00',
+            '2026-04-15 11:00:00'
+        );
+
+        $lockName = Slave::buildBinlogAnalysisLockName($criteria);
+
+        $this->assertSame($lockName, Slave::buildBinlogAnalysisLockName($sameCriteria));
+        $this->assertNotSame($lockName, Slave::buildBinlogAnalysisLockName($differentWindow));
+        $this->assertStringStartsWith('pmacontrol:ba:', $lockName);
+        $this->assertLessThanOrEqual(64, strlen($lockName));
     }
 
     public function testNormalizeReplicationLagGraphRowsKeepsMultipleDays(): void

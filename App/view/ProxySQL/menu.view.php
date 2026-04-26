@@ -3,12 +3,28 @@
   
     <?php 
 
+    $data = $data ?? array();
+    if (! is_array($data)) {
+        $data = array();
+    }
+
+    $proxysql_list = is_array($data['proxysql'] ?? null) ? $data['proxysql'] : array();
+    $id_proxysql_server = $data['id_proxysql_server'] ?? '';
+    $selected_proxysql = $proxysql_list[$id_proxysql_server] ?? null;
+
     echo '<button type="button" class="btn btn-default">';
      echo '<img src="'.IMG.'icon/proxysql.png" height="18px" width="18px">';
-     echo ' <span title="Production" class="label label-danger">P</span> <b>'
-     .$data['proxysql'][$data['id_proxysql_server']]['display_name'].'</b> ';
-     echo $data['proxysql'][$data['id_proxysql_server']]['hostname'].':'.$data['proxysql'][$data['id_proxysql_server']]['port']
-     .' v'.$data['proxysql'][$data['id_proxysql_server']]['version'];
+     echo ' <span title="Production" class="label label-danger">P</span> <b>';
+    if (is_array($selected_proxysql)) {
+        echo ($selected_proxysql['display_name'] ?? '').'</b> ';
+        echo ($selected_proxysql['hostname'] ?? '').':'.($selected_proxysql['port'] ?? '')
+            .' v'.($selected_proxysql['version'] ?? 'N/A');
+    } else {
+        echo __('ProxySQL').'</b>';
+        if ($id_proxysql_server !== '') {
+            echo ' #'.htmlspecialchars((string) $id_proxysql_server, ENT_QUOTES, 'UTF-8');
+        }
+    }
 
      echo '</button>';
     ?>
@@ -22,16 +38,21 @@
     $current_config_tab = $data['current_config_tab'] ?? 'MYSQL_SERVERS';
     $menu_current = strtolower((string) ($data['param']['menu_current'] ?? 'config'));
 
-    foreach($data['proxysql'] as $proxysql_server)
+    foreach($proxysql_list as $proxysql_server)
     {
+        if (!is_array($proxysql_server)) {
+            continue;
+        }
+
+        $proxysql_id = $proxysql_server['id'] ?? '';
         if ($menu_current === 'config') {
-            $link = LINK.'ProxySQL/config/'.$proxysql_server['id'].'/'.$current_config_tab;
+            $link = LINK.'ProxySQL/config/'.$proxysql_id.'/'.$current_config_tab;
         } else {
-            $link = LINK.'ProxySQL/'.$menu_current.'/'.$proxysql_server['id'];
+            $link = LINK.'ProxySQL/'.$menu_current.'/'.$proxysql_id;
         }
         echo '<li><a href="'.$link.'"><img src="'.IMG.'icon/proxysql.png" height="18px" width="18px"> ';
         echo '<span title="Production" class="label label-danger">P</span> <b>'
-        .$proxysql_server['display_name'].'</b> '.$proxysql_server['hostname'].':'.$proxysql_server['port'].' v'.$proxysql_server['version'].'</a></li>';
+        .($proxysql_server['display_name'] ?? '').'</b> '.($proxysql_server['hostname'] ?? '').':'.($proxysql_server['port'] ?? '').' v'.($proxysql_server['version'] ?? '').'</a></li>';
     }
     
     ?>
@@ -44,15 +65,21 @@
 //boutton
 echo '<div class="btn-group" role="group" aria-label="Default button group">';
 
-foreach($data['menu'] as $key => $menu)
+$menu_items = is_array($data['menu'] ?? null) ? $data['menu'] : array();
+$menu_current = $data['param']['menu_current'] ?? '';
+
+foreach($menu_items as $key => $menu)
 {
+  if (!is_array($menu)) {
+    continue;
+  }
 
   $active = '';
-  if ($data['param']['menu_current'] == $key)
+  if ($menu_current == $key)
   {
     $active = 'active';
   }
-  echo '<a href="'.$menu['link'].'" type="button" class="btn btn-default '.$active.'">'.$menu['title'].'</a> ';
+  echo '<a href="'.($menu['link'] ?? '').'" type="button" class="btn btn-default '.$active.'">'.($menu['title'] ?? '').'</a> ';
 }
 
 

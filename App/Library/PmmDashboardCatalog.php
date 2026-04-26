@@ -189,7 +189,6 @@ class PmmDashboardCatalog
             $rows[] = [
                 'screen' => $dashboard['title'],
                 'route' => 'Pmm/' . $slug . '/' . $idMysqlServer,
-                'route_url' => '/pmacontrol/en/Pmm/' . $slug . '/' . $idMysqlServer,
                 'pmm_dashboard' => $dashboard['pmm_dashboard'],
                 'source' => $dashboard['pmm_source'],
                 'comment' => $dashboard['description'],
@@ -219,9 +218,11 @@ class PmmDashboardCatalog
                             'title' => 'Screens',
                             'columns' => ['Screen', 'Route', 'PMM dashboard', 'PMM source', 'Coverage comment'],
                             'rows' => array_map(static function (array $row): array {
+                                $routeUrl = self::buildRouteUrl(defined('LINK') ? LINK : '/', $row['route']);
+
                                 return [
                                     $row['screen'],
-                                    '<a href="' . htmlspecialchars($row['route_url'], ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($row['route'], ENT_QUOTES, 'UTF-8') . '</a>',
+                                    '<a href="' . htmlspecialchars($routeUrl, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($row['route'], ENT_QUOTES, 'UTF-8') . '</a>',
                                     $row['pmm_dashboard'],
                                     $row['source'],
                                     $row['comment'],
@@ -233,6 +234,11 @@ class PmmDashboardCatalog
                 ],
             ],
         ];
+    }
+
+    public static function buildRouteUrl(string $baseUrl, string $route): string
+    {
+        return rtrim($baseUrl, '/') . '/' . trim($route, '/') . '/';
     }
 
     private static function buildSystem(int $idMysqlServer, array $server, array $dashboard, array $range, array $menu): array

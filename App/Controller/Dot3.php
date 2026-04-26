@@ -4276,7 +4276,7 @@ class Dot3 extends Controller
                 }
 
                 $output_array = array();
-                preg_match('/\((\w+)\)/', $elems['wsrep_provider_version'], $output_array);
+                preg_match('/\((\w+)\)/', $wsrepProviderVersion, $output_array);
                 if (!empty($output_array[1])) {
                     
                     $build[] = $output_array[1];

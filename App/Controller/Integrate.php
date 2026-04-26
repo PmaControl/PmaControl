@@ -4,11 +4,10 @@
 namespace App\Controller;
 
 use \Glial\Synapse\Controller;
-use Fuz\Component\SharedMemory\Storage\StorageFile;
-use Fuz\Component\SharedMemory\SharedMemory;
 use \App\Library\Debug;
 use \App\Library\EngineV4;
 use \App\Library\Mysql;
+use \App\Library\SharedMemoryReader;
 use \Glial\Sgbd\Sgbd;
 use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
@@ -107,6 +106,32 @@ class Integrate extends Controller
             $value['source_port'] = $value['master_port'];
         }
 
+        $sslFields = [
+            'ssl_allowed',
+            'ssl_ca_file',
+            'ssl_ca_path',
+            'ssl_cert',
+            'ssl_cipher',
+            'ssl_key',
+            'ssl_verify_server_cert',
+            'ssl_crl',
+            'ssl_crlpath',
+            'tls_version',
+        ];
+
+        foreach ($sslFields as $sslField) {
+            $masterKey = 'master_'.$sslField;
+            $sourceKey = 'source_'.$sslField;
+
+            if (!isset($value[$masterKey]) && isset($value[$sourceKey])) {
+                $value[$masterKey] = $value[$sourceKey];
+            }
+
+            if (!isset($value[$sourceKey]) && isset($value[$masterKey])) {
+                $value[$sourceKey] = $value[$masterKey];
+            }
+        }
+
         if (!isset($value['slave_io_running']) && isset($value['replica_io_running'])) {
             $value['slave_io_running'] = $value['replica_io_running'];
         }
@@ -181,6 +206,51 @@ class Integrate extends Controller
         $this->logger = $monolog;
     }
 
+    protected function getIntegratePayloadLockPath(string $file): string
+    {
+        $fileName = basename($file);
+        $parts = explode(EngineV4::SEPERATOR, $fileName, 2);
+        $scope = $parts[1] ?? $fileName;
+        $baseName = preg_replace('/[^A-Za-z0-9_.:-]/', '_', $scope);
+
+        return EngineV4::PATH_LOCK.'integrate_payload/'.$baseName.'.lock';
+    }
+
+    protected function acquireIntegratePayloadLock(string $file): ?array
+    {
+        $lockPath = $this->getIntegratePayloadLockPath($file);
+        $lockDir = dirname($lockPath);
+
+        if (!is_dir($lockDir) && !@mkdir($lockDir, 0775, true) && !is_dir($lockDir)) {
+            return null;
+        }
+
+        $handle = @fopen($lockPath, 'c');
+        if (!is_resource($handle)) {
+            return null;
+        }
+
+        if (!@flock($handle, LOCK_EX | LOCK_NB)) {
+            fclose($handle);
+            return null;
+        }
+
+        ftruncate($handle, 0);
+        fwrite($handle, (string)getmypid()."\n".date('c')."\n".$file."\n");
+
+        return array('handle' => $handle, 'path' => $lockPath);
+    }
+
+    protected function releaseIntegratePayloadLock(?array $lock): void
+    {
+        if (empty($lock['handle']) || !is_resource($lock['handle'])) {
+            return;
+        }
+
+        @flock($lock['handle'], LOCK_UN);
+        fclose($lock['handle']);
+    }
+
     /**
      * (PmaControl) <br/>
      * @example ./glial integrate show 1772662469::vip
@@ -206,9 +276,10 @@ class Integrate extends Controller
             throw new Exception("Fichier introuvable : ".$filePath);
         }
 
-        $storage = new StorageFile($filePath);
-        $data    = new SharedMemory($storage);
-        $elems   = $data->getData();
+        $elems = SharedMemoryReader::read($filePath, $reason);
+        if ($elems === null) {
+            throw new Exception("Lecture impossible du fichier ".$filePath." (".$reason.")");
+        }
 
         $payload = $this->normalizeSharedMemoryPayload($elems);
 
@@ -381,6 +452,34 @@ class Integrate extends Controller
         return self::MAX_UNSIGNED_BIGINT;
     }
 
+    protected function sortExistingPivotFilesByMtime(array $files): array
+    {
+        $sortable = array();
+
+        foreach ($files as $file) {
+            if (!is_string($file) || !is_file($file)) {
+                continue;
+            }
+
+            $mtime = @filemtime($file);
+            if ($mtime === false || !is_file($file)) {
+                continue;
+            }
+
+            $sortable[] = array('mtime' => $mtime, 'file' => $file);
+        }
+
+        usort($sortable, static function (array $left, array $right): int {
+            if ($left['mtime'] === $right['mtime']) {
+                return strcmp($left['file'], $right['file']);
+            }
+
+            return $left['mtime'] <=> $right['mtime'];
+        });
+
+        return array_column($sortable, 'file');
+    }
+
 /**
  * Handle integrate state through `isFloat`.
  *
@@ -493,6 +592,18 @@ class Integrate extends Controller
         }
     }
 
+    protected function buildTimeSeriesInsertSql(string $table, array $columns, array $values): string
+    {
+        $quotedColumns = array();
+        foreach ($columns as $column) {
+            $quotedColumns[] = '`'.$column.'`';
+        }
+
+        return "INSERT INTO `".$table."` (".implode(',', $quotedColumns).") VALUES "
+            . implode(",\n", $values)
+            . " ON DUPLICATE KEY UPDATE `value` = VALUES(`value`);";
+    }
+
 /**
  * Handle integrate state through `insert_value`.
  *
@@ -530,7 +641,11 @@ class Integrate extends Controller
 
             $time_start = microtime(true);
 
-            $sql = "INSERT INTO `ts_value_general_" . strtolower($type) . "` (`id_mysql_server`,`id_ts_variable`,`date`, `value`) VALUES " . implode(",", $elems) . ";";
+            $sql = $this->buildTimeSeriesInsertSql(
+                "ts_value_general_" . strtolower($type),
+                array('id_mysql_server', 'id_ts_variable', 'date', 'value'),
+                $elems
+            );
             //Debug::debug(count($elems), "type : $type");
             $db->sql_query($sql);
 
@@ -598,9 +713,11 @@ class Integrate extends Controller
                     break;
             }
 
-            $sql = "INSERT INTO `ts_value_" . $val . "_" . strtolower($type) . "` 
-            (`id_mysql_server`,`".$extra_field."` ,`id_ts_variable`,`date`, `value`) 
-            VALUES " . implode(",\n", $elems) . ";";
+            $sql = $this->buildTimeSeriesInsertSql(
+                "ts_value_" . $val . "_" . strtolower($type),
+                array('id_mysql_server', $extra_field, 'id_ts_variable', 'date', 'value'),
+                $elems
+            );
 
             Debug::sql($sql);
 
@@ -959,15 +1076,16 @@ public function integrateAll($param)
 
             $files = array_merge($files, $part_file);
         }
+        $files = array_values(array_filter($files, 'is_file'));
 
         Debug::debug($files, "FILES BEFORE");
+        $files = $this->sortExistingPivotFilesByMtime($files);
         
         if (empty($files)) {
             usleep(100);
             return true;
         }
 
-        array_multisort(array_map('filemtime', $files), SORT_NUMERIC, SORT_ASC, $files);
         Debug::debug($files, "FILES SORTED");
 
         $variables           = $this->get_variable();
@@ -985,6 +1103,19 @@ public function integrateAll($param)
         foreach ($files as $file) {
 
             Debug::debug($file);
+            $fileLock = $this->acquireIntegratePayloadLock($file);
+            if ($fileLock === null) {
+                if ($this->logger instanceof Logger) {
+                    $this->logger->info('[Skip] Integrate payload already locked or lock unavailable: '.$file);
+                }
+                continue;
+            }
+
+            try {
+            if (!is_file($file)) {
+                continue;
+            }
+
             $elems = explode('/', $file);
             $file_name = end($elems);
 
@@ -1003,11 +1134,21 @@ public function integrateAll($param)
             }
 
             Debug::debug("$id_ts_file => $file");
-            $file_parsed++;
 
-            $storage = new StorageFile($file);
-            $data    = new SharedMemory($storage);
-            $elems   = $data->getData();
+            $elems = SharedMemoryReader::read($file, $reason);
+            if ($elems === null) {
+                $this->logger?->warning("[integrate] skip $file: $reason");
+                @unlink($file);
+                continue;
+            }
+
+            $file_parsed++;
+            $elems = $this->normalizeSharedMemoryPayload($elems);
+            if (!is_iterable($elems)) {
+                $this->logger?->warning('[Integrate] Ignoring invalid pivot payload: '.$file);
+                @unlink($file);
+                continue;
+            }
 
             foreach ($elems as $elem) {
                 foreach ($elem as $date => $server) {
@@ -1216,11 +1357,9 @@ public function integrateAll($param)
 
             Debug::checkPoint("before insert file : " . $file);
 
-            if (file_exists($file)) {
-                unlink($file);
-            } else {
-                $this->logger->emergency('Two process in same time for integrate the same data, please remove one');
-                throw new Exception("PMACTRL-647 : deux intégrateurs lancés en même temps (supprimer le mauvais)");
+            if (!@unlink($file) && file_exists($file)) {
+                $this->logger->emergency('Unable to remove locked integrate payload: '.$file);
+                throw new Exception("PMACTRL-647 : impossible de supprimer le fichier intégré verrouillé");
             }
 
             /*
@@ -1230,6 +1369,9 @@ public function integrateAll($param)
 
             if ($file_parsed >= self::MAX_FILE_AT_ONCE) {
                 break;
+            }
+            } finally {
+                $this->releaseIntegratePayloadLock($fileLock);
             }
 
         }

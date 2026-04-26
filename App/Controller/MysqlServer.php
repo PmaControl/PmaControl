@@ -626,7 +626,18 @@ class MysqlServer extends Controller
                 $sql = "SHOW FULL PROCESSLIST";
             }
 
-            $res = $db->sql_query($sql);
+            $processlistQuery = self::executeProcesslistQuery($db, $sql, (int)$id_mysql_server);
+            $res = $processlistQuery['result'];
+            $processlistDb = $processlistQuery['db'];
+            $sql = $processlistQuery['sql'];
+
+            if (!empty($processlistQuery['fallback_reason']) && !empty($this->logger)) {
+                $this->logger->warning(
+                    'Processlist query recovered through fallback for id_mysql_server='
+                    . (int)$id_mysql_server . ' reason=' . $processlistQuery['fallback_reason']
+                );
+            }
+
             if (!$res) {
                 continue;
             }
@@ -639,7 +650,7 @@ class MysqlServer extends Controller
             }
 
             if ($sql === "SHOW FULL PROCESSLIST") {
-                while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                while ($arr = $processlistDb->sql_fetch_array($res, MYSQLI_ASSOC)) {
                     $command = $arr['Command'] ?? $arr['COMMAND'] ?? '';
                     $info = $arr['Info'] ?? $arr['INFO'] ?? '';
 
@@ -671,7 +682,7 @@ class MysqlServer extends Controller
                 continue;
             }
 
-            while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
+            while($arr = $processlistDb->sql_fetch_array($res, MYSQLI_ASSOC))
             {
                 $queryText = (string)($arr['query'] ?? '');
 
@@ -1532,20 +1543,20 @@ class MysqlServer extends Controller
             }
         }
 
-        file_put_contents($dayDir . '/chart.day.json', json_encode([
+        self::writeJsonFileAtomically($dayDir . '/chart.day.json', [
             'date' => $dayKey,
             'counts' => $dayCounts,
-        ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+        ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
 
-        file_put_contents($dayDir . '/chart.hour.json', json_encode([
+        self::writeJsonFileAtomically($dayDir . '/chart.hour.json', [
             'date' => $dayKey,
             'hours' => $hourCounts,
-        ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+        ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
 
-        file_put_contents($dayDir . '/chart.minute.json', json_encode([
+        self::writeJsonFileAtomically($dayDir . '/chart.minute.json', [
             'date' => $dayKey,
             'hours' => $minuteCounts,
-        ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+        ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
     }
 
     private function hasFreshMysqlLogsChartCachesForDay(string $dayDir): bool
@@ -1623,9 +1634,51 @@ class MysqlServer extends Controller
             $content
         );
 
-        file_put_contents($parsedPath, json_encode($events, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+        self::writeJsonFileAtomically($parsedPath, $events, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
 
         return $events;
+    }
+
+    public static function writeJsonFileAtomically(string $path, $payload, int $jsonFlags = 0): void
+    {
+        $json = json_encode($payload, $jsonFlags);
+        if ($json === false) {
+            throw new \RuntimeException('Unable to encode JSON cache for '.$path);
+        }
+
+        self::writeFileAtomically($path, $json);
+    }
+
+    public static function writeFileAtomically(string $path, string $contents): void
+    {
+        $dir = dirname($path);
+        if (!is_dir($dir)) {
+            throw new \RuntimeException('Cache directory does not exist: '.$dir);
+        }
+
+        $tmpPath = tempnam($dir, '.'.basename($path).'.tmp.');
+        if ($tmpPath === false) {
+            throw new \RuntimeException('Unable to create temporary cache file in '.$dir);
+        }
+
+        try {
+            $bytes = file_put_contents($tmpPath, $contents, LOCK_EX);
+            if ($bytes === false || $bytes !== strlen($contents)) {
+                throw new \RuntimeException('Unable to write temporary cache file '.$tmpPath);
+            }
+
+            @chmod($tmpPath, file_exists($path) ? (fileperms($path) & 0777) : 0644);
+
+            if (!@rename($tmpPath, $path)) {
+                throw new \RuntimeException('Unable to atomically replace cache file '.$path);
+            }
+        } catch (\Throwable $exception) {
+            if (is_file($tmpPath)) {
+                @unlink($tmpPath);
+            }
+
+            throw $exception;
+        }
     }
 
     private function normalizeMysqlLogLevelBucket(string $level): string
@@ -4628,6 +4681,59 @@ class MysqlServer extends Controller
         }
 
         return $data;
+    }
+
+    private static function executeProcesslistQuery($db, string $sql, int $idMysqlServer, ?callable $processlistConnectionFactory = null): array
+    {
+        $query = array(
+            'result' => false,
+            'db' => $db,
+            'sql' => $sql,
+            'fallback_reason' => '',
+        );
+
+        try {
+            $query['result'] = $db->sql_query($sql);
+            return $query;
+        } catch (\Throwable $e) {
+            if (!self::isProxySqlHostgroupLockError($e->getMessage()) || $sql === "SHOW FULL PROCESSLIST") {
+                throw $e;
+            }
+
+            $query['fallback_reason'] = 'primary_hostgroup_lock: ' . $e->getMessage();
+        }
+
+        if ($processlistConnectionFactory === null) {
+            $processlistConnectionFactory = static function (int $idMysqlServer) {
+                return Mysql::getDbLink($idMysqlServer, 'processlist');
+            };
+        }
+
+        try {
+            $fresh = $processlistConnectionFactory($idMysqlServer);
+            $result = $fresh->sql_query($sql);
+            if ($result) {
+                $query['result'] = $result;
+                $query['db'] = $fresh;
+                return $query;
+            }
+
+            $query['fallback_reason'] .= ' ; processlist_connection_returned_false';
+        } catch (\Throwable $e) {
+            $query['fallback_reason'] .= ' ; processlist_connection_failed: ' . $e->getMessage();
+        }
+
+        $query['sql'] = "SHOW FULL PROCESSLIST";
+        $query['db'] = $db;
+        $query['result'] = $db->sql_query($query['sql']);
+
+        return $query;
+    }
+
+    private static function isProxySqlHostgroupLockError(string $message): bool
+    {
+        return stripos($message, 'ProxySQL Error: connection is locked to hostgroup') !== false
+            && stripos($message, 'trying to reach hostgroup') !== false;
     }
 
 }

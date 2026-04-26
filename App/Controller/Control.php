@@ -1167,6 +1167,9 @@ WHERE b.id in (select id_ts_file from z) AND c.date is null;";
                 Debug::debug("Drop du fichier de variable pour le serveur : ".$ob->id_mysql_server);
             }
         }
+
+        $deletedProxySqlMd5 = EngineV4::cleanProxySqlStructuralMd5();
+        Debug::debug($deletedProxySqlMd5, "ProxySQL structural MD5 files deleted");
     }
 
 /**

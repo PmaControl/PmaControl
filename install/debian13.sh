@@ -5,12 +5,71 @@ DEV_MOD=0
 VERSION_MARIADB="11.8"
 VERSION_PHP="8.5"
 GIT_BRANCH="commercial"
+INSTALL_CONFIG_FILE=""
+SSH_KEY_DIR=""
+SSH_PRIVATE_KEY_FILE=""
+SSH_PUBLIC_KEY_FILE=""
+RESET_EXISTING_CHECKOUT=0
+FORCE_REINSTALL=0
 
-password=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
-pwd_pmacontrol=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
-pwd_admin=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
+generate_password()
+{
+    local generated=""
 
-while getopts 'hp:v:dP:' flag; do
+    if command -v openssl >/dev/null 2>&1; then
+        generated=$(openssl rand -base64 48 | tr -d '/+=' | tr -d '\n' | head -c 32 || true)
+    fi
+
+    if [[ ${#generated} -lt 32 ]]; then
+        generated=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 || true)
+    fi
+
+    if [[ ${#generated} -lt 32 ]]; then
+        echo "Unable to generate a secure password." >&2
+        exit 1
+    fi
+
+    printf '%s\n' "${generated}"
+}
+
+cleanup_install_ssh_key()
+{
+    if [[ -n "${SSH_KEY_DIR}" && -d "${SSH_KEY_DIR}" ]]; then
+        rm -rf "${SSH_KEY_DIR}"
+    fi
+}
+
+json_escape_string()
+{
+    printf '%s' "$1" | jq -Rs .
+}
+
+json_escape_file()
+{
+    jq -Rs . < "$1"
+}
+
+generate_install_ssh_key()
+{
+    local hostname_value
+
+    cleanup_install_ssh_key
+    SSH_KEY_DIR=$(mktemp -d /tmp/pmacontrol-install-ssh.XXXXXX)
+    chmod 700 "${SSH_KEY_DIR}"
+    SSH_PRIVATE_KEY_FILE="${SSH_KEY_DIR}/id_rsa"
+    SSH_PUBLIC_KEY_FILE="${SSH_PRIVATE_KEY_FILE}.pub"
+    hostname_value=$(hostname -f 2>/dev/null || hostname)
+
+    ssh-keygen -q -t rsa -b 4096 -m PEM -N "" -C "pmacontrol@${hostname_value}" -f "${SSH_PRIVATE_KEY_FILE}"
+    chmod 600 "${SSH_PRIVATE_KEY_FILE}"
+    chmod 644 "${SSH_PUBLIC_KEY_FILE}"
+}
+
+pwd_pmacontrol=""
+pwd_admin=""
+pwd_webservice=""
+
+while getopts 'hp:v:dP:rF' flag; do
   case "${flag}" in
     h)
         echo "options:"
@@ -18,20 +77,45 @@ while getopts 'hp:v:dP:' flag; do
         echo "-p                      specify password for PmaControl admin"
         echo "-v                      specify version of MariaDB"
         echo "-P                      specify version of PHP"
+        echo "-r                      reset an existing checkout to origin/${GIT_BRANCH}"
+        echo "-F                      force destructive reinstall of /srv/www/pmacontrol"
         exit 0
     ;;
     p) pwd_admin="${OPTARG}" ;;
     d) DEV_MOD="1" ;;
     v) VERSION_MARIADB="${OPTARG}" ;;
     P) VERSION_PHP="${OPTARG}" ;;
+    r) RESET_EXISTING_CHECKOUT="1" ;;
+    F) FORCE_REINSTALL="1" ;;
     *) echo "Unexpected option ${flag}"; exit 1 ;;
   esac
 done
+
+pwd_pmacontrol=$(generate_password)
+if [[ -z "${pwd_admin}" ]]; then
+    pwd_admin=$(generate_password)
+fi
+pwd_webservice=$(generate_password)
 
 export DEBIAN_FRONTEND=noninteractive
 export UCF_FORCE_CONFOLD=1
 export UCF_FORCE_CONFFNEW=1
 export NEEDRESTART_MODE=a
+
+cleanup_install_config()
+{
+    if [[ -n "${INSTALL_CONFIG_FILE}" && -f "${INSTALL_CONFIG_FILE}" ]]; then
+        rm -f "${INSTALL_CONFIG_FILE}"
+    fi
+}
+
+cleanup_install_artifacts()
+{
+    cleanup_install_config
+    cleanup_install_ssh_key
+}
+
+trap cleanup_install_artifacts EXIT
 
 get_os_codename()
 {
@@ -78,7 +162,8 @@ install_base_packages()
         sysbench \
         skopeo \
         jq \
-        sudo
+        sudo \
+        openssh-client
 }
 
 install_php_sury()
@@ -97,9 +182,69 @@ EOF
     apt-get update
 }
 
+install_mariadb_repository()
+{
+    local repo_setup_script
+    repo_setup_script=$(mktemp)
+
+    if ! curl -fsSL https://r.mariadb.com/downloads/mariadb_repo_setup -o "${repo_setup_script}"; then
+        rm -f "${repo_setup_script}"
+        echo "Unable to download MariaDB repository setup script."
+        exit 1
+    fi
+
+    if ! bash "${repo_setup_script}" --mariadb-server-version="mariadb-${VERSION_MARIADB}"; then
+        rm -f "${repo_setup_script}"
+        echo "Unable to configure MariaDB ${VERSION_MARIADB} repository."
+        exit 1
+    fi
+
+    rm -f "${repo_setup_script}"
+    apt-get update
+}
+
+resolve_mariadb_package_version()
+{
+    apt-cache madison mariadb-server \
+        | awk -v requested="${VERSION_MARIADB}" '
+            BEGIN {
+                gsub(/\./, "\\.", requested)
+                pattern = "(^|:)" requested "([.-]|$)"
+            }
+            $3 ~ pattern { print $3; exit }
+        '
+}
+
 install_mariadb()
 {
-    apt-get install -y mariadb-server mariadb-client mariadb-plugin-rocksdb
+    local mariadb_package_version
+    local installed_mariadb_version
+
+    install_mariadb_repository
+    mariadb_package_version=$(resolve_mariadb_package_version)
+
+    if [[ -z "${mariadb_package_version}" ]]; then
+        echo "MariaDB ${VERSION_MARIADB} is not available in the configured APT repositories."
+        echo "Configure a repository that provides MariaDB ${VERSION_MARIADB} or choose an available version with -v."
+        exit 1
+    fi
+
+    apt-get install -y \
+        "mariadb-server=${mariadb_package_version}" \
+        "mariadb-client=${mariadb_package_version}" \
+        "mariadb-plugin-rocksdb=${mariadb_package_version}"
+
+    if command -v mariadb >/dev/null 2>&1; then
+        installed_mariadb_version=$(mariadb --version)
+    else
+        installed_mariadb_version=$(mysql --version)
+    fi
+
+    if [[ "${installed_mariadb_version}" != *"${VERSION_MARIADB}"* ]]; then
+        echo "Installed MariaDB version does not match requested version ${VERSION_MARIADB}: ${installed_mariadb_version}"
+        exit 1
+    fi
+
     systemctl enable mariadb
     systemctl restart mariadb
 }
@@ -147,15 +292,8 @@ configure_apache()
     systemctl restart apache2
 }
 
-clone_repo()
+get_repository_url()
 {
-    mkdir -p /srv/www
-    cd /srv/www
-
-    if [[ -d /srv/www/pmacontrol ]]; then
-        rm -rf /srv/www/pmacontrol
-    fi
-
     if [[ $DEV_MOD -eq 1 ]]; then
         set +e
         ssh -T git@github.com >/dev/null 2>&1
@@ -163,16 +301,52 @@ clone_repo()
         set -e
 
         if [[ $ret -eq 1 ]]; then
-            git clone --branch "${GIT_BRANCH}" --single-branch git@github.com:PmaControl/PmaControl.git pmacontrol
-        else
-            git clone --branch "${GIT_BRANCH}" --single-branch https://github.com/PmaControl/PmaControl.git pmacontrol
+            echo "git@github.com:PmaControl/PmaControl.git"
+            return 0
         fi
-    else
-        git clone --branch "${GIT_BRANCH}" --single-branch https://github.com/PmaControl/PmaControl.git pmacontrol
     fi
 
-    chown -R www-data:www-data /srv/www/pmacontrol
-    chown -R www-data:www-data /var/www || true
+    echo "https://github.com/PmaControl/PmaControl.git"
+}
+
+clone_repo()
+{
+    mkdir -p /srv/www
+    local repo_dir="/srv/www/pmacontrol"
+    local repo_url
+    repo_url=$(get_repository_url)
+
+    if [[ -e "${repo_dir}" && $FORCE_REINSTALL -eq 1 ]]; then
+        rm -rf "${repo_dir}"
+    fi
+
+    if [[ -e "${repo_dir}" && ! -d "${repo_dir}/.git" ]]; then
+        echo "${repo_dir} already exists but is not a git checkout."
+        echo "Move it away or rerun with -F for a destructive reinstall."
+        exit 1
+    fi
+
+    if [[ -d "${repo_dir}/.git" ]]; then
+        cd "${repo_dir}"
+        git fetch origin "${GIT_BRANCH}"
+
+        if [[ $RESET_EXISTING_CHECKOUT -eq 1 ]]; then
+            git checkout -B "${GIT_BRANCH}" "origin/${GIT_BRANCH}"
+            git reset --hard "origin/${GIT_BRANCH}"
+        else
+            git checkout "${GIT_BRANCH}" || git checkout -b "${GIT_BRANCH}" "origin/${GIT_BRANCH}"
+            if ! git merge --ff-only "origin/${GIT_BRANCH}"; then
+                echo "Existing checkout has local changes or divergent commits."
+                echo "Resolve them manually or rerun with -r to reset tracked files."
+                exit 1
+            fi
+        fi
+    else
+        cd /srv/www
+        git clone --branch "${GIT_BRANCH}" --single-branch "${repo_url}" pmacontrol
+    fi
+
+    chown -R www-data:www-data "${repo_dir}"
 }
 
 install_php_dependencies()
@@ -194,13 +368,31 @@ configure_mysql()
 
 write_install_config()
 {
-    cat > /tmp/config.json <<EOF
+    INSTALL_CONFIG_FILE=$(mktemp /tmp/pmacontrol-install-config.XXXXXX)
+    chmod 600 "${INSTALL_CONFIG_FILE}"
+
+    local empty_json
+    local mysql_password_json
+    local ssh_private_key_json
+    local ssh_public_key_json
+    local admin_password_json
+    local webservice_password_json
+
+    generate_install_ssh_key
+    empty_json=$(json_escape_string "")
+    mysql_password_json=$(json_escape_string "${pwd_pmacontrol}")
+    ssh_private_key_json=$(json_escape_file "${SSH_PRIVATE_KEY_FILE}")
+    ssh_public_key_json=$(json_escape_file "${SSH_PUBLIC_KEY_FILE}")
+    admin_password_json=$(json_escape_string "${pwd_admin}")
+    webservice_password_json=$(json_escape_string "${pwd_webservice}")
+
+    cat > "${INSTALL_CONFIG_FILE}" <<EOF
 {
   "mysql": {
     "ip": "127.0.0.1",
     "port": 3306,
     "user": "pmacontrol",
-    "password": "${pwd_pmacontrol}",
+    "password": ${mysql_password_json},
     "database": "pmacontrol"
   },
   "organization": [
@@ -209,12 +401,12 @@ write_install_config()
   "webroot": "/pmacontrol/",
   "ldap": {
     "enabled": false,
-    "url": "pmacontrol.68koncept.com",
+    "url": "",
     "port": 389,
-    "bind dn": "CN=pmacontrol-auth,OU=Utilisateurs,OU=No_delegation,DC=intra,DC=pmacontrol",
-    "bind passwd": "secret_password",
-    "user base": "OU=pmacontrol.com,DC=intra,DC=pmacontrol",
-    "group base": "OU=pmacontrol.com,DC=intra,DC=pmacontrol",
+    "bind dn": "",
+    "bind passwd": ${empty_json},
+    "user base": "",
+    "group base": "",
     "mapping group": {
       "Member": "CN=",
       "Administrator": "CN=",
@@ -232,20 +424,20 @@ write_install_config()
         "country": "France",
         "city": "Paris",
         "login": "admin",
-        "password": "${pwd_admin}"
+        "password": ${admin_password_json}
       }
     ]
   },
   "webservice": [{
     "user": "webservice",
     "host": "%",
-    "password": "QDRWSHGqdrtwhqetrHthTH",
+    "password": ${webservice_password_json},
     "organization": "68Koncept"
   }],
   "ssh": [{
     "user": "pmacontrol",
-    "private key": "-----BEGIN RSA PRIVATE KEY-----\nMIIJKQIBAAKCAgEAsLxsW/pqk8VkCh/eUuhXusDLyG72sWz7uJk6Y1V/3lQRXbCX\n8orlGSlpcBwtMnVOAMUdul4/NQ9swDJqfSYMx5+s4hgswiDwqliwNmu8KGP7gseq\ntpB1apOsIGKby8KVkqwpmxyFs4W+dKwcxmPlw+1b5w5aro6keIbcomKAFNqq1nzR\nARBfL+AUEEZKjkK1o3vfzEhYL8nO+zpMzv2TMcbTumw+jjHC+DzKtUILBo/LjjkC\nwyWKva6QArS125itvIMT5pUW6X72RgWByKIUzCJrR+HzWO9zl8FQQeRlZjtCp+9C\n7HwMPiKH4upN2FfwWXSEa+NyYFUuNyjOCdbrRpgX0FfChE4XFklSNhMXdKMu\n-----END RSA PRIVATE KEY-----\n",
-    "public key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCwvGxb+mqTxWQKH95S6Fe6wMvIbvaxbPu4mTpjVX/eVBFdsJfyiuUZKWlwHC0ydU4AxR26Xj81D2zAMmp9JgzHn6ziGCzCIPCqWLA2a7woY/uCx6q2kHVqk6wgYpvLwpWSrCmbHIWzhb50rBzGY+XD7VvnDlqujqR4htyiYoAU2qrWfNEs5NseGEcQaiRMHe57lw2UTXGbj3Ked+h+n/XngRLV4D01DzaQZ8k45dREe32rUmJZJ3hvE3FI57ICEnVtnrQ8+lQrAoYP0jnYT7eXcIvjHDgyMXKc7fEAyp3b2QG+4J/HxL6K+elFJErLQ2yQlDR9afadnTsBJxFBA2/6yx42Lrp0pMprxKOvhSiMKNiDrP73Jt7d8Z5Z89YN+414Vo2M9713O54IB5H2r88qtdY4fuLzK4d4V39vz6ii5H2aEXIJVsbafLCn/qzbjp7IpoqvuB/3Smp2XW2RnWcZB1NY6diTQkS3MKpblDJILv5UtKN9RCyhRmRHFIM5RyTN21Euuei5bX6WhvEsL7jGo6JDmnXi3tzdAeTUbhPgOd2lX4LECBg9wbhzsezN47S6IGf+72sD/6BCJewKCZ8iheM34pEewDJdUSrg06LDLOr1TrRfaoV1qSsWNDtJVrfae/NTo4oKggxNkkDFkfeHm1pBej37dbMqzDVsKcNoCw=="
+    "private key": ${ssh_private_key_json},
+    "public key": ${ssh_public_key_json}
   }]
 }
 EOF
@@ -255,7 +447,11 @@ run_pmacontrol_install()
 {
     cd /srv/www/pmacontrol
     chmod +x install.sh
-    ./install.sh -c /tmp/config.json
+    if [[ -z "${INSTALL_CONFIG_FILE}" || ! -f "${INSTALL_CONFIG_FILE}" ]]; then
+        echo "Install config file is missing."
+        exit 1
+    fi
+    ./install.sh -c "${INSTALL_CONFIG_FILE}"
 }
 
 install_cli_wrapper()
@@ -279,6 +475,10 @@ print_credentials()
     echo "# Account SuperAdmin on PmaControl"
     echo "Login : admin"
     echo "Password : ${pwd_admin}"
+    echo "#########################################################"
+    echo "# Account Webservice on PmaControl"
+    echo "Login : webservice"
+    echo "Password : ${pwd_webservice}"
     echo "#########################################################"
 }
 

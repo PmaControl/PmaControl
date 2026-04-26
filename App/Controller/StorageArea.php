@@ -121,7 +121,7 @@ class StorageArea extends Controller {
             }
 
             //deploy public key by SCP
-            $ssh = new SSH2($storage_area['backup_storage_area']['ip']);
+            $ssh = new SSH2($storage_area['backup_storage_area']['ip'], $this->getSshPort($storage_area['backup_storage_area']));
 
             //tentative connexion au serveur ssh
             if (!$ssh->login($ssh_user, $key)) {
@@ -130,6 +130,19 @@ class StorageArea extends Controller {
 
                 $title = I18n::getTranslation(__("Failed to connect on ssh/scp"));
                 $msg = I18n::getTranslation(__("Please check your hostname and you credentials !"));
+
+                set_flash("error", $title, $msg);
+
+                header("location: " . LINK . "storageArea/add/" . $elems);
+                exit;
+            }
+
+            if (!$this->isRemoteStoragePathAvailable($ssh, $storage_area['backup_storage_area']['path'])) {
+
+                $elems = Post::getToPost();
+
+                $title = I18n::getTranslation(__("Invalid storage path"));
+                $msg = I18n::getTranslation(__("The storage path does not exist or is not readable on the remote server."));
 
                 set_flash("error", $title, $msg);
 
@@ -298,6 +311,8 @@ class StorageArea extends Controller {
 
         $storages = $db->sql_fetch_yield($sql);
 
+        $success = true;
+
         foreach ($storages as $storage) {
 
             $login = $storage['user'];
@@ -306,15 +321,22 @@ class StorageArea extends Controller {
             $rsa = PublicKeyLoader::load($key_ssh);
             $password = $rsa;
 
-            $ssh = new SSH2($storage['ip']);
+            $ssh = new SSH2($storage['ip'], $this->getSshPort($storage));
 
             //$publicHostKey = $ssh->getServerPublicHostKey();
 
             if (!$ssh->login($login, $password)) {
 
                 Debug::debug("SSH FAILED ! ");
+                $success = false;
             } else {
                 Debug::debug("SSH ok !");
+
+                if (!$this->isRemoteStoragePathAvailable($ssh, $storage['path'])) {
+                    Debug::debug("Storage path not found or not readable: ".$storage['path']);
+                    $success = false;
+                    continue;
+                }
 
                 /*
                  * df -k . => get file systeme for current directory
@@ -324,29 +346,37 @@ class StorageArea extends Controller {
                  * awk '{print $2 \" \" $3 \" \" $4 \" \" $5}' => split result by space
                  */
 
-                $cmd = 'cd ' . $storage['path'] . ' && df -k . | tail -n +2 | sed ":a;N;$!ba;s/\n/ /g" | sed "s/\ +/ /g"';
+                $cmd = $this->getStorageDfCommand($storage['path']);
                 $resultats = $ssh->exec($cmd);
-                $resultats = preg_replace('`([ ]{2,})`', ' ', $resultats);
-                $results = explode(' ', trim($resultats));
 
-
-                $cmd2 = "cd " . $storage['path'] . " && du -s . | awk '{print $1}'";
+                $cmd2 = $this->getStorageBackupSizeCommand($storage['path']);
                 $used_by_backup = $ssh->exec($cmd2);
+
+                $space = $this->parseStorageSpace($resultats, $used_by_backup);
+
+                if ($space === false) {
+                    Debug::debug($cmd, "Storage size command failed");
+                    Debug::debug($resultats);
+                    Debug::debug($cmd2, "Backup size command failed");
+                    Debug::debug($used_by_backup);
+                    $success = false;
+                    continue;
+                }
 
                 $data = [];
                 $data['backup_storage_space']['id_backup_storage_area'] = $storage['id'];
                 $data['backup_storage_space']['date'] = date('Y-m-d H:i:s');
-                $data['backup_storage_space']['size'] = $results['1'];
-                $data['backup_storage_space']['used'] = $results['2'];
-                $data['backup_storage_space']['available'] = $results['3'];
-                $data['backup_storage_space']['percent'] = substr(trim($results['4']), 0, -1);
-                $data['backup_storage_space']['backup'] = trim($used_by_backup);
+                $data['backup_storage_space']['size'] = $space['size'];
+                $data['backup_storage_space']['used'] = $space['used'];
+                $data['backup_storage_space']['available'] = $space['available'];
+                $data['backup_storage_space']['percent'] = $space['percent'];
+                $data['backup_storage_space']['backup'] = $space['backup'];
 
                 if (!$db->sql_save($data)) {
 
                     debug($cmd . "\n");
                     debug($resultats);
-                    debug($results);
+                    debug($space);
                     debug($data);
                     debug($db->sql_error());
                     echo "\n";
@@ -356,7 +386,64 @@ class StorageArea extends Controller {
             }
         }
 
-        return true;
+        return $success;
+    }
+
+    private function getSshPort($storage)
+    {
+        $port = empty($storage['port']) ? 0 : (int)$storage['port'];
+
+        if ($port <= 0) {
+            return 22;
+        }
+
+        return $port;
+    }
+
+    private function isRemoteStoragePathAvailable($ssh, $path)
+    {
+        $result = trim((string)$ssh->exec($this->getStoragePathCheckCommand($path)));
+
+        return $ssh->getExitStatus() === 0 || $result === "PMACTRL_STORAGE_OK";
+    }
+
+    private function getStoragePathCheckCommand($path)
+    {
+        return "cd ".escapeshellarg($path)." && test -d . && test -r . && printf PMACTRL_STORAGE_OK";
+    }
+
+    private function getStorageDfCommand($path)
+    {
+        return "cd ".escapeshellarg($path)." && df -Pk . | awk 'NR==2 {print $2 \" \" $3 \" \" $4 \" \" $5}'";
+    }
+
+    private function getStorageBackupSizeCommand($path)
+    {
+        return "cd ".escapeshellarg($path)." && du -s . | awk '{print $1}'";
+    }
+
+    private function parseStorageSpace($df_output, $du_output)
+    {
+        $results = preg_split('/\s+/', trim((string)$df_output));
+        $backup = trim((string)$du_output);
+
+        if (count($results) < 4) {
+            return false;
+        }
+
+        $percent = rtrim($results[3], "%");
+
+        if (!is_numeric($results[0]) || !is_numeric($results[1]) || !is_numeric($results[2]) || !is_numeric($percent) || !is_numeric($backup)) {
+            return false;
+        }
+
+        return array(
+            'size' => (int)$results[0],
+            'used' => (int)$results[1],
+            'available' => (int)$results[2],
+            'percent' => (int)$percent,
+            'backup' => (int)$backup,
+        );
     }
 
 /**
@@ -463,4 +550,3 @@ class StorageArea extends Controller {
         }
     }
 }
-
