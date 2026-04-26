@@ -6,9 +6,24 @@ VERSION_MARIADB="11.8"
 VERSION_PHP="8.5"
 GIT_BRANCH="commercial"
 
-password=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
-pwd_pmacontrol=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
-pwd_admin=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
+generate_password()
+{
+    local secret=""
+
+    if command -v openssl >/dev/null 2>&1; then
+        secret="$(openssl rand -hex 16 2>/dev/null || true)"
+    fi
+
+    if [[ -z "${secret}" ]]; then
+        secret="$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')"
+    fi
+
+    printf '%s\n' "${secret}"
+}
+
+password="$(generate_password)"
+pwd_pmacontrol="$(generate_password)"
+pwd_admin="$(generate_password)"
 
 while getopts 'hp:v:dP:' flag; do
   case "${flag}" in
