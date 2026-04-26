@@ -247,7 +247,6 @@ clone_repo()
     fi
 
     chown -R www-data:www-data /srv/www/pmacontrol
-    chown -R www-data:www-data /var/www || true
 }
 
 install_php_dependencies()
