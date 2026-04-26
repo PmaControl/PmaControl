@@ -1066,10 +1066,10 @@ class Worker extends Controller
             
             // why workermysql ? good idea to replacE?
             //$idmysqlserver = trim(file_get_contents(EngineV4::getFilePid("worker_mysql", $server['pid'])));
-            $idmysqlserver = trim(file_get_contents(EngineV4::getFilePid($name, $server['pid'])));
+            $idmysqlserver = self::readWorkerServerIdFromPidFile(EngineV4::getFilePid($name, $server['pid']));
 
             // si le pid n'existe plus le fichier temporaire sera surcharger au prochain run
-            if (System::isRunningPid($server['pid']) === true && $idmysqlserver == $server['id']) {
+            if ($idmysqlserver !== null && System::isRunningPid($server['pid']) === true && $idmysqlserver == $server['id']) {
 
                 $mysql_servers[] = $server['id'];
                 $time = microtime(true) - $server['microtime'];
@@ -1531,12 +1531,12 @@ class Worker extends Controller
 
             if ( file_exists($file))
             {
-                $id_mysql_server = file_get_contents($file);
-                Debug::debug($id_mysql_server, "id mysql server");
-
-                if ($id_mysql_server === "Waiting..."){
+                $id_mysql_server = self::readWorkerServerIdFromPidFile($file);
+                if ($id_mysql_server === null) {
                     continue;
                 }
+
+                Debug::debug($id_mysql_server, "id mysql server");
 
                 $elems[] = $id_mysql_server;
             }
@@ -1545,7 +1545,7 @@ class Worker extends Controller
 
         Debug::debug($elems);
 
-        $count_values = array_count_values($elems);
+        $count_values = self::countWorkerServerIds($elems);
 
         Debug::debug($count_values);
 
@@ -1590,7 +1590,11 @@ class Worker extends Controller
                     
                     if ( file_exists($file))
                     {
-                        $id_mysql_server = file_get_contents($file);
+                        $id_mysql_server = self::readWorkerServerIdFromPidFile($file);
+                        if ($id_mysql_server === null) {
+                            continue;
+                        }
+
                         Debug::debug($id_mysql_server);
 
                         $elems[] = $id_mysql_server;
@@ -1601,12 +1605,43 @@ class Worker extends Controller
             }
         }
 
-        $count_values = array_count_values($elems);
+        $count_values = self::countWorkerServerIds($elems);
 
         //$this->logger->warning("deleteExpiredPid worker_".$worker_type." : ".json_encode($count_values).""); 
         Debug::debug($count_values);
 
         return $count_values;
+    }
+
+    public static function readWorkerServerIdFromPidFile(string $file): ?string
+    {
+        if (!is_readable($file)) {
+            return null;
+        }
+
+        $id_mysql_server = @file_get_contents($file);
+        if ($id_mysql_server === false) {
+            return null;
+        }
+
+        $id_mysql_server = trim($id_mysql_server);
+        if ($id_mysql_server === '' || $id_mysql_server === 'Waiting...') {
+            return null;
+        }
+
+        return $id_mysql_server;
+    }
+
+    public static function countWorkerServerIds(array $ids): array
+    {
+        $normalized_ids = [];
+        foreach ($ids as $id) {
+            if (is_string($id) || is_int($id)) {
+                $normalized_ids[] = (string) $id;
+            }
+        }
+
+        return array_count_values($normalized_ids);
     }
 
 
