@@ -32,9 +32,12 @@ PMACTRL_KEEP_CONFIG="${PMACTRL_KEEP_CONFIG:-0}"
 PMACTRL_RUN_PHPUNIT="${PMACTRL_RUN_PHPUNIT:-0}"
 PMACTRL_EXPECT_UBUNTU_VERSION="${PMACTRL_EXPECT_UBUNTU_VERSION:-26.04}"
 PMACTRL_SKIP_OS_CHECK="${PMACTRL_SKIP_OS_CHECK:-0}"
+PMACTRL_SKIP_UPGRADE="${PMACTRL_SKIP_UPGRADE:-0}"
+PMACTRL_CREDENTIALS_FILE="${PMACTRL_CREDENTIALS_FILE:-/root/pmacontrol-credentials.txt}"
 PMACTRL_CONFIG_FILE="${PMACTRL_CONFIG_FILE:-}"
 
 GENERATED_CONFIG_FILE=""
+CREDENTIALS_WRITTEN=0
 
 usage()
 {
@@ -57,7 +60,8 @@ Environment:
   PMACTRL_ADMIN_LOGIN, PMACTRL_ADMIN_EMAIL, PMACTRL_ADMIN_PASSWORD
   PMACTRL_ORGANIZATION, PMACTRL_WEBROOT
   PMACTRL_FORCE_REINSTALL=1, PMACTRL_DRY_RUN=1, PMACTRL_KEEP_CONFIG=1
-  PMACTRL_RUN_PHPUNIT=1, PMACTRL_SKIP_OS_CHECK=1
+  PMACTRL_RUN_PHPUNIT=1, PMACTRL_SKIP_OS_CHECK=1, PMACTRL_SKIP_UPGRADE=1
+  PMACTRL_CREDENTIALS_FILE=/root/pmacontrol-credentials.txt
 USAGE
 }
 
@@ -109,7 +113,9 @@ random_secret()
         return 0
     fi
 
-    tr -dc 'A-Za-z0-9' </dev/urandom | head -c 32
+    local secret
+    secret="$(od -An -N32 -tx1 /dev/urandom | tr -d ' \n')"
+    printf '%s' "${secret:0:32}"
 }
 
 sql_escape()
@@ -166,7 +172,11 @@ require_ubuntu_2604()
 install_packages()
 {
     run apt-get update
-    run apt-get -y upgrade
+    if [[ "${PMACTRL_SKIP_UPGRADE}" == "1" ]]; then
+        log "skipping apt-get upgrade because PMACTRL_SKIP_UPGRADE=1"
+    else
+        run apt-get -y upgrade
+    fi
     run apt-get install -y \
         apache2 \
         apt-transport-https \
@@ -339,59 +349,78 @@ write_install_config()
     PMACTRL_CONFIG_FILE="${GENERATED_CONFIG_FILE}"
     chmod 0600 "${PMACTRL_CONFIG_FILE}"
 
-    cat > "${PMACTRL_CONFIG_FILE}" <<EOF
-{
-  "mysql": {
-    "ip": "${PMACTRL_DB_HOST}",
-    "port": ${PMACTRL_DB_PORT},
-    "user": "${PMACTRL_DB_USER}",
-    "password": "${PMACTRL_DB_PASSWORD}",
-    "database": "${PMACTRL_DB_NAME}"
-  },
-  "organization": ["${PMACTRL_ORGANIZATION}"],
-  "webroot": "${PMACTRL_WEBROOT}",
-  "ldap": {
-    "enabled": false,
-    "url": "localhost",
-    "port": 389,
-    "bind dn": "",
-    "bind passwd": "",
-    "user base": "",
-    "group base": "",
-    "mapping group": {
-      "Member": "CN=",
-      "Administrator": "CN=",
-      "SuperAdministrator": "CN="
-    }
-  },
-  "user": {
-    "Member": null,
-    "Administrator": null,
-    "Super administrator": [
-      {
-        "email": "${PMACTRL_ADMIN_EMAIL}",
-        "firstname": "${PMACTRL_ADMIN_FIRSTNAME}",
-        "lastname": "${PMACTRL_ADMIN_LASTNAME}",
-        "country": "${PMACTRL_ADMIN_COUNTRY}",
-        "city": "${PMACTRL_ADMIN_CITY}",
-        "login": "${PMACTRL_ADMIN_LOGIN}",
-        "password": "${PMACTRL_ADMIN_PASSWORD}"
-      }
-    ]
-  },
-  "webservice": [{
-    "user": "${PMACTRL_WEBSERVICE_USER}",
-    "host": "%",
-    "password": "${PMACTRL_WEBSERVICE_PASSWORD}",
-    "organization": "${PMACTRL_ORGANIZATION}"
-  }],
-  "ssh": [{
-    "user": "pmacontrol",
-    "private key": "",
-    "public key": ""
-  }]
-}
-EOF
+    jq -n \
+        --arg db_host "${PMACTRL_DB_HOST}" \
+        --argjson db_port "${PMACTRL_DB_PORT}" \
+        --arg db_user "${PMACTRL_DB_USER}" \
+        --arg db_password "${PMACTRL_DB_PASSWORD}" \
+        --arg db_name "${PMACTRL_DB_NAME}" \
+        --arg organization "${PMACTRL_ORGANIZATION}" \
+        --arg webroot "${PMACTRL_WEBROOT}" \
+        --arg admin_email "${PMACTRL_ADMIN_EMAIL}" \
+        --arg admin_firstname "${PMACTRL_ADMIN_FIRSTNAME}" \
+        --arg admin_lastname "${PMACTRL_ADMIN_LASTNAME}" \
+        --arg admin_country "${PMACTRL_ADMIN_COUNTRY}" \
+        --arg admin_city "${PMACTRL_ADMIN_CITY}" \
+        --arg admin_login "${PMACTRL_ADMIN_LOGIN}" \
+        --arg admin_password "${PMACTRL_ADMIN_PASSWORD}" \
+        --arg webservice_user "${PMACTRL_WEBSERVICE_USER}" \
+        --arg webservice_password "${PMACTRL_WEBSERVICE_PASSWORD}" \
+        '{
+            mysql: {
+                ip: $db_host,
+                port: $db_port,
+                user: $db_user,
+                password: $db_password,
+                database: $db_name
+            },
+            organization: [$organization],
+            webroot: $webroot,
+            ldap: {
+                enabled: false,
+                url: "localhost",
+                port: 389,
+                "bind dn": "",
+                "bind passwd": "",
+                "user base": "",
+                "group base": "",
+                "mapping group": {
+                    Member: "CN=",
+                    Administrator: "CN=",
+                    SuperAdministrator: "CN="
+                }
+            },
+            user: {
+                Member: null,
+                Administrator: null,
+                "Super administrator": [
+                    {
+                        email: $admin_email,
+                        firstname: $admin_firstname,
+                        lastname: $admin_lastname,
+                        country: $admin_country,
+                        city: $admin_city,
+                        login: $admin_login,
+                        password: $admin_password
+                    }
+                ]
+            },
+            webservice: [
+                {
+                    user: $webservice_user,
+                    host: "%",
+                    password: $webservice_password,
+                    organization: $organization
+                }
+            ],
+            ssh: [
+                {
+                    user: "pmacontrol",
+                    "private key": "",
+                    "public key": ""
+                }
+            ]
+        }' > "${PMACTRL_CONFIG_FILE}"
 }
 
 run_application_install()
@@ -427,15 +456,50 @@ run_phpunit()
     run bash -c "cd '${PMACTRL_INSTALL_DIR}' && ./vendor/bin/phpunit --testsuite 'PmaControl Test Suite'"
 }
 
+write_credentials_file()
+{
+    if [[ "${PMACTRL_DRY_RUN}" == "1" ]]; then
+        log "would write credentials summary to ${PMACTRL_CREDENTIALS_FILE}"
+        return 0
+    fi
+
+    if [[ -z "${PMACTRL_CREDENTIALS_FILE}" ]]; then
+        return 0
+    fi
+
+    install -m 0600 /dev/null "${PMACTRL_CREDENTIALS_FILE}"
+    {
+        printf 'PmaControl install credentials\n'
+        printf 'install_dir=%s\n' "${PMACTRL_INSTALL_DIR}"
+        printf 'webroot=%s\n' "${PMACTRL_WEBROOT}"
+        printf 'db_user=%s\n' "${PMACTRL_DB_USER}"
+        if [[ -n "${PMACTRL_DB_PASSWORD}" ]]; then
+            printf 'db_password=%s\n' "${PMACTRL_DB_PASSWORD}"
+        fi
+        if [[ -n "${PMACTRL_ADMIN_PASSWORD}" ]]; then
+            printf 'admin_login=%s\n' "${PMACTRL_ADMIN_LOGIN}"
+            printf 'admin_password=%s\n' "${PMACTRL_ADMIN_PASSWORD}"
+        fi
+        if [[ -n "${PMACTRL_WEBSERVICE_PASSWORD}" ]]; then
+            printf 'webservice_user=%s\n' "${PMACTRL_WEBSERVICE_USER}"
+            printf 'webservice_password=%s\n' "${PMACTRL_WEBSERVICE_PASSWORD}"
+        fi
+    } > "${PMACTRL_CREDENTIALS_FILE}"
+    CREDENTIALS_WRITTEN=1
+}
+
 print_summary()
 {
     log "installation finished"
     log "URL path: ${PMACTRL_WEBROOT}"
     log "database user: ${PMACTRL_DB_USER}"
 
-    if [[ -n "${PMACTRL_ADMIN_PASSWORD}" ]]; then
+    if [[ "${CREDENTIALS_WRITTEN}" == "1" ]]; then
         log "admin login: ${PMACTRL_ADMIN_LOGIN}"
-        log "admin password: ${PMACTRL_ADMIN_PASSWORD}"
+        log "credentials file: ${PMACTRL_CREDENTIALS_FILE}"
+    elif [[ "${PMACTRL_DRY_RUN}" == "1" ]]; then
+        log "admin login: ${PMACTRL_ADMIN_LOGIN}"
+        log "credentials file: ${PMACTRL_CREDENTIALS_FILE} (dry-run, not written)"
     fi
 
     if [[ -n "${GENERATED_CONFIG_FILE}" && "${PMACTRL_KEEP_CONFIG}" == "1" ]]; then
@@ -456,6 +520,7 @@ main()
     run_application_install
     install_cli_wrapper
     run_phpunit
+    write_credentials_file
     run systemctl restart apache2
     print_summary
 }

@@ -33,6 +33,8 @@ existing installer.
 | `PMACTRL_KEEP_CONFIG` | `0` | Keep the generated JSON config when set to `1`. |
 | `PMACTRL_RUN_PHPUNIT` | `0` | Run the PHPUnit suite after install when set to `1`. |
 | `PMACTRL_SKIP_OS_CHECK` | `0` | Skip the Ubuntu 26.04 guard for local syntax/dry-run validation. |
+| `PMACTRL_SKIP_UPGRADE` | `0` | Skip `apt-get upgrade` when set to `1`. |
+| `PMACTRL_CREDENTIALS_FILE` | `/root/pmacontrol-credentials.txt` | File receiving generated credentials with mode `0600`. |
 
 ## Re-runs
 
@@ -59,3 +61,15 @@ PMACTRL_CI_UBUNTU2604_TEMPLATE_ID=923 bash ci/proxmox-install-matrix.sh ubuntu26
 The remote test path runs `install/ubuntu26.04.sh`, checks that
 `http://127.0.0.1/pmacontrol/` returns `200`, `301`, or `302`, then runs the
 PHPUnit suite.
+
+## Private Forgejo Checkout
+
+For a private Forgejo repository, provide the repository URL explicitly:
+
+```bash
+PMACTRL_REPO_URL="https://git.istosia.com/pmacontrol/pmacontrol.git" \
+PMACTRL_GIT_BRANCH=commercial \
+sudo -E bash install/ubuntu26.04.sh
+```
+
+Use the normal Git credential mechanism for the host running the installer.
