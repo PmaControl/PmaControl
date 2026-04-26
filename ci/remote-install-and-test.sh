@@ -83,6 +83,12 @@ apt-get install -y \
     "php${PHP_VERSION}-xml" \
     "libapache2-mod-php${PHP_VERSION}"
 
+if command -v update-alternatives >/dev/null 2>&1 && [[ -x "/usr/bin/php${PHP_VERSION}" ]]; then
+    update-alternatives --set php "/usr/bin/php${PHP_VERSION}" || true
+    update-alternatives --set phar "/usr/bin/phar${PHP_VERSION}" || true
+    update-alternatives --set phar.phar "/usr/bin/phar.phar${PHP_VERSION}" || true
+fi
+
 systemctl enable --now mariadb
 systemctl enable --now apache2
 systemctl enable --now "php${PHP_VERSION}-fpm"
