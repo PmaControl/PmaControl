@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Controller\Integrate;
+use App\Library\SharedMemoryReader;
+use Fuz\Component\SharedMemory\Entity\StoredEntity;
 use PHPUnit\Framework\TestCase;
 
 final class IntegrateTest extends TestCase
@@ -105,6 +107,62 @@ final class IntegrateTest extends TestCase
         $controller = new TestableIntegrate('Controller', 'View', []);
 
         $this->assertNull($controller->exposeNormalizeSlaveMetricRow('status', ['threads_running' => 1]));
+    }
+
+    public function testSharedMemoryReaderReadsSerializedStoredEntityWithoutWriteAccess(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'pmacontrol-integrate-pivot-');
+        $this->assertIsString($file);
+
+        $data = new stdClass();
+        $data->mysql_server = ['ok' => true];
+
+        $entity = new StoredEntity();
+        $entity->setData($data);
+
+        try {
+            file_put_contents($file, serialize($entity));
+            chmod($file, 0444);
+
+            $payload = SharedMemoryReader::read($file, $reason);
+
+            $this->assertNull($reason);
+            $this->assertInstanceOf(stdClass::class, $payload);
+            $this->assertSame(['ok' => true], $payload->mysql_server);
+        } finally {
+            if (is_file($file)) {
+                chmod($file, 0644);
+                unlink($file);
+            }
+        }
+    }
+
+    public function testSharedMemoryReaderIgnoresCorruptFileWithoutPhpWarning(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'pmacontrol-integrate-pivot-');
+        $this->assertIsString($file);
+
+        try {
+            file_put_contents($file, 'not serialized');
+
+            set_error_handler(static function (int $severity, string $message, string $sourceFile, int $line): bool {
+                throw new ErrorException($message, 0, $severity, $sourceFile, $line);
+            });
+
+            try {
+                $this->assertNull(SharedMemoryReader::read($file, $reason));
+            } finally {
+                restore_error_handler();
+            }
+
+            $this->assertIsString($reason);
+            $this->assertStringContainsString('invalid stored entity', $reason);
+            $this->assertFileExists($file);
+        } finally {
+            if (is_file($file)) {
+                unlink($file);
+            }
+        }
     }
 }
 
