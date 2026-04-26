@@ -5,6 +5,7 @@ DEV_MOD=0
 VERSION_MARIADB="11.8"
 VERSION_PHP="8.5"
 GIT_BRANCH="commercial"
+INSTALL_CONFIG_FILE=""
 
 generate_password()
 {
@@ -47,6 +48,15 @@ export DEBIAN_FRONTEND=noninteractive
 export UCF_FORCE_CONFOLD=1
 export UCF_FORCE_CONFFNEW=1
 export NEEDRESTART_MODE=a
+
+cleanup_install_config()
+{
+    if [[ -n "${INSTALL_CONFIG_FILE}" && -f "${INSTALL_CONFIG_FILE}" ]]; then
+        rm -f "${INSTALL_CONFIG_FILE}"
+    fi
+}
+
+trap cleanup_install_config EXIT
 
 get_os_codename()
 {
@@ -268,7 +278,10 @@ configure_mysql()
 
 write_install_config()
 {
-    cat > /tmp/config.json <<EOF
+    INSTALL_CONFIG_FILE=$(mktemp /tmp/pmacontrol-install-config.XXXXXX)
+    chmod 600 "${INSTALL_CONFIG_FILE}"
+
+    cat > "${INSTALL_CONFIG_FILE}" <<EOF
 {
   "mysql": {
     "ip": "127.0.0.1",
@@ -329,7 +342,11 @@ run_pmacontrol_install()
 {
     cd /srv/www/pmacontrol
     chmod +x install.sh
-    ./install.sh -c /tmp/config.json
+    if [[ -z "${INSTALL_CONFIG_FILE}" || ! -f "${INSTALL_CONFIG_FILE}" ]]; then
+        echo "Install config file is missing."
+        exit 1
+    fi
+    ./install.sh -c "${INSTALL_CONFIG_FILE}"
 }
 
 install_cli_wrapper()
