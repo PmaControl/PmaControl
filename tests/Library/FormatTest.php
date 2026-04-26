@@ -47,7 +47,7 @@ final class FormatTest extends TestCase
 
         $this->assertSame('8.4.8', $version['number']);
         $this->assertSame('Percona', $version['fork']);
-        $this->assertFalse($version['enterprise']);
+        $this->assertTrue($version['enterprise']);
     }
 
     public function testMysqlVersionRendersProxySqlLabel(): void
