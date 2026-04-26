@@ -340,6 +340,12 @@ class Client extends Controller
         $this->view        = false;
         $this->layout_name = false;
 
+        if (!self::isDeleteRequestAllowed($_SERVER)) {
+            set_flash("error", __("Error"), __("Invalid request method"));
+            header("location: ".LINK."client/index");
+            exit;
+        }
+
         $id_client = (int) ($param[0] ?? 0);
         if ($id_client <= 0) {
             set_flash("error", __("Error"), __("Invalid client id"));
@@ -386,5 +392,10 @@ class Client extends Controller
         set_flash("success", I18n::getTranslation(__("Success")), I18n::getTranslation(__("Organization deleted")));
         header("location: ".LINK."client/index");
         exit;
+    }
+
+    public static function isDeleteRequestAllowed(array $server): bool
+    {
+        return strtoupper((string) ($server['REQUEST_METHOD'] ?? 'GET')) === 'POST';
     }
 }
