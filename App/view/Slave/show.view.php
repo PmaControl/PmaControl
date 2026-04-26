@@ -1710,7 +1710,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function buildTimelineTooltip(fr) {
         var duration = Math.max(0, Math.round((fr.endMs - fr.startMs) / 1000));
-        var sizeMb = ((parseInt(fr.size_bytes || 0) || 0) / 1048576).toFixed(1);
+        var sizeMb = ((parseInt(fr.size || 0) || 0) / 1048576).toFixed(1);
         var totals = { inserts: 0, updates: 0, deletes: 0 };
         (fr.tables || []).forEach(function(t) {
             totals.inserts += parseInt(t.inserts || 0) || 0;
@@ -1718,7 +1718,7 @@ document.addEventListener('DOMContentLoaded', function() {
             totals.deletes += parseInt(t.deletes || 0) || 0;
         });
 
-        return '<b>' + escHtml(fr.file || '') + '</b>'
+        return '<b>' + escHtml(fr.name || '') + '</b>'
             + '<br>' + escHtml(fr.start || '') + ' &rarr; ' + escHtml(fr.end || '')
             + '<br>Duration: ' + numberFmt(duration) + 's'
             + '<br>Size: ' + sizeMb + ' MB'
@@ -1764,7 +1764,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (width > 38 && barHeight >= 9) {
                     ctx.fillStyle = '#ffffff';
-                    ctx.fillText(shortBinlogName(fr.file), left + 4, top + (barHeight / 2), width - 8);
+                    ctx.fillText(shortBinlogName(fr.name), left + 4, top + (barHeight / 2), width - 8);
                 }
 
                 chart.$binlogTimelineHitboxes.push({
