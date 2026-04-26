@@ -60,6 +60,7 @@ apt-get install -y \
     libcairo2 \
     lsb-release \
     mariadb-client \
+    mariadb-plugin-rocksdb \
     mariadb-server \
     net-tools \
     rsync \
