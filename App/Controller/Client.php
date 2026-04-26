@@ -49,8 +49,7 @@ class Client extends Controller
     public function index()
     {
         $this->title  = '<span class="glyphicon glyphicon glyphicon-user"></span> '.__("Clients");
-        $this->ariane = ' > <a href⁼"'.LINK.'">'.'<span class="glyphicon glyphicon glyphicon-cog" style="font-size:12px">'
-            .'</span> '.__("Settings").'</a> >'.$this->title;
+        $this->ariane = self::buildSettingsBreadcrumb(LINK, __("Settings")).' >'.$this->title;
 
         $this->di['js']->addJavascript(array('bootstrap-editable.min.js', 'Tree/index.js', 'Client/index.js'));
 
@@ -129,8 +128,7 @@ class Client extends Controller
     public function add()
     {
         $this->title  = '<span class="glyphicon glyphicon glyphicon-plus"></span> '.__("Add a new client");
-        $this->ariane = ' > <a href⁼"'.LINK.'">'.'<span class="glyphicon glyphicon glyphicon-cog" style="font-size:12px">'
-            .'</span> '.__("Settings").'</a> >'.
+        $this->ariane = self::buildSettingsBreadcrumb(LINK, __("Settings")).' >'.
             '<span class="glyphicon glyphicon glyphicon-user"></span> '.__("Clients").' > '
             .$this->title;
 
@@ -163,6 +161,12 @@ class Client extends Controller
                 }
             }
         }
+    }
+
+    public static function buildSettingsBreadcrumb(string $link, string $settingsLabel = 'Settings'): string
+    {
+        return ' > <a href="'.$link.'"><span class="glyphicon glyphicon glyphicon-cog" style="font-size:12px">'
+            .'</span> '.$settingsLabel.'</a>';
     }
 
 /**
