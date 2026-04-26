@@ -260,7 +260,7 @@ class Table extends Controller {
             //debug(self::$tables);
 
             //generate invisible edge bewteen column
-            $this->generateHiddenArrow($premiere_table_de_chaque_colonne);
+            $this->generateHiddenArrow($premiere_table_de_chaque_colonne, $table_schema);
 
             //edge between cluster and main table
             //$first_table = array_key_first());
@@ -285,7 +285,8 @@ class Table extends Controller {
             $tmp['referenced_table'] = $table_name;
             $tmp['tooltip'] = "* => ".$tmp['constraint_table'].".".$tmp['referenced_table'];
 
-            $tmp['arrow'] = $last_colone[$middle].":d".$pos1." -> ".$tmp['referenced_table'].":a".$pos2." ";
+            $tmp['arrow'] = Graphviz::tableNodeRef($table_schema, $last_colone[$middle], "d".$pos1)
+                ." -> ".Graphviz::tableNodeRef($table_schema, $tmp['referenced_table'], "a".$pos2)." ";
             $tmp['color'] = Graphviz::getColor($tmp['referenced_table']);
             
             // don't work :(
@@ -320,7 +321,7 @@ class Table extends Controller {
         if (self::$main_table['nb_column_right'] > 1)
         {
             $colones = $this->splitTableByColumnBasic(self::$main_table['link'],self::$main_table['nb_column_right']);
-            $this->generateHiddenArrow($colones);
+            $this->generateHiddenArrow($colones, $table_schema);
         }
 
         foreach(self::$hidden_edges as $hidden_edge){
@@ -410,7 +411,8 @@ class Table extends Controller {
             $tmp['constraint_table'] = $arr['constraint_table'];
             $tmp['referenced_table'] = $arr['referenced_table'];
             $tmp['tooltip'] = $arr['constraint_table'].".".$arr['constraint_column']." => ".$arr['referenced_table'].".".$arr['referenced_column'];
-            $tmp['arrow'] = $arr['constraint_table'].":d".$pos1." -> ".$arr['referenced_table'].":a".$pos2;
+            $tmp['arrow'] = Graphviz::tableNodeRef($arr['constraint_schema'], $arr['constraint_table'], "d".$pos1)
+                ." -> ".Graphviz::tableNodeRef($arr['referenced_schema'], $arr['referenced_table'], "a".$pos2);
             $tmp['color'] = Graphviz::getColor($arr['referenced_table']);
             $tmp['options']['arrowhead'] = "none";
             $tmp['options']['arrowtail'] = "crow";
@@ -730,7 +732,7 @@ class Table extends Controller {
  * @since 5.0
  * @version 1.0
  */
-    public function generateHiddenArrow($tables)
+    public function generateHiddenArrow($tables, string $tableSchema = '')
     {
         $maxElements = max(array_map('count', $tables));
 
@@ -754,7 +756,8 @@ class Table extends Controller {
 
         // Export des résultats
         foreach ($result as $key => $value) {
-            self::$hidden_edges[] =  $key . ":title -> " . $value.":title";
+            self::$hidden_edges[] = Graphviz::tableNodeRef($tableSchema, $key, 'title')
+                ." -> ".Graphviz::tableNodeRef($tableSchema, $value, 'title');
         }
     }
 
