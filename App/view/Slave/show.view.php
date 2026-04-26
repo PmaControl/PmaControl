@@ -1139,7 +1139,7 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('time_start', timeStart);
         formData.append('time_end', timeEnd);
 
-        fetch(LINK + 'slave/startBinlogAnalysis/' + serverId + '/', {
+        fetch(LINK + 'slave/startBinlogAnalysis/' + serverId + '/ajax:true/', {
             method: 'POST',
             body: formData
         })
@@ -1193,7 +1193,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         function poll() {
-            fetch(LINK + 'slave/binlogAnalysisResult/' + id + '/').then(function(r){return r.json()}).then(function(data) {
+            fetch(LINK + 'slave/binlogAnalysisResult/' + id + '/ajax:true/').then(function(r){return r.json()}).then(function(data) {
                 if (data.error) {
                     statusBadge.className = 'label label-danger';
                     statusBadge.textContent = 'Error: ' + data.error;
@@ -1732,10 +1732,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ---- Load past analyses ----
     function loadHistory() {
-        var historyUrl = LINK + 'slave/binlogAnalysisList/' + serverId + '/ajax:true/?connection_name='
-            + encodeURIComponent(replicationName || '');
-
-        fetch(historyUrl).then(function(r){return r.json()}).then(function(list) {
+        fetch(LINK + 'slave/binlogAnalysisList/' + serverId + '/ajax:true/?connection_name='
+            + encodeURIComponent(replicationName || '')).then(function(r){return r.json()}).then(function(list) {
             if (!list || !list.length) {
                 document.getElementById('sv-ba-history').innerHTML = '';
                 return;
@@ -1762,7 +1760,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 var id = btn.getAttribute('data-id');
                 var st = btn.getAttribute('data-status');
                 if (st === 'done') {
-                    fetch(LINK + 'slave/binlogAnalysisResult/' + id + '/').then(function(r){return r.json()}).then(function(data) {
+                    fetch(LINK + 'slave/binlogAnalysisResult/' + id + '/ajax:true/').then(function(r){return r.json()}).then(function(data) {
                         if (!data.error) renderResults(data);
                     });
                 } else if (st === 'pending' || st === 'running') {
