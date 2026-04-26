@@ -123,19 +123,32 @@ class Integrate extends Controller
             $value['replica_sql_running'] = $value['slave_sql_running'];
         }
 
-        if (empty($value['seconds_behind_master'])) {
-            if (!empty($value['seconds_behind_source'])) {
-                $value['seconds_behind_master'] = $value['seconds_behind_source'];
-            } else {
-                $value['seconds_behind_master'] = '0';
-            }
+        $hasMasterLag = $this->hasAvailableReplicationLag($value, 'seconds_behind_master');
+        $hasSourceLag = $this->hasAvailableReplicationLag($value, 'seconds_behind_source');
+
+        if (!$hasMasterLag && $hasSourceLag) {
+            $value['seconds_behind_master'] = $value['seconds_behind_source'];
+            $hasMasterLag = true;
         }
 
-        if (empty($value['seconds_behind_source'])) {
+        if (!$hasSourceLag && $hasMasterLag) {
             $value['seconds_behind_source'] = $value['seconds_behind_master'];
         }
 
         return $value;
+    }
+
+    private function hasAvailableReplicationLag(array $value, string $field): bool
+    {
+        if (!array_key_exists($field, $value)) {
+            return false;
+        }
+
+        if ($value[$field] === null) {
+            return false;
+        }
+
+        return trim((string) $value[$field]) !== '';
     }
 
 /**
@@ -1036,6 +1049,11 @@ public function integrateAll($param)
                                                 if (empty($variables[$type_metrics][$slave_variable])) {
 
                                                     if ($slave_value === "-1") continue;
+
+                                                    // If the first sample is unavailable, wait for a real
+                                                    // value before freezing the ts_value_* storage type.
+                                                    if ($slave_value === null) continue;
+                                                    if (is_string($slave_value) && trim($slave_value) === "") continue;
 
                                                     if (empty($var_index[$type_metrics][$slave_variable])) {
                                                         $var_index[$type_metrics][$slave_variable] = 1;

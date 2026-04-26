@@ -23,6 +23,15 @@ foreach ($data['menu'] as $elems => $sql)
 
 $current = str_replace('_', ' ', $data['current']);
 
+$renderUpdateButton = static function (string $from, string $to, string $class, string $label) use ($data): string {
+    $action = LINK.'ProxySQL/update/'.$data['id_proxysql_server'].'/'.$from.'/'.$data['current'].'/'.$to;
+
+    return '<form method="post" action="'.htmlspecialchars($action, ENT_QUOTES, 'UTF-8').'" style="display:inline; margin:0;">'
+        . '<button type="submit" class="'.htmlspecialchars($class, ENT_QUOTES, 'UTF-8').'">'
+        . htmlspecialchars($label, ENT_QUOTES, 'UTF-8')
+        . '</button></form>';
+};
+
 echo '</div>';
 echo "<br><br>";
 
@@ -38,7 +47,7 @@ echo '<div class="col-md-3">';
 echo '<div style="padding-top:10px;">';
 
 echo '<div class="arrow-container" style="background:rgb(92, 184, 92); text-align:center">
-    <a href="'.LINK.'ProxySQL/update/'.$data['id_proxysql_server'].'/SAVE/'.$data['current'].'/DISK" class="btn btn-success btn-custom">SAVE '.$current.' TO DISK</a>
+    '.$renderUpdateButton('SAVE', 'DISK', 'btn btn-success btn-custom', 'SAVE '.$current.' TO DISK').'
     <div class="arrow-left" style="border-color:transparent rgb(92, 184, 92) transparent transparent"></div>
     <div class="arrow-left-tail" style="border-color: rgb(92, 184, 92)  transparent  rgb(92, 184, 92) rgb(92, 184, 92);"></div>
 </div>';
@@ -46,7 +55,7 @@ echo "<br>";
 echo '<div class="arrow-container" style="background:rgb(91, 192, 222); text-align:center">
     <div class="arrow-right-tail" style="border-color: rgb(91, 192, 222) rgb(91, 192, 222)    rgb(91, 192, 222) transparent;"></div>
     <div class="arrow-right" style="border-color: transparent rgb(91, 192, 222)  transparent  rgb(91, 192, 222);"></div>
-    <a href="'.LINK.'ProxySQL/update/'.$data['id_proxysql_server'].'/LOAD/'.$data['current'].'/MEMORY" class="btn btn-info btn-custom">LOAD '.$current.' TO MEMORY</a>
+    '.$renderUpdateButton('LOAD', 'MEMORY', 'btn btn-info btn-custom', 'LOAD '.$current.' TO MEMORY').'
 </div>';
 echo '</div>';
 
@@ -61,13 +70,13 @@ echo '<div class="col-md-3">';
 
 echo '<div style="padding-top:10px;">';
 echo '<div class="arrow-container" style="background:rgb(240, 173, 78); text-align:center">
-    <a href="'.LINK.'ProxySQL/update/'.$data['id_proxysql_server'].'/SAVE/'.$data['current'].'/MEMORY" class="btn btn-warning">SAVE '.$current.' TO MEMORY</a>
+    '.$renderUpdateButton('SAVE', 'MEMORY', 'btn btn-warning', 'SAVE '.$current.' TO MEMORY').'
     <div class="arrow-left" style="border-color:transparent rgb(240, 173, 78) transparent transparent"></div>
     <div class="arrow-left-tail" style="border-color: rgb(240, 173, 78)  transparent  rgb(240, 173, 78) rgb(240, 173, 78);"></div>
 </div>';
 echo "<br>";
 echo '<div class="arrow-container" style="background:rgb(217, 83, 79); text-align:center">
-    <a href="'.LINK.'ProxySQL/update/'.$data['id_proxysql_server'].'/LOAD/'.$data['current'].'/RUNTIME" class="btn btn-danger">LOAD '.$current.' TO RUNTIME</a>
+    '.$renderUpdateButton('LOAD', 'RUNTIME', 'btn btn-danger', 'LOAD '.$current.' TO RUNTIME').'
     <div class="arrow-gg" style="border-color:rgb(217, 83, 79) rgb(217, 83, 79) rgb(217, 83, 79) transparent"></div>
     <div class="arrow-right" style="border-color: transparent  #ff0000  transparent rgb(217, 83, 79);"></div>
 </div>';
@@ -196,4 +205,3 @@ foreach ($data['table'] as $table_name)
     echo '</div>';
 
 }
-

@@ -11,7 +11,6 @@ class AspirateurSystemStatsTest extends TestCase
     {
         $reflection = new \ReflectionClass($object);
         $instanceMethod = $reflection->getMethod($method);
-        $instanceMethod->setAccessible(true);
 
         return $instanceMethod->invokeArgs($object, $arguments);
     }

@@ -57,6 +57,17 @@ class Server extends Controller
  */
     var $logger;
 
+    public static function getGeoipCountryLookupSql($db, string $ip): string
+    {
+        $escapedIp = $db->sql_real_escape_string($ip);
+
+        return "SELECT country_iso FROM data_geoip
+                           WHERE network_start <= INET6_ATON('".$escapedIp."')
+                           AND network_end >= INET6_ATON('".$escapedIp."')
+                           ORDER BY network_start DESC
+                           LIMIT 1";
+    }
+
 /**
  * Prepare server state through `before`.
  *
@@ -481,10 +492,7 @@ class Server extends Controller
                 }
             }
             foreach (array_keys($ips) as $ip) {
-                $sqlGeo = "SELECT country_iso FROM data_geoip
-                           WHERE network_start <= INET6_ATON('".$db->sql_real_escape_string($ip)."')
-                           AND network_end >= INET6_ATON('".$db->sql_real_escape_string($ip)."')
-                           LIMIT 1";
+                $sqlGeo = self::getGeoipCountryLookupSql($db, $ip);
                 $resGeo = $db->sql_query($sqlGeo);
                 if ($resGeo && ($row = $db->sql_fetch_array($resGeo, MYSQLI_ASSOC))) {
                     $data['geoip'][$ip] = $row['country_iso'];
@@ -1827,7 +1835,9 @@ var myChart = new Chart(ctx, {
  */
     public function show($param)
     {
-        $db = Sgbd::sql(DB_DEFAULT);
+        $this->layout_name = false;
+        $this->layout = false;
+        $this->view = false;
     }
 
 /**

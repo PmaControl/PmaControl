@@ -81,7 +81,6 @@ class Dot3Test extends TestCase
         $reflection = new ReflectionClass(Dot3::class);
         $dot3 = $reflection->newInstanceWithoutConstructor();
         $method = $reflection->getMethod('buildVipDestinationLabel');
-        $method->setAccessible(true);
 
         $label = $method->invoke($dot3, [
             112 => [
