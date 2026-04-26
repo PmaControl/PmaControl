@@ -5722,6 +5722,26 @@ GROUP BY C.ID, C.INFO;";
  * @since 5.0
  * @version 1.0
  */
+    private function getLastRunCacheFile(int $id_mysql_server, string $file_key): string
+    {
+        $safe_file_key = preg_replace('/[^A-Za-z0-9_.-]/', '_', $file_key);
+        if ($safe_file_key === null || $safe_file_key === '') {
+            $safe_file_key = 'default';
+        }
+
+        return TMP . 'cache' . DIRECTORY_SEPARATOR . 'last_run' . DIRECTORY_SEPARATOR . 'pmacontrol_last_run_' . $safe_file_key . '_' . $id_mysql_server;
+    }
+
+    private function openLastRunCacheFile(string $cache_file)
+    {
+        $cache_dir = dirname($cache_file);
+        if (!is_dir($cache_dir) && !@mkdir($cache_dir, 0775, true) && !is_dir($cache_dir)) {
+            return false;
+        }
+
+        return @fopen($cache_file, 'c+');
+    }
+
     private function runEachMinuteAtBalancedSecond(int $id_mysql_server, int $interval, string $file_key, callable $callback): bool
     {
         $offset = crc32((string)$id_mysql_server) % $interval;
@@ -5735,13 +5755,17 @@ GROUP BY C.ID, C.INFO;";
             return false;
         }
 
-        $cache_file = "/tmp/pmacontrol_last_run_{$file_key}_{$id_mysql_server}";
-        $fp = fopen($cache_file, 'c+');
-        if ($fp === false) {
+        $cache_file = $this->getLastRunCacheFile($id_mysql_server, $file_key);
+        $fp = $this->openLastRunCacheFile($cache_file);
+        if ($fp === false || !flock($fp, LOCK_EX)) {
+            if ($fp !== false) {
+                fclose($fp);
+                $fp = false;
+            }
             $last_bucket_run = null;
         } else {
-            flock($fp, LOCK_EX);
-            $last_bucket_run = trim(stream_get_contents($fp));
+            $contents = stream_get_contents($fp);
+            $last_bucket_run = is_string($contents) ? trim($contents) : null;
         }
 
         if ((string)$last_bucket_run === (string)$bucket) {
