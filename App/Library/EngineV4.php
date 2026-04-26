@@ -55,6 +55,15 @@ class EngineV4
 
 	const FILE_TO_LISTEN = self::FILE_MYSQL_VARIABLE .",".self::FILE_MYSQL_DATABASE;
 
+    private const PROXYSQL_STRUCTURAL_TS_FILES = [
+        'proxysql_runtime_mysql_servers',
+        'proxysql_runtime_mysql_group_replication_hostgroups',
+        'proxysql_runtime_mysql_group_replication_hostgroup',
+        'proxysql_runtime_mysql_replication_hostgroups',
+        'proxysql_runtime_mysql_galera_hostgroups',
+        'proxysql_runtime_proxysql_servers',
+    ];
+
 
 /**
  * Retrieve engine v4 state through `getFileLock`.
@@ -115,6 +124,51 @@ class EngineV4
     static public function getFileMd5($ts_file, $pid)
     {
         return self::getFileLock($ts_file, $pid, self::FILE_MD5);
+    }
+
+    static public function getMd5GlobPattern(string $ts_file, ?int $pid = null): string
+    {
+        $pidPart = $pid === null ? '*' : (string) $pid;
+
+        return self::PATH_MD5.$ts_file.self::SEPERATOR.$pidPart.'.'.self::EXT_MD5;
+    }
+
+    static public function getProxySqlStructuralFiles(): array
+    {
+        return self::PROXYSQL_STRUCTURAL_TS_FILES;
+    }
+
+    static public function cleanMd5Files(array $tsFiles, array $pids = []): int
+    {
+        $deleted = 0;
+        $pids = empty($pids) ? [null] : array_map('intval', $pids);
+
+        foreach ($tsFiles as $tsFile) {
+            $tsFile = (string) $tsFile;
+            if ($tsFile === '') {
+                continue;
+            }
+
+            foreach ($pids as $pid) {
+                $pattern = self::getMd5GlobPattern($tsFile, $pid);
+                foreach (glob($pattern) ?: [] as $fileMd5) {
+                    if (basename($fileMd5) === '.gitignore' || !is_file($fileMd5)) {
+                        continue;
+                    }
+
+                    if (unlink($fileMd5)) {
+                        $deleted++;
+                    }
+                }
+            }
+        }
+
+        return $deleted;
+    }
+
+    static public function cleanProxySqlStructuralMd5(array $pids = []): int
+    {
+        return self::cleanMd5Files(self::getProxySqlStructuralFiles(), $pids);
     }
 
 /**
@@ -216,16 +270,10 @@ class EngineV4
 			{
 				$ts_file_name = $ts_file[$id_ts_file];
 				self::log()->notice('ts_file_name : '.$ts_file_name);
-				$regex = self::PATH_MD5.$ts_file_name.self::SEPERATOR."*".self::EXT_MD5;
+				$regex = self::getMd5GlobPattern($ts_file_name);
 				self::log()->notice('regex : '.$regex);
-				foreach(glob($regex) as $file_md5)
-				{
-					self::log()->notice('to delete file : '.$file_md5);
-					if (file_exists($file_md5)) {
-						self::log()->notice('We deleted file : '.$file_md5);
-						unlink($file_md5);
-					}
-				}
+                $deleted = self::cleanMd5Files([$ts_file_name]);
+                self::log()->notice('Deleted md5 files : '.$deleted);
 			}
 		}
 	}
