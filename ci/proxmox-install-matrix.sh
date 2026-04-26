@@ -49,6 +49,11 @@ case "${TARGET_OS}" in
         VMID_START=9500
         VMID_END=9599
         ;;
+    ubuntu2604)
+        TEMPLATE_ID="${PMACTRL_CI_UBUNTU2604_TEMPLATE_ID:-923}"
+        VMID_START=9600
+        VMID_END=9699
+        ;;
     *)
         echo "Unsupported target OS: ${TARGET_OS}" >&2
         exit 1
@@ -113,8 +118,7 @@ find_free_vmid() {
 }
 
 wait_for_agent() {
-    local count
-    for count in $(seq 1 120); do
+    for _ in $(seq 1 120); do
         if qm agent "${VMID}" ping >/dev/null 2>&1; then
             return 0
         fi
@@ -170,8 +174,7 @@ create_ci_cloudinit_snippet() {
 }
 
 wait_for_ssh() {
-    local count
-    for count in $(seq 1 60); do
+    for _ in $(seq 1 60); do
         if ssh "${SSH_OPTS[@]}" root@"${VM_IP}" 'echo ok' >/dev/null 2>&1; then
             return 0
         fi
@@ -198,6 +201,7 @@ copy_workspace() {
 }
 
 run_remote_install() {
+    # shellcheck disable=SC2029
     ssh "${SSH_OPTS[@]}" root@"${VM_IP}" \
         "TARGET_OS='${TARGET_OS}' GIT_COMMIT='${GITHUB_SHA:-manual}' bash /srv/www/pmacontrol/ci/remote-install-and-test.sh"
 }
