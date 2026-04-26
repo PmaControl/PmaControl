@@ -156,7 +156,7 @@ cat > /tmp/pmacontrol-ci-config.json <<EOF
         "email": "ci@example.com",
         "firstname": "CI",
         "lastname": "Runner",
-        "country": "FR",
+        "country": "France",
         "city": "Paris",
         "login": "admin",
         "password": "${ADMIN_PASS}"
