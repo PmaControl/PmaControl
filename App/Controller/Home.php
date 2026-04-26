@@ -6,6 +6,7 @@ use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
 use App\Library\Extraction2;
 use App\Library\Format;
+use App\Library\System;
 
 class Home extends Controller {
 
@@ -130,11 +131,7 @@ class Home extends Controller {
         $res = $db->sql_query($sql);
         while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['daemons']['total']++;
-            $status = 'stopped';
-            if (!empty($row['pid'])) {
-                $alive = @shell_exec("ps -p ".(int)$row['pid']." -o pid=");
-                $status = (trim($alive ?? '') !== '') ? 'running' : 'error';
-            }
+            $status = System::resolveDaemonStatus($row);
             $data['daemons'][$status]++;
             $row['status'] = $status;
             $data['daemons']['list'][] = $row;
