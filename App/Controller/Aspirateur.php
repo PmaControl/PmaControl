@@ -423,8 +423,10 @@ class Aspirateur extends Controller
         // To know if we use a proxy like PROXYSQL / MAXSCALE
         $IS_PROXY = 0;
         $IS_VIP = 0;
+        $IS_MYSQL_ROUTER_ENDPOINT = false;
         $vipConnectionHost = '';
         $vipConnectionPort = 3306;
+        $detectedServerBanner = '';
 
         $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT is_proxy, is_vip, ip, port FROM mysql_server WHERE id=".$id_mysql_server;
@@ -436,6 +438,7 @@ class Aspirateur extends Controller
             $vipConnectionHost = trim((string)($ob->ip ?? ''));
             $vipConnectionPort = (int)($ob->port ?? 3306);
         }
+        $IS_MYSQL_ROUTER_ENDPOINT = $this->isKnownMysqlRouterEndpoint((int)$id_mysql_server);
         $db->sql_close();
         //end of case of HA proxy & Maxscale
 
@@ -464,12 +467,17 @@ class Aspirateur extends Controller
                 return false;
             }
 
+            $detectedServerBanner = $this->readMysqlServerBanner($mysql_tested);
+            if (!$IS_MYSQL_ROUTER_ENDPOINT && $this->isMysqlRouterSignature($detectedServerBanner)) {
+                $IS_MYSQL_ROUTER_ENDPOINT = true;
+            }
+
             // only if REAL server => should make test if Galera if select 1 => not ready to use too
             if (empty($IS_PROXY) && empty($IS_VIP)) {
 
 
             }
-            else if (!empty($IS_PROXY)){
+            else if ($this->shouldRunProxyTransactionProbe((int)$IS_PROXY, (int)$IS_VIP, $IS_MYSQL_ROUTER_ENDPOINT)){
                 // need try one case if hostgroup 2 ok but hostgroup 1 ko
                 $error_ori = '';
                 $isMaxScaleReadWriteSplit = $this->isKnownMaxScaleReadWriteSplitEndpoint(
@@ -621,29 +629,7 @@ class Aspirateur extends Controller
 
         $detectedVersion = (string) ($var['variables']['version'] ?? '');
         $detectedVersionComment = (string) ($var['variables']['version_comment'] ?? '');
-        $detectedServerBanner = '';
-
-        if (!empty($mysql_tested->link)) {
-            try {
-                $detectedServerBanner = (string) mysqli_get_server_info($mysql_tested->link);
-            } catch (\Throwable $e) {
-                $detectedServerBanner = '';
-            }
-        }
-
-        $isMysqlRouter = false;
-
-        if ($detectedServerBanner !== '' && stripos($detectedServerBanner, '-router') !== false) {
-            $isMysqlRouter = true;
-        }
-
-        if (!$isMysqlRouter && $detectedVersion !== '' && stripos($detectedVersion, '-router') !== false) {
-            $isMysqlRouter = true;
-        }
-
-        if (!$isMysqlRouter && $detectedVersionComment !== '' && stripos($detectedVersionComment, 'router') !== false) {
-            $isMysqlRouter = true;
-        }
+        $isMysqlRouter = $this->isMysqlRouterSignature($detectedServerBanner, $detectedVersion, $detectedVersionComment);
 
         if (empty($var['variables']['is_proxysql']) && $IS_PROXY == "1" && $isMysqlRouter)
         {
@@ -3630,6 +3616,51 @@ GROUP BY C.ID, C.INFO;";
         $var_temp['variables']['version_comment'] = "MaxScale";
 
         $this->exportData($id_mysql_server, "mysql_global_variable", $var_temp);
+    }
+
+    private function isKnownMysqlRouterEndpoint(int $id_mysql_server): bool
+    {
+        try {
+            $db = Sgbd::sql(DB_DEFAULT);
+            $sql = "SELECT 1 FROM mysqlrouter_server__mysql_server WHERE id_mysql_server=" . $id_mysql_server . " LIMIT 1";
+            $res = Mysql::sqlQuerySilentCompat($db, $sql);
+            if ($res === false) {
+                $db->sql_close();
+                return false;
+            }
+
+            $isKnown = $db->sql_num_rows($res) > 0;
+            $db->sql_close();
+
+            return $isKnown;
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    private function shouldRunProxyTransactionProbe(int $isProxy, int $isVip, bool $isMysqlRouterEndpoint): bool
+    {
+        return !empty($isProxy) && empty($isVip) && !$isMysqlRouterEndpoint;
+    }
+
+    private function readMysqlServerBanner($mysql): string
+    {
+        if (empty($mysql->link)) {
+            return '';
+        }
+
+        try {
+            return (string) mysqli_get_server_info($mysql->link);
+        } catch (\Throwable $e) {
+            return '';
+        }
+    }
+
+    private function isMysqlRouterSignature(string $serverBanner, string $version = '', string $versionComment = ''): bool
+    {
+        return ($serverBanner !== '' && stripos($serverBanner, '-router') !== false)
+            || ($version !== '' && stripos($version, '-router') !== false)
+            || ($versionComment !== '' && stripos($versionComment, 'router') !== false);
     }
 
 
