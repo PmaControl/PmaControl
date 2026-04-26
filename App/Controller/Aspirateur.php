@@ -4153,6 +4153,51 @@ GROUP BY C.ID, C.INFO;";
     }
 
 
+    /**
+     * Look up the writer hostgroup to use when auto-inserting the pmacontrol user.
+     *
+     * Reads `writer_hostgroup` from the ProxySQL relationship tables in order of preference
+     * (Galera → Group Replication → async replication → Aurora), then falls back to the
+     * smallest hostgroup_id with an ONLINE server. Returns null if nothing matches — the
+     * caller should use the per-row hostgroup_id as a last resort to preserve legacy
+     * behavior.
+     */
+    private function discoverWriterHostgroup($db)
+    {
+        $candidates = array(
+            "SELECT writer_hostgroup FROM mysql_galera_hostgroups WHERE active=1 ORDER BY writer_hostgroup ASC LIMIT 1",
+            "SELECT writer_hostgroup FROM mysql_group_replication_hostgroups WHERE active=1 ORDER BY writer_hostgroup ASC LIMIT 1",
+            "SELECT writer_hostgroup FROM mysql_replication_hostgroups ORDER BY writer_hostgroup ASC LIMIT 1",
+            "SELECT writer_hostgroup FROM mysql_aws_aurora_hostgroups WHERE active=1 ORDER BY writer_hostgroup ASC LIMIT 1",
+        );
+
+        foreach ($candidates as $sql) {
+            $res = $db->sql_query_silent($sql);
+            if ($res === false) {
+                continue; // table may not exist on this ProxySQL build
+            }
+            while ($ob = $db->sql_fetch_object($res)) {
+                if (isset($ob->writer_hostgroup) && $ob->writer_hostgroup !== null) {
+                    return (int)$ob->writer_hostgroup;
+                }
+            }
+        }
+
+        $res = $db->sql_query_silent(
+            "SELECT hostgroup_id FROM runtime_mysql_servers WHERE status='ONLINE' "
+            . "ORDER BY hostgroup_id ASC LIMIT 1"
+        );
+        if ($res !== false) {
+            while ($ob = $db->sql_fetch_object($res)) {
+                if (isset($ob->hostgroup_id) && $ob->hostgroup_id !== null) {
+                    return (int)$ob->hostgroup_id;
+                }
+            }
+        }
+
+        return null;
+    }
+
 /**
  * Handle aspirateur state through `tryProxySqlConnection`.
  *
@@ -4275,10 +4320,20 @@ GROUP BY C.ID, C.INFO;";
 
 
                     Debug::debug($e->getMessage(), "dfgdgf");
-                    
+
+                    // Resolve the writer hostgroup once, before walking runtime_mysql_servers.
+                    // Previously we inserted pmacontrol with `default_hostgroup = <first HG found>`,
+                    // and because runtime_mysql_servers can transiently contain Galera's
+                    // offline_hostgroup (or HG 0), sessions landed in an empty hostgroup and
+                    // timed out after 10s. Reading the writer_hostgroup from the relationship
+                    // tables guarantees we route client sessions to a populated hostgroup.
+                    $writer_hostgroup = $this->discoverWriterHostgroup($db);
+
                     $sql = "SELECT DISTINCT hostgroup_id,hostname,port FROM runtime_mysql_servers;";
                     $res = $db->sql_query($sql);
                     Debug::sql($sql);
+
+                    $user_inserted = false;
 
                     while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
                     {
@@ -4299,55 +4354,55 @@ GROUP BY C.ID, C.INFO;";
                             // il faut recupérer le bon
                             $password_hash = $ob->password;
                         }
-                    
-                        $sql2 = "SELECT count(1) as cpt FROM runtime_mysql_users WHERE username= '$user'";
-                        Debug::sql($sql2);
-                        $res2 = $db->sql_query($sql2);
 
-                        while($ob2 = $db->sql_fetch_object($res2))
-                        {
-                            //il faut stocker memory somewhere 
-                            // made update
-                            // restore it
+                        if (!$user_inserted) {
+                            $sql2 = "SELECT count(1) as cpt FROM runtime_mysql_users WHERE username= '$user'";
+                            Debug::sql($sql2);
+                            $res2 = $db->sql_query($sql2);
 
-                            //uniquement si l'user n'est pas presént pour eviter des effet de bord
-                            if ($ob2->cpt == "0") {
+                            while($ob2 = $db->sql_fetch_object($res2))
+                            {
+                                //uniquement si l'user n'est pas presént pour eviter des effet de bord
+                                if ($ob2->cpt == "0") {
 
-                                $sql5 = "LOAD MYSQL USERS FROM DISK;";
-                                Debug::sql($sql5);
-                                $db->sql_query($sql5);
+                                    $sql5 = "LOAD MYSQL USERS FROM DISK;";
+                                    Debug::sql($sql5);
+                                    $db->sql_query($sql5);
 
-                                $sql4 = "INSERT INTO mysql_users(username,password,default_hostgroup,default_schema) 
-                                VALUES ('".$user."','".$password_hash."',".$hostgroup_id.",'mysql');";
-                                Debug::sql($sql4);
-                                $db->sql_query($sql4);
+                                    $effective_hostgroup = ($writer_hostgroup !== null) ? $writer_hostgroup : (int)$hostgroup_id;
 
-                                $sql6 = "LOAD MYSQL USERS TO RUNTIME;";
-                                Debug::sql($sql6);
-                                $db->sql_query($sql6);
+                                    $sql4 = "INSERT INTO mysql_users(username,password,default_hostgroup,default_schema)
+                                    VALUES ('".$user."','".$password_hash."',".$effective_hostgroup.",'');";
+                                    Debug::sql($sql4);
+                                    $db->sql_query($sql4);
 
-
-                                //try connection
-                                $ret = Mysql::testMySQL(array($mysql_server_hostname,$port,$user, $password  ));
-
-                                if ($ret === true)
-                                {
-                                    $data = array();
-
-                                    $data['fqdn'] = $mysql_server_hostname;
-                                    $data['login'] = $user;
-                                    $data['password']= $password;
-                                    $data['port'] = $port;
-                                    
-                                    
-                                    Mysql::addMysqlServer($data );
-                                    
-                                    $sql7 = "SAVE MYSQL USERS TO DISK;";
-                                    $db->sql_query($sql7);
-
-                                    ProxySQL::associate(array($id_proxysql_server ));
+                                    $sql6 = "LOAD MYSQL USERS TO RUNTIME;";
+                                    Debug::sql($sql6);
+                                    $db->sql_query($sql6);
                                 }
                             }
+                            $user_inserted = true;
+                        }
+
+                        //try connection
+                        $ret = Mysql::testMySQL(array($mysql_server_hostname,$port,$user, $password  ));
+
+                        if ($ret === true)
+                        {
+                            $data = array();
+
+                            $data['fqdn'] = $mysql_server_hostname;
+                            $data['login'] = $user;
+                            $data['password']= $password;
+                            $data['port'] = $port;
+
+
+                            Mysql::addMysqlServer($data );
+
+                            $sql7 = "SAVE MYSQL USERS TO DISK;";
+                            $db->sql_query($sql7);
+
+                            ProxySQL::associate(array($id_proxysql_server ));
                         }
                     }
                 }
