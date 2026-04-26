@@ -4234,10 +4234,25 @@ GROUP BY C.ID, C.INFO;";
     public function getInnodbMetrics($name_server)
     {
         $db = Sgbd::sql($name_server);
+
+        return $this->collectInnodbMetricsFromConnection($db);
+    }
+
+    private function collectInnodbMetricsFromConnection($db): array
+    {
+        $data = array();
+
+        if (!$this->informationSchemaTableExists($db, 'INNODB_METRICS')) {
+            return $data;
+        }
+
         $sql = "SELECT * FROM `INFORMATION_SCHEMA`.`INNODB_METRICS`;";
 
-        $res = $db->sql_query($sql);
-        $data = array();
+        $res = Mysql::sqlQuerySilentCompat($db, $sql);
+        if ($res === false) {
+            return $data;
+        }
+
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             if (empty($arr['ENABLED'])) {
                 continue;
@@ -4250,6 +4265,19 @@ GROUP BY C.ID, C.INFO;";
         }
         return $data;
 
+    }
+
+    private function informationSchemaTableExists($db, string $table): bool
+    {
+        $tableSql = $db->sql_real_escape_string($table);
+        $sql = "SHOW TABLES FROM `INFORMATION_SCHEMA` LIKE '".$tableSql."';";
+        $res = Mysql::sqlQuerySilentCompat($db, $sql);
+
+        if ($res === false) {
+            return false;
+        }
+
+        return $db->sql_num_rows($res) > 0;
     }
 
 
