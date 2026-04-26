@@ -40,4 +40,13 @@ final class SlaveBinlogTimelineTest extends TestCase
         $this->assertStringContainsString('var fStart = parseTimelineTs(fr.start);', $this->view);
         $this->assertStringContainsString('var fEnd = parseTimelineTs(fr.end);', $this->view);
     }
+
+    public function testTimelineReadsBinlogAnalyzerPayloadFieldNames(): void
+    {
+        $this->assertStringContainsString('parseInt(fr.size || 0)', $this->view);
+        $this->assertStringContainsString("escHtml(fr.name || '')", $this->view);
+        $this->assertStringContainsString('shortBinlogName(fr.name)', $this->view);
+        $this->assertStringNotContainsString('fr.size_bytes', $this->view);
+        $this->assertStringNotContainsString('fr.file', $this->view);
+    }
 }
