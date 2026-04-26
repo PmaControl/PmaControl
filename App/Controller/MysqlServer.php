@@ -1543,20 +1543,20 @@ class MysqlServer extends Controller
             }
         }
 
-        file_put_contents($dayDir . '/chart.day.json', json_encode([
+        self::writeJsonFileAtomically($dayDir . '/chart.day.json', [
             'date' => $dayKey,
             'counts' => $dayCounts,
-        ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+        ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
 
-        file_put_contents($dayDir . '/chart.hour.json', json_encode([
+        self::writeJsonFileAtomically($dayDir . '/chart.hour.json', [
             'date' => $dayKey,
             'hours' => $hourCounts,
-        ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+        ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
 
-        file_put_contents($dayDir . '/chart.minute.json', json_encode([
+        self::writeJsonFileAtomically($dayDir . '/chart.minute.json', [
             'date' => $dayKey,
             'hours' => $minuteCounts,
-        ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+        ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
     }
 
     private function hasFreshMysqlLogsChartCachesForDay(string $dayDir): bool
@@ -1634,9 +1634,51 @@ class MysqlServer extends Controller
             $content
         );
 
-        file_put_contents($parsedPath, json_encode($events, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+        self::writeJsonFileAtomically($parsedPath, $events, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
 
         return $events;
+    }
+
+    public static function writeJsonFileAtomically(string $path, $payload, int $jsonFlags = 0): void
+    {
+        $json = json_encode($payload, $jsonFlags);
+        if ($json === false) {
+            throw new \RuntimeException('Unable to encode JSON cache for '.$path);
+        }
+
+        self::writeFileAtomically($path, $json);
+    }
+
+    public static function writeFileAtomically(string $path, string $contents): void
+    {
+        $dir = dirname($path);
+        if (!is_dir($dir)) {
+            throw new \RuntimeException('Cache directory does not exist: '.$dir);
+        }
+
+        $tmpPath = tempnam($dir, '.'.basename($path).'.tmp.');
+        if ($tmpPath === false) {
+            throw new \RuntimeException('Unable to create temporary cache file in '.$dir);
+        }
+
+        try {
+            $bytes = file_put_contents($tmpPath, $contents, LOCK_EX);
+            if ($bytes === false || $bytes !== strlen($contents)) {
+                throw new \RuntimeException('Unable to write temporary cache file '.$tmpPath);
+            }
+
+            @chmod($tmpPath, file_exists($path) ? (fileperms($path) & 0777) : 0644);
+
+            if (!@rename($tmpPath, $path)) {
+                throw new \RuntimeException('Unable to atomically replace cache file '.$path);
+            }
+        } catch (\Throwable $exception) {
+            if (is_file($tmpPath)) {
+                @unlink($tmpPath);
+            }
+
+            throw $exception;
+        }
     }
 
     private function normalizeMysqlLogLevelBucket(string $level): string
