@@ -10,7 +10,6 @@ class InnoDBClusterDot3Test extends TestCase
     {
         $reflection = new ReflectionClass(Dot3::class);
         $method = $reflection->getMethod('extractGroupReplicationEndpoints');
-        $method->setAccessible(true);
 
         $res = $method->invoke(null, 'mysql://db1:33061,[2001:db8::1]:33062,db3');
 

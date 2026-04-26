@@ -23,7 +23,8 @@ final class IntegrateTest extends TestCase
         $this->assertSame(3306, $normalized['master_port']);
         $this->assertSame('Yes', $normalized['slave_io_running']);
         $this->assertSame('Yes', $normalized['slave_sql_running']);
-        $this->assertSame('0', $normalized['seconds_behind_master']);
+        $this->assertArrayNotHasKey('seconds_behind_master', $normalized);
+        $this->assertArrayNotHasKey('seconds_behind_source', $normalized);
     }
 
     public function testNormalizeSlaveMetricRowKeepsExistingConnectionName(): void
@@ -61,6 +62,42 @@ final class IntegrateTest extends TestCase
         $this->assertSame('Yes', $normalized['slave_sql_running']);
         $this->assertSame('Yes', $normalized['replica_io_running']);
         $this->assertSame('Yes', $normalized['replica_sql_running']);
+    }
+
+    public function testNormalizeSlaveMetricRowKeepsZeroLagAsAvailable(): void
+    {
+        $controller = new TestableIntegrate('Controller', 'View', []);
+
+        $normalized = $controller->exposeNormalizeSlaveMetricRow('slave', [
+            'Seconds_Behind_Source' => '0',
+        ]);
+
+        $this->assertSame('0', $normalized['seconds_behind_master']);
+        $this->assertSame('0', $normalized['seconds_behind_source']);
+    }
+
+    public function testNormalizeSlaveMetricRowPreservesNullLagAsUnavailable(): void
+    {
+        $controller = new TestableIntegrate('Controller', 'View', []);
+
+        $normalized = $controller->exposeNormalizeSlaveMetricRow('slave', [
+            'Seconds_Behind_Source' => null,
+        ]);
+
+        $this->assertNull($normalized['seconds_behind_source']);
+        $this->assertArrayNotHasKey('seconds_behind_master', $normalized);
+    }
+
+    public function testNormalizeSlaveMetricRowPreservesBlankLagAsUnavailable(): void
+    {
+        $controller = new TestableIntegrate('Controller', 'View', []);
+
+        $normalized = $controller->exposeNormalizeSlaveMetricRow('slave', [
+            'Seconds_Behind_Master' => ' ',
+        ]);
+
+        $this->assertSame(' ', $normalized['seconds_behind_master']);
+        $this->assertArrayNotHasKey('seconds_behind_source', $normalized);
     }
 
     public function testNormalizeSlaveMetricRowReturnsNullForNonSlaveMetrics(): void

@@ -439,14 +439,14 @@ class ProxySQL extends Controller
                 $arr['servers'] = $proxysql[$arr['id_mysql_server']]['mysql_servers'];
             }
 
+            $arr['mysql_available'] = "";
+            $arr['mysql_error'] = "";
             if (!empty($arr['id_mysql_server'])) {
-                
                 $var = Extraction::display(array('mysql_server::mysql_available', 'mysql_server::mysql_error'), array($arr['id_mysql_server']));
-                $arr['mysql_available'] = $var[$arr['id_mysql_server']]['']['mysql_available'];
-
+                $server_state = $var[$arr['id_mysql_server']][''] ?? [];
+                $arr['mysql_available'] = $server_state['mysql_available'] ?? "";
+                $arr['mysql_error'] = $server_state['mysql_error'] ?? "";
             }
-
-            $arr['mysql_error'] = $var[$arr['id_mysql_server']]['']['mysql_error'] ?? "";
 
             $data['proxysql_error'] = [];
             //$data['proxysql_error'] = $this->getErrorConnect(array($arr['id']));
@@ -884,6 +884,16 @@ class ProxySQL extends Controller
         $sqls["ADMIN VARIABLES"]['update_only'] = array("variable_value");
         $sqls["MYSQL QUERY RULES"]['sql'] = "SELECT * FROM {PREFIX}mysql_query_rules ORDER BY rule_id ASC;";
         $sqls["MYSQL SERVERS"]['sql'] = "SELECT * FROM {PREFIX}mysql_servers ORDER BY hostgroup_id, hostname, port;";
+        // Extra ProxySQL tables that reference `hostgroup_id` (async replication, Group Replication,
+        // Galera, AWS Aurora and per-hostgroup attributes). They are loaded on a best-effort basis:
+        // older ProxySQL builds may be missing some of them, so `config()` skips tables that don't exist.
+        $sqls["MYSQL SERVERS"]['related_sql'] = array(
+            "SELECT * FROM {PREFIX}mysql_replication_hostgroups ORDER BY writer_hostgroup, reader_hostgroup;",
+            "SELECT * FROM {PREFIX}mysql_group_replication_hostgroups ORDER BY writer_hostgroup;",
+            "SELECT * FROM {PREFIX}mysql_galera_hostgroups ORDER BY writer_hostgroup;",
+            "SELECT * FROM {PREFIX}mysql_aws_aurora_hostgroups ORDER BY writer_hostgroup;",
+            "SELECT * FROM {PREFIX}mysql_hostgroup_attributes ORDER BY hostgroup_id;",
+        );
         $sqls["MYSQL USERS"]['sql'] = "SELECT * FROM {PREFIX}mysql_users ORDER BY default_hostgroup, username ASC;";
 
         $sqls["MYSQL VARIABLES"]['sql'] = "SELECT * FROM {PREFIX}global_variables WHERE variable_name NOT LIKE 'admin%' ORDER BY variable_name ASC;";
@@ -1238,6 +1248,7 @@ class ProxySQL extends Controller
         $data['current'] = $current_config_tab;
 
         $data['table'] = array();
+        $data['primary_keys'] = array();
 
         foreach ($sqls as $name => $elem) {
 
@@ -1247,34 +1258,63 @@ class ProxySQL extends Controller
                 continue;
             }
 
+            $sql_templates = array($elem['sql']);
+            if (!empty($elem['related_sql']) && is_array($elem['related_sql'])) {
+                $sql_templates = array_merge($sql_templates, $elem['related_sql']);
+            }
+
             $prefix = array('', 'runtime_');
-            foreach ($prefix as $opt) {
 
-                $sql_finale = str_replace('{PREFIX}', $opt, $elem['sql']);
-                $output_array = array();
-                preg_match('/FROM\s+(\S+)/', $sql_finale, $output_array);
+            foreach ($sql_templates as $sql_template) {
+                $base_table = $this->extractTableNameFromSqlTemplate($sql_template);
 
-                $table_name = $output_array[1];
-
-                if ($opt === '') {
-                    $data['table'][] = $table_name;
+                if ($base_table === '') {
+                    continue;
                 }
 
-                $res = $db->sql_query($sql_finale);
+                // Related tables may be absent on older ProxySQL builds; skip silently.
+                $safe_base_table = str_replace("'", "''", $base_table);
+                $exists_sql = "SELECT 1 FROM sqlite_master WHERE type='table' AND name='".$safe_base_table."' LIMIT 1;";
+                $exists_res = $db->sql_query_silent($exists_sql);
+                if ($exists_res === false || $db->sql_num_rows($exists_res) === 0) {
+                    continue;
+                }
 
-                $data['tables'][$table_name] = array();
-                while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-                    $data['tables'][$table_name][] = $arr;
+                foreach ($prefix as $opt) {
+
+                    $sql_finale = str_replace('{PREFIX}', $opt, $sql_template);
+                    $output_array = array();
+                    preg_match('/FROM\s+(\S+)/', $sql_finale, $output_array);
+
+                    $table_name = $output_array[1];
+
+                    if ($opt === '') {
+                        $data['table'][] = $table_name;
+                    }
+
+                    $data['tables'][$table_name] = array();
+                    $res = $db->sql_query_silent($sql_finale);
+                    if ($res === false) {
+                        continue;
+                    }
+
+                    while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                        $data['tables'][$table_name][] = $arr;
+                    }
+                }
+
+                //get Primary Key per table (needed for inline edit / delete of related tables)
+                $sql2 = "SELECT name FROM pragma_table_info('".$safe_base_table."') WHERE pk > 0;";
+                $res2 = $db->sql_query($sql2);
+                $data['primary_keys'][$base_table] = array();
+                while ($ob = $db->sql_fetch_object($res2, MYSQLI_ASSOC)) {
+                    $data['primary_keys'][$base_table][] = $ob->name;
                 }
             }
 
-            //get Primary Key for update
-            $sql2 = "SELECT name FROM pragma_table_info('".$table_name."') WHERE pk > 0;";
-            $res2 = $db->sql_query($sql2);
-            $data['primary_key'] = array();
-            while ($ob = $db->sql_fetch_object($res2, MYSQLI_ASSOC)) {
-                $data['primary_key'][] = $ob->name;
-            }
+            // Backward compatibility: keep primary_key pointed at the tab's main table.
+            $main_table = $this->extractTableNameFromSqlTemplate($elem['sql']);
+            $data['primary_key'] = $data['primary_keys'][$main_table] ?? array();
         }
 
         $data['menu'] = $sqls;
@@ -2014,11 +2054,19 @@ class ProxySQL extends Controller
     public function addLine($param)
     {
         Debug::parseDebug($param);
+        $this->view = false;
 
         $id_proxysql_server = $param[0] ?? "";
         $current = $param[1] ?? "MYSQL_SERVERS";
+        $requested_table = (string) ($param[2] ?? "");
 
         if (empty($id_proxysql_server)) {
+            if (! IS_CLI) {
+                set_flash("warning", __("Warning"), __('ProxySQL server id is required'));
+                header("location: " . LINK . "ProxySQL/index/");
+                return;
+            }
+
             throw new \Exception(__FUNCTION__ . ' should have id_proxysql_server in parameter');
         }
 
@@ -2054,7 +2102,10 @@ class ProxySQL extends Controller
             return;
         }
 
+        // Build the allow-list of tables reachable from this tab (main + related_sql),
+        // then pick the requested one if it matches, otherwise fall back to the main table.
         $table_name = "";
+        $allowed_tables = array();
         foreach ($sqls as $name => $elem) {
             $key = str_replace(' ', '_', $name);
 
@@ -2062,8 +2113,26 @@ class ProxySQL extends Controller
                 continue;
             }
 
-            $table_name = $this->extractTableNameFromSqlTemplate($elem['sql']);
+            $main_table = $this->extractTableNameFromSqlTemplate($elem['sql']);
+            if ($main_table !== '') {
+                $allowed_tables[] = $main_table;
+            }
+
+            if (!empty($elem['related_sql']) && is_array($elem['related_sql'])) {
+                foreach ($elem['related_sql'] as $related) {
+                    $related_table = $this->extractTableNameFromSqlTemplate($related);
+                    if ($related_table !== '') {
+                        $allowed_tables[] = $related_table;
+                    }
+                }
+            }
+
+            $table_name = $main_table;
             break;
+        }
+
+        if ($requested_table !== '' && in_array($requested_table, $allowed_tables, true)) {
+            $table_name = $requested_table;
         }
 
         if (empty($table_name)) {
@@ -2150,6 +2219,7 @@ class ProxySQL extends Controller
 
                     if (! IS_CLI) {
                         header("location: " . LINK . "ProxySQL/config/" . $id_proxysql_server . "/" . $current . "/");
+                        exit;
                     }
 
                     return;

@@ -90,7 +90,6 @@ class ServerStateTimelineTest extends TestCase
     {
         $reflection = new \ReflectionClass(ServerStateTimeline::class);
         $method = $reflection->getMethod('fillLatestMissingBucketFromCurrentStatus');
-        $method->setAccessible(true);
 
         $values = [1, null, null];
         $result = $method->invoke(null, $values, 1);
