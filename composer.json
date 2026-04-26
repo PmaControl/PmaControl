@@ -36,7 +36,8 @@
 		"Glial\\": "Glial/"
 		},
         "files": [
-            "App/Library/SqlFormatterCompat.php"
+            "App/Library/SqlFormatterCompat.php",
+            "App/Library/LdapEncodingCompat.php"
         ]
     },
     "autoload-dev": {
