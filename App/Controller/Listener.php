@@ -707,9 +707,14 @@ class Listener extends Controller
 
         Debug::debug($param);
 
+        $data = array();
         $extract = Extraction2::display(array('variables::'), array($param['id_mysql_server']), array($param['min_date']));
         
-        if (! empty($extract))
+        if (
+            ! empty($extract)
+            && isset($extract[$param['id_mysql_server']])
+            && is_array($extract[$param['id_mysql_server']])
+        )
         {
             //Debug::debug($extract, "EXTRACT");
             $data[$param['id_mysql_server']] = $extract[$param['id_mysql_server']];
@@ -1126,4 +1131,3 @@ ORDER BY t.date DESC
 LIMIT 100;
 
 */
-
