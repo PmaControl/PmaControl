@@ -59,7 +59,6 @@ final class PartitionAlgorithmTest extends TestCase
     {
         $reflection = new ReflectionClass($this->partition);
         $method = $reflection->getMethod($methodName);
-        $method->setAccessible(true);
 
         return $method->invokeArgs($this->partition, $arguments);
     }

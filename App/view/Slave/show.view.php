@@ -1732,7 +1732,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ---- Load past analyses ----
     function loadHistory() {
-        fetch(LINK + 'slave/binlogAnalysisList/' + serverId + '/').then(function(r){return r.json()}).then(function(list) {
+        var historyUrl = LINK + 'slave/binlogAnalysisList/' + serverId + '/ajax:true/?connection_name='
+            + encodeURIComponent(replicationName || '');
+
+        fetch(historyUrl).then(function(r){return r.json()}).then(function(list) {
             if (!list || !list.length) {
                 document.getElementById('sv-ba-history').innerHTML = '';
                 return;

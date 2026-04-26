@@ -26,7 +26,6 @@ final class UtilTest extends TestCase
 
         $reflection = new ReflectionClass(Util::class);
         $method = $reflection->getMethod('getFilter');
-        $method->setAccessible(true);
 
         $sql = $method->invoke(null, [9, 10], 'srv');
 

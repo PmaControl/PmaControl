@@ -45,3 +45,7 @@ Quick jumps:
 | `tests/` | PHPUnit tests, mirroring the namespace under test |
 | `config_sample/` → `configuration/` | Config templates → live config (gitignored) |
 | `data/`, `tmp/` | Ephemeral runtime state (gitignored) |
+
+## Local MySQL access
+
+On this host, the `mysql` CLI authenticates without a password (socket auth). For ad-hoc inspection run `mysql pmacontrol -e "SELECT …"` directly — no need to parse `configuration/db.config.ini.php` or bootstrap the app. The encrypted passwords in that file are only required when connecting *as the PmaControl app user*.

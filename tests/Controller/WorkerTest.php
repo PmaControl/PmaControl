@@ -44,4 +44,33 @@ final class WorkerTest extends TestCase
         $this->assertContains("UPDATE worker_queue SET nb_worker = 1 WHERE `table` = 'ssh_server';", $queries);
         $this->assertCount(2, $queries);
     }
+
+    public function testReadWorkerServerIdFromPidFileIgnoresMissingAndWaitingFiles(): void
+    {
+        $missing = sys_get_temp_dir() . '/pmacontrol-missing-worker-' . uniqid('', true) . '.pid';
+        $this->assertNull(Worker::readWorkerServerIdFromPidFile($missing));
+
+        $file = tempnam(sys_get_temp_dir(), 'pmacontrol-worker-pid-');
+        $this->assertIsString($file);
+
+        try {
+            file_put_contents($file, " Waiting...\n");
+            $this->assertNull(Worker::readWorkerServerIdFromPidFile($file));
+
+            file_put_contents($file, " 42\n");
+            $this->assertSame('42', Worker::readWorkerServerIdFromPidFile($file));
+        } finally {
+            if (is_file($file)) {
+                unlink($file);
+            }
+        }
+    }
+
+    public function testCountWorkerServerIdsIgnoresNonScalars(): void
+    {
+        $this->assertSame([
+            42 => 2,
+            7 => 1,
+        ], Worker::countWorkerServerIds(['42', 42, ['invalid'], false, null, '7']));
+    }
 }

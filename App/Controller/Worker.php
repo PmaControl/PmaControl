@@ -15,6 +15,8 @@ use App\Library\Microsecond;
 use \App\Library\System;
 use \App\Library\Log;
 
+use Glial\Http\Request;
+use Glial\Security\Csrf;
 use \Glial\Synapse\Controller;
 use \Glial\I18n\I18n;
 use \Glial\Sgbd\Sgbd;
@@ -39,6 +41,8 @@ use \Monolog\Handler\StreamHandler;
  */
 class Worker extends Controller
 {
+    private const WORKER_UPDATE_CSRF_SCOPE = 'worker.update';
+    private const WORKER_UPDATE_FIELDS = ['nb_worker', 'queue_number'];
 
 /**
  * Stores `$timestamp_config_file` for timestamp config file.
@@ -522,9 +526,17 @@ class Worker extends Controller
         Debug::parseDebug($param);
 
         $db = Sgbd::sql(DB_DEFAULT);
+        $data = [
+            'worker' => [],
+            'worker_update_csrf_field' => Csrf::DEFAULT_FIELD,
+            'worker_update_csrf_token' => Csrf::issueToken($_SESSION, self::WORKER_UPDATE_CSRF_SCOPE),
+        ];
 
         if (!empty($_GET['ajax']) && $_GET['ajax'] === "true") {
             $this->layout_name = false;
+        }
+        else {
+            $this->di['js']->addJavascript(array('bootstrap-editable.min.js', 'Tree/index.js'));
         }
 
 
@@ -1054,10 +1066,10 @@ class Worker extends Controller
             
             // why workermysql ? good idea to replacE?
             //$idmysqlserver = trim(file_get_contents(EngineV4::getFilePid("worker_mysql", $server['pid'])));
-            $idmysqlserver = trim(file_get_contents(EngineV4::getFilePid($name, $server['pid'])));
+            $idmysqlserver = self::readWorkerServerIdFromPidFile(EngineV4::getFilePid($name, $server['pid']));
 
             // si le pid n'existe plus le fichier temporaire sera surcharger au prochain run
-            if (System::isRunningPid($server['pid']) === true && $idmysqlserver == $server['id']) {
+            if ($idmysqlserver !== null && System::isRunningPid($server['pid']) === true && $idmysqlserver == $server['id']) {
 
                 $mysql_servers[] = $server['id'];
                 $time = microtime(true) - $server['microtime'];
@@ -1175,18 +1187,89 @@ class Worker extends Controller
         $this->view        = false;
         $this->layout_name = false;
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            $db = Sgbd::sql(DB_DEFAULT);
-
-            $sql = "UPDATE worker_queue SET `".$_POST['name']."` = '".$_POST['value']."' WHERE id = ".$db->sql_real_escape_string($_POST['pk'])."";
-            $db->sql_query($sql);
-
-            if ($db->sql_affected_rows() === 1) {
-                echo "OK";
-            } else {
-                header("HTTP/1.0 503 Internal Server Error");
-            }
+        $outcome = self::evaluateUpdateRequest($_POST, $_SERVER, $_SESSION);
+        if ($outcome['status'] !== 200) {
+            self::sendWorkerUpdateError($outcome['status'], $outcome['body'], $outcome['headers']);
+            return;
         }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $db->sql_query($outcome['sql']);
+
+        if ($db->sql_affected_rows() === 1) {
+            echo "OK";
+        } else {
+            self::sendWorkerUpdateError(503, "Worker queue not updated");
+        }
+    }
+
+    public static function evaluateUpdateRequest(array $post, array $server, array $session): array
+    {
+        if (!Request::isMethod($server, "POST")) {
+            return self::buildWorkerUpdateOutcome(405, "Method Not Allowed", ['Allow' => 'POST']);
+        }
+
+        if (!Request::isSameSite($server)) {
+            return self::buildWorkerUpdateOutcome(403, "Invalid request origin");
+        }
+
+        if (!Csrf::validateToken($post, $session, self::WORKER_UPDATE_CSRF_SCOPE)) {
+            return self::buildWorkerUpdateOutcome(403, "Invalid CSRF token");
+        }
+
+        $sql = self::buildWorkerUpdateSql($post);
+        if ($sql === null) {
+            return self::buildWorkerUpdateOutcome(400, "Invalid worker update payload");
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'sql' => $sql,
+        ];
+    }
+
+    public static function buildWorkerUpdateSql(array $post): ?string
+    {
+        $field = (string) ($post['name'] ?? '');
+        $value = (string) ($post['value'] ?? '');
+        $id = (string) ($post['pk'] ?? '');
+
+        if (! in_array($field, self::WORKER_UPDATE_FIELDS, true)) {
+            return null;
+        }
+
+        if (! ctype_digit($value) || ! ctype_digit($id) || (int) $id < 1) {
+            return null;
+        }
+
+        return sprintf(
+            'UPDATE worker_queue SET `%s` = %d WHERE id = %d',
+            $field,
+            (int) $value,
+            (int) $id
+        );
+    }
+
+    private static function buildWorkerUpdateOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'sql' => null,
+        ];
+    }
+
+    private static function sendWorkerUpdateError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
 /**
@@ -1448,12 +1531,12 @@ class Worker extends Controller
 
             if ( file_exists($file))
             {
-                $id_mysql_server = file_get_contents($file);
-                Debug::debug($id_mysql_server, "id mysql server");
-
-                if ($id_mysql_server === "Waiting..."){
+                $id_mysql_server = self::readWorkerServerIdFromPidFile($file);
+                if ($id_mysql_server === null) {
                     continue;
                 }
+
+                Debug::debug($id_mysql_server, "id mysql server");
 
                 $elems[] = $id_mysql_server;
             }
@@ -1462,7 +1545,7 @@ class Worker extends Controller
 
         Debug::debug($elems);
 
-        $count_values = array_count_values($elems);
+        $count_values = self::countWorkerServerIds($elems);
 
         Debug::debug($count_values);
 
@@ -1507,7 +1590,11 @@ class Worker extends Controller
                     
                     if ( file_exists($file))
                     {
-                        $id_mysql_server = file_get_contents($file);
+                        $id_mysql_server = self::readWorkerServerIdFromPidFile($file);
+                        if ($id_mysql_server === null) {
+                            continue;
+                        }
+
                         Debug::debug($id_mysql_server);
 
                         $elems[] = $id_mysql_server;
@@ -1518,12 +1605,43 @@ class Worker extends Controller
             }
         }
 
-        $count_values = array_count_values($elems);
+        $count_values = self::countWorkerServerIds($elems);
 
         //$this->logger->warning("deleteExpiredPid worker_".$worker_type." : ".json_encode($count_values).""); 
         Debug::debug($count_values);
 
         return $count_values;
+    }
+
+    public static function readWorkerServerIdFromPidFile(string $file): ?string
+    {
+        if (!is_readable($file)) {
+            return null;
+        }
+
+        $id_mysql_server = @file_get_contents($file);
+        if ($id_mysql_server === false) {
+            return null;
+        }
+
+        $id_mysql_server = trim($id_mysql_server);
+        if ($id_mysql_server === '' || $id_mysql_server === 'Waiting...') {
+            return null;
+        }
+
+        return $id_mysql_server;
+    }
+
+    public static function countWorkerServerIds(array $ids): array
+    {
+        $normalized_ids = [];
+        foreach ($ids as $id) {
+            if (is_string($id) || is_int($id)) {
+                $normalized_ids[] = (string) $id;
+            }
+        }
+
+        return array_count_values($normalized_ids);
     }
 
 
@@ -1620,4 +1738,3 @@ class Worker extends Controller
         $db->sql_query($sql);
     }
 }
-

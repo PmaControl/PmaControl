@@ -2818,7 +2818,7 @@ var chart = new Chart(ctx, {
 
     /**
      * AJAX: List past binlog analyses for a slave.
-     * GET /slave/binlogAnalysisList/<id_mysql_server>/
+     * GET /slave/binlogAnalysisList/<id_mysql_server>/ajax:true/?connection_name=<connection_name>
      */
     public function binlogAnalysisList($param)
     {
@@ -2827,6 +2827,7 @@ var chart = new Chart(ctx, {
         header('Content-Type: application/json');
 
         $id_mysql_server = (int) $param[0];
+        $connection_name = self::sanitizeConnectionName((string) ($_GET['connection_name'] ?? ($param[1] ?? '')));
 
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -2838,10 +2839,12 @@ var chart = new Chart(ctx, {
         }
 
         ob_start();
+        $connection_name = $db->sql_real_escape_string($connection_name);
         $res = $db->sql_query_silent(
-            "SELECT id, status, time_start, time_end, total_transactions, total_size_bytes, duration_seconds, peak_txn_per_sec, created_at, completed_at
+            "SELECT id, status, connection_name, time_start, time_end, total_transactions, total_size_bytes, duration_seconds, peak_txn_per_sec, created_at, completed_at
              FROM binlog_analysis
              WHERE id_mysql_server = $id_mysql_server
+             AND connection_name = '$connection_name'
              ORDER BY created_at DESC
              LIMIT 20"
         );

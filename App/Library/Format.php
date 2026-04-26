@@ -261,14 +261,16 @@ class Format
         // need make test with that
         $enterprise = false;
 
-        if (strpos($version, "-")) {
+        if (strpos($version, "-") !== false) {
             $versionParts = explode("-", $version);
             $number = $versionParts[0];
-            $fork   = $versionParts[1] ?? 'MySQL';
-            
-            if (preg_match('/^-?\d+$/', $fork) && !empty($versionParts[2])) {
-                $fork   = $versionParts[2];
+            $second = $versionParts[1] ?? 'MySQL';
+
+            if (preg_match('/^\d+$/', $second)) {
                 $enterprise = true;
+                $fork = !empty($versionParts[2]) ? $versionParts[2] : $second;
+            } else {
+                $fork = $second;
             }
         } else {
             $number = $version;

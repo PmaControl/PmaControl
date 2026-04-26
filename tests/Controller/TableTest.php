@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Controller\Table;
+use App\Library\Graphviz;
 use PHPUnit\Framework\TestCase;
 
 final class TableTest extends TestCase
@@ -60,10 +61,16 @@ final class TableTest extends TestCase
         $this->table->generateHiddenArrow([
             ['users', 'orders'],
             ['items', 'payments'],
-        ]);
+        ], 'shop');
 
-        $this->assertContains('users:title -> items:title', Table::$hidden_edges);
-        $this->assertContains('orders:title -> payments:title', Table::$hidden_edges);
+        $this->assertContains(
+            Graphviz::tableNodeRef('shop', 'users', 'title').' -> '.Graphviz::tableNodeRef('shop', 'items', 'title'),
+            Table::$hidden_edges
+        );
+        $this->assertContains(
+            Graphviz::tableNodeRef('shop', 'orders', 'title').' -> '.Graphviz::tableNodeRef('shop', 'payments', 'title'),
+            Table::$hidden_edges
+        );
     }
 
     public function testDiluerCouleurLightensAValidHexColor(): void
