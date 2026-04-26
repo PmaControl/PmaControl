@@ -29,7 +29,8 @@ final class InstallerConfigSecretTest extends TestCase
 
     public function testDebian13InstallerDeletesTemporaryConfigOnExit(): void
     {
-        $this->assertStringContainsString('trap cleanup_install_config EXIT', $this->script);
+        $this->assertStringContainsString('cleanup_install_config', $this->script);
+        $this->assertStringContainsString('trap cleanup_install_artifacts EXIT', $this->script);
         $this->assertStringContainsString('rm -f "${INSTALL_CONFIG_FILE}"', $this->script);
     }
 
