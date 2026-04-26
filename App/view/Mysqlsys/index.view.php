@@ -119,21 +119,21 @@ if (!empty($_GET['mysql_server']['id'])) {
                             }
 
                             if ($var == "query") {
+                                $query = (string)($val ?? '');
+                                $queryExcerpt = $query;
 
                                 echo '<button class="btn btn-default btn-xs" type="button" data-toggle="collapse" data-target="#collapseExample' . $i . '">'
                                 . '<i class="fa fa-plus"></i></button>';
                                 echo ' <span>';
 
-                                echo '<div class="collapse" id="collapseExample' . $i . '">' . SqlFormatter::format($val) . '</div>';
+                                echo '<div class="collapse" id="collapseExample' . $i . '">' . SqlFormatter::format($query) . '</div>';
 
-                                $nb_length = intval(strlen($val));
+                                $nb_length = mb_strlen($query, 'UTF-8');
 
                                 if ($nb_length > 64) {
-
-                                    echo substr($val, 0, 32) . "..." . substr($val, -32);
-                                } else {
-                                    echo $val;
+                                    $queryExcerpt = mb_substr($query, 0, 32, 'UTF-8') . "..." . mb_substr($query, -32, 32, 'UTF-8');
                                 }
+                                echo htmlspecialchars($queryExcerpt, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
                                 echo '</span>';
 
                             } else if ($var == "digest")
