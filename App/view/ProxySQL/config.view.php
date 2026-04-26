@@ -95,20 +95,24 @@ echo "<br>";
 
 foreach ($data['table'] as $table_name)
 {
+    $primary_key_cols = isset($data['primary_keys'][$table_name])
+        ? $data['primary_keys'][$table_name]
+        : (isset($data['primary_key']) ? $data['primary_key'] : array());
+
     echo '<div class="row">';
     echo '<div class="col-md-6">';
-    
+
     echo '<div class="panel panel-primary" style="overflow:auto">';
     echo '<div class="panel-heading">';
     echo '<h3 class="panel-title">'.$table_name.' ';
 
     if (! isset($extra['insert_or_delete']))
     {
-      echo '<a style="float:right; margin-top:-8px" href="'.LINK.'ProxySQL/addLine/'.$data['id_proxysql_server'].'/'.$data['current'].'/" class="active btn btn-primary">
+      echo '<a style="float:right; margin-top:-8px" href="'.LINK.'ProxySQL/addLine/'.$data['id_proxysql_server'].'/'.$data['current'].'/'.$table_name.'/" class="active btn btn-primary">
       <span class="glyphicon glyphicon-plus"></span> Add a line</a>';
     }
-    
-    
+
+
     echo '</h3>';
     echo '</div>';
 
@@ -116,7 +120,7 @@ foreach ($data['table'] as $table_name)
     {
       echo '<table class="table table-condensed table-bordered table-striped" id="table">';
       $keys = array_keys(end($data['tables'][$table_name]));
-      
+
       echo '<tr>';
       foreach($keys as $key) {
           echo '<th>'.$key.'</th>';
@@ -134,19 +138,19 @@ foreach ($data['table'] as $table_name)
           foreach($line as $field => $elem) {
 
             $pk_table = [];
-            foreach($data['primary_key'] as $pk)
+            foreach($primary_key_cols as $pk)
             {
                 $pk_table[] = "$pk = '".$line[$pk]."'";
             }
             $full_pk = implode (' AND ', $pk_table);
 
-            if (in_array($field , $data['primary_key']))
+            if (in_array($field , $primary_key_cols))
             {
-              echo '<td style="color:#777777;">'.$elem.'</td>'; 
+              echo '<td style="color:#777777;">'.$elem.'</td>';
             }
             else {
               echo '<td class="line-edit" data-name="'.$field.'" data-pk="'.$full_pk .'" data-type="text" data-url="'. LINK.'ProxySQL/updateField/'.$data['id_proxysql_server'].'/'.$table_name.'" data-title="Enter value">';
-              echo $elem.'</td>'; 
+              echo $elem.'</td>';
             }
           }
 

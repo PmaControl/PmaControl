@@ -90,7 +90,11 @@ class Daemon extends Controller
             $(document).ready(function(){
                 function refresh(){
                     var myURL = GLIAL_LINK+"worker/index"+"/ajax:true";
-                    $("#worker-index").load(myURL);
+                    $("#worker-index").load(myURL, function(){
+                        if (window.pmacontrolInitLineEdit) {
+                            window.pmacontrolInitLineEdit(this);
+                        }
+                    });
                 }
 
                 var intervalId = window.setInterval(function(){

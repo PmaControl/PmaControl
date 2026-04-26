@@ -81,7 +81,6 @@ final class SlaveTest extends TestCase
     public function testNormalizeReplicationLagDisplayRowsPrefersSourceLag(): void
     {
         $method = new ReflectionMethod(Slave::class, 'normalizeReplicationLagDisplayRows');
-        $method->setAccessible(true);
 
         $rows = [
             1 => [
@@ -100,7 +99,6 @@ final class SlaveTest extends TestCase
     public function testNormalizeReplicationLagGraphRowsPrefersSourceMetric(): void
     {
         $method = new ReflectionMethod(Slave::class, 'normalizeReplicationLagGraphRows');
-        $method->setAccessible(true);
 
         Extraction::$variable[10]['name'] = 'seconds_behind_master';
         Extraction::$variable[11]['name'] = 'seconds_behind_source';
@@ -129,7 +127,6 @@ final class SlaveTest extends TestCase
     public function testSanitizeConnectionNameRemovesInjectionChars(): void
     {
         $method = new ReflectionMethod(Slave::class, 'sanitizeConnectionName');
-        $method->setAccessible(true);
 
         $this->assertSame('production_fr', $method->invoke(null, 'production_fr'));
         $this->assertSame('slave-01', $method->invoke(null, 'slave-01'));
@@ -145,7 +142,6 @@ final class SlaveTest extends TestCase
     public function testNormalizeReplicationLagGraphRowsKeepsMultipleDays(): void
     {
         $method = new ReflectionMethod(Slave::class, 'normalizeReplicationLagGraphRows');
-        $method->setAccessible(true);
 
         Extraction::$variable[10]['name'] = 'seconds_behind_master';
 
@@ -187,7 +183,6 @@ final class SlaveTest extends TestCase
     public function testNormalizeReplicationLagGraphRowsReturnsEmptyForEmptyInput(): void
     {
         $method = new ReflectionMethod(Slave::class, 'normalizeReplicationLagGraphRows');
-        $method->setAccessible(true);
 
         $this->assertSame([], $method->invoke($this->slave, []));
     }
@@ -195,7 +190,6 @@ final class SlaveTest extends TestCase
     public function testNormalizeReplicationLagGraphRowsSingleRowPassthrough(): void
     {
         $method = new ReflectionMethod(Slave::class, 'normalizeReplicationLagGraphRows');
-        $method->setAccessible(true);
 
         Extraction::$variable[10]['name'] = 'seconds_behind_master';
 
@@ -218,7 +212,6 @@ final class SlaveTest extends TestCase
     public function testNormalizeReplicationLagGraphRowsWithoutDayFieldForSparkline(): void
     {
         $method = new ReflectionMethod(Slave::class, 'normalizeReplicationLagGraphRows');
-        $method->setAccessible(true);
 
         Extraction::$variable[10]['name'] = 'seconds_behind_master';
         Extraction::$variable[11]['name'] = 'seconds_behind_source';
@@ -238,7 +231,6 @@ final class SlaveTest extends TestCase
     public function testNormalizeReplicationLagGraphRowsTwoChannelsSameDaySameServer(): void
     {
         $method = new ReflectionMethod(Slave::class, 'normalizeReplicationLagGraphRows');
-        $method->setAccessible(true);
 
         Extraction::$variable[10]['name'] = 'seconds_behind_master';
 
@@ -259,7 +251,6 @@ final class SlaveTest extends TestCase
     public function testNormalizeReplicationLagGraphRowsEmptyConnectionName(): void
     {
         $method = new ReflectionMethod(Slave::class, 'normalizeReplicationLagGraphRows');
-        $method->setAccessible(true);
 
         Extraction::$variable[10]['name'] = 'seconds_behind_master';
 
@@ -278,7 +269,6 @@ final class SlaveTest extends TestCase
     public function testNormalizeReplicationLagDisplayRowsEmptyInput(): void
     {
         $method = new ReflectionMethod(Slave::class, 'normalizeReplicationLagDisplayRows');
-        $method->setAccessible(true);
 
         $this->assertSame([], $method->invoke($this->slave, []));
     }
@@ -286,7 +276,6 @@ final class SlaveTest extends TestCase
     public function testNormalizeReplicationLagDisplayRowsOnlyMasterPresent(): void
     {
         $method = new ReflectionMethod(Slave::class, 'normalizeReplicationLagDisplayRows');
-        $method->setAccessible(true);
 
         $rows = [
             1 => ['' => ['seconds_behind_master' => '7']],
@@ -300,7 +289,6 @@ final class SlaveTest extends TestCase
     public function testNormalizeReplicationLagDisplayRowsSourceOverridesMaster(): void
     {
         $method = new ReflectionMethod(Slave::class, 'normalizeReplicationLagDisplayRows');
-        $method->setAccessible(true);
 
         $rows = [
             1 => ['' => ['seconds_behind_master' => '99', 'seconds_behind_source' => '2']],
@@ -313,7 +301,6 @@ final class SlaveTest extends TestCase
     public function testNormalizeReplicationLagDisplayRowsMultipleConnections(): void
     {
         $method = new ReflectionMethod(Slave::class, 'normalizeReplicationLagDisplayRows');
-        $method->setAccessible(true);
 
         $rows = [
             228 => [
@@ -330,7 +317,6 @@ final class SlaveTest extends TestCase
     public function testNormalizeReplicationLagDisplayRowsBothAbsent(): void
     {
         $method = new ReflectionMethod(Slave::class, 'normalizeReplicationLagDisplayRows');
-        $method->setAccessible(true);
 
         $rows = [
             1 => ['' => ['some_other_var' => 'yes']],
@@ -346,7 +332,6 @@ final class SlaveTest extends TestCase
     public function testSanitizeConnectionNameUnicode(): void
     {
         $method = new ReflectionMethod(Slave::class, 'sanitizeConnectionName');
-        $method->setAccessible(true);
 
         // Unicode chars should be stripped
         // é is 2 bytes (0xC3 0xA9), regex strips both, keeps 'connction'
@@ -357,7 +342,6 @@ final class SlaveTest extends TestCase
     public function testSanitizeConnectionNamePreservesLongValidNames(): void
     {
         $method = new ReflectionMethod(Slave::class, 'sanitizeConnectionName');
-        $method->setAccessible(true);
 
         $long = str_repeat('a', 200);
         $this->assertSame($long, $method->invoke(null, $long));
@@ -366,7 +350,6 @@ final class SlaveTest extends TestCase
     public function testSanitizeConnectionNameSpacesOnly(): void
     {
         $method = new ReflectionMethod(Slave::class, 'sanitizeConnectionName');
-        $method->setAccessible(true);
 
         $this->assertSame('', $method->invoke(null, '   '));
     }
@@ -374,7 +357,6 @@ final class SlaveTest extends TestCase
     public function testSanitizeConnectionNameBacktickAndBackslash(): void
     {
         $method = new ReflectionMethod(Slave::class, 'sanitizeConnectionName');
-        $method->setAccessible(true);
 
         $this->assertSame('conn', $method->invoke(null, '`conn`'));
         $this->assertSame('ab', $method->invoke(null, 'a\\b'));
@@ -383,7 +365,6 @@ final class SlaveTest extends TestCase
     public function testNormalizeReplicationLagGraphRowsMixedMetricsAcrossDays(): void
     {
         $method = new ReflectionMethod(Slave::class, 'normalizeReplicationLagGraphRows');
-        $method->setAccessible(true);
 
         Extraction::$variable[10]['name'] = 'seconds_behind_master';
         Extraction::$variable[11]['name'] = 'seconds_behind_source';
@@ -412,7 +393,6 @@ final class SlaveTest extends TestCase
     public function testNormalizeReplicationLagDisplayRowsWhitespaceLagIgnored(): void
     {
         $method = new ReflectionMethod(Slave::class, 'normalizeReplicationLagDisplayRows');
-        $method->setAccessible(true);
 
         $rows = [
             1 => ['' => ['seconds_behind_master' => '7', 'seconds_behind_source' => '  ']],
@@ -432,7 +412,6 @@ final class SlaveTest extends TestCase
     public function testBuildReplicationCmdMariaDBNoChannel(): void
     {
         $method = new ReflectionMethod(Slave::class, 'buildReplicationCmd');
-        $method->setAccessible(true);
 
         // useReplica ignoré sur MariaDB
         $this->assertSame('STOP SLAVE', $method->invoke(null, 'STOP', true, false, ''));
@@ -443,7 +422,6 @@ final class SlaveTest extends TestCase
     public function testBuildReplicationCmdMariaDBWithChannel(): void
     {
         $method = new ReflectionMethod(Slave::class, 'buildReplicationCmd');
-        $method->setAccessible(true);
 
         $this->assertSame("STOP SLAVE 'production_fr'", $method->invoke(null, 'STOP', true, false, 'production_fr'));
         $this->assertSame("START SLAVE 'chan-1'", $method->invoke(null, 'START', true, false, 'chan-1'));
@@ -453,7 +431,6 @@ final class SlaveTest extends TestCase
     {
         // MySQL >= 8.0.22 : REPLICA
         $method = new ReflectionMethod(Slave::class, 'buildReplicationCmd');
-        $method->setAccessible(true);
 
         $this->assertSame('STOP REPLICA', $method->invoke(null, 'STOP', false, true, ''));
         $this->assertSame('START REPLICA', $method->invoke(null, 'START', false, true, ''));
@@ -462,7 +439,6 @@ final class SlaveTest extends TestCase
     public function testBuildReplicationCmdMySQLModernWithChannel(): void
     {
         $method = new ReflectionMethod(Slave::class, 'buildReplicationCmd');
-        $method->setAccessible(true);
 
         $this->assertSame("STOP REPLICA FOR CHANNEL 'pmacontrol'", $method->invoke(null, 'STOP', false, true, 'pmacontrol'));
         $this->assertSame("START REPLICA FOR CHANNEL 'chan.test'", $method->invoke(null, 'START', false, true, 'chan.test'));
@@ -472,7 +448,6 @@ final class SlaveTest extends TestCase
     {
         // gh#144 — MySQL 5.7 et MySQL 8.0.0-8.0.21 ne connaissent que SLAVE
         $method = new ReflectionMethod(Slave::class, 'buildReplicationCmd');
-        $method->setAccessible(true);
 
         $this->assertSame('STOP SLAVE', $method->invoke(null, 'STOP', false, false, ''));
         $this->assertSame('START SLAVE', $method->invoke(null, 'START', false, false, ''));
@@ -485,7 +460,6 @@ final class SlaveTest extends TestCase
     public function testUsesReplicaSyntaxMariaDBAlwaysFalse(): void
     {
         $method = new ReflectionMethod(Slave::class, 'usesReplicaSyntax');
-        $method->setAccessible(true);
 
         $this->assertFalse($method->invoke(null, $this->fakeDb('mariadb', '10.11.6')));
         $this->assertFalse($method->invoke(null, $this->fakeDb('MariaDB', '11.4.2')));
@@ -495,7 +469,6 @@ final class SlaveTest extends TestCase
     {
         // gh#144 — MySQL 5.7 et 8.0.0-8.0.21 doivent rester en SLAVE
         $method = new ReflectionMethod(Slave::class, 'usesReplicaSyntax');
-        $method->setAccessible(true);
 
         $this->assertFalse($method->invoke(null, $this->fakeDb('MySQL', '5.7.44')));
         $this->assertFalse($method->invoke(null, $this->fakeDb('mysql', '8.0.0')));
@@ -505,7 +478,6 @@ final class SlaveTest extends TestCase
     public function testUsesReplicaSyntaxMySQL8022PlusTrue(): void
     {
         $method = new ReflectionMethod(Slave::class, 'usesReplicaSyntax');
-        $method->setAccessible(true);
 
         $this->assertTrue($method->invoke(null, $this->fakeDb('mysql', '8.0.22')));
         $this->assertTrue($method->invoke(null, $this->fakeDb('mysql', '8.0.36')));
@@ -526,7 +498,6 @@ final class SlaveTest extends TestCase
     public function testGetReplicationLagVariablesReturnsBothMetrics(): void
     {
         $method = new ReflectionMethod(Slave::class, 'getReplicationLagVariables');
-        $method->setAccessible(true);
 
         $vars = $method->invoke($this->slave);
 
