@@ -131,6 +131,13 @@ class Mysqlsys extends Controller {
                     }
                     
                     $data['table'] = $remote->sql_fetch_yield($sql);
+                    if ($_GET['mysqlsys'] === 'schema_unused_indexes') {
+                        $data['table'] = $this->enrichSchemaUnusedIndexes(
+                            $remote,
+                            iterator_to_array($data['table'], false),
+                            $id_mysql_server
+                        );
+                    }
                     $data['name_table'] = $_GET['mysqlsys'];
                 }
 
@@ -138,6 +145,106 @@ class Mysqlsys extends Controller {
             }
         }
         $this->set('data', $data);
+    }
+
+    private function enrichSchemaUnusedIndexes($remote, array $rows, int $idMysqlServer): array
+    {
+        if (empty($rows)) {
+            return $rows;
+        }
+
+        $stats = $this->fetchSchemaUnusedIndexTableStats($remote, $rows, $idMysqlServer);
+
+        return self::appendSchemaUnusedIndexEstimates($rows, $stats);
+    }
+
+    private function fetchSchemaUnusedIndexTableStats($remote, array $rows, int $idMysqlServer): array
+    {
+        $conditions = [];
+        foreach ($rows as $row) {
+            if (empty($row['object_schema']) || empty($row['object_name'])) {
+                continue;
+            }
+
+            $schema = $remote->sql_real_escape_string($row['object_schema']);
+            $table = $remote->sql_real_escape_string($row['object_name']);
+            $conditions[] = "(t.TABLE_SCHEMA = '".$schema."' AND t.TABLE_NAME = '".$table."')";
+        }
+
+        $conditions = array_values(array_unique($conditions));
+        if (empty($conditions)) {
+            return [];
+        }
+
+        $sql = "SELECT t.TABLE_SCHEMA AS object_schema,
+                       t.TABLE_NAME AS object_name,
+                       t.TABLE_ROWS AS table_rows,
+                       t.INDEX_LENGTH AS table_index_bytes,
+                       COUNT(DISTINCT CASE WHEN s.INDEX_NAME <> 'PRIMARY' THEN s.INDEX_NAME END) AS secondary_index_count
+                FROM information_schema.TABLES t
+                LEFT JOIN information_schema.STATISTICS s
+                  ON s.TABLE_SCHEMA = t.TABLE_SCHEMA
+                 AND s.TABLE_NAME = t.TABLE_NAME
+                WHERE ".implode(' OR ', $conditions)."
+                GROUP BY t.TABLE_SCHEMA, t.TABLE_NAME, t.TABLE_ROWS, t.INDEX_LENGTH";
+
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($remote, $sql, $idMysqlServer, __METHOD__);
+        $stats = [];
+        while ($row = $remote->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $stats[self::schemaTableKey($row['object_schema'], $row['object_name'])] = [
+                'table_rows' => $row['table_rows'],
+                'table_index_bytes' => $row['table_index_bytes'],
+                'secondary_index_count' => $row['secondary_index_count'],
+            ];
+        }
+
+        return $stats;
+    }
+
+    private static function appendSchemaUnusedIndexEstimates(array $rows, array $stats): array
+    {
+        foreach ($rows as $key => $row) {
+            $schema = (string)($row['object_schema'] ?? '');
+            $table = (string)($row['object_name'] ?? '');
+            $stat = $stats[self::schemaTableKey($schema, $table)] ?? null;
+
+            if ($stat === null) {
+                $rows[$key]['table_rows'] = 'n/a';
+                $rows[$key]['table_index_size'] = 'n/a';
+                $rows[$key]['estimated_gain'] = 'n/a';
+                continue;
+            }
+
+            $tableRows = is_numeric($stat['table_rows']) ? (int)$stat['table_rows'] : 0;
+            $indexBytes = is_numeric($stat['table_index_bytes']) ? (int)$stat['table_index_bytes'] : 0;
+            $secondaryIndexCount = is_numeric($stat['secondary_index_count'])
+                ? max(0, (int)$stat['secondary_index_count'])
+                : 0;
+            $estimatedGain = $secondaryIndexCount > 0 ? (int)ceil($indexBytes / $secondaryIndexCount) : 0;
+
+            $rows[$key]['table_rows'] = number_format($tableRows, 0, '.', ' ');
+            $rows[$key]['table_index_size'] = self::formatBytes($indexBytes);
+            $rows[$key]['estimated_gain'] = $estimatedGain > 0 ? self::formatBytes($estimatedGain) : 'n/a';
+        }
+
+        return $rows;
+    }
+
+    private static function schemaTableKey(string $schema, string $table): string
+    {
+        return $schema.'.'.$table;
+    }
+
+    private static function formatBytes(int $bytes): string
+    {
+        if ($bytes <= 0) {
+            return '0 o';
+        }
+
+        $units = ['o', 'Ko', 'Mo', 'Go', 'To'];
+        $factor = min(count($units) - 1, (int)floor(log($bytes, 1024)));
+
+        return number_format($bytes / (1024 ** $factor), 2, '.', ' ').' '.$units[$factor];
     }
 
 
