@@ -4220,6 +4220,41 @@ GROUP BY C.ID, C.INFO;";
  * @since 5.0
  * @version 1.0
  */
+    private function discoverProxySqlWriterHostgroup($db): ?int
+    {
+        $candidates = array(
+            "SELECT writer_hostgroup FROM mysql_galera_hostgroups WHERE active=1 ORDER BY writer_hostgroup ASC LIMIT 1",
+            "SELECT writer_hostgroup FROM mysql_group_replication_hostgroups WHERE active=1 ORDER BY writer_hostgroup ASC LIMIT 1",
+            "SELECT writer_hostgroup FROM mysql_replication_hostgroups ORDER BY writer_hostgroup ASC LIMIT 1",
+            "SELECT writer_hostgroup FROM mysql_aws_aurora_hostgroups WHERE active=1 ORDER BY writer_hostgroup ASC LIMIT 1",
+        );
+
+        foreach ($candidates as $sql) {
+            $res = Mysql::sqlQuerySilentCompat($db, $sql);
+            if ($res === false) {
+                continue;
+            }
+
+            while ($ob = $db->sql_fetch_object($res)) {
+                if (isset($ob->writer_hostgroup) && $ob->writer_hostgroup !== null) {
+                    return (int)$ob->writer_hostgroup;
+                }
+            }
+        }
+
+        $sql = "SELECT hostgroup_id FROM runtime_mysql_servers WHERE status='ONLINE' ORDER BY hostgroup_id ASC LIMIT 1";
+        $res = Mysql::sqlQuerySilentCompat($db, $sql);
+        if ($res !== false) {
+            while ($ob = $db->sql_fetch_object($res)) {
+                if (isset($ob->hostgroup_id) && $ob->hostgroup_id !== null) {
+                    return (int)$ob->hostgroup_id;
+                }
+            }
+        }
+
+        return null;
+    }
+
     public function tryProxySqlConnection($param)
     {
         Debug::parseDebug($param);
@@ -4321,19 +4356,12 @@ GROUP BY C.ID, C.INFO;";
 
                     Debug::debug($e->getMessage(), "dfgdgf");
 
-                    // Resolve the writer hostgroup once, before walking runtime_mysql_servers.
-                    // Previously we inserted pmacontrol with `default_hostgroup = <first HG found>`,
-                    // and because runtime_mysql_servers can transiently contain Galera's
-                    // offline_hostgroup (or HG 0), sessions landed in an empty hostgroup and
-                    // timed out after 10s. Reading the writer_hostgroup from the relationship
-                    // tables guarantees we route client sessions to a populated hostgroup.
-                    $writer_hostgroup = $this->discoverWriterHostgroup($db);
+                    $writer_hostgroup = $this->discoverProxySqlWriterHostgroup($db);
+                    $user_inserted = false;
 
-                    $sql = "SELECT DISTINCT hostgroup_id,hostname,port FROM runtime_mysql_servers;";
+                    $sql = "SELECT DISTINCT hostgroup_id,hostname,port FROM runtime_mysql_servers WHERE status='ONLINE' ORDER BY hostgroup_id ASC, hostname ASC, port ASC;";
                     $res = $db->sql_query($sql);
                     Debug::sql($sql);
-
-                    $user_inserted = false;
 
                     while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
                     {
@@ -4342,46 +4370,47 @@ GROUP BY C.ID, C.INFO;";
                         $mysql_server_hostname = $arr['hostname'];
                         $mysql_server_port = $arr['port'];
                         $hostgroup_id = $arr['hostgroup_id'];
+                        $default_hostgroup = $writer_hostgroup ?? (int)$hostgroup_id;
 
                         $name_server = Mysql::getNameMysqlServerFromIpPort($mysql_server_hostname,$mysql_server_port);
 
                         $mysql_to_link = Sgbd::sql($name_server);
 
-                        $sql3 = "SELECT password as password FROM mysql.user WHERE user='$user'";
+                        $user_mysql_sql = $mysql_to_link->sql_real_escape_string((string)$user);
+                        $sql3 = "SELECT password as password FROM mysql.user WHERE user='".$user_mysql_sql."'";
                         $res3 = $mysql_to_link->sql_query($sql3);
+                        $password_hash = null;
                         while ($ob = $mysql_to_link->sql_fetch_object($res3)){
                             Debug::debug($ob, "password");
                             // il faut recupérer le bon
                             $password_hash = $ob->password;
                         }
 
-                        if (!$user_inserted) {
-                            $sql2 = "SELECT count(1) as cpt FROM runtime_mysql_users WHERE username= '$user'";
-                            Debug::sql($sql2);
-                            $res2 = $db->sql_query($sql2);
+                        $user_sql = $db->sql_real_escape_string((string)$user);
+                        $sql2 = "SELECT count(1) as cpt FROM runtime_mysql_users WHERE username= '".$user_sql."'";
+                        Debug::sql($sql2);
+                        $res2 = $db->sql_query($sql2);
 
-                            while($ob2 = $db->sql_fetch_object($res2))
-                            {
-                                //uniquement si l'user n'est pas presént pour eviter des effet de bord
-                                if ($ob2->cpt == "0") {
+                        while($ob2 = $db->sql_fetch_object($res2))
+                        {
+                            //uniquement si l'user n'est pas presént pour eviter des effet de bord
+                            if ($ob2->cpt == "0" && $user_inserted === false && $password_hash !== null) {
 
-                                    $sql5 = "LOAD MYSQL USERS FROM DISK;";
-                                    Debug::sql($sql5);
-                                    $db->sql_query($sql5);
+                                $sql5 = "LOAD MYSQL USERS FROM DISK;";
+                                Debug::sql($sql5);
+                                $db->sql_query($sql5);
 
-                                    $effective_hostgroup = ($writer_hostgroup !== null) ? $writer_hostgroup : (int)$hostgroup_id;
+                                $password_hash_sql = $db->sql_real_escape_string((string)$password_hash);
+                                $sql4 = "INSERT INTO mysql_users(username,password,default_hostgroup,default_schema) 
+                                VALUES ('".$user_sql."','".$password_hash_sql."',".$default_hostgroup.",'');";
+                                Debug::sql($sql4);
+                                $db->sql_query($sql4);
+                                $user_inserted = true;
 
-                                    $sql4 = "INSERT INTO mysql_users(username,password,default_hostgroup,default_schema)
-                                    VALUES ('".$user."','".$password_hash."',".$effective_hostgroup.",'');";
-                                    Debug::sql($sql4);
-                                    $db->sql_query($sql4);
-
-                                    $sql6 = "LOAD MYSQL USERS TO RUNTIME;";
-                                    Debug::sql($sql6);
-                                    $db->sql_query($sql6);
-                                }
+                                $sql6 = "LOAD MYSQL USERS TO RUNTIME;";
+                                Debug::sql($sql6);
+                                $db->sql_query($sql6);
                             }
-                            $user_inserted = true;
                         }
 
                         //try connection
