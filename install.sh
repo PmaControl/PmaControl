@@ -87,6 +87,7 @@ fi
 
 workFolder=$(readlink -f "$(dirname $0)")
 path=$(echo $workFolder | awk -F"/" ' { print $(NF) } ')
+pmacontrol_path=$(pwd)
 
 cp -a config_sample/*.config.php configuration/
 cp -a config_sample/*.ini.php configuration/
@@ -173,8 +174,6 @@ fi
 #write out current crontab
 echo '# crontab for pmacontrol' > mycron
 #echo new cron into cron file
-
-pmacontrol_path=$(pwd)
 
 echo $pmacontrol_path 
 

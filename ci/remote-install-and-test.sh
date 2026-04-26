@@ -16,6 +16,7 @@ if [[ ! -d /srv/www/pmacontrol ]]; then
     exit 1
 fi
 
+# shellcheck disable=SC1091
 . /etc/os-release
 OS_KEY="${ID}-${VERSION_ID}"
 
@@ -39,11 +40,37 @@ case "${OS_KEY}" in
     ubuntu-24.04)
         PHP_VERSION="8.3"
         ;;
+    ubuntu-26.04)
+        PHP_VERSION=""
+        ;;
     *)
         echo "Unsupported guest OS: ${OS_KEY}" >&2
         exit 1
         ;;
 esac
+
+if [[ "${OS_KEY}" == "ubuntu-26.04" ]]; then
+    cd /srv/www/pmacontrol
+    PMACTRL_INSTALL_DIR=/srv/www/pmacontrol \
+    PMACTRL_GIT_BRANCH="${GITHUB_REF_NAME:-commercial}" \
+    PMACTRL_FORCE_REINSTALL=0 \
+    PMACTRL_RUN_PHPUNIT=0 \
+    bash install/ubuntu26.04.sh
+
+    HTTP_CODE="$(curl -s -o /tmp/pmacontrol-home.html -w '%{http_code}' http://127.0.0.1/pmacontrol/ || true)"
+    case "${HTTP_CODE}" in
+        200|301|302)
+            ;;
+        *)
+            echo "Unexpected HTTP status from local install: ${HTTP_CODE}" >&2
+            exit 1
+            ;;
+    esac
+
+    ./vendor/bin/phpunit --testsuite "PmaControl Test Suite"
+    echo "CI install success on ${OS_KEY} for commit ${GIT_COMMIT:-unknown}"
+    exit 0
+fi
 
 apt-get update
 apt-get install -y \

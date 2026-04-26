@@ -24,3 +24,6 @@ One topic per file. Load only what the current task needs.
 ## Runtime
 - [logs.md](logs.md) — log files under `tmp/log/`
 - [tips.md](tips.md) — small gotchas (grep -a on binlog, stale browser cache, …)
+
+## Installation
+- [install_ubuntu2604.md](install_ubuntu2604.md) — Ubuntu 26.04 installer variables, re-run behavior, CI target

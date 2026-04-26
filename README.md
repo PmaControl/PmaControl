@@ -84,6 +84,15 @@ plugin-load=ha_rocksdb
 
 * ./install
 
+### Ubuntu 26.04 install
+
+Ubuntu 26.04 hosts can be provisioned with:
+
+* `sudo PMACTRL_GIT_BRANCH=commercial bash install/ubuntu26.04.sh`
+
+Supported variables and CI usage are documented in
+[`docs/install_ubuntu2604.md`](docs/install_ubuntu2604.md).
+
 ## You are ready !
 
 
