@@ -60,6 +60,7 @@ apt-get install -y \
     libcairo2 \
     lsb-release \
     mariadb-client \
+    mariadb-plugin-rocksdb \
     mariadb-server \
     net-tools \
     rsync \
@@ -82,9 +83,23 @@ apt-get install -y \
     "php${PHP_VERSION}-xml" \
     "libapache2-mod-php${PHP_VERSION}"
 
+if command -v update-alternatives >/dev/null 2>&1 && [[ -x "/usr/bin/php${PHP_VERSION}" ]]; then
+    update-alternatives --set php "/usr/bin/php${PHP_VERSION}" || true
+    update-alternatives --set phar "/usr/bin/phar${PHP_VERSION}" || true
+    update-alternatives --set phar.phar "/usr/bin/phar.phar${PHP_VERSION}" || true
+fi
+
 systemctl enable --now mariadb
 systemctl enable --now apache2
 systemctl enable --now "php${PHP_VERSION}-fpm"
+
+if ! mysql -NBe "SHOW ENGINES" | awk '$1 == "ROCKSDB" && ($2 == "YES" || $2 == "DEFAULT") {found=1} END {exit !found}'; then
+    mysql -e "INSTALL SONAME 'ha_rocksdb';" || true
+fi
+if ! mysql -NBe "SHOW ENGINES" | awk '$1 == "ROCKSDB" && ($2 == "YES" || $2 == "DEFAULT") {found=1} END {exit !found}'; then
+    echo "ROCKSDB engine is not available after installing mariadb-plugin-rocksdb" >&2
+    exit 1
+fi
 
 a2enmod proxy_fcgi setenvif rewrite
 a2enconf "php${PHP_VERSION}-fpm"
@@ -147,7 +162,7 @@ cat > /tmp/pmacontrol-ci-config.json <<EOF
         "email": "ci@example.com",
         "firstname": "CI",
         "lastname": "Runner",
-        "country": "FR",
+        "country": "France",
         "city": "Paris",
         "login": "admin",
         "password": "${ADMIN_PASS}"
