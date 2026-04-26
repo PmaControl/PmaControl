@@ -138,14 +138,17 @@ class Agent extends Controller {
 
         if ($ob->pid === "0") {
             $php = explode(" ", shell_exec("whereis php"))[1];
-            //todo add error flux in the log
 
             $debug = "";
             if (Debug::$debug === true) {
                 $debug = "--debug";
             }
 
-            $cmd = $php . " " . GLIAL_INDEX . " Agent launch " . $id_daemon . " " . $debug . " >> " . $this->log_file . " & echo $!";
+            $cmdArgs = [$php, GLIAL_INDEX, "Agent", "launch", (string)$id_daemon];
+            if ($debug !== "") {
+                $cmdArgs[] = $debug;
+            }
+            $cmd = self::buildBackgroundCommand($cmdArgs, $this->log_file);
             Debug::debug($cmd);
             $this->logger->debug("$cmd");
             $pid = trim(shell_exec($cmd));
@@ -304,7 +307,11 @@ class Agent extends Controller {
             while ($ob = $db->sql_fetch_object($res)) {
 
                 $php = explode(" ", shell_exec("whereis php"))[1];
-                $cmd = $php . " " . GLIAL_INDEX . " " . $ob->class . " " . $ob->method . " '" . $ob->params . "' loop:" . $id_loop . " " . $debug . " 2>&1 >> " . $this->log_file . " & echo $!";
+                $cmdArgs = [$php, GLIAL_INDEX, $ob->class, $ob->method, (string)$ob->params, "loop:" . $id_loop];
+                if ($debug !== "") {
+                    $cmdArgs[] = $debug;
+                }
+                $cmd = self::buildBackgroundCommand($cmdArgs, $this->log_file);
 
                 //FactoryController::addNode($ob->class, $ob->method, explode(',',$ob->params));
                 //$pid=43563456375635673;
@@ -638,7 +645,10 @@ class Agent extends Controller {
 
                 $php = explode(" ", shell_exec("whereis php"))[1];
 
-                $cmd = $php . " " . GLIAL_INDEX . " Agent launch " . $ob->id . " >> " . TMP . "worker.log" . " & echo $!";
+                $cmd = self::buildBackgroundCommand(
+                    [$php, GLIAL_INDEX, "Agent", "launch", (string)$ob->id],
+                    TMP . "worker.log"
+                );
                 $pid = shell_exec($cmd);
 
                 $sql = "UPDATE daemon_main SET pid=" . $pid . " WHERE id=" . $ob->id;
@@ -652,6 +662,21 @@ class Agent extends Controller {
             }
         }
 
+    }
+
+    /**
+     * @param array<int,mixed> $args
+     */
+    private static function buildBackgroundCommand(array $args, string $logFile): string
+    {
+        $quotedArgs = array_map(
+            static function ($arg): string {
+                return escapeshellarg((string)$arg);
+            },
+            $args
+        );
+
+        return implode(" ", $quotedArgs) . " >> " . escapeshellarg($logFile) . " 2>&1 & echo $!";
     }
 
     /*
