@@ -18,7 +18,6 @@ final class MysqlServerProcesslistTest extends TestCase
         };
 
         $method = new ReflectionMethod(MysqlServer::class, 'shouldUsePerfSchemaProcesslist');
-        $method->setAccessible(true);
 
         $this->assertTrue($method->invoke(null, $db, true));
     }
@@ -31,7 +30,6 @@ final class MysqlServerProcesslistTest extends TestCase
         };
 
         $method = new ReflectionMethod(MysqlServer::class, 'shouldUsePerfSchemaProcesslist');
-        $method->setAccessible(true);
 
         $this->assertFalse($method->invoke(null, $db, true));
     }
@@ -44,7 +42,6 @@ final class MysqlServerProcesslistTest extends TestCase
         };
 
         $method = new ReflectionMethod(MysqlServer::class, 'shouldUsePerfSchemaProcesslist');
-        $method->setAccessible(true);
 
         $this->assertFalse($method->invoke(null, $db, false));
     }
@@ -52,7 +49,6 @@ final class MysqlServerProcesslistTest extends TestCase
     public function testGetProcesslistClassThresholds(): void
     {
         $method = new ReflectionMethod(MysqlServer::class, 'getProcesslistClass');
-        $method->setAccessible(true);
 
         $this->assertSame('', $method->invoke(null, 1));
         $this->assertSame('info', $method->invoke(null, 2));

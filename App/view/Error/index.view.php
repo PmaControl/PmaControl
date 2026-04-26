@@ -32,34 +32,49 @@ $labelClass = [
     'Parse error' => 'label-danger',
 ];
 
-$renderRow = function ($item) use ($labelClass) {
-    $cls = $labelClass[$item['level']] ?? 'label-default';
-    echo '<tr>';
-    echo '<td><span class="label '.$cls.'">'.htmlspecialchars($item['level']).'</span></td>';
-    echo '<td>'.htmlspecialchars($item['msg']).'</td>';
-    echo '<td><code>'.htmlspecialchars($item['file']).':'.(int) $item['line'].'</code></td>';
-    echo '<td style="text-align:right">'.(int) $item['count'].'</td>';
-    echo '<td><small class="muted">'.htmlspecialchars($item['last_seen']).'</small></td>';
-    echo '</tr>';
+$colgroup = '<colgroup>'
+    .'<col style="width:90px">'
+    .'<col style="width:50%">'
+    .'<col style="width:35%">'
+    .'<col style="width:70px">'
+    .'<col style="width:170px">'
+    .'</colgroup>';
+
+$header = '<thead><tr>'
+    .'<th>Level</th>'
+    .'<th>Message</th>'
+    .'<th>Location</th>'
+    .'<th style="text-align:right">Count</th>'
+    .'<th>Last seen</th>'
+    .'</tr></thead>';
+
+$tableStyle = 'table-layout:fixed; word-wrap:break-word;';
+
+$renderTable = function (array $items, string $caption) use ($labelClass, $colgroup, $header, $tableStyle) {
+    echo '<h3 style="margin-top:25px">'.$caption.'</h3>';
+    echo '<table class="display-tab table table-condensed" width="100%" style="'.$tableStyle.'">';
+    echo $colgroup;
+    echo $header;
+    echo '<tbody>';
+    foreach ($items as $item) {
+        $cls = $labelClass[$item['level']] ?? 'label-default';
+        echo '<tr>';
+        echo '<td><span class="label '.$cls.'">'.htmlspecialchars($item['level']).'</span></td>';
+        echo '<td>'.htmlspecialchars($item['msg']).'</td>';
+        echo '<td><code style="word-break:break-all">'.htmlspecialchars($item['file']).':'.(int) $item['line'].'</code></td>';
+        echo '<td style="text-align:right">'.(int) $item['count'].'</td>';
+        echo '<td><small class="muted">'.htmlspecialchars($item['last_seen']).'</small></td>';
+        echo '</tr>';
+    }
+    echo '</tbody></table>';
 };
 
 foreach ($data['pages'] as $page => $items) {
     $total = array_sum(array_column($items, 'count'));
-    echo '<h3 style="margin-top:25px">'.htmlspecialchars($page).' <small>('.count($items).' distinct, '.$total.' occurrences)</small></h3>';
-    echo '<table class="display-tab table table-condensed" width="100%">';
-    echo '<tr><th style="width:90px">Level</th><th>Message</th><th>Location</th><th style="width:70px; text-align:right">Count</th><th style="width:180px">Last seen</th></tr>';
-    foreach ($items as $item) {
-        $renderRow($item);
-    }
-    echo '</table>';
+    $caption = htmlspecialchars($page).' <small>('.count($items).' distinct, '.$total.' occurrences)</small>';
+    $renderTable($items, $caption);
 }
 
 if (!empty($data['orphans'])) {
-    echo '<h3 style="margin-top:25px">Orphans <small>(no page context — usually CLI / worker entries)</small></h3>';
-    echo '<table class="display-tab table table-condensed" width="100%">';
-    echo '<tr><th style="width:90px">Level</th><th>Message</th><th>Location</th><th style="width:70px; text-align:right">Count</th><th style="width:180px">Last seen</th></tr>';
-    foreach ($data['orphans'] as $item) {
-        $renderRow($item);
-    }
-    echo '</table>';
+    $renderTable($data['orphans'], 'Orphans <small>(no page context — usually CLI / worker entries)</small>');
 }

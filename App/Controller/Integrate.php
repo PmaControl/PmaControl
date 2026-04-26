@@ -3,13 +3,10 @@
 
 namespace App\Controller;
 
-use Exception;
 use \Glial\Synapse\Controller;
 use Fuz\Component\SharedMemory\Storage\StorageFile;
 use Fuz\Component\SharedMemory\SharedMemory;
 use \App\Library\Debug;
-use \App\Controller\Aspirateur;
-use \App\Library\Microsecond;
 use \App\Library\EngineV4;
 use \App\Library\Mysql;
 use \Glial\Sgbd\Sgbd;

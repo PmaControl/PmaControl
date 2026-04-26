@@ -15,6 +15,8 @@ use App\Library\Microsecond;
 use \App\Library\System;
 use \App\Library\Log;
 
+use Glial\Http\Request;
+use Glial\Security\Csrf;
 use \Glial\Synapse\Controller;
 use \Glial\I18n\I18n;
 use \Glial\Sgbd\Sgbd;
@@ -39,6 +41,8 @@ use \Monolog\Handler\StreamHandler;
  */
 class Worker extends Controller
 {
+    private const WORKER_UPDATE_CSRF_SCOPE = 'worker.update';
+    private const WORKER_UPDATE_FIELDS = ['nb_worker', 'queue_number'];
 
 /**
  * Stores `$timestamp_config_file` for timestamp config file.
@@ -522,9 +526,17 @@ class Worker extends Controller
         Debug::parseDebug($param);
 
         $db = Sgbd::sql(DB_DEFAULT);
+        $data = [
+            'worker' => [],
+            'worker_update_csrf_field' => Csrf::DEFAULT_FIELD,
+            'worker_update_csrf_token' => Csrf::issueToken($_SESSION, self::WORKER_UPDATE_CSRF_SCOPE),
+        ];
 
         if (!empty($_GET['ajax']) && $_GET['ajax'] === "true") {
             $this->layout_name = false;
+        }
+        else {
+            $this->di['js']->addJavascript(array('bootstrap-editable.min.js', 'Tree/index.js'));
         }
 
 
@@ -1175,18 +1187,89 @@ class Worker extends Controller
         $this->view        = false;
         $this->layout_name = false;
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            $db = Sgbd::sql(DB_DEFAULT);
-
-            $sql = "UPDATE worker_queue SET `".$_POST['name']."` = '".$_POST['value']."' WHERE id = ".$db->sql_real_escape_string($_POST['pk'])."";
-            $db->sql_query($sql);
-
-            if ($db->sql_affected_rows() === 1) {
-                echo "OK";
-            } else {
-                header("HTTP/1.0 503 Internal Server Error");
-            }
+        $outcome = self::evaluateUpdateRequest($_POST, $_SERVER, $_SESSION);
+        if ($outcome['status'] !== 200) {
+            self::sendWorkerUpdateError($outcome['status'], $outcome['body'], $outcome['headers']);
+            return;
         }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $db->sql_query($outcome['sql']);
+
+        if ($db->sql_affected_rows() === 1) {
+            echo "OK";
+        } else {
+            self::sendWorkerUpdateError(503, "Worker queue not updated");
+        }
+    }
+
+    public static function evaluateUpdateRequest(array $post, array $server, array $session): array
+    {
+        if (!Request::isMethod($server, "POST")) {
+            return self::buildWorkerUpdateOutcome(405, "Method Not Allowed", ['Allow' => 'POST']);
+        }
+
+        if (!Request::isSameSite($server)) {
+            return self::buildWorkerUpdateOutcome(403, "Invalid request origin");
+        }
+
+        if (!Csrf::validateToken($post, $session, self::WORKER_UPDATE_CSRF_SCOPE)) {
+            return self::buildWorkerUpdateOutcome(403, "Invalid CSRF token");
+        }
+
+        $sql = self::buildWorkerUpdateSql($post);
+        if ($sql === null) {
+            return self::buildWorkerUpdateOutcome(400, "Invalid worker update payload");
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'sql' => $sql,
+        ];
+    }
+
+    public static function buildWorkerUpdateSql(array $post): ?string
+    {
+        $field = (string) ($post['name'] ?? '');
+        $value = (string) ($post['value'] ?? '');
+        $id = (string) ($post['pk'] ?? '');
+
+        if (! in_array($field, self::WORKER_UPDATE_FIELDS, true)) {
+            return null;
+        }
+
+        if (! ctype_digit($value) || ! ctype_digit($id) || (int) $id < 1) {
+            return null;
+        }
+
+        return sprintf(
+            'UPDATE worker_queue SET `%s` = %d WHERE id = %d',
+            $field,
+            (int) $value,
+            (int) $id
+        );
+    }
+
+    private static function buildWorkerUpdateOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'sql' => null,
+        ];
+    }
+
+    private static function sendWorkerUpdateError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
 /**
