@@ -426,6 +426,34 @@ class Integrate extends Controller
         return self::MAX_UNSIGNED_BIGINT;
     }
 
+    protected function sortExistingPivotFilesByMtime(array $files): array
+    {
+        $sortable = array();
+
+        foreach ($files as $file) {
+            if (!is_string($file) || !is_file($file)) {
+                continue;
+            }
+
+            $mtime = @filemtime($file);
+            if ($mtime === false || !is_file($file)) {
+                continue;
+            }
+
+            $sortable[] = array('mtime' => $mtime, 'file' => $file);
+        }
+
+        usort($sortable, static function (array $left, array $right): int {
+            if ($left['mtime'] === $right['mtime']) {
+                return strcmp($left['file'], $right['file']);
+            }
+
+            return $left['mtime'] <=> $right['mtime'];
+        });
+
+        return array_column($sortable, 'file');
+    }
+
 /**
  * Handle integrate state through `isFloat`.
  *
@@ -1025,13 +1053,13 @@ public function integrateAll($param)
         $files = array_values(array_filter($files, 'is_file'));
 
         Debug::debug($files, "FILES BEFORE");
+        $files = $this->sortExistingPivotFilesByMtime($files);
         
         if (empty($files)) {
             usleep(100);
             return true;
         }
 
-        array_multisort(array_map('filemtime', $files), SORT_NUMERIC, SORT_ASC, $files);
         Debug::debug($files, "FILES SORTED");
 
         $variables           = $this->get_variable();

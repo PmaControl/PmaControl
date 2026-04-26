@@ -209,6 +209,32 @@ final class IntegrateTest extends TestCase
             $sql
         );
     }
+
+    public function testSortExistingPivotFilesByMtimeSkipsMissingFiles(): void
+    {
+        $controller = new TestableIntegrate('Controller', 'View', []);
+        $dir = sys_get_temp_dir().'/pmacontrol-integrate-sort-'.getmypid();
+        @mkdir($dir, 0775, true);
+
+        $older = $dir.'/100::mysql_global';
+        $newer = $dir.'/200::mysql_global';
+        $missing = $dir.'/300::mysql_global';
+
+        file_put_contents($older, 'older');
+        file_put_contents($newer, 'newer');
+        touch($older, 100);
+        touch($newer, 200);
+
+        try {
+            $sorted = $controller->exposeSortExistingPivotFilesByMtime([$missing, $newer, $older]);
+
+            $this->assertSame([$older, $newer], $sorted);
+        } finally {
+            @unlink($older);
+            @unlink($newer);
+            @rmdir($dir);
+        }
+    }
 }
 
 final class TestableIntegrate extends Integrate
@@ -231,5 +257,10 @@ final class TestableIntegrate extends Integrate
     public function exposeBuildTimeSeriesInsertSql(string $table, array $columns, array $values): string
     {
         return $this->buildTimeSeriesInsertSql($table, $columns, $values);
+    }
+
+    public function exposeSortExistingPivotFilesByMtime(array $files): array
+    {
+        return $this->sortExistingPivotFilesByMtime($files);
     }
 }
