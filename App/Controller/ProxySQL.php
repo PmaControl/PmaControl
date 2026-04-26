@@ -2157,6 +2157,7 @@ class ProxySQL extends Controller
 
                     if (! IS_CLI) {
                         header("location: " . LINK . "ProxySQL/config/" . $id_proxysql_server . "/" . $current . "/");
+                        exit;
                     }
 
                     return;

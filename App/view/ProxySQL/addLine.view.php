@@ -1,7 +1,7 @@
 <?php
 
 $data = $data ?? array();
-if (!is_array($data) || empty($data)) {
+if (! is_array($data) || empty($data)) {
     echo '<div class="alert alert-warning">'.__('ProxySQL context is missing').'</div>';
     return;
 }
@@ -16,23 +16,30 @@ $data += array(
     'table_name' => '',
 );
 
+$data['param'] = is_array($data['param']) ? $data['param'] : array();
+$data['menu'] = is_array($data['menu']) ? $data['menu'] : array();
+$data['columns'] = is_array($data['columns']) ? $data['columns'] : array();
+$data['post'] = is_array($data['post']) ? $data['post'] : array();
+
 \Glial\Synapse\FactoryController::addNode("ProxySQL", "menu", $data['param']);
 
-$current_human = str_replace('_', ' ', $data['current']);
-$back_link = LINK.'ProxySQL/config/'.$data['id_proxysql_server'].'/'.$data['current'].'/';
+$current = (string) $data['current'];
+$id_proxysql_server = (string) $data['id_proxysql_server'];
+$current_human = str_replace('_', ' ', $current);
+$back_link = LINK.'ProxySQL/config/'.$id_proxysql_server.'/'.$current.'/';
 
 echo '&nbsp;&nbsp;&nbsp;'; 
 echo '<div class="btn-group" role="group" aria-label="Default button group">';
 
 foreach ($data['menu'] as $elems => $sql)
 {
-  $key_menu = str_replace(' ', '_', $elems);
+  $key_menu = str_replace(' ', '_', (string) $elems);
 
   $active = "";
-  if ($key_menu == $data['current']){
+  if ($key_menu == $current){
     $active = " active";
   }
-  echo '<a href="'.LINK.'ProxySQL/addLine/'.$data['id_proxysql_server'].'/'.$key_menu.'" type="button" class="btn btn-primary'.$active.'">'.ucfirst(strtolower($elems)).'</a>';
+  echo '<a href="'.LINK.'ProxySQL/addLine/'.$id_proxysql_server.'/'.$key_menu.'" type="button" class="btn btn-primary'.$active.'">'.ucfirst(strtolower((string) $elems)).'</a>';
 }
 
 
@@ -46,7 +53,7 @@ if (isset($data['is_addline_allowed']) && $data['is_addline_allowed'] === false)
 echo '<br><br>';
 echo '<div class="panel panel-primary">';
 echo '<div class="panel-heading">';
-echo '<h3 class="panel-title">'.__('Add a line').' : <b>'.$data['table_name'].'</b> <small>('.$current_human.')</small></h3>';
+echo '<h3 class="panel-title">'.__('Add a line').' : <b>'.(string) $data['table_name'].'</b> <small>('.$current_human.')</small></h3>';
 echo '</div>';
 echo '<div class="panel-body">';
 
@@ -56,11 +63,19 @@ echo '<div class="row">';
 $editable_column_found = false;
 
 foreach ($data['columns'] as $column) {
-    $column_name = $column['name'];
-    $column_type = $column['type'];
+    if (!is_array($column)) {
+        continue;
+    }
+
+    $column_name = $column['name'] ?? '';
+    $column_type = $column['type'] ?? '';
+
+    if ($column_name === '') {
+        continue;
+    }
 
     $is_required = !empty($column['notnull'])
-        && $column['default'] === null
+        && ($column['default'] ?? null) === null
         && empty($column['autoincrement']);
 
     if (!empty($column['autoincrement'])) {
@@ -89,7 +104,8 @@ foreach ($data['columns'] as $column) {
             echo '<option value="">--</option>';
         }
 
-        foreach ($column['enum_values'] as $enum_value) {
+        $enum_values = is_array($column['enum_values'] ?? null) ? $column['enum_values'] : array();
+        foreach ($enum_values as $enum_value) {
             $selected = ((string) $value === (string) $enum_value) ? ' selected' : '';
             echo '<option value="'.htmlspecialchars($enum_value, ENT_QUOTES, 'UTF-8').'"'.$selected.'>'
                 .htmlspecialchars($enum_value, ENT_QUOTES, 'UTF-8').'</option>';
@@ -114,7 +130,7 @@ foreach ($data['columns'] as $column) {
     if (!empty($column['pk'])) {
         echo ' | PK';
     }
-    if ($column['default'] !== null) {
+    if (($column['default'] ?? null) !== null) {
         echo ' | '.__('Default').' : '.htmlspecialchars((string) $column['default'], ENT_QUOTES, 'UTF-8');
     }
     echo '</small>';
