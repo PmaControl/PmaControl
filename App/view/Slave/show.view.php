@@ -937,6 +937,12 @@ $catIcons = [
                 <small style="color:#94a3b8;margin-left:8px"><?= __('Drag to zoom, scroll to zoom, double-click to reset') ?></small>
             </div>
 
+            <!-- Binlog file timeline -->
+            <div id="sv-ba-file-timeline-wrap" style="display:none;position:relative;height:92px;margin-bottom:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px">
+                <canvas id="sv-ba-file-timeline"></canvas>
+                <div id="sv-ba-file-tooltip" style="display:none;position:absolute;z-index:4;pointer-events:none;background:#0f172a;color:#fff;border-radius:4px;padding:6px 8px;font-size:11px;line-height:1.45;box-shadow:0 6px 18px rgba(15,23,42,.25);max-width:320px"></div>
+            </div>
+
             <!-- Chart -->
             <div style="position:relative;height:250px;margin-bottom:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px">
                 <canvas id="sv-ba-chart"></canvas>
@@ -1032,7 +1038,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var replicationName = <?= json_encode($data['replication_name'] ?? '') ?>;
     var masterId = <?= (int) ($data['master_id'] ?? 0) ?>;
     var LINK = <?= json_encode(LINK) ?>;
-    var baChart = null;
+    var baChart = null, baParallelChart = null, baTimelineChart = null;
     var _baVolData = null, _baTopTables = null, _baAnalysis = null;
     var pollTimer = null;
 
@@ -1345,6 +1351,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Chart
         renderChart(d.volume_per_second || [], d.lag_data || []);
         renderParallelismChart(d.volume_per_second || [], d);
+        renderBinlogTimeline(d.binlog_file_ranges || []);
     }
 
     // ---- Treemaps: databases + tables ----
@@ -1545,7 +1552,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         zoom: {
                             drag: { enabled: true, backgroundColor: 'rgba(33,150,243,0.15)', borderColor: '#2196F3', borderWidth: 1 },
                             mode: 'x',
-                            onZoomComplete: function(ctx) { syncZoom(ctx.chart, baParallelChart); rebuildTreemapsFromZoom(ctx.chart); }
+                            onZoomComplete: function(ctx) { syncZoom(ctx.chart, baParallelChart); syncZoom(ctx.chart, baTimelineChart); rebuildTreemapsFromZoom(ctx.chart); }
                         }
                     }
                 }
@@ -1563,7 +1570,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ---- Parallelism chart (txn/s with min/avg/max lines) ----
-    var baParallelChart = null;
     function renderParallelismChart(volData, d) {
         var canvas = document.getElementById('sv-ba-parallel-chart');
         if (baParallelChart) { baParallelChart.destroy(); baParallelChart = null; }
@@ -1671,7 +1677,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         zoom: {
                             drag: { enabled: true, backgroundColor: 'rgba(16,185,129,0.15)', borderColor: '#10b981', borderWidth: 1 },
                             mode: 'x',
-                            onZoomComplete: function(ctx) { syncZoom(ctx.chart, baChart); rebuildTreemapsFromZoom(baChart); }
+                            onZoomComplete: function(ctx) { syncZoom(ctx.chart, baChart); syncZoom(ctx.chart, baTimelineChart); rebuildTreemapsFromZoom(ctx.chart); }
                         }
                     }
                 },
@@ -1680,7 +1686,219 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ---- Lag chart ----
+    // ---- Binlog file timeline (custom Gantt-style bars) ----
+    function parseTimelineTs(ts) {
+        var value = String(ts || '').replace(' ', 'T');
+        var parsed = new Date(value).getTime();
+        return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    function timelineColor(ratio) {
+        var start = [16, 185, 129];
+        var end = [124, 58, 237];
+        var pct = Math.max(0, Math.min(1, ratio || 0));
+        var rgb = start.map(function(v, i) { return Math.round(v + ((end[i] - v) * pct)); });
+        return 'rgb(' + rgb.join(',') + ')';
+    }
+
+    function shortBinlogName(name) {
+        var label = String(name || '');
+        var suffix = label.match(/(\d+)$/);
+        if (suffix) return suffix[1];
+        return label.length > 18 ? label.substr(label.length - 18) : label;
+    }
+
+    function buildTimelineTooltip(fr) {
+        var duration = Math.max(0, Math.round((fr.endMs - fr.startMs) / 1000));
+        var sizeMb = ((parseInt(fr.size_bytes || 0) || 0) / 1048576).toFixed(1);
+        var totals = { inserts: 0, updates: 0, deletes: 0 };
+        (fr.tables || []).forEach(function(t) {
+            totals.inserts += parseInt(t.inserts || 0) || 0;
+            totals.updates += parseInt(t.updates || 0) || 0;
+            totals.deletes += parseInt(t.deletes || 0) || 0;
+        });
+
+        return '<b>' + escHtml(fr.file || '') + '</b>'
+            + '<br>' + escHtml(fr.start || '') + ' &rarr; ' + escHtml(fr.end || '')
+            + '<br>Duration: ' + numberFmt(duration) + 's'
+            + '<br>Size: ' + sizeMb + ' MB'
+            + '<br>DML: I=' + numberFmt(totals.inserts) + ' U=' + numberFmt(totals.updates) + ' D=' + numberFmt(totals.deletes);
+    }
+
+    var binlogTimelinePlugin = {
+        id: 'binlogFileTimeline',
+        afterDatasetsDraw: function(chart, args, opts) {
+            opts = opts || {};
+            var ranges = opts.ranges || [];
+            var xScale = chart.scales && chart.scales.x;
+            if (!ranges.length || !xScale) return;
+
+            var ctx = chart.ctx;
+            var area = chart.chartArea;
+            var laneHeight = Math.min(24, (area.bottom - area.top) / ranges.length);
+            var barHeight = Math.max(2, Math.min(18, laneHeight - 2));
+            var maxDurationMs = Math.max(1, opts.maxDurationMs || 1);
+            chart.$binlogTimelineHitboxes = [];
+
+            ctx.save();
+            ctx.font = '10px Arial';
+            ctx.textBaseline = 'middle';
+
+            ranges.forEach(function(fr, idx) {
+                var x1 = xScale.getPixelForValue(fr.startMs);
+                var x2 = xScale.getPixelForValue(fr.endMs);
+                if (!Number.isFinite(x1) || !Number.isFinite(x2)) return;
+
+                var left = Math.max(area.left, Math.min(x1, x2));
+                var right = Math.min(area.right, Math.max(x1, x2));
+                if (right < area.left || left > area.right) return;
+
+                var width = Math.max(2, right - left);
+                var top = area.top + (idx * laneHeight) + ((laneHeight - barHeight) / 2);
+                var ratio = Math.max(0, Math.min(1, (fr.endMs - fr.startMs) / maxDurationMs));
+
+                ctx.fillStyle = timelineColor(ratio);
+                ctx.fillRect(left, top, width, barHeight);
+                ctx.strokeStyle = 'rgba(15,23,42,.18)';
+                ctx.strokeRect(left, top, width, barHeight);
+
+                if (width > 38 && barHeight >= 9) {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillText(shortBinlogName(fr.file), left + 4, top + (barHeight / 2), width - 8);
+                }
+
+                chart.$binlogTimelineHitboxes.push({
+                    x1: left,
+                    x2: left + width,
+                    y1: top,
+                    y2: top + barHeight,
+                    range: fr
+                });
+            });
+
+            ctx.restore();
+        }
+    };
+
+    function bindTimelineTooltip(canvas) {
+        var tooltip = document.getElementById('sv-ba-file-tooltip');
+        if (!canvas || !tooltip) return;
+
+        canvas.onmousemove = function(e) {
+            if (!baTimelineChart || !baTimelineChart.$binlogTimelineHitboxes) return;
+            var rect = canvas.getBoundingClientRect();
+            var x = e.clientX - rect.left;
+            var y = e.clientY - rect.top;
+            var hit = baTimelineChart.$binlogTimelineHitboxes.find(function(box) {
+                return x >= box.x1 && x <= box.x2 && y >= box.y1 && y <= box.y2;
+            });
+
+            if (!hit) {
+                tooltip.style.display = 'none';
+                return;
+            }
+
+            tooltip.innerHTML = buildTimelineTooltip(hit.range);
+            tooltip.style.left = Math.max(4, Math.min(rect.width - 320, x + 12)) + 'px';
+            tooltip.style.top = Math.max(4, y - 10) + 'px';
+            tooltip.style.display = 'block';
+        };
+
+        canvas.onmouseleave = function() {
+            tooltip.style.display = 'none';
+        };
+    }
+
+    function renderBinlogTimeline(ranges) {
+        var wrap = document.getElementById('sv-ba-file-timeline-wrap');
+        var canvas = document.getElementById('sv-ba-file-timeline');
+        if (baTimelineChart) { baTimelineChart.destroy(); baTimelineChart = null; }
+        if (!wrap || !canvas) return;
+
+        var normalized = (ranges || []).map(function(fr) {
+            var startMs = parseTimelineTs(fr.start);
+            var endMs = parseTimelineTs(fr.end);
+            if (startMs === null || endMs === null) return null;
+            if (endMs < startMs) endMs = startMs;
+            return Object.assign({}, fr, { startMs: startMs, endMs: endMs });
+        }).filter(function(fr) {
+            return fr !== null;
+        });
+
+        if (!normalized.length) {
+            var tooltip = document.getElementById('sv-ba-file-tooltip');
+            if (tooltip) { tooltip.style.display = 'none'; }
+            wrap.style.display = 'none';
+            return;
+        }
+
+        wrap.style.display = '';
+        wrap.style.height = Math.min(360, Math.max(92, (normalized.length * 14) + 36)) + 'px';
+        var maxDurationMs = normalized.reduce(function(max, fr) {
+            return Math.max(max, fr.endMs - fr.startMs);
+        }, 1);
+        var domain = normalized.reduce(function(acc, fr) {
+            return {
+                min: Math.min(acc.min, fr.startMs),
+                max: Math.max(acc.max, fr.endMs)
+            };
+        }, { min: normalized[0].startMs, max: normalized[0].endMs });
+
+        baTimelineChart = new Chart(canvas.getContext('2d'), {
+            type: 'line',
+            data: {
+                datasets: [{
+                    data: [
+                        { x: domain.min, y: 0 },
+                        { x: domain.max, y: 1 }
+                    ],
+                    pointRadius: 0,
+                    borderWidth: 0,
+                    showLine: false
+                }]
+            },
+            plugins: [binlogTimelinePlugin],
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                interaction: { mode: 'nearest', axis: 'x', intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { enabled: false },
+                    title: { display: true, text: 'Binlog Files Timeline', font: { size: 12, weight: 'bold' }, padding: 4 },
+                    binlogFileTimeline: { ranges: normalized, maxDurationMs: maxDurationMs },
+                    zoom: {
+                        zoom: {
+                            drag: { enabled: true, backgroundColor: 'rgba(124,58,237,0.12)', borderColor: '#7c3aed', borderWidth: 1 },
+                            mode: 'x',
+                            onZoomComplete: function(ctx) {
+                                syncZoom(ctx.chart, baChart);
+                                syncZoom(ctx.chart, baParallelChart);
+                                rebuildTreemapsFromZoom(ctx.chart);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'time',
+                        min: domain.min,
+                        max: domain.max,
+                        time: { parser: 'YYYY-MM-DD HH:mm:ss', tooltipFormat: 'YYYY-MM-DD HH:mm:ss', displayFormats: { second: 'HH:mm:ss', minute: 'HH:mm' } },
+                        ticks: { maxRotation: 45, font: { size: 8 } },
+                        grid: { color: 'rgba(148,163,184,.25)' }
+                    },
+                    y: { display: false, min: 0, max: 1 }
+                }
+            }
+        });
+
+        if (baChart && baChart.scales && baChart.scales.x) {
+            syncZoom(baChart, baTimelineChart);
+        }
+        bindTimelineTooltip(canvas);
+    }
 
     // ---- Rebuild treemaps from zoom window ----
     function rebuildTreemapsFromZoom(chart) {
@@ -1705,8 +1923,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Find which binlog files overlap the zoom window
         var merged = {};
         ranges.forEach(function(fr) {
-            var fStart = new Date(fr.start).getTime();
-            var fEnd = new Date(fr.end).getTime();
+            var fStart = parseTimelineTs(fr.start);
+            var fEnd = parseTimelineTs(fr.end);
+            if (fStart === null || fEnd === null) return;
             // File overlaps zoom window?
             if (fEnd >= xMin && fStart <= xMax) {
                 (fr.tables || []).forEach(function(t) {
@@ -1783,6 +2002,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('sv-ba-reset-zoom').addEventListener('click', function() {
         if (baChart) { baChart.resetZoom(); }
         if (baParallelChart) { baParallelChart.resetZoom(); }
+        if (baTimelineChart) { baTimelineChart.resetZoom(); }
         rebuildTreemapsFromZoom(null);
     });
 
