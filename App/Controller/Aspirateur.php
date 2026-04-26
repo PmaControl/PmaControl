@@ -472,6 +472,12 @@ class Aspirateur extends Controller
             else if (!empty($IS_PROXY)){
                 // need try one case if hostgroup 2 ok but hostgroup 1 ko
                 $error_ori = '';
+                $isMaxScaleReadWriteSplit = $this->isKnownMaxScaleReadWriteSplitEndpoint(
+                    (int)$id_mysql_server,
+                    (string)$vipConnectionHost,
+                    (int)$vipConnectionPort
+                );
+                $skipBrokenMaxScaleSession = false;
                 try{
                     // hack to force read to switch back online after shunned in case of no query on proxy (reader)
                     $mysql_tested->sql_query("SELECT 1;");
@@ -501,12 +507,24 @@ class Aspirateur extends Controller
                 finally
                 {
                     $available = empty($error_ori) ? 1 : 2; // 2 => cas read only
+                    if (!empty($error_ori)
+                        && $isMaxScaleReadWriteSplit
+                        && $this->isTransientProxySessionLoss($error_ori)) {
+                        $available = 1;
+                        $skipBrokenMaxScaleSession = true;
+                    }
                     $this->setService($id_mysql_server, $ping, $error_filter, $available, 'mysql');
 
                     if ($available === 0 && $available === 2) {
                         $mysql_tested->sql_close();
                         return false;
                     }
+                }
+
+                if ($skipBrokenMaxScaleSession) {
+                    $this->exportMaxScaleProxyVariables((int)$id_mysql_server);
+                    $mysql_tested->sql_close();
+                    return true;
                 }
             }
 
@@ -642,15 +660,7 @@ class Aspirateur extends Controller
         // cas maxscale
         if (empty($var['variables']['is_proxysql']) && $IS_PROXY == "1")
         {
-
-            $var_temp = array();
-            $var_temp['variables']['is_proxy']     = "1";
-            $var_temp['variables']['is_maxscale']     = "1";
-
-            $var_temp['variables']['version']         = MaxScale::getVersion(array($id_mysql_server));
-            $var_temp['variables']['version_comment'] = "MaxScale";
-
-            $this->exportData($id_mysql_server,"mysql_global_variable", $var_temp);
+            $this->exportMaxScaleProxyVariables((int)$id_mysql_server);
             $mysql_tested->sql_close();
             return true;
         }
@@ -3512,6 +3522,114 @@ GROUP BY C.ID, C.INFO;";
         while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             Debug::debug($ob);
         }
+    }
+
+    private function isKnownMaxScaleReadWriteSplitEndpoint(int $id_mysql_server, string $host, int $port): bool
+    {
+        try {
+            $data = Extraction2::display(
+                array("is_maxscale", "version_comment", "maxscale::maxscale_listeners", "maxscale::maxscale_services"),
+                array($id_mysql_server)
+            );
+        } catch (\Throwable $e) {
+            return false;
+        }
+
+        return $this->isMaxScaleReadWriteSplitEndpointData($data[$id_mysql_server] ?? array(), $host, $port);
+    }
+
+    private function isMaxScaleReadWriteSplitEndpointData(array $data, string $host, int $port): bool
+    {
+        $isMaxScale = ((string)($data['is_maxscale'] ?? '') === '1')
+            || (strcasecmp((string)($data['version_comment'] ?? ''), 'MaxScale') === 0);
+
+        if (!$isMaxScale) {
+            return false;
+        }
+
+        $readWriteSplitServices = array();
+        foreach (($data['maxscale_services']['data'] ?? array()) as $service) {
+            if (!is_array($service)) {
+                continue;
+            }
+
+            $serviceId = (string)($service['id'] ?? '');
+            $router = strtolower((string)($service['attributes']['router'] ?? ''));
+            if ($serviceId !== '' && $router === 'readwritesplit') {
+                $readWriteSplitServices[$serviceId] = true;
+            }
+        }
+
+        if (empty($readWriteSplitServices)) {
+            return false;
+        }
+
+        $listeners = $data['maxscale_listeners']['data'] ?? array();
+        if (empty($listeners)) {
+            return true;
+        }
+
+        foreach ($listeners as $listener) {
+            if (!is_array($listener) || !$this->maxScaleListenerMatchesEndpoint($listener, $host, $port)) {
+                continue;
+            }
+
+            foreach (($listener['relationships']['services']['data'] ?? array()) as $serviceRef) {
+                $serviceId = (string)($serviceRef['id'] ?? '');
+                if ($serviceId !== '' && isset($readWriteSplitServices[$serviceId])) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private function maxScaleListenerMatchesEndpoint(array $listener, string $host, int $port): bool
+    {
+        $listenerPort = (int)($listener['attributes']['parameters']['port'] ?? 0);
+        if ($listenerPort !== $port) {
+            return false;
+        }
+
+        $listenerHost = trim((string)($listener['attributes']['parameters']['address'] ?? ''));
+        if ($listenerHost === '' || $listenerHost === '0.0.0.0' || $listenerHost === '::') {
+            return true;
+        }
+
+        return MaxScale::normalizeEndpointHost($listenerHost) === MaxScale::normalizeEndpointHost($host);
+    }
+
+    private function isTransientProxySessionLoss(string $error): bool
+    {
+        $patterns = array(
+            'gone away',
+            'lost connection',
+            '(2006)',
+            '(2013)',
+            'failed to route query',
+            'closing connection',
+        );
+        $error = strtolower($error);
+
+        foreach ($patterns as $pattern) {
+            if (strpos($error, $pattern) !== false) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function exportMaxScaleProxyVariables(int $id_mysql_server): void
+    {
+        $var_temp = array();
+        $var_temp['variables']['is_proxy'] = "1";
+        $var_temp['variables']['is_maxscale'] = "1";
+        $var_temp['variables']['version'] = MaxScale::getVersion(array($id_mysql_server));
+        $var_temp['variables']['version_comment'] = "MaxScale";
+
+        $this->exportData($id_mysql_server, "mysql_global_variable", $var_temp);
     }
 
 
