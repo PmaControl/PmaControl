@@ -9,6 +9,8 @@ INSTALL_CONFIG_FILE=""
 SSH_KEY_DIR=""
 SSH_PRIVATE_KEY_FILE=""
 SSH_PUBLIC_KEY_FILE=""
+RESET_EXISTING_CHECKOUT=0
+FORCE_REINSTALL=0
 
 generate_password()
 {
@@ -67,7 +69,7 @@ pwd_pmacontrol=""
 pwd_admin=""
 pwd_webservice=""
 
-while getopts 'hp:v:dP:' flag; do
+while getopts 'hp:v:dP:rF' flag; do
   case "${flag}" in
     h)
         echo "options:"
@@ -75,12 +77,16 @@ while getopts 'hp:v:dP:' flag; do
         echo "-p                      specify password for PmaControl admin"
         echo "-v                      specify version of MariaDB"
         echo "-P                      specify version of PHP"
+        echo "-r                      reset an existing checkout to origin/${GIT_BRANCH}"
+        echo "-F                      force destructive reinstall of /srv/www/pmacontrol"
         exit 0
     ;;
     p) pwd_admin="${OPTARG}" ;;
     d) DEV_MOD="1" ;;
     v) VERSION_MARIADB="${OPTARG}" ;;
     P) VERSION_PHP="${OPTARG}" ;;
+    r) RESET_EXISTING_CHECKOUT="1" ;;
+    F) FORCE_REINSTALL="1" ;;
     *) echo "Unexpected option ${flag}"; exit 1 ;;
   esac
 done
@@ -286,15 +292,8 @@ configure_apache()
     systemctl restart apache2
 }
 
-clone_repo()
+get_repository_url()
 {
-    mkdir -p /srv/www
-    cd /srv/www
-
-    if [[ -d /srv/www/pmacontrol ]]; then
-        rm -rf /srv/www/pmacontrol
-    fi
-
     if [[ $DEV_MOD -eq 1 ]]; then
         set +e
         ssh -T git@github.com >/dev/null 2>&1
@@ -302,15 +301,52 @@ clone_repo()
         set -e
 
         if [[ $ret -eq 1 ]]; then
-            git clone --branch "${GIT_BRANCH}" --single-branch git@github.com:PmaControl/PmaControl.git pmacontrol
-        else
-            git clone --branch "${GIT_BRANCH}" --single-branch https://github.com/PmaControl/PmaControl.git pmacontrol
+            echo "git@github.com:PmaControl/PmaControl.git"
+            return 0
         fi
-    else
-        git clone --branch "${GIT_BRANCH}" --single-branch https://github.com/PmaControl/PmaControl.git pmacontrol
     fi
 
-    chown -R www-data:www-data /srv/www/pmacontrol
+    echo "https://github.com/PmaControl/PmaControl.git"
+}
+
+clone_repo()
+{
+    mkdir -p /srv/www
+    local repo_dir="/srv/www/pmacontrol"
+    local repo_url
+    repo_url=$(get_repository_url)
+
+    if [[ -e "${repo_dir}" && $FORCE_REINSTALL -eq 1 ]]; then
+        rm -rf "${repo_dir}"
+    fi
+
+    if [[ -e "${repo_dir}" && ! -d "${repo_dir}/.git" ]]; then
+        echo "${repo_dir} already exists but is not a git checkout."
+        echo "Move it away or rerun with -F for a destructive reinstall."
+        exit 1
+    fi
+
+    if [[ -d "${repo_dir}/.git" ]]; then
+        cd "${repo_dir}"
+        git fetch origin "${GIT_BRANCH}"
+
+        if [[ $RESET_EXISTING_CHECKOUT -eq 1 ]]; then
+            git checkout -B "${GIT_BRANCH}" "origin/${GIT_BRANCH}"
+            git reset --hard "origin/${GIT_BRANCH}"
+        else
+            git checkout "${GIT_BRANCH}" || git checkout -b "${GIT_BRANCH}" "origin/${GIT_BRANCH}"
+            if ! git merge --ff-only "origin/${GIT_BRANCH}"; then
+                echo "Existing checkout has local changes or divergent commits."
+                echo "Resolve them manually or rerun with -r to reset tracked files."
+                exit 1
+            fi
+        fi
+    else
+        cd /srv/www
+        git clone --branch "${GIT_BRANCH}" --single-branch "${repo_url}" pmacontrol
+    fi
+
+    chown -R www-data:www-data "${repo_dir}"
 }
 
 install_php_dependencies()

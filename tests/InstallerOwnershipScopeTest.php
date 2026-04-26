@@ -15,8 +15,12 @@ final class InstallerOwnershipScopeTest extends TestCase
 
     public function testDebian13InstallerKeepsOwnershipChangeScopedToPmaControlCheckout(): void
     {
-        $this->assertMatchesRegularExpression(
-            '/^\s*chown\s+-R\s+www-data:www-data\s+\/srv\/www\/pmacontrol\b/m',
+        $this->assertStringContainsString(
+            'local repo_dir="/srv/www/pmacontrol"',
+            $this->script
+        );
+        $this->assertStringContainsString(
+            'chown -R www-data:www-data "${repo_dir}"',
             $this->script
         );
     }
