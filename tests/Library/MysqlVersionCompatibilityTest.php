@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Glial\Sgbd\Sql\Mysql\Mysql;
+use App\Library\Format as Mysql;
 use PHPUnit\Framework\TestCase;
 
 final class MysqlVersionCompatibilityTest extends TestCase
