@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+if (!defined('TMP')) {
+    define('TMP', sys_get_temp_dir().'/');
+}
+
 use App\Controller\Integrate;
 use App\Library\SharedMemoryReader;
 use Fuz\Component\SharedMemory\Entity\StoredEntity;
@@ -164,6 +168,47 @@ final class IntegrateTest extends TestCase
             }
         }
     }
+
+    public function testPayloadLockPreventsSecondOwnerForSameFile(): void
+    {
+        $controller = new TestableIntegrate('Controller', 'View', []);
+        $file = sys_get_temp_dir().'/pmacontrol-integrate-test::phpunit_integrate_lock_'.getmypid();
+
+        $firstLock = $controller->exposeAcquireIntegratePayloadLock($file);
+        $this->assertIsArray($firstLock);
+
+        try {
+            $secondLock = $controller->exposeAcquireIntegratePayloadLock($file);
+            $this->assertNull($secondLock);
+        } finally {
+            $controller->exposeReleaseIntegratePayloadLock($firstLock);
+        }
+
+        $thirdLock = $controller->exposeAcquireIntegratePayloadLock($file);
+        $this->assertIsArray($thirdLock);
+        $controller->exposeReleaseIntegratePayloadLock($thirdLock);
+        @unlink($thirdLock['path']);
+    }
+
+    public function testBuildTimeSeriesInsertSqlIsIdempotentOnPrimaryKeyCollision(): void
+    {
+        $controller = new TestableIntegrate('Controller', 'View', []);
+
+        $sql = $controller->exposeBuildTimeSeriesInsertSql(
+            'ts_value_general_int',
+            ['id_mysql_server', 'id_ts_variable', 'date', 'value'],
+            ['(4499,238,"2026-04-15 23:03:31","1")']
+        );
+
+        $this->assertStringStartsWith(
+            'INSERT INTO `ts_value_general_int` (`id_mysql_server`,`id_ts_variable`,`date`,`value`) VALUES ',
+            $sql
+        );
+        $this->assertStringContainsString(
+            'ON DUPLICATE KEY UPDATE `value` = VALUES(`value`);',
+            $sql
+        );
+    }
 }
 
 final class TestableIntegrate extends Integrate
@@ -171,5 +216,20 @@ final class TestableIntegrate extends Integrate
     public function exposeNormalizeSlaveMetricRow(string $typeMetrics, $value): ?array
     {
         return $this->normalizeSlaveMetricRow($typeMetrics, $value);
+    }
+
+    public function exposeAcquireIntegratePayloadLock(string $file): ?array
+    {
+        return $this->acquireIntegratePayloadLock($file);
+    }
+
+    public function exposeReleaseIntegratePayloadLock(?array $lock): void
+    {
+        $this->releaseIntegratePayloadLock($lock);
+    }
+
+    public function exposeBuildTimeSeriesInsertSql(string $table, array $columns, array $values): string
+    {
+        return $this->buildTimeSeriesInsertSql($table, $columns, $values);
     }
 }
