@@ -23,6 +23,40 @@
 //to know if we are in cli
 define('IS_CLI', PHP_SAPI === 'cli');
 
+if (IS_CLI) {
+    require_once dirname(__DIR__).DIRECTORY_SEPARATOR.'Library'.DIRECTORY_SEPARATOR.'CliRootGuard.php';
+
+    $pmacontrolCliEnv = [
+        'PMACONTROL_CLI_REEXEC' => getenv('PMACONTROL_CLI_REEXEC'),
+        'PMACONTROL_ALLOW_ROOT' => getenv('PMACONTROL_ALLOW_ROOT'),
+        'PMACONTROL_CLI_KEEP_ROOT' => getenv('PMACONTROL_CLI_KEEP_ROOT'),
+        'PMACONTROL_CLI_USER' => getenv('PMACONTROL_CLI_USER'),
+    ];
+    $pmacontrolEffectiveUserId = function_exists('posix_geteuid') ? posix_geteuid() : -1;
+
+    if (\App\Library\CliRootGuard::shouldReexec(true, $pmacontrolEffectiveUserId, $_SERVER['argv'] ?? [], $pmacontrolCliEnv)) {
+        $pmacontrolTargetUser = \App\Library\CliRootGuard::targetUser($pmacontrolCliEnv);
+        $pmacontrolScript = $_SERVER['SCRIPT_FILENAME'] ?? ($_SERVER['argv'][0] ?? __FILE__);
+        $pmacontrolPhp = PHP_BINARY ?: 'php';
+        $pmacontrolCommand = \App\Library\CliRootGuard::buildPhpCommand($_SERVER['argv'] ?? [], $pmacontrolScript, $pmacontrolPhp);
+
+        putenv('PMACONTROL_CLI_REEXEC=1');
+
+        if (function_exists('pcntl_exec') && is_executable('/usr/sbin/runuser')) {
+            pcntl_exec('/usr/sbin/runuser', array_merge(['-u', $pmacontrolTargetUser, '--'], $pmacontrolCommand));
+        }
+
+        $pmacontrolQuotedCommand = implode(' ', array_map('escapeshellarg', $pmacontrolCommand));
+        $pmacontrolShellCommand = 'PMACONTROL_CLI_REEXEC=1 exec su -s /bin/sh -c '
+            . escapeshellarg($pmacontrolQuotedCommand)
+            . ' '
+            . escapeshellarg($pmacontrolTargetUser);
+
+        passthru($pmacontrolShellCommand, $pmacontrolExitCode);
+        exit((int)$pmacontrolExitCode);
+    }
+}
+
 
 mb_internal_encoding("UTF-8");
 // Définit l'encodage de sortie en UTF-8
