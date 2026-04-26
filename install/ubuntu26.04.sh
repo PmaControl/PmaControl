@@ -458,6 +458,15 @@ run_phpunit()
 
 write_credentials_file()
 {
+    if application_config_exists \
+        && [[ "${PMACTRL_FORCE_REINSTALL}" != "1" ]] \
+        && [[ -z "${PMACTRL_DB_PASSWORD}" ]] \
+        && [[ -z "${PMACTRL_ADMIN_PASSWORD}" ]] \
+        && [[ -z "${PMACTRL_WEBSERVICE_PASSWORD}" ]]; then
+        log "existing application config found and no new secrets generated; leaving credentials file unchanged"
+        return 0
+    fi
+
     if [[ "${PMACTRL_DRY_RUN}" == "1" ]]; then
         log "would write credentials summary to ${PMACTRL_CREDENTIALS_FILE}"
         return 0
