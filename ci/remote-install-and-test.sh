@@ -87,6 +87,14 @@ systemctl enable --now mariadb
 systemctl enable --now apache2
 systemctl enable --now "php${PHP_VERSION}-fpm"
 
+if ! mysql -NBe "SHOW ENGINES" | awk '$1 == "ROCKSDB" && ($2 == "YES" || $2 == "DEFAULT") {found=1} END {exit !found}'; then
+    mysql -e "INSTALL SONAME 'ha_rocksdb';" || true
+fi
+if ! mysql -NBe "SHOW ENGINES" | awk '$1 == "ROCKSDB" && ($2 == "YES" || $2 == "DEFAULT") {found=1} END {exit !found}'; then
+    echo "ROCKSDB engine is not available after installing mariadb-plugin-rocksdb" >&2
+    exit 1
+fi
+
 a2enmod proxy_fcgi setenvif rewrite
 a2enconf "php${PHP_VERSION}-fpm"
 
