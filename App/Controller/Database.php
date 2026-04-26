@@ -187,7 +187,7 @@ class Database extends Controller
 
 //a déporté dans une librairy ?
         $sql = "SELECT * FROM mysql_privilege ORDER BY `type`, `privilege`";
-        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql, $id_mysql_server, __METHOD__);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql, null, __METHOD__);
 
         $data['mysql_privilege'] = array();
         while ($ob                      = $db->sql_fetch_object($res)) {

@@ -130,9 +130,9 @@ if (empty($_GET['ajax'])):
 .sm-t { width: 100%; border-collapse: collapse; font-size: 12px; }
 .sm-t thead { position: sticky; top: 0; z-index: 2; }
 .sm-t th { background: #f8fafc; color: #64748b; font-size: 10px; text-transform: uppercase;
-           letter-spacing: .4px; padding: 8px 10px; border-bottom: 2px solid var(--sm-border);
+           letter-spacing: .4px; padding: 6px 10px; border-bottom: 2px solid var(--sm-border);
            white-space: nowrap; user-select: none; }
-.sm-t td { padding: 8px 10px; border-bottom: 1px solid #f1f5f9; vertical-align: middle;
+.sm-t td { padding: 4px 10px; border-bottom: 1px solid #f1f5f9; vertical-align: middle;
            transition: background .12s; }
 .sm-t tbody tr { transition: transform .1s; }
 .sm-t tbody tr:hover td { background: #f0f4ff; }
@@ -165,7 +165,7 @@ if (empty($_GET['ajax'])):
 .sm-srv-name { font-weight: 600; color: var(--sm-text); font-size: 13px; }
 .sm-srv-name a { color: inherit; text-decoration: none; transition: color .12s; }
 .sm-srv-name a:hover { color: #1e3a8a; }
-.sm-srv-meta { margin-top: 2px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.sm-srv-meta { margin-top: 1px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 .sm-env { font-size: 9px; padding: 1px 6px; border-radius: 3px; font-weight: 600; }
 .sm-org { font-size: 11px; color: var(--sm-muted); }
 .sm-tag { font-size: 9px; padding: 1px 5px; border-radius: 3px; }
@@ -185,7 +185,7 @@ if (empty($_GET['ajax'])):
 .sm-badge.muted { background: #f1f5f9; color: #94a3b8; }
 .sm-badge.info { background: #dbeafe; color: #1e40af; }
 
-.sm-err-row td { padding: 0 10px 6px 38px; border-bottom: 1px solid #f1f5f9; font-size: 11px;
+.sm-err-row td { padding: 0 10px 4px 38px; border-bottom: 1px solid #f1f5f9; font-size: 11px;
                   background: #fef2f2; box-shadow: inset 4px 0 0 var(--sm-crit); }
 .sm-err-row td .sm-err-text { color: #991b1b; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
 .sm-err-row td .sm-err-text i { color: var(--sm-crit); font-size: 10px; }

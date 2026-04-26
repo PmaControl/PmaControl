@@ -71,11 +71,9 @@ final class TunnelCacheTest extends TestCase
         $reflection = new ReflectionClass(Tunnel::class);
 
         $cacheProperty = $reflection->getProperty('tunnel_cache');
-        $cacheProperty->setAccessible(true);
-        $cacheProperty->setValue($cache);
+        $cacheProperty->setValue(null, $cache);
 
         $expireProperty = $reflection->getProperty('tunnel_cache_expire');
-        $expireProperty->setAccessible(true);
-        $expireProperty->setValue(time() + 60);
+        $expireProperty->setValue(null, time() + 60);
     }
 }
