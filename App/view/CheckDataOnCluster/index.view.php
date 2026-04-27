@@ -7,6 +7,9 @@
 
 use Glial\Html\Form\Form;
 
+$checkDataOnClusterCsrfField = htmlspecialchars((string) ($data['check_data_on_cluster_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$checkDataOnClusterCsrfToken = htmlspecialchars((string) ($data['check_data_on_cluster_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+
 function setColor($type)
 {
     $hex = substr(sha1($type), 0, 2).substr(sha1($type), 20, 2).substr(md5($type), -2, 2);
@@ -31,7 +34,8 @@ function getrgba($label, $alpha)
 }
 echo '<div class="well">';
 
-echo '<form method="POST" action="">';
+echo '<form method="post" action="">';
+echo '<input type="hidden" name="'.$checkDataOnClusterCsrfField.'" value="'.$checkDataOnClusterCsrfToken.'">';
 echo Form::select("mysql_cluster", "id", $data['grappe'], "", array("data-live-search" => "true", "class" => "selectpicker form-control"));
 
 echo '<br />';
@@ -54,7 +58,7 @@ if (!empty($_GET['sql'])) {
     $sql = $_GET['sql'];
 }
 
-echo '<textarea name="sql" class="form-control">'.$sql.'</textarea>';
+echo '<textarea name="sql" class="form-control">'.htmlspecialchars((string) $sql, ENT_QUOTES, 'UTF-8').'</textarea>';
 echo '<br />';
 
 echo '<button type="submit" class="btn btn-primary">Check Result on this cluster</button>';

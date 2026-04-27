@@ -4,7 +4,9 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use \App\Library\Debug;
+use App\Library\Security\ClusterDataCheckRequest;
 use \App\Library\Mysql;
+use Glial\Security\Csrf;
 use \Glial\Sgbd\Sgbd;
 
 
@@ -23,6 +25,8 @@ use \Glial\Sgbd\Sgbd;
  * @version 1.0
  */
 class CheckDataOnCluster extends Controller {
+
+    private const INDEX_CSRF_SCOPE = 'check_data_on_cluster.index';
 
 /**
  * Stores `$should_be_different` for should be different.
@@ -76,34 +80,40 @@ class CheckDataOnCluster extends Controller {
 
         Debug::parseDebug($param);
 
+        $data = [];
+        $data['check_data_on_cluster_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['check_data_on_cluster_csrf_token'] = Csrf::issueToken($_SESSION, self::INDEX_CSRF_SCOPE);
+
+        $indexRequest = self::evaluateIndexRequest($_POST, $_SERVER, $_SESSION);
+        if ($indexRequest['status'] !== 200) {
+            $this->view = false;
+            $this->layout_name = false;
+            self::sendIndexError($indexRequest['status'], $indexRequest['body'], $indexRequest['headers']);
+            return;
+        }
+
+        $selection = $indexRequest['selection'];
+        ClusterDataCheckRequest::applyToGet($selection);
+
         $db = Sgbd::sql(DB_DEFAULT);
 
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
-            if (!empty($_POST['mysql_cluster']['database']) && !empty($_POST['sql'])) {
-
-                header('location: ' . LINK . $this->getClass() . '/' . __FUNCTION__ . '/mysql_cluster:id:' . $_POST['mysql_cluster']['id']
-                        . '/mysql_cluster:database:' . $_POST['mysql_cluster']['database'] . '/sql:' . urlencode($_POST['sql']));
-            }
-        } else {
-
-            if (!empty($_GET['mysql_cluster']['database']) && !empty($_GET['sql'])) {
-
-
-                $sql = "SELECT * FROM mysql_server WHERE id in (" . $_GET['mysql_cluster']['id'] . ")";
+        if (ClusterDataCheckRequest::isComplete($selection)) {
+                $sql = "SELECT * FROM mysql_server WHERE id in (" . $selection['id_list'] . ")";
                 $res = $db->sql_query($sql);
                 while ($ob = $db->sql_fetch_object($res)) {
                     $data['mysql_server'][$ob->id] = $ob->display_name . " (" . $ob->ip . ")";
                 }
 
+                $data['show'] = false;
                 $resultat = array();
 
-                $id_mysql_servers = explode(",", $_GET['mysql_cluster']['id']);
+                $id_mysql_servers = $selection['ids'];
                 foreach ($id_mysql_servers as $id_mysql_server) {
 
                     $db_link = $this->getDbLinkFromId($id_mysql_server);
-                    $db_link->sql_select_db($_GET['mysql_cluster']['database']);
+                    $db_link->sql_select_db($selection['database']);
 
-                    $res = $db_link->sql_query($_GET['sql']);
+                    $res = $db_link->sql_query($selection['sql']);
 
 
                     while ($arr = $db_link->sql_fetch_array($res, MYSQLI_ASSOC)) {
@@ -130,6 +140,7 @@ class CheckDataOnCluster extends Controller {
                     }
                 }
 
+                $data['resultat'] = $resultat;
                 if ($data['show']) {
                     foreach ($resultat as $res) {
                         $index = array_merge($res);
@@ -138,7 +149,6 @@ class CheckDataOnCluster extends Controller {
                     $data['index'] = array_keys($index);
                     sort($data['index']);
 
-                    $data['resultat'] = $resultat;
                 }
 
                 $combinaisons = $this->perm($id_mysql_servers);
@@ -201,7 +211,6 @@ class CheckDataOnCluster extends Controller {
 
 
                 $data['groups'] = $groups;
-            }
         }
 
         $sql = "select group_concat(b.name) as name ,group_concat(a.id_mysql_server) as id_mysql_servers
@@ -222,6 +231,24 @@ class CheckDataOnCluster extends Controller {
         }
 
         $this->set('data', $data);
+    }
+
+    public static function evaluateIndexRequest(array $post, array $server, array $session): array
+    {
+        return ClusterDataCheckRequest::evaluate($post, $server, $session, self::INDEX_CSRF_SCOPE);
+    }
+
+    private static function sendIndexError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+
+        if ($message !== '') {
+            echo $message;
+        }
     }
 
 /**
@@ -475,4 +502,3 @@ class CheckDataOnCluster extends Controller {
     }
 
 }
-
