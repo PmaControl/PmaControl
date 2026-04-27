@@ -8,7 +8,7 @@ final class PositiveIntegerSelection
 {
     public const DEFAULT_MAX_IDS = 64;
 
-    public static function normalizeList($raw, int $maxIds = self::DEFAULT_MAX_IDS): ?array
+    public static function normalizeList($raw, int $maxIds = self::DEFAULT_MAX_IDS, ?int $maxValue = null): ?array
     {
         if (is_array($raw)) {
             $values = $raw;
@@ -42,7 +42,12 @@ final class PositiveIntegerSelection
                 return null;
             }
 
-            $ids[] = (int) $id;
+            $value = (int) $id;
+            if ($maxValue !== null && $value > $maxValue) {
+                return null;
+            }
+
+            $ids[] = $value;
         }
 
         if ($ids === [] || count($ids) > $maxIds || count($ids) !== count(array_unique($ids))) {

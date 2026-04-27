@@ -7,6 +7,9 @@
 
 use Glial\Html\Form\Form;
 
+$benchmarkBenchCsrfField = htmlspecialchars((string) ($data['benchmark_bench_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$benchmarkBenchCsrfToken = htmlspecialchars((string) ($data['benchmark_bench_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+
 //Debug::debug($data);
 
 
@@ -19,6 +22,7 @@ if (version_compare($data['sysbench'], '0.5', ">=")) {
         //echo $data['sql'];
 
         echo '<form class="form-inline" action="" method="post">';
+        echo '<input type="hidden" name="'.$benchmarkBenchCsrfField.'" value="'.$benchmarkBenchCsrfToken.'">';
         echo ' <div class="form-group" role="group" aria-label="Default button group">';
 
         echo __("Server : ");
