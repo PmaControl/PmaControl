@@ -19,6 +19,7 @@ use \Glial\Sgbd\Sgbd;
 use \App\Library\Extraction;
 use \App\Library\Param;
 use \App\Library\Available;
+use App\Library\Security\CsrfGuard;
 use \Glial\I18n\I18n;
 use \Glial\Cli\Table;
 use \Glial\Synapse\FactoryController;
@@ -42,6 +43,14 @@ use Glial\Security\Csrf;
  */
 class Database extends Controller
 {
+    private const DATABASE_SIZE_UPDATE_CSRF_SCOPE = 'database.size.update';
+    private const DATABASE_SIZE_UPDATE_FIELDS = ['label', 'min', 'max', 'color', 'background'];
+    private const DATABASE_SIZE_TEXT_FIELD_LIMITS = [
+        'label' => 3,
+        'color' => 20,
+        'background' => 20,
+    ];
+
 /**
  * Stores `$log_file` for log file.
  *
@@ -1630,6 +1639,8 @@ END;";
  */
     function size($param)
     {
+        $this->di['js']->addJavascript(array('bootstrap-editable.min.js', 'Tree/index.js'));
+
         $db  = Sgbd::sql(DB_DEFAULT);
         $res = $db->sql_query("SELECT * FROM database_size order by `min`;");
 
@@ -1638,10 +1649,193 @@ END;";
             $data['color'][] = $ob;
         }
 
-        $data['tag_update_csrf_field'] = Csrf::DEFAULT_FIELD;
-        $data['tag_update_csrf_token'] = Csrf::issueToken($_SESSION, Tag::TAG_UPDATE_CSRF_SCOPE);
+        $data['database_size_update_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['database_size_update_csrf_token'] = Csrf::issueToken($_SESSION, self::DATABASE_SIZE_UPDATE_CSRF_SCOPE);
 
         $this->set("data", $data);
+    }
+
+    public function sizeUpdate(): void
+    {
+        $this->view = false;
+        $this->layout_name = false;
+
+        $outcome = self::evaluateSizeUpdateRequest($_POST, $_SERVER, $_SESSION);
+        if ($outcome['status'] !== 200) {
+            self::sendDatabaseSizeUpdateError($outcome['status'], $outcome['body'], $outcome['headers']);
+            return;
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = self::buildDatabaseSizeUpdateSql($outcome['update'], [$db, 'sql_real_escape_string']);
+        $db->sql_query($sql);
+
+        if ($db->sql_affected_rows() === 1) {
+            echo "OK";
+        } else {
+            self::sendDatabaseSizeUpdateError(503, "Database size not updated");
+        }
+    }
+
+    public static function evaluateSizeUpdateRequest(array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::DATABASE_SIZE_UPDATE_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildDatabaseSizeUpdateOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $update = self::normalizeSizeUpdatePayload($post);
+        if ($update === null) {
+            return self::buildDatabaseSizeUpdateOutcome(400, "Invalid database size update payload");
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'update' => $update,
+        ];
+    }
+
+    public static function normalizeSizeUpdatePayload(array $post): ?array
+    {
+        if (
+            ! array_key_exists('name', $post)
+            || ! array_key_exists('pk', $post)
+            || ! array_key_exists('value', $post)
+            || ! is_scalar($post['name'])
+            || ! is_scalar($post['pk'])
+            || ! is_scalar($post['value'])
+        ) {
+            return null;
+        }
+
+        $field = (string) $post['name'];
+        if (! in_array($field, self::DATABASE_SIZE_UPDATE_FIELDS, true)) {
+            return null;
+        }
+
+        $id = self::normalizeUnsignedInteger((string) $post['pk']);
+        if ($id === null || $id < 1) {
+            return null;
+        }
+
+        if ($field === 'min' || $field === 'max') {
+            $value = self::normalizeDatabaseSizeBytes((string) $post['value']);
+            if ($value === null) {
+                return null;
+            }
+        } else {
+            $value = self::normalizeDatabaseSizeTextField($field, $post['value']);
+            if ($value === null) {
+                return null;
+            }
+        }
+
+        return [
+            'field' => $field,
+            'value' => $value,
+            'id' => $id,
+        ];
+    }
+
+    public static function buildDatabaseSizeUpdateSql(array $update, callable $escape): string
+    {
+        $value = $update['value'];
+        if (in_array($update['field'], ['min', 'max'], true)) {
+            $sqlValue = (string) $value;
+        } else {
+            $sqlValue = "'" . $escape((string) $value) . "'";
+        }
+
+        return sprintf(
+            "UPDATE database_size SET `%s` = %s WHERE id = %d",
+            $update['field'],
+            $sqlValue,
+            $update['id']
+        );
+    }
+
+    public static function normalizeDatabaseSizeBytes(string $value): ?int
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return null;
+        }
+
+        $integer = self::normalizeUnsignedInteger($value);
+        if ($integer !== null) {
+            return $integer;
+        }
+
+        if (! preg_match('/^([0-9]+(?:\.[0-9]+)?)\s*([KMGTPE])$/i', $value, $matches)) {
+            return null;
+        }
+
+        $units = ['K' => 1, 'M' => 2, 'G' => 3, 'T' => 4, 'P' => 5, 'E' => 6];
+        $number = (float) $matches[1];
+        $unit = strtoupper($matches[2]);
+        $bytes = $number * (1024 ** $units[$unit]);
+
+        if (! is_finite($bytes) || $bytes < 0 || $bytes > PHP_INT_MAX) {
+            return null;
+        }
+
+        return (int) round($bytes);
+    }
+
+    private static function normalizeUnsignedInteger(string $value): ?int
+    {
+        $value = trim($value);
+        if ($value === '' || ! ctype_digit($value)) {
+            return null;
+        }
+
+        $normalized = ltrim($value, '0');
+        if ($normalized === '') {
+            return 0;
+        }
+
+        $max = (string) PHP_INT_MAX;
+        if (strlen($normalized) > strlen($max) || (strlen($normalized) === strlen($max) && strcmp($normalized, $max) > 0)) {
+            return null;
+        }
+
+        return (int) $normalized;
+    }
+
+    private static function normalizeDatabaseSizeTextField(string $field, $value): ?string
+    {
+        if (! is_scalar($value) || ! isset(self::DATABASE_SIZE_TEXT_FIELD_LIMITS[$field])) {
+            return null;
+        }
+
+        $text = trim((string) $value);
+        if ($text === '' || strlen($text) > self::DATABASE_SIZE_TEXT_FIELD_LIMITS[$field]) {
+            return null;
+        }
+
+        return $text;
+    }
+
+    private static function buildDatabaseSizeUpdateOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'update' => null,
+        ];
+    }
+
+    private static function sendDatabaseSizeUpdateError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
 /**

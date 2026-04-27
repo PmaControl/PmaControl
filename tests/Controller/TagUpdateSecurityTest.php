@@ -124,15 +124,11 @@ final class TagUpdateSecurityTest extends TestCase
     public function testTagUpdateUsesSharedCsrfLibraryAndInlineEditSendsToken(): void
     {
         $tagController = file_get_contents(__DIR__ . '/../../App/Controller/Tag.php');
-        $databaseController = file_get_contents(__DIR__ . '/../../App/Controller/Database.php');
         $tagView = file_get_contents(__DIR__ . '/../../App/view/Tag/index.view.php');
-        $databaseSizeView = file_get_contents(__DIR__ . '/../../App/view/Database/size.view.php');
         $javascript = file_get_contents(__DIR__ . '/../../App/Webroot/js/Tree/index.js');
 
         $this->assertIsString($tagController);
-        $this->assertIsString($databaseController);
         $this->assertIsString($tagView);
-        $this->assertIsString($databaseSizeView);
         $this->assertIsString($javascript);
 
         $this->assertStringContainsString('use Glial\\Security\\Csrf;', $tagController);
@@ -142,17 +138,10 @@ final class TagUpdateSecurityTest extends TestCase
         $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::TAG_UPDATE_CSRF_SCOPE)', $tagController);
         $this->assertStringContainsString('private const TAG_UPDATE_FIELDS', $tagController);
 
-        $this->assertStringContainsString('use Glial\\Security\\Csrf;', $databaseController);
-        $this->assertStringContainsString('Csrf::issueToken($_SESSION, Tag::TAG_UPDATE_CSRF_SCOPE)', $databaseController);
-
         $this->assertStringContainsString('$tagUpdateCsrfAttributes', $tagView);
-        $this->assertStringContainsString('$tagUpdateCsrfAttributes', $databaseSizeView);
         $this->assertStringContainsString('data-csrf-field="', $tagView);
         $this->assertStringContainsString('data-csrf-token="', $tagView);
-        $this->assertStringContainsString('data-csrf-field="', $databaseSizeView);
-        $this->assertStringContainsString('data-csrf-token="', $databaseSizeView);
         $this->assertStringContainsString('tag/update', $tagView);
-        $this->assertStringContainsString('tag/update', $databaseSizeView);
         $this->assertStringContainsString('params[csrfField] = csrfToken;', $javascript);
     }
 

@@ -25,9 +25,9 @@ function getUnit($bytes, $format = false)
 
     return $res;
 }
-$tagUpdateCsrfField = htmlspecialchars((string) ($data['tag_update_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$tagUpdateCsrfToken = htmlspecialchars((string) ($data['tag_update_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
-$tagUpdateCsrfAttributes = ' data-csrf-field="'.$tagUpdateCsrfField.'" data-csrf-token="'.$tagUpdateCsrfToken.'"';
+$databaseSizeUpdateCsrfField = htmlspecialchars((string) ($data['database_size_update_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$databaseSizeUpdateCsrfToken = htmlspecialchars((string) ($data['database_size_update_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$databaseSizeUpdateCsrfAttributes = ' data-csrf-field="'.$databaseSizeUpdateCsrfField.'" data-csrf-token="'.$databaseSizeUpdateCsrfToken.'"';
 
 echo '<table class="table table-bordered table-striped" id="table">';
 echo '<tr>';
@@ -48,11 +48,11 @@ foreach ($data['color'] as $tag) {
     echo '<tr>';
     echo '<td>'.$i.'</td>';
     echo '<td>'.$tag['id'].'</td>';
-    echo '<td class="line-edit" data-name="name" data-pk="'.$tag['id'].'" data-type="text" data-url="'.LINK.'tag/update" data-title="Enter Libelle"'.$tagUpdateCsrfAttributes.'>'.$tag['label'].'</td>';
-    echo '<td class="line-edit" data-name="name" data-pk="'.$tag['id'].'" data-type="text" data-url="'.LINK.'tag/update" data-title="Enter Libelle"'.$tagUpdateCsrfAttributes.'>'.getUnit($tag['min'], true).'</td>';
-    echo '<td class="line-edit" data-name="name" data-pk="'.$tag['id'].'" data-type="text" data-url="'.LINK.'tag/update" data-title="Enter Libelle"'.$tagUpdateCsrfAttributes.'>'.getUnit($tag['max'], true).'</td>';
-    echo '<td class="line-edit" data-name="color" data-pk="'.$tag['id'].'" data-type="text" data-url="'.LINK.'tag/update" data-title="Enter Color"'.$tagUpdateCsrfAttributes.'>'.$tag['color'].'</td>';
-    echo '<td class="line-edit" data-name="background" data-pk="'.$tag['id'].'" data-type="text" data-url="'.LINK.'tag/update" data-title="Enter Color"'.$tagUpdateCsrfAttributes.'>'.$tag['background'].'</td>';
+    echo '<td class="line-edit" data-name="label" data-pk="'.$tag['id'].'" data-type="text" data-url="'.LINK.'database/sizeUpdate" data-title="Enter Libelle"'.$databaseSizeUpdateCsrfAttributes.'>'.$tag['label'].'</td>';
+    echo '<td class="line-edit" data-name="min" data-pk="'.$tag['id'].'" data-type="text" data-url="'.LINK.'database/sizeUpdate" data-title="Enter Min"'.$databaseSizeUpdateCsrfAttributes.'>'.getUnit($tag['min'], true).'</td>';
+    echo '<td class="line-edit" data-name="max" data-pk="'.$tag['id'].'" data-type="text" data-url="'.LINK.'database/sizeUpdate" data-title="Enter Max"'.$databaseSizeUpdateCsrfAttributes.'>'.getUnit($tag['max'], true).'</td>';
+    echo '<td class="line-edit" data-name="color" data-pk="'.$tag['id'].'" data-type="text" data-url="'.LINK.'database/sizeUpdate" data-title="Enter Color"'.$databaseSizeUpdateCsrfAttributes.'>'.$tag['color'].'</td>';
+    echo '<td class="line-edit" data-name="background" data-pk="'.$tag['id'].'" data-type="text" data-url="'.LINK.'database/sizeUpdate" data-title="Enter Color"'.$databaseSizeUpdateCsrfAttributes.'>'.$tag['background'].'</td>';
 
     echo '<td><span class="label" style="color:'.$tag['color'].'; background:'.$tag['background'].' ;">'.$tag['label'].'</span></td>';
     echo '</tr>'."\n";
