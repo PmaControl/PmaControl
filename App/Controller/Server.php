@@ -17,6 +17,7 @@ use App\Library\ServerStateTimeline;
 
 use App\Library\Chiffrement;
 use \Glial\Sgbd\Sgbd;
+use Glial\Security\Csrf;
 use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
@@ -479,6 +480,8 @@ class Server extends Controller
         }
 
         $data['processing'] = $this->getDaemonRunning(['mysql']);
+        $data['worker_kill_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['worker_kill_csrf_token'] = Csrf::issueToken($_SESSION, Worker::WORKER_KILL_SERVER_CSRF_SCOPE);
 
         // GeoIP: lookup country for each server IP (IPv4 + IPv6) via range join
         // Skip loopback / private / reserved ranges — they are never in the GeoIP table
@@ -2200,6 +2203,11 @@ var myChart = new Chart(ctx, {
 
                 Debug::debug(microtime(true));
                 $data['time'] = round(Microsecond::timestamp() - $data['microtime'], 2);
+                $data['pid'] = Worker::findWorkerPidForServerId(
+                    'worker_'.$worker_type,
+                    (int)$data['id'],
+                    !empty($data['pid']) ? (int)$data['pid'] : null
+                );
 
                 Debug::debug($data);
                 $seconds = round($data['time'] / 1_000_000,2);
