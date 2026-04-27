@@ -405,6 +405,14 @@ $("#ssh_key-id").change(function() {
      */
 
     public function workerDeploy() {
+        $outcome = self::evaluateWorkerDeployRequest(defined('IS_CLI') && IS_CLI === true);
+        if ($outcome['status'] !== 200) {
+            $this->view = false;
+            $this->layout_name = false;
+            self::sendWorkerDeployError($outcome['status'], $outcome['body'], $outcome['headers']);
+            return;
+        }
+
         $pid = getmypid();
 
         $queue = msg_get_queue(self::KEY_WORKER_DEPLOY);
@@ -421,6 +429,33 @@ $("#ssh_key-id").change(function() {
 
             $this->deploy2($data['server'], $data['key']);
         }
+    }
+
+    public static function evaluateWorkerDeployRequest(bool $isCli): array
+    {
+        if (!$isCli) {
+            return self::buildWorkerDeployOutcome(403, 'CLI only');
+        }
+
+        return self::buildWorkerDeployOutcome(200, '');
+    }
+
+    private static function buildWorkerDeployOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+        ];
+    }
+
+    private static function sendWorkerDeployError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        echo $message;
     }
 
     /**
@@ -778,4 +813,3 @@ $("#ssh_key-id").change(function() {
     }
 
 }
-
