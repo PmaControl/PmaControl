@@ -5,6 +5,9 @@ use App\Library\Display;
 
 // -- helpers ------------------------------------------------------------------
 
+$slaveBinlogAnalysisStartCsrfField = (string)($data['slave_binlog_analysis_start_csrf_field'] ?? '_csrf_token');
+$slaveBinlogAnalysisStartCsrfToken = (string)($data['slave_binlog_analysis_start_csrf_token'] ?? '');
+
 $isMariaDB = isset($data['server_type']) && stripos($data['server_type'], 'mariadb') !== false;
 $isMySQLNewSyntax = !$isMariaDB && isset($data['server_version']) && version_compare((string)$data['server_version'], '8.0.22', '>=');
 
@@ -1144,6 +1147,7 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('connection_name', replicationName);
         formData.append('time_start', timeStart);
         formData.append('time_end', timeEnd);
+        formData.append(<?= json_encode($slaveBinlogAnalysisStartCsrfField) ?>, <?= json_encode($slaveBinlogAnalysisStartCsrfToken) ?>);
 
         fetch(LINK + 'slave/startBinlogAnalysis/' + serverId + '/ajax:true/', {
             method: 'POST',

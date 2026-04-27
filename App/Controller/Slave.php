@@ -11,10 +11,12 @@ use App\Library\Extraction2;
 use App\Library\Mysql;
 use App\Library\Debug;
 use App\Controller\Tunnel;
+use App\Library\Security\CsrfGuard;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Chiffrement;
 use \App\Library\DryRun;
 use \App\Library\BinlogAnalyzer;
+use Glial\Security\Csrf;
 
 /**
  * Class responsible for slave workflows.
@@ -35,6 +37,7 @@ class Slave extends Controller
 
     use \App\Library\Filter;
     const BACKUP_TEMP = "/backup/";
+    private const SLAVE_BINLOG_ANALYSIS_START_CSRF_SCOPE = 'slave.binlog_analysis.start';
 
     private function getReplicationLagVariables(): array
     {
@@ -798,6 +801,8 @@ if (!empty($_GET['mysql_server']['id'])) {
         $data['class']    = $this->getClass();
         $data['function'] = __FUNCTION__;
         $data['master_id'] = $master_id ?? 0;
+        $data['slave_binlog_analysis_start_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['slave_binlog_analysis_start_csrf_token'] = Csrf::issueToken($_SESSION, self::SLAVE_BINLOG_ANALYSIS_START_CSRF_SCOPE);
 
         $this->di['js']->code_javascript('
 function svHumanDuration(sec) {
@@ -2645,17 +2650,19 @@ var chart = new Chart(ctx, {
     {
         $this->layout_name = false;
         $this->view = false;
-        header('Content-Type: application/json');
+        header('Content-Type: application/json; charset=UTF-8');
 
-        $id_mysql_server = (int) $param[0];
-        $connection_name = self::sanitizeConnectionName($_POST['connection_name'] ?? '');
-        $time_start      = $_POST['time_start'] ?? '';
-        $time_end        = $_POST['time_end'] ?? '';
-
-        if (empty($time_start) || empty($time_end)) {
-            echo json_encode(['error' => 'time_start and time_end are required']);
+        $outcome = self::evaluateStartBinlogAnalysisRequest($param, $_POST, $_SERVER, $_SESSION);
+        if ($outcome['status'] !== 200) {
+            self::sendStartBinlogAnalysisError($outcome['status'], $outcome['body'], $outcome['headers']);
             return;
         }
+
+        $request = $outcome['request'];
+        $id_mysql_server = $request['id_mysql_server'];
+        $connection_name = $request['connection_name'];
+        $time_start = $request['time_start'];
+        $time_end = $request['time_end'];
 
         // Find master — buffer output to prevent SQL warnings from corrupting JSON
         ob_start();
@@ -2733,6 +2740,110 @@ var chart = new Chart(ctx, {
         exec($cmd);
 
         echo json_encode(['id' => $analysisId, 'status' => 'pending']);
+    }
+
+    public static function evaluateStartBinlogAnalysisRequest(array $param, array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::SLAVE_BINLOG_ANALYSIS_START_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildStartBinlogAnalysisOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $request = self::normalizeStartBinlogAnalysisPayload($param, $post);
+        if ($request === null) {
+            return self::buildStartBinlogAnalysisOutcome(400, 'Invalid binlog analysis start payload');
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'request' => $request,
+        ];
+    }
+
+    public static function normalizeStartBinlogAnalysisPayload(array $param, array $post): ?array
+    {
+        if (!isset($param[0]) || !is_scalar($param[0])) {
+            return null;
+        }
+
+        $idMysqlServer = trim((string) $param[0]);
+        if ($idMysqlServer === '' || !ctype_digit($idMysqlServer) || (int) $idMysqlServer < 1) {
+            return null;
+        }
+
+        if (
+            !array_key_exists('connection_name', $post)
+            || !array_key_exists('time_start', $post)
+            || !array_key_exists('time_end', $post)
+            || !is_scalar($post['connection_name'])
+        ) {
+            return null;
+        }
+
+        $timeStart = self::normalizeBinlogAnalysisDate($post['time_start']);
+        $timeEnd = self::normalizeBinlogAnalysisDate($post['time_end']);
+        if ($timeStart === null || $timeEnd === null) {
+            return null;
+        }
+        if ($timeStart >= $timeEnd) {
+            return null;
+        }
+
+        return [
+            'id_mysql_server' => (int) $idMysqlServer,
+            'connection_name' => self::sanitizeConnectionName((string) $post['connection_name']),
+            'time_start' => $timeStart,
+            'time_end' => $timeEnd,
+        ];
+    }
+
+    private static function normalizeBinlogAnalysisDate($value): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $date = trim((string) $value);
+        if (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/', $date) === 1) {
+            $date .= ':00';
+        }
+
+        if (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $date) !== 1) {
+            return null;
+        }
+
+        $parsed = \DateTimeImmutable::createFromFormat('!Y-m-d H:i:s', $date);
+        $errors = \DateTimeImmutable::getLastErrors();
+        if (
+            $parsed === false
+            || ($errors !== false && ((int) $errors['warning_count'] > 0 || (int) $errors['error_count'] > 0))
+        ) {
+            return null;
+        }
+
+        return $parsed->format('Y-m-d H:i:s');
+    }
+
+    private static function buildStartBinlogAnalysisOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'request' => null,
+        ];
+    }
+
+    private static function sendStartBinlogAnalysisError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: application/json; charset=UTF-8');
+        echo json_encode(['error' => $message]);
     }
 
     public static function buildInFlightBinlogAnalysisCriteria(
