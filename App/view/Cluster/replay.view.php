@@ -5,7 +5,7 @@ use \Glial\Html\Form\Form;
 
 
 <div>
-    <form method="post" action="<?= LINK ?>Cluster/history/<?= $data['id_mysql_server'] ?>">
+    <form method="get" action="<?= LINK ?>Cluster/history/<?= $data['id_mysql_server'] ?>">
     <?php
 
         $options = array_merge(array("data-live-search" => "true", "class" => "selectpicker", "all_selectable" => "true"), $data['options']);
@@ -19,5 +19,4 @@ use \Glial\Html\Form\Form;
   <button type="submit" class="btn btn-info" id="btn-replay">Replay</button>
   </form>
 </div>
-
 

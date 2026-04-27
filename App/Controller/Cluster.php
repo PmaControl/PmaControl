@@ -12,6 +12,7 @@ use \Monolog\Handler\StreamHandler;
 use \App\Library\Debug;
 use App\Library\Graphviz;
 use App\Library\Security\CsrfGuard;
+use App\Library\Security\DateRangeSelection;
 use Glial\Security\Csrf;
 
 /**
@@ -31,6 +32,9 @@ use Glial\Security\Csrf;
 class Cluster extends Controller
 {
     private const VIEW_DOT_CSRF_SCOPE = 'cluster.view_dot';
+    private const HISTORY_DATE_GROUP = 'dot3_cluster__mysql_server';
+    private const HISTORY_DATE_MIN = 'date_min';
+    private const HISTORY_DATE_MAX = 'date_max';
 
     private static function formatDotSource(string $dot): string
     {
@@ -996,20 +1000,31 @@ class Cluster extends Controller
  */
    public function history($param)
    {
+        $request = self::evaluateHistoryRequest($_GET, $_SERVER, $param);
+        if ($request['status'] !== 200) {
+            $this->view = false;
+            $this->layout_name = false;
+            http_response_code($request['status']);
+
+            if ($request['redirect_route'] !== null) {
+                header('location: ' . LINK . $request['redirect_route']);
+                exit;
+            }
+
+            foreach ($request['headers'] as $name => $value) {
+                header($name . ': ' . $value);
+            }
+
+            header('Content-Type: text/plain; charset=UTF-8');
+            echo $request['body'];
+            return;
+        }
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $id_mysql_server = $param[0];
-
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
-
-            debug($_POST); 
-            header("location: ".LINK."Cluster/history/".$id_mysql_server."/".$_POST['dot3_cluster__mysql_server']['date_min']."/".$_POST['dot3_cluster__mysql_server']['date_max']);
-            exit;
-        }
-
-        $date_min = $param[1];
-        $date_max = $param[2];
+        $id_mysql_server = $request['id_mysql_server'];
+        $date_min = $request['date_min'];
+        $date_max = $request['date_max'];
 
         $sub_query = "SELECT z.id from dot3_cluster__mysql_server z where z.id_mysql_server={$id_mysql_server} 
         AND date_inserted BETWEEN '".$date_min."' AND '".$date_max."'";
@@ -1041,4 +1056,66 @@ class Cluster extends Controller
 
         $this->set('data', $data);
    }
+
+    public static function evaluateHistoryRequest(array $get, array $server, array $param): array
+    {
+        $method = strtoupper((string)($server['REQUEST_METHOD'] ?? 'GET'));
+        if ($method !== 'GET' && $method !== 'HEAD') {
+            return self::buildHistoryOutcome(405, 'Method Not Allowed', ['Allow' => 'GET, HEAD']);
+        }
+
+        $idMysqlServer = DateRangeSelection::normalizePositiveInt($param[0] ?? null);
+        if ($idMysqlServer === null) {
+            return self::buildHistoryOutcome(400, 'Invalid history selection');
+        }
+
+        if (array_key_exists(self::HISTORY_DATE_GROUP, $get)) {
+            $selection = DateRangeSelection::normalizeSelection(
+                $get[self::HISTORY_DATE_GROUP],
+                self::HISTORY_DATE_MIN,
+                self::HISTORY_DATE_MAX
+            );
+            if ($selection === null) {
+                return self::buildHistoryOutcome(400, 'Invalid history selection');
+            }
+
+            return self::buildHistoryOutcome(
+                302,
+                '',
+                [],
+                $idMysqlServer,
+                $selection[self::HISTORY_DATE_MIN],
+                $selection[self::HISTORY_DATE_MAX],
+                'Cluster/history/' . $idMysqlServer . '/' . $selection[self::HISTORY_DATE_MIN] . '/' . $selection[self::HISTORY_DATE_MAX]
+            );
+        }
+
+        $dateMin = DateRangeSelection::normalizeDate($param[1] ?? null);
+        $dateMax = DateRangeSelection::normalizeDate($param[2] ?? null);
+        if ($dateMin === null || $dateMax === null || $dateMin > $dateMax) {
+            return self::buildHistoryOutcome(400, 'Invalid history selection');
+        }
+
+        return self::buildHistoryOutcome(200, '', [], $idMysqlServer, $dateMin, $dateMax);
+    }
+
+    private static function buildHistoryOutcome(
+        int $status,
+        string $body,
+        array $headers = [],
+        ?int $idMysqlServer = null,
+        ?string $dateMin = null,
+        ?string $dateMax = null,
+        ?string $redirectRoute = null
+    ): array {
+        return [
+            'status' => $status,
+            'body' => $body,
+            'headers' => $headers,
+            'id_mysql_server' => $idMysqlServer,
+            'date_min' => $dateMin,
+            'date_max' => $dateMax,
+            'redirect_route' => $redirectRoute,
+        ];
+    }
 }
