@@ -21,6 +21,7 @@ use \App\Library\Param;
 use \App\Library\Available;
 use App\Library\Security\CsrfGuard;
 use App\Library\Security\GroupedFormRequest;
+use App\Library\Security\Identifier;
 use \Glial\I18n\I18n;
 use \Glial\Cli\Table;
 use \Glial\Synapse\FactoryController;
@@ -57,6 +58,23 @@ class Database extends Controller
         'database' => ['type' => 'string', 'required' => true, 'min' => 1, 'max' => 64],
         'new_name' => ['type' => 'string', 'required' => true, 'min' => 1, 'max' => 64],
         'adjust_privileges' => ['type' => 'string', 'required' => false, 'max' => 16, 'default' => ''],
+    ];
+    private const DATABASE_REFRESH_CSRF_SCOPE = 'database.refresh';
+    private const DATABASE_REFRESH_RULES = [
+        'refresh' => ['type' => 'enum', 'required' => true, 'values' => ['1']],
+        'id_mysql_server__from' => ['type' => 'int', 'required' => true, 'min' => 1],
+        'id_mysql_server__target' => ['type' => 'int', 'required' => true, 'min' => 1],
+        'list' => [
+            'type' => 'list',
+            'required' => true,
+            'min_items' => 1,
+            'max_items' => 64,
+            'item_type' => 'string',
+            'item_min' => 1,
+            'item_max' => 64,
+            'item_pattern' => Identifier::DATABASE_NAME_PATTERN,
+        ],
+        'path' => ['type' => 'string', 'required' => true, 'min' => 1, 'max' => 255],
     ];
 
 /**
@@ -281,6 +299,8 @@ class Database extends Controller
 
 //Debug::$debug = true;
         Debug::parseDebug($param);
+        $data['database_refresh_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['database_refresh_csrf_token'] = Csrf::issueToken($_SESSION, self::DATABASE_REFRESH_CSRF_SCOPE);
 
         $this->di['js']->code_javascript('$("#database-id_mysql_server__from").change(function () {
     data = $(this).val();
@@ -292,33 +312,89 @@ class Database extends Controller
 ');
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
-
-            if (!empty($_POST['database'][__FUNCTION__])) {
-                if (!empty($_POST['database']['id_mysql_server__from']) && !empty($_POST['database']['id_mysql_server__target']) && !empty($_POST['database']['list'])
-                    && !empty($_POST['database']['path'])) {
-
-                    $id_mysql_server__source      = $_POST['database']['id_mysql_server__from'];
-                    $id_mysql_server__destination = $_POST['database']['id_mysql_server__target'];
-                    $databases                    = implode(',', $_POST['database']['list']);
-                    $path                         = $_POST['database']['path'];
-
-                    $debug = "";
-                    if (Debug::$debug === true) {
-                        $debug = "--debug";
-                    }
-
-
-                    $elems = array($id_mysql_server__source, $id_mysql_server__destination, $databases, $path, $debug);
-                    $this->addRefresh($elems);
-
-                    header("location: ".LINK."job/index");
-                }
+            $refreshRequest = self::evaluateRefreshRequest($_POST, $_SERVER, $_SESSION);
+            if ($refreshRequest['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendDatabaseRefreshError($refreshRequest['status'], $refreshRequest['body'], $refreshRequest['headers']);
+                return;
             }
+
+            $refresh = $refreshRequest['payload'];
+            $debug = "";
+            if (Debug::$debug === true) {
+                $debug = "--debug";
+            }
+
+            $elems = array(
+                $refresh['id_mysql_server__from'],
+                $refresh['id_mysql_server__target'],
+                implode(',', $refresh['list']),
+                $refresh['path'],
+                $debug,
+            );
+            $this->addRefresh($elems);
+
+            header("location: ".LINK."job/index");
         }
 
 
         $data['listdb1'] = array();
         $this->set('data', $data);
+    }
+
+    public static function evaluateRefreshRequest(array $post, array $server, array $session): array
+    {
+        $request = GroupedFormRequest::evaluate(
+            $post,
+            $server,
+            $session,
+            self::DATABASE_REFRESH_CSRF_SCOPE,
+            'database',
+            self::DATABASE_REFRESH_RULES,
+            'Invalid database refresh payload'
+        );
+
+        if ($request['status'] !== 200) {
+            return self::buildDatabaseRefreshOutcome($request['status'], $request['body'], $request['headers']);
+        }
+
+        $payload = $request['payload'];
+        foreach ($payload['list'] as $database) {
+            if (!Identifier::isDatabaseName($database)) {
+                return self::buildDatabaseRefreshOutcome(400, 'Invalid database refresh payload');
+            }
+        }
+
+        if (!Identifier::isSafeAbsolutePath($payload['path'])) {
+            return self::buildDatabaseRefreshOutcome(400, 'Invalid database refresh payload');
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'payload' => $payload,
+        ];
+    }
+
+    private static function buildDatabaseRefreshOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'payload' => null,
+        ];
+    }
+
+    private static function sendDatabaseRefreshError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        echo $message;
     }
     /*
      * example : ./glial database databaseRefresh  82 83 drupal_home '/mysql/backup'
@@ -567,7 +643,7 @@ class Database extends Controller
 
     private static function isSafeDatabaseRenameName(string $name): bool
     {
-        return (bool) preg_match('/^[A-Za-z0-9_-]{1,64}$/', $name);
+        return Identifier::isDatabaseName($name);
     }
 
     private static function buildDatabaseRenameOutcome(int $statusCode, string $message, array $headers = []): array

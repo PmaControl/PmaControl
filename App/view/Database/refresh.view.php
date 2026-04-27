@@ -6,6 +6,9 @@
  */
 
 use Glial\Html\Form\Form;
+
+$databaseRefreshCsrfField = htmlspecialchars((string) ($data['database_refresh_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$databaseRefreshCsrfToken = htmlspecialchars((string) ($data['database_refresh_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
 ?>
 
 
@@ -13,6 +16,7 @@ use Glial\Html\Form\Form;
 
 
 <form action="<?= LINK ?>database/refresh" method="POST">
+    <input type="hidden" name="<?= $databaseRefreshCsrfField ?>" value="<?= $databaseRefreshCsrfToken ?>">
     <?= Form::input("database", "refresh", array("type" => "hidden", "value"=>"1")); ?>
     <div class="panel panel-primary">
         <div class="panel-heading">
