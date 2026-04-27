@@ -76,6 +76,21 @@ class Database extends Controller
         ],
         'path' => ['type' => 'string', 'required' => true, 'min' => 1, 'max' => 255],
     ];
+    private const DATABASE_ANALYZE_CSRF_SCOPE = 'database.analyze';
+    private const DATABASE_ANALYZE_RULES = [
+        'analyze' => ['type' => 'enum', 'required' => true, 'values' => ['1']],
+        'id_mysql_server' => ['type' => 'int', 'required' => true, 'min' => 1],
+        'database' => [
+            'type' => 'list',
+            'required' => true,
+            'min_items' => 1,
+            'max_items' => 256,
+            'item_type' => 'string',
+            'item_min' => 1,
+            'item_max' => 64,
+            'item_pattern' => Identifier::DATABASE_NAME_PATTERN,
+        ],
+    ];
     private const DATABASE_CREATE_CSRF_SCOPE = 'database.create';
     private const DATABASE_CREATE_RULES = [
         'create' => ['type' => 'enum', 'required' => true, 'values' => ['1']],
@@ -1338,20 +1353,83 @@ END;";
     {
 
 
+        $data['database_analyze_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['database_analyze_csrf_token'] = Csrf::issueToken($_SESSION, self::DATABASE_ANALYZE_CSRF_SCOPE);
+
         $this->di['js']->code_javascript('$("#analyze-id_mysql_server").change(function () {
     data = $(this).val();
     $("#analyze-database").load(GLIAL_LINK+"common/getDatabaseByServer/" + data + "/ajax>true/",
        function(){
 	$("#analyze-database").selectpicker("refresh");
     });
-});');
+	});');
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
+            $analyzeRequest = self::evaluateAnalyzeRequest($_POST, $_SERVER, $_SESSION);
+            if ($analyzeRequest['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendDatabaseAnalyzeError($analyzeRequest['status'], $analyzeRequest['body'], $analyzeRequest['headers']);
+                return;
+            }
 
-            if (!empty($_POST['database'][__FUNCTION__])) {
-                $this->updateStats(array($_POST['analyze']['id_mysql_server'], implode(',', $_POST['analyze']['database'])));
+            $analyze = $analyzeRequest['payload'];
+            $this->updateStats(array($analyze['id_mysql_server'], implode(',', $analyze['database'])));
+        }
+
+        $data['listdb1'] = array();
+        $this->set('data', $data);
+    }
+
+    public static function evaluateAnalyzeRequest(array $post, array $server, array $session): array
+    {
+        $request = GroupedFormRequest::evaluate(
+            $post,
+            $server,
+            $session,
+            self::DATABASE_ANALYZE_CSRF_SCOPE,
+            'analyze',
+            self::DATABASE_ANALYZE_RULES,
+            'Invalid database analyze payload'
+        );
+
+        if ($request['status'] !== 200) {
+            return self::buildDatabaseAnalyzeOutcome($request['status'], $request['body'], $request['headers']);
+        }
+
+        $payload = $request['payload'];
+        foreach ($payload['database'] as $database) {
+            if (!Identifier::isDatabaseName($database)) {
+                return self::buildDatabaseAnalyzeOutcome(400, 'Invalid database analyze payload');
             }
         }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'payload' => $payload,
+        ];
+    }
+
+    private static function buildDatabaseAnalyzeOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'payload' => null,
+        ];
+    }
+
+    private static function sendDatabaseAnalyzeError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
     /*
      *
