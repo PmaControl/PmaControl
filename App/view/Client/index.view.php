@@ -1,6 +1,10 @@
 <?php
 use Glial\Html\Form\Form;
 
+$clientUpdateCsrfField = htmlspecialchars((string) ($data['client_update_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$clientUpdateCsrfToken = htmlspecialchars((string) ($data['client_update_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$clientUpdateCsrfAttributes = ' data-csrf-field="'.$clientUpdateCsrfField.'" data-csrf-token="'.$clientUpdateCsrfToken.'"';
+
 $totalAll = 0;
 $onlineAll = 0;
 $offlineAll = 0;
@@ -123,6 +127,7 @@ if (!empty($data['client'])) {
             </div>
             <div>
                 <div class="cl-item-name line-edit"
+                     <?= $clientUpdateCsrfAttributes ?>
                      data-name="libelle" data-pk="<?= (int)$client['id'] ?>"
                      data-type="text" data-url="<?= LINK ?>client/update"
                      data-title="<?= __('Edit name') ?>">

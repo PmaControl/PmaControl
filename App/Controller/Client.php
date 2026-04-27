@@ -10,6 +10,8 @@ namespace App\Controller;
 use \Glial\I18n\I18n;
 use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
+use App\Library\Security\InlineEditRequest;
+use Glial\Security\Csrf;
 
 /**
  * Class responsible for client workflows.
@@ -27,6 +29,11 @@ use \Glial\Sgbd\Sgbd;
  */
 class Client extends Controller
 {
+    private const CLIENT_UPDATE_CSRF_SCOPE = 'client.update';
+    private const CLIENT_UPDATE_FIELDS = ['libelle', 'logo', 'is_monitored', 'is_display'];
+    private const CLIENT_UPDATE_BOOLEAN_FIELDS = ['is_monitored', 'is_display'];
+    private const CLIENT_UPDATE_VALUE_MAX_BYTES = 255;
+    private const CLIENT_RESERVED_ID = 99;
 
 /**
  * Render client state through `index`.
@@ -103,6 +110,8 @@ class Client extends Controller
             WHERE c.is_display = 1
             ORDER BY c.libelle";
         $data['client'] = $db->sql_fetch_all($sql);
+        $data['client_update_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['client_update_csrf_token'] = Csrf::issueToken($_SESSION, self::CLIENT_UPDATE_CSRF_SCOPE);
 
         $this->set('data', $data);
     }
@@ -195,28 +204,107 @@ class Client extends Controller
         $this->view        = false;
         $this->layout_name = false;
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            $db = Sgbd::sql(DB_DEFAULT);
+        $outcome = self::evaluateUpdateRequest($_POST, $_SERVER, $_SESSION);
+        if ($outcome['status'] !== 200) {
+            self::sendClientUpdateError($outcome['status'], $outcome['body'], $outcome['headers']);
+            return;
+        }
 
-            $allowedFields = ['libelle', 'logo', 'is_monitored', 'is_display'];
-            $field = $_POST['name'] ?? '';
-            if (!in_array($field, $allowedFields, true)) {
-                header("HTTP/1.0 400 Bad Request");
-                echo "Invalid field";
-                return;
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = self::buildClientUpdateSql($outcome['update'], [$db, 'sql_real_escape_string']);
+        $db->sql_query($sql);
+
+        if ($db->sql_affected_rows() >= 0) {
+            echo "OK";
+        } else {
+            self::sendClientUpdateError(503, "Client not updated");
+        }
+    }
+
+    public static function evaluateUpdateRequest(array $post, array $server, array $session): array
+    {
+        $outcome = InlineEditRequest::evaluate(
+            $post,
+            $server,
+            $session,
+            self::CLIENT_UPDATE_CSRF_SCOPE,
+            self::CLIENT_UPDATE_FIELDS,
+            'Invalid client update payload',
+            self::CLIENT_UPDATE_VALUE_MAX_BYTES
+        );
+
+        if ($outcome['status'] !== 200) {
+            return $outcome;
+        }
+
+        $update = self::normalizeClientUpdate($outcome['update']);
+        if ($update === null) {
+            return self::buildClientUpdateOutcome(400, 'Invalid client update payload');
+        }
+
+        return self::buildClientUpdateOutcome(200, '', [], $update);
+    }
+
+    public static function normalizeUpdatePayload(array $post): ?array
+    {
+        return self::normalizeClientUpdate(InlineEditRequest::normalize(
+            $post,
+            self::CLIENT_UPDATE_FIELDS,
+            self::CLIENT_UPDATE_VALUE_MAX_BYTES
+        ));
+    }
+
+    public static function buildClientUpdateSql(array $update, callable $escape): string
+    {
+        return sprintf(
+            "UPDATE client SET `%s` = '%s' WHERE id = %d",
+            $update['field'],
+            $escape($update['value']),
+            $update['id']
+        );
+    }
+
+    private static function normalizeClientUpdate(?array $update): ?array
+    {
+        if ($update === null || $update['id'] === self::CLIENT_RESERVED_ID) {
+            return null;
+        }
+
+        if ($update['field'] === 'libelle' && trim($update['value']) === '') {
+            return null;
+        }
+
+        if (in_array($update['field'], self::CLIENT_UPDATE_BOOLEAN_FIELDS, true)) {
+            $boolean = filter_var($update['value'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            if ($boolean === null) {
+                return null;
             }
 
-            $pk = (int)($_POST['pk'] ?? 0);
-            $value = $db->sql_real_escape_string($_POST['value'] ?? '');
+            $update['value'] = $boolean ? '1' : '0';
+        }
 
-            $sql = "UPDATE client SET `$field` = '$value' WHERE id = $pk";
-            $db->sql_query($sql);
+        return $update;
+    }
 
-            if ($db->sql_affected_rows() >= 0) {
-                echo "OK";
-            } else {
-                header("HTTP/1.0 503 Internal Server Error");
-            }
+    private static function buildClientUpdateOutcome(int $statusCode, string $message, array $headers = [], ?array $update = null): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'update' => $update,
+        ];
+    }
+
+    private static function sendClientUpdateError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+
+        if ($message !== '') {
+            echo $message;
         }
     }
 
