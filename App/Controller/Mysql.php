@@ -33,6 +33,8 @@ class Mysql extends Controller
 {
     const DEBUG = true;
     private const MYSQL_PLAYSKOOL_CSRF_SCOPE = 'mysql.playskool';
+    private const MYSQL_ADD_CSRF_SCOPE = 'mysql.add';
+    private const MYSQL_ADD_TEXT_MAX_LENGTH = 255;
     private const MYSQL_PLAYSKOOL_TEXT_MAX_LENGTH = 255;
     private const MYSQL_PLAYSKOOL_SQL_MAX_LENGTH = 65535;
 
@@ -1670,6 +1672,22 @@ class Mysql extends Controller
  */
     public function add($param)
     {
+        if ($_SERVER['REQUEST_METHOD'] == "POST") {
+            $outcome = self::evaluateAddRequest($_POST, $_SERVER, $_SESSION);
+            if (!$outcome['allowed']) {
+                $this->view = false;
+                $this->layout_name = false;
+                http_response_code($outcome['status']);
+                foreach ($outcome['headers'] as $name => $value) {
+                    header($name . ': ' . $value);
+                }
+                echo $outcome['body'];
+                return;
+            }
+
+            $_POST['mysql_server'] = $outcome['mysql_server'];
+        }
+
         $db = Sgbd::sql(DB_DEFAULT);
 
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
@@ -1852,8 +1870,171 @@ class Mysql extends Controller
             $_GET['mysql_server']['port'] = 3306;
         }
 
+        $data['mysql_add_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['mysql_add_csrf_token'] = Csrf::issueToken($_SESSION, self::MYSQL_ADD_CSRF_SCOPE);
 
         $this->set('data', $data);
+    }
+
+    public static function evaluateAddRequest(array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::MYSQL_ADD_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return [
+                'allowed' => false,
+                'status' => $guard['status'],
+                'body' => $guard['body'],
+                'headers' => $guard['headers'],
+                'mysql_server' => null,
+            ];
+        }
+
+        $mysqlServer = self::normalizeAddPayload($post);
+        if ($mysqlServer === null) {
+            return [
+                'allowed' => false,
+                'status' => 400,
+                'body' => 'Invalid MySQL add payload',
+                'headers' => [],
+                'mysql_server' => null,
+            ];
+        }
+
+        return [
+            'allowed' => true,
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'mysql_server' => $mysqlServer,
+        ];
+    }
+
+    public static function normalizeAddPayload(array $post): ?array
+    {
+        if (empty($post['mysql_server']) || !is_array($post['mysql_server'])) {
+            return null;
+        }
+
+        $source = $post['mysql_server'];
+        foreach ($source as $value) {
+            if (!is_scalar($value)) {
+                return null;
+            }
+        }
+
+        $host = self::normalizeAddHost($source['ip'] ?? '');
+        $port = self::normalizeAddPort($source['port'] ?? null);
+        $login = self::normalizeAddText($source['login'] ?? '', self::MYSQL_ADD_TEXT_MAX_LENGTH, false);
+        $password = self::normalizeAddText($source['password'] ?? '', self::MYSQL_ADD_TEXT_MAX_LENGTH, false);
+        $displayName = self::normalizeAddText($source['display_name'] ?? '', self::MYSQL_ADD_TEXT_MAX_LENGTH, true);
+        $idClient = self::normalizeOptionalPositiveInteger($source['id_client'] ?? null);
+        $idEnvironment = self::normalizeOptionalPositiveInteger($source['id_environement'] ?? null);
+
+        if (
+            $host === null
+            || $port === null
+            || $login === null
+            || $password === null
+            || $displayName === null
+            || $idClient === null
+            || $idEnvironment === null
+        ) {
+            return null;
+        }
+
+        $mysqlServer = [
+            'display_name' => $displayName,
+            'ip' => $host,
+            'port' => $port,
+            'login' => $login,
+            'password' => $password,
+            'is_proxy' => self::normalizeBooleanFlag($source['is_proxy'] ?? null),
+            'is_vip' => self::normalizeBooleanFlag($source['is_vip'] ?? null),
+        ];
+
+        if (array_key_exists('id_client', $source)) {
+            $mysqlServer['id_client'] = $idClient;
+        }
+
+        if (array_key_exists('id_environement', $source)) {
+            $mysqlServer['id_environement'] = $idEnvironment;
+        }
+
+        return $mysqlServer;
+    }
+
+    private static function normalizeAddHost($value): ?string
+    {
+        $host = self::normalizeAddText($value, self::MYSQL_ADD_TEXT_MAX_LENGTH, false);
+        if (
+            $host === null
+            || preg_match('/[\\x00-\\x1F\\x7F\\s\\/\\\\?#@]/', $host) === 1
+            || strpos($host, '://') !== false
+        ) {
+            return null;
+        }
+
+        return $host;
+    }
+
+    private static function normalizeAddText($value, int $maxLength, bool $allowEmpty): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $value = trim((string) $value);
+        if ((!$allowEmpty && $value === '') || strlen($value) > $maxLength) {
+            return null;
+        }
+
+        return $value;
+    }
+
+    private static function normalizeAddPort($value): ?int
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $port = trim((string) $value);
+        if ($port === '' || !ctype_digit($port)) {
+            return null;
+        }
+
+        $port = (int) $port;
+        if ($port < 1 || $port > 65535) {
+            return null;
+        }
+
+        return $port;
+    }
+
+    private static function normalizeOptionalPositiveInteger($value): ?int
+    {
+        if ($value === null) {
+            return 0;
+        }
+
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $value = trim((string) $value);
+        if ($value === '' || !ctype_digit($value) || (int) $value < 1) {
+            return null;
+        }
+
+        return (int) $value;
+    }
+
+    private static function normalizeBooleanFlag($value): int
+    {
+        if (!is_scalar($value)) {
+            return 0;
+        }
+
+        return in_array(strtolower(trim((string) $value)), ['1', 'true', 'on'], true) ? 1 : 0;
     }
 
 /**
