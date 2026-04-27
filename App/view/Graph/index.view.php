@@ -19,7 +19,7 @@ use Glial\Html\Form\Form;
 
     echo "<br />";
 
-    echo '<form class="form-inline" action="" method="post">';
+    echo '<form class="form-inline" action="" method="get">';
     echo ' <div class="form-group" role="group" aria-label="Default button group">';
 
     echo __("Server : ");
@@ -56,6 +56,5 @@ if (!empty($data['fields_required'])) {
 } else {
     echo '<canvas style="width: 100%; height: 450px;" id="myChart" height="450" width="1600"></canvas>';
 }
-
 
 
