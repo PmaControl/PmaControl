@@ -12,7 +12,7 @@ $treeUpdateCsrfToken = htmlspecialchars((string) ($data['tree_update_csrf_token'
 $treeUpdateCsrfAttributes = ' data-csrf-field="' . $treeUpdateCsrfField . '" data-csrf-token="' . $treeUpdateCsrfToken . '"';
 ?>
 
-<form action="" method="post">
+<form action="" method="get">
 
     <div class="panel panel-primary">
         <div class="panel-heading">
@@ -45,7 +45,7 @@ $treeUpdateCsrfAttributes = ' data-csrf-field="' . $treeUpdateCsrfField . '" dat
 
 </form>
 
-<form action="" method="post">
+<form action="" method="get">
 
     <div class="panel panel-primary">
         <div class="panel-heading">
