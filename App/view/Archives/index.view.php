@@ -15,6 +15,9 @@ function human_filesize($bytes, $decimals = 2)
 use \Glial\Html\Form\Form;
 use \Glial\Synapse\FactoryController;
 
+$archivesRestoreCsrfField = htmlspecialchars((string)($data['archives_restore_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$archivesRestoreCsrfToken = htmlspecialchars((string)($data['archives_restore_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+
 echo '<div class="well">';
 \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
 echo '</div>';
@@ -67,6 +70,7 @@ if (!empty($data['cleaner'])) {
         echo '<td>';
 
         echo '<form method="post" action="'.LINK.'archives/restore">';
+        echo '<input type="hidden" name="'.$archivesRestoreCsrfField.'" value="'.$archivesRestoreCsrfToken.'" />';
 
         echo '<input type="hidden" name="id_cleaner_main" value="'.$cleaner[0].'" />';
         echo 'Servers : ';

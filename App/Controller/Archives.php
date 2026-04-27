@@ -5,6 +5,8 @@
 
 namespace App\Controller;
 
+use App\Library\Security\ArchiveRestoreRequest;
+use Glial\Security\Csrf;
 use \Glial\Synapse\Controller;
 use \Glial\I18n\I18n;
 use \Glial\Security\Crypt\Crypt;
@@ -36,6 +38,8 @@ class Archives extends Controller
     use \App\Library\Filter;
     use \App\Library\Scp;
     use \App\Library\File;
+
+    private const ARCHIVES_RESTORE_CSRF_SCOPE = 'archives.restore';
 /**
  * Stores `$id_user_main` for id user main.
  *
@@ -213,6 +217,9 @@ var myChart = new Chart(ctx, {
     }
 });
 ");
+
+        $data['archives_restore_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['archives_restore_csrf_token'] = Csrf::issueToken($_SESSION, self::ARCHIVES_RESTORE_CSRF_SCOPE);
 
         $this->set('data', $data);
     }
@@ -670,21 +677,39 @@ ORDER BY a.id DESC";
  */
     public function restore($param)
     {
-
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-
-            $db = Sgbd::sql(DB_DEFAULT);
-
-            foreach ($_POST['mysql_server'] as $arr) {
-                if (!empty($arr['database'])) {
-
-                    $this->load_archive(array($arr['id'], $arr['database'], $_POST['id_cleaner_main']));
-
-                    header("location: ".LINK.'archives/index');
-                    exit;
-                }
-            }
+        $request = self::evaluateRestoreRequest($_POST, $_SERVER, $_SESSION);
+        if ($request['status'] !== 200) {
+            $this->view = false;
+            $this->layout_name = false;
+            self::sendRestoreError($request['status'], $request['body'], $request['headers']);
+            return;
         }
+
+        $restore = $request['restore'];
+        $this->load_archive(array($restore['id_mysql_server'], $restore['database'], $restore['id_cleaner_main']));
+
+        header("location: ".LINK.'archives/index');
+        exit;
+    }
+
+    public static function evaluateRestoreRequest(array $post, array $server, array $session): array
+    {
+        return ArchiveRestoreRequest::evaluate($post, $server, $session, self::ARCHIVES_RESTORE_CSRF_SCOPE);
+    }
+
+    public static function normalizeRestorePayload(array $post): ?array
+    {
+        return ArchiveRestoreRequest::normalize($post);
+    }
+
+    private static function sendRestoreError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
 /**
