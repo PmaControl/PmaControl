@@ -55,6 +55,18 @@ class ProxySQL extends Controller
     use \App\Library\Filter;
 
     const DB_STATS = 'stats';
+    private const PROXYSQL_UPDATE_CSRF_SCOPE = 'proxysql.update';
+    private const PROXYSQL_UPDATE_COMMANDS = ['SAVE', 'LOAD'];
+    private const PROXYSQL_UPDATE_CONFIG_AREAS = [
+        'ADMIN_VARIABLES',
+        'MYSQL_QUERY_RULES',
+        'MYSQL_SERVERS',
+        'MYSQL_USERS',
+        'MYSQL_VARIABLES',
+        'PROXYSQL_SERVERS',
+        'SCHEDULER',
+    ];
+    private const PROXYSQL_UPDATE_TARGETS = ['MEMORY', 'DISK', 'RUNTIME', 'CONFIG'];
     private const PROXYSQL_UPDATE_FIELD_CSRF_SCOPE = 'proxysql.update_field';
     private const PROXYSQL_UPDATE_FIELD_TABLES = [
         'global_variables',
@@ -1227,6 +1239,8 @@ class ProxySQL extends Controller
         $param['menu_current'] = __FUNCTION__;
         $data['param'] = $param;
         $data['id_proxysql_server'] = $id_proxysql_server;
+        $data['proxysql_update_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['proxysql_update_csrf_token'] = Csrf::issueToken($_SESSION, self::PROXYSQL_UPDATE_CSRF_SCOPE);
         $data['proxysql_update_field_csrf_field'] = Csrf::DEFAULT_FIELD;
         $data['proxysql_update_field_csrf_token'] = Csrf::issueToken($_SESSION, self::PROXYSQL_UPDATE_FIELD_CSRF_SCOPE);
 
@@ -1364,40 +1378,22 @@ class ProxySQL extends Controller
         $this->layout_name = false;
 
         $id_proxysql_server = (string) ($param[0] ?? "");
-        $from = $param[1] ?? "";
         $table = $param[2] ?? "";
-        $to = $param[3] ?? "";
 
-        if (! self::isUpdateRequestAllowed(IS_CLI, $_SERVER['REQUEST_METHOD'] ?? null)) {
-            set_flash("error", __("Error"), __("ProxySQL update commands must be submitted with POST."));
-            header("location: " . self::getUpdateRedirectTarget($id_proxysql_server, (string) $table, $_SERVER['HTTP_REFERER'] ?? null, null, $_SERVER['HTTP_HOST'] ?? null), true, 303);
+        $outcome = self::evaluateUpdateRequest($param, $_POST, $_SERVER, $_SESSION, IS_CLI);
+        if (!$outcome['allowed']) {
+            if (!IS_CLI) {
+                set_flash("error", __("Error"), $outcome['body']);
+                header("location: " . self::getUpdateRedirectTarget($id_proxysql_server, (string) $table, $_SERVER['HTTP_REFERER'] ?? null, null, $_SERVER['HTTP_HOST'] ?? null), true, 303);
+            }
+
             return;
         }
 
-     
-        $restrict[0] = array('SAVE','LOAD');
-        $restrict[1] = array('ADMIN_VARIABLES','MYSQL_QUERY_RULES','MYSQL_SERVERS', 'MYSQL_USERS','MYSQL_VARIABLES', 'PROXYSQL_SERVERS', 'SCHEDULER');
-        $restrict[2] = array('MEMORY','DISK', 'RUNTIME','CONFIG'); 
+        $command = $outcome['command'];
+        $db = Sgbd::sql("proxysql_".$command['id_proxysql_server']);
 
-        unset($param[0]);
-
-        $i = 0;
-        foreach($param as $elem)
-        {
-            $to_match = $restrict[$i];
-            $i++;
-
-            Debug::debug($elem, 'ELEM');
-            Debug::debug($to_match, 'RESTRICT');
-
-            if (! in_array($elem , $to_match)){
-                throw new \Exception("ERROR UNKNOW OPTION : ".$elem);
-            }
-        }
-
-        $db = Sgbd::sql("proxysql_".$id_proxysql_server);        
-
-        $sql = $from." ".str_replace('_', ' ',$table )." TO ".$to.";";
+        $sql = self::buildUpdateCommandSql($command);
         Debug::sql($sql);
 
         try{
@@ -1414,6 +1410,93 @@ class ProxySQL extends Controller
                 header("location: " . self::getUpdateRedirectTarget($id_proxysql_server, (string) $table, $_SERVER['HTTP_REFERER'] ?? null, null, $_SERVER['HTTP_HOST'] ?? null), true, 303);
             }
         }
+    }
+
+    public static function evaluateUpdateRequest(
+        array $param,
+        array $post,
+        array $server,
+        array $session,
+        bool $isCli = false
+    ): array {
+        if (!$isCli) {
+            $guard = CsrfGuard::check($post, $server, $session, self::PROXYSQL_UPDATE_CSRF_SCOPE);
+            if (!$guard['allowed']) {
+                return [
+                    'allowed' => false,
+                    'status' => $guard['status'],
+                    'body' => $guard['body'],
+                    'headers' => $guard['headers'],
+                    'command' => null,
+                ];
+            }
+        }
+
+        $command = self::normalizeUpdateCommandPayload($param);
+        if ($command === null) {
+            return [
+                'allowed' => false,
+                'status' => 400,
+                'body' => 'Invalid ProxySQL update command',
+                'headers' => [],
+                'command' => null,
+            ];
+        }
+
+        return [
+            'allowed' => true,
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'command' => $command,
+        ];
+    }
+
+    public static function normalizeUpdateCommandPayload(array $param): ?array
+    {
+        if (
+            !isset($param[0], $param[1], $param[2], $param[3])
+            || !is_scalar($param[1])
+            || !is_scalar($param[2])
+            || !is_scalar($param[3])
+        ) {
+            return null;
+        }
+
+        $idProxysqlServer = self::normalizePositiveInteger($param[0]);
+        $from = self::normalizeUpdateOption($param[1], self::PROXYSQL_UPDATE_COMMANDS);
+        $table = self::normalizeUpdateOption($param[2], self::PROXYSQL_UPDATE_CONFIG_AREAS);
+        $to = self::normalizeUpdateOption($param[3], self::PROXYSQL_UPDATE_TARGETS);
+
+        if ($idProxysqlServer === null || $from === null || $table === null || $to === null) {
+            return null;
+        }
+
+        return [
+            'id_proxysql_server' => $idProxysqlServer,
+            'from' => $from,
+            'table' => $table,
+            'to' => $to,
+        ];
+    }
+
+    public static function buildUpdateCommandSql(array $command): string
+    {
+        return $command['from']." ".str_replace('_', ' ', $command['table'])." TO ".$command['to'].";";
+    }
+
+    private static function normalizeUpdateOption($value, array $allowed): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $value = strtoupper(trim((string) $value));
+        if (!in_array($value, $allowed, true)) {
+            return null;
+        }
+
+        return $value;
     }
 
     public static function isUpdateRequestAllowed(bool $isCli, ?string $requestMethod): bool

@@ -3,6 +3,8 @@
 
 \Glial\Synapse\FactoryController::addNode("ProxySQL", "menu", $data['param']);
 
+$proxySqlUpdateCsrfField = htmlspecialchars((string) ($data['proxysql_update_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$proxySqlUpdateCsrfToken = htmlspecialchars((string) ($data['proxysql_update_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
 $proxySqlUpdateFieldCsrfField = htmlspecialchars((string) ($data['proxysql_update_field_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
 $proxySqlUpdateFieldCsrfToken = htmlspecialchars((string) ($data['proxysql_update_field_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
 $proxySqlUpdateFieldCsrfAttributes = ' data-csrf-field="'.$proxySqlUpdateFieldCsrfField.'" data-csrf-token="'.$proxySqlUpdateFieldCsrfToken.'"';
@@ -26,10 +28,11 @@ foreach ($data['menu'] as $elems => $sql)
 
 $current = str_replace('_', ' ', $data['current']);
 
-$renderUpdateButton = static function (string $from, string $to, string $class, string $label) use ($data): string {
+$renderUpdateButton = static function (string $from, string $to, string $class, string $label) use ($data, $proxySqlUpdateCsrfField, $proxySqlUpdateCsrfToken): string {
     $action = LINK.'ProxySQL/update/'.$data['id_proxysql_server'].'/'.$from.'/'.$data['current'].'/'.$to;
 
     return '<form method="post" action="'.htmlspecialchars($action, ENT_QUOTES, 'UTF-8').'" style="display:inline; margin:0;">'
+        . '<input type="hidden" name="'.$proxySqlUpdateCsrfField.'" value="'.$proxySqlUpdateCsrfToken.'">'
         . '<button type="submit" class="'.htmlspecialchars($class, ENT_QUOTES, 'UTF-8').'">'
         . htmlspecialchars($label, ENT_QUOTES, 'UTF-8')
         . '</button></form>';
