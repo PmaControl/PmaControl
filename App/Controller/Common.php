@@ -82,11 +82,6 @@ class Common extends Controller
             if (!empty($_GET['client_environment'])) {
                 $ret = "";
                 if (!empty($_GET['client']['libelle']) || !empty($_GET['environment']['libelle'])) {
-
-                    /* header("location: ".LINK."".\Glial\Synapse\FactoryController::$controller."/".\Glial\Synapse\FactoryController::$method."/client:libelle:"
-                      .$_POST['client']['libelle']."/environment:libelle:".$_POST['environment']['libelle']); */
-
-
                     if (!empty($_GET['client']['libelle'])) {
                         $_SESSION['client']['libelle'] = json_encode($_GET['client']['libelle']);
                         $ret                           .= "/client:libelle:".json_encode($_GET['client']['libelle']);
