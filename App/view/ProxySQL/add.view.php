@@ -2,12 +2,17 @@
 
 use Glial\Html\Form\Form;
 
+$data = $data ?? array();
+$proxySqlAddCsrfField = htmlspecialchars((string) ($data['proxysql_add_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$proxySqlAddCsrfToken = htmlspecialchars((string) ($data['proxysql_add_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+
 if (empty($_GET['ssh']['password'])) {
     $_GET['ssh']['password'] = 22;
 }
 ?>
 
 <form action="" method="post">
+    <input type="hidden" name="<?= $proxySqlAddCsrfField ?>" value="<?= $proxySqlAddCsrfToken ?>">
     <div class="panel panel-primary">
         <div class="panel-heading">
             <h3 class="panel-title"><?= __('ProxySQL') ?> : <?= __('Admin credentials') ?></h3>
