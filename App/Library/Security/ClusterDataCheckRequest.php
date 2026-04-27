@@ -49,7 +49,7 @@ final class ClusterDataCheckRequest
             }
         }
 
-        $ids = self::normalizeServerIds($source['mysql_cluster']['id'] ?? null);
+        $ids = ServerIdSelection::normalizeList($source['mysql_cluster']['id'] ?? null, self::MAX_SERVER_IDS);
         if ($ids === null) {
             return null;
         }
@@ -94,29 +94,6 @@ final class ClusterDataCheckRequest
             'database' => (string) $selection['database'],
         ];
         $_GET['sql'] = (string) $selection['sql'];
-    }
-
-    private static function normalizeServerIds($raw): ?array
-    {
-        if (!is_scalar($raw)) {
-            return null;
-        }
-
-        $ids = [];
-        foreach (explode(',', (string) $raw) as $value) {
-            $id = trim($value);
-            if ($id === '' || !ctype_digit($id) || (int) $id < 1) {
-                return null;
-            }
-
-            $ids[] = (int) $id;
-        }
-
-        if ($ids === [] || count($ids) > self::MAX_SERVER_IDS || count($ids) !== count(array_unique($ids))) {
-            return null;
-        }
-
-        return $ids;
     }
 
     private static function normalizeDatabase($raw): ?string
