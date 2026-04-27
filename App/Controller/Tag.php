@@ -15,6 +15,13 @@ use Glial\Security\Csrf;
  *
  */
 class Tag extends Controller {
+    private const TAG_ADD_CSRF_SCOPE = 'tag.add';
+    private const TAG_ADD_FIELDS = ['name', 'color', 'background'];
+    private const TAG_ADD_FIELD_LIMITS = [
+        'name' => 50,
+        'color' => 20,
+        'background' => 20,
+    ];
     public const TAG_UPDATE_CSRF_SCOPE = 'tag.update';
     private const TAG_UPDATE_FIELDS = ['name', 'color', 'background'];
 
@@ -90,39 +97,118 @@ class Tag extends Controller {
  * @version 1.0
  */
     public function add() {
-        $db = Sgbd::sql(DB_DEFAULT);
+        if (CsrfGuard::isPost($_SERVER)) {
+            $this->view = false;
+            $this->layout_name = false;
 
-
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            if (!empty($_POST['tag']['name'])) {
-
-                $save['tag'] = array();
-                $save['tag'] = $_POST['tag'];
-
-
-                $id_tag = $db->sql_save($save);
-
-                if ($id_tag) {
-                    $msg = I18n::getTranslation(__("The tag has been added"));
-                    $title = I18n::getTranslation(__("Success"));
-                    set_flash("success", $title, $msg);
-
-                    $method = "index";
-                } else {
-                    $msg = I18n::getTranslation(__("Impossible to add this tag : " . $db->sql_error()));
-                    $title = I18n::getTranslation(__("Error"));
-                    set_flash("error", $title, $msg);
-
-                    $method = __FUNCTION__;
-                }
-
-
-                header('location: ' . LINK .$this->getClass(). '/' . $method . '/' . Post::getToPost());
+            $outcome = self::evaluateAddRequest($_POST, $_SERVER, $_SESSION);
+            if ($outcome['status'] !== 200) {
+                self::sendTagAddError($outcome['status'], $outcome['body'], $outcome['headers']);
+                return;
             }
+
+            $db = Sgbd::sql(DB_DEFAULT);
+            $save['tag'] = $outcome['tag'];
+
+            $id_tag = $db->sql_save($save);
+
+            if ($id_tag) {
+                $msg = I18n::getTranslation(__("The tag has been added"));
+                $title = I18n::getTranslation(__("Success"));
+                set_flash("success", $title, $msg);
+
+                $method = "index";
+            } else {
+                $msg = I18n::getTranslation(__("Impossible to add this tag : " . $db->sql_error()));
+                $title = I18n::getTranslation(__("Error"));
+                set_flash("error", $title, $msg);
+
+                $method = __FUNCTION__;
+            }
+
+
+            header('location: ' . LINK .$this->getClass(). '/' . $method . '/' . Post::getToPost());
+            return;
         }
 
-        $data = array();
+        $data['tag_add_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['tag_add_csrf_token'] = Csrf::issueToken($_SESSION, self::TAG_ADD_CSRF_SCOPE);
         $this->set('data', $data);
+    }
+
+    public static function evaluateAddRequest(array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::TAG_ADD_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildTagAddOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $tag = self::normalizeAddPayload($post);
+        if ($tag === null) {
+            return self::buildTagAddOutcome(400, 'Invalid tag add payload');
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'tag' => $tag,
+        ];
+    }
+
+    public static function normalizeAddPayload(array $post): ?array
+    {
+        if (! isset($post['tag']) || ! is_array($post['tag']) || $post['tag'] === []) {
+            return null;
+        }
+
+        $tag = [
+            'color' => '',
+            'background' => '',
+        ];
+
+        foreach ($post['tag'] as $field => $value) {
+            if (! is_string($field) || ! in_array($field, self::TAG_ADD_FIELDS, true) || ! is_scalar($value)) {
+                return null;
+            }
+
+            $text = trim((string) $value);
+            if (strlen($text) > self::TAG_ADD_FIELD_LIMITS[$field]) {
+                return null;
+            }
+
+            $tag[$field] = $text;
+        }
+
+        if (! isset($tag['name']) || $tag['name'] === '') {
+            return null;
+        }
+
+        return [
+            'name' => $tag['name'],
+            'color' => $tag['color'],
+            'background' => $tag['background'],
+        ];
+    }
+
+    private static function buildTagAddOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'tag' => null,
+        ];
+    }
+
+    private static function sendTagAddError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
 /**
