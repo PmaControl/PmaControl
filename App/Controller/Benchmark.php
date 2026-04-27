@@ -3,7 +3,10 @@
 namespace App\Controller;
 
 use \App\Library\Debug;
+use App\Library\Security\BenchmarkBenchRequest;
+use App\Library\Security\CsrfGuard;
 use App\Library\Security\PositiveIntegerSelection;
+use Glial\Security\Csrf;
 
 use \Glial\Synapse\Controller;
 use \Glial\Security\Crypt\Crypt;
@@ -38,6 +41,7 @@ class Benchmark extends Controller
     const SHADOW                    = "0.2";
     const DIRECTORY_LUA_SYSBENCH_05 = "/usr/local/sysbench/tests/db/";
     const DIRECTORY_LUA_SYSBENCH_1  = "/usr/share/sysbench/";
+    private const BENCHMARK_BENCH_CSRF_SCOPE = 'benchmark.bench';
 
 /**
  * Stores `$debug` for debug.
@@ -1361,83 +1365,66 @@ Threads fairness:
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        if (! IS_CLI && $_SERVER['REQUEST_METHOD'] == "POST") {
+        if (! IS_CLI && CsrfGuard::isPost($_SERVER)) {
+            $outcome = self::evaluateBenchRequest($_POST, $_SERVER, $_SESSION, $this->getLua());
+            if ($outcome['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendBenchError($outcome['status'], $outcome['body'], $outcome['headers']);
+                return;
+            }
 
-            if (!empty($_POST['benchmark'])) {
-                if (!empty($_POST['mysql_server']['id'])) {
+            $benchmark = $outcome['benchmark'];
+            $idUserMain = (int) $this->di['auth']->getuser()->id;
+            $sysbenchVersion = (string) $this->getSysbenchVersion();
+            $date = date("Y-m-d H:i:s");
 
-                    //boucler sur tous les cas à prévoir
-                    foreach ($_POST['benchmark_main']['mode'] as $mode) {
-                        foreach ($_POST['mysql_server']['id'] as $id_mysql_server) {
+            foreach ($benchmark['modes'] as $mode) {
+                foreach ($benchmark['server_ids'] as $id_mysql_server) {
+                    $db->sql_query(self::buildBenchInsertSql($benchmark, $id_mysql_server, $mode, $idUserMain, $sysbenchVersion, $date));
+                }
+            }
 
-                            if (empty($id_mysql_server)) {
-                                continue;
-                            }
+            $sql = "SELECT * FROM benchmark_config where id=1";
+            $res = $db->sql_query($sql);
 
-                            $sql = "INSERT INTO benchmark_main
-                            SET id_mysql_server = '".$id_mysql_server."',
-                            id_user_main = '".$this->di['auth']->getuser()->id."',
-                            date = '".date("Y-m-d H:i:s")."',
-                            sysbench_version = '".$this->getSysbenchVersion()."',
-                            threads = '".implode(',', $_POST['benchmark_main']['threads'])."',
-                            tables_count = '".$_POST['benchmark_main']['tables_count']."',
-                            table_size = '".$_POST['benchmark_main']['tables_count']."',
-                            mode = '".$mode."',
-                            max_time = '".$_POST['benchmark_main']['max_time']."',
-                            status = 'NOT STARTED',
-                            date_start='0000-00-00 00:00:00',
-                            date_end='0000-00-00 00:00:00',
-                            progression=0
-                            ";
+            // system de queue
+            while ($ob = $db->sql_fetch_object($res)) {
 
-                            $db->sql_query($sql);
-                        }
+                $start_queue = true;
+                if (!empty($ob->pid)) {
+                    $cmd   = "ps -p ".(int) $ob->pid;
+                    $alive = shell_exec($cmd);
+
+                    if (strpos((string) $alive, (string) (int) $ob->pid) !== false) {
+                        $start_queue = false;
                     }
+                }
 
-                    $sql = "SELECT * FROM benchmark_config where id=1";
-                    $res = $db->sql_query($sql);
+                if ($start_queue) {
 
-                    // system de queue
-                    while ($ob = $db->sql_fetch_object($res)) {
+                    $php = explode(" ", shell_exec("whereis php"))[1];
+                    $cmd = $php." ".GLIAL_INDEX." Benchmark queue >> /tmp/queue & echo $!";
 
-                        $start_queue = true;
-                        if (!empty($ob->pid)) {
-                            $cmd   = "ps -p ".$ob->pid;
-                            $alive = shell_exec($cmd);
+                    $pid = 0;
+                    $pid = trim(shell_exec($cmd));
 
-                            if (strpos($alive, $ob->pid) !== false) {
-                                $start_queue = false;
-                            }
-                        }
+                    $this->logger->warning("STARTED QUEUE : $pid");
 
-                        if ($start_queue) {
+                    $sql = "UPDATE `benchmark_config` SET pid = '".(int) $pid."' WHERE id = 1";
+                    $db->sql_query($sql);
 
-                            $php = explode(" ", shell_exec("whereis php"))[1];
-                            $cmd = $php." ".GLIAL_INDEX." Benchmark queue >> /tmp/queue & echo $!";
-
-                            $pid = 0;
-                            $pid = trim(shell_exec($cmd));
-
-                            $this->logger->warning("STARTED QUEUE : $pid");
-
-                            $sql = "UPDATE `benchmark_config` SET pid = '".$pid."' WHERE id = 1";
-                            $db->sql_query($sql);
-
-                            set_flash("success", "Daemon", "Benchmark started in background, check onglet current");
-                        } else {
-                            set_flash("caution", "Daemon", "Daemon already started, benchmark added in queue, check onglet current");
-                        }
-                    }
+                    set_flash("success", "Daemon", "Benchmark started in background, check onglet current");
                 } else {
-                    set_flash("error", "Server", "Please select the server(s) you want to bench");
-
-                    header("location: ".LINK.$this->getClass()."/index/".__FUNCTION__);
+                    set_flash("caution", "Daemon", "Daemon already started, benchmark added in queue, check onglet current");
                 }
             }
         }
 
         // version de sysbench
         $data['sysbench'] = $this->getSysbenchVersion();
+        $data['benchmark_bench_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['benchmark_bench_csrf_token'] = Csrf::issueToken($_SESSION, self::BENCHMARK_BENCH_CSRF_SCOPE);
 
 
         // chargement de la config
@@ -1521,6 +1508,41 @@ Threads fairness:
     
     
         $this->set("data", $data);
+    }
+
+    public static function evaluateBenchRequest(
+        array $post,
+        array $server,
+        array $session,
+        array $allowedModes = []
+    ): array {
+        return BenchmarkBenchRequest::evaluate($post, $server, $session, self::BENCHMARK_BENCH_CSRF_SCOPE, $allowedModes);
+    }
+
+    public static function normalizeBenchPayload(array $post, array $allowedModes = []): ?array
+    {
+        return BenchmarkBenchRequest::normalize($post, $allowedModes);
+    }
+
+    public static function buildBenchInsertSql(
+        array $payload,
+        int $idMysqlServer,
+        string $mode,
+        int $idUserMain,
+        string $sysbenchVersion,
+        string $date
+    ): string {
+        return BenchmarkBenchRequest::buildInsertSql($payload, $idMysqlServer, $mode, $idUserMain, $sysbenchVersion, $date);
+    }
+
+    private static function sendBenchError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
 /**
