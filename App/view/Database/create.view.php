@@ -7,6 +7,8 @@
 
 use Glial\Html\Form\Form;
 
+$databaseCreateCsrfField = htmlspecialchars((string) ($data['database_create_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$databaseCreateCsrfToken = htmlspecialchars((string) ($data['database_create_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
 
 if (!empty($data['compte'])) {
     echo '<ul class="list-group">';
@@ -20,6 +22,7 @@ if (!empty($data['compte'])) {
 
 
 <form action="<?= LINK ?>database/create" method="POST">
+    <input type="hidden" name="<?= $databaseCreateCsrfField ?>" value="<?= $databaseCreateCsrfToken ?>">
     <div class="panel panel-primary">
         <div class="panel-heading">
 

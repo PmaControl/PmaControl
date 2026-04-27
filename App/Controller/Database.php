@@ -76,6 +76,32 @@ class Database extends Controller
         ],
         'path' => ['type' => 'string', 'required' => true, 'min' => 1, 'max' => 255],
     ];
+    private const DATABASE_CREATE_CSRF_SCOPE = 'database.create';
+    private const DATABASE_CREATE_RULES = [
+        'create' => ['type' => 'enum', 'required' => true, 'values' => ['1']],
+        'id_mysql_server' => [
+            'type' => 'list',
+            'required' => true,
+            'min_items' => 1,
+            'max_items' => 256,
+            'item_type' => 'int',
+            'item_min' => 1,
+        ],
+        'name' => ['type' => 'string', 'required' => true, 'min' => 1, 'max' => 4096],
+        'user' => ['type' => 'string', 'default' => '', 'max' => 64],
+        'gg' => ['type' => 'enum', 'default' => '@', 'values' => ['@']],
+        'hostname' => ['type' => 'string', 'default' => '%', 'min' => 1, 'max' => 255, 'pattern' => Identifier::HOST_PATTERN],
+        'id_mysql_privilege' => [
+            'type' => 'list',
+            'required' => false,
+            'min_items' => 1,
+            'max_items' => 128,
+            'item_type' => 'string',
+            'item_min' => 1,
+            'item_max' => 25,
+            'item_pattern' => Identifier::PRIVILEGE_PATTERN,
+        ],
+    ];
 
 /**
  * Stores `$log_file` for log file.
@@ -148,75 +174,64 @@ class Database extends Controller
     public function create()
     {
         $db = Sgbd::sql(DB_DEFAULT);
+        $data['database_create_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['database_create_csrf_token'] = Csrf::issueToken($_SESSION, self::DATABASE_CREATE_CSRF_SCOPE);
 
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
-            if (!empty($_POST['database'][__FUNCTION__])) {
+            $createRequest = self::evaluateCreateRequest($_POST, $_SERVER, $_SESSION);
+            if ($createRequest['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendDatabaseCreateError($createRequest['status'], $createRequest['body'], $createRequest['headers']);
+                return;
+            }
 
-                $compte       = array();
-                $tmp_password = array();
+            $create = $createRequest['payload'];
+            $compte       = array();
+            $tmp_password = array();
 
-                $sql = "SELECT a.*,b.key FROM mysql_server a
+            $sql = "SELECT a.*,b.key FROM mysql_server a
                     INNER JOIN environment b ON a.`id_environment` = b.id
 
-                 WHERE a.id in(".implode(",", $_POST['database']['id_mysql_server']).");";
-                $res = $db->sql_query($sql);
+                 WHERE a.id in(".implode(",", $create['id_mysql_server']).");";
+            $res = $db->sql_query($sql);
 
-                while ($ob = $db->sql_fetch_object($res)) {
+            while ($ob = $db->sql_fetch_object($res)) {
 
-                    $db_remote = Sgbd::sql($ob->name);
-                    $databases = explode(",", $_POST['database']['name']);
+                $db_remote = Sgbd::sql($ob->name);
 
-                    foreach ($databases as $database) {
-                        $database = trim($database);
+                foreach ($create['databases'] as $database) {
 
-                        if (!empty($database)) {
-
-
-
-                            $sql = "CREATE DATABASE IF NOT EXISTS `".$database."` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;";
-                            $db_remote->sql_query($sql);
+                    $sql = "CREATE DATABASE IF NOT EXISTS `".$database."` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;";
+                    $db_remote->sql_query($sql);
 
 //$sql = "set sql_log_bin =0;";
 //$db_remote->sql_query($sql);
 
+                    if (empty($create['id_mysql_privilege'])) {
 
-
-
-                            if (empty($_POST['database']['id_mysql_privilege'])) {
-
-                                if (in_array($ob->key, array("prod", "preprod"))) {
-                                    $droits = "SELECT, INSERT, UPDATE, DELETE";
-                                } else {
-                                    $droits = "ALL";
-                                }
-                            } else {
-                                $droits = implode(', ', $_POST['database']['id_mysql_privilege']);
-                            }
-
-                            if (empty($_POST['database']['user'])) {
-                                $user = $database;
-                            } else {
-                                $user = $_POST['database']['user'];
-                            }
-
-                            if (empty($_POST['database']['hostname'])) {
-                                $hostname = "%";
-                            } else {
-                                $hostname = $_POST['database']['hostname'];
-                            }
-
-                            if (empty($tmp_password[$user][$database])) {
-                                $password = $this->generatePassword(20);
-                            } else {
-                                $password = $tmp_password[$user][$database];
-                            }
-
-                            $sql = "GRANT ".$droits." ON ".$database.".* TO '".$user."'@'".$hostname."' IDENTIFIED BY '".$password."'";
-                            $db_remote->sql_query($sql);
-
-                            $data['compte'][] = "Server : ".$ob->ip.":".$ob->port." - ".$database.".maria.db.".$ob->key.".wideip - login : ".$user." / password : ".$password." Database : ".$database;
+                        if (in_array($ob->key, array("prod", "preprod"))) {
+                            $droits = "SELECT, INSERT, UPDATE, DELETE";
+                        } else {
+                            $droits = "ALL";
                         }
+                    } else {
+                        $droits = implode(', ', $create['id_mysql_privilege']);
                     }
+
+                    $user = $create['user'] === '' ? $database : $create['user'];
+                    $hostname = $create['hostname'];
+
+                    if (empty($tmp_password[$user][$database])) {
+                        $password = $this->generatePassword(20);
+                    } else {
+                        $password = $tmp_password[$user][$database];
+                    }
+
+                    $sql = "GRANT ".$droits." ON `".$database."`.* TO '".$user."'@'".$hostname."' IDENTIFIED BY '".$password."'";
+                    $db_remote->sql_query($sql);
+
+                    $data['compte'][] = "Server : ".$ob->ip.":".$ob->port." - ".$database.".maria.db.".$ob->key.".wideip - login : ".$user." / password : ".$password." Database : ".$database;
                 }
             }
         }
@@ -237,6 +252,66 @@ class Database extends Controller
 
 //fin de la déportation
         $this->set('data', $data);
+    }
+
+    public static function evaluateCreateRequest(array $post, array $server, array $session): array
+    {
+        $request = GroupedFormRequest::evaluate(
+            $post,
+            $server,
+            $session,
+            self::DATABASE_CREATE_CSRF_SCOPE,
+            'database',
+            self::DATABASE_CREATE_RULES,
+            'Invalid database create payload'
+        );
+
+        if ($request['status'] !== 200) {
+            return self::buildDatabaseCreateOutcome($request['status'], $request['body'], $request['headers']);
+        }
+
+        $payload = $request['payload'];
+        $databases = Identifier::normalizeDatabaseNameList($payload['name']);
+        if ($databases === null || !Identifier::isAccountName($payload['user']) || !Identifier::isHostName($payload['hostname'])) {
+            return self::buildDatabaseCreateOutcome(400, 'Invalid database create payload');
+        }
+
+        foreach ($payload['id_mysql_privilege'] ?? [] as $privilege) {
+            if (!Identifier::isPrivilegeName($privilege)) {
+                return self::buildDatabaseCreateOutcome(400, 'Invalid database create payload');
+            }
+        }
+
+        $payload['databases'] = $databases;
+        $payload['id_mysql_privilege'] = $payload['id_mysql_privilege'] ?? [];
+        unset($payload['name'], $payload['create'], $payload['gg']);
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'payload' => $payload,
+        ];
+    }
+
+    private static function buildDatabaseCreateOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'payload' => null,
+        ];
+    }
+
+    private static function sendDatabaseCreateError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
 /**
