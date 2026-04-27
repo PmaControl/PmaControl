@@ -1,4 +1,15 @@
 <?php
+$userProfileCsrfField = htmlspecialchars(
+	(string)($data['user_profile_csrf_field'] ?? '_csrf_token'),
+	ENT_QUOTES,
+	'UTF-8'
+);
+$userProfileCsrfToken = htmlspecialchars(
+	(string)($data['user_profile_csrf_token'] ?? ''),
+	ENT_QUOTES,
+	'UTF-8'
+);
+
 echo "<div id=\"menu_admin_crop\">";
 echo "<div class=\"title_box\"><a href=\"\">" . __('Photo') . "</a></div>";
 echo "<div>";
@@ -25,6 +36,7 @@ foreach ($data['shoutbox'] as $line)
 	$i++;
 }
 echo '<form action="" method="post">';
+echo '<input type="hidden" name="' . $userProfileCsrfField . '" value="' . $userProfileCsrfToken . '">';
 echo input("shoutbox", "text", "textform shoutbox");
 echo "<input class=\"button btBlueTest overlayW btMedium\" type=\"submit\" value=\"" . __("Send") . "\" />";
 echo '</form>';
