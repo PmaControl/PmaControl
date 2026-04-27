@@ -44,7 +44,7 @@ $rendererOptions = [
 ?>
 
 
-<form action="<?= LINK ?>database/compare" method="post">
+<form action="<?= LINK ?>database/compare" method="get">
 
     <div class="panel panel-primary">
         <div class="panel-heading">
