@@ -5,7 +5,7 @@ use App\Library\Diff;
 
 ?>
 
-<form action="" method="post">
+<form action="<?= LINK ?>compare/index" method="get">
     <div class="well">
         <div class="row">
             <div class="col-md-4"></div>
