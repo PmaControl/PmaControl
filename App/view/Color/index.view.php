@@ -1,14 +1,21 @@
 <?php
 
+$colorIndexCsrfField = htmlspecialchars((string)($data['color_index_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$colorIndexCsrfToken = htmlspecialchars((string)($data['color_index_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$selectedColorType = (string)($_GET['type'] ?? '');
+$escapedSelectedColorType = htmlspecialchars($selectedColorType, ENT_QUOTES, 'UTF-8');
+
 echo '<div class="btn-group">';
 foreach($data['type'] as $type)
 {
+    $type = (string) $type;
     $active = "";
-    if ($type == $_GET['type'])
+    if ($type == $selectedColorType)
     {
         $active = "active";
     }
-    echo '<a href="'.LINK.'Color/index/'.$type.'/" type="button" class="btn btn-primary '.$active.'">'.$type.'</a>';
+    $escapedType = htmlspecialchars($type, ENT_QUOTES, 'UTF-8');
+    echo '<a href="'.LINK.'Color/index/'.rawurlencode($type).'/" type="button" class="btn btn-primary '.$active.'">'.$escapedType.'</a>';
 }  
 echo '</div><br><br>';
 
@@ -35,11 +42,12 @@ function dot_style_select($id, $selected_style, $dot_style_values)
     return $html;
 }
 
-echo '<form action="'.LINK.'Color/index/'.$_GET['type'].'/" method="post">';
+echo '<form action="'.LINK.'Color/index/'.rawurlencode($selectedColorType).'/" method="post">';
+echo '<input type="hidden" name="'.$colorIndexCsrfField.'" value="'.$colorIndexCsrfToken.'" />';
 
 echo '<div class="panel panel-primary">';
 echo '<div class="panel-heading">';
-echo '<h3 class="panel-title">'.$_GET['type'].'</h3>';
+echo '<h3 class="panel-title">'.$escapedSelectedColorType.'</h3>';
 echo '</div>';
 echo '<div>';
 
@@ -129,5 +137,3 @@ echo '<button type="submit" class="btn btn-primary">'.__("Update").'</button>';
 echo '</div>';
 
 echo '</form>';
-
-

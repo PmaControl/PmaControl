@@ -5,6 +5,8 @@ namespace App\Controller;
 use \Glial\I18n\I18n;
 use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
+use App\Library\Security\CsrfGuard;
+use Glial\Security\Csrf;
 use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
@@ -26,6 +28,18 @@ use \Monolog\Handler\StreamHandler;
  */
 class Color extends Controller
 {
+    private const COLOR_INDEX_CSRF_SCOPE = 'color.index';
+    private const DOT_STYLE_VALUES = [
+        'solid',
+        'dashed',
+        'dotted',
+        'bold',
+        'invis',
+        'filled',
+        'rounded',
+        'diagonals',
+    ];
+
 /**
  * Render color state through `index`.
  *
@@ -57,38 +71,24 @@ class Color extends Controller
         $selectedType = isset($param[0]) ? (string) $param[0] : '';
 
         // Keep in sync with `chk_style` constraint in `dot3_legend` model
-        $dotStyleValues = array(
-            'solid',
-            'dashed',
-            'dotted',
-            'bold',
-            'invis',
-            'filled',
-            'rounded',
-            'diagonals',
-        );
+        $dotStyleValues = self::DOT_STYLE_VALUES;
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['dot3_legend']) && is_array($_POST['dot3_legend'])) {
+        if (CsrfGuard::isPost($_SERVER)) {
+            $indexRequest = self::evaluateIndexRequest($_POST, $_SERVER, $_SESSION);
+            if ($indexRequest['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendColorIndexError($indexRequest['status'], $indexRequest['body'], $indexRequest['headers']);
+                return;
+            }
+
             $updated = 0;
 
-            foreach ($_POST['dot3_legend'] as $id => $legend) {
-                if (!is_array($legend)) {
-                    continue;
-                }
-
-                $id = (int) $id;
-                if ($id <= 0) {
-                    continue;
-                }
-
-                $font = strtoupper(trim((string) ($legend['font'] ?? '')));
-                $color = strtoupper(trim((string) ($legend['color'] ?? '')));
-                $background = strtoupper(trim((string) ($legend['background'] ?? '')));
-                $style = trim((string) ($legend['style'] ?? ''));
-
-                if (!in_array($style, $dotStyleValues, true)) {
-                    continue;
-                }
+            foreach ($indexRequest['rows'] as $id => $legend) {
+                $font = $legend['font'];
+                $color = $legend['color'];
+                $background = $legend['background'];
+                $style = $legend['style'];
 
                 $sql = "UPDATE dot3_legend SET
                         `font` = '".$db->sql_real_escape_string($font)."',
@@ -138,9 +138,109 @@ class Color extends Controller
 
         $_GET['type'] = $selectedType;
         $data['dot_style_values'] = $dotStyleValues;
+        $data['color_index_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['color_index_csrf_token'] = Csrf::issueToken($_SESSION, self::COLOR_INDEX_CSRF_SCOPE);
 
         $this->set('data', $data);
     }
 
+    public static function evaluateIndexRequest(array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::COLOR_INDEX_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildIndexOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $rows = self::normalizeIndexPayload($post);
+        if ($rows === null) {
+            return self::buildIndexOutcome(400, 'Invalid color legend payload');
+        }
+
+        return self::buildIndexOutcome(200, '', [], $rows);
+    }
+
+    public static function normalizeIndexPayload(array $post): ?array
+    {
+        if (!isset($post['dot3_legend']) || !is_array($post['dot3_legend']) || $post['dot3_legend'] === []) {
+            return null;
+        }
+
+        if (count($post['dot3_legend']) > 500) {
+            return null;
+        }
+
+        $rows = [];
+        foreach ($post['dot3_legend'] as $id => $legend) {
+            $id = is_int($id) ? (string) $id : (string) $id;
+            if (!ctype_digit($id) || (int) $id < 1 || !is_array($legend)) {
+                return null;
+            }
+
+            foreach ($legend as $field => $value) {
+                if (!is_string($field) || !in_array($field, ['font', 'color', 'background', 'style'], true) || !is_scalar($value)) {
+                    return null;
+                }
+            }
+
+            foreach (['font', 'color', 'background', 'style'] as $field) {
+                if (!array_key_exists($field, $legend)) {
+                    return null;
+                }
+            }
+
+            $font = self::normalizeLegendText((string) $legend['font']);
+            $color = self::normalizeLegendText((string) $legend['color']);
+            $background = self::normalizeLegendText((string) $legend['background']);
+            $style = trim((string) $legend['style']);
+
+            if (
+                $font === null
+                || $color === null
+                || $background === null
+                || !in_array($style, self::DOT_STYLE_VALUES, true)
+            ) {
+                return null;
+            }
+
+            $rows[(int) $id] = [
+                'font' => strtoupper($font),
+                'color' => strtoupper($color),
+                'background' => strtoupper($background),
+                'style' => $style,
+            ];
+        }
+
+        return $rows;
+    }
+
+    private static function normalizeLegendText(string $value): ?string
+    {
+        $value = trim($value);
+        if (strlen($value) > 32 || preg_match('/[\r\n\x00]/', $value)) {
+            return null;
+        }
+
+        return $value;
+    }
+
+    private static function buildIndexOutcome(int $statusCode, string $message, array $headers = [], ?array $rows = null): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'rows' => $rows,
+        ];
+    }
+
+    private static function sendColorIndexError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
+    }
 
 }
