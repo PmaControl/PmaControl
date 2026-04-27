@@ -60,6 +60,37 @@ final class WebserviceTest extends TestCase
 
         $controller->exposeAssertCliRootOnly();
     }
+
+    public function testPushServerUsesApiGuardForMachineToMachineCsrfExemption(): void
+    {
+        $source = file_get_contents(__DIR__ . '/../../App/Controller/Webservice.php');
+
+        $this->assertIsString($source);
+        $this->assertStringContainsString('use App\\Library\\Security\\ApiRequestGuard;', $source);
+        $this->assertStringContainsString('ApiRequestGuard::checkJsonPostBasicAuth($jsonData, $_SERVER)', $source);
+        $this->assertStringNotContainsString('CsrfGuard::check', $source);
+    }
+
+    public function testLegacyJsonCheckDelegatesToApiGuard(): void
+    {
+        $controller = new TestableWebservice('Controller', 'View', []);
+
+        $this->assertTrue($controller->isJson('{"mysql":[]}'));
+        $this->assertFalse($controller->isJson('{bad json'));
+    }
+
+    public function testPushServerWritesTemporaryImportFileAfterCredentialCheck(): void
+    {
+        $source = file_get_contents(__DIR__ . '/../../App/Controller/Webservice.php');
+
+        $this->assertIsString($source);
+        $credentialCheck = strpos($source, '$id_user_main = $this->checkCredentials');
+        $temporaryWrite = strpos($source, 'file_put_contents($finale_name');
+
+        $this->assertIsInt($credentialCheck);
+        $this->assertIsInt($temporaryWrite);
+        $this->assertLessThan($temporaryWrite, $credentialCheck);
+    }
 }
 
 final class TestableWebservice extends Webservice
