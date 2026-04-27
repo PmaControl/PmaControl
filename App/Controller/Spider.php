@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Library\Security\CsrfGuard;
 use \App\Library\Mysql;
 use \Glial\Sgbd\Sgbd;
 use \Glial\Synapse\Controller;
@@ -50,8 +51,66 @@ class Spider extends Controller {
         $this->title = '<img src="/pmacontrol/image/main/spider-icon32.png" height="16" width="16px">' . "Spider";
         $this->ariane = '> <i style="font-size: 16px" class="fa fa-puzzle-piece"></i> Plugins > ' . $this->title;
 
-        $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT * FROM mysql_database";
+        $indexRequest = self::evaluateIndexRequest($_GET, $_SERVER);
+        if ($indexRequest['status'] === 405) {
+            $this->view = false;
+            $this->layout_name = false;
+            self::sendIndexError($indexRequest['status'], $indexRequest['body'], $indexRequest['headers']);
+            return;
+        }
+
+        $this->set('data', ['id_mysql_server' => $indexRequest['id_mysql_server']]);
+    }
+
+    public static function evaluateIndexRequest(array $get, array $server): array
+    {
+        if (CsrfGuard::isPost($server)) {
+            return self::buildIndexOutcome(405, 'Method Not Allowed', ['Allow' => 'GET']);
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'id_mysql_server' => self::normalizeIndexServerSelection($get),
+        ];
+    }
+
+    public static function normalizeIndexServerSelection(array $get): ?int
+    {
+        $value = $get['mysql_server']['id'] ?? null;
+        if (! is_scalar($value)) {
+            return null;
+        }
+
+        $idMysqlServer = (string) $value;
+        if (! ctype_digit($idMysqlServer) || (int) $idMysqlServer < 1) {
+            return null;
+        }
+
+        return (int) $idMysqlServer;
+    }
+
+    private static function buildIndexOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'id_mysql_server' => null,
+        ];
+    }
+
+    private static function sendIndexError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+
+        if ($message !== '') {
+            echo $message;
+        }
     }
 
     /*
