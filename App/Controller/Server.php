@@ -13,6 +13,7 @@ use \App\Library\Mysql;
 use \App\Library\EngineV4;
 use App\Library\Display;
 use App\Library\EngineMemoryBreakdown;
+use App\Library\Security\CsrfGuard;
 use App\Library\ServerStateTimeline;
 
 use App\Library\Chiffrement;
@@ -40,6 +41,8 @@ class Server extends Controller
 {
 
     use \App\Library\Filter;
+    private const SERVER_SETTINGS_CSRF_SCOPE = 'server.settings';
+    private const SERVER_SETTINGS_DISPLAY_NAME_MAX_LENGTH = 255;
 /**
  * Stores `$clip` for clip.
  *
@@ -1537,80 +1540,56 @@ var myChart = new Chart(ctx, {
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
-
-            if (!empty($_POST['settings'])) {
-
-
-                foreach ($_POST['id'] as $key => $value) {
-
-                    if (empty($_POST['mysql_server'][$key]['is_monitored'])) {
-                        $_POST['mysql_server'][$key]['is_monitored'] = 0;
-                    } else {
-                        $_POST['mysql_server'][$key]['is_monitored'] = 1;
-                    }
-
-                    if (empty($_POST['mysql_server'][$key]['is_proxy'])) {
-                        $_POST['mysql_server'][$key]['is_proxy'] = 0;
-                    } else {
-                        $_POST['mysql_server'][$key]['is_proxy'] = 1;
-                    }
-
-                    if (empty($_POST['mysql_server'][$key]['is_vip'])) {
-                        $_POST['mysql_server'][$key]['is_vip'] = 0;
-                    } else {
-                        $_POST['mysql_server'][$key]['is_vip'] = 1;
-                    }
-
-                    $server_main                                   = array();
-                    $server_main['mysql_server']['id']             = $value;
-                    $server_main['mysql_server']['display_name']   = $_POST['mysql_server'][$key]['display_name'];
-                    $server_main['mysql_server']['id_client']      = $_POST['mysql_server'][$key]['id_client'];
-                    $server_main['mysql_server']['id_environment'] = $_POST['mysql_server'][$key]['id_environment'];
-                    $server_main['mysql_server']['is_monitored']   = $_POST['mysql_server'][$key]['is_monitored'];
-                    $server_main['mysql_server']['is_proxy']       = $_POST['mysql_server'][$key]['is_proxy'];
-                    $server_main['mysql_server']['is_vip']         = $_POST['mysql_server'][$key]['is_vip'];
-
-
-                    //debug($server_main);
-                    
-                    $ret = $db->sql_save($server_main);
-
-                    if (!$ret) {
-                        
-                        print_r($db->sql_error());
-                    }
-                }
-                if (!empty($_POST['link__mysql_server_tag'])) {
-
-                    $sql = "BEGIN";
-                    $db->sql_query($sql);
-
-                    try {
-
-                        $sql = "delete from link__mysql_server__tag where id_mysql_server in (".implode(",", $_POST['id']).")";
-                        $db->sql_query($sql);
-                        foreach ($_POST['link__mysql_server_tag'] as $key => $servers) {
-
-                            foreach ($servers as $tags) {
-                                foreach ($tags as $tag) {
-
-                                    $sql = "INSERT INTO link__mysql_server__tag (`id_mysql_server`, `id_tag`) VALUES ('".$_POST['id'][$key]."','".$tag."')";
-                                    $db->sql_query($sql);
-                                }
-                            }
-                        }
-                        $sql = "COMMIT";
-                        $db->sql_query($sql);
-                    } catch (\Exception $ex) {
-                        $sql = "ROLLBACK";
-                        $db->sql_query($sql);
-                    }
-                }
-
-                header("location: ".LINK."Server/settings");
-                exit;
+        if (CsrfGuard::isPost($_SERVER) && !empty($_POST['settings'])) {
+            $outcome = self::evaluateSettingsRequest($_POST, $_SERVER, $_SESSION);
+            if ($outcome['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendSettingsError($outcome['status'], $outcome['body'], $outcome['headers']);
+                return;
             }
+
+            $settings = $outcome['settings'];
+            foreach ($settings['servers'] as $server) {
+                $server_main = array();
+                $server_main['mysql_server']['id'] = $server['id'];
+                $server_main['mysql_server']['display_name'] = $server['display_name'];
+                $server_main['mysql_server']['id_client'] = $server['id_client'];
+                $server_main['mysql_server']['id_environment'] = $server['id_environment'];
+                $server_main['mysql_server']['is_monitored'] = $server['is_monitored'];
+                $server_main['mysql_server']['is_proxy'] = $server['is_proxy'];
+                $server_main['mysql_server']['is_vip'] = $server['is_vip'];
+
+                $ret = $db->sql_save($server_main);
+
+                if (!$ret) {
+                    print_r($db->sql_error());
+                }
+            }
+
+            if ($settings['tags_submitted']) {
+                $sql = "BEGIN";
+                $db->sql_query($sql);
+
+                try {
+                    $sql = "delete from link__mysql_server__tag where id_mysql_server in (".implode(",", $settings['server_ids']).")";
+                    $db->sql_query($sql);
+                    foreach ($settings['tags'] as $key => $tags) {
+                        foreach ($tags as $tag) {
+                            $sql = "INSERT INTO link__mysql_server__tag (`id_mysql_server`, `id_tag`) VALUES ('".$settings['servers'][$key]['id']."','".$tag."')";
+                            $db->sql_query($sql);
+                        }
+                    }
+                    $sql = "COMMIT";
+                    $db->sql_query($sql);
+                } catch (\Exception $ex) {
+                    $sql = "ROLLBACK";
+                    $db->sql_query($sql);
+                }
+            }
+
+            header("location: ".LINK."Server/settings");
+            exit;
         }
 
         $this->title  = '<i class="fa fa-server"></i> '.__("Servers");
@@ -1646,7 +1625,170 @@ var myChart = new Chart(ctx, {
             $data['tag_selected'][$ob->id_mysql_server][] = $ob->id_tag;
         }
 
+        $data['server_settings_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['server_settings_csrf_token'] = Csrf::issueToken($_SESSION, self::SERVER_SETTINGS_CSRF_SCOPE);
+
         $this->set('data', $data);
+    }
+
+    public static function evaluateSettingsRequest(array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::SERVER_SETTINGS_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildSettingsOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $settings = self::normalizeSettingsPayload($post);
+        if ($settings === null) {
+            return self::buildSettingsOutcome(400, 'Invalid server settings payload');
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'settings' => $settings,
+        ];
+    }
+
+    public static function normalizeSettingsPayload(array $post): ?array
+    {
+        if (empty($post['settings']) || empty($post['id']) || !is_array($post['id'])) {
+            return null;
+        }
+
+        if (empty($post['mysql_server']) || !is_array($post['mysql_server'])) {
+            return null;
+        }
+
+        $servers = [];
+        $serverIds = [];
+        foreach ($post['id'] as $key => $value) {
+            $id = self::normalizeSettingsPositiveInteger($value);
+            if ($id === null || empty($post['mysql_server'][$key]) || !is_array($post['mysql_server'][$key])) {
+                return null;
+            }
+
+            $row = $post['mysql_server'][$key];
+            foreach (['display_name', 'id_client', 'id_environment'] as $field) {
+                if (!array_key_exists($field, $row) || !is_scalar($row[$field])) {
+                    return null;
+                }
+            }
+
+            $displayName = trim((string) $row['display_name']);
+            if (strlen($displayName) > self::SERVER_SETTINGS_DISPLAY_NAME_MAX_LENGTH) {
+                return null;
+            }
+
+            $idClient = self::normalizeSettingsPositiveInteger($row['id_client']);
+            $idEnvironment = self::normalizeSettingsPositiveInteger($row['id_environment']);
+            if ($idClient === null || $idEnvironment === null) {
+                return null;
+            }
+
+            $isMonitored = self::normalizeSettingsFlag($row, 'is_monitored');
+            $isProxy = self::normalizeSettingsFlag($row, 'is_proxy');
+            $isVip = self::normalizeSettingsFlag($row, 'is_vip');
+            if ($isMonitored === null || $isProxy === null || $isVip === null) {
+                return null;
+            }
+
+            $servers[$key] = [
+                'id' => $id,
+                'display_name' => $displayName,
+                'id_client' => $idClient,
+                'id_environment' => $idEnvironment,
+                'is_monitored' => $isMonitored,
+                'is_proxy' => $isProxy,
+                'is_vip' => $isVip,
+            ];
+            $serverIds[] = $id;
+        }
+
+        $tagsSubmitted = !empty($post['link__mysql_server_tag']);
+        $tags = [];
+        if ($tagsSubmitted) {
+            if (!is_array($post['link__mysql_server_tag'])) {
+                return null;
+            }
+
+            foreach ($post['link__mysql_server_tag'] as $key => $groups) {
+                if (!array_key_exists($key, $servers) || !is_array($groups)) {
+                    return null;
+                }
+
+                $tags[$key] = [];
+                foreach ($groups as $tagList) {
+                    if (!is_array($tagList)) {
+                        return null;
+                    }
+
+                    foreach ($tagList as $tagValue) {
+                        $tag = self::normalizeSettingsPositiveInteger($tagValue);
+                        if ($tag === null) {
+                            return null;
+                        }
+                        $tags[$key][$tag] = $tag;
+                    }
+                }
+                $tags[$key] = array_values($tags[$key]);
+            }
+        }
+
+        return [
+            'servers' => $servers,
+            'server_ids' => $serverIds,
+            'tags_submitted' => $tagsSubmitted,
+            'tags' => $tags,
+        ];
+    }
+
+    private static function normalizeSettingsPositiveInteger($value): ?int
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $value = trim((string) $value);
+        if ($value === '' || !ctype_digit($value) || (int) $value < 1) {
+            return null;
+        }
+
+        return (int) $value;
+    }
+
+    private static function normalizeSettingsFlag(array $row, string $field): ?int
+    {
+        if (!array_key_exists($field, $row) || $row[$field] === '' || $row[$field] === null) {
+            return 0;
+        }
+
+        if (!is_scalar($row[$field])) {
+            return null;
+        }
+
+        return 1;
+    }
+
+    private static function buildSettingsOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'settings' => null,
+        ];
+    }
+
+    private static function sendSettingsError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
 /**

@@ -76,31 +76,31 @@ class Common extends Controller
         $db = Sgbd::sql(DB_DEFAULT);
 
 
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
+        if ($_SERVER['REQUEST_METHOD'] == "GET") {
 
 
-            if (!empty($_POST['client_environment'])) {
+            if (!empty($_GET['client_environment'])) {
                 $ret = "";
-                if (!empty($_POST['client']['libelle']) || !empty($_POST['environment']['libelle'])) {
+                if (!empty($_GET['client']['libelle']) || !empty($_GET['environment']['libelle'])) {
 
                     /* header("location: ".LINK."".\Glial\Synapse\FactoryController::$controller."/".\Glial\Synapse\FactoryController::$method."/client:libelle:"
                       .$_POST['client']['libelle']."/environment:libelle:".$_POST['environment']['libelle']); */
 
 
-                    if (!empty($_POST['client']['libelle'])) {
-                        $_SESSION['client']['libelle'] = json_encode($_POST['client']['libelle']);
-                        $ret                           .= "/client:libelle:".json_encode($_POST['client']['libelle']);
+                    if (!empty($_GET['client']['libelle'])) {
+                        $_SESSION['client']['libelle'] = json_encode($_GET['client']['libelle']);
+                        $ret                           .= "/client:libelle:".json_encode($_GET['client']['libelle']);
                     } else {
                         unset($_SESSION['client']['libelle']);
                     }
 
-                    if (!empty($_POST['environment']['libelle'])) {
-                        $_SESSION['environment']['libelle'] = json_encode($_POST['environment']['libelle']);
-                        $ret                                .= "/environment:libelle:".json_encode($_POST['environment']['libelle']);
+                    if (!empty($_GET['environment']['libelle'])) {
+                        $_SESSION['environment']['libelle'] = json_encode($_GET['environment']['libelle']);
+                        $ret                                .= "/environment:libelle:".json_encode($_GET['environment']['libelle']);
                     } else {
                         unset($_SESSION['environment']['libelle']);
                     }
-                } elseif (!empty($_POST['client_environment'])) {
+                } elseif (!empty($_GET['client_environment'])) {
                     unset($_SESSION['client']['libelle']);
                     unset($_SESSION['environment']['libelle']);
                 }
