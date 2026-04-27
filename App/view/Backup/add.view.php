@@ -1,9 +1,13 @@
 <?php
 
 use Glial\Html\Form\Form;
+
+$backupAddCsrfField = htmlspecialchars((string) ($data['backup_add_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$backupAddCsrfToken = htmlspecialchars((string) ($data['backup_add_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
 ?>
 
 <form action="" method="post">
+    <input type="hidden" name="<?= $backupAddCsrfField ?>" value="<?= $backupAddCsrfToken ?>">
 
 
 
@@ -143,6 +147,5 @@ use Glial\Html\Form\Form;
 
 
 </form>
-
 
 
