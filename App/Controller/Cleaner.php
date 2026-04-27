@@ -70,6 +70,21 @@ class Cleaner extends Controller
     private $com_status = array();
 
     const FIELD_LOOP = "pmactrol_purge_loop";
+    private const CLEANER_ADD_CSRF_SCOPE = 'cleaner.add';
+    private const CLEANER_ADD_MAIN_RULES = [
+        'id' => ['type' => 'int', 'default' => 0, 'min' => 0],
+        'libelle' => ['type' => 'string', 'required' => true, 'min' => 1, 'max' => 50],
+        'id_mysql_server' => ['type' => 'int', 'required' => true, 'min' => 1],
+        'database' => ['type' => 'string', 'required' => true, 'min' => 1, 'max' => 64],
+        'main_table' => ['type' => 'string', 'required' => true, 'min' => 1, 'max' => 64],
+        'query' => ['type' => 'string', 'required' => true, 'min' => 1],
+        'limit' => ['type' => 'int', 'default' => 1000, 'min' => 1],
+        'wait_time_in_sec' => ['type' => 'int', 'required' => true, 'min' => 1, 'max' => 100],
+        'cleaner_db' => ['type' => 'string', 'required' => true, 'min' => 1, 'max' => 50],
+        'prefix' => ['type' => 'string', 'default' => '', 'max' => 50],
+        'id_backup_storage_area' => ['type' => 'int', 'default' => 0, 'min' => 0],
+        'is_crypted' => ['type' => 'enum', 'default' => '0', 'values' => ['0', '1', 'on']],
+    ];
     private const CLEANER_SETTINGS_CSRF_SCOPE = 'cleaner.settings';
     private const CLEANER_SETTINGS_MAX_FOREIGN_KEYS = 128;
     private const CLEANER_SETTINGS_MAIN_RULES = [
@@ -759,7 +774,6 @@ var myChart = new Chart(ctx, {
     public function add($param)
     {
 
-        $db = Sgbd::sql(DB_DEFAULT);
         $this->di['js']->addJavascript(array("jquery-latest.min.js", "jquery.browser.min.js",
             "jquery.autocomplete.min.js", "cleaner/add.cleaner.js"));
 
@@ -775,16 +789,27 @@ var myChart = new Chart(ctx, {
             $data['table']     = array();
         }
 
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
+        $data['cleaner_add_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['cleaner_add_csrf_token'] = Csrf::issueToken($_SESSION, self::CLEANER_ADD_CSRF_SCOPE);
 
-            $cleaner_main['cleaner_main']                 = $_POST['cleaner_main'];
+        if (CsrfGuard::isPost($_SERVER)) {
+            $outcome = self::evaluateAddRequest($_POST, $_SERVER, $_SESSION);
+            if ($outcome['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendCleanerAddError($outcome['status'], $outcome['body'], $outcome['headers']);
+                return;
+            }
+
+            $db = Sgbd::sql(DB_DEFAULT);
+            $cleaner_main['cleaner_main']                 = $outcome['cleaner_main'];
             $cleaner_main['cleaner_main']['id_user_main'] = $this->di['auth']->getUser()->id;
 
             if (empty($cleaner_main['cleaner_main']['id'])) {
                 unset($cleaner_main['cleaner_main']['id']);
             }
 
-            if (!empty($cleaner_main['cleaner_main']['is_crypted']) && $cleaner_main['cleaner_main']['is_crypted'] === "on") {
+            if (!empty($cleaner_main['cleaner_main']['is_crypted']) && in_array($cleaner_main['cleaner_main']['is_crypted'], ['1', 'on'], true)) {
                 $cleaner_main['cleaner_main']['is_crypted'] = 1;
             } else {
                 $cleaner_main['cleaner_main']['is_crypted'] = 0;
@@ -841,6 +866,7 @@ var myChart = new Chart(ctx, {
 
 
 
+        $db      = Sgbd::sql(DB_DEFAULT);
         $sql     = "SELECT * FROM backup_storage_area order by `libelle`;";
         $servers = $db->sql_fetch_yield($sql);
 
@@ -875,6 +901,58 @@ var myChart = new Chart(ctx, {
         $this->set('data', $data);
 
         return $data;
+    }
+
+    public static function evaluateAddRequest(array $post, array $server, array $session): array
+    {
+        $request = GroupedFormRequest::evaluate(
+            $post,
+            $server,
+            $session,
+            self::CLEANER_ADD_CSRF_SCOPE,
+            'cleaner_main',
+            self::CLEANER_ADD_MAIN_RULES,
+            'Invalid cleaner add payload'
+        );
+
+        if ($request['status'] !== 200) {
+            return self::buildCleanerAddOutcome($request['status'], $request['body'], $request['headers']);
+        }
+
+        return self::buildCleanerAddOutcome(200, '', [], $request['payload']);
+    }
+
+    public static function normalizeAddPayload(array $post): ?array
+    {
+        return GroupedFormRequest::normalize($post, 'cleaner_main', self::CLEANER_ADD_MAIN_RULES);
+    }
+
+    private static function buildCleanerAddOutcome(
+        int $statusCode,
+        string $message,
+        array $headers = [],
+        ?array $cleaner_main = null
+    ): array {
+        return [
+            'allowed' => $statusCode === 200,
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'cleaner_main' => $cleaner_main,
+        ];
+    }
+
+    private static function sendCleanerAddError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+
+        if ($message !== '') {
+            echo $message;
+        }
     }
 
 
