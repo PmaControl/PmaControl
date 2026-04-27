@@ -11,10 +11,14 @@ namespace App\Controller;
 use phpseclib\Crypt\RSA;
 use phpseclib\Net\SSH2;
 use \Glial\Synapse\Controller;
+use App\Library\Security\CsrfGuard;
+use App\Library\Security\GroupedFormRequest;
+use App\Library\Security\IndexedRowsRequest;
 use Glial\I18n\I18n;
 use \App\Library\Debug;
 use \App\Library\Ssh;
 use App\Library\Chiffrement;
+use Glial\Security\Csrf;
 use \Glial\Sgbd\Sgbd;
 
 
@@ -34,6 +38,8 @@ use \Glial\Sgbd\Sgbd;
  */
 class DeployRsaKey extends Controller {
 
+    private const INDEX_CSRF_SCOPE = 'deploy_rsa_key.index';
+    private const INDEX_MAX_SERVER_ROWS = 2000;
     const KEY_WORKER_DEPLOY = 148759;
     const KEY_PUBLIC = "public_key";
     const KEY_PRIVATE = "private_key";
@@ -94,13 +100,26 @@ $("#ssh_key-id").change(function() {
         $this->ariane = '> <i style="font-size: 16px" class="fa fa-puzzle-piece"></i> Plugins > '
                 . '<i style="font-size: 16px" class="fa fa-key" aria-hidden="true"></i> ' . "Deploy key RSA";
 
+        $postPayload = null;
+        if (CsrfGuard::isPost($_SERVER)) {
+            $outcome = self::evaluateIndexRequest($_POST, $_SERVER, $_SESSION);
+            if ($outcome['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendIndexError($outcome['status'], $outcome['body'], $outcome['headers']);
+                return;
+            }
+
+            $postPayload = $outcome['payload'];
+        }
+
         $db = Sgbd::sql(DB_DEFAULT);
 
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
+        if ($postPayload !== null) {
 
-            if (!empty($_POST['settings'])) {
+            if (!empty($postPayload['settings'])) {
 
-                Debug::debug($_POST, "POST");
+                Debug::debug($postPayload, "POST");
 
                 $error_form = false;
 
@@ -108,24 +127,25 @@ $("#ssh_key-id").change(function() {
 
                 $private = '';
 
-                if (!empty($_POST['mysql_server']['login_ssh'])) {
+                if (!empty($postPayload['mysql_server']['login_ssh'])) {
 
-                    $login = $_POST['mysql_server']['login_ssh'];
+                    $login = $postPayload['mysql_server']['login_ssh'];
 
-                    if (!empty($_POST['mysql_server']['password_ssh'])) {
-                        $private = $login . "@" . $_POST['mysql_server']['password_ssh'];
+                    if (!empty($postPayload['mysql_server']['password_ssh'])) {
+                        $private = $login . "@" . $postPayload['mysql_server']['password_ssh'];
                     }
-                    if (!empty($_POST['mysql_server']['key_ssh'])) {
-                        $private = $login . "@" . $_POST['mysql_server']['key_ssh'];
+                    if (!empty($postPayload['mysql_server']['key_ssh'])) {
+                        $private = $login . "@" . $postPayload['mysql_server']['key_ssh'];
                     }
                 }
 
-                if (!empty($_POST['ssh_key_pv']['id'])) {
-                    $private = $_POST['ssh_key_pv']['id'];
+                if (!empty($postPayload['ssh_key_pv']['id'])) {
+                    $private = (string) $postPayload['ssh_key_pv']['id'];
                 }
 
-                if (!empty($_POST['ssh_key']['id'])) {
-                    $public = $_POST['ssh_key']['id'];
+                $public = '';
+                if (!empty($postPayload['ssh_key']['id'])) {
+                    $public = (string) $postPayload['ssh_key']['id'];
                 }
 
                 if (empty($public)) {
@@ -145,9 +165,9 @@ $("#ssh_key-id").change(function() {
                 }
 
                 $list_id = [];
-                foreach ($_POST['link__mysql_server__ssh_key'] as $key => $value) {
+                foreach ($postPayload['link__mysql_server__ssh_key'] as $value) {
 
-                    if (!empty($value["deploy"])) {
+                    if ($value["deploy"] === true) {
                         $list_id[] = $value['id_mysql_server'];
                     }
                 }
@@ -178,7 +198,7 @@ $("#ssh_key-id").change(function() {
                     $this->deploy(array($ob->ip, $public, $private));
 
                     if ($this->testConnection($ob->ip, $public) === true) {
-                        Debug::debug($_POST['mysql_server']['login_ssh'] . "@" . $ob->ip . " : " . 'CONNECTION OK !');
+                        Debug::debug($postPayload['mysql_server']['login_ssh'] . "@" . $ob->ip . " : " . 'CONNECTION OK !');
                         //Debug::debug($path_private_key);
 
 
@@ -263,8 +283,89 @@ $("#ssh_key-id").change(function() {
             $data['key_ssh'][] = $tmp;
         }
 
+        $data['deploy_rsa_key_index_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['deploy_rsa_key_index_csrf_token'] = Csrf::issueToken($_SESSION, self::INDEX_CSRF_SCOPE);
 
         $this->set('data', $data);
+    }
+
+    public static function evaluateIndexRequest(array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::INDEX_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildIndexOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $payload = self::normalizeIndexPayload($post);
+        if ($payload === null) {
+            return self::buildIndexOutcome(400, 'Invalid deploy RSA key payload');
+        }
+
+        return self::buildIndexOutcome(200, '', [], $payload);
+    }
+
+    public static function normalizeIndexPayload(array $post): ?array
+    {
+        if (!isset($post['settings']) || !is_scalar($post['settings']) || trim((string) $post['settings']) !== '1') {
+            return null;
+        }
+
+        $mysqlServer = GroupedFormRequest::normalize($post, 'mysql_server', [
+            'login_ssh' => ['type' => 'string', 'default' => '', 'max' => 128],
+            'password_ssh' => ['type' => 'string', 'default' => '', 'max' => 1024],
+            'key_ssh' => ['type' => 'string', 'default' => '', 'max' => 8192],
+        ]);
+        $privateKey = GroupedFormRequest::normalize($post, 'ssh_key_pv', [
+            'id' => ['type' => 'int', 'default' => 0, 'min' => 0],
+        ]);
+        $publicKey = GroupedFormRequest::normalize($post, 'ssh_key', [
+            'id' => ['type' => 'int', 'default' => 0, 'min' => 0],
+        ]);
+        $serverRows = IndexedRowsRequest::normalize(
+            $post,
+            'link__mysql_server__ssh_key',
+            [
+                'deploy' => ['type' => 'bool', 'default' => false],
+                'id_mysql_server' => ['type' => 'int', 'min' => 1],
+            ],
+            self::INDEX_MAX_SERVER_ROWS
+        );
+
+        if ($mysqlServer === null || $privateKey === null || $publicKey === null || $serverRows === null) {
+            return null;
+        }
+
+        return [
+            'settings' => '1',
+            'mysql_server' => $mysqlServer,
+            'ssh_key_pv' => $privateKey,
+            'ssh_key' => $publicKey,
+            'link__mysql_server__ssh_key' => $serverRows,
+        ];
+    }
+
+    private static function buildIndexOutcome(
+        int $statusCode,
+        string $message,
+        array $headers = [],
+        ?array $payload = null
+    ): array {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'payload' => $payload,
+        ];
+    }
+
+    private static function sendIndexError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
 //to mutualize

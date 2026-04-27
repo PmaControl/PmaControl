@@ -21,12 +21,16 @@ use App\Library\Display;
  * select server
  *
  */
+$deployRsaKeyIndexCsrfField = htmlspecialchars((string) ($data['deploy_rsa_key_index_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$deployRsaKeyIndexCsrfToken = htmlspecialchars((string) ($data['deploy_rsa_key_index_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
 ?>
 <div class="well">
     <?= \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array()); ?>
 </div>
 
 <form action="" method="post" class="form-inline" autocomplete="off">
+    <input type="hidden" name="<?= $deployRsaKeyIndexCsrfField ?>" value="<?= $deployRsaKeyIndexCsrfToken ?>">
+
     <div class="row">
         <div class="col-md-6">
             <div class="panel panel-primary">
