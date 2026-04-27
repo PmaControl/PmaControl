@@ -1275,10 +1275,6 @@ GROUP BY d.id";
  * @version 1.0
  */
     function photo($param) {
-
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
-            
-        }
     }
 
 /**
