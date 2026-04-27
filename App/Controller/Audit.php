@@ -6,7 +6,7 @@ use App\Library\Available;
 use Exception;
 use \Glial\Synapse\Controller;
 use \App\Library\Debug;
-use \App\Library\Post;
+use App\Library\Security\ServerIdSelection;
 use \App\Library\Extraction;
 use \App\Library\Extraction2;
 use \App\Library\Transfer;
@@ -180,30 +180,107 @@ class Audit extends Controller {
     public function general_log($param) {
         Debug::parseDebug($param);
 
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
-
-            Debug::debug($_POST);
-
-            if (!empty($_POST['general_log']['activate'])) {
-                $get = Post::getToPost();
-
-
-                $url = LINK .$this->getClass(). "/" . __FUNCTION__ . "/" . $get;
-
-                Debug::debug($url);
-
-                header('location: ' . $url);
-            }
+        $request = self::evaluateGeneralLogRequest($_GET, $_SERVER);
+        if ($request['status'] !== 200) {
+            $this->view = false;
+            $this->layout_name = false;
+            self::sendGeneralLogError($request['status'], $request['body'], $request['headers']);
+            return;
         }
 
-        if (!empty($_GET['mysql_server']['id'])) {
+        $selection = $request['selection'];
+        self::applyGeneralLogSelectionToGet($selection);
+
+        if ($selection['id'] !== null) {
 
             $db = Sgbd::sql(DB_DEFAULT);
 
-            
-            $data['logs'] = Extraction::display(array("variables::general_log_file", "variables::datadir"), array($_GET['mysql_server']['id']));
+            $data['logs'] = Extraction::display(array("variables::general_log_file", "variables::datadir"), array($selection['id']));
 
             Debug::debug($data['logs']);
+        }
+    }
+
+    public static function evaluateGeneralLogRequest(array $get, array $server): array
+    {
+        $method = strtoupper((string) ($server['REQUEST_METHOD'] ?? 'GET'));
+        if ($method !== 'GET' && $method !== 'HEAD') {
+            return self::buildGeneralLogOutcome(405, 'Method Not Allowed', ['Allow' => 'GET, HEAD']);
+        }
+
+        $selection = self::normalizeGeneralLogSelection($get);
+        if ($selection === null) {
+            return self::buildGeneralLogOutcome(400, 'Invalid audit general log selection');
+        }
+
+        return self::buildGeneralLogOutcome(200, '', [], $selection);
+    }
+
+    public static function normalizeGeneralLogSelection(array $get): ?array
+    {
+        if (!array_key_exists('mysql_server', $get)) {
+            return self::emptyGeneralLogSelection();
+        }
+
+        if (
+            !is_array($get['mysql_server'])
+            || array_diff(array_keys($get['mysql_server']), ['id']) !== []
+            || !array_key_exists('id', $get['mysql_server'])
+        ) {
+            return null;
+        }
+
+        if ($get['mysql_server']['id'] === '' || $get['mysql_server']['id'] === []) {
+            return self::emptyGeneralLogSelection();
+        }
+
+        $ids = ServerIdSelection::normalizeList($get['mysql_server']['id'], 1);
+        if ($ids === null) {
+            return null;
+        }
+
+        return ['id' => $ids[0]];
+    }
+
+    private static function applyGeneralLogSelectionToGet(array $selection): void
+    {
+        if ($selection['id'] === null) {
+            unset($_GET['mysql_server']);
+            return;
+        }
+
+        $_GET['mysql_server'] = ['id' => (string) $selection['id']];
+    }
+
+    private static function emptyGeneralLogSelection(): array
+    {
+        return ['id' => null];
+    }
+
+    private static function buildGeneralLogOutcome(
+        int $statusCode,
+        string $message,
+        array $headers = [],
+        ?array $selection = null
+    ): array {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'selection' => $selection,
+        ];
+    }
+
+    private static function sendGeneralLogError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+
+        if ($message !== '') {
+            echo $message;
         }
     }
 
