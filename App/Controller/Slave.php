@@ -38,6 +38,7 @@ class Slave extends Controller
     use \App\Library\Filter;
     const BACKUP_TEMP = "/backup/";
     private const SLAVE_BINLOG_ANALYSIS_START_CSRF_SCOPE = 'slave.binlog_analysis.start';
+    private const SLAVE_SETUP_SOURCE_CSRF_SCOPE = 'slave.setup_source';
 
     private function getReplicationLagVariables(): array
     {
@@ -803,6 +804,10 @@ if (!empty($_GET['mysql_server']['id'])) {
         $data['master_id'] = $master_id ?? 0;
         $data['slave_binlog_analysis_start_csrf_field'] = Csrf::DEFAULT_FIELD;
         $data['slave_binlog_analysis_start_csrf_token'] = Csrf::issueToken($_SESSION, self::SLAVE_BINLOG_ANALYSIS_START_CSRF_SCOPE);
+        if ($replication_name === '__new__' && self::normalizeSetupSourceServerId($id_mysql_server) !== null) {
+            $data['slave_setup_source_csrf_field'] = Csrf::DEFAULT_FIELD;
+            $data['slave_setup_source_csrf_token'] = Csrf::issueToken($_SESSION, self::SLAVE_SETUP_SOURCE_CSRF_SCOPE);
+        }
 
         $this->di['js']->code_javascript('
 function svHumanDuration(sec) {
@@ -1881,28 +1886,31 @@ var chart = new Chart(ctx, {
     public function setupSource($param)
     {
         $this->view = false;
-        $id_mysql_server = $param[0];
+        $idForRedirect = self::normalizeSetupSourceServerId($param[0] ?? null) ?? 0;
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('location: '.LINK.'slave/show/'.$id_mysql_server.'/');
+            header('location: '.LINK.'slave/show/'.$idForRedirect.'/');
             return;
         }
 
-        $connection_name = self::sanitizeConnectionName(trim($_POST['connection_name'] ?? ''));
-        $master_host     = trim($_POST['master_host'] ?? '');
-        $master_port     = (int)($_POST['master_port'] ?? 3306);
-        $master_user     = trim($_POST['master_user'] ?? '');
-        $master_password = $_POST['master_password'] ?? '';
-        $use_gtid        = !empty($_POST['use_gtid']);
-        $use_ssl         = !empty($_POST['use_ssl']);
-        $replicate_do_db = trim($_POST['replicate_do_db'] ?? '');
-        $replicate_rewrite_db = trim($_POST['replicate_rewrite_db'] ?? '');
-
-        if ($connection_name === '' || $master_host === '' || $master_user === '') {
-            set_flash("error", __("Error"), __("Connection name, host and user are required"));
-            header('location: '.LINK.'slave/show/'.$id_mysql_server.'/__new__/');
+        $outcome = self::evaluateSetupSourceRequest($param, $_POST, $_SERVER, $_SESSION);
+        if ($outcome['status'] !== 200) {
+            set_flash("error", __("Error"), __($outcome['body']));
+            header('location: '.LINK.'slave/show/'.$idForRedirect.'/__new__/');
             return;
         }
+
+        $request = $outcome['request'];
+        $id_mysql_server = $request['id_mysql_server'];
+        $connection_name = $request['connection_name'];
+        $master_host = $request['master_host'];
+        $master_port = $request['master_port'];
+        $master_user = $request['master_user'];
+        $master_password = $request['master_password'];
+        $use_gtid = $request['use_gtid'];
+        $use_ssl = $request['use_ssl'];
+        $replicate_do_db = $request['replicate_do_db'];
+        $replicate_rewrite_db = $request['replicate_rewrite_db'];
 
         $db = Mysql::getDbLink($id_mysql_server);
         $isMariaDB = (stripos($db->getServerType(), 'mariadb') !== false);
@@ -1974,6 +1982,130 @@ var chart = new Chart(ctx, {
             set_flash("error", __("Error"), $e->getMessage());
             header('location: '.LINK.'slave/show/'.$id_mysql_server.'/__new__/');
         }
+    }
+
+    public static function evaluateSetupSourceRequest(array $param, array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::SLAVE_SETUP_SOURCE_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildSetupSourceOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $request = self::normalizeSetupSourcePayload($param, $post);
+        if ($request === null) {
+            return self::buildSetupSourceOutcome(400, 'Invalid replication source payload');
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'request' => $request,
+        ];
+    }
+
+    public static function normalizeSetupSourcePayload(array $param, array $post): ?array
+    {
+        $idMysqlServer = self::normalizeSetupSourceServerId($param[0] ?? null);
+        if ($idMysqlServer === null) {
+            return null;
+        }
+
+        foreach (['connection_name', 'master_host', 'master_user', 'master_password'] as $field) {
+            if (!array_key_exists($field, $post) || !is_scalar($post[$field])) {
+                return null;
+            }
+        }
+
+        $connectionName = self::sanitizeConnectionName(trim((string) $post['connection_name']));
+        $masterHost = trim((string) $post['master_host']);
+        $masterUser = trim((string) $post['master_user']);
+        $masterPassword = (string) $post['master_password'];
+
+        if ($connectionName === '' || $masterHost === '' || $masterUser === '') {
+            return null;
+        }
+
+        $masterPort = self::normalizeSetupSourcePort($post['master_port'] ?? '3306');
+        if ($masterPort === null) {
+            return null;
+        }
+
+        $replicateDoDb = self::normalizeSetupSourceOptionalString($post['replicate_do_db'] ?? '');
+        $replicateRewriteDb = self::normalizeSetupSourceOptionalString($post['replicate_rewrite_db'] ?? '');
+        if ($replicateDoDb === null || $replicateRewriteDb === null) {
+            return null;
+        }
+
+        return [
+            'id_mysql_server' => $idMysqlServer,
+            'connection_name' => $connectionName,
+            'master_host' => $masterHost,
+            'master_port' => $masterPort,
+            'master_user' => $masterUser,
+            'master_password' => $masterPassword,
+            'use_gtid' => self::normalizeSetupSourceCheckbox($post, 'use_gtid'),
+            'use_ssl' => self::normalizeSetupSourceCheckbox($post, 'use_ssl'),
+            'replicate_do_db' => $replicateDoDb,
+            'replicate_rewrite_db' => $replicateRewriteDb,
+        ];
+    }
+
+    private static function normalizeSetupSourceServerId($value): ?int
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $id = trim((string) $value);
+        if ($id === '' || !ctype_digit($id) || (int) $id < 1) {
+            return null;
+        }
+
+        return (int) $id;
+    }
+
+    private static function normalizeSetupSourcePort($value): ?int
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $port = trim((string) $value);
+        if ($port === '' || !ctype_digit($port)) {
+            return null;
+        }
+
+        $portNumber = (int) $port;
+        if ($portNumber < 1 || $portNumber > 65535) {
+            return null;
+        }
+
+        return $portNumber;
+    }
+
+    private static function normalizeSetupSourceOptionalString($value): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        return trim((string) $value);
+    }
+
+    private static function normalizeSetupSourceCheckbox(array $post, string $field): bool
+    {
+        return isset($post[$field]) && is_scalar($post[$field]) && (string) $post[$field] !== '';
+    }
+
+    private static function buildSetupSourceOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'request' => null,
+        ];
     }
 
 /**

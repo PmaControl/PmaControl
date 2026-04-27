@@ -7,6 +7,8 @@ use App\Library\Display;
 
 $slaveBinlogAnalysisStartCsrfField = (string)($data['slave_binlog_analysis_start_csrf_field'] ?? '_csrf_token');
 $slaveBinlogAnalysisStartCsrfToken = (string)($data['slave_binlog_analysis_start_csrf_token'] ?? '');
+$slaveSetupSourceCsrfField = htmlspecialchars((string)($data['slave_setup_source_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$slaveSetupSourceCsrfToken = htmlspecialchars((string)($data['slave_setup_source_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
 
 $isMariaDB = isset($data['server_type']) && stripos($data['server_type'], 'mariadb') !== false;
 $isMySQLNewSyntax = !$isMariaDB && isset($data['server_version']) && version_compare((string)$data['server_version'], '8.0.22', '>=');
@@ -277,6 +279,7 @@ elseif ((int)$seconds_behind > 0) $health = 'behind';
     <div class="sv-card-body">
         <form class="sv-new-source" method="POST"
               action="<?= LINK ?>slave/setupSource/<?= $data['id_mysql_server'] ?>/">
+            <input type="hidden" name="<?= $slaveSetupSourceCsrfField ?>" value="<?= $slaveSetupSourceCsrfToken ?>">
 
             <!-- Step 1: Source server -->
             <fieldset style="border:1px solid var(--clr-border);border-radius:var(--radius);padding:16px;margin-bottom:16px">
