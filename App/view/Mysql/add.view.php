@@ -4,8 +4,11 @@ use Glial\Html\Form\Form;
 
 $isProxyChecked = !empty($_GET['mysql_server']['is_proxy']) && (string) $_GET['mysql_server']['is_proxy'] !== '0';
 $isVipChecked   = !empty($_GET['mysql_server']['is_vip']) && (string) $_GET['mysql_server']['is_vip'] !== '0';
+$mysqlAddCsrfField = htmlspecialchars((string)($data['mysql_add_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$mysqlAddCsrfToken = htmlspecialchars((string)($data['mysql_add_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
 ?>
 <form action="" method="post">
+    <input type="hidden" name="<?= $mysqlAddCsrfField ?>" value="<?= $mysqlAddCsrfToken ?>">
     <div class="panel panel-primary">
         <div class="panel-heading">
             <h3 class="panel-title"><?= __('Parameters') ?></h3>
