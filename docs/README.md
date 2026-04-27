@@ -11,6 +11,7 @@ One topic per file. Load only what the current task needs.
 - [issue_workflow.md](issue_workflow.md) — tracked issue workflow with two-pass review, comments, PR and merge links
 - [commits.md](commits.md) — commit format, PR guidelines, tooling visibility, secrets handling
 - [build_test.md](build_test.md) — composer, PHPUnit, CLI invocation, local dev server, test conventions
+- [plugin_packages.md](plugin_packages.md) — `plugin.json` manifest files, copy plans, SQL/data and install scripts
 
 ## Database
 - [database_conventions.md](database_conventions.md) — table / column / FK / data type naming
