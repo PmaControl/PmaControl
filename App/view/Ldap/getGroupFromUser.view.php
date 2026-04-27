@@ -1,8 +1,12 @@
 <?php
 
 use Glial\Html\Form\Form;
+
+$ldapGetGroupFromUserCsrfField = htmlspecialchars((string) ($data['ldap_get_group_from_user_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$ldapGetGroupFromUserCsrfToken = htmlspecialchars((string) ($data['ldap_get_group_from_user_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
 ?>
 <form action="" method="post">
+    <input type="hidden" name="<?= $ldapGetGroupFromUserCsrfField ?>" value="<?= $ldapGetGroupFromUserCsrfToken ?>">
     <div class="panel panel-primary">
         <div class="panel-heading">
 
@@ -24,7 +28,7 @@ if (!empty($data['list'])) {
 
     echo '<div class="panel panel-primary">';
     echo '<div class="panel-heading">';
-    echo '<h3 class="panel-title">"'.$data['user'] .'" '.__('is member of').'</h3>';
+    echo '<h3 class="panel-title">"'.htmlspecialchars((string) $data['user'], ENT_QUOTES, 'UTF-8').'" '.__('is member of').'</h3>';
     echo '</div>';
     echo '<div class="well">';
 
@@ -44,10 +48,9 @@ if (!empty($data['list'])) {
 
         echo '<tr>';
         echo '<td>'.$i.'</td>';
-        echo '<td>'.($list).'</td>';
+        echo '<td>'.htmlspecialchars((string) $list, ENT_QUOTES, 'UTF-8').'</td>';
         echo '</tr>';
     }
 
     echo '</table></div></div>';
 }
-
