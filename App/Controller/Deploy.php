@@ -49,6 +49,13 @@ class Deploy extends Controller
  */
     public function index()
     {
+        $outcome = self::evaluateIndexRequest($_SERVER);
+        if ($outcome['status'] !== 200) {
+            $this->view = false;
+            $this->layout_name = false;
+            self::sendDeployError($outcome['status'], $outcome['body'], $outcome['headers']);
+            return;
+        }
 
         $this->title = '<i class="fa fa-arrows-alt" aria-hidden="true"></i> '.__("Deploy");
 
@@ -64,6 +71,34 @@ class Deploy extends Controller
         html:true
     });
 });');
+    }
+
+    public static function evaluateIndexRequest(array $server): array
+    {
+        $method = strtoupper((string) ($server['REQUEST_METHOD'] ?? 'GET'));
+        if ($method !== 'GET' && $method !== 'HEAD') {
+            return self::buildIndexOutcome(405, 'Method Not Allowed', ['Allow' => 'GET, HEAD']);
+        }
+
+        return self::buildIndexOutcome(200, '');
+    }
+
+    private static function buildIndexOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+        ];
+    }
+
+    private static function sendDeployError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        echo $message;
     }
 
 /**
