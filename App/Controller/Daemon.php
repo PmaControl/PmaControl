@@ -8,10 +8,12 @@
 namespace App\Controller;
 
 use App\Library\EngineV4;
+use App\Library\Security\CsrfGuard;
 use \Glial\Synapse\Controller;
 use \App\Library\Debug;
 use \App\Library\Microsecond;
 use \Glial\I18n\I18n;
+use Glial\Security\Csrf;
 use \Glial\Sgbd\Sgbd;
 
 /**
@@ -30,6 +32,8 @@ use \Glial\Sgbd\Sgbd;
  */
 class Daemon extends Controller
 {
+    private const DAEMON_UPDATE_CSRF_SCOPE = 'daemon.update';
+    private const DAEMON_UPDATE_FIELDS = ['refresh_time'];
 
 /**
  * Render daemon state through `index`.
@@ -111,6 +115,8 @@ class Daemon extends Controller
         while ($arr            = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['daemon'][] = $arr;
         }
+        $data['daemon_update_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['daemon_update_csrf_token'] = Csrf::issueToken($_SESSION, self::DAEMON_UPDATE_CSRF_SCOPE);
 
         $this->set('data', $data);
     }
@@ -268,18 +274,82 @@ class Daemon extends Controller
         $this->view        = false;
         $this->layout_name = false;
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            $db = Sgbd::sql(DB_DEFAULT);
-
-            $sql = "UPDATE daemon_main SET `".$_POST['name']."` = '".$_POST['value']."' WHERE id = ".$db->sql_real_escape_string($_POST['pk'])."";
-            $db->sql_query($sql);
-
-            if ($db->sql_affected_rows() === 1) {
-                echo "OK";
-            } else {
-                header("HTTP/1.0 503 Internal Server Error");
-            }
+        $outcome = self::evaluateUpdateRequest($_POST, $_SERVER, $_SESSION);
+        if ($outcome['status'] !== 200) {
+            self::sendDaemonUpdateError($outcome['status'], $outcome['body'], $outcome['headers']);
+            return;
         }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $db->sql_query($outcome['sql']);
+
+        if ($db->sql_affected_rows() === 1) {
+            echo "OK";
+        } else {
+            self::sendDaemonUpdateError(503, "Daemon not updated");
+        }
+    }
+
+    public static function evaluateUpdateRequest(array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::DAEMON_UPDATE_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildDaemonUpdateOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $sql = self::buildDaemonUpdateSql($post);
+        if ($sql === null) {
+            return self::buildDaemonUpdateOutcome(400, "Invalid daemon update payload");
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'sql' => $sql,
+        ];
+    }
+
+    public static function buildDaemonUpdateSql(array $post): ?string
+    {
+        $field = (string) ($post['name'] ?? '');
+        $value = (string) ($post['value'] ?? '');
+        $id = (string) ($post['pk'] ?? '');
+
+        if (! in_array($field, self::DAEMON_UPDATE_FIELDS, true)) {
+            return null;
+        }
+
+        if (! ctype_digit($value) || ! ctype_digit($id) || (int) $id < 1) {
+            return null;
+        }
+
+        return sprintf(
+            'UPDATE daemon_main SET `%s` = %d WHERE id = %d',
+            $field,
+            (int) $value,
+            (int) $id
+        );
+    }
+
+    private static function buildDaemonUpdateOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'sql' => null,
+        ];
+    }
+
+    private static function sendDaemonUpdateError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
 /**
