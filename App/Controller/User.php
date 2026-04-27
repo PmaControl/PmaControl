@@ -46,6 +46,7 @@ class User extends Controller {
 
     private const USER_UPDATE_IDGROUP_CSRF_SCOPE = 'user.updateIdGroup';
     private const USER_REGISTER_CSRF_SCOPE = 'user.register';
+    private const USER_PROFILE_CSRF_SCOPE = 'user.profile';
 
 /**
  * Prepare user state through `before`.
@@ -990,24 +991,40 @@ class User extends Controller {
 
         $db = Sgbd::sql(DB_DEFAULT);
         $this->layout_name = "admin";
+        $this->data['user_profile_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $this->data['user_profile_csrf_token'] = Csrf::issueToken($_SESSION, self::USER_PROFILE_CSRF_SCOPE);
 
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
-            if (!empty($_POST['shoutbox']['text'])) {
-                $data = array();
-                $data['shoutbox'] = $_POST['shoutbox'];
-                $data['shoutbox']['id_user_main'] = $user->id;
-                $data['shoutbox']['id_user_main__box'] = $db->sql_real_escape_string($param[0]);
-                $data['shoutbox']['date'] = date("Y-m-d H:i:s");
-                $data['shoutbox']['id_history_etat'] = 1;
+        if (CsrfGuard::isPost($_SERVER)) {
+            $outcome = self::evaluateProfileRequest(
+                $_POST,
+                $_SERVER,
+                $_SESSION,
+                $param,
+                $GLOBALS['_SITE'] ?? []
+            );
 
-                if (!$db->sql_save($data)) {
-                    debug($db->sql_error());
-                    die("problem to save msg en shoutbox");
-                }
-
-                header("location: " . LINK . "user/profil/" . $param[0]);
-                exit;
+            if ($outcome['status'] !== 200) {
+                $msg = I18n::getTranslation(__($outcome['body']));
+                $title = I18n::getTranslation(__("Error"));
+                set_flash("error", $title, $msg);
+                header("location: " . LINK . self::profileRedirectPath($param));
+                return;
             }
+
+            $data = array();
+            $data['shoutbox']['text'] = $outcome['message'];
+            $data['shoutbox']['id_user_main'] = $outcome['id_user_main'];
+            $data['shoutbox']['id_user_main__box'] = $outcome['id_user_main__box'];
+            $data['shoutbox']['date'] = date("Y-m-d H:i:s");
+            $data['shoutbox']['id_history_etat'] = 1;
+
+            if (!$db->sql_save($data)) {
+                debug($db->sql_error());
+                die("problem to save msg en shoutbox");
+            }
+
+            header("location: " . LINK . "user/profil/" . $outcome['id_user_main__box']);
+            exit;
         }
         $this->data['id'] = $db->sql_real_escape_string($param[0]);
 
@@ -1056,6 +1073,85 @@ GROUP BY d.id";
         }
 
         $this->set("data", $this->data);
+    }
+
+    public static function evaluateProfileRequest(
+        array $post,
+        array $server,
+        array $session,
+        array $params,
+        array $site
+    ): array {
+        $guard = CsrfGuard::check($post, $server, $session, self::USER_PROFILE_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildProfileOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $message = self::normalizeProfileMessagePayload($post);
+        $profileUserId = self::normalizePositiveInteger($params[0] ?? null);
+        $currentUserId = self::normalizePositiveInteger($site['IdUser'] ?? null);
+
+        if ($message === null || $profileUserId === null || $currentUserId === null) {
+            return self::buildProfileOutcome(400, "Invalid profile message payload");
+        }
+
+        return self::buildProfileOutcome(200, "", [], $message, $currentUserId, $profileUserId);
+    }
+
+    public static function normalizeProfileMessagePayload(array $post): ?string
+    {
+        if (empty($post['shoutbox']) || !is_array($post['shoutbox'])) {
+            return null;
+        }
+
+        $message = (string)($post['shoutbox']['text'] ?? '');
+
+        return trim($message) === '' ? null : $message;
+    }
+
+    private static function normalizePositiveInteger(mixed $value): ?int
+    {
+        if (is_int($value)) {
+            return $value > 0 ? $value : null;
+        }
+
+        if (!is_string($value)) {
+            return null;
+        }
+
+        $value = trim($value);
+        if ($value === '' || !ctype_digit($value)) {
+            return null;
+        }
+
+        $integer = (int)$value;
+
+        return $integer > 0 ? $integer : null;
+    }
+
+    private static function profileRedirectPath(array $params): string
+    {
+        $profileUserId = self::normalizePositiveInteger($params[0] ?? null);
+
+        return $profileUserId === null ? "user/" : "user/profil/" . $profileUserId;
+    }
+
+    private static function buildProfileOutcome(
+        int $statusCode,
+        string $message,
+        array $headers = [],
+        string $profileMessage = '',
+        int $currentUserId = 0,
+        int $profileUserId = 0
+    ): array {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'message' => $profileMessage,
+            'id_user_main' => $currentUserId,
+            'id_user_main__box' => $profileUserId,
+        ];
     }
 
 /**
