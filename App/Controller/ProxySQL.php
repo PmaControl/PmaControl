@@ -55,6 +55,11 @@ class ProxySQL extends Controller
     use \App\Library\Filter;
 
     const DB_STATS = 'stats';
+    private const PROXYSQL_ADD_CSRF_SCOPE = 'proxysql.add';
+    private const PROXYSQL_ADD_HOSTNAME_MAX_LENGTH = 255;
+    private const PROXYSQL_ADD_LOGIN_MAX_LENGTH = 128;
+    private const PROXYSQL_ADD_PASSWORD_MAX_LENGTH = 1024;
+    private const PROXYSQL_ADD_DISPLAY_NAME_MAX_LENGTH = 255;
     private const PROXYSQL_UPDATE_CSRF_SCOPE = 'proxysql.update';
     private const PROXYSQL_UPDATE_COMMANDS = ['SAVE', 'LOAD'];
     private const PROXYSQL_UPDATE_CONFIG_AREAS = [
@@ -210,21 +215,150 @@ class ProxySQL extends Controller
 
     public function add()
     {
-        $db = Sgbd::sql(DB_DEFAULT);
+        $data = array(
+            'proxysql_add_csrf_field' => Csrf::DEFAULT_FIELD,
+            'proxysql_add_csrf_token' => Csrf::issueToken($_SESSION, self::PROXYSQL_ADD_CSRF_SCOPE),
+        );
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            debug($_POST);
+            $outcome = self::evaluateAddRequest($_POST, $_SERVER, $_SESSION, IS_CLI);
+            if (!$outcome['allowed']) {
+                set_flash("error", __("Error"), $outcome['body']);
+                $this->set('data', $data);
+                return;
+            }
 
-            $param = array();
-            $param[0] = $_POST['proxysql_server']['hostname'];
-            $param[1] = $_POST['proxysql_server']['port'];
-            $param[2] = $_POST['proxysql_server']['login'];
-            $param[3] = $_POST['proxysql_server']['password'];
-            $param[4] = $_POST['proxysql_server']['display_name'];
-
-            $this->insertProxySqlAdmin($param);
+            $this->insertProxySqlAdmin($outcome['proxysql']);
             //$this->addProxyAdmin($param);
         }
+
+        $this->set('data', $data);
+    }
+
+    public static function evaluateAddRequest(array $post, array $server, array $session, bool $isCli = false): array
+    {
+        if (!$isCli) {
+            $guard = CsrfGuard::check($post, $server, $session, self::PROXYSQL_ADD_CSRF_SCOPE);
+            if (!$guard['allowed']) {
+                return [
+                    'allowed' => false,
+                    'status' => $guard['status'],
+                    'body' => $guard['body'],
+                    'headers' => $guard['headers'],
+                    'proxysql' => null,
+                ];
+            }
+        }
+
+        $proxysql = self::normalizeAddPayload($post);
+        if ($proxysql === null) {
+            return [
+                'allowed' => false,
+                'status' => 400,
+                'body' => 'Invalid ProxySQL add payload',
+                'headers' => [],
+                'proxysql' => null,
+            ];
+        }
+
+        return [
+            'allowed' => true,
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'proxysql' => $proxysql,
+        ];
+    }
+
+    public static function normalizeAddPayload(array $post): ?array
+    {
+        $values = $post['proxysql_server'] ?? null;
+        if (!is_array($values)) {
+            return null;
+        }
+
+        $hostname = self::normalizeProxySqlHostname($values['hostname'] ?? null);
+        $port = self::normalizeProxySqlPort($values['port'] ?? null);
+        $login = self::normalizeProxySqlRequiredText($values['login'] ?? null, self::PROXYSQL_ADD_LOGIN_MAX_LENGTH);
+        $password = self::normalizeProxySqlPassword($values['password'] ?? null);
+        $displayName = self::normalizeProxySqlRequiredText(
+            $values['display_name'] ?? null,
+            self::PROXYSQL_ADD_DISPLAY_NAME_MAX_LENGTH
+        );
+
+        if (
+            $hostname === null
+            || $port === null
+            || $login === null
+            || $password === null
+            || $displayName === null
+        ) {
+            return null;
+        }
+
+        return [
+            $hostname,
+            (string) $port,
+            $login,
+            $password,
+            $displayName,
+        ];
+    }
+
+    private static function normalizeProxySqlHostname($value): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $hostname = trim((string) $value);
+        if (
+            $hostname === ''
+            || strlen($hostname) > self::PROXYSQL_ADD_HOSTNAME_MAX_LENGTH
+            || preg_match('/^[A-Za-z0-9_.:-]+$/', $hostname) !== 1
+        ) {
+            return null;
+        }
+
+        return $hostname;
+    }
+
+    private static function normalizeProxySqlPort($value): ?int
+    {
+        $port = self::normalizePositiveInteger($value);
+        if ($port === null || $port > 65535) {
+            return null;
+        }
+
+        return $port;
+    }
+
+    private static function normalizeProxySqlRequiredText($value, int $maxLength): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $text = trim((string) $value);
+        if ($text === '' || strlen($text) > $maxLength) {
+            return null;
+        }
+
+        return $text;
+    }
+
+    private static function normalizeProxySqlPassword($value): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $password = (string) $value;
+        if ($password === '' || strlen($password) > self::PROXYSQL_ADD_PASSWORD_MAX_LENGTH) {
+            return null;
+        }
+
+        return $password;
     }
     /*
      * Test if it's ProxySQL Admin Module
