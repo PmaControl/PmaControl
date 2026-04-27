@@ -51,6 +51,10 @@ class InnoDBClusterDot3Test extends TestCase
 
     public function testGenerateInnoDBClusterCreatesPrimaryAndReplicaSubgraphs(): void
     {
+        if (!defined('ROOT')) {
+            define('ROOT', dirname(__DIR__, 2));
+        }
+
         if (!defined('LINK')) {
             define('LINK', '/');
         }
