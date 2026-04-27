@@ -68,6 +68,7 @@ class ProxySQL extends Controller
     ];
     private const PROXYSQL_UPDATE_TARGETS = ['MEMORY', 'DISK', 'RUNTIME', 'CONFIG'];
     private const PROXYSQL_UPDATE_FIELD_CSRF_SCOPE = 'proxysql.update_field';
+    private const PROXYSQL_ADD_LINE_CSRF_SCOPE = 'proxysql.add_line';
     private const PROXYSQL_UPDATE_FIELD_TABLES = [
         'global_variables',
         'mysql_query_rules',
@@ -2333,6 +2334,8 @@ class ProxySQL extends Controller
             $data['columns'] = array();
             $data['post'] = array();
             $data['is_addline_allowed'] = false;
+            $data['proxysql_addline_csrf_field'] = Csrf::DEFAULT_FIELD;
+            $data['proxysql_addline_csrf_token'] = Csrf::issueToken($_SESSION, self::PROXYSQL_ADD_LINE_CSRF_SCOPE);
 
             $this->view = 'addLine';
             $this->set('data', $data);
@@ -2412,56 +2415,63 @@ class ProxySQL extends Controller
         $posted_values = $_POST['proxysql_addline'] ?? array();
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            $fields = array();
-            $values = array();
-            $errors = array();
+            $outcome = self::evaluateAddLinePostRequest($_POST, $_SERVER, $_SESSION, IS_CLI);
+            if (!$outcome['allowed']) {
+                set_flash("error", __("Error"), $outcome['body']);
+                $posted_values = array();
+            } else {
+                $posted_values = $outcome['values'];
+                $fields = array();
+                $values = array();
+                $errors = array();
 
-            foreach ($columns as $column) {
-                $column_name = $column['name'];
-                $value = trim((string)($posted_values[$column_name] ?? ""));
+                foreach ($columns as $column) {
+                    $column_name = $column['name'];
+                    $value = trim((string)($posted_values[$column_name] ?? ""));
 
-                if ($value === "") {
-                    if (!empty($column['autoincrement'])) {
-                        continue;
-                    }
+                    if ($value === "") {
+                        if (!empty($column['autoincrement'])) {
+                            continue;
+                        }
 
-                    if ($column['default'] !== null) {
-                        continue;
-                    }
+                        if ($column['default'] !== null) {
+                            continue;
+                        }
 
-                    if (!empty($column['notnull'])) {
-                        $errors[] = __('Field') . " '" . $column_name . "' " . __('is required');
+                        if (!empty($column['notnull'])) {
+                            $errors[] = __('Field') . " '" . $column_name . "' " . __('is required');
+                            continue;
+                        }
+
+                        $fields[] = "`" . $column_name . "`";
+                        $values[] = "NULL";
                         continue;
                     }
 
                     $fields[] = "`" . $column_name . "`";
-                    $values[] = "NULL";
-                    continue;
+                    $values[] = "'" . $db->sql_real_escape_string($value) . "'";
                 }
 
-                $fields[] = "`" . $column_name . "`";
-                $values[] = "'" . $db->sql_real_escape_string($value) . "'";
-            }
+                if (count($errors) > 0) {
+                    set_flash("error", __("Error"), implode('<br>', $errors));
+                } else if (count($fields) === 0) {
+                    set_flash("warning", __("Warning"), __("No value to insert"));
+                } else {
+                    $sql_insert = "INSERT INTO `".$table_name."` (".implode(', ', $fields).") VALUES (".implode(', ', $values).");";
 
-            if (count($errors) > 0) {
-                set_flash("error", __("Error"), implode('<br>', $errors));
-            } else if (count($fields) === 0) {
-                set_flash("warning", __("Warning"), __("No value to insert"));
-            } else {
-                $sql_insert = "INSERT INTO `".$table_name."` (".implode(', ', $fields).") VALUES (".implode(', ', $values).");";
+                    try {
+                        $db->sql_query($sql_insert);
+                        set_flash("success", __("Success !"), "ProxySQL Admin [(main)]> " . $sql_insert);
 
-                try {
-                    $db->sql_query($sql_insert);
-                    set_flash("success", __("Success !"), "ProxySQL Admin [(main)]> " . $sql_insert);
+                        if (! IS_CLI) {
+                            header("location: " . LINK . "ProxySQL/config/" . $id_proxysql_server . "/" . $current . "/");
+                            exit;
+                        }
 
-                    if (! IS_CLI) {
-                        header("location: " . LINK . "ProxySQL/config/" . $id_proxysql_server . "/" . $current . "/");
-                        exit;
+                        return;
+                    } catch(\Exception $e) {
+                        set_flash("error", "Error", $e->getMessage());
                     }
-
-                    return;
-                } catch(\Exception $e) {
-                    set_flash("error", "Error", $e->getMessage());
                 }
             }
         }
@@ -2477,9 +2487,58 @@ class ProxySQL extends Controller
         $data['columns'] = $columns;
         $data['post'] = $posted_values;
         $data['is_addline_allowed'] = true;
+        $data['proxysql_addline_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['proxysql_addline_csrf_token'] = Csrf::issueToken($_SESSION, self::PROXYSQL_ADD_LINE_CSRF_SCOPE);
 
         $this->view = 'addLine';
         $this->set('data', $data);
+    }
+
+    public static function evaluateAddLinePostRequest(array $post, array $server, array $session, bool $isCli = false): array
+    {
+        if (!$isCli) {
+            $guard = CsrfGuard::check($post, $server, $session, self::PROXYSQL_ADD_LINE_CSRF_SCOPE);
+            if (!$guard['allowed']) {
+                return [
+                    'allowed' => false,
+                    'status' => $guard['status'],
+                    'body' => $guard['body'],
+                    'headers' => $guard['headers'],
+                    'values' => null,
+                ];
+            }
+        }
+
+        $values = $post['proxysql_addline'] ?? array();
+        if (!is_array($values)) {
+            return [
+                'allowed' => false,
+                'status' => 400,
+                'body' => 'Invalid ProxySQL addLine payload',
+                'headers' => array(),
+                'values' => null,
+            ];
+        }
+
+        foreach ($values as $value) {
+            if (!is_scalar($value)) {
+                return [
+                    'allowed' => false,
+                    'status' => 400,
+                    'body' => 'Invalid ProxySQL addLine payload',
+                    'headers' => array(),
+                    'values' => null,
+                ];
+            }
+        }
+
+        return [
+            'allowed' => true,
+            'status' => 200,
+            'body' => '',
+            'headers' => array(),
+            'values' => $values,
+        ];
     }
 
 
