@@ -4,7 +4,6 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
-use \App\Library\Json;
 
 use App\Library\Debug;
 //require ROOT."/application/library/Filter.php";
@@ -208,19 +207,41 @@ WHERE dc.id_dot3_information = (SELECT MAX(id_dot3_information) FROM dot3_cluste
  */
     public function view($param)
     {
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
+        $request = self::evaluateViewRequest($_SERVER);
+        if ($request['status'] !== 200) {
+            $this->view = false;
+            $this->layout_name = false;
+            self::sendViewError($request['status'], $request['body'], $request['headers']);
+            return;
+        }
+    }
 
-            debug($_POST);
-            debug($_FILES);
-            
-            if (!empty($_FILES['import']['tmp_name']['file'])) {
-                $file     = $_FILES['export']['tmp_name']['file'];
-            }
-
-            //debug(json_decode($json,JSON_PRETTY_PRINT));
-
-            //$data = Json::isJson($json);
+    public static function evaluateViewRequest(array $server): array
+    {
+        $method = strtoupper((string) ($server['REQUEST_METHOD'] ?? 'GET'));
+        if ($method !== 'GET' && $method !== 'HEAD') {
+            return self::buildViewOutcome(405, 'Method Not Allowed', ['Allow' => 'GET, HEAD']);
         }
 
+        return self::buildViewOutcome(200, '');
+    }
+
+    private static function buildViewOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+        ];
+    }
+
+    private static function sendViewError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 }
