@@ -51,6 +51,7 @@ class User extends Controller {
     private const USER_PROFILE_CSRF_SCOPE = 'user.profile';
     private const USER_PASSWORD_RECOVER_CSRF_SCOPE = 'user.passwordRecover';
     private const USER_MAILBOX_CSRF_SCOPE = 'user.mailbox';
+    private const USER_LOST_PASSWORD_CSRF_SCOPE = 'user.lostPassword';
 
 /**
  * Prepare user state through `before`.
@@ -651,10 +652,23 @@ class User extends Controller {
 
         $this->title = __("Password forgotten ?");
         $this->ariane = "> <a href=\"" . LINK . "user/\">" . __("Members") . "</a> > " . $this->title;
+        $data = array();
+        $data['user_lost_password_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['user_lost_password_csrf_token'] = Csrf::issueToken($_SESSION, self::USER_LOST_PASSWORD_CSRF_SCOPE);
+        $this->set("data", $data);
 
-        if (!empty($_POST['user_main']['email'])) {
+        if (CsrfGuard::isPost($_SERVER)) {
+            $outcome = self::evaluateLostPasswordRequest($_POST, $_SERVER, $_SESSION);
+            if ($outcome['status'] !== 200) {
+                $msg = I18n::getTranslation(__($outcome['body']));
+                $title = I18n::getTranslation(__("Error"));
+                set_flash("error", $title, $msg);
+                header("location: " . LINK . "user/lost_password/");
+                return;
+            }
 
-            $sql = "SELECT * FROM user_main WHERE email='" . $db->sql_real_escape_string($_POST['user_main']['email']) . "'";
+            $email = $outcome['email'];
+            $sql = "SELECT * FROM user_main WHERE email='" . $db->sql_real_escape_string($email) . "'";
 
             $res = $db->sql_query($sql);
 
@@ -664,12 +678,7 @@ class User extends Controller {
                 $msg = I18n::getTranslation(__("This email does not exist in our database"));
                 set_flash("error", $title, $msg);
 
-                $ret = array();
-                foreach ($_POST['user_main'] as $var => $val) {
-                    $ret[] = "user_main:" . $var . ":" . urlencode($val);
-                }
-
-                $param = implode("/", $ret);
+                $param = "user_main:email:" . urlencode($email);
 
                 header("location: " . LINK . "user/lost_password/" . $param);
                 exit;
@@ -716,6 +725,49 @@ class User extends Controller {
                 exit;
             }
         }
+    }
+
+    public static function evaluateLostPasswordRequest(array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::USER_LOST_PASSWORD_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildLostPasswordOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $email = self::normalizeLostPasswordPayload($post);
+        if ($email === null) {
+            return self::buildLostPasswordOutcome(400, "Invalid lost password payload");
+        }
+
+        return self::buildLostPasswordOutcome(200, "", [], $email);
+    }
+
+    public static function normalizeLostPasswordPayload(array $post): ?string
+    {
+        if (empty($post['user_main']) || !is_array($post['user_main'])) {
+            return null;
+        }
+
+        $email = trim((string)($post['user_main']['email'] ?? ''));
+        if ($email === '' || filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+            return null;
+        }
+
+        return $email;
+    }
+
+    private static function buildLostPasswordOutcome(
+        int $statusCode,
+        string $message,
+        array $headers = [],
+        string $email = ''
+    ): array {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'email' => $email,
+        ];
     }
 
 /**

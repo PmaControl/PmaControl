@@ -18,6 +18,17 @@ echo "</form>";
 
 use Glial\Html\Form\Form;
 
+$userLostPasswordCsrfField = htmlspecialchars(
+    (string)($data['user_lost_password_csrf_field'] ?? '_csrf_token'),
+    ENT_QUOTES,
+    'UTF-8'
+);
+$userLostPasswordCsrfToken = htmlspecialchars(
+    (string)($data['user_lost_password_csrf_token'] ?? ''),
+    ENT_QUOTES,
+    'UTF-8'
+);
+
 ?>
 
 <div class="container">
@@ -30,6 +41,7 @@ use Glial\Html\Form\Form;
                 <h3 style="margin-bottom: 3px;"><?=__("Forgot password ?") ?></h3>
                 <form id="loginForm" name="loginForm" method="post" action="" class="form-horizontal">
                     <input type="hidden" name="loginForm" value="loginForm">
+                    <input type="hidden" name="<?=$userLostPasswordCsrfField?>" value="<?=$userLostPasswordCsrfToken?>">
 
                     <table class="table" style="margin-top: 7px;">
                         <tbody>
