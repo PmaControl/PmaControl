@@ -15,6 +15,8 @@ use App\Library\Extraction2;
 use App\Library\System;
 use App\Library\Mysql;
 use App\Library\Color;
+use App\Library\Security\CsrfGuard;
+use Glial\Security\Csrf;
 
 /**
  * Class responsible for alias workflows.
@@ -32,6 +34,9 @@ use App\Library\Color;
  */
 class Alias extends Controller
 {
+    private const ALIAS_INDEX_CSRF_SCOPE = 'alias.index';
+    private const ALIAS_DNS_MAX_BYTES = 200;
+
 /**
  * Stores `$hostname` for hostname.
  *
@@ -67,13 +72,16 @@ class Alias extends Controller
         $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $dns = trim((string)($_POST['alias_dns']['dns'] ?? ''));
-            $port = (int)($_POST['alias_dns']['port'] ?? 0);
-            $id_mysql_server = (int)($_POST['alias_dns']['id_mysql_server'] ?? 0);
+            $indexRequest = self::evaluateIndexPostRequest($_POST, $_SERVER, $_SESSION);
+            if ($indexRequest['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                $this->respondIndexError($indexRequest['status'], $indexRequest['body'], $indexRequest['headers']);
 
-            if ($dns !== '' && $port > 0 && $id_mysql_server > 0) {
-                self::upsertAliasDns([$dns, $port, $id_mysql_server]);
+                return;
             }
+
+            self::upsertAliasDnsFromRow($indexRequest['alias']);
 
             header("location: ".LINK."alias/index");
             return;
@@ -91,8 +99,116 @@ class Alias extends Controller
         }
 
         $data['pending_aliases'] = $this->getPendingAliasesFromSlaveIndex();
+        $data['alias_index_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['alias_index_csrf_token'] = Csrf::issueToken($_SESSION, self::ALIAS_INDEX_CSRF_SCOPE);
 
         $this->set('data', $data);
+    }
+
+    public static function evaluateIndexPostRequest(array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::ALIAS_INDEX_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildIndexPostOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $alias = self::normalizeIndexPayload($post);
+        if ($alias === null) {
+            return self::buildIndexPostOutcome(400, 'Invalid alias payload');
+        }
+
+        return self::buildIndexPostOutcome(200, '', [], $alias);
+    }
+
+    public static function normalizeIndexPayload(array $post): ?array
+    {
+        if (!isset($post['alias_dns']) || !is_array($post['alias_dns'])) {
+            return null;
+        }
+
+        $dns = self::normalizeAliasDns($post['alias_dns']['dns'] ?? null);
+        $port = self::normalizePositiveInteger($post['alias_dns']['port'] ?? null, 65535);
+        $idMysqlServer = self::normalizePositiveInteger($post['alias_dns']['id_mysql_server'] ?? null);
+
+        if ($dns === null || $port === null || $idMysqlServer === null) {
+            return null;
+        }
+
+        return [
+            'dns' => $dns,
+            'port' => $port,
+            'id_mysql_server' => $idMysqlServer,
+        ];
+    }
+
+    private static function normalizeAliasDns($value): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $dns = trim((string) $value);
+        if (
+            $dns === ''
+            || strlen($dns) > self::ALIAS_DNS_MAX_BYTES
+            || !preg_match('/^[A-Za-z0-9._:-]+$/', $dns)
+        ) {
+            return null;
+        }
+
+        return $dns;
+    }
+
+    private static function normalizePositiveInteger($value, ?int $max = null): ?int
+    {
+        if (is_int($value)) {
+            $intValue = $value;
+        } elseif (is_string($value)) {
+            $trimmed = trim($value);
+            if ($trimmed === '' || !ctype_digit($trimmed)) {
+                return null;
+            }
+            $intValue = (int) $trimmed;
+        } else {
+            return null;
+        }
+
+        if ($intValue <= 0 || ($max !== null && $intValue > $max)) {
+            return null;
+        }
+
+        return $intValue;
+    }
+
+    private static function upsertAliasDnsFromRow(array $alias): void
+    {
+        self::upsertAliasDns([
+            $alias['dns'],
+            $alias['port'],
+            $alias['id_mysql_server'],
+        ]);
+    }
+
+    private static function buildIndexPostOutcome(int $status, string $body, array $headers = [], ?array $alias = null): array
+    {
+        return [
+            'status' => $status,
+            'body' => $body,
+            'headers' => $headers,
+            'alias' => $alias,
+        ];
+    }
+
+    private function respondIndexError(int $status, string $body, array $headers = []): void
+    {
+        if (!headers_sent()) {
+            http_response_code($status);
+            foreach ($headers as $name => $value) {
+                header($name.': '.$value);
+            }
+        }
+
+        echo $body;
     }
 
     /**
