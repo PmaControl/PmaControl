@@ -42,7 +42,9 @@ use \Monolog\Handler\StreamHandler;
 class Worker extends Controller
 {
     private const WORKER_UPDATE_CSRF_SCOPE = 'worker.update';
+    public const WORKER_KILL_SERVER_CSRF_SCOPE = 'worker.killServer';
     private const WORKER_UPDATE_FIELDS = ['nb_worker', 'queue_number'];
+    private const WORKER_KILL_TYPES = ['mysql', 'maxscale', 'proxysql', 'ssh'];
 
 /**
  * Stores `$timestamp_config_file` for timestamp config file.
@@ -180,6 +182,7 @@ class Worker extends Controller
             $this->keepConfigFile($param);
             
             $data['id']        = $msg->id;
+            $data['pid']       = $pid;
             $data['microtime'] = Microsecond::timestamp();
 
             $lock_file = EngineV4::getFileLock($WORKER['name'],$msg->id );
@@ -890,6 +893,214 @@ class Worker extends Controller
 
             Debug::sql($sql);
             $db->sql_query($sql);
+        }
+    }
+
+/**
+ * Kill the worker currently processing one server.
+ *
+ * This action handles a POST request from `Server/main` and redirects back to
+ * the referring page after killing the matching worker process.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for killServerWorker.
+ * @phpstan-return void
+ * @psalm-return void
+ */
+    public function killServerWorker($param): void
+    {
+        $this->view = false;
+        $this->layout_name = false;
+
+        $redirect = self::getSafeWorkerRedirectUrl($_SERVER);
+        $outcome = self::evaluateKillServerWorkerRequest($_POST, $_SERVER, $_SESSION, $param);
+
+        if ($outcome['status'] !== 200) {
+            if (function_exists('set_flash')) {
+                set_flash('error', __('Worker'), __($outcome['body']));
+            }
+            header('Location: '.$redirect);
+            return;
+        }
+
+        $result = $this->killProcessingServerWorker(
+            (int)$outcome['server_id'],
+            (string)$outcome['worker_type'],
+            $outcome['pid']
+        );
+
+        if (function_exists('set_flash')) {
+            set_flash(
+                $result['killed'] ? 'success' : 'caution',
+                __('Worker'),
+                __($result['message'])
+            );
+        }
+
+        header('Location: '.$redirect);
+    }
+
+    public static function evaluateKillServerWorkerRequest(array $post, array $server, array $session, array $params = []): array
+    {
+        if (!Request::isMethod($server, 'POST')) {
+            return self::buildWorkerUpdateOutcome(405, 'Method Not Allowed', ['Allow' => 'POST']);
+        }
+
+        if (!Request::isSameSite($server)) {
+            return self::buildWorkerUpdateOutcome(403, 'Invalid request origin');
+        }
+
+        if (!Csrf::validateToken($post, $session, self::WORKER_KILL_SERVER_CSRF_SCOPE)) {
+            return self::buildWorkerUpdateOutcome(403, 'Invalid CSRF token');
+        }
+
+        $serverId = (string)($post['id_mysql_server'] ?? $params[0] ?? '');
+        if (!ctype_digit($serverId) || (int)$serverId < 1) {
+            return self::buildWorkerUpdateOutcome(400, 'Invalid server id');
+        }
+
+        $workerType = (string)($post['worker_type'] ?? $params[1] ?? 'mysql');
+        if (!in_array($workerType, self::WORKER_KILL_TYPES, true)) {
+            return self::buildWorkerUpdateOutcome(400, 'Invalid worker type');
+        }
+
+        $pid = null;
+        $pidValue = (string)($post['pid'] ?? '');
+        if ($pidValue !== '') {
+            if (!ctype_digit($pidValue) || (int)$pidValue < 1) {
+                return self::buildWorkerUpdateOutcome(400, 'Invalid worker pid');
+            }
+            $pid = (int)$pidValue;
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'sql' => null,
+            'server_id' => (int)$serverId,
+            'worker_type' => $workerType,
+            'pid' => $pid,
+        ];
+    }
+
+    private function killProcessingServerWorker(int $serverId, string $workerType, ?int $pid): array
+    {
+        $workerName = 'worker_'.$workerType;
+        $db = Sgbd::sql(DB_DEFAULT);
+        $workerNameSql = $db->sql_real_escape_string($workerName);
+
+        $sql = "SELECT a.*, b.name FROM `worker_run` a
+            INNER JOIN worker_queue b ON a.id_worker_queue = b.id
+            WHERE a.is_working = 1
+            AND b.name = '".$workerNameSql."'";
+
+        if ($pid !== null) {
+            $sql .= " AND a.pid = ".(int)$pid;
+        }
+
+        $sql .= " ORDER BY a.id DESC";
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+            $candidatePid = (int)$ob->pid;
+            if (!self::isWorkerPidHandlingServer($workerName, $candidatePid, $serverId)) {
+                continue;
+            }
+
+            if (System::isRunningPid($candidatePid)) {
+                shell_exec('kill '.$candidatePid);
+            }
+
+            self::clearWorkerServerFiles($workerName, $candidatePid, $serverId);
+
+            $sqlUpdate = "UPDATE worker_run SET is_working=0, is_safe_kill=1, date_killed='".date('Y-m-d H:i:s')."'
+                WHERE id=".(int)$ob->id.";";
+            $db->sql_query($sqlUpdate);
+
+            return [
+                'killed' => true,
+                'message' => 'Worker '.$workerName.' PID '.$candidatePid.' killed for server '.$serverId,
+            ];
+        }
+
+        return [
+            'killed' => false,
+            'message' => 'No active worker found for server '.$serverId,
+        ];
+    }
+
+    private static function getSafeWorkerRedirectUrl(array $server): string
+    {
+        $referer = (string)($server['HTTP_REFERER'] ?? '');
+        if ($referer !== '' && Request::isSameSiteUrl($referer, $server)) {
+            return $referer;
+        }
+
+        return LINK.'server/main';
+    }
+
+    public static function findWorkerPidForServerId(string $workerName, int $serverId, ?int $preferredPid = null): ?int
+    {
+        if ($preferredPid !== null && self::isWorkerPidHandlingServer($workerName, $preferredPid, $serverId)) {
+            return $preferredPid;
+        }
+
+        $pidFiles = glob(EngineV4::PATH_LOCK.$workerName.EngineV4::SEPERATOR.'*.'.EngineV4::EXT_PID);
+        if ($pidFiles === false) {
+            return null;
+        }
+
+        foreach ($pidFiles as $file) {
+            if (!preg_match('/'.preg_quote(EngineV4::SEPERATOR, '/').'(\d+)\.'.preg_quote(EngineV4::EXT_PID, '/').'$/', $file, $matches)) {
+                continue;
+            }
+
+            $pid = (int)$matches[1];
+            if (self::isWorkerPidHandlingServer($workerName, $pid, $serverId)) {
+                return $pid;
+            }
+        }
+
+        return null;
+    }
+
+    public static function isWorkerPidHandlingServer(string $workerName, int $pid, int $serverId): bool
+    {
+        $id = self::readWorkerServerIdFromPidFile(EngineV4::getFilePid($workerName, $pid));
+        if ($id !== null && ctype_digit($id) && (int)$id === $serverId) {
+            return true;
+        }
+
+        $lockFile = EngineV4::getFileLock($workerName, $serverId);
+        if (!is_readable($lockFile)) {
+            return false;
+        }
+
+        $json = @file_get_contents($lockFile);
+        if ($json === false) {
+            return false;
+        }
+
+        $data = json_decode($json, true);
+        return is_array($data)
+            && !empty($data['pid'])
+            && ctype_digit((string)$data['pid'])
+            && (int)$data['pid'] === $pid;
+    }
+
+    private static function clearWorkerServerFiles(string $workerName, int $pid, int $serverId): void
+    {
+        $pidFile = EngineV4::getFilePid($workerName, $pid);
+        if (file_exists($pidFile)) {
+            unlink($pidFile);
+        }
+
+        $lockFile = EngineV4::getFileLock($workerName, $serverId);
+        if (file_exists($lockFile)) {
+            unlink($lockFile);
         }
     }
 

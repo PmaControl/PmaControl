@@ -75,6 +75,9 @@ if (!empty($data['servers'])) {
     }
 }
 
+$workerKillCsrfField = htmlspecialchars((string)($data['worker_kill_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$workerKillCsrfToken = htmlspecialchars((string)($data['worker_kill_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+
 if (empty($_GET['ajax'])):
 ?>
 <style>
@@ -146,6 +149,7 @@ if (empty($_GET['ajax'])):
 .sm-row-err td.sm-status::after { background: var(--sm-crit); }
 .sm-row-ack td.sm-status::after { background: var(--sm-ok); }
 .sm-row-off td.sm-status::after { background: var(--sm-info); }
+.sm-row-proc td.sm-status::after { background: var(--sm-warn); }
 
 /* subtle row tints */
 .sm-row-err td { background: #fef2f2; }
@@ -156,6 +160,8 @@ if (empty($_GET['ajax'])):
 .sm-row-ack:hover td { background: #dcfce7 !important; }
 .sm-row-off td { background: #eff6ff; }
 .sm-row-off:hover td { background: #dbeafe !important; }
+.sm-row-proc td { background: #fff7ed; }
+.sm-row-proc:hover td { background: #ffedd5 !important; }
 
 /* hidden rows for search filter */
 .sm-hidden { display: none !important; }
@@ -165,10 +171,12 @@ if (empty($_GET['ajax'])):
 .sm-srv-name { font-weight: 600; color: var(--sm-text); font-size: 13px; }
 .sm-srv-name a { color: inherit; text-decoration: none; transition: color .12s; }
 .sm-srv-name a:hover { color: #1e3a8a; }
-.sm-srv-meta { margin-top: 1px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 .sm-env { font-size: 9px; padding: 1px 6px; border-radius: 3px; font-weight: 600; }
 .sm-org { font-size: 11px; color: var(--sm-muted); }
 .sm-tag { font-size: 9px; padding: 1px 5px; border-radius: 3px; }
+.sm-env-cell { white-space: nowrap; }
+.sm-tag-cell { min-width: 110px; max-width: 220px; }
+.sm-tag-empty { color: var(--sm-muted); font-size: 10px; }
 
 .sm-host { font-family: 'SFMono-Regular',Consolas,monospace; font-size: 11px; white-space: nowrap; color: #475569; }
 .sm-host a { color: inherit; text-decoration: none; }
@@ -185,11 +193,20 @@ if (empty($_GET['ajax'])):
 .sm-badge.muted { background: #f1f5f9; color: #94a3b8; }
 .sm-badge.info { background: #dbeafe; color: #1e40af; }
 
-.sm-err-row td { padding: 0 10px 4px 38px; border-bottom: 1px solid #f1f5f9; font-size: 11px;
-                  background: #fef2f2; box-shadow: inset 4px 0 0 var(--sm-crit); }
+.sm-detail-row td { padding: 0 10px 4px 38px; border-bottom: 1px solid #f1f5f9; font-size: 11px; background: #fff; }
+.sm-detail-line { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 22px; }
+.sm-detail-actions { display: flex; align-items: center; justify-content: flex-end; gap: 4px; flex-wrap: wrap; margin-left: auto; }
+.sm-detail-actions .btn { font-size: 10px; padding: 2px 6px; margin-right: 0; }
+.sm-detail-actions form { display: inline-flex; margin: 0; }
+.sm-detail-placeholder { flex: 1; min-width: 12px; }
+.sm-proc-label { display: inline-flex; align-items: center; font-size: 10px; padding: 1px 6px; border-radius: 3px;
+                 font-weight: 700; background: #fed7aa; color: #9a3412; }
+.sm-kill-worker { background: #c2410c; border-color: #9a3412; color: #fff; font-weight: 700; }
+.sm-kill-worker:hover, .sm-kill-worker:focus { background: #9a3412; border-color: #7c2d12; color: #fff; }
+.sm-err-row td { background: #fef2f2; box-shadow: inset 4px 0 0 var(--sm-crit); }
 .sm-err-row td .sm-err-text { color: #991b1b; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
 .sm-err-row td .sm-err-text i { color: var(--sm-crit); font-size: 10px; }
-.sm-err-row td .label { font-size: 9px; }
+.sm-detail-row td .label { font-size: 9px; }
 .sm-row-ack + .sm-err-row td { background: #f0fdf4; box-shadow: inset 4px 0 0 var(--sm-ok); }
 .sm-row-ack + .sm-err-row .sm-err-text { color: #065f46; }
 .sm-row-ack + .sm-err-row .sm-err-text i { color: var(--sm-ok); }
@@ -199,16 +216,14 @@ if (empty($_GET['ajax'])):
 .sm-row-off + .sm-err-row td { background: #eff6ff; box-shadow: inset 4px 0 0 var(--sm-info); }
 .sm-row-off + .sm-err-row .sm-err-text { color: #1e40af; }
 .sm-row-off + .sm-err-row .sm-err-text i { color: var(--sm-info); }
-.sm-t tbody tr:has(+ .sm-err-row) td { border-bottom: none; }
+.sm-row-proc + .sm-detail-row td { background: #fff7ed; box-shadow: inset 4px 0 0 var(--sm-warn); }
+.sm-t tbody tr:has(+ .sm-detail-row) td { border-bottom: none; }
 
 /* general log switch compact */
 .sm-org-cell { font-size: 11px; color: #475569; white-space: nowrap; }
 
 /* ping cell */
 .sm-ping { white-space: nowrap; }
-
-/* actions */
-.sm-act .btn { font-size: 10px; padding: 2px 6px; margin-right: 2px; }
 
 /* no data */
 .sm-empty { text-align: center; padding: 40px; color: var(--sm-muted); }
@@ -223,6 +238,7 @@ if (empty($_GET['ajax'])):
 .sv-dot.halo::after { content: ""; position: absolute; top: 50%; left: 50%; width: 100%; height: 100%;
                        border-radius: 50%; border: 3px solid var(--sm-crit);
                        transform: translate(-50%,-50%); animation: sm-halo 2s ease-out infinite; }
+.sv-dot.warn.halo::after { border-color: var(--sm-warn); }
 @keyframes sm-halo { 0% { width:100%;height:100%;opacity:1; } 100% { width:280%;height:280%;opacity:0; } }
 </style>
 
@@ -289,23 +305,30 @@ if (empty($_GET['ajax'])):
     <th style="width:4px;padding:0"></th>
     <th></th>
     <th class="sm-srv"><?= __("Server") ?></th>
+    <th><?= __("Environment") ?></th>
+    <th><?= __("Tag") ?></th>
     <th><?= __("Host") ?></th>
     <th><?= __("Version") ?></th>
     <th><?= __("Organization") ?></th>
     <th><?= __("Latency") ?></th>
     <th><?= __("Seen") ?></th>
     <th><?= __("Ping") ?></th>
-    <th><?= __("Status") ?></th>
 </tr>
 </thead>
 <tbody>
 <?php
 if (empty($data['servers'])) {
-    echo '<tr><td colspan="10" class="sm-empty"><i class="fa fa-server"></i> '.__('No servers found').'</td></tr>';
+    echo '<tr><td colspan="11" class="sm-empty"><i class="fa fa-server"></i> '.__('No servers found').'</td></tr>';
 } else {
     foreach ($data['servers'] as $server) {
         $isEffectiveMonitored = !empty($server['effective_is_monitored']) && (string)$server['effective_is_monitored'] === "1";
         $extra = $data['extra'][$server['id']] ?? [];
+        $serverProcessing = $data['processing'][$server['id']] ?? null;
+        $serverTags = $data['tag'][$server['id']] ?? [];
+        $tagSearchParts = [];
+        foreach ($serverTags as $tag) {
+            $tagSearchParts[] = (string)($tag['name'] ?? '');
+        }
         $isVipServer = !empty($server['is_vip']) && (string)$server['is_vip'] === "1";
         $isProxyServer = !empty($server['is_proxy']) && (string)$server['is_proxy'] === "1";
         $isProxyLikeServer = $isProxyServer || (!empty($extra['is_proxysql']) && (string)$extra['is_proxysql'] === "1");
@@ -316,9 +339,10 @@ if (empty($data['servers'])) {
         elseif ($status === 'warning') $rowClass = 'sm-row-warn';
         elseif ($status === 'acknowledged') $rowClass = 'sm-row-ack';
         elseif ($status === 'unmonitored') $rowClass = 'sm-row-off';
+        if (!empty($serverProcessing)) $rowClass = trim($rowClass.' sm-row-proc');
 
         // Build searchable text
-        $searchText = strtolower($server['display_name'].' '.$server['client'].' '.$server['environment'].' '.$server['ip'].' '.($extra['version'] ?? ''));
+        $searchText = strtolower($server['display_name'].' '.$server['client'].' '.$server['environment'].' '.implode(' ', $tagSearchParts).' '.$server['ip'].' '.($extra['version'] ?? ''));
 ?>
 <tr class="<?= $rowClass ?>" data-search="<?= htmlspecialchars($searchText, ENT_QUOTES) ?>">
     <td class="sm-status"></td>
@@ -326,7 +350,8 @@ if (empty($data['servers'])) {
     <!-- Dot -->
     <td style="width:20px;text-align:center">
         <?php
-        if ($status === 'ok') echo '<span class="sv-dot ok"></span>';
+        if (!empty($serverProcessing)) echo '<span class="sv-dot warn halo"></span>';
+        elseif ($status === 'ok') echo '<span class="sv-dot ok"></span>';
         elseif ($status === 'warning') echo '<span class="sv-dot warn"></span>';
         elseif ($status === 'error') echo '<span class="sv-dot fail halo"></span>';
         elseif ($status === 'acknowledged') echo '<span class="sv-dot ok"></span>';
@@ -342,14 +367,22 @@ if (empty($data['servers'])) {
                 <span class="sm-ro">R/O</span>
             <?php endif; ?>
         </div>
-        <div class="sm-srv-meta">
-            <span class="sm-env label label-<?= $server['class'] ?>"><?= $server['environment'] ?></span>
-            <?php if (!empty($data['tag'][$server['id']])): ?>
-                <?php foreach ($data['tag'][$server['id']] as $tag): ?>
-                    <span class="sm-tag" style="color:<?= $tag['color'] ?>;background:<?= $tag['background'] ?>"><?= htmlspecialchars($tag['name']) ?></span>
-                <?php endforeach; ?>
-            <?php endif; ?>
-        </div>
+    </td>
+
+    <!-- Environment -->
+    <td class="sm-env-cell">
+        <span class="sm-env label label-<?= htmlspecialchars((string)$server['class'], ENT_QUOTES) ?>"><?= htmlspecialchars((string)$server['environment'], ENT_QUOTES) ?></span>
+    </td>
+
+    <!-- Tag -->
+    <td class="sm-tag-cell">
+        <?php if (!empty($serverTags)): ?>
+            <?php foreach ($serverTags as $tag): ?>
+                <span class="sm-tag" style="color:<?= htmlspecialchars((string)$tag['color'], ENT_QUOTES) ?>;background:<?= htmlspecialchars((string)$tag['background'], ENT_QUOTES) ?>"><?= htmlspecialchars((string)$tag['name'], ENT_QUOTES) ?></span>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <span class="sm-tag-empty">-</span>
+        <?php endif; ?>
     </td>
 
     <!-- Host -->
@@ -423,30 +456,9 @@ if (empty($data['servers'])) {
     <td class="sm-ping">
         <?php if (!empty($extra['mysql_ping'])) echo Format::ping($extra['mysql_ping']); ?>
     </td>
-
-    <!-- Actions -->
-    <td class="sm-act">
-        <?php
-        if (!empty($data['processing'][$server['id']])) {
-            echo '<span class="label label-warning" style="font-size:9px">'.__("Processing").' '.$data['processing'][$server['id']]['time'].'s</span> ';
-        }
-        if (!empty($extra['mysql_available']) && $extra['mysql_available'] === "2" && empty($extra['mysql_error'])) {
-            echo '<span class="sm-badge warn">R/O</span> ';
-        }
-        if (!empty($extra['wsrep_on']) && $extra['wsrep_on'] === "ON" && ($extra['wsrep_cluster_status'] ?? 'Primary') !== "Primary") {
-            echo '<a href="'.LINK.'GaleraCluster/setNodeAsPrimary/'.$server['id'].'" class="btn btn-danger btn-xs" style="font-size:9px"><i class="fa fa-play"></i> PRIMARY</a> ';
-        }
-        if (empty($extra['mysql_available']) && $isEffectiveMonitored && $server['is_acknowledged'] === "0") {
-            echo '<a href="'.LINK.'server/acknowledge/'.$server['id'].'" class="btn btn-primary btn-xs" style="font-size:9px"><i class="fa fa-star"></i> ACK</a> ';
-        }
-        if ($server['is_acknowledged'] !== "0") {
-            echo '<a href="'.LINK.'server/retract/'.$server['id'].'" class="btn btn-default btn-xs" style="font-size:9px"><i class="fa fa-star-o"></i> Retract</a> ';
-        }
-        ?>
-    </td>
 </tr>
 <?php
-        // Error detail row — only if there's an error message to show
+        // Detail row: error message on the left, status/actions on the right.
         $errMsg = '';
         if (isset($extra['mysql_available']) && $extra['mysql_available'] === "0") {
             $errMsg .= htmlspecialchars((string)($extra['mysql_error'] ?? ''), ENT_QUOTES, 'UTF-8');
@@ -458,11 +470,50 @@ if (empty($data['servers'])) {
         if (!empty($extra['wsrep_on']) && $extra['wsrep_on'] === "ON" && ($extra['wsrep_cluster_status'] ?? 'Primary') !== "Primary") {
             $errMsg .= ($errMsg ? ' | ' : '').'Galera node is '.$extra['wsrep_cluster_status'];
         }
-        if ($errMsg):
+        $hasStatusActions = !empty($serverProcessing)
+            || (!empty($extra['mysql_available']) && $extra['mysql_available'] === "2" && empty($extra['mysql_error']))
+            || (!empty($extra['wsrep_on']) && $extra['wsrep_on'] === "ON" && ($extra['wsrep_cluster_status'] ?? 'Primary') !== "Primary")
+            || (empty($extra['mysql_available']) && $isEffectiveMonitored && $server['is_acknowledged'] === "0")
+            || ($server['is_acknowledged'] !== "0");
+        if ($errMsg || $hasStatusActions):
 ?>
-<tr class="sm-err-row" data-search="<?= htmlspecialchars($searchText, ENT_QUOTES) ?>">
-    <td colspan="10">
-        <div class="sm-err-text"><i class="fa fa-exclamation-triangle"></i> <?= $errMsg ?></div>
+<tr class="sm-detail-row<?= $errMsg ? ' sm-err-row' : '' ?>" data-search="<?= htmlspecialchars($searchText, ENT_QUOTES) ?>">
+    <td colspan="11">
+        <div class="sm-detail-line">
+            <?php if ($errMsg): ?>
+                <div class="sm-err-text"><i class="fa fa-exclamation-triangle"></i> <?= $errMsg ?></div>
+            <?php else: ?>
+                <div class="sm-detail-placeholder"></div>
+            <?php endif; ?>
+            <?php if ($hasStatusActions): ?>
+                <div class="sm-detail-actions">
+                    <?php if (!empty($serverProcessing)): ?>
+                        <span class="sm-proc-label"><span class="sv-dot warn halo"></span><?= __("Processing") ?> <?= htmlspecialchars((string)$serverProcessing['time'], ENT_QUOTES) ?>s</span>
+                        <?php if (!empty($serverProcessing['pid'])): ?>
+                            <form method="post" action="<?= LINK ?>worker/killServerWorker/<?= (int)$server['id'] ?>" data-confirm="<?= htmlspecialchars(__('Kill this worker?'), ENT_QUOTES, 'UTF-8') ?>" onsubmit="return confirm(this.getAttribute('data-confirm'));">
+                                <input type="hidden" name="<?= $workerKillCsrfField ?>" value="<?= $workerKillCsrfToken ?>">
+                                <input type="hidden" name="id_mysql_server" value="<?= (int)$server['id'] ?>">
+                                <input type="hidden" name="worker_type" value="mysql">
+                                <input type="hidden" name="pid" value="<?= (int)$serverProcessing['pid'] ?>">
+                                <button type="submit" class="btn btn-warning btn-xs sm-kill-worker"><i class="fa fa-bolt"></i> <?= __('Kill worker') ?></button>
+                            </form>
+                        <?php endif; ?>
+                    <?php endif; ?>
+                    <?php if (!empty($extra['mysql_available']) && $extra['mysql_available'] === "2" && empty($extra['mysql_error'])): ?>
+                        <span class="sm-badge warn">R/O</span>
+                    <?php endif; ?>
+                    <?php if (!empty($extra['wsrep_on']) && $extra['wsrep_on'] === "ON" && ($extra['wsrep_cluster_status'] ?? 'Primary') !== "Primary"): ?>
+                        <a href="<?= LINK ?>GaleraCluster/setNodeAsPrimary/<?= (int)$server['id'] ?>" class="btn btn-danger btn-xs"><i class="fa fa-play"></i> PRIMARY</a>
+                    <?php endif; ?>
+                    <?php if (empty($extra['mysql_available']) && $isEffectiveMonitored && $server['is_acknowledged'] === "0"): ?>
+                        <a href="<?= LINK ?>server/acknowledge/<?= (int)$server['id'] ?>" class="btn btn-primary btn-xs"><i class="fa fa-star"></i> ACK</a>
+                    <?php endif; ?>
+                    <?php if ($server['is_acknowledged'] !== "0"): ?>
+                        <a href="<?= LINK ?>server/retract/<?= (int)$server['id'] ?>" class="btn btn-default btn-xs"><i class="fa fa-star-o"></i> Retract</a>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+        </div>
     </td>
 </tr>
 <?php endif; ?>

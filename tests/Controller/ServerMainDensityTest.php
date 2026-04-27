@@ -22,7 +22,27 @@ final class ServerMainDensityTest extends TestCase
     public function testHeaderAndErrorRowsStayCompactButAligned(): void
     {
         self::assertStringContainsString('letter-spacing: .4px; padding: 6px 10px;', $this->source);
-        self::assertStringContainsString('.sm-err-row td { padding: 0 10px 4px 38px;', $this->source);
+        self::assertStringContainsString('.sm-detail-row td { padding: 0 10px 4px 38px;', $this->source);
         self::assertStringContainsString('.sm-t td.sm-status { width: 4px; padding: 0;', $this->source);
+    }
+
+    public function testEnvironmentAndTagsUseDedicatedColumns(): void
+    {
+        self::assertStringContainsString('<th><?= __("Environment") ?></th>', $this->source);
+        self::assertStringContainsString('<th><?= __("Tag") ?></th>', $this->source);
+        self::assertStringContainsString('class="sm-env-cell"', $this->source);
+        self::assertStringContainsString('class="sm-tag-cell"', $this->source);
+        self::assertStringContainsString('colspan="11"', $this->source);
+    }
+
+    public function testStatusActionsMovedToDetailRowWithWorkerKillAction(): void
+    {
+        self::assertStringNotContainsString('<th><?= __("Status") ?></th>', $this->source);
+        self::assertStringContainsString('class="sm-detail-actions"', $this->source);
+        self::assertStringContainsString('class="sm-proc-label"', $this->source);
+        self::assertStringContainsString('sv-dot warn halo', $this->source);
+        self::assertStringContainsString('worker/killServerWorker/', $this->source);
+        self::assertStringContainsString('method="post"', $this->source);
+        self::assertStringContainsString('workerKillCsrfToken', $this->source);
     }
 }

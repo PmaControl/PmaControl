@@ -36,6 +36,70 @@ final class WorkerUpdateSecurityTest extends TestCase
         $this->assertSame('POST', $outcome['headers']['Allow']);
     }
 
+    public function testWorkerKillServerRequestAcceptsValidPost(): void
+    {
+        $session = [];
+        $token = Csrf::issueToken($session, Worker::WORKER_KILL_SERVER_CSRF_SCOPE);
+
+        $outcome = Worker::evaluateKillServerWorkerRequest(
+            [
+                Csrf::DEFAULT_FIELD => $token,
+                'id_mysql_server' => '42',
+                'worker_type' => 'mysql',
+                'pid' => '1234',
+            ],
+            [
+                'REQUEST_METHOD' => 'POST',
+                'HTTPS' => 'on',
+                'HTTP_HOST' => 'pmacontrol.test',
+                'HTTP_ORIGIN' => 'https://pmacontrol.test',
+            ],
+            $session,
+            []
+        );
+
+        $this->assertSame(200, $outcome['status']);
+        $this->assertSame(42, $outcome['server_id']);
+        $this->assertSame('mysql', $outcome['worker_type']);
+        $this->assertSame(1234, $outcome['pid']);
+    }
+
+    public function testWorkerKillServerRequestRejectsUnsafeInputs(): void
+    {
+        $session = [];
+        $token = Csrf::issueToken($session, Worker::WORKER_KILL_SERVER_CSRF_SCOPE);
+
+        $get = Worker::evaluateKillServerWorkerRequest([], ['REQUEST_METHOD' => 'GET'], $session, []);
+        $external = Worker::evaluateKillServerWorkerRequest(
+            [Csrf::DEFAULT_FIELD => $token, 'id_mysql_server' => '42', 'worker_type' => 'mysql'],
+            [
+                'REQUEST_METHOD' => 'POST',
+                'HTTPS' => 'on',
+                'HTTP_HOST' => 'pmacontrol.test',
+                'HTTP_ORIGIN' => 'https://attacker.test',
+            ],
+            $session,
+            []
+        );
+        $badPayload = Worker::evaluateKillServerWorkerRequest(
+            [Csrf::DEFAULT_FIELD => $token, 'id_mysql_server' => '42', 'worker_type' => 'mysql', 'pid' => '1; kill -9 1'],
+            [
+                'REQUEST_METHOD' => 'POST',
+                'HTTPS' => 'on',
+                'HTTP_HOST' => 'pmacontrol.test',
+                'HTTP_ORIGIN' => 'https://pmacontrol.test',
+            ],
+            $session,
+            []
+        );
+
+        $this->assertSame(405, $get['status']);
+        $this->assertSame(403, $external['status']);
+        $this->assertSame('Invalid request origin', $external['body']);
+        $this->assertSame(400, $badPayload['status']);
+        $this->assertSame('Invalid worker pid', $badPayload['body']);
+    }
+
     public function testWorkerUpdateRequestRejectsExternalSourceAndMissingToken(): void
     {
         $session = [];
