@@ -11,6 +11,8 @@ use \Monolog\Handler\StreamHandler;
 
 use \App\Library\Debug;
 use App\Library\Graphviz;
+use App\Library\Security\CsrfGuard;
+use Glial\Security\Csrf;
 
 /**
  * Class responsible for cluster workflows.
@@ -28,6 +30,7 @@ use App\Library\Graphviz;
  */
 class Cluster extends Controller
 {
+    private const VIEW_DOT_CSRF_SCOPE = 'cluster.view_dot';
 
     private static function formatDotSource(string $dot): string
     {
@@ -543,6 +546,16 @@ class Cluster extends Controller
             $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
         }
 
+        if (CsrfGuard::isPost($_SERVER)) {
+            $postRequest = self::evaluateViewDotPostRequest($_POST, $_SERVER, $_SESSION);
+            if ($postRequest['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendViewDotPostError($postRequest['status'], $postRequest['body'], $postRequest['headers'], $isAjaxPreview);
+                return;
+            }
+        }
+
         $_GET['mysql_server']['id'] = $id_mysql_server;
 
         $db = Sgbd::sql(DB_DEFAULT, "SVG");
@@ -798,6 +811,8 @@ class Cluster extends Controller
             'import_selected_graph' => $selectedImportGraph,
             'import_payload' => $importPayload,
             'import_selected_graph_index' => $selectedGraphIndex ?? null,
+            'view_dot_csrf_field' => Csrf::DEFAULT_FIELD,
+            'view_dot_csrf_token' => Csrf::issueToken($_SESSION, self::VIEW_DOT_CSRF_SCOPE),
         ];
 
         if ($isAjaxPreview) {
@@ -814,6 +829,47 @@ class Cluster extends Controller
 
         $this->set('data', $data);
         $this->set('param', [$id_mysql_server]);
+    }
+
+    public static function evaluateViewDotPostRequest(array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::VIEW_DOT_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return [
+                'status' => $guard['status'],
+                'body' => $guard['body'],
+                'headers' => $guard['headers'],
+            ];
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+        ];
+    }
+
+    private static function sendViewDotPostError(int $statusCode, string $message, array $headers = [], bool $json = false): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+
+        if ($json) {
+            header('Content-Type: application/json; charset=UTF-8');
+            echo json_encode([
+                'svg' => '',
+                'download_svg_href' => '',
+                'render_error' => $message,
+                'dot_length' => 0,
+                'preview_key' => '',
+            ], JSON_INVALID_UTF8_SUBSTITUTE);
+            return;
+        }
+
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
     private static function isSvgPreviewPayload($payload)
