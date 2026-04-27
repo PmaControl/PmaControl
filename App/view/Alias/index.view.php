@@ -7,6 +7,9 @@ function alias_h($value)
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 }
 
+$aliasIndexCsrfField = alias_h($data['alias_index_csrf_field'] ?? '_csrf_token');
+$aliasIndexCsrfToken = alias_h($data['alias_index_csrf_token'] ?? '');
+
 echo '<div style="margin-bottom:15px">';
 echo '<a href="'.LINK.'alias/updateAlias/" class="btn btn-primary" style="font-size:12px; margin-right:8px"><span class="glyphicon glyphicon-refresh" style="font-size:12px"></span> Get aliases</a>';
 $pendingAliasCount = count($data['pending_aliases'] ?? []);
@@ -36,6 +39,7 @@ if (!$hasPendingAliases) {
         echo '<td>'.alias_h(implode(', ', $pendingAlias['sources'])).'</td>';
         echo '<td>';
         echo '<form id="'.alias_h($formId).'" action="'.LINK.'alias/index/" method="POST" style="margin:0">';
+        echo '<input type="hidden" name="'.$aliasIndexCsrfField.'" value="'.$aliasIndexCsrfToken.'" />';
         echo '<input type="hidden" name="alias_dns[dns]" value="'.alias_h($pendingAlias['dns']).'" />';
         echo '<input type="hidden" name="alias_dns[port]" value="'.(int)$pendingAlias['port'].'" />';
         echo '<select name="alias_dns[id_mysql_server]" class="selectpicker" data-live-search="true" data-width="100%" title="'.alias_h(__('Choose a server')).'">';
