@@ -37,6 +37,8 @@ class Client extends Controller
     private const CLIENT_RESERVED_ID = 99;
     private const CLIENT_DELETE_CSRF_SCOPE = 'client.delete';
     private const CLIENT_MONITORING_TOGGLE_CSRF_SCOPE = 'client.toggleMonitoring';
+    private const CLIENT_ADD_CSRF_SCOPE = 'client.add';
+    private const CLIENT_ADD_LIBELLE_MAX_BYTES = 255;
 
 /**
  * Render client state through `index`.
@@ -148,34 +150,104 @@ class Client extends Controller
             '<span class="glyphicon glyphicon glyphicon-user"></span> '.__("Clients").' > '
             .$this->title;
 
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
-            if (!empty($_POST['client']['libelle'])) {
-                $db = Sgbd::sql(DB_DEFAULT);
+        $data['client_add_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['client_add_csrf_token'] = Csrf::issueToken($_SESSION, self::CLIENT_ADD_CSRF_SCOPE);
+        $this->set('data', $data);
 
-                $client                      = [];
-                $client['client']['libelle'] = $_POST['client']['libelle'];
-                $client['client']['date']    = date('Y-m-d H:i:s');
-
-                $res = $db->sql_save($client);
-
-                if (!$res) {
-                    debug($client);
-                    debug($db->sql_error());
-                    //die();
-
-                    $msg   = I18n::getTranslation(__("Impossible to find the daemon with the id : ")."'".$id_daemon."'");
-                    $title = I18n::getTranslation(__("Error"));
-                    set_flash("error", $title, $msg);
-                    header("location: ".LINK."client/add");
-
-                    exit;
-                } else {
-                    $msg   = I18n::getTranslation(__("Client add"));
-                    $title = I18n::getTranslation(__("Success"));
-                    set_flash("success", $title, $msg);
-                    header("location: ".LINK.'client/index');
-                }
+        if (CsrfGuard::isPost($_SERVER)) {
+            $outcome = self::evaluateAddRequest($_POST, $_SERVER, $_SESSION);
+            if ($outcome['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendClientAddError($outcome['status'], $outcome['body'], $outcome['headers']);
+                return;
             }
+
+            $db = Sgbd::sql(DB_DEFAULT);
+
+            $client                      = [];
+            $client['client']['libelle'] = $outcome['client']['libelle'];
+            $client['client']['date']    = date('Y-m-d H:i:s');
+
+            $res = $db->sql_save($client);
+
+            if (!$res) {
+                debug($client);
+                debug($db->sql_error());
+
+                $msg   = I18n::getTranslation(__("Client not added"));
+                $title = I18n::getTranslation(__("Error"));
+                set_flash("error", $title, $msg);
+                header("location: ".LINK."client/add");
+
+                exit;
+            } else {
+                $msg   = I18n::getTranslation(__("Client add"));
+                $title = I18n::getTranslation(__("Success"));
+                set_flash("success", $title, $msg);
+                header("location: ".LINK.'client/index');
+            }
+        }
+    }
+
+    public static function evaluateAddRequest(array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::CLIENT_ADD_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildClientAddOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $client = self::normalizeAddPayload($post);
+        if ($client === null) {
+            return self::buildClientAddOutcome(400, 'Invalid client add payload');
+        }
+
+        return self::buildClientAddOutcome(200, '', [], $client);
+    }
+
+    public static function normalizeAddPayload(array $post): ?array
+    {
+        if (
+            !isset($post['client'])
+            || !is_array($post['client'])
+            || !array_key_exists('libelle', $post['client'])
+            || !is_string($post['client']['libelle'])
+        ) {
+            return null;
+        }
+
+        $libelle = trim($post['client']['libelle']);
+        if ($libelle === '' || strlen($libelle) > self::CLIENT_ADD_LIBELLE_MAX_BYTES) {
+            return null;
+        }
+
+        if (!mb_check_encoding($libelle, 'UTF-8') || preg_match('/[\x00-\x1F\x7F]/u', $libelle) === 1) {
+            return null;
+        }
+
+        return ['libelle' => $libelle];
+    }
+
+    private static function buildClientAddOutcome(int $statusCode, string $message, array $headers = [], ?array $client = null): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'client' => $client,
+        ];
+    }
+
+    private static function sendClientAddError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+
+        if ($message !== '') {
+            echo $message;
         }
     }
 
