@@ -9,9 +9,11 @@ use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use \App\Library\Debug;
 use \App\Library\Ssh as SshLib;
+use App\Library\Security\CsrfGuard;
 use App\Library\Post;
 use \Glial\I18n\I18n;
 use \Glial\Sgbd\Sgbd;
+use Glial\Security\Csrf;
 use \phpseclib3\Crypt\PublicKeyLoader;
 use \phpseclib3\Math\BigInteger;
 use \phpseclib3\Crypt\RSA;
@@ -35,6 +37,12 @@ class Ssh extends Controller
 {
     const KEY_WORKER_ASSOCIATE = 435665;
     const NB_WORKER            = 10;
+    private const SSH_SAVE_CSRF_SCOPE = 'ssh.save';
+    private const SSH_SAVE_REQUIRED_FIELDS = ['name', 'user', 'public_key', 'private_key'];
+    private const SSH_SAVE_FIELD_LIMITS = [
+        'name' => 64,
+        'user' => 64,
+    ];
 
 /**
  * Stores `$logger` for logger.
@@ -155,21 +163,24 @@ class Ssh extends Controller
             });
         });');
 
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (CsrfGuard::isPost($_SERVER)) {
                 //traitement du UI en post
 
 
-                if (isset($_POST['ssh_key'])) {
-
-                    $keys = $_POST['ssh_key'];
-
-                    $keys['public_key']  = $_POST['ssh_key']['public_key'];
-                    $keys['private_key'] = $_POST['ssh_key']['private_key'];
-
-
-                    $this->save($keys);
+                $outcome = self::evaluateSaveRequest($_POST, $_SERVER, $_SESSION);
+                if ($outcome['status'] !== 200) {
+                    $this->view = false;
+                    $this->layout_name = false;
+                    self::sendSshSaveError($outcome['status'], $outcome['body'], $outcome['headers']);
+                    return;
                 }
+
+                $this->save($outcome['ssh_key']);
             }
+
+            $data['ssh_save_csrf_field'] = Csrf::DEFAULT_FIELD;
+            $data['ssh_save_csrf_token'] = Csrf::issueToken($_SESSION, self::SSH_SAVE_CSRF_SCOPE);
+            $this->set('data', $data);
         }
         
         /*
@@ -192,6 +203,97 @@ class Ssh extends Controller
           }
           } else
          */
+    }
+
+    public static function evaluateSaveRequest(array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::SSH_SAVE_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildSshSaveOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $sshKey = self::normalizeSavePayload($post);
+        if ($sshKey === null) {
+            return self::buildSshSaveOutcome(400, "Invalid SSH key payload");
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'ssh_key' => $sshKey,
+        ];
+    }
+
+    public static function normalizeSavePayload(array $post): ?array
+    {
+        if (empty($post['ssh_key']) || ! is_array($post['ssh_key'])) {
+            return null;
+        }
+
+        $input = $post['ssh_key'];
+        foreach ($input as $field => $value) {
+            if (! is_string($field) || ! is_scalar($value)) {
+                return null;
+            }
+        }
+
+        $sshKey = [];
+        foreach (self::SSH_SAVE_REQUIRED_FIELDS as $field) {
+            if (! array_key_exists($field, $input) || (string) $input[$field] === '') {
+                return null;
+            }
+
+            if (
+                isset(self::SSH_SAVE_FIELD_LIMITS[$field])
+                && strlen((string) $input[$field]) > self::SSH_SAVE_FIELD_LIMITS[$field]
+            ) {
+                return null;
+            }
+
+            $sshKey[$field] = (string) $input[$field];
+        }
+
+        if (isset($input['id']) && (string) $input['id'] !== '') {
+            $id = (string) $input['id'];
+            if (! ctype_digit($id) || (int) $id < 1) {
+                return null;
+            }
+            $sshKey['id'] = (int) $id;
+        }
+
+        return $sshKey;
+    }
+
+    public static function buildSshKeyLookupSql(string $fingerprint, string $user, callable $escape): string
+    {
+        return "SELECT id from ssh_key WHERE fingerprint='"
+            . $escape($fingerprint)
+            . "' and user = '"
+            . $escape($user)
+            . "'";
+    }
+
+    private static function buildSshSaveOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'ssh_key' => null,
+        ];
+    }
+
+    private static function sendSshSaveError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+
+        if ($message !== '') {
+            echo $message;
+        }
     }
 
 /**
@@ -224,9 +326,7 @@ class Ssh extends Controller
             $db = Sgbd::sql(DB_DEFAULT);
 
 
-            $_POST['ssh_key']['user'] = $_POST['ssh_key']['user'] ?? '';
-
-            $sql = "SELECT id from ssh_key WHERE fingerprint='".$fingerprint."' and user = '".$_POST['ssh_key']['user']."'";
+            $sql = self::buildSshKeyLookupSql($fingerprint, $keys['user'], [$db, 'sql_real_escape_string']);
             $res = $db->sql_query($sql);
 
             $data            = array();
@@ -247,12 +347,12 @@ class Ssh extends Controller
 
             $error = array();
 
-            if (empty($_POST['ssh_key']['name'])) {
+            if (empty($keys['name'])) {
                 $error[] = __('The name of the key is required !');
             }
 
 
-            if (empty($_POST['ssh_key']['user'])) {
+            if (empty($keys['user'])) {
                 $error[] = __('The user of the key is required !');
             }
 
@@ -284,12 +384,12 @@ class Ssh extends Controller
 
                 //echo Post::getToPost();
 
-                if (empty($_POST['ssh_key']['id'])) {
+                if (empty($keys['id'])) {
                     unset($_POST['ssh_key']['id']);
                 }
 
-                $_SESSION['ssh_key']['private_key'] = $_POST['ssh_key']['private_key'];
-                $_SESSION['ssh_key']['public_key']  = $_POST['ssh_key']['public_key'];
+                $_SESSION['ssh_key']['private_key'] = $keys['private_key'];
+                $_SESSION['ssh_key']['public_key']  = $keys['public_key'];
 
                 unset($_POST['ssh_key']['private_key']);
                 unset($_POST['ssh_key']['public_key']);
