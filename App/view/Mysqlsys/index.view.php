@@ -9,6 +9,8 @@ use Glial\Html\Form\Form;
 use App\Library\SysTooltips;
 
 $data = $data ?? array();
+$selectedMysqlServerId = $data['selected_mysql_server_id'] ?? null;
+$selectedMysqlServerFound = !empty($data['selected_mysql_server_found']);
 $mysqlsysUpdateConfigCsrfField = htmlspecialchars((string) ($data['mysqlsys_update_config_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
 $mysqlsysUpdateConfigCsrfToken = htmlspecialchars((string) ($data['mysqlsys_update_config_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
 $mysqlsysUpdateConfigCsrfAttributes = ' data-csrf-field="'.$mysqlsysUpdateConfigCsrfField.'" data-csrf-token="'.$mysqlsysUpdateConfigCsrfToken.'"';
@@ -17,23 +19,34 @@ echo '<div class="well">';
 
 \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
 
-function remove($array) {
-    $params = explode("/", trim($_GET['url'], "/"));
+function remove($array, $selectedMysqlServerId = null) {
+    $params = explode("/", trim($_GET['url'] ?? '', "/"));
+    $hasMysqlServer = false;
+    $removeMysqlServer = in_array('mysql_server', $array, true);
 
     foreach ($params as $key => $param) {
+        if (strstr($param, 'mysql_server:')) {
+            $hasMysqlServer = true;
+        }
+
         foreach ($array as $var) {
             if (strstr($param, $var . ':')) {
                 unset($params[$key]);
             }
         }
     }
+
+    if ($selectedMysqlServerId !== null && !$hasMysqlServer && !$removeMysqlServer) {
+        $params[] = 'mysql_server:id:' . (int) $selectedMysqlServerId;
+    }
+
     $ret = implode('/', $params);
 
     return $ret;
 }
 
 echo '<br /><br />';
-echo '<form action="" method="POST">';
+echo '<form action="" method="get">';
 echo __("Server") . " : ";
 
 \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_server", "id", array("data-width" => "auto")));
@@ -43,11 +56,11 @@ echo ' ';
 
 echo '<button type="submit" class="btn btn-primary">Filter</button>';
 
-if (!empty($_GET['mysql_server']['id'])) {
+if ($selectedMysqlServerId !== null && $selectedMysqlServerFound) {
     echo ' ';
-    echo '<a href="' . LINK . 'Mysqlsys/reset/' . $_GET['mysql_server']['id'] . '" class="btn btn-warning" role="button" title="This option will truncate all table of PERFORMANCE_SCHEMA to reset statistiques in MySQL-sys" aria-pressed="true">Reset Statistics</a>';
+    echo '<a href="' . LINK . 'Mysqlsys/reset/' . (int) $selectedMysqlServerId . '" class="btn btn-warning" role="button" title="This option will truncate all table of PERFORMANCE_SCHEMA to reset statistiques in MySQL-sys" aria-pressed="true">Reset Statistics</a>';
     echo ' ';
-    echo '<a href="' . LINK . 'Mysqlsys/drop/' . $_GET['mysql_server']['id'] . '" class="btn btn-danger" role="button" aria-pressed="true" title="This will DROP DATABASE `sys`; after this you can reinstall Mysql-sys for new version for example">Uninstall MySQL-sys</a>';
+    echo '<a href="' . LINK . 'Mysqlsys/drop/' . (int) $selectedMysqlServerId . '" class="btn btn-danger" role="button" aria-pressed="true" title="This will DROP DATABASE `sys`; after this you can reinstall Mysql-sys for new version for example">Uninstall MySQL-sys</a>';
 }
 
 echo '</form>';
@@ -55,7 +68,7 @@ echo '</div>';
 
 //debug($data['innodb']);
 
-if (!empty($_GET['mysql_server']['id'])) {
+if ($selectedMysqlServerId !== null && $selectedMysqlServerFound) {
 
     if (!empty($data['view_available']) && count($data['view_available']) > 0 && !empty($data['innodb'])) {
         ?>
@@ -76,7 +89,7 @@ if (!empty($_GET['mysql_server']['id'])) {
                     //$url = $_GET['url'];
 
                     $i++;
-                    $url = remove(array("mysqlsys"));
+                    $url = remove(array("mysqlsys"), $selectedMysqlServerId);
 
                     if (!empty($_GET['mysqlsys']) && $view == $_GET['mysqlsys']) {
                         echo '<a href="' . LINK . $url . '/mysqlsys:' . $view . '"><b>' . $i . '. ' . $view . '</b></a><br/>';
@@ -118,7 +131,7 @@ if (!empty($_GET['mysql_server']['id'])) {
 
                             if ($data['name_table'] == 'sys_config' && $var == "value") {
 
-                                echo '<td class="line-edit" data-name="' . $line['variable'] . '" data-pk="' . $_GET['mysql_server']['id'] . '" data-type="text" data-url="' . LINK . 'mysqlsys/updateConfig" data-title="Enter Libelle"' . $mysqlsysUpdateConfigCsrfAttributes . '>';
+                                echo '<td class="line-edit" data-name="' . $line['variable'] . '" data-pk="' . (int) $selectedMysqlServerId . '" data-type="text" data-url="' . LINK . 'mysqlsys/updateConfig" data-title="Enter Libelle"' . $mysqlsysUpdateConfigCsrfAttributes . '>';
                             } else {
                                 echo '<td>';
                             }
@@ -143,7 +156,7 @@ if (!empty($_GET['mysql_server']['id'])) {
 
                             } else if ($var == "digest")
                             {
-                                echo '<a href="'.LINK.'/Query/byDigest/'.$val.'/'.$_GET['mysql_server']['id'].'/'.$line['db'].'/">'.$val.'</a>';
+                                echo '<a href="'.LINK.'/Query/byDigest/'.$val.'/'.(int) $selectedMysqlServerId.'/'.$line['db'].'/">'.$val.'</a>';
                             }
                             else if ($var == "percent" || $var == "auto_increment_ratio") {
                                 $percent = round($val * 100, 2);
@@ -167,7 +180,7 @@ if (!empty($_GET['mysql_server']['id'])) {
                     }
                     echo "</table>";
 
-                    echo '<a href="'.LINK.'mysqlsys/export/'.$_GET['mysql_server']['id'].'/'.$_GET['mysqlsys'].'" class="btn btn-primary active" role="button">Export Dokuwiki</a>';
+                    echo '<a href="'.LINK.'mysqlsys/export/'.(int) $selectedMysqlServerId.'/'.$_GET['mysqlsys'].'" class="btn btn-primary active" role="button">Export Dokuwiki</a>';
 
                     
                 } else {
@@ -200,7 +213,7 @@ if (!empty($_GET['mysql_server']['id'])) {
 
         echo 'Your version of MySQL / MariaDB / Percona Server: <b>' . $data['variables'] . "</b><br />";
         echo 'mysql-sys is not yet installed on this server, do you want to install it ? ';
-        echo '<a href="' . LINK . 'mysqlsys/install/mysql_server:id:' . $_GET['mysql_server']['id'] . '" role="button" class="btn btn-primary">Install MySQL-sys</a>';
+        echo '<a href="' . LINK . 'mysqlsys/install/mysql_server:id:' . (int) $selectedMysqlServerId . '" role="button" class="btn btn-primary">Install MySQL-sys</a>';
 
         echo '</div>';
     }
