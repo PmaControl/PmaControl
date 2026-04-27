@@ -1,6 +1,8 @@
 <?php
 
 use Glial\Html\Form\Form;
+$exportConfCsrfField = htmlspecialchars((string) ($data['export_conf_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$exportConfCsrfToken = htmlspecialchars((string) ($data['export_conf_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
 $exportImportConfCsrfField = htmlspecialchars((string) ($data['export_import_conf_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
 $exportImportConfCsrfToken = htmlspecialchars((string) ($data['export_import_conf_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
 ?>
@@ -8,6 +10,7 @@ $exportImportConfCsrfToken = htmlspecialchars((string) ($data['export_import_con
 <div class="row">
     <div class="col-md-6">
         <form class="form1" action="<?= LINK ?>export/export_conf" method="post">
+            <input type="hidden" name="<?= $exportConfCsrfField ?>" value="<?= $exportConfCsrfToken ?>">
             <div class="panel panel-primary">
                 <div class="panel-heading">
                     <h3 class="panel-title"><?= __('Export configuration') ?></h3>

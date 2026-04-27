@@ -10,6 +10,42 @@ use Glial\Security\Crypt\Crypt;
 final class EncryptedExportRequest
 {
     public const DEFAULT_MAX_BYTES = 5242880;
+    public const DEFAULT_MAX_PASSWORD_BYTES = 4096;
+
+    public static function evaluatePasswordPairPost(
+        array $post,
+        array $server,
+        array $session,
+        string $scope,
+        string $invalidPayloadMessage,
+        string $passwordMismatchMessage,
+        int $maxPasswordBytes = self::DEFAULT_MAX_PASSWORD_BYTES,
+        string $group = 'export',
+        string $passwordField = 'password',
+        string $passwordConfirmField = 'password2'
+    ): array {
+        $guard = CsrfGuard::check($post, $server, $session, $scope);
+        if (!$guard['allowed']) {
+            return self::outcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $payload = self::normalizePasswordPairPayload($post, $maxPasswordBytes, $group, $passwordField, $passwordConfirmField);
+        if ($payload === null) {
+            return self::outcome(422, $invalidPayloadMessage);
+        }
+
+        if ($payload['password'] !== $payload['password_confirm']) {
+            return self::outcome(422, $passwordMismatchMessage);
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'file' => '',
+            'password' => $payload['password'],
+        ];
+    }
 
     public static function evaluateUploadPasswordPost(
         array $files,
@@ -85,6 +121,37 @@ final class EncryptedExportRequest
         return [
             'file' => $file,
             'password' => $password,
+        ];
+    }
+
+    public static function normalizePasswordPairPayload(
+        array $post,
+        int $maxPasswordBytes = self::DEFAULT_MAX_PASSWORD_BYTES,
+        string $group = 'export',
+        string $passwordField = 'password',
+        string $passwordConfirmField = 'password2'
+    ): ?array {
+        $exportPost = $post[$group] ?? null;
+        if (!is_array($exportPost)
+            || !is_scalar($exportPost[$passwordField] ?? null)
+            || !is_scalar($exportPost[$passwordConfirmField] ?? null)
+        ) {
+            return null;
+        }
+
+        $password = trim((string) $exportPost[$passwordField]);
+        $passwordConfirm = trim((string) $exportPost[$passwordConfirmField]);
+        if ($password === '' || $passwordConfirm === '') {
+            return null;
+        }
+
+        if (strlen($password) > $maxPasswordBytes || strlen($passwordConfirm) > $maxPasswordBytes) {
+            return null;
+        }
+
+        return [
+            'password' => $password,
+            'password_confirm' => $passwordConfirm,
         ];
     }
 

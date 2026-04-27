@@ -24,6 +24,7 @@ for mysql_server => ADD SYSTEM VERSIONING PARTITION BY SYSTEM_TIME;
 
 class Export extends Controller
 {
+    private const EXPORT_CONF_CSRF_SCOPE = 'export.export_conf';
     private const EXPORT_IMPORT_CONF_CSRF_SCOPE = 'export.import_conf';
     private const EXPORT_TEST_DECHIFFREMENT_CSRF_SCOPE = 'export.test_dechiffrement';
 
@@ -197,6 +198,8 @@ $("#export_all-all2").click(function(){
             $data['options'][] = $arr;
         }
 
+        $data['export_conf_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['export_conf_csrf_token'] = Csrf::issueToken($_SESSION, self::EXPORT_CONF_CSRF_SCOPE);
         $data['export_import_conf_csrf_field'] = Csrf::DEFAULT_FIELD;
         $data['export_import_conf_csrf_token'] = Csrf::issueToken($_SESSION, self::EXPORT_IMPORT_CONF_CSRF_SCOPE);
 
@@ -226,31 +229,69 @@ $("#export_all-all2").click(function(){
 
         $this->view = false;
 
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
+        $exportPost = self::evaluateExportConfPost($_POST, $_SERVER, $_SESSION);
+        if ($exportPost['status'] !== 200) {
+            if ($exportPost['status'] === 403 || $exportPost['status'] === 405) {
+                $this->layout_name = false;
+                self::sendExportError($exportPost['status'], $exportPost['body'], $exportPost['headers']);
+                return;
+            }
 
-
-            $backup = $this->_export();
-
-            $json = json_encode($backup);
-
-            //file_put_contents("/tmp/json", $json);
-            //$compressed = gzcompress($json, 9);
-
-
-            Debug::debug($json, "JSON");
-
-            $crypted = Chiffrement::encrypt($json, $_POST['export']['password']);
-
-            //$file_name = $_POST['export']['name_file'];
-            $file_name = "export_".date('Y-m-d').".pmactrl";
-
-            file_put_contents("/tmp/export", $crypted);
-
-            header("Content-Disposition: attachment; filename=\"".$file_name."\"");
-            header("Content-Length: ".filesize("/tmp/export"));
-            header("Content-Type: application/octet-stream;");
-            readfile("/tmp/export");
+            set_flash("error", __('Error'), __($exportPost['body']));
+            header("location: ".LINK.$this->getClass()."/index");
+            return;
         }
+
+        $backup = $this->_export();
+
+        $json = json_encode($backup);
+        if (!is_string($json)) {
+            set_flash("error", __('Error'), __("Unable to encode export configuration"));
+            header("location: ".LINK.$this->getClass()."/index");
+            return;
+        }
+
+        //file_put_contents("/tmp/json", $json);
+        //$compressed = gzcompress($json, 9);
+
+
+        Debug::debug($json, "JSON");
+
+        $crypted = Chiffrement::encrypt($json, $exportPost['password']);
+
+        //$file_name = $_POST['export']['name_file'];
+        $file_name = "export_".date('Y-m-d').".pmactrl";
+        $tmpFile = tempnam(sys_get_temp_dir(), 'pmactrl_export_');
+        if ($tmpFile === false) {
+            set_flash("error", __('Error'), __("Unable to write export file"));
+            header("location: ".LINK.$this->getClass()."/index");
+            return;
+        }
+
+        if (file_put_contents($tmpFile, $crypted) === false) {
+            unlink($tmpFile);
+            set_flash("error", __('Error'), __("Unable to write export file"));
+            header("location: ".LINK.$this->getClass()."/index");
+            return;
+        }
+
+        header("Content-Disposition: attachment; filename=\"".$file_name."\"");
+        header("Content-Length: ".filesize($tmpFile));
+        header("Content-Type: application/octet-stream;");
+        readfile($tmpFile);
+        unlink($tmpFile);
+    }
+
+    public static function evaluateExportConfPost(array $post, array $server, array $session): array
+    {
+        return EncryptedExportRequest::evaluatePasswordPairPost(
+            $post,
+            $server,
+            $session,
+            self::EXPORT_CONF_CSRF_SCOPE,
+            'Invalid export password payload',
+            'Export passwords do not match'
+        );
     }
 
 /**
