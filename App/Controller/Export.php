@@ -14,6 +14,8 @@ use \Glial\Security\Crypt\Crypt;
 use \App\Library\Mysql;
 use \App\Library\Json;
 use \Glial\Sgbd\Sgbd;
+use App\Library\Security\CsrfGuard;
+use Glial\Security\Csrf;
 
 /*
 for mysql_server => ADD SYSTEM VERSIONING PARTITION BY SYSTEM_TIME;
@@ -21,6 +23,9 @@ for mysql_server => ADD SYSTEM VERSIONING PARTITION BY SYSTEM_TIME;
 
 class Export extends Controller
 {
+    private const EXPORT_TEST_DECHIFFREMENT_CSRF_SCOPE = 'export.test_dechiffrement';
+    private const EXPORT_TEST_DECHIFFREMENT_MAX_BYTES = 5242880;
+
 /**
  * Stores `$table_with_data` for table with data.
  *
@@ -860,6 +865,8 @@ $("#export_all-all2").click(function(){
  */
     public function test_dechiffrement($param)
     {
+        $data = array();
+
         if (IS_CLI) {
 
             $file     = $param[0];
@@ -868,53 +875,166 @@ $("#export_all-all2").click(function(){
             Debug::debug($file, "file");
         } else {
 
-            if ($_SERVER['REQUEST_METHOD'] === "POST") {
+            if (CsrfGuard::isPost($_SERVER)) {
+                $testPost = self::evaluateTestDechiffrementPost($_FILES, $_POST, $_SERVER, $_SESSION);
+                if ($testPost['status'] !== 200) {
+                    if ($testPost['status'] === 403 || $testPost['status'] === 405) {
+                        $this->view = false;
+                        $this->layout_name = false;
+                        self::sendExportError($testPost['status'], $testPost['body'], $testPost['headers']);
+                        return;
+                    }
 
-                if (!empty($_FILES['export']['tmp_name']['file'])) {
-                    $file     = $_FILES['export']['tmp_name']['file'];
-                    $password = $_POST['export']['password'];
-                }
-
-                $error = false;
-
-                if (empty($file)) {
-                    $error = true;
-                    set_flash("error", __('Error'), __("Please select the config file"));
-                }
-
-                if (empty($password)) {
-                    $error = true;
-                    set_flash("error", __('Error'), __("Please request the password to uncrypt file"));
-                }
-
-                if ($error == true) {
+                    set_flash("error", __('Error'), __($testPost['body']));
                     header("location: ".LINK.$this->getClass()."/".__FUNCTION__);
-                    exit;
+                    return;
                 }
+
+                $file = $testPost['file'];
+                $password = $testPost['password'];
             }
+
+            $data['export_test_dechiffrement_csrf_field'] = Csrf::DEFAULT_FIELD;
+            $data['export_test_dechiffrement_csrf_token'] = Csrf::issueToken($_SESSION, self::EXPORT_TEST_DECHIFFREMENT_CSRF_SCOPE);
         }
 
-        $data = array();
-
         if (!empty($file) && !empty($password)) {
-            $crypted    = file_get_contents($file);
-            $compressed = Chiffrement::decrypt($crypted, $password);
-
-            if ($this->is_gzipped($compressed) === true) {
-
-                $json         = gzuncompress($compressed);
+            $json = self::decryptTestDechiffrementFile($file, $password);
+            if ($json !== null) {
                 $data['json'] = $json;
             } else {
-
-
                 set_flash("error", __('Error'), __("The password is not good"));
                 header("location: ".LINK.$this->getClass()."/".__FUNCTION__);
-                exit;
+                return;
             }
             //false
         }
 
         $this->set('data', $data);
+    }
+
+    public static function evaluateTestDechiffrementPost(
+        array $files,
+        array $post,
+        array $server,
+        array $session,
+        bool $requireUploadedFile = true
+    ): array {
+        $guard = CsrfGuard::check($post, $server, $session, self::EXPORT_TEST_DECHIFFREMENT_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildTestDechiffrementOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $fileSize = self::extractTestDechiffrementFileSize($files);
+        if ($fileSize !== null && $fileSize > self::EXPORT_TEST_DECHIFFREMENT_MAX_BYTES) {
+            return self::buildTestDechiffrementOutcome(413, 'Uploaded export file too large');
+        }
+
+        $payload = self::normalizeTestDechiffrementPayload($files, $post, $requireUploadedFile);
+        if ($payload === null) {
+            return self::buildTestDechiffrementOutcome(422, 'Invalid export test payload');
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'file' => $payload['file'],
+            'password' => $payload['password'],
+        ];
+    }
+
+    public static function normalizeTestDechiffrementPayload(
+        array $files,
+        array $post,
+        bool $requireUploadedFile = true
+    ): ?array {
+        $uploadError = $files['export']['error']['file'] ?? UPLOAD_ERR_OK;
+        if (!is_numeric($uploadError) || (int) $uploadError !== UPLOAD_ERR_OK) {
+            return null;
+        }
+
+        $file = $files['export']['tmp_name']['file'] ?? null;
+        if (!is_scalar($file)) {
+            return null;
+        }
+
+        $file = trim((string) $file);
+        if ($file === '' || ($requireUploadedFile && !is_uploaded_file($file))) {
+            return null;
+        }
+
+        $exportPost = $post['export'] ?? null;
+        if (!is_array($exportPost) || !is_scalar($exportPost['password'] ?? null)) {
+            return null;
+        }
+
+        $password = trim((string) $exportPost['password']);
+        if ($password === '') {
+            return null;
+        }
+
+        return [
+            'file' => $file,
+            'password' => $password,
+        ];
+    }
+
+    public static function decryptTestDechiffrementFile(string $file, string $password): ?string
+    {
+        $crypted = file_get_contents($file);
+        if ($crypted === false) {
+            return null;
+        }
+
+        set_error_handler(static function (int $severity, string $message, string $file, int $line): bool {
+            throw new \ErrorException($message, 0, $severity, $file, $line);
+        });
+
+        try {
+            $compressed = Chiffrement::decrypt($crypted, $password);
+        } catch (\Throwable $exception) {
+            return null;
+        } finally {
+            restore_error_handler();
+        }
+
+        if (!self::isGzippedPayload($compressed)) {
+            return null;
+        }
+
+        $json = gzuncompress($compressed);
+        return is_string($json) ? $json : null;
+    }
+
+    private static function extractTestDechiffrementFileSize(array $files): ?int
+    {
+        $size = $files['export']['size']['file'] ?? null;
+        if (!is_numeric($size)) {
+            return null;
+        }
+
+        return (int) $size;
+    }
+
+    private static function buildTestDechiffrementOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'file' => '',
+            'password' => '',
+        ];
+    }
+
+    private static function sendExportError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        echo $message;
     }
 
 /**
@@ -940,19 +1060,20 @@ $("#export_all-all2").click(function(){
  */
     function is_gzipped($in)
     {
+        return self::isGzippedPayload($in);
+    }
 
-        if (mb_strpos($in, "\x1f"."\x8b"."\x08") === 0) {
-            return true;
-        } else if (@gzuncompress($in) !== false) {
-            return true;
-        } else if (@gzinflate($in) !== false) {
-            return true;
-        } else {
+    private static function isGzippedPayload($in): bool
+    {
+        if (!is_string($in)) {
             return false;
         }
+
+        return mb_strpos($in, "\x1f"."\x8b"."\x08") === 0
+            || @gzuncompress($in) !== false
+            || @gzinflate($in) !== false;
     }
 }
 /* $compressed   = gzcompress('Compresse moi', 9);
   $uncompressed = gzuncompress($compressed);
   echo $uncompressed; */
-
