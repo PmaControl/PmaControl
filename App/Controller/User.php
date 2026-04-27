@@ -595,7 +595,7 @@ class User extends Controller {
                 set_flash("success", $title, $msg);
 
 
-                $this->login($data['user_main']['login'], $password_non_hashed);
+                $this->establishSession($data['user_main']['login'], $password_non_hashed);
 
                 header("location: " . LINK . ROUTE_DEFAULT);
                 exit;
@@ -859,7 +859,7 @@ class User extends Controller {
                       debug($password_non_hash);
                       exit;
                      */
-                    $this->login($ob->login, $password_non_hash);
+                    $this->establishSession($ob->login, $password_non_hash);
 
 
                     $title = I18n::getTranslation(__("Success"));
@@ -1057,7 +1057,7 @@ class User extends Controller {
                 $db->sql_query($sql);
 
 /**
- * Handle user state through `login`.
+ * Handle user state through `establishSession`.
  *
  * This routine may read or mutate framework state, superglobals or persistence layers.
  *
@@ -1070,8 +1070,8 @@ class User extends Controller {
  * @return void Returned value for login.
  * @phpstan-return void
  * @psalm-return void
- * @see self::login()
- * @example /fr/user/login
+ * @see self::establishSession()
+ * @example internal session bootstrap
  * @category PmaControl
  * @package App
  * @subpackage Controller
@@ -1080,20 +1080,7 @@ class User extends Controller {
  * @since 5.0
  * @version 1.0
  */
-                function login($login, $password) {
-                    $_POST['user_main']['login'] = $login;
-                    $_POST['user_main']['password'] = $password;
-                    $_SERVER['REQUEST_METHOD'] = "POST";
-
-                    $ret = $this->di['auth']->authenticate();
-                    $id_user = $this->di['auth']->getIdUserTriingLogin();
-
-                    if (!empty($id_user)) {
-                        $this->log($id_user, $ret);
-                    }
-                }
-
-                $this->login($ob->login, $ob->password);
+                $this->establishSession($ob->login, $ob->password);
             } else {
                 $type = "error";
                 $title = "Error";
@@ -1653,7 +1640,7 @@ GROUP BY d.id";
     }
 
 /**
- * Handle user state through `login`.
+ * Handle user state through `establishSession`.
  *
  * This routine may read or mutate framework state, superglobals or persistence layers.
  *
@@ -1666,8 +1653,8 @@ GROUP BY d.id";
  * @return void Returned value for login.
  * @phpstan-return void
  * @psalm-return void
- * @see self::login()
- * @example /fr/user/login
+ * @see self::establishSession()
+ * @example internal session bootstrap
  * @category PmaControl
  * @package App
  * @subpackage Controller
@@ -1676,7 +1663,7 @@ GROUP BY d.id";
  * @since 5.0
  * @version 1.0
  */
-    private function login($login, $password) {
+    private function establishSession($login, $password) {
         $_POST['user_main']['login'] = $login;
         $_POST['user_main']['password'] = $password;
         $_SERVER['REQUEST_METHOD'] = "POST";
