@@ -7,7 +7,9 @@ use \App\Library\Debug;
 use \App\Library\Mysql;
 use \App\Library\Extraction;
 use \App\Library\Extraction2;
+use App\Library\Security\CsrfGuard;
 use \Glial\Sgbd\Sgbd;
+use Glial\Security\Csrf;
 use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
@@ -53,6 +55,22 @@ class ProxySQL extends Controller
     use \App\Library\Filter;
 
     const DB_STATS = 'stats';
+    private const PROXYSQL_UPDATE_FIELD_CSRF_SCOPE = 'proxysql.update_field';
+    private const PROXYSQL_UPDATE_FIELD_TABLES = [
+        'global_variables',
+        'mysql_query_rules',
+        'mysql_servers',
+        'mysql_replication_hostgroups',
+        'mysql_group_replication_hostgroups',
+        'mysql_galera_hostgroups',
+        'mysql_aws_aurora_hostgroups',
+        'mysql_hostgroup_attributes',
+        'mysql_users',
+        'proxysql_servers',
+        'scheduler',
+    ];
+    private const PROXYSQL_UPDATE_FIELD_VALUE_MAX_LENGTH = 4096;
+    private const PROXYSQL_UPDATE_FIELD_PK_MAX_LENGTH = 2048;
 
 /**
  * Stores `$clip` for clip.
@@ -1201,15 +1219,7 @@ class ProxySQL extends Controller
     {
         $data = array();
 
-        $this->di['js']->addJavascript(array('bootstrap-editable.min.js'));
-
-
-        $this->di['js']->code_javascript('
-        $.fn.editable.defaults.mode = "inline";
-
-        $(document).ready(function () {
-            $(".line-edit").editable();
-        });');
+        $this->di['js']->addJavascript(array('bootstrap-editable.min.js', 'Tree/index.js'));
 
         Debug::parseDebug($param);
         $id_proxysql_server = $param[0] ?? "";
@@ -1217,6 +1227,8 @@ class ProxySQL extends Controller
         $param['menu_current'] = __FUNCTION__;
         $data['param'] = $param;
         $data['id_proxysql_server'] = $id_proxysql_server;
+        $data['proxysql_update_field_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['proxysql_update_field_csrf_token'] = Csrf::issueToken($_SESSION, self::PROXYSQL_UPDATE_FIELD_CSRF_SCOPE);
 
         if (empty($id_proxysql_server)) {
             throw new \Exception(__FUNCTION__ . ' should have id_proxysql_server in parameter');
@@ -1723,20 +1735,27 @@ class ProxySQL extends Controller
 
         ini_set('display_errors','Off');    
 
-        $id_proxysql_server = $param[0];
-        $table = $param[1];
-
         $this->view        = false;
         $this->layout_name = false;
 
-        
+        $outcome = self::evaluateUpdateFieldRequest($param, $_POST, $_SERVER, $_SESSION);
+        if (!$outcome['allowed']) {
+            http_response_code($outcome['status']);
+            foreach ($outcome['headers'] as $name => $value) {
+                header($name . ': ' . $value);
+            }
+            echo $outcome['body'];
+            return;
+        }
+
+        $update = $outcome['update'];
+
         try{
-            $db = Sgbd::sql("proxysql_".$id_proxysql_server);
+            $db = Sgbd::sql("proxysql_".$update['id_proxysql_server']);
 
-            //UPDATE menu SET `variable_value` = 'truefghdfh' WHERE id = variable_value
-            $sql = "UPDATE `".$table."` SET `".$_POST['name']."` = '".$_POST['value']."' WHERE ".$_POST['pk'].";";
+            $sql = self::buildUpdateFieldSql($update, [$db, 'sql_real_escape_string']);
 
-            $this->logger->emergency($sql." [id_proxysql_server:$id_proxysql_server]");
+            $this->logger->emergency($sql." [id_proxysql_server:".$update['id_proxysql_server']."]");
             $db->sql_query($sql);
     
             if ($db->sql_affected_rows() == 1) {
@@ -1751,6 +1770,141 @@ class ProxySQL extends Controller
         catch(\Exception $e){
             header("HTTP/1.0 503 Internal Server Error");
         }
+    }
+
+    public static function evaluateUpdateFieldRequest(array $param, array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::PROXYSQL_UPDATE_FIELD_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return [
+                'allowed' => false,
+                'status' => $guard['status'],
+                'body' => $guard['body'],
+                'headers' => $guard['headers'],
+                'update' => null,
+            ];
+        }
+
+        $update = self::normalizeUpdateFieldPayload($param, $post);
+        if ($update === null) {
+            return [
+                'allowed' => false,
+                'status' => 400,
+                'body' => 'Invalid ProxySQL update payload',
+                'headers' => [],
+                'update' => null,
+            ];
+        }
+
+        return [
+            'allowed' => true,
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'update' => $update,
+        ];
+    }
+
+    public static function normalizeUpdateFieldPayload(array $param, array $post): ?array
+    {
+        if (
+            !isset($param[0], $param[1], $post['name'], $post['value'], $post['pk'])
+            || !is_scalar($param[1])
+            || !is_scalar($post['name'])
+            || !is_scalar($post['value'])
+            || !is_scalar($post['pk'])
+        ) {
+            return null;
+        }
+
+        $idProxysqlServer = self::normalizePositiveInteger($param[0]);
+        if ($idProxysqlServer === null) {
+            return null;
+        }
+
+        $table = self::normalizeUpdateFieldTable($param[1]);
+        $field = self::normalizeSqlIdentifier($post['name']);
+        $pk = self::normalizePrimaryKeyPredicate($post['pk']);
+        $value = (string) $post['value'];
+
+        if (
+            $table === null
+            || $field === null
+            || $pk === null
+            || strlen($value) > self::PROXYSQL_UPDATE_FIELD_VALUE_MAX_LENGTH
+        ) {
+            return null;
+        }
+
+        return [
+            'id_proxysql_server' => $idProxysqlServer,
+            'table' => $table,
+            'field' => $field,
+            'value' => $value,
+            'pk' => $pk,
+        ];
+    }
+
+    public static function buildUpdateFieldSql(array $update, callable $escape): string
+    {
+        return "UPDATE `".$update['table']."` SET `".$update['field']."` = '".$escape($update['value'])."' WHERE ".$update['pk'].";";
+    }
+
+    private static function normalizePositiveInteger($value): ?int
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $value = trim((string) $value);
+        if ($value === '' || !ctype_digit($value) || (int) $value < 1) {
+            return null;
+        }
+
+        return (int) $value;
+    }
+
+    private static function normalizeUpdateFieldTable($value): ?string
+    {
+        $table = self::normalizeSqlIdentifier($value);
+        if ($table === null || !in_array($table, self::PROXYSQL_UPDATE_FIELD_TABLES, true)) {
+            return null;
+        }
+
+        return $table;
+    }
+
+    private static function normalizeSqlIdentifier($value): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $identifier = trim((string) $value);
+        if ($identifier === '' || strlen($identifier) > 64 || preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $identifier) !== 1) {
+            return null;
+        }
+
+        return $identifier;
+    }
+
+    private static function normalizePrimaryKeyPredicate($value): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $predicate = trim((string) $value);
+        if ($predicate === '' || strlen($predicate) > self::PROXYSQL_UPDATE_FIELD_PK_MAX_LENGTH) {
+            return null;
+        }
+
+        $condition = "[A-Za-z_][A-Za-z0-9_]*\\s*=\\s*'(?:[^'\\\\]|\\\\.|'')*'";
+        if (preg_match('/^'.$condition.'(?:\\s+AND\\s+'.$condition.')*$/', $predicate) !== 1) {
+            return null;
+        }
+
+        return $predicate;
     }
 
 /**
