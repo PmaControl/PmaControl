@@ -4,6 +4,8 @@ use Glial\Html\Form\Form;
 $clientUpdateCsrfField = htmlspecialchars((string) ($data['client_update_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
 $clientUpdateCsrfToken = htmlspecialchars((string) ($data['client_update_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
 $clientUpdateCsrfAttributes = ' data-csrf-field="'.$clientUpdateCsrfField.'" data-csrf-token="'.$clientUpdateCsrfToken.'"';
+$clientDeleteCsrfField = htmlspecialchars((string) ($data['client_delete_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$clientDeleteCsrfToken = htmlspecialchars((string) ($data['client_delete_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
 
 $totalAll = 0;
 $onlineAll = 0;
@@ -174,6 +176,7 @@ if (!empty($data['client'])) {
                       action="<?= LINK ?>client/delete/<?= (int)$client['id'] ?>"
                       style="display:inline"
                       onsubmit="return confirm('<?= __('Delete this client? All servers will be orphaned.') ?>')">
+                    <input type="hidden" name="<?= $clientDeleteCsrfField ?>" value="<?= $clientDeleteCsrfToken ?>" />
                     <button type="submit" class="btn btn-danger">
                         <i class="fa fa-trash"></i>
                     </button>

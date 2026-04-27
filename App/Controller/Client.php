@@ -10,6 +10,7 @@ namespace App\Controller;
 use \Glial\I18n\I18n;
 use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
+use App\Library\Security\CsrfGuard;
 use App\Library\Security\InlineEditRequest;
 use Glial\Security\Csrf;
 
@@ -34,6 +35,7 @@ class Client extends Controller
     private const CLIENT_UPDATE_BOOLEAN_FIELDS = ['is_monitored', 'is_display'];
     private const CLIENT_UPDATE_VALUE_MAX_BYTES = 255;
     private const CLIENT_RESERVED_ID = 99;
+    private const CLIENT_DELETE_CSRF_SCOPE = 'client.delete';
 
 /**
  * Render client state through `index`.
@@ -112,6 +114,8 @@ class Client extends Controller
         $data['client'] = $db->sql_fetch_all($sql);
         $data['client_update_csrf_field'] = Csrf::DEFAULT_FIELD;
         $data['client_update_csrf_token'] = Csrf::issueToken($_SESSION, self::CLIENT_UPDATE_CSRF_SCOPE);
+        $data['client_delete_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['client_delete_csrf_token'] = Csrf::issueToken($_SESSION, self::CLIENT_DELETE_CSRF_SCOPE);
 
         $this->set('data', $data);
     }
@@ -428,25 +432,13 @@ class Client extends Controller
         $this->view        = false;
         $this->layout_name = false;
 
-        if (!self::isDeleteRequestAllowed($_SERVER)) {
-            set_flash("error", __("Error"), __("Invalid request method"));
-            header("location: ".LINK."client/index");
-            exit;
+        $deleteRequest = self::evaluateDeleteRequest($_POST, $_SERVER, $_SESSION, is_array($param) ? $param : []);
+        if ($deleteRequest['status'] !== 200) {
+            self::sendClientDeleteError($deleteRequest['status'], $deleteRequest['body'], $deleteRequest['headers']);
+            return;
         }
 
-        $id_client = (int) ($param[0] ?? 0);
-        if ($id_client <= 0) {
-            set_flash("error", __("Error"), __("Invalid client id"));
-            header("location: ".LINK."client/index");
-            exit;
-        }
-
-        if ($id_client == "99") {
-            set_flash("error", __("Error"), __("Invalid client id"));
-            header("location: ".LINK."client/index");
-            exit;
-        }
-
+        $id_client = $deleteRequest['id_client'];
         $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT
                     SUM(CASE WHEN COALESCE(is_deleted, 0) = 0 THEN 1 ELSE 0 END) AS active_servers,
@@ -485,5 +477,64 @@ class Client extends Controller
     public static function isDeleteRequestAllowed(array $server): bool
     {
         return strtoupper((string) ($server['REQUEST_METHOD'] ?? 'GET')) === 'POST';
+    }
+
+    public static function evaluateDeleteRequest(array $post, array $server, array $session, array $param): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::CLIENT_DELETE_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildClientDeleteOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $idClient = self::normalizeDeleteClientId($param[0] ?? null);
+        if ($idClient === null) {
+            return self::buildClientDeleteOutcome(400, 'Invalid client id');
+        }
+
+        return self::buildClientDeleteOutcome(200, '', [], $idClient);
+    }
+
+    public static function normalizeDeleteClientId($value): ?int
+    {
+        if (is_int($value)) {
+            $id = $value;
+        } elseif (is_string($value)) {
+            $trimmed = trim($value);
+            if ($trimmed === '' || !ctype_digit($trimmed)) {
+                return null;
+            }
+            $id = (int) $trimmed;
+        } else {
+            return null;
+        }
+
+        if ($id <= 0 || $id === self::CLIENT_RESERVED_ID) {
+            return null;
+        }
+
+        return $id;
+    }
+
+    private static function buildClientDeleteOutcome(int $statusCode, string $message, array $headers = [], ?int $idClient = null): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'id_client' => $idClient,
+        ];
+    }
+
+    private static function sendClientDeleteError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+
+        if ($message !== '') {
+            echo $message;
+        }
     }
 }
