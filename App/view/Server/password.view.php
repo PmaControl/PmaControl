@@ -6,11 +6,14 @@
  */
 
 use Glial\Html\Form\Form;
+$serverPasswordCsrfField = htmlspecialchars((string)($data['server_password_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$serverPasswordCsrfToken = htmlspecialchars((string)($data['server_password_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
 ?>
 
 
 
 <form action="" method="POST">
+    <input type="hidden" name="<?= $serverPasswordCsrfField ?>" value="<?= $serverPasswordCsrfToken ?>">
     <div class="panel panel-primary">
         <div class="panel-heading">
 
