@@ -20,6 +20,7 @@ use \App\Library\Extraction;
 use \App\Library\Param;
 use \App\Library\Available;
 use App\Library\Security\CsrfGuard;
+use App\Library\Security\GroupedFormRequest;
 use \Glial\I18n\I18n;
 use \Glial\Cli\Table;
 use \Glial\Synapse\FactoryController;
@@ -49,6 +50,13 @@ class Database extends Controller
         'label' => 3,
         'color' => 20,
         'background' => 20,
+    ];
+    private const DATABASE_RENAME_CSRF_SCOPE = 'database.rename';
+    private const DATABASE_RENAME_RULES = [
+        'id_mysql_server' => ['type' => 'int', 'required' => true, 'min' => 1],
+        'database' => ['type' => 'string', 'required' => true, 'min' => 1, 'max' => 64],
+        'new_name' => ['type' => 'string', 'required' => true, 'min' => 1, 'max' => 64],
+        'adjust_privileges' => ['type' => 'string', 'required' => false, 'max' => 16, 'default' => ''],
     ];
 
 /**
@@ -495,6 +503,9 @@ class Database extends Controller
     {
 
         $this->title = '<i class="fa fa-wpforms" aria-hidden="true"></i> '.__("Rename database");
+        $data['database_rename_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['database_rename_csrf_token'] = Csrf::issueToken($_SESSION, self::DATABASE_RENAME_CSRF_SCOPE);
+        $this->set("data", $data);
 
         $this->di['js']->code_javascript('$("#rename-id_mysql_server").change(function () {
     data = $(this).val();
@@ -505,15 +516,77 @@ class Database extends Controller
 });');
 
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
-            if (!empty($_POST['rename']['new_name']) && !empty($_POST['rename']['database']) && !empty($_POST['rename']['id_mysql_server'])) {
-
-                $_POST['rename']['adjust_privileges'] ?? '';
-
-                $nb_renamed = $this->move(array($_POST['rename']['id_mysql_server'], $_POST['rename']['database'], $_POST['rename']['new_name'], $_POST['rename']['adjust_privileges']));
-
-                header('location: '.LINK.$this->getClass().'/'.__FUNCTION__.'/renamed:tables:'.$nb_renamed);
+            $renameRequest = self::evaluateRenameRequest($_POST, $_SERVER, $_SESSION);
+            if ($renameRequest['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendDatabaseRenameError($renameRequest['status'], $renameRequest['body'], $renameRequest['headers']);
+                return;
             }
+
+            $rename = $renameRequest['payload'];
+            $nb_renamed = $this->move(array($rename['id_mysql_server'], $rename['database'], $rename['new_name'], $rename['adjust_privileges']));
+
+            header('location: '.LINK.$this->getClass().'/'.__FUNCTION__.'/renamed:tables:'.$nb_renamed);
         }
+    }
+
+    public static function evaluateRenameRequest(array $post, array $server, array $session): array
+    {
+        $request = GroupedFormRequest::evaluate(
+            $post,
+            $server,
+            $session,
+            self::DATABASE_RENAME_CSRF_SCOPE,
+            'rename',
+            self::DATABASE_RENAME_RULES,
+            'Invalid database rename payload'
+        );
+
+        if ($request['status'] !== 200) {
+            return self::buildDatabaseRenameOutcome($request['status'], $request['body'], $request['headers']);
+        }
+
+        $payload = $request['payload'];
+        if (
+            ! self::isSafeDatabaseRenameName($payload['database'])
+            || ! self::isSafeDatabaseRenameName($payload['new_name'])
+        ) {
+            return self::buildDatabaseRenameOutcome(400, 'Invalid database rename payload');
+        }
+
+        $payload['adjust_privileges'] = $payload['adjust_privileges'] === '' ? '' : '1';
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'payload' => $payload,
+        ];
+    }
+
+    private static function isSafeDatabaseRenameName(string $name): bool
+    {
+        return (bool) preg_match('/^[A-Za-z0-9_-]{1,64}$/', $name);
+    }
+
+    private static function buildDatabaseRenameOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'payload' => null,
+        ];
+    }
+
+    private static function sendDatabaseRenameError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        echo $message;
     }
 
     /**

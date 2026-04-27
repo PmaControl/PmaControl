@@ -7,9 +7,13 @@
 
 use Glial\Html\Form\Form;
 
+$databaseRenameCsrfField = htmlspecialchars((string) ($data['database_rename_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$databaseRenameCsrfToken = htmlspecialchars((string) ($data['database_rename_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+
 ?>
 
 <form action="<?= LINK ?>database/rename" method="POST">
+    <input type="hidden" name="<?= $databaseRenameCsrfField ?>" value="<?= $databaseRenameCsrfToken ?>">
     <?= Form::input("database", "rename", array("type" => "hidden", "value"=>"1")); ?>
     <div class="panel panel-primary">
         <div class="panel-heading">
