@@ -13,6 +13,7 @@ use Glial\I18n\I18n;
 use \Glial\Sgbd\Sql\Mysql\Compare as CompareTable;
 use App\Library\Diff;
 use App\Library\Mysql;
+use App\Library\Security\CompareMainSelection;
 use \Glial\Sgbd\Sgbd;
 
 //&lrarr;
@@ -96,19 +97,26 @@ class Compare extends Controller {
     function index($params) {
 
 
-        $db = Sgbd::sql(DB_DEFAULT);
         $this->title = __("Compare");
 
-        $redirect = false;
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
+        $indexRequest = self::evaluateIndexRequest($_GET, $_SERVER);
+        if ($indexRequest['status'] !== 200) {
+            $this->view = false;
+            $this->layout_name = false;
+            self::sendCompareIndexError($indexRequest['status'], $indexRequest['body'], $indexRequest['headers']);
+            return;
+        }
 
-            $id_server1 = empty($_POST['compare_main']['id_mysql_server__original']) ? "" : $_POST['compare_main']['id_mysql_server__original'];
-            $id_server2 = empty($_POST['compare_main']['id_mysql_server__compare']) ? "" : $_POST['compare_main']['id_mysql_server__compare'];
-            $db1 = empty($_POST['compare_main']['database__original']) ? "" : $_POST['compare_main']['database__original'];
-            $db2 = empty($_POST['compare_main']['database__compare']) ? "" : $_POST['compare_main']['database__compare'];
+        $selection = $indexRequest['selection'];
+        CompareMainSelection::applyToGet($selection);
+        $selectionIsValid = true;
 
-            $out = $this->checkConfig($id_server1, $db1, $id_server2, $db2);
-
+        if (CompareMainSelection::isComplete($selection)) {
+            $out = $this->checkConfig(
+                    $selection[CompareMainSelection::SERVER_ORIGINAL],
+                    $selection[CompareMainSelection::DATABASE_ORIGINAL],
+                    $selection[CompareMainSelection::SERVER_COMPARE],
+                    $selection[CompareMainSelection::DATABASE_COMPARE]);
             if ($out !== true) {
                 $extra = "";
 
@@ -119,15 +127,8 @@ class Compare extends Controller {
                 $msg = I18n::getTranslation(__("Please correct your paramaters !") . $extra);
                 $title = I18n::getTranslation(__("Error"));
                 set_flash("error", $title, $msg);
-
-                $redirect = true;
+                $selectionIsValid = false;
             }
-
-            header('location: ' . LINK . 'compare/index/compare_main:id_mysql_server__original:' . $id_server1
-                    . '/compare_main:' . 'id_mysql_server__compare:' . $id_server2
-                    . '/compare_main:' . 'database__original:' . $db1
-                    . '/compare_main:' . 'database__compare:' . $db2
-            );
         }
 
         $this->di['js']->addJavascript(array("jquery-latest.min.js", "jquery.browser.min.js",
@@ -135,38 +136,53 @@ class Compare extends Controller {
 
 
         $data['listdb1'] = array();
-        if (!empty($_GET['compare_main']['id_mysql_server__original'])) {
-            $select1 = $this->getDatabaseByServer(array($_GET['compare_main']['id_mysql_server__original']));
+        if ($selectionIsValid && $selection[CompareMainSelection::SERVER_ORIGINAL] !== null) {
+            $select1 = $this->getDatabaseByServer(array($selection[CompareMainSelection::SERVER_ORIGINAL]));
             $data['listdb1'] = $select1['databases'];
         }
 
         $data['listdb2'] = array();
-        if (!empty($_GET['compare_main']['id_mysql_server__compare'])) {
-            $select1 = $this->getDatabaseByServer(array($_GET['compare_main']['id_mysql_server__compare']));
+        if ($selectionIsValid && $selection[CompareMainSelection::SERVER_COMPARE] !== null) {
+            $select1 = $this->getDatabaseByServer(array($selection[CompareMainSelection::SERVER_COMPARE]));
             $data['listdb2'] = $select1['databases'];
         }
 
 
         $data['display'] = false;
 
-        if (count($data['listdb2']) != 0 && count($data['listdb1']) != 0) {
-            if (!empty($_GET['compare_main']['database__original']) && !empty($_GET['compare_main']['database__compare'])) {
+        if ($selectionIsValid && count($data['listdb2']) != 0 && count($data['listdb1']) != 0) {
+            if ($selection[CompareMainSelection::DATABASE_ORIGINAL] !== null && $selection[CompareMainSelection::DATABASE_COMPARE] !== null) {
 
 
-                $data['resultat'] = $this->analyse($_GET['compare_main']['id_mysql_server__original'],
-                        $_GET['compare_main']['database__original'],
-                        $_GET['compare_main']['id_mysql_server__compare'],
-                        $_GET['compare_main']['database__compare']);
+                $data['resultat'] = $this->analyse($selection[CompareMainSelection::SERVER_ORIGINAL],
+                        $selection[CompareMainSelection::DATABASE_ORIGINAL],
+                        $selection[CompareMainSelection::SERVER_COMPARE],
+                        $selection[CompareMainSelection::DATABASE_COMPARE]);
 
                 $data['display'] = true;
 
                 //log
-                $this->di['log']->warning('[Compare] ' . $_GET['compare_main']['id_mysql_server__original'] . ":" . $_GET['compare_main']['database__original'] . " vs " .
-                        $_GET['compare_main']['id_mysql_server__compare'] . ":" . $_GET['compare_main']['database__compare'] . "(" . $_SERVER["REMOTE_ADDR"] . ")");
+                $this->di['log']->warning('[Compare] ' . $selection[CompareMainSelection::SERVER_ORIGINAL] . ":" . $selection[CompareMainSelection::DATABASE_ORIGINAL] . " vs " .
+                        $selection[CompareMainSelection::SERVER_COMPARE] . ":" . $selection[CompareMainSelection::DATABASE_COMPARE] . "(" . $_SERVER["REMOTE_ADDR"] . ")");
             }
         }
 
         $this->set('data', $data);
+    }
+
+    public static function evaluateIndexRequest(array $get, array $server): array
+    {
+        return CompareMainSelection::evaluate($get, $server);
+    }
+
+    private static function sendCompareIndexError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
 /**
