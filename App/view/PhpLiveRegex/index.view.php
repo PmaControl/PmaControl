@@ -1,4 +1,9 @@
-<div class="container">
+<?php
+$data = $data ?? array();
+$phpLiveRegexCsrfField = htmlspecialchars((string) ($data['phpliveregex_evaluate_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$phpLiveRegexCsrfToken = htmlspecialchars((string) ($data['phpliveregex_evaluate_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+?>
+<div class="container" id="php-live-regex" data-csrf-field="<?= $phpLiveRegexCsrfField ?>" data-csrf-token="<?= $phpLiveRegexCsrfToken ?>">
     <div class="row well well-sm" style="padding-bottom: 18px">
         <div class="col-md-6">
             <label>Regex</label>

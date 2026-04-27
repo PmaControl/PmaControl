@@ -48,6 +48,28 @@
 
 PHPREGEX_EVAL = null;
 PERMALINK_DIRTY = false;
+
+function getPhpLiveRegexPayload() {
+    var payload = {
+        "regex_1": $("#regex_1").val(),
+        "regex_2": $("#regex_2").val(),
+        "replacement": $("#replacement").val(),
+        "examples": $("#examples").val()
+    };
+    var container = document.getElementById("php-live-regex");
+
+    if (container !== null) {
+        var csrfField = container.getAttribute("data-csrf-field");
+        var csrfToken = container.getAttribute("data-csrf-token");
+
+        if (csrfField && csrfToken) {
+            payload[csrfField] = csrfToken;
+        }
+    }
+
+    return payload;
+}
+
 function evalRegex() {
     PERMALINK_DIRTY = true;
     $(".tab-content").fadeTo(100, 0.5);
@@ -56,10 +78,7 @@ function evalRegex() {
         PHPREGEX_EVAL.abort();
     }
     PHPREGEX_EVAL = $.post(GLIAL_LINK+"/PhpLiveRegex/evaluate",
-            {"regex_1": $("#regex_1").val(),
-                "regex_2": $("#regex_2").val(),
-                "replacement": $("#replacement").val(),
-                "examples": $("#examples").val()},
+            getPhpLiveRegexPayload(),
             function (data) {
                 document.getElementById("preg-match").innerHTML = data.preg_match;
                 document.getElementById("preg-match-all").innerHTML = data.preg_match_all;
