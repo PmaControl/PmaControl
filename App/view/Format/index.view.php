@@ -1,4 +1,10 @@
+<?php
+$formatIndexCsrfField = htmlspecialchars((string) ($data['format_index_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$formatIndexCsrfToken = htmlspecialchars((string) ($data['format_index_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$formatSql = htmlspecialchars((string) ($data['sql'] ?? ''), ENT_QUOTES, 'UTF-8');
+?>
 <form action="" method="post">
+    <input type="hidden" name="<?= $formatIndexCsrfField ?>" value="<?= $formatIndexCsrfToken ?>">
     <div class="panel panel-primary">
         <div class="panel-heading">
             <h3 class="panel-title"><?= __('Format SQL') ?></h3>
@@ -9,11 +15,7 @@
                     Type your SQL here:<br />
                 </div>
                 <div class="col-md-12">
-                    <textarea name="sql" rows="5" class="form-control"><?php
-                        if (!empty($data['sql'])) {
-                            echo $data['sql'];
-                        }
-                        ?></textarea>
+                    <textarea name="sql" rows="5" class="form-control"><?= $formatSql ?></textarea>
                 </div>
                 <div class="col-md-12">
                     <br />

@@ -8,6 +8,8 @@
 namespace App\Controller;
 
 use \Glial\Synapse\Controller;
+use App\Library\Security\CsrfGuard;
+use Glial\Security\Csrf;
 
 /**
  * Class responsible for format workflows.
@@ -25,6 +27,11 @@ use \Glial\Synapse\Controller;
  */
 class Format extends Controller
 {
+    private const FORMAT_INDEX_CSRF_SCOPE = 'format.index';
+    private const FORMAT_SQL_SESSION_KEY = 'format_sql';
+    private const FORMAT_SQL_MAX_BYTES = 1048576;
+    private const FORMAT_SQL_MAX_AGE = 86400;
+    private const FORMAT_SQL_MAX_ENTRIES = 20;
 
 /**
  * Render format state through `index`.
@@ -52,31 +59,176 @@ class Format extends Controller
 
         $this->title = '<i class="fa fa-wpforms" aria-hidden="true"></i> '.__("Format SQL");
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-
-
-            $md5            = md5($_POST['sql']);
-            $_SESSION[$md5] = $_POST['sql'];
-
-            header("location: ".LINK.$this->getClass()."/".__FUNCTION__."/".$md5);
-        }
-
-        $data = array();
-
-        if (!empty($param[0])) {
-
-            if (!empty($_SESSION[$param[0]])) {
-                $data['sql'] = $_SESSION[$param[0]];
-
-                $data['$queries'] = \SqlFormatter::splitQuery($data['sql']);
-
-                foreach ($data['$queries'] as $query) {
-                    $data['sql_formated'][] = \SqlFormatter::format($query);
-                }
+        if (CsrfGuard::isPost($_SERVER)) {
+            $indexPost = self::evaluateIndexPost($_POST, $_SERVER, $_SESSION);
+            if ($indexPost['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendFormatError($indexPost['status'], $indexPost['body'], $indexPost['headers']);
+                return;
             }
-            
-            $this->set('data', $data);
+
+            self::storeSqlInSession($_SESSION, $indexPost['hash'], $indexPost['sql']);
+
+            header("location: ".LINK.$this->getClass()."/".__FUNCTION__."/".$indexPost['hash']);
+            return;
         }
+
+        $data = self::buildIndexData($param, $_SESSION);
+        $data['format_index_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['format_index_csrf_token'] = Csrf::issueToken($_SESSION, self::FORMAT_INDEX_CSRF_SCOPE);
+
+        $this->set('data', $data);
+    }
+
+    public static function evaluateIndexPost(array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::FORMAT_INDEX_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildIndexPostOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $sql = self::normalizeSqlPayload($post);
+        if ($sql === null) {
+            return self::buildIndexPostOutcome(422, 'Invalid SQL payload');
+        }
+
+        if (strlen($sql) > self::FORMAT_SQL_MAX_BYTES) {
+            return self::buildIndexPostOutcome(413, 'SQL payload too large');
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'sql' => $sql,
+            'hash' => md5($sql),
+        ];
+    }
+
+    public static function normalizeSqlPayload(array $post): ?string
+    {
+        if (!array_key_exists('sql', $post) || !is_scalar($post['sql'])) {
+            return null;
+        }
+
+        return (string) $post['sql'];
+    }
+
+    public static function storeSqlInSession(array &$session, string $hash, string $sql, ?int $now = null): void
+    {
+        $now = $now ?? time();
+        self::pruneSqlSession($session, $now);
+        $session[self::FORMAT_SQL_SESSION_KEY][$hash] = [
+            'sql' => $sql,
+            'created_at' => $now,
+        ];
+    }
+
+    public static function getStoredSql(array $session, string $hash): ?string
+    {
+        if (!self::isFormatSqlHash($hash)) {
+            return null;
+        }
+
+        $formatSqlSession = $session[self::FORMAT_SQL_SESSION_KEY] ?? [];
+        $entry = is_array($formatSqlSession) ? ($formatSqlSession[$hash] ?? null) : null;
+        if (is_array($entry) && isset($entry['sql']) && is_string($entry['sql'])) {
+            return $entry['sql'];
+        }
+        if (is_string($entry)) {
+            return $entry;
+        }
+
+        $legacyEntry = $session[$hash] ?? null;
+        return is_string($legacyEntry) ? $legacyEntry : null;
+    }
+
+    public static function buildIndexData(array $param, array $session): array
+    {
+        $data = array();
+        $hash = $param[0] ?? null;
+        if (!is_scalar($hash)) {
+            return $data;
+        }
+
+        $sql = self::getStoredSql($session, trim((string) $hash));
+        if ($sql === null) {
+            return $data;
+        }
+
+        $data['sql'] = $sql;
+        if ($sql === '') {
+            return $data;
+        }
+
+        $data['$queries'] = \SqlFormatter::splitQuery($sql);
+        foreach ($data['$queries'] as $query) {
+            $data['sql_formated'][] = \SqlFormatter::format($query);
+        }
+
+        return $data;
+    }
+
+    private static function pruneSqlSession(array &$session, int $now): void
+    {
+        if (!isset($session[self::FORMAT_SQL_SESSION_KEY]) || !is_array($session[self::FORMAT_SQL_SESSION_KEY])) {
+            $session[self::FORMAT_SQL_SESSION_KEY] = [];
+            return;
+        }
+
+        $entries = [];
+        foreach ($session[self::FORMAT_SQL_SESSION_KEY] as $hash => $entry) {
+            if (!is_string($hash) || !self::isFormatSqlHash($hash)) {
+                continue;
+            }
+
+            $createdAt = is_array($entry) && isset($entry['created_at']) && is_numeric($entry['created_at'])
+                ? (int) $entry['created_at']
+                : $now;
+            if ($now - $createdAt > self::FORMAT_SQL_MAX_AGE) {
+                continue;
+            }
+
+            $entries[$hash] = $entry;
+        }
+
+        uasort($entries, static function ($left, $right): int {
+            $leftCreatedAt = is_array($left) && isset($left['created_at']) && is_numeric($left['created_at']) ? (int) $left['created_at'] : 0;
+            $rightCreatedAt = is_array($right) && isset($right['created_at']) && is_numeric($right['created_at']) ? (int) $right['created_at'] : 0;
+            return $leftCreatedAt <=> $rightCreatedAt;
+        });
+
+        while (count($entries) >= self::FORMAT_SQL_MAX_ENTRIES) {
+            array_shift($entries);
+        }
+
+        $session[self::FORMAT_SQL_SESSION_KEY] = $entries;
+    }
+
+    private static function isFormatSqlHash(string $hash): bool
+    {
+        return preg_match('/\\A[a-f0-9]{32}\\z/i', $hash) === 1;
+    }
+
+    private static function buildIndexPostOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'sql' => '',
+            'hash' => '',
+        ];
+    }
+
+    private static function sendFormatError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        echo $message;
     }
 
 /**
