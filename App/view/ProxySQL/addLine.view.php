@@ -27,6 +27,8 @@ $current = (string) $data['current'];
 $id_proxysql_server = (string) $data['id_proxysql_server'];
 $current_human = str_replace('_', ' ', $current);
 $back_link = LINK.'ProxySQL/config/'.$id_proxysql_server.'/'.$current.'/';
+$proxySqlAddLineCsrfField = htmlspecialchars((string) ($data['proxysql_addline_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$proxySqlAddLineCsrfToken = htmlspecialchars((string) ($data['proxysql_addline_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
 
 echo '&nbsp;&nbsp;&nbsp;'; 
 echo '<div class="btn-group" role="group" aria-label="Default button group">';
@@ -58,6 +60,7 @@ echo '</div>';
 echo '<div class="panel-body">';
 
 echo '<form action="" method="post">';
+echo '<input type="hidden" name="'.$proxySqlAddLineCsrfField.'" value="'.$proxySqlAddLineCsrfToken.'">';
 echo '<div class="row">';
 
 $editable_column_found = false;
