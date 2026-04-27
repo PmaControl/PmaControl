@@ -296,58 +296,6 @@ class User extends Controller {
     }
 
 /**
- * Handle user state through `block_newsletter`.
- *
- * This routine may read or mutate framework state, superglobals or persistence layers.
- *
- * @return void Returned value for block_newsletter.
- * @phpstan-return void
- * @psalm-return void
- * @see self::block_newsletter()
- * @example /fr/user/block_newsletter
- * @category PmaControl
- * @package App
- * @subpackage Controller
- * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
- * @license GPL-3.0
- * @since 5.0
- * @version 1.0
- */
-    function block_newsletter() {
-        //Vous Ã¯Â¿Â½tes maintenant abonnÃ¯Â¿Â½ Ã¯Â¿Â½ la lettre d'information.
-        //Veuillez renseigner le champ correctement...
-        //include_once("class/mail.lib.php");
-        $_MSG = "";
-
-        if (!empty($_POST['newsletter'])) {
-            if (mail::IsSyntaxEmail($_POST['newsletter'])) {
-                $sql = "select * from UserNewsLetter where Email = '" . $db->sql_real_escape_string($_POST['newsletter']) . "'";
-                $res = sql::sql_query($sql);
-
-
-                if ($db->sql_num_rows($res) != 0) {
-                    $_MSG = __("You are removed from our newslettter");
-                    $sql = "DELETE FROM UserNewsLetter where Email = '" . $db->sql_real_escape_string($_POST['newsletter']) . "'";
-                    sql::sql_query($sql);
-                } else {
-                    $sql = "INSERT INTO UserNewsLetter SET 
-					Email = '" . $db->sql_real_escape_string($_POST['newsletter']) . "', 
-					IP='" . $_SERVER['REMOTE_ADDR'] . "', 
-					UserAgent='" . $_SERVER['HTTP_USER_AGENT'] . "', 
-					DateInserted=now()";
-
-                    sql::sql_query($sql);
-
-                    $_MSG = __("Your Email has been added !");
-                }
-            } else {
-
-                $_MSG = __("Your Email is not valid !");
-            }
-        }
-    }
-
-/**
  * Handle user state through `city`.
  *
  * This routine may read or mutate framework state, superglobals or persistence layers.
