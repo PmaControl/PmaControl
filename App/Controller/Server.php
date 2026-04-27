@@ -43,6 +43,9 @@ class Server extends Controller
     use \App\Library\Filter;
     private const SERVER_SETTINGS_CSRF_SCOPE = 'server.settings';
     private const SERVER_SETTINGS_DISPLAY_NAME_MAX_LENGTH = 255;
+    private const SERVER_PASSWORD_CSRF_SCOPE = 'server.password';
+    private const SERVER_PASSWORD_LOGIN_MAX_LENGTH = 128;
+    private const SERVER_PASSWORD_VALUE_MAX_LENGTH = 1024;
 /**
  * Stores `$clip` for clip.
  *
@@ -2090,39 +2093,46 @@ var myChart = new Chart(ctx, {
  */
     public function password($param)
     {
-        $id_server = $param[0];
+        $id_server = self::normalizeSettingsPositiveInteger($param[0] ?? null);
 
-        if (empty($id_server)) {
+        if ($id_server === null) {
             throw new \Exception("PMACTRL-748 : Impossible to get id_server, wrong URL ?");
         }
 
+        if (CsrfGuard::isPost($_SERVER)) {
+            $outcome = self::evaluatePasswordRequest($param, $_POST, $_SERVER, $_SESSION);
+            if ($outcome['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendPasswordError($outcome['status'], $outcome['body'], $outcome['headers']);
+                return;
+            }
 
+            $passwordRequest = $outcome['password'];
+            $db = Sgbd::sql(DB_DEFAULT);
+            $server['mysql_server']['passwd'] = Chiffrement::encrypt($passwordRequest['passwd']);
+            $server['mysql_server']['login']  = $passwordRequest['login'];
+            $server['mysql_server']['id']     = $passwordRequest['id_server'];
 
-        $db = Sgbd::sql(DB_DEFAULT);
+            $ret = $db->sql_save($server);
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
+            if ($ret) {
 
-            if (!empty($_POST['mysql_server']['passwd'])) {
-                $server['mysql_server']['passwd'] = Chiffrement::encrypt($_POST['mysql_server']['passwd']);
-                $server['mysql_server']['login']  = $_POST['mysql_server']['login'];
-                $server['mysql_server']['id']     = $id_server;
+                Mysql::onAddMysqlServer();
 
-                $ret = $db->sql_save($server);
+                set_flash("success", "Success", "Password updated !");
 
-                if ($ret) {
+                header("location: ".LINK.$this->getClass().'/settings');
+                return;
+            } else {
+                set_flash("error", "Error", "Password not updated !");
 
-                    Mysql::onAddMysqlServer();
-
-                    set_flash("success", "Success", "Password updated !");
-
-                    header("location: ".LINK.$this->getClass().'/settings');
-                } else {
-                    set_flash("error", "Error", "Password not updated !");
-
-                    header("location: ".LINK.$this->getClass().'/'.__FUNCTION__.'/'.$id_server);
-                }
+                header("location: ".LINK.$this->getClass().'/'.__FUNCTION__.'/'.$id_server);
+                return;
             }
         }
+
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM mysql_server WHERE id =".$id_server;
 
@@ -2133,8 +2143,85 @@ var myChart = new Chart(ctx, {
             $data['server'] = $ob;
         }
 
+        $data['server_password_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['server_password_csrf_token'] = Csrf::issueToken($_SESSION, self::SERVER_PASSWORD_CSRF_SCOPE);
 
         $this->set('data', $data);
+    }
+
+    public static function evaluatePasswordRequest(array $param, array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::SERVER_PASSWORD_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildPasswordOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $password = self::normalizePasswordPayload($param, $post);
+        if ($password === null) {
+            return self::buildPasswordOutcome(400, 'Invalid server password payload');
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'password' => $password,
+        ];
+    }
+
+    public static function normalizePasswordPayload(array $param, array $post): ?array
+    {
+        $idServer = self::normalizeSettingsPositiveInteger($param[0] ?? null);
+        if ($idServer === null || empty($post['mysql_server']) || !is_array($post['mysql_server'])) {
+            return null;
+        }
+
+        $mysqlServer = $post['mysql_server'];
+        if (
+            !array_key_exists('login', $mysqlServer)
+            || !array_key_exists('passwd', $mysqlServer)
+            || !is_scalar($mysqlServer['login'])
+            || !is_scalar($mysqlServer['passwd'])
+        ) {
+            return null;
+        }
+
+        $login = trim((string) $mysqlServer['login']);
+        $passwd = (string) $mysqlServer['passwd'];
+        if (
+            $login === ''
+            || $passwd === ''
+            || strlen($login) > self::SERVER_PASSWORD_LOGIN_MAX_LENGTH
+            || strlen($passwd) > self::SERVER_PASSWORD_VALUE_MAX_LENGTH
+        ) {
+            return null;
+        }
+
+        return [
+            'id_server' => $idServer,
+            'login' => $login,
+            'passwd' => $passwd,
+        ];
+    }
+
+    private static function buildPasswordOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'password' => null,
+        ];
+    }
+
+    private static function sendPasswordError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
 /**
