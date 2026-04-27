@@ -1,2 +1,6 @@
 *
 !.gitignore
+!plugin.json
+!extracted/
+!extracted/mysql-sys-1.2/
+!extracted/mysql-sys-1.2/**

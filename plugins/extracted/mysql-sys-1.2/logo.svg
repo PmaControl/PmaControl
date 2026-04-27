@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">MySQL sys plugin</title>
+  <desc id="desc">Database cylinder with sys label for the MySQL sys plugin example.</desc>
+  <defs>
+    <linearGradient id="db" x1="18" x2="110" y1="20" y2="116" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1d4ed8"/>
+      <stop offset="1" stop-color="#0f766e"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="22" fill="#f8fafc"/>
+  <path d="M24 34c0-11 18-20 40-20s40 9 40 20v60c0 11-18 20-40 20s-40-9-40-20V34z" fill="url(#db)"/>
+  <ellipse cx="64" cy="34" rx="40" ry="20" fill="#38bdf8"/>
+  <ellipse cx="64" cy="34" rx="28" ry="12" fill="#e0f2fe" opacity=".9"/>
+  <path d="M24 58c0 11 18 20 40 20s40-9 40-20M24 82c0 11 18 20 40 20s40-9 40-20" fill="none" stroke="#bae6fd" stroke-width="5" opacity=".8"/>
+  <rect x="37" y="54" width="54" height="28" rx="7" fill="#0f172a" opacity=".92"/>
+  <text x="64" y="74" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="700" fill="#ffffff">sys</text>
+</svg>

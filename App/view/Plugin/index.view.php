@@ -73,7 +73,8 @@ if (!is_null($data))
         <div class="row" style="background: #eee; border:#ddd 1px solid;">
         <?php endif; ?>
             <div class="col-md-2" style="padding:10px">
-                <img src='<?= $line2['image'] ?>' height="100" width="100">
+                <?php $image = str_replace('{LINK}', LINK, (string)$line2['image']); ?>
+                <img src="<?= htmlspecialchars($image, ENT_QUOTES, 'UTF-8') ?>" height="100" width="100">
             </div>
             <div class="col-md-10" style="padding:10px">
                 <div class="row">

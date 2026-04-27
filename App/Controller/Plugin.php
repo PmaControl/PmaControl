@@ -10,6 +10,7 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use App\Library\Tree as TreeInterval;
+use App\Library\PluginPackage;
 use \Glial\Sgbd\Sgbd;
 
 /**
@@ -51,12 +52,10 @@ class Plugin extends Controller {
  */
     public function index($param) {
         $LOCALJSONFILE = ROOT . "/plugins/plugin.json";
-        $PMAPLUGINURL = "http://localhost/plugins/"; //Il faut mettre dans un fichier de conf
-        $JSONURL = $PMAPLUGINURL . "extracted/plugin.json";
-
-        debug($LOCALJSONFILE);
 
         /*
+        $PMAPLUGINURL = "http://localhost/plugins/"; //Il faut mettre dans un fichier de conf
+        $JSONURL = $PMAPLUGINURL . "extracted/plugin.json";
         if ((!file_exists($LOCALJSONFILE)) || (filectime($LOCALJSONFILE) < date_timestamp_get(date_create('-1 day')))) {
             if ($file = file_get_contents($JSONURL)) {
                 $Array = json_decode($file, true);
@@ -70,9 +69,6 @@ class Plugin extends Controller {
         if (file_exists($LOCALJSONFILE))
         {
             $file = file_get_contents($LOCALJSONFILE);
-            $plugins = json_decode($file, true);
-
-            debug($plugins);
             $this->jsontodatabase($file);
 
         }
@@ -182,6 +178,7 @@ SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','
         if (!isset($param[0])) {
             Throw new \Exception("No plugin Id provided");
         }
+        $pluginId = (int)$param[0];
 
         $LOCALPLUGIN = $_SERVER["DOCUMENT_ROOT"] . WWW_ROOT . "plugins/";
         $LOCALAPPLICATION = $_SERVER["DOCUMENT_ROOT"] . WWW_ROOT . "App/";
@@ -189,7 +186,7 @@ SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','
         $db = Sgbd::sql(DB_DEFAULT);
 
         $Query = "SELECT id, nom, description, auteur, image, fichier, date_installation, md5_zip, version, type_licence, est_actif
-        FROM plugin_main WHERE id = " . $param[0];
+        FROM plugin_main WHERE id = " . $pluginId;
 
         $res = $db->sql_query($Query);
 
@@ -201,10 +198,14 @@ SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','
                 mkdir($LOCALPLUGIN . $plugin["nom"], 0755, true);
             }
 
+            $zipPath = $LOCALPLUGIN . $plugin["nom"] . "/" . $plugin["version"] . ".zip";
             $handle = fopen($plugin["fichier"], "r");
-            $handle2 = fopen($LOCALPLUGIN . $plugin["nom"] . "/" . $plugin["version"] . ".zip", "w");
+            $handle2 = fopen($zipPath, "w");
             if (FALSE === $handle) {
                 Throw new \Exception("Echec lors de l'ouverture du flux vers l'URL");
+            }
+            if (FALSE === $handle2) {
+                Throw new \Exception("Echec lors de l'ouverture du fichier ZIP local");
             }
 
             while (!feof($handle)) {
@@ -213,9 +214,14 @@ SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','
             fclose($handle);
             fclose($handle2);
 
-            $zip = new ZipArchive;
-            $res = $zip->open($LOCALPLUGIN . $plugin["nom"] . "/" . $plugin["version"] . ".zip");
+            if (!empty($plugin['md5_zip']) && md5_file($zipPath) !== $plugin['md5_zip']) {
+                Throw new \Exception("Plugin ZIP checksum mismatch");
+            }
+
+            $zip = new \ZipArchive;
+            $res = $zip->open($zipPath);
             if ($res === TRUE) {
+                $this->assertZipArchiveIsSafe($zip);
                 $zip->extractTo($LOCALPLUGIN . "extracted/");
                 $zip->close();
             } else {
@@ -225,40 +231,56 @@ SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','
             Throw new \Exception("Error while loading plugin in database");
         }
 
-        //Copy Plugin ungeneric files
+        $manifest = null;
+
         $ThisPluginDirectory = $LOCALPLUGIN . "extracted/" . $plugin["nom"] . "-" . substr($plugin["version"], 1);
-        $scanned_directory = array_diff(scandir($ThisPluginDirectory), array('..', '.', '.gitmodules', 'sql', 'install.php', 'upgrade.php', 'uninstall.php', 'README.md', 'image.jpg'));
+        $manifestFile = $ThisPluginDirectory . "/plugin.json";
 
-        $Return = array();
-        $Return[0] = true;
+        if (is_file($manifestFile)) {
+            $manifest = PluginPackage::load($ThisPluginDirectory);
+            $plan = PluginPackage::install($manifest, $ThisPluginDirectory, ROOT);
 
-        $source = $ThisPluginDirectory . "/";
-        $target = $LOCALAPPLICATION;
-
-        foreach ($scanned_directory AS $value) {
-            if ($Return[0] == true) {
-                $Return = $this->copyfile($value, $source, $target);
+            foreach ($plan['files'] as $file) {
+                $this->logpluginfilepath($file['destination'], $pluginId);
             }
-        }
 
-        if ($Return[0] == false) {
-            Throw new \Exception("Error while copying plugin files : " . $Return[1]);
-        }
+            foreach ($plan['sql'] as $sqlFile) {
+                $this->sqlexecute($sqlFile);
+            }
 
-        //Log plugin file to database
-        foreach ($scanned_directory AS $value) {
-            $this->logpluginfile($value, $param[0], $source, $target);
-        }
+            foreach ($plan['scripts'] as $scriptFile) {
+                PluginPackage::runScript($scriptFile);
+            }
+        } else {
+            //Copy Plugin ungeneric files
+            $scanned_directory = array_diff(scandir($ThisPluginDirectory), array('..', '.', '.gitmodules', 'sql', 'install.php', 'upgrade.php', 'uninstall.php', 'README.md', 'image.jpg'));
 
-        //Installation INSTALL.SQL
-        if (file_exists($ThisPluginDirectory . "/sql/install.sql")) {
-            $this->sqlexecute($ThisPluginDirectory . "/sql/install.sql");
-        } elseif (file_exists($ThisPluginDirectory . "/SQL/install.sql")) {
-            $this->sqlexecute($ThisPluginDirectory . "/SQL/install.sql");
-        } elseif (file_exists($ThisPluginDirectory . "/sql/INSTALL.SQL")) {
-            $this->sqlexecute($ThisPluginDirectory . "/sql/INSTALL.SQL");
-        } elseif (file_exists($ThisPluginDirectory . "/SQL/INSTALL.SQL")) {
-            $this->sqlexecute($ThisPluginDirectory . "/SQL/INSTALL.SQL");
+            $Return = array();
+            $Return[0] = true;
+
+            $source = $ThisPluginDirectory . "/";
+            $target = $LOCALAPPLICATION;
+
+            foreach ($scanned_directory AS $value) {
+                if ($Return[0] == true) {
+                    $Return = $this->copyfile($value, $source, $target);
+                }
+            }
+
+            if ($Return[0] == false) {
+                Throw new \Exception("Error while copying plugin files : " . $Return[1]);
+            }
+
+            //Log plugin file to database
+            foreach ($scanned_directory AS $value) {
+                $this->logpluginfile($value, $pluginId, $source, $target);
+            }
+
+            //Installation INSTALL.SQL
+            $installSql = $this->findSqlScript($ThisPluginDirectory, 'install.sql');
+            if ($installSql !== null) {
+                $this->sqlexecute($installSql);
+            }
         }
 
         $Query = "SELECT group_id, id FROM menu WHERE title = 'Plugins'";
@@ -269,27 +291,23 @@ SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','
 
         $tree = new TreeInterval($db, "menu", array("id_parent" => "parent_id"), array("group_id" => $ids["group_id"]));
 
-        include($ThisPluginDirectory . "/" . "install.php");
+        $lastinstallmenu = LINK.'plugin/index';
+        foreach ($this->loadPluginMenu($ThisPluginDirectory, 'install.php', 'install', 'menu_install') as $value) {
+                $tree->add($value, $ids["id"]);
 
-        $ThisInstallation = new install();
+                //On met en base le fait que le plugin est installé.
+                $sql = "INSERT INTO plugin_menu (id_plugin_main, url) SELECT " . $pluginId . ", '" . $db->sql_real_escape_string($value["url"]) . "';";
+                $db->sql_query($sql);
 
-        $lastinstallmenu = "";
-
-        foreach ($ThisInstallation->menu_install() AS $key => $value) {
-            $tree->add($value, $ids["id"]);
-
-            //On met en base le fait que le plugin est installé.
-            $sql = "INSERT INTO plugin_menu (id_plugin_main, url) SELECT " . $param[0] . ", '" . $value["url"] . "';";
-            $db->sql_query($sql);
-
-            $lastinstallmenu = $value["url"];
+                $lastinstallmenu = $value["url"];
         }
 
         //On met en base le fait que le plugin est installé.
-        $sql = "UPDATE plugin_main SET est_actif = 1 WHERE id = " . $param[0] . ";";
+        $sql = "UPDATE plugin_main SET est_actif = 1 WHERE id = " . $pluginId . ";";
         $db->sql_query($sql);
+        $this->clearAclCache();
 
-        echo '<SCRIPT type="text/javascript">window.location.replace("' . str_replace("{LINK}", LINK, $lastinstallmenu) . '")</SCRIPT>';
+        $this->redirectTo(str_replace("{LINK}", LINK, $lastinstallmenu));
     }
 
 /**
@@ -415,7 +433,16 @@ SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','
             }
         } else {
             //Fonctionnement si fichier
-            $sql = "REPLACE INTO plugin_file (id_plugin_main, file, md5) SELECT " . $pluginid . ", '" . $target . $handle . "', '" . md5_file($target . $handle) . "'";
+            $sql = "REPLACE INTO plugin_file (id_plugin_main, file, md5) SELECT " . (int)$pluginid . ", '" . $db->sql_real_escape_string($target . $handle) . "', '" . md5_file($target . $handle) . "'";
+            $db->sql_query($sql);
+        }
+    }
+
+    public function logpluginfilepath($path, $pluginid) {
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        if (is_file($path)) {
+            $sql = "REPLACE INTO plugin_file (id_plugin_main, file, md5) SELECT " . (int)$pluginid . ", '" . $db->sql_real_escape_string($path) . "', '" . md5_file($path) . "'";
             $db->sql_query($sql);
         }
     }
@@ -474,21 +501,9 @@ SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','
         if (!isset($param[0])) {
             Throw new \Exception("No plugin Id provided");
         }
+        $pluginId = (int)$param[0];
 
         $db = Sgbd::sql(DB_DEFAULT);
-
-        $Query = "SELECT id, file FROM plugin_file WHERE id_plugin_main = " . $param[0];
-
-        $res = $db->sql_query($Query);
-
-        $plugin = array();
-        while ($plugin = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            // On efface
-            unlink($plugin["file"]);
-            // On purge le fichier effacé de la base de données.
-            $QueryDelete = "DELETE FROM plugin_file WHERE id = " . $plugin["id"];
-            $db->sql_query($QueryDelete);
-        }
 
         //On charge le bon menu pour pouvoir l'administrer
         $Query = "SELECT group_id, id, url FROM menu WHERE title = 'Plugins'";
@@ -500,7 +515,7 @@ SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','
         $tree = new TreeInterval($db, "menu", array("id_parent" => "parent_id"), array("group_id" => $ids["group_id"]));
 
         //On charge les entrées menus à retirer
-        $Query = "SELECT menu.id AS menuid, plugin_menu.id AS pluginmenuid FROM plugin_menu INNER JOIN menu ON menu.url = plugin_menu.url WHERE plugin_menu.id_plugin_main = " . $param[0];
+        $Query = "SELECT menu.id AS menuid, plugin_menu.id AS pluginmenuid FROM plugin_menu INNER JOIN menu ON menu.url = plugin_menu.url WHERE plugin_menu.id_plugin_main = " . $pluginId;
         $res = $db->sql_query($Query);
 
         $menu = array();
@@ -512,34 +527,131 @@ SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','
             $db->sql_query($QueryDelete);
         }
 
-        $Query = "SELECT nom, version FROM plugin_main WHERE id = " . $param[0];
+        $Query = "SELECT nom, version FROM plugin_main WHERE id = " . $pluginId;
         $res = $db->sql_query($Query);
 
         $plugin = array();
         $plugin = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+        if (!is_array($plugin)) {
+            Throw new \Exception("Error while loading plugin in database");
+        }
 
         $LOCALPLUGIN = $_SERVER["DOCUMENT_ROOT"] . WWW_ROOT . "plugins/";
         $ThisPluginDirectory = $LOCALPLUGIN . "extracted/" . $plugin["nom"] . "-" . substr($plugin["version"], 1);
+        $manifestFile = $ThisPluginDirectory . "/plugin.json";
+        $this->loadPluginMenu($ThisPluginDirectory, 'uninstall.php', 'uninstall', 'menu_uninstall');
 
-        //on a pas spécifié ce que l'on voulait faire avec ca.
-        //include($ThisPluginDirectory."/"."uninstall.php");
-        //On met en base le fait que le plugin est installé.
-        $sql = "UPDATE plugin_main SET est_actif = 0 WHERE id = " . $param[0] . ";";
-        $db->sql_query($sql);
+        if (is_file($manifestFile)) {
+            $manifest = PluginPackage::load($ThisPluginDirectory);
 
-        //execution du script SQL de UNINSTALL.
-        if (file_exists($ThisPluginDirectory . "/sql/uninstall.sql")) {
-            $this->sqlexecute($ThisPluginDirectory . "/sql/uninstall.sql");
-        } elseif (file_exists($ThisPluginDirectory . "/SQL/uninstall.sql")) {
-            $this->sqlexecute($ThisPluginDirectory . "/SQL/uninstall.sql");
-        } elseif (file_exists($ThisPluginDirectory . "/sql/UNINSTALL.SQL")) {
-            $this->sqlexecute($ThisPluginDirectory . "/sql/UNINSTALL.SQL");
-        } elseif (file_exists($ThisPluginDirectory . "/SQL/UNINSTALL.SQL")) {
-            $this->sqlexecute($ThisPluginDirectory . "/SQL/UNINSTALL.SQL");
+            foreach (PluginPackage::phaseScripts($manifest, $ThisPluginDirectory, 'uninstall') as $scriptFile) {
+                PluginPackage::runScript($scriptFile);
+            }
+
+            foreach (PluginPackage::phaseFiles($manifest, $ThisPluginDirectory, 'uninstall') as $sqlFile) {
+                $this->sqlexecute($sqlFile);
+            }
+
+            PluginPackage::removeFiles($manifest, ROOT);
+
+            $QueryDelete = "DELETE FROM plugin_file WHERE id_plugin_main = " . $pluginId;
+            $db->sql_query($QueryDelete);
+        } else {
+            $Query = "SELECT id, file FROM plugin_file WHERE id_plugin_main = " . $pluginId;
+
+            $res = $db->sql_query($Query);
+
+            $pluginFile = array();
+            while ($pluginFile = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                // On efface
+                if (is_file($pluginFile["file"])) {
+                    unlink($pluginFile["file"]);
+                }
+                // On purge le fichier effacé de la base de données.
+                $QueryDelete = "DELETE FROM plugin_file WHERE id = " . $pluginFile["id"];
+                $db->sql_query($QueryDelete);
+            }
+
+            //execution du script SQL de UNINSTALL.
+            $uninstallSql = $this->findSqlScript($ThisPluginDirectory, 'uninstall.sql');
+            if ($uninstallSql !== null) {
+                $this->sqlexecute($uninstallSql);
+            }
         }
 
-        echo '<SCRIPT type="text/javascript">window.history.back();</SCRIPT>';
+        //On met en base le fait que le plugin est installé.
+        $sql = "UPDATE plugin_main SET est_actif = 0 WHERE id = " . $pluginId . ";";
+        $db->sql_query($sql);
+        $this->clearAclCache();
+
+        $this->redirectTo($_SERVER['HTTP_REFERER'] ?? LINK.'plugin/index');
+    }
+
+    private function findSqlScript($pluginDirectory, $filename)
+    {
+        foreach (array('sql', 'SQL') as $directory) {
+            foreach (array($filename, strtoupper($filename)) as $candidate) {
+                $path = rtrim($pluginDirectory, '/').'/'.$directory.'/'.$candidate;
+                if (is_file($path)) {
+                    return $path;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private function loadPluginMenu($pluginDirectory, $fileName, $className, $methodName)
+    {
+        $script = rtrim($pluginDirectory, '/').'/'.$fileName;
+        if (!is_file($script)) {
+            return array();
+        }
+
+        include_once $script;
+        if (!class_exists($className)) {
+            return array();
+        }
+
+        $hook = new $className();
+        if (!method_exists($hook, $methodName)) {
+            return array();
+        }
+
+        return (array)$hook->$methodName();
+    }
+
+    private function assertZipArchiveIsSafe(\ZipArchive $zip)
+    {
+        $uncompressedSize = 0;
+        $maxUncompressedSize = 100 * 1024 * 1024;
+
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $name = str_replace('\\', '/', (string)$zip->getNameIndex($i));
+            if ($name === '' || $name[0] === '/' || preg_match('#(^|/)\.\.(/|$)#', $name)) {
+                Throw new \Exception("Unsafe plugin ZIP entry: ".$name);
+            }
+
+            $stat = $zip->statIndex($i);
+            $uncompressedSize += (int)($stat['size'] ?? 0);
+            if ($uncompressedSize > $maxUncompressedSize) {
+                Throw new \Exception("Plugin ZIP is too large after extraction");
+            }
+        }
+    }
+
+    private function redirectTo($url)
+    {
+        header('Location: '.$url, true, 303);
+        exit;
+    }
+
+    private function clearAclCache()
+    {
+        $aclCache = $_SERVER["DOCUMENT_ROOT"].WWW_ROOT."tmp/acl/acl.ser";
+        if (is_file($aclCache)) {
+            unlink($aclCache);
+        }
     }
 
 }
-
