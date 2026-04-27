@@ -4,8 +4,10 @@ namespace App\Controller;
 
 use Glial\I18n\I18n;
 use Glial\Synapse\Controller;
+use App\Library\Security\CsrfGuard;
 use App\Library\Post;
 use \Glial\Sgbd\Sgbd;
+use Glial\Security\Csrf;
 
 /*
  * Module pour gérer les tag sur les equipements pour les régrouper
@@ -13,6 +15,8 @@ use \Glial\Sgbd\Sgbd;
  *
  */
 class Tag extends Controller {
+    public const TAG_UPDATE_CSRF_SCOPE = 'tag.update';
+    private const TAG_UPDATE_FIELDS = ['name', 'color', 'background'];
 
 /**
  * Render tag state through `index`.
@@ -61,6 +65,8 @@ class Tag extends Controller {
             $data['tags'][] = $arr;
         }
 
+        $data['tag_update_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['tag_update_csrf_token'] = Csrf::issueToken($_SESSION, self::TAG_UPDATE_CSRF_SCOPE);
 
         $this->set('data', $data);
     }
@@ -142,19 +148,102 @@ class Tag extends Controller {
         $this->view = false;
         $this->layout_name = false;
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            $db = Sgbd::sql(DB_DEFAULT);
+        $outcome = self::evaluateUpdateRequest($_POST, $_SERVER, $_SESSION);
+        if ($outcome['status'] !== 200) {
+            self::sendTagUpdateError($outcome['status'], $outcome['body'], $outcome['headers']);
+            return;
+        }
 
-            $sql = "UPDATE tag SET `" . $_POST['name'] . "` = '" . $_POST['value'] . "' WHERE id = " . $db->sql_real_escape_string($_POST['pk']) . "";
-            $db->sql_query($sql);
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = self::buildTagUpdateSql($outcome['update'], [$db, 'sql_real_escape_string']);
+        $db->sql_query($sql);
 
-            if ($db->sql_affected_rows() === 1) {
-                echo "OK";
-            } else {
-                header("HTTP/1.0 503 Internal Server Error");
-            }
+        if ($db->sql_affected_rows() === 1) {
+            echo "OK";
+        } else {
+            self::sendTagUpdateError(503, "Tag not updated");
         }
     }
 
-}
+    public static function evaluateUpdateRequest(array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::TAG_UPDATE_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildTagUpdateOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
 
+        $update = self::normalizeUpdatePayload($post);
+        if ($update === null) {
+            return self::buildTagUpdateOutcome(400, "Invalid tag update payload");
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'update' => $update,
+        ];
+    }
+
+    public static function normalizeUpdatePayload(array $post): ?array
+    {
+        if (
+            ! array_key_exists('name', $post)
+            || ! array_key_exists('pk', $post)
+            || ! array_key_exists('value', $post)
+            || ! is_scalar($post['name'])
+            || ! is_scalar($post['pk'])
+            || ! is_scalar($post['value'])
+        ) {
+            return null;
+        }
+
+        $field = (string) $post['name'];
+        $id = (string) $post['pk'];
+
+        if (! in_array($field, self::TAG_UPDATE_FIELDS, true)) {
+            return null;
+        }
+
+        if (! ctype_digit($id) || (int) $id < 1) {
+            return null;
+        }
+
+        return [
+            'field' => $field,
+            'value' => (string) $post['value'],
+            'id' => (int) $id,
+        ];
+    }
+
+    public static function buildTagUpdateSql(array $update, callable $escape): string
+    {
+        return sprintf(
+            "UPDATE tag SET `%s` = '%s' WHERE id = %d",
+            $update['field'],
+            $escape($update['value']),
+            $update['id']
+        );
+    }
+
+    private static function buildTagUpdateOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'update' => null,
+        ];
+    }
+
+    private static function sendTagUpdateError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
+    }
+
+}

@@ -22,6 +22,7 @@ use \App\Library\Available;
 use \Glial\I18n\I18n;
 use \Glial\Cli\Table;
 use \Glial\Synapse\FactoryController;
+use Glial\Security\Csrf;
 
 //TODO : metre un  sysème de tab pour éviter d'être perdu
 
@@ -1636,6 +1637,9 @@ END;";
         while ($ob            = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['color'][] = $ob;
         }
+
+        $data['tag_update_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['tag_update_csrf_token'] = Csrf::issueToken($_SESSION, Tag::TAG_UPDATE_CSRF_SCOPE);
 
         $this->set("data", $data);
     }
