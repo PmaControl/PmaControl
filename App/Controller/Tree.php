@@ -27,6 +27,8 @@ use Glial\Security\Csrf;
  */
 class Tree extends Controller
 {
+    private const TREE_ADD_CSRF_SCOPE = 'tree.add';
+    private const TREE_ADD_FIELDS = ['title', 'url', 'icon', 'class', 'method'];
     private const TREE_UPDATE_CSRF_SCOPE = 'tree.update';
     private const TREE_UPDATE_FIELDS = ['icon', 'title', 'url', 'class', 'method', 'active'];
 
@@ -232,18 +234,88 @@ class Tree extends Controller
  */
     public function add($param)
     {
-        $db = Sgbd::sql(DB_DEFAULT);
-
         $id_menu   = $param[0];
         $id_parent = $param[1];
 
-        $tree = new TreeInterval($db, "menu", array("id_parent" => "parent_id"), array("group_id" => $id_menu));
+        if (CsrfGuard::isPost($_SERVER)) {
+            $this->view        = false;
+            $this->layout_name = false;
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
+            $outcome = self::evaluateAddRequest($_POST, $_SERVER, $_SESSION);
+            if ($outcome['status'] !== 200) {
+                self::sendTreeAddError($outcome['status'], $outcome['body'], $outcome['headers']);
+                return;
+            }
 
-            $tree->add($_POST['menu'], $id_parent);
+            $db = Sgbd::sql(DB_DEFAULT);
+            $tree = new TreeInterval($db, "menu", array("id_parent" => "parent_id"), array("group_id" => $id_menu));
+            $tree->add($outcome['menu'], $id_parent);
             header("location: ".LINK."tree/index/".$id_menu);
+            return;
         }
+
+        $data['tree_add_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['tree_add_csrf_token'] = Csrf::issueToken($_SESSION, self::TREE_ADD_CSRF_SCOPE);
+
+        $this->set('data', $data);
+    }
+
+    public static function evaluateAddRequest(array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::TREE_ADD_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildTreeAddOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $menu = self::normalizeAddPayload($post);
+        if ($menu === null) {
+            return self::buildTreeAddOutcome(400, 'Invalid tree add payload');
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'menu' => $menu,
+        ];
+    }
+
+    public static function normalizeAddPayload(array $post): ?array
+    {
+        if (! isset($post['menu']) || ! is_array($post['menu']) || $post['menu'] === []) {
+            return null;
+        }
+
+        $menu = [];
+        foreach ($post['menu'] as $field => $value) {
+            if (! is_string($field) || ! in_array($field, self::TREE_ADD_FIELDS, true) || ! is_scalar($value)) {
+                return null;
+            }
+
+            $menu[$field] = (string) $value;
+        }
+
+        return $menu === [] ? null : $menu;
+    }
+
+    private static function buildTreeAddOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'menu' => null,
+        ];
+    }
+
+    private static function sendTreeAddError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
 /**
