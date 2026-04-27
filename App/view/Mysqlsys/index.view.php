@@ -8,6 +8,11 @@
 use Glial\Html\Form\Form;
 use App\Library\SysTooltips;
 
+$data = $data ?? array();
+$mysqlsysUpdateConfigCsrfField = htmlspecialchars((string) ($data['mysqlsys_update_config_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$mysqlsysUpdateConfigCsrfToken = htmlspecialchars((string) ($data['mysqlsys_update_config_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$mysqlsysUpdateConfigCsrfAttributes = ' data-csrf-field="'.$mysqlsysUpdateConfigCsrfField.'" data-csrf-token="'.$mysqlsysUpdateConfigCsrfToken.'"';
+
 echo '<div class="well">';
 
 \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
@@ -113,7 +118,7 @@ if (!empty($_GET['mysql_server']['id'])) {
 
                             if ($data['name_table'] == 'sys_config' && $var == "value") {
 
-                                echo '<td class="line-edit" data-name="' . $line['variable'] . '" data-pk="' . $_GET['mysql_server']['id'] . '" data-type="text" data-url="' . LINK . 'mysqlsys/updateConfig" data-title="Enter Libelle">';
+                                echo '<td class="line-edit" data-name="' . $line['variable'] . '" data-pk="' . $_GET['mysql_server']['id'] . '" data-type="text" data-url="' . LINK . 'mysqlsys/updateConfig" data-title="Enter Libelle"' . $mysqlsysUpdateConfigCsrfAttributes . '>';
                             } else {
                                 echo '<td>';
                             }
