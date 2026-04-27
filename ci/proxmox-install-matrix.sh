@@ -60,10 +60,10 @@ case "${TARGET_OS}" in
         ;;
 esac
 
-exec 9>"${LOCK_FILE}"
-if ! flock -w "${LOCK_WAIT_SECONDS}" 9; then
-    echo "Unable to acquire CI lock ${LOCK_FILE} after ${LOCK_WAIT_SECONDS}s" >&2
-    exit 1
+if [[ "${PMACTRL_CI_LOCK_HELD:-0}" != "1" ]]; then
+    log "waiting for CI lock ${LOCK_FILE}"
+    export PMACTRL_CI_LOCK_HELD=1
+    exec flock --close -w "${LOCK_WAIT_SECONDS}" "${LOCK_FILE}" bash "$0" "${TARGET_OS}"
 fi
 
 should_destroy_vm() {
