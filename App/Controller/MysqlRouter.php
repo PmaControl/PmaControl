@@ -4,13 +4,18 @@ namespace App\Controller;
 
 use App\Library\Debug;
 use App\Library\Mysql;
+use App\Library\Security\CsrfGuard;
 use Glial\Sgbd\Sgbd;
+use Glial\Security\Csrf;
 use Glial\Synapse\Controller;
 
 class MysqlRouter extends Controller
 {
     public static string $version_api = 'api/20190715';
     public static array $mysqlrouter_mysql_server_links_cache = [];
+    private const MYSQLROUTER_ADD_CSRF_SCOPE = 'mysqlrouter.add';
+    private const MYSQLROUTER_ADD_TEXT_MAX_LENGTH = 255;
+    private const MYSQLROUTER_ADD_PASSWORD_MAX_LENGTH = 1024;
 
     public function index()
     {
@@ -107,17 +112,198 @@ class MysqlRouter extends Controller
 
     public function add()
     {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $param = [];
-            $param[0] = $_POST['mysqlrouter_server']['hostname'] ?? '';
-            $param[1] = $_POST['mysqlrouter_server']['port'] ?? '';
-            $param[2] = $_POST['mysqlrouter_server']['login'] ?? '';
-            $param[3] = $_POST['mysqlrouter_server']['password'] ?? '';
-            $param[4] = $_POST['mysqlrouter_server']['display_name'] ?? '';
-            $param[5] = $_POST['mysqlrouter_server']['is_ssl'] ?? 1;
+        $data = [
+            'router' => [
+                'display_name' => 'MySQL Router Admin',
+                'hostname' => '',
+                'port' => '8443',
+                'login' => '',
+                'password' => '',
+                'is_ssl' => 1,
+            ],
+            'mysqlrouter_add_csrf_field' => Csrf::DEFAULT_FIELD,
+            'mysqlrouter_add_csrf_token' => Csrf::issueToken($_SESSION, self::MYSQLROUTER_ADD_CSRF_SCOPE),
+        ];
 
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $outcome = self::evaluateAddRequest($_POST, $_SERVER, $_SESSION);
+            if (!$outcome['allowed']) {
+                $this->view = false;
+                $this->layout_name = false;
+                http_response_code($outcome['status']);
+                foreach ($outcome['headers'] as $name => $value) {
+                    header($name . ': ' . $value);
+                }
+                echo $outcome['body'];
+                return;
+            }
+
+            $data['router'] = $outcome['router'];
+            $param = self::buildInsertParamFromRouter($outcome['router']);
             $this->insertMysqlRouterAdmin($param);
+            return;
         }
+
+        $this->set('data', $data);
+    }
+
+    public static function evaluateAddRequest(array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::MYSQLROUTER_ADD_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return [
+                'allowed' => false,
+                'status' => $guard['status'],
+                'body' => $guard['body'],
+                'headers' => $guard['headers'],
+                'router' => null,
+            ];
+        }
+
+        $router = self::normalizeAddPayload($post);
+        if ($router === null) {
+            return [
+                'allowed' => false,
+                'status' => 400,
+                'body' => 'Invalid MySQL Router add payload',
+                'headers' => [],
+                'router' => null,
+            ];
+        }
+
+        return [
+            'allowed' => true,
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'router' => $router,
+        ];
+    }
+
+    public static function normalizeAddPayload(array $post): ?array
+    {
+        if (empty($post['mysqlrouter_server']) || !is_array($post['mysqlrouter_server'])) {
+            return null;
+        }
+
+        $source = $post['mysqlrouter_server'];
+        foreach (['display_name', 'hostname', 'port', 'login', 'password', 'is_ssl'] as $field) {
+            if (array_key_exists($field, $source) && !is_scalar($source[$field])) {
+                return null;
+            }
+        }
+
+        $hostname = self::normalizeRouterHost($source['hostname'] ?? '');
+        $port = self::normalizeRouterPort($source['port'] ?? null);
+        $login = self::normalizeRouterText($source['login'] ?? '', self::MYSQLROUTER_ADD_TEXT_MAX_LENGTH, false);
+        $password = self::normalizeRouterText(
+            $source['password'] ?? '',
+            self::MYSQLROUTER_ADD_PASSWORD_MAX_LENGTH,
+            false
+        );
+        $displayName = self::normalizeRouterText(
+            $source['display_name'] ?? 'MySQL Router Admin',
+            self::MYSQLROUTER_ADD_TEXT_MAX_LENGTH,
+            false
+        );
+        $isSsl = self::normalizeRouterSsl($source['is_ssl'] ?? '1');
+
+        if (
+            $hostname === null
+            || $port === null
+            || $login === null
+            || $password === null
+            || $displayName === null
+            || $isSsl === null
+        ) {
+            return null;
+        }
+
+        return [
+            'hostname' => $hostname,
+            'port' => $port,
+            'login' => $login,
+            'password' => $password,
+            'display_name' => $displayName,
+            'is_ssl' => $isSsl,
+        ];
+    }
+
+    public static function buildInsertParamFromRouter(array $router): array
+    {
+        return [
+            $router['hostname'],
+            $router['port'],
+            $router['login'],
+            $router['password'],
+            $router['display_name'],
+            $router['is_ssl'],
+        ];
+    }
+
+    private static function normalizeRouterHost($value): ?string
+    {
+        $host = self::normalizeRouterText($value, self::MYSQLROUTER_ADD_TEXT_MAX_LENGTH, false);
+        if (
+            $host === null
+            || preg_match('/[\\x00-\\x1F\\x7F\\s\\/\\\\?#@:]/', $host) === 1
+            || strpos($host, '://') !== false
+        ) {
+            return null;
+        }
+
+        return $host;
+    }
+
+    private static function normalizeRouterText($value, int $maxLength, bool $allowEmpty): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $text = trim((string) $value);
+        if ((!$allowEmpty && $text === '') || strlen($text) > $maxLength) {
+            return null;
+        }
+
+        return $text;
+    }
+
+    private static function normalizeRouterPort($value): ?int
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $port = trim((string) $value);
+        if ($port === '' || !ctype_digit($port)) {
+            return null;
+        }
+
+        $port = (int) $port;
+        if ($port < 1 || $port > 65535) {
+            return null;
+        }
+
+        return $port;
+    }
+
+    private static function normalizeRouterSsl($value): ?int
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $value = strtolower(trim((string) $value));
+        if (in_array($value, ['1', 'true', 'on'], true)) {
+            return 1;
+        }
+
+        if (in_array($value, ['0', 'false', 'off'], true)) {
+            return 0;
+        }
+
+        return null;
     }
 
     public function insertMysqlRouterAdmin($param)
@@ -146,7 +332,7 @@ class MysqlRouter extends Controller
             set_flash('error', 'Error', $e->getMessage());
         } finally {
             if (!IS_CLI) {
-                header('location: ' . $_SERVER['HTTP_REFERER']);
+                header('location: ' . LINK . 'MysqlRouter/index');
             }
         }
     }
