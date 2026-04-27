@@ -1,4 +1,14 @@
 <?php
+$userPasswordRecoverCsrfField = htmlspecialchars(
+    (string)($data['user_password_recover_csrf_field'] ?? '_csrf_token'),
+    ENT_QUOTES,
+    'UTF-8'
+);
+$userPasswordRecoverCsrfToken = htmlspecialchars(
+    (string)($data['user_password_recover_csrf_token'] ?? ''),
+    ENT_QUOTES,
+    'UTF-8'
+);
 
 echo '<div style="width:1000px; margin-left:auto; margin-right:auto; padding:0" class="well">';
 
@@ -6,6 +16,7 @@ echo '<div style="width:1000px; margin-left:auto; margin-right:auto; padding:0" 
 
 
 echo "<form action=\"\" method=\"post\" class=\"form-horizontal\" width=\"100%\">";
+echo '<input type="hidden" name="'.$userPasswordRecoverCsrfField.'" value="'.$userPasswordRecoverCsrfToken.'">';
 
 
 echo '<div style="padding:10px">';

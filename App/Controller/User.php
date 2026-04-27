@@ -47,6 +47,7 @@ class User extends Controller {
     private const USER_UPDATE_IDGROUP_CSRF_SCOPE = 'user.updateIdGroup';
     private const USER_REGISTER_CSRF_SCOPE = 'user.register';
     private const USER_PROFILE_CSRF_SCOPE = 'user.profile';
+    private const USER_PASSWORD_RECOVER_CSRF_SCOPE = 'user.passwordRecover';
 
 /**
  * Prepare user state through `before`.
@@ -668,9 +669,25 @@ class User extends Controller {
 
         $this->title = __("Recover your password");
         $this->ariane = "> <a href=\"" . LINK . "user/\">" . __("Members") . "</a> > " . $this->title;
+        $data = array();
+        $data['user_password_recover_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['user_password_recover_csrf_token'] = Csrf::issueToken($_SESSION, self::USER_PASSWORD_RECOVER_CSRF_SCOPE);
+        $this->set("data", $data);
+
+        $isPost = CsrfGuard::isPost($_SERVER);
+        if ($isPost) {
+            $outcome = self::evaluatePasswordRecoverRequest($_POST, $_SERVER, $_SESSION);
+            if ($outcome['status'] !== 200) {
+                $msg = I18n::getTranslation(__($outcome['body']));
+                $title = I18n::getTranslation(__("Error"));
+                set_flash("error", $title, $msg);
+                header("location: " . LINK . self::passwordRecoverRedirectPath($param));
+                return;
+            }
+        }
 
         $sql = "SELECT * FROM user_main WHERE email='" . $db->sql_real_escape_string($param[0]) . "'
-			AND key_auth='" . $db->sql_real_escape_string($param[1]) . "'";
+				AND key_auth='" . $db->sql_real_escape_string($param[1]) . "'";
 
         $res = $db->sql_query($sql);
 
@@ -679,27 +696,27 @@ class User extends Controller {
             $msg = I18n::getTranslation(__("This link to recover your password is not valid anymore. Make a new request."));
             set_flash("error", $title, $msg);
 
-            header("location: " . LINK . "user/lost_password/" . $param);
+            header("location: " . LINK . "user/lost_password/");
             exit;
         } else {
-            if ($_SERVER['REQUEST_METHOD'] == "POST") {
+            if ($isPost) {
 
                 $ob = $db->sql_fetch_object($res);
 
                 $recover = array();
                 $recover['user_main']['id'] = $ob->id;
-                $recover['user_main']['password'] = $_POST['user_main']['password'];
+                $recover['user_main']['password'] = $outcome['password'];
 
 
                 if ($db->sql_save($recover)) {
                     $tmp = array();
                     $tmp['user_main']['id'] = $ob->id;
                     $tmp['user_main']['key_auth'] = "";
-                    $tmp['user_main']['password'] = $this->di['auth']->hash_password($ob->login, $_POST['user_main']['password']);
-                    $_POST['user_main']['password2'] = $this->di['auth']->hash_password($ob->login, $_POST['user_main']['password']);
+                    $tmp['user_main']['password'] = $this->di['auth']->hash_password($ob->login, $outcome['password']);
+                    $_POST['user_main']['password2'] = $this->di['auth']->hash_password($ob->login, $outcome['password']);
 
 
-                    $password_non_hash = $_POST['user_main']['password'];
+                    $password_non_hash = $outcome['password'];
 
                     if (!$db->sql_save($tmp)) {
                         $error = $db->sql_error();
@@ -736,6 +753,55 @@ class User extends Controller {
                 }
             }
         }
+    }
+
+    public static function evaluatePasswordRecoverRequest(array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::USER_PASSWORD_RECOVER_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildPasswordRecoverOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $password = self::normalizePasswordRecoverPayload($post);
+        if ($password === null) {
+            return self::buildPasswordRecoverOutcome(400, "Invalid password recovery payload");
+        }
+
+        return self::buildPasswordRecoverOutcome(200, "", [], $password);
+    }
+
+    public static function normalizePasswordRecoverPayload(array $post): ?string
+    {
+        if (empty($post['user_main']) || !is_array($post['user_main'])) {
+            return null;
+        }
+
+        $password = (string)($post['user_main']['password'] ?? '');
+
+        return trim($password) === '' ? null : $password;
+    }
+
+    private static function passwordRecoverRedirectPath(array $params): string
+    {
+        if (empty($params[0]) || empty($params[1])) {
+            return "user/lost_password/";
+        }
+
+        return "user/password_recover/" . $params[0] . "/" . $params[1];
+    }
+
+    private static function buildPasswordRecoverOutcome(
+        int $statusCode,
+        string $message,
+        array $headers = [],
+        string $password = ''
+    ): array {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'password' => $password,
+        ];
     }
 
 /**
