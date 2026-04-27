@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use \App\Library\Debug;
+use App\Library\Security\PositiveIntegerSelection;
 
 use \Glial\Synapse\Controller;
 use \Glial\Security\Crypt\Crypt;
@@ -1051,34 +1052,34 @@ Threads fairness:
 
         $data = array();
 
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
-
-            if (!empty($_POST['benchmark'])) {
-
-                if (!empty($_POST['benchmark_main']['id'])) {
-                    $ret = "";
-                    $ret .= "benchmark/index/benchmark_main:id:".json_encode($_POST['benchmark_main']['id']);
-                } else {
-
-                    $ret = "";
-                    $ret .= "benchmark/index/";
-                }
-
-                header("location: ".LINK.$ret);
-
-                exit;
-            }
+        $outcome = self::evaluateGraphRequest($_GET, $_SERVER);
+        if ($outcome['status'] !== 200) {
+            $this->view = false;
+            $this->layout_name = false;
+            self::sendGraphError($outcome['status'], $outcome['body'], $outcome['headers']);
+            return;
         }
 
-        if (!empty($_GET['benchmark_main']['id'])) {
-            $id_to_take = implode(",", json_decode($_GET['benchmark_main']['id']));
+        $selection = $outcome['selection'];
+        if (!empty($selection['ids'])) {
+            $id_to_take = $selection['id_list'];
+            self::applyGraphSelectionToGet($selection);
         } else {
             $sql = "SELECT max(id) as id FROM `benchmark_main` WHERE status = 'COMPLETED'";
             $res = $db->sql_query($sql);
 
             while ($ob = $db->sql_fetch_object($res)) {
-                $id_to_take                   = $ob->id;
-                $_GET['benchmark_main']['id'] = json_encode(array($id_to_take));
+                $defaultBenchmarkId = (int) $ob->id;
+                if ($defaultBenchmarkId < 1) {
+                    continue;
+                }
+
+                $id_to_take = (string) $defaultBenchmarkId;
+                self::applyGraphSelectionToGet([
+                    'ids' => [$defaultBenchmarkId],
+                    'id_list' => $id_to_take,
+                    'query_value' => PositiveIntegerSelection::toBracketedList([$defaultBenchmarkId]),
+                ]);
             }
         }
 
@@ -1215,6 +1216,97 @@ Threads fairness:
             }
 
             $this->set("data", $data);
+        }
+    }
+
+    public static function evaluateGraphRequest(array $get, array $server): array
+    {
+        $method = strtoupper((string) ($server['REQUEST_METHOD'] ?? 'GET'));
+        if ($method !== 'GET' && $method !== 'HEAD') {
+            return self::buildGraphOutcome(405, 'Method Not Allowed', ['Allow' => 'GET, HEAD']);
+        }
+
+        $selection = self::normalizeGraphSelection($get);
+        if ($selection === null) {
+            return self::buildGraphOutcome(400, 'Invalid benchmark graph selection');
+        }
+
+        return self::buildGraphOutcome(200, '', [], $selection);
+    }
+
+    public static function normalizeGraphSelection(array $get): ?array
+    {
+        if (!array_key_exists('benchmark_main', $get)) {
+            return self::emptyGraphSelection();
+        }
+
+        if (!is_array($get['benchmark_main']) || array_diff(array_keys($get['benchmark_main']), ['id']) !== []) {
+            return null;
+        }
+
+        if (!array_key_exists('id', $get['benchmark_main'])) {
+            return null;
+        }
+
+        if ($get['benchmark_main']['id'] === '' || $get['benchmark_main']['id'] === []) {
+            return self::emptyGraphSelection();
+        }
+
+        $ids = PositiveIntegerSelection::normalizeList($get['benchmark_main']['id'], 100);
+        if ($ids === null) {
+            return null;
+        }
+
+        return [
+            'ids' => $ids,
+            'id_list' => PositiveIntegerSelection::toCsv($ids),
+            'query_value' => PositiveIntegerSelection::toBracketedList($ids),
+        ];
+    }
+
+    private static function applyGraphSelectionToGet(array $selection): void
+    {
+        if ($selection['ids'] === []) {
+            unset($_GET['benchmark_main']);
+            return;
+        }
+
+        $_GET['benchmark_main'] = ['id' => $selection['query_value']];
+    }
+
+    private static function emptyGraphSelection(): array
+    {
+        return [
+            'ids' => [],
+            'id_list' => '',
+            'query_value' => '',
+        ];
+    }
+
+    private static function buildGraphOutcome(
+        int $statusCode,
+        string $message,
+        array $headers = [],
+        ?array $selection = null
+    ): array {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'selection' => $selection,
+        ];
+    }
+
+    private static function sendGraphError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+
+        if ($message !== '') {
+            echo $message;
         }
     }
 
