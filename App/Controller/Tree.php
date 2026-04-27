@@ -53,21 +53,27 @@ class Tree extends Controller
  */
     public function index($param)
     {
-        $this->di['js']->addJavascript(array('bootstrap-editable.min.js', 'Tree/index.js'));
-        $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
-
         if (empty($param[0])) {
             $param[0] = 1;
         }
 
-        $data['id_menu'] = $param[0];
-
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-
-            if (!empty($_POST['menu']['id'])) {
-                header('location: '.LINK.$this->getClass().'/'.__FUNCTION__.'/'.$_POST['menu']['id']);
-            }
+        $indexRequest = self::evaluateIndexRequest($_GET, $_SERVER);
+        if ($indexRequest['status'] === 405) {
+            $this->view        = false;
+            $this->layout_name = false;
+            self::sendTreeIndexError($indexRequest['status'], $indexRequest['body'], $indexRequest['headers']);
+            return;
         }
+
+        if ($indexRequest['menu_id'] !== null) {
+            header('location: '.LINK.$this->getClass().'/'.__FUNCTION__.'/'.$indexRequest['menu_id']);
+            return;
+        }
+
+        $this->di['js']->addJavascript(array('bootstrap-editable.min.js', 'Tree/index.js'));
+        $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
+
+        $data['id_menu'] = $param[0];
         /*
           $this->di['js']->code_javascript('$(function () {  $(\'[data-toggle="popover"]\').popover({trigger:"hover"}) });');
           $this->di['js']->code_javascript('
@@ -112,6 +118,61 @@ class Tree extends Controller
         $data['tree_update_csrf_token'] = Csrf::issueToken($_SESSION, self::TREE_UPDATE_CSRF_SCOPE);
 
         $this->set('data', $data);
+    }
+
+    public static function evaluateIndexRequest(array $get, array $server): array
+    {
+        if (CsrfGuard::isPost($server)) {
+            return self::buildTreeIndexOutcome(405, 'Method Not Allowed', ['Allow' => 'GET']);
+        }
+
+        $menuId = self::normalizeIndexMenuSelection($get);
+
+        return [
+            'status' => $menuId === null ? 200 : 302,
+            'body' => '',
+            'headers' => [],
+            'menu_id' => $menuId,
+        ];
+    }
+
+    public static function normalizeIndexMenuSelection(array $get): ?int
+    {
+        if (
+            ! isset($get['menu'])
+            || ! is_array($get['menu'])
+            || ! array_key_exists('id', $get['menu'])
+            || ! is_scalar($get['menu']['id'])
+        ) {
+            return null;
+        }
+
+        $id = (string) $get['menu']['id'];
+        if (! ctype_digit($id) || (int) $id < 1) {
+            return null;
+        }
+
+        return (int) $id;
+    }
+
+    private static function buildTreeIndexOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'menu_id' => null,
+        ];
+    }
+
+    private static function sendTreeIndexError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
 /**
