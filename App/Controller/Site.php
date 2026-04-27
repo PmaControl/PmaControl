@@ -164,7 +164,7 @@ class Site extends Controller
             ],
             [
                 'id'       => 'login',
-                'route'    => 'User/login/',
+                'route'    => 'User/connection/',
                 'labels'   => [
                     'fr' => 'Se connecter',
                     'en' => 'Sign in',
@@ -661,4 +661,3 @@ class Site extends Controller
         $this->setActive('incidents');
     }
 }
-
