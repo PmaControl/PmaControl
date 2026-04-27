@@ -674,7 +674,7 @@ Database service has been restarted
 
 ## Scope
 
-The REST API documents and exposes the configuration I/O that is currently editable from the UI for these resources:
+The REST API documents and exposes read-only configuration I/O for these resources:
 
 - `tags`
 - `clients`
@@ -689,10 +689,8 @@ Supported verbs:
 
 - `GET /fr/api/config/{resource}`: list all items.
 - `GET /fr/api/config/{resource}/{id}`: read one item.
-- `POST /fr/api/config/{resource}`: create one item from a JSON body.
-- `PUT /fr/api/config/{resource}/{id}`: update one item from a JSON body.
-- `PATCH /fr/api/config/{resource}/{id}`: partial update.
-- `DELETE /fr/api/config/{resource}/{id}`: delete or soft-delete depending on the resource policy.
+
+`POST`, `PUT`, `PATCH` and `DELETE` are intentionally closed with `405 Method not allowed` and `Allow: GET` until a dedicated API authentication flow exists. They must not be re-opened as session-backed browser mutations without CSRF tokens, and they must not be documented as CSRF-exempt unless the endpoint authenticates machine clients independently.
 
 OpenAPI-like JSON export: `/fr/api/openApi`
 

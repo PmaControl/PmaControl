@@ -115,6 +115,38 @@ final class ApiTest extends TestCase
         $this->assertArrayHasKey('/fr/api/config/ssh-keys', $document['paths']);
     }
 
+    public function testConfigApiAllowsOnlyGetRequests(): void
+    {
+        $outcome = Api::evaluateConfigRequest(['REQUEST_METHOD' => 'GET']);
+
+        $this->assertSame(200, $outcome['status']);
+        $this->assertSame([], $outcome['headers']);
+    }
+
+    public function testConfigApiRejectsMutativeMethods(): void
+    {
+        foreach (['POST', 'PUT', 'PATCH', 'DELETE'] as $method) {
+            $outcome = Api::evaluateConfigRequest(['REQUEST_METHOD' => $method]);
+
+            $this->assertSame(405, $outcome['status']);
+            $this->assertSame('Method not allowed', $outcome['data']['error']);
+            $this->assertSame(['GET'], $outcome['data']['allowed']);
+            $this->assertSame('GET', $outcome['headers']['Allow']);
+        }
+    }
+
+    public function testOpenApiDocumentDoesNotExposeMutativeConfigMethods(): void
+    {
+        $document = Api::getOpenApiDocument();
+
+        $this->assertArrayHasKey('get', $document['paths']['/fr/api/config/tags']);
+        $this->assertArrayNotHasKey('post', $document['paths']['/fr/api/config/tags']);
+        $this->assertArrayHasKey('get', $document['paths']['/fr/api/config/tags/{id}']);
+        $this->assertArrayNotHasKey('put', $document['paths']['/fr/api/config/tags/{id}']);
+        $this->assertArrayNotHasKey('patch', $document['paths']['/fr/api/config/tags/{id}']);
+        $this->assertArrayNotHasKey('delete', $document['paths']['/fr/api/config/tags/{id}']);
+    }
+
     public function testReadRawRequestBodyFallsBackToStdinInCli(): void
     {
         $stream = fopen('php://memory', 'r+');

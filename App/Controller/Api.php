@@ -25,6 +25,8 @@ use Glial\Synapse\Controller;
  */
 class Api extends Controller
 {
+    private const CONFIG_ALLOWED_METHODS = ['GET'];
+
     /**
      * API resource metadata indexed by slug.
      *
@@ -237,25 +239,17 @@ class Api extends Controller
 
         $resource = $param[0] ?? '';
         $id = isset($param[1]) ? (int) $param[1] : null;
-        $method = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+        $request = self::evaluateConfigRequest($_SERVER);
+        if ($request['status'] !== 200) {
+            $this->respondJson($request['data'], $request['status'], $request['headers']);
 
-        $definition = self::getResourceDefinition($resource);
-        $db = Sgbd::sql(DB_DEFAULT);
+            return;
+        }
 
         try {
-            $response = match ($method) {
-                'GET' => $this->handleGet($db, $definition, $id),
-                'POST' => $this->handleCreate($db, $resource, $definition, self::readJsonInput()),
-                'PUT', 'PATCH' => $this->handleUpdate($db, $resource, $definition, $id, self::readJsonInput()),
-                'DELETE' => $this->handleDelete($db, $definition, $id),
-                default => [
-                    'status' => 405,
-                    'data' => [
-                        'error' => 'Method not allowed',
-                        'allowed' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-                    ],
-                ],
-            };
+            $definition = self::getResourceDefinition($resource);
+            $db = Sgbd::sql(DB_DEFAULT);
+            $response = $this->handleGet($db, $definition, $id);
         } catch (\Throwable $exception) {
             $response = [
                 'status' => 400,
@@ -266,6 +260,39 @@ class Api extends Controller
         }
 
         $this->respondJson($response['data'], $response['status']);
+    }
+
+    /**
+     * Validate the HTTP method for the configuration API.
+     *
+     * Mutative methods stay closed until this machine API has a dedicated
+     * authentication flow; there is no browser token issuer for CSRF here.
+     *
+     * @param array<string,mixed> $server Request server variables.
+     *
+     * @return array{status:int,data:array<string,mixed>,headers:array<string,string>}
+     */
+    public static function evaluateConfigRequest(array $server): array
+    {
+        $method = strtoupper((string) ($server['REQUEST_METHOD'] ?? 'GET'));
+        if (!in_array($method, self::CONFIG_ALLOWED_METHODS, true)) {
+            return [
+                'status' => 405,
+                'data' => [
+                    'error' => 'Method not allowed',
+                    'allowed' => self::CONFIG_ALLOWED_METHODS,
+                ],
+                'headers' => [
+                    'Allow' => implode(', ', self::CONFIG_ALLOWED_METHODS),
+                ],
+            ];
+        }
+
+        return [
+            'status' => 200,
+            'data' => [],
+            'headers' => [],
+        ];
     }
 
     /**
@@ -415,25 +442,11 @@ class Api extends Controller
                         'table' => $definition['table'],
                     ],
                 ],
-                'post' => [
-                    'summary' => 'Create '.$slug,
-                    'requestBody' => [
-                        'required' => $definition['requiredCreate'],
-                        'fields' => $definition['fields'],
-                    ],
-                ],
             ];
 
             $paths['/fr/api/config/'.$slug.'/{id}'] = [
                 'get' => [
                     'summary' => 'Read a single '.$slug.' item',
-                ],
-                'put' => [
-                    'summary' => 'Update a '.$slug.' item',
-                ],
-                'delete' => [
-                    'summary' => 'Delete a '.$slug.' item',
-                    'mode' => $definition['deleteMode'],
                 ],
             ];
         }
@@ -506,6 +519,12 @@ class Api extends Controller
             ],
         ];
     }
+
+    /*
+     * Mutative helpers are intentionally not routed by config() while
+     * /Api/config is read-only. Keep them isolated for a future authenticated
+     * API flow instead of re-opening them as session-backed CSRF exemptions.
+     */
 
     /**
      * @param object $db Database adapter exposing the legacy SQL API.
@@ -674,9 +693,12 @@ class Api extends Controller
      *
      * @return void
      */
-    private function respondJson(array $payload, int $status): void
+    private function respondJson(array $payload, int $status, array $headers = []): void
     {
         http_response_code($status);
+        foreach ($headers as $name => $value) {
+            header($name.': '.$value);
+        }
         header('Content-Type: application/json');
         echo json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n";
     }
