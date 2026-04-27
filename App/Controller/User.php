@@ -2,6 +2,8 @@
 
 namespace App\Controller;
 
+use App\Library\Security\CsrfGuard;
+use Glial\Security\Csrf;
 use \Glial\Synapse\Controller;
 use \Glial\I18n\I18n;
 use \Glial\Sgbd\Sgbd;
@@ -41,6 +43,8 @@ class User extends Controller {
  * @psalm-var array<int|string,mixed>
  */
     public $method_administration = array("user", "roles");
+
+    private const USER_UPDATE_IDGROUP_CSRF_SCOPE = 'user.updateIdGroup';
 
 /**
  * Prepare user state through `before`.
@@ -142,6 +146,12 @@ class User extends Controller {
             $tmp['libelle'] = __($ob->name);
             $data['group'][] = $tmp;
         }
+
+        $data['user_update_idgroup_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['user_update_idgroup_csrf_token'] = Csrf::issueToken(
+            $_SESSION,
+            self::USER_UPDATE_IDGROUP_CSRF_SCOPE
+        );
 
         $this->set("data", $data);
     }
@@ -1382,36 +1392,101 @@ GROUP BY d.id";
         $this->view = false;
 
 
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
+        $outcome = self::evaluateUpdateIdGroupRequest($_POST, $_SERVER, $_SESSION);
+        if ($outcome['status'] !== 200) {
+            $msg = I18n::getTranslation(__($outcome['body']));
+            $title = I18n::getTranslation(__("Error"));
+            set_flash("error", $title, $msg);
+            header('location: ' . LINK . "user/index");
+            return;
+        }
 
-            $db = Sgbd::sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
-            foreach ($_POST['user_main'] as $id_user_main => $value) {
+        foreach ($outcome['updates'] as $id_user_main => $id_group) {
 
-                $user_main = [];
-                $user_main['user_main']['id'] = $id_user_main;
-                $user_main['user_main']['id_group'] = $value['id_group'];
+            $user_main = [];
+            $user_main['user_main']['id'] = $id_user_main;
+            $user_main['user_main']['id_group'] = $id_group;
 
-                $yes = $db->sql_save($user_main);
+            $yes = $db->sql_save($user_main);
 
-                if (!$yes) {
+            if (!$yes) {
 
-                    $msg = I18n::getTranslation(__("Impossible to update the group for these users !") . $extra);
-                    $title = I18n::getTranslation(__("Error"));
-                    set_flash("error", $title, $msg);
+                $msg = I18n::getTranslation(__("Impossible to update the group for these users !"));
+                $title = I18n::getTranslation(__("Error"));
+                set_flash("error", $title, $msg);
 
-                    header('location: ' . LINK . "user/index");
-                }
+                header('location: ' . LINK . "user/index");
+                return;
+            }
+        }
+
+        $msg = I18n::getTranslation(__("The group of these users has been updated"));
+        $title = I18n::getTranslation(__("Success"));
+        set_flash("success", $title, $msg);
+
+
+        header('location: ' . LINK . 'user/index/');
+    }
+
+    public static function evaluateUpdateIdGroupRequest(array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::USER_UPDATE_IDGROUP_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildUpdateIdGroupOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $updates = self::normalizeUpdateIdGroupPayload($post);
+        if ($updates === null) {
+            return self::buildUpdateIdGroupOutcome(400, "Invalid user group update payload");
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'updates' => $updates,
+        ];
+    }
+
+    public static function normalizeUpdateIdGroupPayload(array $post): ?array
+    {
+        if (empty($post['user_main']) || !is_array($post['user_main'])) {
+            return null;
+        }
+
+        $updates = [];
+        foreach ($post['user_main'] as $id_user_main => $value) {
+            if (!is_array($value)) {
+                return null;
             }
 
-            $msg = I18n::getTranslation(__("The group of these users has been updated") . $extra);
-            $title = I18n::getTranslation(__("Success"));
-            set_flash("success", $title, $msg);
+            $userId = (string)$id_user_main;
+            $groupId = (string)($value['id_group'] ?? '');
 
+            if (!ctype_digit($userId) || (int)$userId < 1) {
+                return null;
+            }
 
-            header('location: ' . LINK . 'user/index/');
+            if (!ctype_digit($groupId) || (int)$groupId < 1) {
+                return null;
+            }
+
+            $updates[(int)$userId] = (int)$groupId;
         }
+
+        return $updates !== [] ? $updates : null;
+    }
+
+    private static function buildUpdateIdGroupOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'updates' => [],
+        ];
     }
 
 }
-
