@@ -2013,37 +2013,16 @@ END;";
         Debug::parseDebug($param);
 
         $db = Sgbd::sql(DB_DEFAULT);
-
-        $redirect = false;
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
-
-            $id_server1 = empty($_POST['compare_main']['id_mysql_server__original']) ? "" : $_POST['compare_main']['id_mysql_server__original'];
-            $id_server2 = empty($_POST['compare_main']['id_mysql_server__compare']) ? "" : $_POST['compare_main']['id_mysql_server__compare'];
-            $db1        = empty($_POST['compare_main']['database__original']) ? "" : $_POST['compare_main']['database__original'];
-            $db2        = empty($_POST['compare_main']['database__compare']) ? "" : $_POST['compare_main']['database__compare'];
-
-            $out = $this->checkConfig($id_server1, $db1, $id_server2, $db2);
-
-            if ($out !== true) {
-                $extra = "";
-
-                foreach ($out as $msg) {
-                    $extra .= "<br />".__($msg);
-                }
-
-                $msg   = I18n::getTranslation(__("Please correct your paramaters !").$extra);
-                $title = I18n::getTranslation(__("Error"));
-                set_flash("error", $title, $msg);
-
-                $redirect = true;
-            }
-
-            header('location: '.LINK.'database/compare/compare_main:id_mysql_server__original:'.$id_server1
-                .'/compare_main:'.'id_mysql_server__compare:'.$id_server2
-                .'/compare_main:'.'database__original:'.$db1
-                .'/compare_main:'.'database__compare:'.$db2
-            );
+        $dataRequest = self::evaluateDataRequest($_GET, $_SERVER);
+        if ($dataRequest['status'] !== 200) {
+            $this->view = false;
+            $this->layout_name = false;
+            self::sendDatabaseDataError($dataRequest['status'], $dataRequest['body'], $dataRequest['headers']);
+            return;
         }
+
+        $selection = $dataRequest['selection'];
+        self::applyDataSelectionToGet($selection);
 //134217728
 //375394272
 
@@ -2063,14 +2042,14 @@ END;";
         }
 
         $data['listdb1'] = array();
-        if (!empty($_GET['compare_main']['id_mysql_server__original'])) {
-            $select1         = $this->getDatabaseByServer(array($_GET['compare_main']['id_mysql_server__original']));
+        if ($selection['id_mysql_server__original'] !== null) {
+            $select1         = $this->getDatabaseByServer(array($selection['id_mysql_server__original']));
             $data['listdb1'] = $select1['databases'];
         }
 
         $data['listdb2'] = array();
-        if (!empty($_GET['compare_main']['id_mysql_server__compare'])) {
-            $select1         = $this->getDatabaseByServer(array($_GET['compare_main']['id_mysql_server__compare']));
+        if ($selection['id_mysql_server__compare'] !== null) {
+            $select1         = $this->getDatabaseByServer(array($selection['id_mysql_server__compare']));
             $data['listdb2'] = $select1['databases'];
         }
 
@@ -2078,12 +2057,12 @@ END;";
         $data['display'] = false;
 
         if (count($data['listdb2']) != 0 && count($data['listdb1']) != 0) {
-            if (!empty($_GET['compare_main']['database__original']) && !empty($_GET['compare_main']['database__compare'])) {
+            if ($selection['database__original'] !== null && $selection['database__compare'] !== null) {
 
-                $id_mysql_server_a = $_GET['compare_main']['id_mysql_server__original'];
-                $database_a        = $_GET['compare_main']['database__original'];
-                $id_mysql_server_b = $_GET['compare_main']['id_mysql_server__compare'];
-                $database_b        = $_GET['compare_main']['database__compare'];
+                $id_mysql_server_a = $selection['id_mysql_server__original'];
+                $database_a        = $selection['database__original'];
+                $id_mysql_server_b = $selection['id_mysql_server__compare'];
+                $database_b        = $selection['database__compare'];
 
                 $data['resultat'] = $this->analyse(array($id_mysql_server_a, $database_a, $id_mysql_server_b, $database_b));
 
@@ -2096,6 +2075,109 @@ END;";
         }
 
         $this->set('data', $data);
+    }
+
+    public static function evaluateDataRequest(array $get, array $server): array
+    {
+        $method = strtoupper((string) ($server['REQUEST_METHOD'] ?? 'GET'));
+        if ($method !== 'GET' && $method !== 'HEAD') {
+            return self::buildDatabaseDataOutcome(405, 'Method Not Allowed', ['Allow' => 'GET, HEAD']);
+        }
+
+        $selection = self::normalizeDataSelection($get);
+        if ($selection === null) {
+            return self::buildDatabaseDataOutcome(400, 'Invalid database data selection');
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'selection' => $selection,
+        ];
+    }
+
+    public static function normalizeDataSelection(array $get): ?array
+    {
+        $selection = [
+            'id_mysql_server__original' => null,
+            'id_mysql_server__compare' => null,
+            'database__original' => null,
+            'database__compare' => null,
+        ];
+
+        if (!isset($get['compare_main'])) {
+            return $selection;
+        }
+        if (!is_array($get['compare_main'])) {
+            return null;
+        }
+
+        foreach ($get['compare_main'] as $field => $value) {
+            if (!is_string($field) || !array_key_exists($field, $selection) || !is_scalar($value)) {
+                return null;
+            }
+
+            $text = trim((string) $value);
+            if ($text === '') {
+                continue;
+            }
+
+            if ($field === 'id_mysql_server__original' || $field === 'id_mysql_server__compare') {
+                if (!ctype_digit($text) || (int) $text < 1) {
+                    return null;
+                }
+
+                $selection[$field] = (int) $text;
+                continue;
+            }
+
+            if (!Identifier::isDatabaseName($text)) {
+                return null;
+            }
+
+            $selection[$field] = $text;
+        }
+
+        return $selection;
+    }
+
+    private static function applyDataSelectionToGet(array $selection): void
+    {
+        $compareMain = [];
+        foreach ($selection as $field => $value) {
+            if ($value !== null) {
+                $compareMain[$field] = (string) $value;
+            }
+        }
+
+        if ($compareMain === []) {
+            unset($_GET['compare_main']);
+            return;
+        }
+
+        // Form::select reads $_GET directly to restore selected values in this legacy view.
+        $_GET['compare_main'] = $compareMain;
+    }
+
+    private static function buildDatabaseDataOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'selection' => null,
+        ];
+    }
+
+    private static function sendDatabaseDataError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
 /**

@@ -8,7 +8,7 @@
 use Glial\Html\Form\Form;
 ?>
 
-<form action="<?= LINK ?>database/data" method="post">
+<form action="<?= LINK ?>database/data" method="get">
     <div class="panel panel-primary">
         <div class="panel-heading">
             <h3 class="panel-title"><?= __('Compare database') ?></h3>
