@@ -7,7 +7,11 @@
 
 use Glial\Html\Form\Form;
 
-echo '<form action="" method="POST">';
+$clientAddCsrfField = htmlspecialchars((string) ($data['client_add_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$clientAddCsrfToken = htmlspecialchars((string) ($data['client_add_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+
+echo '<form action="'.LINK.'client/add" method="post">';
+echo '<input type="hidden" name="'.$clientAddCsrfField.'" value="'.$clientAddCsrfToken.'" />';
 
 
 echo '<div class="form-group">';
@@ -17,5 +21,4 @@ echo '<br />';
 echo '<button type="submit" class="btn btn-primary">'.__("Add").'</button>';
 echo '</div>';
 echo '</form>';
-
 
