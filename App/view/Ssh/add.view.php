@@ -1,8 +1,13 @@
 <?php
 
 use Glial\Html\Form\Form;
+
+$sshSaveCsrfField = htmlspecialchars((string) ($data['ssh_save_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$sshSaveCsrfToken = htmlspecialchars((string) ($data['ssh_save_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$sshSaveCsrfInput = '<input type="hidden" name="'.$sshSaveCsrfField.'" value="'.$sshSaveCsrfToken.'">';
 ?>
 <form action="" method="post">
+    <?= $sshSaveCsrfInput ?>
     <div class="panel panel-primary">
         <div class="panel-heading">
             <h3 class="panel-title"><?= __('Add a ssh key') ?></h3>
