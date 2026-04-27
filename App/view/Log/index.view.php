@@ -9,7 +9,7 @@ use \Glial\Html\Form\Form;
 
 echo '<div class="well">';
 
-echo '<form action="" method="post">';
+echo '<form action="" method="get">';
 
 echo '<div class="row">';
 echo '<div class="col-md-2">';
@@ -107,11 +107,12 @@ echo '</div>';
 
 if (!empty($data['log'])) {
 
-    $variables = explode(',', substr($_GET['ts_variable']['id'], 1, -1));
+    $variables = $data['filters']['ts_variables'] ?? array();
 
+    $titles = array();
     foreach ($variables as $variable) {
         $elem     = explode('::', $variable);
-        $titles[] = $elem[1];
+        $titles[] = $elem[1] ?? $elem[0];
     }
 
     if (count($data['log']) == 1) {
@@ -125,7 +126,7 @@ if (!empty($data['log'])) {
 
 
         foreach ($titles as $title) {
-            echo '<th>'.$title.'</th>';
+            echo '<th>'.htmlspecialchars($title, ENT_QUOTES, 'UTF-8').'</th>';
         }
 
         echo '</tr>';
@@ -136,14 +137,14 @@ if (!empty($data['log'])) {
 
                 foreach ($connection as $date => $values) {
                     echo '<tr>';
-                    echo '<td>'.$date.'</td>';
+                    echo '<td>'.htmlspecialchars((string) $date, ENT_QUOTES, 'UTF-8').'</td>';
 
 
                     foreach ($titles as $title) {
                         echo '<td>';
 
                         if (isset($values[$title])) {
-                            echo $values[$title];
+                            echo htmlspecialchars((string) $values[$title], ENT_QUOTES, 'UTF-8');
                         } else {
                             echo 'N/A';
                         }
@@ -159,8 +160,6 @@ if (!empty($data['log'])) {
 
 
         echo '</table>';
-        http://localhost/pmacontrol/en/Log/index/mysql_server:id:[7]/ts_variable:id:[slave::exec_master_log_pos,slave::last_io_errno,slave::last_io_error,slave::last_sql_errno,slave::last_sql_error,slave::master_log_file,status::wsrep_cluster_size,status::wsrep_cluster_status,status::wsrep_local_state_comment,status::wsrep_ready]/ts:date_start:2018-07-26%2003:45:55/ts:date_end:2018-07-04%2004:13:46
-        //;
     }
 
     //debug($data['log']);
