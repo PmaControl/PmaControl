@@ -1,8 +1,13 @@
 <?php
 use Glial\Html\Form\Form;
 use Glial\I18n\I18n;
+
+$tagAddCsrfField = htmlspecialchars((string) ($data['tag_add_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$tagAddCsrfToken = htmlspecialchars((string) ($data['tag_add_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
 ?>
 <form action="" method="post">
+    <input type="hidden" name="<?= $tagAddCsrfField ?>" value="<?= $tagAddCsrfToken ?>">
+
     <div class="panel panel-primary">
         <div class="panel-heading">
             <h3 class="panel-title"><?= __('Add a tag') ?></h3>
@@ -32,4 +37,3 @@ use Glial\I18n\I18n;
         </div>
     </div>
 </form>
-
