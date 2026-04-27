@@ -46,6 +46,19 @@ class Server extends Controller
     private const SERVER_PASSWORD_CSRF_SCOPE = 'server.password';
     private const SERVER_PASSWORD_LOGIN_MAX_LENGTH = 128;
     private const SERVER_PASSWORD_VALUE_MAX_LENGTH = 1024;
+    private const SERVER_ID_FILTER_INTERVALS = [
+        '5-minute',
+        '15-minute',
+        '1-hour',
+        '2-hour',
+        '6-hour',
+        '12-hour',
+        '1-day',
+        '2-day',
+        '1-week',
+        '2-week',
+        '1-month',
+    ];
 /**
  * Stores `$clip` for clip.
  *
@@ -1215,22 +1228,20 @@ class Server extends Controller
 
         $data = array();
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST" && !empty($_POST['mysql_server'])) {
-
-            $sql = "SELECT * FROM mysql_server where id='".$_POST['mysql_server']['id']."'";
-            $res = $db->sql_query($sql);
-            while ($ob  = $db->sql_fetch_object($res)) {
-                $id_mysql_server = $ob->id;
-
+        if ($_SERVER['REQUEST_METHOD'] === "GET" && !empty($_GET['server_id_filter'])) {
+            $filter = self::normalizeIdFilterPayload($_GET);
+            if ($filter !== null) {
                 header('location: '.LINK.$this->getClass()
-                    .'/'.__FUNCTION__.'/mysql_server:id:'.$id_mysql_server
-                    .'/ts_variable:name:'.$_POST['ts_variable']['name']
-                    .'/ts_variable:date:'.$_POST['ts_variable']['date']
-                    .'/ts_variable:derivate:'.$_POST['ts_variable']['derivate']);
-                    exit;
+                    .'/'.__FUNCTION__.'/mysql_server:id:'.$filter['id_mysql_server']
+                    .'/ts_variable:name:'.$filter['ts_variable_name']
+                    .'/ts_variable:date:'.$filter['ts_variable_date']
+                    .'/ts_variable:derivate:'.$filter['ts_variable_derivate']);
+                exit;
             }
-        } else {
 
+            header('location: '.LINK.$this->getClass().'/'.__FUNCTION__);
+            exit;
+        }
             // get server available
             //TODO : add available ===1
             $sql             = "SELECT * FROM mysql_server a WHERE 1=1 ".$this->getFilter()." order by a.name ASC";
@@ -1280,13 +1291,17 @@ class Server extends Controller
                 $_GET['ts_variable']['date'] = "1 hour";
             }
 
-            if (!empty($_GET['mysql_server']['id']) && !empty($_GET['ts_variable']['name']) && !empty($_GET['ts_variable']['date']) && !empty($_GET['ts_variable']['derivate'])
-            ) {
+            $activeFilter = self::normalizeIdFilterPayload($_GET);
+            if ($activeFilter !== null) {
                 
                 
                 $gg = Extraction::extract(array("version"), array(1));
 
-                $res = Extraction::extract(array($_GET['ts_variable']['name']), array($_GET['mysql_server']['id']), str_replace("-"," ",$_GET['ts_variable']['date']));
+                $res = Extraction::extract(
+                    array($activeFilter['ts_variable_name']),
+                    array($activeFilter['id_mysql_server']),
+                    str_replace("-", " ", $activeFilter['ts_variable_date'])
+                );
 
 
                 $data['date_max'] = date('Y-m-d H:i:s');
@@ -1322,7 +1337,7 @@ class Server extends Controller
                   $name = $ob2->name;
                   } */
 
-                $name = $_GET['ts_variable']['name'];
+                $name = $activeFilter['ts_variable_name'];
                 $i    = 0;
 
                 $old_date = "";
@@ -1332,12 +1347,12 @@ class Server extends Controller
 
                     foreach ($data['graph'] as $value) {
 
-                        if (empty($old_date) && $_GET['ts_variable']['derivate'] == "1") {
+                        if (empty($old_date) && $activeFilter['ts_variable_derivate'] == "1") {
 
                             $old_date  = $value['date'];
                             $old_value = $value['value'];
                             continue;
-                        } elseif ($_GET['ts_variable']['derivate'] == "1") {
+                        } elseif ($activeFilter['ts_variable_derivate'] == "1") {
 
                             $datetime1 = strtotime($old_date);
                             $datetime2 = strtotime($value['date']);
@@ -1384,7 +1399,7 @@ var myChart = new Chart(ctx, {
     type: "line",
     data: {
         datasets: [{
-            label: "'.$name.'",
+            label: '.json_encode($name).',
             data: ['.$points.'],
                 borderWidth: 1,
              pointRadius :0,
@@ -1515,9 +1530,51 @@ var myChart = new Chart(ctx, {
 
                 $data['fields_required'] = 1;
             }
-        }
 
         $this->set('data', $data);
+    }
+
+    public static function normalizeIdFilterPayload(array $source): ?array
+    {
+        if (
+            empty($source['mysql_server']['id'])
+            || empty($source['ts_variable']['name'])
+            || empty($source['ts_variable']['date'])
+            || empty($source['ts_variable']['derivate'])
+            || !is_scalar($source['mysql_server']['id'])
+            || !is_scalar($source['ts_variable']['name'])
+            || !is_scalar($source['ts_variable']['date'])
+            || !is_scalar($source['ts_variable']['derivate'])
+        ) {
+            return null;
+        }
+
+        $idMysqlServer = self::normalizeSettingsPositiveInteger($source['mysql_server']['id']);
+        if ($idMysqlServer === null) {
+            return null;
+        }
+
+        $name = trim((string) $source['ts_variable']['name']);
+        if ($name === '' || strlen($name) > 128 || preg_match('/^[A-Za-z0-9_.-]+$/', $name) !== 1) {
+            return null;
+        }
+
+        $date = str_replace(' ', '-', trim((string) $source['ts_variable']['date']));
+        if (!in_array($date, self::SERVER_ID_FILTER_INTERVALS, true)) {
+            return null;
+        }
+
+        $derivate = trim((string) $source['ts_variable']['derivate']);
+        if (!in_array($derivate, ['1', '2'], true)) {
+            return null;
+        }
+
+        return [
+            'id_mysql_server' => $idMysqlServer,
+            'ts_variable_name' => $name,
+            'ts_variable_date' => $date,
+            'ts_variable_derivate' => $derivate,
+        ];
     }
 
 /**
