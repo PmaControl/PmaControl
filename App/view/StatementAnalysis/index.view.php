@@ -1,7 +1,7 @@
 <?php
 
 echo '<div>';
-echo '<form action="" method="POST">';
+echo '<form action="" method="GET">';
 echo __("Server") . " : ";
 
 \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_server", "id", array("data-width" => "auto")));
