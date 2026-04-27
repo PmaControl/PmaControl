@@ -1,7 +1,7 @@
 <?php
 use Glial\Html\Form\Form;
 ?>
-<form method="post">
+<form method="get">
 <?php
 
 //debug($data);
@@ -145,4 +145,3 @@ foreach($data['json'] as $elem)
   echo '</div>';
   echo '</div>';
 }
-

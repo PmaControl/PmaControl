@@ -75,44 +75,24 @@ class Dashboard extends Controller
              });
         });");
 
-        $now = date("Y-m-d H:i:s");
-        $hourAgo = date("H:i:s", strtotime("-1 hour", strtotime($now)));
-
-        $split_get = explode("/", $_GET["url"]);
-
-        $time = "";
-        if (count($split_get)> 4 )
-        {
-            $time = $split_get[4];
+        $jsonRequest = self::evaluateJsonRequest($_GET, $_SERVER, $param);
+        if ($jsonRequest['status'] !== 200) {
+            $this->view = false;
+            $this->layout_name = false;
+            self::sendDashboardJsonError($jsonRequest['status'], $jsonRequest['body'], $jsonRequest['headers']);
+            return;
         }
 
-        $output_array = [];
-        preg_match('/^\d{2}\:\d{2}\:\d{2}$/', $time, $output_array);
-
-
-        if (!empty($output_array[0])){
-            $_GET['date']['time'] = $output_array[0];
-        }
-        else{
-            $_GET['date']['time'] = $hourAgo;
-        }
-
-        $_GET['mysql_server']['id'] = $param[0] ?? 1;
-        $_GET['ts_variable']['id'] = $param[1]  ?? 1323;  // better to map processlist there, the id can change and will change
-        $_GET['date']['date'] = $param[2] ?? date('Y-m-d');
-        
-        $limit = $param[4] ?? 100;
+        $filter = $jsonRequest['filter'];
+        $_GET['mysql_server']['id'] = (string) $filter['id_mysql_server'];
+        $_GET['ts_variable']['id'] = (string) $filter['id_ts_variable'];
+        $_GET['date']['date'] = $filter['date'];
+        $_GET['date']['time'] = $filter['time'];
+        $_GET['limit'] = (string) $filter['limit'];
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST")
-        {
-            header("location: ".LINK."Dashboard/json/".$_POST['mysql_server']['id']."/".$_POST['ts_variable']['id'].
-            "/".$_POST['date']['date']."/".$_POST['date']['time']."/10");
-            exit;
-        }
-
-        $sql = "select * from ts_value_general_json where id_mysql_server =".$_GET['mysql_server']['id']." and id_ts_variable= ".$_GET['ts_variable']['id']." and date > '".$_GET['date']['date']." ".$_GET['date']['time']."' limit ".$limit."";
+        $sql = self::buildJsonRowsSql($filter);
         //$sql = "select * from ts_value_general_json where id_mysql_server =19 and id_ts_variable= 1323 and date > '2025-02-06 01:20:00' limit 10";
         //debug($sql);
         $res = $db->sql_query($sql);
@@ -140,6 +120,166 @@ class Dashboard extends Controller
         }
 
         $this->set('data', $data);
+    }
+
+    public static function evaluateJsonRequest(array $get, array $server, array $param = [], ?string $now = null): array
+    {
+        $method = strtoupper((string) ($server['REQUEST_METHOD'] ?? 'GET'));
+        if ($method !== 'GET' && $method !== 'HEAD') {
+            return self::buildDashboardJsonOutcome(405, 'Method Not Allowed', ['Allow' => 'GET, HEAD']);
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'filter' => self::normalizeJsonFilter($get, $param, $now),
+        ];
+    }
+
+    public static function normalizeJsonFilter(array $get, array $param = [], ?string $now = null): array
+    {
+        $timestamp = strtotime($now ?? date('Y-m-d H:i:s'));
+        if ($timestamp === false) {
+            $timestamp = time();
+        }
+
+        $date = self::normalizeJsonDate(self::arrayPath($get, ['date', 'date']) ?? ($param[2] ?? self::extractFirstDateFromUrl($get['url'] ?? null)));
+        $time = self::normalizeJsonTime(self::arrayPath($get, ['date', 'time']) ?? ($param[3] ?? self::extractFirstTimeFromUrl($get['url'] ?? null)));
+
+        return [
+            'id_mysql_server' => self::normalizeJsonPositiveInt(self::arrayPath($get, ['mysql_server', 'id']) ?? ($param[0] ?? null), 1),
+            'id_ts_variable' => self::normalizeJsonPositiveInt(self::arrayPath($get, ['ts_variable', 'id']) ?? ($param[1] ?? null), 1323),
+            'date' => $date ?? date('Y-m-d', $timestamp),
+            'time' => $time ?? date('H:i:s', strtotime('-1 hour', $timestamp)),
+            'limit' => self::normalizeJsonPositiveInt($get['limit'] ?? ($param[4] ?? null), 100, 1, 1000),
+        ];
+    }
+
+    public static function buildJsonRowsSql(array $filter): string
+    {
+        return "select * from ts_value_general_json where id_mysql_server =".(int) $filter['id_mysql_server']
+            ." and id_ts_variable= ".(int) $filter['id_ts_variable']
+            ." and date > '".$filter['date']." ".$filter['time']."' limit ".(int) $filter['limit'];
+    }
+
+    private static function normalizeJsonPositiveInt($raw, int $default, int $min = 1, ?int $max = null): int
+    {
+        if (!is_scalar($raw)) {
+            return $default;
+        }
+
+        $text = trim((string) $raw);
+        if (!ctype_digit($text)) {
+            return $default;
+        }
+
+        $value = (int) $text;
+        if ($value < $min) {
+            return $default;
+        }
+        if ($max !== null && $value > $max) {
+            return $max;
+        }
+
+        return $value;
+    }
+
+    private static function normalizeJsonDate($raw): ?string
+    {
+        if (!is_scalar($raw)) {
+            return null;
+        }
+
+        $date = trim((string) $raw);
+        if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $date, $matches) !== 1) {
+            return null;
+        }
+
+        if (!checkdate((int) $matches[2], (int) $matches[3], (int) $matches[1])) {
+            return null;
+        }
+
+        return $date;
+    }
+
+    private static function normalizeJsonTime($raw): ?string
+    {
+        if (!is_scalar($raw)) {
+            return null;
+        }
+
+        $time = trim((string) $raw);
+        if (preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$/', $time) !== 1) {
+            return null;
+        }
+
+        return $time;
+    }
+
+    private static function arrayPath(array $source, array $path)
+    {
+        $current = $source;
+        foreach ($path as $key) {
+            if (!is_array($current) || !array_key_exists($key, $current)) {
+                return null;
+            }
+            $current = $current[$key];
+        }
+
+        return $current;
+    }
+
+    private static function extractFirstDateFromUrl($url): ?string
+    {
+        if (!is_scalar($url)) {
+            return null;
+        }
+
+        foreach (explode('/', (string) $url) as $segment) {
+            $date = self::normalizeJsonDate($segment);
+            if ($date !== null) {
+                return $date;
+            }
+        }
+
+        return null;
+    }
+
+    private static function extractFirstTimeFromUrl($url): ?string
+    {
+        if (!is_scalar($url)) {
+            return null;
+        }
+
+        foreach (explode('/', (string) $url) as $segment) {
+            $time = self::normalizeJsonTime($segment);
+            if ($time !== null) {
+                return $time;
+            }
+        }
+
+        return null;
+    }
+
+    private static function buildDashboardJsonOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'filter' => null,
+        ];
+    }
+
+    private static function sendDashboardJsonError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
 
