@@ -1,8 +1,13 @@
 <?php
 
 use Glial\Html\Form\Form;
+
+$dockerAddCsrfField = htmlspecialchars((string) ($data['docker_add_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$dockerAddCsrfToken = htmlspecialchars((string) ($data['docker_add_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
 ?>
-<form action="" method="post">
+<form action="<?= LINK ?>docker/add" method="post">
+    <input type="hidden" name="<?= $dockerAddCsrfField ?>" value="<?= $dockerAddCsrfToken ?>">
+
     <div class="panel panel-primary">
         <div class="panel-heading">
             <h3 class="panel-title"><?= __('Docker Host Parameters') ?></h3>

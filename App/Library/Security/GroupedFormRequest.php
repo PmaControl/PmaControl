@@ -48,11 +48,12 @@ final class GroupedFormRequest
             }
 
             if (array_key_exists('default', $rule)) {
-                if (!is_scalar($rule['default'])) {
+                $default = self::normalizeValue($rule['default'], $rule);
+                if ($default === null) {
                     return null;
                 }
 
-                $payload[$field] = (string) $rule['default'];
+                $payload[$field] = $default;
             }
         }
 
@@ -62,27 +63,12 @@ final class GroupedFormRequest
             }
 
             $rule = $rules[$field];
-            $type = (string) ($rule['type'] ?? (isset($rule['values']) ? 'enum' : 'string'));
-            if (!in_array($type, ['string', 'enum'], true)) {
+            $payloadValue = self::normalizeValue($value, $rule);
+            if ($payloadValue === null) {
                 return null;
             }
 
-            $text = trim((string) $value);
-            if (isset($rule['max']) && strlen($text) > (int) $rule['max']) {
-                return null;
-            }
-
-            if (isset($rule['min']) && strlen($text) < (int) $rule['min']) {
-                return null;
-            }
-
-            if ($type === 'enum') {
-                if (!isset($rule['values']) || !is_array($rule['values']) || !in_array($text, $rule['values'], true)) {
-                    return null;
-                }
-            }
-
-            $payload[$field] = $text;
+            $payload[$field] = $payloadValue;
         }
 
         foreach ($rules as $field => $rule) {
@@ -91,7 +77,63 @@ final class GroupedFormRequest
             }
         }
 
-        return $payload;
+        $orderedPayload = [];
+        foreach ($rules as $field => $rule) {
+            if (array_key_exists($field, $payload)) {
+                $orderedPayload[$field] = $payload[$field];
+            }
+        }
+
+        return $orderedPayload;
+    }
+
+    private static function normalizeValue($raw, array $rule)
+    {
+        if (!is_scalar($raw)) {
+            return null;
+        }
+
+        $text = trim((string) $raw);
+        if ($text === '' && array_key_exists('default', $rule)) {
+            $text = trim((string) $rule['default']);
+        }
+
+        $type = (string) ($rule['type'] ?? (isset($rule['values']) ? 'enum' : 'string'));
+        if ($type === 'int') {
+            if (!ctype_digit($text)) {
+                return null;
+            }
+
+            $value = (int) $text;
+            if (isset($rule['min']) && $value < (int) $rule['min']) {
+                return null;
+            }
+            if (isset($rule['max']) && $value > (int) $rule['max']) {
+                return null;
+            }
+
+            return $value;
+        }
+
+        if (!in_array($type, ['string', 'enum'], true)) {
+            return null;
+        }
+
+        if (isset($rule['max']) && strlen($text) > (int) $rule['max']) {
+            return null;
+        }
+
+        if (isset($rule['min']) && strlen($text) < (int) $rule['min']) {
+            return null;
+        }
+
+        if ($type === 'enum') {
+            if (!isset($rule['values']) || !is_array($rule['values']) || !in_array($text, $rule['values'], true)) {
+                return null;
+            }
+        }
+
+        return $text;
     }
 
     private static function outcome(int $statusCode, string $message, array $headers = []): array
