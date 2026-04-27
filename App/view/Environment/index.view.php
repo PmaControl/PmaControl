@@ -5,6 +5,10 @@
  * and open the template in the editor.
  */
 
+$environmentUpdateCsrfField = htmlspecialchars((string) ($data['environment_update_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$environmentUpdateCsrfToken = htmlspecialchars((string) ($data['environment_update_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$environmentUpdateCsrfAttributes = ' data-csrf-field="'.$environmentUpdateCsrfField.'" data-csrf-token="'.$environmentUpdateCsrfToken.'"';
+
 echo '<table class="table table-bordered table-striped" id="table">';
 echo '<tr>';
 echo '<th style="width: 10%">' . __('Top') . '</th>';
@@ -24,10 +28,10 @@ foreach ($data['env'] as $env) {
     echo '<td>' . $i . '</td>';
     echo '<td>' . $env['id'] . '</td>';
     echo '<td><span class="label label-' . $env['class'] . '">' . $env['libelle'] . '</span></td>';
-    echo '<td class="line-edit" data-name="libelle" data-pk="' . $env['id'] . '" data-type="text" data-url="' . LINK . 'environment/update" data-title="Enter Libelle">' . $env['libelle'] . '</td>';
-    echo '<td class="line-edit" data-name="key" data-pk="' . $env['id'] . '" data-type="text" data-url="' . LINK . 'environment/update" data-title="Enter key">' . $env['key'] . '</td>';
-    echo '<td class="line-edit" data-name="class" data-pk="' . $env['id'] . '" data-type="text" data-url="' . LINK . 'environment/update" data-title="Enter class">' . $env['class'] . '</td>';
-    echo '<td class="line-edit" data-name="letter" data-pk="' . $env['id'] . '" data-type="text" data-url="' . LINK . 'environment/update" data-title="Enter letter">' . $env['letter'] . '</td>';
+    echo '<td class="line-edit"' . $environmentUpdateCsrfAttributes . ' data-name="libelle" data-pk="' . (int) $env['id'] . '" data-type="text" data-url="' . LINK . 'environment/update" data-title="Enter Libelle">' . $env['libelle'] . '</td>';
+    echo '<td class="line-edit"' . $environmentUpdateCsrfAttributes . ' data-name="key" data-pk="' . (int) $env['id'] . '" data-type="text" data-url="' . LINK . 'environment/update" data-title="Enter key">' . $env['key'] . '</td>';
+    echo '<td class="line-edit"' . $environmentUpdateCsrfAttributes . ' data-name="class" data-pk="' . (int) $env['id'] . '" data-type="text" data-url="' . LINK . 'environment/update" data-title="Enter class">' . $env['class'] . '</td>';
+    echo '<td class="line-edit"' . $environmentUpdateCsrfAttributes . ' data-name="letter" data-pk="' . (int) $env['id'] . '" data-type="text" data-url="' . LINK . 'environment/update" data-title="Enter letter">' . $env['letter'] . '</td>';
     echo '<td>';
     
     if ($env['id'] > 6){

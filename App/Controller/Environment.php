@@ -10,7 +10,9 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use App\Library\Post;
+use App\Library\Security\InlineEditRequest;
 use \Glial\Sgbd\Sgbd;
+use Glial\Security\Csrf;
 
 
 /**
@@ -28,6 +30,9 @@ use \Glial\Sgbd\Sgbd;
  * @version 1.0
  */
 class Environment extends Controller {
+    private const ENVIRONMENT_UPDATE_CSRF_SCOPE = 'environment.update';
+    private const ENVIRONMENT_UPDATE_FIELDS = ['libelle', 'key', 'class', 'letter'];
+    private const ENVIRONMENT_UPDATE_VALUE_MAX_BYTES = 255;
 
 /**
  * Render environment state through `index`.
@@ -65,6 +70,8 @@ class Environment extends Controller {
             $data['env'][] = $row;
         }
 
+        $data['environment_update_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['environment_update_csrf_token'] = Csrf::issueToken($_SESSION, self::ENVIRONMENT_UPDATE_CSRF_SCOPE);
 
         $this->set('data', $data);
     }
@@ -92,17 +99,60 @@ class Environment extends Controller {
         $this->view = false;
         $this->layout_name = false;
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            $db = Sgbd::sql(DB_DEFAULT);
+        $outcome = self::evaluateUpdateRequest($_POST, $_SERVER, $_SESSION);
+        if ($outcome['status'] !== 200) {
+            self::sendEnvironmentUpdateError($outcome['status'], $outcome['body'], $outcome['headers']);
+            return;
+        }
 
-            $sql = "UPDATE environment SET `" . $_POST['name'] . "` = '" . $_POST['value'] . "' WHERE id = " . $db->sql_real_escape_string($_POST['pk']) . "";
-            $db->sql_query($sql);
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = self::buildEnvironmentUpdateSql($outcome['update'], [$db, 'sql_real_escape_string']);
+        $db->sql_query($sql);
 
-            if ($db->sql_affected_rows() === 1) {
-                echo "OK";
-            } else {
-                header("HTTP/1.0 503 Internal Server Error");
-            }
+        if ($db->sql_affected_rows() === 1) {
+            echo "OK";
+        } else {
+            self::sendEnvironmentUpdateError(503, "Environment not updated");
+        }
+    }
+
+    public static function evaluateUpdateRequest(array $post, array $server, array $session): array
+    {
+        return InlineEditRequest::evaluate(
+            $post,
+            $server,
+            $session,
+            self::ENVIRONMENT_UPDATE_CSRF_SCOPE,
+            self::ENVIRONMENT_UPDATE_FIELDS,
+            "Invalid environment update payload",
+            self::ENVIRONMENT_UPDATE_VALUE_MAX_BYTES
+        );
+    }
+
+    public static function normalizeUpdatePayload(array $post): ?array
+    {
+        return InlineEditRequest::normalize($post, self::ENVIRONMENT_UPDATE_FIELDS, self::ENVIRONMENT_UPDATE_VALUE_MAX_BYTES);
+    }
+
+    public static function buildEnvironmentUpdateSql(array $update, callable $escape): string
+    {
+        return sprintf(
+            "UPDATE environment SET `%s` = '%s' WHERE id = %d",
+            $update['field'],
+            $escape($update['value']),
+            $update['id']
+        );
+    }
+
+    private static function sendEnvironmentUpdateError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+
+        if ($message !== '') {
+            echo $message;
         }
     }
 
@@ -205,4 +255,3 @@ class Environment extends Controller {
     }
 
 }
-
