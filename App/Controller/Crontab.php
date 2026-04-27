@@ -4,6 +4,9 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
+use App\Library\Security\CsrfGuard;
+use Glial\Cli\Crontab as CliCrontab;
+use Glial\Security\Csrf;
 
 
 /**
@@ -21,6 +24,9 @@ use \Glial\Sgbd\Sgbd;
  * @version 1.0
  */
 class Crontab extends Controller {
+    private const ADMIN_CRONTAB_ADD_CSRF_SCOPE = 'crontab.admin_crontab.add';
+    private const ADMIN_CRONTAB_DELETE_CSRF_SCOPE = 'crontab.admin_crontab.delete';
+    private const ADMIN_CRONTAB_CRON_FIELDS = ['minute', 'hour', 'dayofmonth', 'month', 'dayofweek'];
 
 /**
  * Stores `$module_group` for module group.
@@ -97,42 +103,56 @@ class Crontab extends Controller {
 
         $this->javascript = array("jquery.1.3.2.js");
 
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
+        if (CsrfGuard::isPost($_SERVER)) {
             if (!empty($_POST['crontab']['command'])) {
+                $request = self::evaluateAdminCrontabAddRequest($_POST, $_SERVER, $_SESSION);
+                if ($request['status'] !== 200) {
+                    $this->view        = false;
+                    $this->layout_name = false;
+                    self::sendAdminCrontabError($request['status'], $request['body'], $request['headers']);
+                    return $module;
+                }
 
-                $regexp = $this->buildRegexp();
+                $payload = $request['payload'];
+                $regexp = CliCrontab::buildRegexp();
 
-                $ligne = $_POST['crontab']['minute'] . " " . $_POST['crontab']['hour'] . " " . $_POST['crontab']['dayofmonth'] . " " . $_POST['crontab']['month'] . " " . $_POST['crontab']['dayofweek'] . " " . $_POST['crontab']['command'];
+                $ligne = $payload['line'];
 
                 if (preg_match("/$regexp/", $ligne)) {
                     set_flash("success", "Added", "This tasks has beend added in the crontab");
 
-                    $this->add($_POST['crontab']['minute'], $_POST['crontab']['hour'], $_POST['crontab']['dayofmonth'], $_POST['crontab']['month'], $_POST['crontab']['dayofweek'],
-                            $_POST['crontab']['command'], "commentaire =)");
+                    CliCrontab::insert($payload['minute'], $payload['hour'], $payload['dayofmonth'], $payload['month'], $payload['dayofweek'],
+                            $payload['command'], "commentaire =)");
 
                     header("location: " . $_SERVER['REQUEST_URI']);
                     die();
                 } else {
                     set_flash("error", "Error", "This crontab is not valid : " . $ligne);
 
-
-                    $ret = array();
-                    foreach ($_POST['crontab'] as $var => $val) {
-                        $ret[] = "crontab:" . $var . ":" . $val;
-                    }
-
-                    $param = implode("/", $ret);
-
-
-                    header("location: " . LINK .$this->getClass(). "/" . __FUNCTION__ . "/" . $param);
+                    header("location: " . LINK .$this->getClass(). "/" . __FUNCTION__);
 
                     die();
                 }
             }
 
             if (!empty($_POST['crontab']['delete'])) {
+                $request = self::evaluateAdminCrontabDeleteRequest($_POST, $_SERVER, $_SESSION);
+                if ($request['status'] !== 200) {
+                    $this->view        = false;
+                    $this->layout_name = false;
+                    self::sendAdminCrontabError($request['status'], $request['body'], $request['headers']);
+                    return $module;
+                }
+
                 set_flash("success", "Removed", "This task has been removed");
-                $this->delete($_POST['crontab']['delete']);
+                CliCrontab::delete($request['payload']['delete']);
+                header("location: " . $_SERVER['REQUEST_URI']);
+                die();
+            } else {
+                $this->view        = false;
+                $this->layout_name = false;
+                self::sendAdminCrontabError(400, 'Invalid crontab action');
+                return $module;
             }
         }
 
@@ -142,10 +162,99 @@ class Crontab extends Controller {
         $this->title = __("Crontab");
         $this->ariane = "> <a href=\"" . LINK . "administration/\">" . __("Administration") . "</a> > " . $this->title;
         $data = $this->view();
+        $data['__csrf'] = [
+            'field' => Csrf::DEFAULT_FIELD,
+            'add_token' => Csrf::issueToken($_SESSION, self::ADMIN_CRONTAB_ADD_CSRF_SCOPE),
+            'delete_token' => Csrf::issueToken($_SESSION, self::ADMIN_CRONTAB_DELETE_CSRF_SCOPE),
+        ];
         $this->set("data", $data);
         //}
 
         return $module;
+    }
+
+    public static function evaluateAdminCrontabAddRequest(array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::ADMIN_CRONTAB_ADD_CSRF_SCOPE);
+        if (! $guard['allowed']) {
+            return self::buildAdminCrontabOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        if (! isset($post['crontab']) || ! is_array($post['crontab'])) {
+            return self::buildAdminCrontabOutcome(400, 'Invalid crontab payload');
+        }
+
+        $payload = [];
+        foreach (self::ADMIN_CRONTAB_CRON_FIELDS as $field) {
+            if (! array_key_exists($field, $post['crontab']) || ! is_scalar($post['crontab'][$field])) {
+                return self::buildAdminCrontabOutcome(400, 'Invalid crontab payload');
+            }
+
+            $value = trim((string) $post['crontab'][$field]);
+            if ($value === '' || preg_match('/[\s\r\n]/', $value) || strlen($value) > 64) {
+                return self::buildAdminCrontabOutcome(400, 'Invalid crontab schedule');
+            }
+
+            $payload[$field] = $value;
+        }
+
+        if (! array_key_exists('command', $post['crontab']) || ! is_scalar($post['crontab']['command'])) {
+            return self::buildAdminCrontabOutcome(400, 'Invalid crontab payload');
+        }
+
+        $command = trim((string) $post['crontab']['command']);
+        if ($command === '' || preg_match('/[\r\n]/', $command) || strlen($command) > 4096) {
+            return self::buildAdminCrontabOutcome(400, 'Invalid crontab command');
+        }
+
+        $payload['command'] = $command;
+        $payload['line'] = $payload['minute'] . ' ' . $payload['hour'] . ' ' . $payload['dayofmonth'] . ' ' . $payload['month'] . ' ' . $payload['dayofweek'] . ' ' . $payload['command'];
+
+        return self::buildAdminCrontabOutcome(200, '', [], $payload);
+    }
+
+    public static function evaluateAdminCrontabDeleteRequest(array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::ADMIN_CRONTAB_DELETE_CSRF_SCOPE);
+        if (! $guard['allowed']) {
+            return self::buildAdminCrontabOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        if (
+            ! isset($post['crontab'])
+            || ! is_array($post['crontab'])
+            || ! array_key_exists('delete', $post['crontab'])
+            || ! is_scalar($post['crontab']['delete'])
+        ) {
+            return self::buildAdminCrontabOutcome(400, 'Invalid crontab payload');
+        }
+
+        $delete = trim((string) $post['crontab']['delete']);
+        if (! ctype_digit($delete) || (int) $delete < 1) {
+            return self::buildAdminCrontabOutcome(400, 'Invalid crontab delete id');
+        }
+
+        return self::buildAdminCrontabOutcome(200, '', [], ['delete' => (int) $delete]);
+    }
+
+    private static function buildAdminCrontabOutcome(int $statusCode, string $message, array $headers = [], ?array $payload = null): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'payload' => $payload,
+        ];
+    }
+
+    private static function sendAdminCrontabError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
 /**
@@ -234,4 +343,3 @@ class Crontab extends Controller {
     }
 
 }
-
