@@ -3,14 +3,15 @@
 use Glial\Html\Form\Form;
 
 \Glial\Synapse\FactoryController::addNode("StorageArea", "menu", array($data['menu']));
+
+$storageAreaAddCsrfField = htmlspecialchars((string) ($data['storage_area_add_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$storageAreaAddCsrfToken = htmlspecialchars((string) ($data['storage_area_add_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$storageAreaAddCsrfInput = '<input type="hidden" name="'.$storageAreaAddCsrfField.'" value="'.$storageAreaAddCsrfToken.'">';
 ?>
 
-
 <form action="" method="post">
-    
+    <?= $storageAreaAddCsrfInput ?>
 
-
-   
     <div class="panel panel-primary">
         <div class="panel-heading">
             <h3 class="panel-title"><?= __("Main") ?></h3>
@@ -102,6 +103,7 @@ use Glial\Html\Form\Form;
 <br><br>
 
 <form action="" method="post">
+    <?= $storageAreaAddCsrfInput ?>
     <div class="panel panel-primary">
         <div class="panel-heading">
             <h3 class="panel-title"><?= __("Local storage") ?></h3>

@@ -47,6 +47,10 @@ class Post
         //debug($_POST);
 
         foreach ($_POST as $main => $elems) {
+            if (!is_array($elems)) {
+                continue;
+            }
+
             foreach ($elems as $key => $val) {
 
                 if (is_array($val)) {
