@@ -165,7 +165,20 @@ class Monitoring extends Controller
         $this->title  = __("Query Analyzer");
         $this->ariane = " > ".__("Monitoring")." > ".$this->title;
 
-        if (empty($param[0])) {
+        $outcome = self::evaluateQueryRequest($_SERVER);
+        if (!$outcome['allowed']) {
+            $this->view = false;
+            $this->layout_name = false;
+            http_response_code($outcome['status']);
+            foreach ($outcome['headers'] as $name => $value) {
+                header($name . ': ' . $value);
+            }
+            echo $outcome['body'];
+            return;
+        }
+
+        $idServer = self::normalizeQueryServerId($_GET, $param);
+        if ($idServer === null) {
 
             $default = Sgbd::sql(DB_DEFAULT);
             $sql     = "SELECT * FROM mysql_server limit 1";
@@ -173,59 +186,18 @@ class Monitoring extends Controller
 
             $ob = $default->sql_fetch_object($res);
 
-            $param[0] = $ob->id;
+            $idServer = (int) $ob->id;
         }
-        if (!empty($param[0])) {
-            $data['id_server']          = $param[0];
+        if ($idServer !== null) {
+            $param[0] = $idServer;
+            $data['id_server']          = $idServer;
             $_GET['mysql_server']['id'] = $data['id_server'];
         }
 
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
-            if (!empty($_POST['mysql_server']['id'])) {
-                $data['id_server'] = $_POST['mysql_server']['id'];
-            }
-
-
-            if (empty($_GET['page'])) {
-                $_GET['page'] = 1;
-            }
-
-            if (!empty($_POST['database']['id'])) {
-                $_GET['database']['id'] = $_POST['database']['id'];
-            } else {
-                $_GET['database']['id'] = "";
-            }
-
-            if (!empty($_POST['database']['filter'])) {
-                $_GET['database']['filter'] = $_POST['database']['filter'];
-            } else {
-                $_GET['database']['filter'] = "";
-            }
-
-            if (!empty($_POST['field']['id'])) {
-                $_GET['field']['id'] = $_POST['field']['id'];
-            } else {
-                $_GET['field']['id'] = "";
-            }
-
-
-            if (!empty($_POST['orderby']['id'])) {
-                $_GET['orderby']['id'] = $_POST['orderby']['id'];
-            } else {
-                $_GET['orderby']['id'] = "ASC";
-            }
-
-
-            header('location: '.LINK."monitoring/query/".$data['id_server']
-                ."/database:id:".$_GET['database']['id']
-                ."/field:id:".$_GET['field']['id']
-                ."/database:filter:".$_GET['database']['filter']."/orderby:id:".$_GET['orderby']['id']."/page:".$_GET['page']);
-        } else {
-            $_GET['database']['id']     = empty($_GET['database']['id']) ? "" : $_GET['database']['id'];
-            $_GET['field']['id']        = empty($_GET['field']['id']) ? "" : $_GET['field']['id'];
-            $_GET['database']['filter'] = empty($_GET['database']['filter']) ? "" : $_GET['database']['filter'];
-            $_GET['orderby']['id']      = empty($_GET['orderby']['id']) ? "" : $_GET['orderby']['id'];
-        }
+        $_GET['database']['id']     = empty($_GET['database']['id']) ? "" : $_GET['database']['id'];
+        $_GET['field']['id']        = empty($_GET['field']['id']) ? "" : $_GET['field']['id'];
+        $_GET['database']['filter'] = empty($_GET['database']['filter']) ? "" : $_GET['database']['filter'];
+        $_GET['orderby']['id']      = empty($_GET['orderby']['id']) ? "" : $_GET['orderby']['id'];
 
 
         $default = Sgbd::sql(DB_DEFAULT);
@@ -312,6 +284,12 @@ class Monitoring extends Controller
                 $data['fields'][] = $tmp;
             }
 
+            $allowedFields = array_column($data['fields'], 'id');
+            $filter = self::normalizeQueryFilter($_GET, $allowedFields);
+            $_GET['database']['id'] = $filter['database_id'];
+            $_GET['database']['filter'] = $filter['database_filter'];
+            $_GET['field']['id'] = $filter['field_id'];
+            $_GET['orderby']['id'] = $filter['orderby'];
 
             $data['orderby'][0]['id']      = 'ASC';
             $data['orderby'][0]['libelle'] = 'ASC';
@@ -324,23 +302,9 @@ class Monitoring extends Controller
             $sql = " FROM performance_schema.events_statements_summary_by_digest a
             where 1=1 ";
 
-            if (!empty($_GET['database']['id'])) {
-                $sql .= " AND a.SCHEMA_NAME ='".$_GET['database']['id']."' ";
-            }
+            $sql .= self::buildQueryWhereClause($filter, [$db, 'sql_real_escape_string']);
 
-            if (!empty($_GET['database']['filter'])) {
-                $sql .= " AND a.DIGEST_TEXT LIKE '%".$_GET['database']['filter']."%' ";
-            }
-
-            $sql3 = " ";
-
-            if (!empty($_GET['field']['id'])) {
-                if (empty($_GET['orderby']['id'])) {
-                    $_GET['orderby']['id'] = "ASC";
-                }
-
-                $sql3 = " ORDER BY a.`".$_GET['field']['id']."` ".$_GET['orderby']['id']." ";
-            }
+            $sql3 = self::buildQueryOrderClause($filter);
 
 
 
@@ -366,9 +330,9 @@ class Monitoring extends Controller
                 }
 
                 $pagination = new Pagination(LINK.$this->getClass().'/'.__FUNCTION__.'/'.$param[0]
-                    ."/database:id:".$_GET['database']['id']
-                    ."/field:id:".$_GET['field']['id']
-                    ."/database:filter:".$_GET['database']['filter']."/orderby:id:".$_GET['orderby']['id']
+                    ."/database:id:".rawurlencode($filter['database_id'])
+                    ."/field:id:".rawurlencode($filter['field_id'])
+                    ."/database:filter:".rawurlencode($filter['database_filter'])."/orderby:id:".$filter['orderby']
                     , $_GET['page'], $data['count'], 50, 30);
 
                 $tab = $pagination->get_sql_limit();
@@ -399,6 +363,99 @@ class Monitoring extends Controller
         }
 
         $this->set('data', $data);
+    }
+
+    public static function evaluateQueryRequest(array $server): array
+    {
+        if (strtoupper((string)($server['REQUEST_METHOD'] ?? 'GET')) === 'POST') {
+            return [
+                'allowed' => false,
+                'status' => 405,
+                'body' => 'Method Not Allowed',
+                'headers' => ['Allow' => 'GET'],
+            ];
+        }
+
+        return [
+            'allowed' => true,
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+        ];
+    }
+
+    public static function normalizeQueryServerId(array $get, array $param): ?int
+    {
+        $value = $get['mysql_server']['id'] ?? ($param[0] ?? null);
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $value = trim((string)$value);
+        if ($value === '' || !ctype_digit($value) || (int)$value < 1) {
+            return null;
+        }
+
+        return (int)$value;
+    }
+
+    public static function normalizeQueryFilter(array $get, array $allowedFields): array
+    {
+        $allowed = array_fill_keys(array_map('strval', $allowedFields), true);
+        $fieldId = self::normalizeQueryText($get['field']['id'] ?? '', 128, true);
+        $orderby = strtoupper((string)self::normalizeQueryText($get['orderby']['id'] ?? 'ASC', 4, true));
+
+        if ($fieldId === null || !isset($allowed[$fieldId])) {
+            $fieldId = '';
+        }
+
+        if (!in_array($orderby, ['ASC', 'DESC'], true)) {
+            $orderby = 'ASC';
+        }
+
+        return [
+            'database_id' => self::normalizeQueryText($get['database']['id'] ?? '', 255, true) ?? '',
+            'database_filter' => self::normalizeQueryText($get['database']['filter'] ?? '', 255, true) ?? '',
+            'field_id' => $fieldId,
+            'orderby' => $orderby,
+        ];
+    }
+
+    public static function buildQueryWhereClause(array $filter, callable $escape): string
+    {
+        $sql = '';
+        if ($filter['database_id'] !== '') {
+            $sql .= " AND a.SCHEMA_NAME ='".$escape($filter['database_id'])."' ";
+        }
+
+        if ($filter['database_filter'] !== '') {
+            $sql .= " AND a.DIGEST_TEXT LIKE '%".$escape($filter['database_filter'])."%' ";
+        }
+
+        return $sql;
+    }
+
+    public static function buildQueryOrderClause(array $filter): string
+    {
+        if ($filter['field_id'] === '') {
+            return ' ';
+        }
+
+        return " ORDER BY a.`".$filter['field_id']."` ".$filter['orderby']." ";
+    }
+
+    private static function normalizeQueryText($value, int $maxLength, bool $allowEmpty): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $value = trim((string)$value);
+        if ((!$allowEmpty && $value === '') || strlen($value) > $maxLength) {
+            return null;
+        }
+
+        return $value;
     }
 
     /*
@@ -476,4 +533,3 @@ class Monitoring extends Controller
         return $remote;
     }
 }
-
