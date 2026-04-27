@@ -1,11 +1,15 @@
 <?php
 
 use Glial\Html\Form\Form;
+
+$binlogAddCsrfField = htmlspecialchars((string) ($data['binlog_add_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$binlogAddCsrfToken = htmlspecialchars((string) ($data['binlog_add_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
 ?>
 
 
 
 <form action="" method="post">
+    <input type="hidden" name="<?= $binlogAddCsrfField ?>" value="<?= $binlogAddCsrfToken ?>">
 
 
     <div class="well">

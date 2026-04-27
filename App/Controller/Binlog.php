@@ -12,11 +12,13 @@ use \Glial\Synapse\Controller;
 use \App\Library\Debug;
 use App\Library\Extraction;
 use App\Library\Extraction2;
+use App\Library\Security\BinlogAddRequest;
+use App\Library\Security\CsrfGuard;
 use App\Library\Mysql;
 use Glial\Security\Crypt\Crypt;
+use Glial\Security\Csrf;
 use App\Library\Display;
 use \Glial\Sgbd\Sgbd;
-use \Glial\I18n\I18n;
 
 use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
@@ -43,6 +45,7 @@ class Binlog extends Controller {
 
     CONST DELAIS_DE_RETENTION = 172800; //48 heures en secondes
     CONST DIRECTORY_BACKUP = '/data/backup/binlog';
+    private const BINLOG_ADD_CSRF_SCOPE = 'binlog.add';
 
 /**
  * Stores `$logger` for logger.
@@ -127,54 +130,52 @@ class Binlog extends Controller {
     public function add() {
         $this->di['js']->addJavascript(array('Binlog/index.js'));
 
-        //debug($_POST);
-
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-
-            if (!empty($_POST['binlog_max']['size'])) {
-
-                preg_match('/[kmgKMG]$/', $_POST['binlog_max']['size'], $output_array);
-
-                if (!empty($output_array[0])) {
-
-                    $number = substr($_POST['binlog_max']['size'], 0, -1);
-
-                    switch (strtolower($output_array[0])) {
-                        case 'g':
-                            $number *= 1024 * 1024 * 1024;
-                            break;
-                        case 'm':
-                            $number *= 1024 * 1024;
-                            break;
-                        case 'k':
-                            $number *= 1024;
-                            break;
-                    }
-                }
-                else{
-                    $number = intval($_POST['binlog_max']['size']);
-                }
-
-                if ($number < $_POST['variables']['file_binlog_size'])
-                {
-                    $msg   = I18n::getTranslation(__("The size cannot be less than max_binlog_size (".$_POST['variables']['file_binlog_size']." < ".$number.")"));
-                    $title = I18n::getTranslation(__("Error"));
-                    set_flash("error", $title, $msg);
-
-                    header('location: ' . LINK . $this->getClass() . '/index');
-                    exit;
-                }
-
-                $max_file_to_keep = ceil($number / $_POST['variables']['file_binlog_size']);
-
-                $db = Sgbd::sql(DB_DEFAULT);
-                $sql = "REPLACE INTO binlog_max (`id_mysql_server`, `size_max`, `number_file_max`) VALUES ('" . $_POST['mysql_server']['id'] . "', '" . $number . "', '" . $max_file_to_keep . "')";
-
-                $db->sql_query($sql);
-
-                header('location: ' . LINK . $this->getClass() . '/index');
+        if (CsrfGuard::isPost($_SERVER)) {
+            $outcome = self::evaluateAddRequest($_POST, $_SERVER, $_SESSION);
+            if ($outcome['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendBinlogAddError($outcome['status'], $outcome['body'], $outcome['headers']);
+                return;
             }
+
+            $db = Sgbd::sql(DB_DEFAULT);
+            $db->sql_query(self::buildBinlogAddSql($outcome['binlog']));
+
+            header('location: ' . LINK . $this->getClass() . '/index');
+            return;
         }
+
+        $data = array();
+        $data['binlog_add_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['binlog_add_csrf_token'] = Csrf::issueToken($_SESSION, self::BINLOG_ADD_CSRF_SCOPE);
+
+        $this->set('data', $data);
+    }
+
+    public static function evaluateAddRequest(array $post, array $server, array $session): array
+    {
+        return BinlogAddRequest::evaluate($post, $server, $session, self::BINLOG_ADD_CSRF_SCOPE);
+    }
+
+    public static function normalizeAddPayload(array $post): ?array
+    {
+        return BinlogAddRequest::normalize($post);
+    }
+
+    public static function buildBinlogAddSql(array $payload): string
+    {
+        return BinlogAddRequest::buildReplaceSql($payload);
+    }
+
+    private static function sendBinlogAddError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
 /**
@@ -807,4 +808,3 @@ class Binlog extends Controller {
 }
 
 //glyphicon glyphicon-list
-
