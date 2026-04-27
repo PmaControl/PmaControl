@@ -25,7 +25,9 @@ use \Glial\Sgbd\Sgbd;
  */
 class User extends Controller {
 
-    use \Glial\Neuron\MailBox\MailBox;
+    use \Glial\Neuron\MailBox\MailBox {
+        mailbox as private legacyMailbox;
+    }
 
 /**
  * Stores `$module_group` for module group.
@@ -48,6 +50,7 @@ class User extends Controller {
     private const USER_REGISTER_CSRF_SCOPE = 'user.register';
     private const USER_PROFILE_CSRF_SCOPE = 'user.profile';
     private const USER_PASSWORD_RECOVER_CSRF_SCOPE = 'user.passwordRecover';
+    private const USER_MAILBOX_CSRF_SCOPE = 'user.mailbox';
 
 /**
  * Prepare user state through `before`.
@@ -100,6 +103,79 @@ class User extends Controller {
 
             //$this->di['js']->addJavascript(array("https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/js/bootstrap.min.js"));
         }
+    }
+
+    public function mailbox($param)
+    {
+        $this->data['user_mailbox_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $this->data['user_mailbox_csrf_token'] = Csrf::issueToken($_SESSION, self::USER_MAILBOX_CSRF_SCOPE);
+
+        if (CsrfGuard::isPost($_SERVER)) {
+            $outcome = self::evaluateMailboxRequest($_POST, $_SERVER, $_SESSION, $param);
+            if ($outcome['status'] !== 200) {
+                $msg = I18n::getTranslation(__($outcome['body']));
+                $title = I18n::getTranslation(__("Error"));
+                set_flash("error", $title, $msg);
+                header("location: " . LINK . self::mailboxRedirectPath($param));
+                return;
+            }
+
+            $_POST['mailbox_main']['id_user_main__to'] = (string)$outcome['recipient_id'];
+        }
+
+        $this->legacyMailbox($param);
+    }
+
+    public static function evaluateMailboxRequest(array $post, array $server, array $session, array $params): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::USER_MAILBOX_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildMailboxOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        if (($params[0] ?? '') !== 'compose') {
+            return self::buildMailboxOutcome(400, "Invalid mailbox action");
+        }
+
+        $recipientId = self::normalizeMailboxRecipientPayload($post);
+        if ($recipientId === null) {
+            return self::buildMailboxOutcome(400, "Invalid mailbox payload");
+        }
+
+        return self::buildMailboxOutcome(200, "", [], $recipientId);
+    }
+
+    public static function normalizeMailboxRecipientPayload(array $post): ?int
+    {
+        if (empty($post['mailbox_main']) || !is_array($post['mailbox_main'])) {
+            return null;
+        }
+
+        return self::normalizePositiveInteger($post['mailbox_main']['id_user_main__to'] ?? null);
+    }
+
+    private static function mailboxRedirectPath(array $params): string
+    {
+        $request = (string)($params[0] ?? 'all_mails');
+        if ($request === '') {
+            $request = 'all_mails';
+        }
+
+        return "user/mailbox/" . $request . "/";
+    }
+
+    private static function buildMailboxOutcome(
+        int $statusCode,
+        string $message,
+        array $headers = [],
+        int $recipientId = 0
+    ): array {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'recipient_id' => $recipientId,
+        ];
     }
 
 /**
