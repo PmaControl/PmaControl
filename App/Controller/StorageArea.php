@@ -10,7 +10,9 @@ use \phpseclib3\Net\SSH2;
 use \phpseclib3\Crypt\PublicKeyLoader;
 use \App\Library\Debug;
 use \App\Library\Post;
+use App\Library\Security\CsrfGuard;
 use \Glial\Sgbd\Sgbd;
+use Glial\Security\Csrf;
 
 /*
  *
@@ -20,6 +22,9 @@ use \Glial\Sgbd\Sgbd;
  */
 
 class StorageArea extends Controller {
+    private const STORAGE_AREA_UPDATE_CSRF_SCOPE = 'storage_area.update';
+    private const STORAGE_AREA_UPDATE_FIELDS = ['libelle'];
+    private const STORAGE_AREA_LIBELLE_MAX_LENGTH = 64;
 
 /**
  * Render storage area state through `index`.
@@ -47,7 +52,7 @@ class StorageArea extends Controller {
         $db = Sgbd::sql(DB_DEFAULT);
 
 
-        $this->di['js']->addJavascript(array('bootstrap-editable.min.js', 'StorageArea/index.js'));
+        $this->di['js']->addJavascript(array('bootstrap-editable.min.js', 'Tree/index.js'));
 
 
         if (empty($param[0])) {
@@ -256,6 +261,8 @@ class StorageArea extends Controller {
         $data['storage'] = $db->sql_fetch_yield($sql);
         
         $data['storage2'] = $db->sql_fetch_yield($sql);
+        $data['storage_area_update_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['storage_area_update_csrf_token'] = Csrf::issueToken($_SESSION, self::STORAGE_AREA_UPDATE_CSRF_SCOPE);
 
         $sql = "SELECT * FROM backup_storage_space b  
         JOIN (select max(id) as id from backup_storage_space a group by id_backup_storage_area) a ON a.id = b.id";
@@ -538,15 +545,109 @@ class StorageArea extends Controller {
         $this->view = false;
         $this->layout_name = false;
 
+        $outcome = self::evaluateUpdateRequest($_POST, $_SERVER, $_SESSION);
+        if ($outcome['status'] !== 200) {
+            self::sendStorageAreaUpdateError($outcome['status'], $outcome['body'], $outcome['headers']);
+            return;
+        }
+
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "UPDATE menu SET `" . $_POST['name'] . "` = '" . $_POST['value'] . "' WHERE id = " . $db->sql_real_escape_string($_POST['pk']) . "";
+        $sql = self::buildStorageAreaUpdateSql($outcome['update'], [$db, 'sql_real_escape_string']);
         $db->sql_query($sql);
 
         if ($db->sql_affected_rows() === 1) {
             echo "OK";
         } else {
-            header("HTTP/1.0 503 Internal Server Error");
+            self::sendStorageAreaUpdateError(503, "Storage area not updated");
+        }
+    }
+
+    public static function evaluateUpdateRequest(array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::STORAGE_AREA_UPDATE_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildStorageAreaUpdateOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $update = self::normalizeUpdatePayload($post);
+        if ($update === null) {
+            return self::buildStorageAreaUpdateOutcome(400, "Invalid storage area update payload");
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'update' => $update,
+        ];
+    }
+
+    public static function normalizeUpdatePayload(array $post): ?array
+    {
+        if (
+            ! array_key_exists('name', $post)
+            || ! array_key_exists('pk', $post)
+            || ! array_key_exists('value', $post)
+            || ! is_scalar($post['name'])
+            || ! is_scalar($post['pk'])
+            || ! is_scalar($post['value'])
+        ) {
+            return null;
+        }
+
+        $field = (string) $post['name'];
+        $id = (string) $post['pk'];
+        $value = (string) $post['value'];
+
+        if (! in_array($field, self::STORAGE_AREA_UPDATE_FIELDS, true)) {
+            return null;
+        }
+
+        if (! ctype_digit($id) || (int) $id < 1) {
+            return null;
+        }
+
+        if (strlen($value) > self::STORAGE_AREA_LIBELLE_MAX_LENGTH) {
+            return null;
+        }
+
+        return [
+            'field' => $field,
+            'value' => $value,
+            'id' => (int) $id,
+        ];
+    }
+
+    public static function buildStorageAreaUpdateSql(array $update, callable $escape): string
+    {
+        return sprintf(
+            "UPDATE backup_storage_area SET `%s` = '%s' WHERE id = %d",
+            $update['field'],
+            $escape($update['value']),
+            $update['id']
+        );
+    }
+
+    private static function buildStorageAreaUpdateOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'update' => null,
+        ];
+    }
+
+    private static function sendStorageAreaUpdateError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+
+        if ($message !== '') {
+            echo $message;
         }
     }
 }
