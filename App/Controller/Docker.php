@@ -8,6 +8,8 @@
 namespace App\Controller;
 
 use Glial\Synapse\Controller;
+use App\Library\Security\CsrfGuard;
+use App\Library\Security\GroupedRowsRequest;
 use App\Library\Extraction;
 use App\Library\Mysql;
 use App\Library\Available;
@@ -22,6 +24,7 @@ use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use \Glial\I18n\I18n;
 use \Glial\Security\Crypt\Crypt;
+use Glial\Security\Csrf;
 use \App\Library\Ssh;
 
 /**
@@ -40,6 +43,9 @@ use \App\Library\Ssh;
  */
 class Docker extends Controller
 {
+    private const DOCKER_ADD_CONTAINER_CSRF_SCOPE = 'docker.addContainer';
+    private const DOCKER_ADD_CONTAINER_MAX_ROWS = 64;
+
 /**
  * Stores `$logger` for logger.
  *
@@ -1215,40 +1221,31 @@ class Docker extends Controller
  */
     public function addContainer($param)
     {
-        $id_docker_server = $param[0] ?? '';
+        $id_docker_server = (int)($param[0] ?? 0);
 
 
-        $db = Sgbd::sql(DB_DEFAULT);
-
-
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
-            $rows = $_POST['docker_container'] ?? null;
-
-            if (!$rows || !is_array($rows)) {
-                set_flash("error", "No data", "No container definition provided.");
-                header("location: " . LINK . "docker/addContainer");
-                exit;
+        if (CsrfGuard::isPost($_SERVER)) {
+            $outcome = self::evaluateAddContainerRequest($_POST, $_SERVER, $_SESSION);
+            if ($outcome['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendDockerAddContainerError($outcome['status'], $outcome['body'], $outcome['headers']);
+                return;
             }
+
+            $db = Sgbd::sql(DB_DEFAULT);
+            $rows = $outcome['rows'];
+
 
             $finalList = []; // => liste des conteneurs à créer
 
             // On parcours chaque ligne du formulaire
-            $countList   = $rows['count'] ?? [];
-            $softList    = $rows['id_software'] ?? [];
-            $majorList   = $rows['major'] ?? [];
-            $imageList   = $rows['id_image'] ?? [];
-            $labelList   = $rows['label'] ?? [];
+            foreach ($rows as $row) {
 
-            $numRows = count($softList);
-
-            for ($i = 0; $i < $numRows; $i++) {
-
-                $count     = (int)$countList[$i];
-                $softId    = (int)$softList[$i];
-                $major     = trim($majorList[$i]);
-                $imageId   = (int)$imageList[$i];
-                $labelBase = trim($labelList[$i]);
+                $count     = $row['count'];
+                $softId    = $row['id_software'];
+                $imageId   = $row['id_image'];
+                $labelBase = $row['label'];
 
                 // ignore ligne vide
                 if (!$softId || !$imageId) {
@@ -1296,6 +1293,8 @@ class Docker extends Controller
             header("location: " . LINK . "docker/server/".$id_docker_server);
             exit;
         }
+
+        $db = Sgbd::sql(DB_DEFAULT);
 
         // Familles (docker_software) -> id/libelle
         $sql = "SELECT id, display_name FROM docker_software ORDER BY name";
@@ -1348,9 +1347,76 @@ class Docker extends Controller
 
         $data['majors'] = $majors;
         $data['tags']   = $tags;
+        $data['docker_add_container_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['docker_add_container_csrf_token'] = Csrf::issueToken($_SESSION, self::DOCKER_ADD_CONTAINER_CSRF_SCOPE);
 
         $this->set('id_docker_server', $id_docker_server);
         $this->set('data', $data);
+    }
+
+    public static function evaluateAddContainerRequest(array $post, array $server, array $session): array
+    {
+        $request = GroupedRowsRequest::evaluate(
+            $post,
+            $server,
+            $session,
+            self::DOCKER_ADD_CONTAINER_CSRF_SCOPE,
+            'docker_container',
+            self::dockerAddContainerRules(),
+            'Invalid docker container payload',
+            self::DOCKER_ADD_CONTAINER_MAX_ROWS
+        );
+
+        if ($request['status'] !== 200) {
+            return self::buildDockerAddContainerOutcome($request['status'], $request['body'], $request['headers']);
+        }
+
+        return self::buildDockerAddContainerOutcome(200, '', [], $request['rows']);
+    }
+
+    public static function normalizeAddContainerPayload(array $post): ?array
+    {
+        return GroupedRowsRequest::normalize(
+            $post,
+            'docker_container',
+            self::dockerAddContainerRules(),
+            self::DOCKER_ADD_CONTAINER_MAX_ROWS
+        );
+    }
+
+    private static function dockerAddContainerRules(): array
+    {
+        return [
+            'count' => ['type' => 'int', 'required' => true, 'default' => 1, 'min' => 1, 'max' => 32],
+            'id_software' => ['type' => 'int', 'required' => true, 'default' => 0, 'min' => 0],
+            'major' => ['type' => 'string', 'required' => true, 'default' => '', 'max' => 32],
+            'id_image' => ['type' => 'int', 'required' => true, 'default' => 0, 'min' => 0],
+            'label' => ['type' => 'string', 'required' => true, 'default' => '', 'max' => 64],
+        ];
+    }
+
+    private static function buildDockerAddContainerOutcome(
+        int $statusCode,
+        string $message,
+        array $headers = [],
+        ?array $rows = null
+    ): array {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'rows' => $rows,
+        ];
+    }
+
+    private static function sendDockerAddContainerError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
 
@@ -1758,4 +1824,3 @@ CMD;
     }
 
 }
-
