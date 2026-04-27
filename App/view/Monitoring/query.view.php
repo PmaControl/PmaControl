@@ -8,7 +8,7 @@
 use \Glial\Html\Form\Form;
 
 echo '<div class="well">';
-echo '<form action="" method="post" class="form-inline">';
+echo '<form action="" method="get" class="form-inline">';
 echo '<div class="form-group">';
 
 \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array());
