@@ -5,6 +5,7 @@
 
 namespace App\Controller;
 
+use App\Library\Archive\ArchiveLoader;
 use App\Library\Security\ArchiveRestoreRequest;
 use Glial\Security\Csrf;
 use \Glial\Synapse\Controller;
@@ -686,7 +687,7 @@ ORDER BY a.id DESC";
         }
 
         $restore = $request['restore'];
-        $this->load_archive(array($restore['id_mysql_server'], $restore['database'], $restore['id_cleaner_main']));
+        ArchiveLoader::dispatch($this, $restore);
 
         header("location: ".LINK.'archives/index');
         exit;
@@ -981,101 +982,6 @@ ORDER BY a.id DESC";
         $data['logs'] = $this->format($lines, $id_archive_load);
 
         $this->set('data', $data);
-    }
-
-/**
- * Handle archives state through `load_archive`.
- *
- * This routine may read or mutate framework state, superglobals or persistence layers.
- *
- * @param array<int,mixed> $param Route parameters forwarded by the router.
- * @phpstan-param array<int,mixed> $param
- * @psalm-param array<int,mixed> $param
- * @return void Returned value for load_archive.
- * @phpstan-return void
- * @psalm-return void
- * @see self::load_archive()
- * @example /fr/archives/load_archive
- * @category PmaControl
- * @package App
- * @subpackage Controller
- * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
- * @license GPL-3.0
- * @since 5.0
- * @version 1.0
- */
-    public function load_archive($param)
-    {
-        Debug::parseDebug($param);
-
-        $db = Sgbd::sql(DB_DEFAULT);
-
-        //$tb = explode("-", $arr['database']);
-
-        $id_mysql_server = $param[0];
-        $database        = $param[1];
-        $id_cleaner_main = $param[2];
-
-        $php = explode(" ", shell_exec("whereis php"))[1];
-
-        $archive_load                                    = array();
-        $archive_load['archive_load']['id_cleaner_main'] = $id_cleaner_main;
-        $archive_load['archive_load']['id_mysql_server'] = $id_mysql_server;
-        $archive_load['archive_load']['database']        = $database;
-        $archive_load['archive_load']['date_start']      = date('Y-m-d H:i:s');
-        //$archive_load['archive_load']['date_end'] = "0000-00-00 00:00:00";
-        $archive_load['archive_load']['progression']     = 0;
-        $archive_load['archive_load']['duration']        = 0;
-        $archive_load['archive_load']['pid']             = 0;
-        $archive_load['archive_load']['status']          = "NOT_STARTED";
-        $archive_load['archive_load']['id_user_main']    = 1;
-        //$archive_load['archive_load']['id_archive']    = 1;
-
-        $id_archive_load = $db->sql_save($archive_load);
-
-        if ($id_archive_load) {
-
-
-            $sql = "SELECT * FROM archive WHERE id_cleaner = ".$id_cleaner_main;
-
-            if (IS_CLI) {
-
-                $this->load(array($id_archive_load));
-
-                $pid = getmypid();
-            } else {
-
-                $cmd = $php." ".GLIAL_INDEX." Archives load ".$id_archive_load." >> ".TMP."archive_".$id_cleaner_main."_".$database.".sql & echo $!";
-
-                Debug::debug($cmd);
-
-                $pid = shell_exec($cmd);
-            }
-
-            $db                                  = Sgbd::sql(DB_DEFAULT);
-            $archive_load                        = array();
-            $archive_load['archive_load']['pid'] = (int) $pid;
-            $archive_load['archive_load']['id']  = $id_archive_load;
-
-            Debug::debug($archive_load);
-
-            $db->sql_save($archive_load);
-
-            $msg   = I18n::getTranslation(__("The loading on database is currently in progress ..."));
-            $title = I18n::getTranslation(__("Loading"));
-            set_flash("success", $title, $msg);
-        } else {
-
-            debug($db->sql_error());
-            debug($archive_load);
-
-            debug($_POST);
-            exit;
-
-            $msg   = I18n::getTranslation(__("Impossible to save : ")."'".print_r($db->sql_error())."'");
-            $title = I18n::getTranslation(__("Loading"));
-            set_flash("error", $title, $msg);
-        }
     }
 
     // to move in class logs
