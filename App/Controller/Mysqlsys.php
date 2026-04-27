@@ -6,8 +6,10 @@ use \Glial\Synapse\Controller;
 use \Glial\Security\Crypt\Crypt;
 use \Glial\I18n\I18n;
 use \Glial\Sgbd\Sgbd;
+use App\Library\Security\CsrfGuard;
 use App\Library\Mysql;
 use App\Library\Debug;
+use Glial\Security\Csrf;
 
 
 /**
@@ -27,6 +29,10 @@ use App\Library\Debug;
 class Mysqlsys extends Controller {
 
     use \App\Library\Filter;
+
+    private const MYSQLSYS_UPDATE_CONFIG_CSRF_SCOPE = 'mysqlsys.update_config';
+    private const MYSQLSYS_UPDATE_CONFIG_NAME_MAX_LENGTH = 128;
+    private const MYSQLSYS_UPDATE_CONFIG_VALUE_MAX_LENGTH = 4096;
 
 /**
  * Render mysqlsys state through `index`.
@@ -144,6 +150,8 @@ class Mysqlsys extends Controller {
                 $data['variables'] = $remote->getVersion();
             }
         }
+        $data['mysqlsys_update_config_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['mysqlsys_update_config_csrf_token'] = Csrf::issueToken($_SESSION, self::MYSQLSYS_UPDATE_CONFIG_CSRF_SCOPE);
         $this->set('data', $data);
     }
 
@@ -470,20 +478,136 @@ class Mysqlsys extends Controller {
         $this->view = false;
         $this->layout_name = false;
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            
-            $db = Mysql::getDbLink($_POST['pk']);
-            
-            $sql = "UPDATE sys.sys_config SET `value` = '" . $_POST['value'] . "' 
-            WHERE `variable` = '" . $db->sql_real_escape_string($_POST['name']) . "'";
-            $db->sql_query($sql);
+        $outcome = self::evaluateUpdateConfigRequest($_POST, $_SERVER, $_SESSION, IS_CLI);
+        if (!$outcome['allowed']) {
+            http_response_code($outcome['status']);
+            foreach ($outcome['headers'] as $name => $value) {
+                header($name . ': ' . $value);
+            }
+            echo $outcome['body'];
+            return;
+        }
 
-            if ($db->sql_affected_rows() === 1) {
-                echo "OK";
-            } else {
-                header("HTTP/1.0 503 Internal Server Error");
+        $config = $outcome['config'];
+        $db = Mysql::getDbLink($config['id_mysql_server']);
+
+        $sql = self::buildUpdateConfigSql($config, [$db, 'sql_real_escape_string']);
+        $db->sql_query($sql);
+
+        if ($db->sql_affected_rows() === 1) {
+            echo "OK";
+        } else {
+            header("HTTP/1.0 503 Internal Server Error");
+        }
+    }
+
+    public static function evaluateUpdateConfigRequest(
+        array $post,
+        array $server,
+        array $session,
+        bool $isCli = false
+    ): array {
+        if (!$isCli) {
+            $guard = CsrfGuard::check($post, $server, $session, self::MYSQLSYS_UPDATE_CONFIG_CSRF_SCOPE);
+            if (!$guard['allowed']) {
+                return [
+                    'allowed' => false,
+                    'status' => $guard['status'],
+                    'body' => $guard['body'],
+                    'headers' => $guard['headers'],
+                    'config' => null,
+                ];
             }
         }
+
+        $config = self::normalizeUpdateConfigPayload($post);
+        if ($config === null) {
+            return [
+                'allowed' => false,
+                'status' => 400,
+                'body' => 'Invalid MySQL-sys config payload',
+                'headers' => [],
+                'config' => null,
+            ];
+        }
+
+        return [
+            'allowed' => true,
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'config' => $config,
+        ];
+    }
+
+    public static function normalizeUpdateConfigPayload(array $post): ?array
+    {
+        if (
+            !array_key_exists('pk', $post)
+            || !array_key_exists('name', $post)
+            || !array_key_exists('value', $post)
+            || !is_scalar($post['pk'])
+            || !is_scalar($post['name'])
+            || !is_scalar($post['value'])
+        ) {
+            return null;
+        }
+
+        $idMysqlServer = self::normalizePositiveInteger($post['pk']);
+        $name = self::normalizeSysConfigName($post['name']);
+        $value = (string) $post['value'];
+
+        if (
+            $idMysqlServer === null
+            || $name === null
+            || strlen($value) > self::MYSQLSYS_UPDATE_CONFIG_VALUE_MAX_LENGTH
+        ) {
+            return null;
+        }
+
+        return [
+            'id_mysql_server' => $idMysqlServer,
+            'name' => $name,
+            'value' => $value,
+        ];
+    }
+
+    public static function buildUpdateConfigSql(array $config, callable $escape): string
+    {
+        return "UPDATE sys.sys_config SET `value` = '".$escape($config['value'])."' "
+            ."WHERE `variable` = '".$escape($config['name'])."'";
+    }
+
+    private static function normalizePositiveInteger($value): ?int
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $value = trim((string) $value);
+        if ($value === '' || !ctype_digit($value) || (int) $value < 1) {
+            return null;
+        }
+
+        return (int) $value;
+    }
+
+    private static function normalizeSysConfigName($value): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $name = trim((string) $value);
+        if (
+            $name === ''
+            || strlen($name) > self::MYSQLSYS_UPDATE_CONFIG_NAME_MAX_LENGTH
+            || preg_match('/^[A-Za-z0-9_.-]+$/', $name) !== 1
+        ) {
+            return null;
+        }
+
+        return $name;
     }
 
 
