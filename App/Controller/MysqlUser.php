@@ -28,6 +28,7 @@ use \App\Library\Extraction2;
 class MysqlUser extends Controller
 {
     const USER_DIR = "/srv/www/pmacontrol/data/backup/user";
+    private const MYSQLUSER_MAX_SELECTED_SERVERS = 200;
 
     public static function getExportAccountsSql($db): string
     {
@@ -36,6 +37,105 @@ class MysqlUser extends Controller
         }
 
         return "SELECT User as `user`,`Host` as `host` FROM mysql.user ORDER by user,host";
+    }
+
+    public static function evaluateIndexSelectionRequest(
+        array $get,
+        array $server,
+        array $param,
+        string $baseLink,
+        string $controller
+    ): array {
+        if (($server['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+            return [
+                'allowed' => false,
+                'status' => 405,
+                'body' => 'Method not allowed',
+                'headers' => ['Allow' => 'GET'],
+                'redirect' => null,
+                'ids' => [],
+            ];
+        }
+
+        if (isset($get['mysql_server']) && is_array($get['mysql_server']) && array_key_exists('id', $get['mysql_server'])) {
+            $ids = self::normalizeSelectedServerIds($get['mysql_server']['id']);
+            return [
+                'allowed' => true,
+                'status' => empty($ids) ? 200 : 303,
+                'body' => '',
+                'headers' => [],
+                'redirect' => empty($ids) ? null : self::getIndexRedirectTarget($ids, $baseLink, $controller),
+                'ids' => [],
+            ];
+        }
+
+        $ids = [];
+        if (!empty($param[0])) {
+            $ids = self::normalizeSelectedServerIds($param[0]);
+        }
+
+        return [
+            'allowed' => true,
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'redirect' => null,
+            'ids' => $ids,
+        ];
+    }
+
+    public static function normalizeSelectedServerIds($selection): array
+    {
+        $values = [];
+        self::collectSelectedServerIds($selection, $values);
+
+        $ids = [];
+        foreach ($values as $value) {
+            $value = trim((string) $value);
+            if ($value === '' || !ctype_digit($value)) {
+                continue;
+            }
+
+            $id = (int) $value;
+            if ($id < 1 || in_array($id, $ids, true)) {
+                continue;
+            }
+
+            $ids[] = $id;
+            if (count($ids) >= self::MYSQLUSER_MAX_SELECTED_SERVERS) {
+                break;
+            }
+        }
+
+        return $ids;
+    }
+
+    public static function getIndexRedirectTarget(array $ids, string $baseLink, string $controller): string
+    {
+        return $baseLink.$controller.'/index/mysql_server:id:['.implode(',', $ids).']';
+    }
+
+    private static function collectSelectedServerIds($selection, array &$values): void
+    {
+        if (is_array($selection)) {
+            foreach ($selection as $value) {
+                self::collectSelectedServerIds($value, $values);
+            }
+            return;
+        }
+
+        if (!is_scalar($selection)) {
+            return;
+        }
+
+        $selection = trim((string) $selection);
+        if (strlen($selection) >= 2 && $selection[0] === '[' && substr($selection, -1) === ']') {
+            $selection = substr($selection, 1, -1);
+        }
+
+        foreach (explode(',', $selection) as $value) {
+            $values[] = $value;
+        }
     }
 
 /**
@@ -61,35 +161,42 @@ class MysqlUser extends Controller
  */
     public function index($param)
     {
+        $selection = self::evaluateIndexSelectionRequest($_GET, $_SERVER, $param, LINK, $this->getClass());
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            if (!empty($_POST['mysql_server']['id'])) {
-                header('location: '.LINK.$this->getClass().'/'.__FUNCTION__."/mysql_server:id:[".implode(',', $_POST['mysql_server']['id'])."]");
+        if (!$selection['allowed']) {
+            http_response_code($selection['status']);
+            foreach ($selection['headers'] as $name => $value) {
+                header($name . ': ' . $value);
             }
+            echo $selection['body'];
+            return;
+        }
+
+        if ($selection['redirect'] !== null) {
+            header('location: '.$selection['redirect'], true, 303);
+            return;
         }
 
         $data = array();
 
-        // Handle CLI parameters if no GET request
-        if (!empty($param[0])) {
-            $_GET['mysql_server']['id'] = $param[0];
-        }
-
         //debug($_GET);
 
-        if (!empty($_GET['mysql_server']['id'])) {
+        if (!empty($selection['ids'])) {
             $db  = Sgbd::sql(DB_DEFAULT);
-            $ids = substr($_GET['mysql_server']['id'], 1, -1);
-            $id_servers = explode(',', $ids);
+            $id_servers = $selection['ids'];
 
             $all = Extraction2::display(array("mysql_available"), $id_servers);
 
             foreach ($all as $server) {
                 if ($server['mysql_available'] !== "1") {
-                    unset($id_servers[array_search($server['id_mysql_server'], $id_servers)]);
+                    $key = array_search((int) $server['id_mysql_server'], $id_servers, true);
+                    if ($key !== false) {
+                        unset($id_servers[$key]);
+                    }
                 }
             }
 
+            $id_servers = array_values($id_servers);
             if (empty($id_servers)) {
                 $data['error'] = "No available MySQL servers found.";
                 $this->set('data', $data);
