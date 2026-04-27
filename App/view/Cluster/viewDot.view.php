@@ -32,6 +32,8 @@ $selectedImportGraph = $data['import_selected_graph'] ?? [];
 $selectedImportGraphIndex = $data['import_selected_graph_index'] ?? null;
 $importPayload = (string) ($data['import_payload'] ?? '');
 $isImported = !empty($importBundle['graphs']);
+$viewDotCsrfField = htmlspecialchars((string) ($data['view_dot_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$viewDotCsrfToken = htmlspecialchars((string) ($data['view_dot_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
 ?>
 
 <style>
@@ -480,6 +482,7 @@ $isImported = !empty($importBundle['graphs']);
         <summary class="btn btn-warning" id="dot-online-import-summary">Import JSON</summary>
         <div class="dot-online-import-panel">
             <form method="post" enctype="multipart/form-data" id="dot-import-form">
+                <input type="hidden" name="<?= $viewDotCsrfField ?>" value="<?= $viewDotCsrfToken ?>" />
                 <input type="hidden" name="dot_import[preview_key]" value="<?= htmlspecialchars($previewKey, ENT_QUOTES, 'UTF-8') ?>" />
                 <div class="dot-online-dropzone" id="dot-online-dropzone">
                     <p class="dot-online-dropzone-hint"><strong>Drop a JSON file here</strong> or use the file picker / paste the payload below.</p>
@@ -570,6 +573,7 @@ $isImported = !empty($importBundle['graphs']);
             </div>
             <div class="dot-online-panel-body">
                 <form method="post" action="" id="dot-online-form">
+                    <input type="hidden" name="<?= $viewDotCsrfField ?>" value="<?= $viewDotCsrfToken ?>" />
                     <input type="hidden" name="dot_preview[preview_key]" value="<?= htmlspecialchars($previewKey, ENT_QUOTES, 'UTF-8') ?>" id="dot-online-preview-key" />
                     <?php if ($selectedImportGraphIndex !== null): ?>
                         <input type="hidden" name="dot_preview[selected_graph]" value="<?= (int) $selectedImportGraphIndex ?>" id="dot-online-selected-import-graph" />
