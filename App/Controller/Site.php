@@ -2,6 +2,8 @@
 
 namespace App\Controller;
 
+use App\Library\Security\CsrfGuard;
+use Glial\Security\Csrf;
 use Glial\Synapse\Controller;
 
 /**
@@ -20,6 +22,15 @@ use Glial\Synapse\Controller;
  */
 class Site extends Controller
 {
+    private const SITE_DEMO_CSRF_SCOPE = 'site.demo';
+    private const SITE_DEMO_FIELD_LIMITS = [
+        'name' => 120,
+        'email' => 254,
+        'mode' => 64,
+        'servers' => 120,
+        'context' => 2000,
+    ];
+
     private array $siteCommon = [];
 
 /**
@@ -467,6 +478,91 @@ class Site extends Controller
     {
         $this->title = "Réserver une démo";
         $this->setActive('demo');
+
+        $data = [
+            'site_demo_csrf_field' => Csrf::DEFAULT_FIELD,
+            'site_demo_csrf_token' => Csrf::issueToken($_SESSION, self::SITE_DEMO_CSRF_SCOPE),
+            'site_demo_submitted' => false,
+        ];
+
+        if (CsrfGuard::isPost($_SERVER)) {
+            $outcome = self::evaluateDemoRequest($_POST, $_SERVER, $_SESSION);
+            if ($outcome['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendDemoError($outcome['status'], $outcome['body'], $outcome['headers']);
+                return;
+            }
+
+            $data['site_demo_submitted'] = true;
+            $data['site_demo_request'] = $outcome['demo_request'];
+        }
+
+        $this->set('data', $data);
+    }
+
+    public static function evaluateDemoRequest(array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::SITE_DEMO_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildDemoOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $demoRequest = self::normalizeDemoPayload($post);
+        if ($demoRequest === null) {
+            return self::buildDemoOutcome(400, 'Invalid demo request payload');
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'demo_request' => $demoRequest,
+        ];
+    }
+
+    public static function normalizeDemoPayload(array $post): ?array
+    {
+        $payload = [];
+        foreach (self::SITE_DEMO_FIELD_LIMITS as $field => $limit) {
+            $value = $post[$field] ?? '';
+            if (!is_scalar($value)) {
+                return null;
+            }
+
+            $value = trim((string) $value);
+            if (strlen($value) > $limit) {
+                return null;
+            }
+
+            $payload[$field] = $value;
+        }
+
+        if ($payload['email'] !== '' && filter_var($payload['email'], FILTER_VALIDATE_EMAIL) === false) {
+            return null;
+        }
+
+        return $payload;
+    }
+
+    private static function buildDemoOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'demo_request' => null,
+        ];
+    }
+
+    private static function sendDemoError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
 /**

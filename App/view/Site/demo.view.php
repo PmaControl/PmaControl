@@ -1,5 +1,7 @@
 <?php
 $phone = $site_common['phone'] ?? '+33 6 63 28 27 47';
+$siteDemoCsrfField = htmlspecialchars((string)($data['site_demo_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$siteDemoCsrfToken = htmlspecialchars((string)($data['site_demo_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
 
 if (!function_exists('pmac_site_lang')) {
     function pmac_site_lang(array $texts = [], string $tag = 'span', string $class = '')
@@ -29,6 +31,7 @@ if (!function_exists('pmac_site_lang')) {
 <section class="panel">
     <header><h2><?php pmac_site_lang(['fr' => 'Formulaire rapide', 'en' => 'Quick form']); ?></h2></header>
     <form class="site-form" action="#" method="post">
+        <input type="hidden" name="<?= $siteDemoCsrfField ?>" value="<?= $siteDemoCsrfToken ?>">
         <div class="form-grid">
             <label>
                 <span><?php pmac_site_lang(['fr' => 'Nom & société', 'en' => 'Name & company']); ?></span>
