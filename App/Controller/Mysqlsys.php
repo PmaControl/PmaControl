@@ -59,101 +59,130 @@ class Mysqlsys extends Controller {
 
         $db = Sgbd::sql(DB_DEFAULT);
         $this->di['js']->addJavascript(array('bootstrap-editable.min.js', 'Tree/index.js'));
-        
-        $data = array();
 
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
-            if (!empty($_POST['mysql_server']['id'])) {
+        $outcome = self::evaluateIndexRequest($_SERVER);
+        if (!$outcome['allowed']) {
+            http_response_code($outcome['status']);
+            foreach ($outcome['headers'] as $name => $value) {
+                header($name . ': ' . $value);
+            }
+            echo $outcome['body'];
+            return;
+        }
 
-                $sql = "SELECT * FROM mysql_server where id='" . $_POST['mysql_server']['id'] . "'";
-                $res = $db->sql_query($sql);
+        $data = [];
+        $selectedMysqlServerId = self::normalizeIndexMysqlServerId($_GET);
+        $data['selected_mysql_server_id'] = $selectedMysqlServerId;
+        $data['selected_mysql_server_found'] = false;
 
-                while ($ob = $db->sql_fetch_object($res)) {
-                    $id_mysql_server = $ob->id;
-                    $url = LINK . strtolower($this->getClass()) . '/index/mysql_server:id:' . $id_mysql_server;
-                    header('location: ' . $url);
+        // get server available
+        $available = Common::getAvailable();
+        $case = $available['case'];
+
+        $sql = "SELECT *,".$case." FROM mysql_server a WHERE 1=1 " . self::getFilter() . " order by a.name ASC";
+
+        $res = $db->sql_query($sql);
+        $data['servers'] = array();
+        while ($ob = $db->sql_fetch_object($res)) {
+            $tmp = [];
+            $tmp['id'] = $ob->id;
+            $tmp['libelle'] = $ob->name . " (" . $ob->ip . ")";
+            $data['servers'][] = $tmp;
+
+            if ($selectedMysqlServerId !== null && (int) $ob->id === $selectedMysqlServerId) {
+                $link_name = $ob->name;
+                $data['selected_mysql_server_found'] = true;
+            }
+        }
+
+        //Debug::debug($link_name);
+
+        if (!empty($link_name)) {
+            $id_mysql_server = $selectedMysqlServerId;
+
+            $remote = Sgbd::sql($link_name);
+            $sql = "select TABLE_NAME from information_schema.tables "
+                    . "WHERE table_schema = 'sys' and table_name not like 'x$%' ORDER BY table_name ASC;";
+            $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($remote, $sql, $id_mysql_server, __METHOD__);
+            $data['view_available'] = [];
+            while ($ob = $remote->sql_fetch_object($res)) {
+                //$data['view_available'][] = str_replace('x$','',$ob->table_name);
+                $data['view_available'][] = $ob->TABLE_NAME;
+            }
+
+            //test if InnoDB activated
+            $sql = "select * from information_schema.engines where engine = 'InnoDB';";
+            $res = $remote->sql_query($sql);
+
+            $data['innodb'] = 0;
+            while ($ob = $remote->sql_fetch_object($res)) {
+                if ($ob->SUPPORT == "YES" || $ob->SUPPORT == "DEFAULT") {
+                    $data['innodb'] = 1;
                 }
             }
-        } else {
 
-            $data = [];
+            //test if spider / rocksdb etc...
+            if (!empty($_GET['mysqlsys']) && in_array($_GET['mysqlsys'], $data['view_available'])) {
 
-            // get server available
-            $available = Common::getAvailable();
-            $case = $available['case'];
-
-            $sql = "SELECT *,".$case." FROM mysql_server a WHERE 1=1 " . self::getFilter() . " order by a.name ASC";
-
-            $res = $db->sql_query($sql);
-            $data['servers'] = array();
-            while ($ob = $db->sql_fetch_object($res)) {
-                $tmp = [];
-                $tmp['id'] = $ob->id;
-                $tmp['libelle'] = $ob->name . " (" . $ob->ip . ")";
-                $data['servers'][] = $tmp;
-
-                if (!empty($_GET['mysql_server']['id']) && $ob->id == $_GET['mysql_server']['id']) {
-                    $link_name = $ob->name;
+            //patch
+            //$sql = "UPDATE sys.sys_config SET value = '100000' where variable ='statement_truncate_len';";
+            //$remote->sql_query($sql);
+            //fin patch
+                if ($remote->checkVersion(array('MariaDB'=> '10.1.1'))) {
+                    $sql = "SET STATEMENT MAX_STATEMENT_TIME = 10 FOR SELECT * FROM `sys`.`" . $_GET['mysqlsys'] . "` LIMIT 200";
                 }
+                else {
+                    $sql = "SELECT * FROM `sys`.`" . $_GET['mysqlsys'] . "` LIMIT 200";
+                }
+                
+                $data['table'] = $remote->sql_fetch_yield($sql);
+                if ($_GET['mysqlsys'] === 'schema_unused_indexes') {
+                    $data['table'] = $this->enrichSchemaUnusedIndexes(
+                        $remote,
+                        iterator_to_array($data['table'], false),
+                        $id_mysql_server
+                    );
+                }
+                $data['name_table'] = $_GET['mysqlsys'];
             }
 
-            //Debug::debug($link_name);
-
-            if (!empty($link_name)) {
-                $id_mysql_server = (int)($_GET['mysql_server']['id'] ?? 0);
-
-                $remote = Sgbd::sql($link_name);
-                $sql = "select TABLE_NAME from information_schema.tables "
-                        . "WHERE table_schema = 'sys' and table_name not like 'x$%' ORDER BY table_name ASC;";
-                $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($remote, $sql, $id_mysql_server, __METHOD__);
-                $data['view_available'] = [];
-                while ($ob = $remote->sql_fetch_object($res)) {
-                    //$data['view_available'][] = str_replace('x$','',$ob->table_name);
-                    $data['view_available'][] = $ob->TABLE_NAME;
-                }
-
-                //test if InnoDB activated
-                $sql = "select * from information_schema.engines where engine = 'InnoDB';";
-                $res = $remote->sql_query($sql);
-
-                $data['innodb'] = 0;
-                while ($ob = $remote->sql_fetch_object($res)) {
-                    if ($ob->SUPPORT == "YES" || $ob->SUPPORT == "DEFAULT") {
-                        $data['innodb'] = 1;
-                    }
-                }
-
-                //test if spider / rocksdb etc...
-                if (!empty($_GET['mysqlsys']) && in_array($_GET['mysqlsys'], $data['view_available'])) {
-
-                //patch
-                //$sql = "UPDATE sys.sys_config SET value = '100000' where variable ='statement_truncate_len';";
-                //$remote->sql_query($sql);
-                //fin patch
-                    if ($remote->checkVersion(array('MariaDB'=> '10.1.1'))) {
-                        $sql = "SET STATEMENT MAX_STATEMENT_TIME = 10 FOR SELECT * FROM `sys`.`" . $_GET['mysqlsys'] . "` LIMIT 200";
-                    }
-                    else {
-                        $sql = "SELECT * FROM `sys`.`" . $_GET['mysqlsys'] . "` LIMIT 200";
-                    }
-                    
-                    $data['table'] = $remote->sql_fetch_yield($sql);
-                    if ($_GET['mysqlsys'] === 'schema_unused_indexes') {
-                        $data['table'] = $this->enrichSchemaUnusedIndexes(
-                            $remote,
-                            iterator_to_array($data['table'], false),
-                            $id_mysql_server
-                        );
-                    }
-                    $data['name_table'] = $_GET['mysqlsys'];
-                }
-
-                $data['variables'] = $remote->getVersion();
-            }
+            $data['variables'] = $remote->getVersion();
         }
         $data['mysqlsys_update_config_csrf_field'] = Csrf::DEFAULT_FIELD;
         $data['mysqlsys_update_config_csrf_token'] = Csrf::issueToken($_SESSION, self::MYSQLSYS_UPDATE_CONFIG_CSRF_SCOPE);
         $this->set('data', $data);
+    }
+
+    public static function evaluateIndexRequest(array $server): array
+    {
+        if (CsrfGuard::isPost($server)) {
+            return [
+                'allowed' => false,
+                'status' => 405,
+                'body' => 'Method Not Allowed',
+                'headers' => ['Allow' => 'GET'],
+            ];
+        }
+
+        return [
+            'allowed' => true,
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+        ];
+    }
+
+    public static function normalizeIndexMysqlServerId(array $get): ?int
+    {
+        if (
+            empty($get['mysql_server'])
+            || !is_array($get['mysql_server'])
+            || !array_key_exists('id', $get['mysql_server'])
+        ) {
+            return null;
+        }
+
+        return self::normalizePositiveInteger($get['mysql_server']['id']);
     }
 
     private function enrichSchemaUnusedIndexes($remote, array $rows, int $idMysqlServer): array
