@@ -10,6 +10,8 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use App\Library\Post;
+use App\Library\Security\CsrfGuard;
+use App\Library\Security\GroupedFormRequest;
 use App\Library\Security\InlineEditRequest;
 use \Glial\Sgbd\Sgbd;
 use Glial\Security\Csrf;
@@ -30,6 +32,8 @@ use Glial\Security\Csrf;
  * @version 1.0
  */
 class Environment extends Controller {
+    private const ENVIRONMENT_ADD_CSRF_SCOPE = 'environment.add';
+    private const ENVIRONMENT_ADD_CLASS_VALUES = ['danger', 'warning', 'default', 'info', 'success', 'primary'];
     private const ENVIRONMENT_UPDATE_CSRF_SCOPE = 'environment.update';
     private const ENVIRONMENT_UPDATE_FIELDS = ['libelle', 'key', 'class', 'letter'];
     private const ENVIRONMENT_UPDATE_VALUE_MAX_BYTES = 255;
@@ -180,10 +184,18 @@ class Environment extends Controller {
  */
     public function add($param) {
         $this->di['js']->addJavascript(array("bootstrap-select.min.js"));
-        $db = Sgbd::sql(DB_DEFAULT);
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            $variable['environment'] = $_POST['environment'];
+        if (CsrfGuard::isPost($_SERVER)) {
+            $outcome = self::evaluateAddRequest($_POST, $_SERVER, $_SESSION);
+            if ($outcome['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendEnvironmentAddError($outcome['status'], $outcome['body'], $outcome['headers']);
+                return;
+            }
+
+            $db = Sgbd::sql(DB_DEFAULT);
+            $variable['environment'] = $outcome['environment'];
 
             //if ((empty($variable['environment']['libelle']))||(empty($variable['environment']['libelle']))||(empty($variable['environment']['libelle']))||(empty($variable['environment']['libelle'])))
 
@@ -203,10 +215,8 @@ class Environment extends Controller {
             }
         }
 
-        $colors = array("danger", "warning", "default", "info", "success", "primary");
-
         $data['colors'] = array();
-        foreach ($colors as $color) {
+        foreach (self::ENVIRONMENT_ADD_CLASS_VALUES as $color) {
             $temp = [];
             $temp['id'] = $color;
             $temp['libelle'] = $color;
@@ -216,7 +226,68 @@ class Environment extends Controller {
             $data['colors'][] = $temp;
         }
 
+        $data['environment_add_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['environment_add_csrf_token'] = Csrf::issueToken($_SESSION, self::ENVIRONMENT_ADD_CSRF_SCOPE);
+
         $this->set('data', $data);
+    }
+
+    public static function evaluateAddRequest(array $post, array $server, array $session): array
+    {
+        $request = GroupedFormRequest::evaluate(
+            $post,
+            $server,
+            $session,
+            self::ENVIRONMENT_ADD_CSRF_SCOPE,
+            'environment',
+            self::environmentAddRules(),
+            'Invalid environment add payload'
+        );
+
+        if ($request['status'] !== 200) {
+            return self::buildEnvironmentAddOutcome($request['status'], $request['body'], $request['headers']);
+        }
+
+        return self::buildEnvironmentAddOutcome(200, '', [], $request['payload']);
+    }
+
+    public static function normalizeAddPayload(array $post): ?array
+    {
+        return GroupedFormRequest::normalize($post, 'environment', self::environmentAddRules());
+    }
+
+    private static function environmentAddRules(): array
+    {
+        return [
+            'libelle' => ['type' => 'string', 'required' => true, 'max' => 20],
+            'key' => ['type' => 'string', 'required' => true, 'max' => 13],
+            'class' => ['type' => 'enum', 'required' => true, 'max' => 50, 'values' => self::ENVIRONMENT_ADD_CLASS_VALUES],
+            'letter' => ['type' => 'string', 'required' => true, 'max' => 1],
+        ];
+    }
+
+    private static function buildEnvironmentAddOutcome(
+        int $statusCode,
+        string $message,
+        array $headers = [],
+        ?array $environment = null
+    ): array {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'environment' => $environment,
+        ];
+    }
+
+    private static function sendEnvironmentAddError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
 
