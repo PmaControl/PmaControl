@@ -4,13 +4,21 @@ use Glial\Html\Form\Form;
 
 //debug($_SESSION);
 
+$userRegisterCsrfField = htmlspecialchars(
+    (string)($data['user_register_csrf_field'] ?? '_csrf_token'),
+    ENT_QUOTES,
+    'UTF-8'
+);
+$userRegisterCsrfToken = htmlspecialchars(
+    (string)($data['user_register_csrf_token'] ?? ''),
+    ENT_QUOTES,
+    'UTF-8'
+);
 
 echo '<div style="width:1000px; margin-left:auto; margin-right:auto; padding:0" class="well">';
 
-
-
-
 echo "<form action=\"\" method=\"post\" class=\"form-horizontal\" width=\"100%\">";
+echo '<input type="hidden" name="'.$userRegisterCsrfField.'" value="'.$userRegisterCsrfToken.'">';
 
 
 echo "<table style=\"margin-bottom: 0px;\" class=\"form table\" width=\"100%\">";

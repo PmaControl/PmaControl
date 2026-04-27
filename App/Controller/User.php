@@ -45,6 +45,7 @@ class User extends Controller {
     public $method_administration = array("user", "roles");
 
     private const USER_UPDATE_IDGROUP_CSRF_SCOPE = 'user.updateIdGroup';
+    private const USER_REGISTER_CSRF_SCOPE = 'user.register';
 
 /**
  * Prepare user state through `before`.
@@ -403,10 +404,20 @@ class User extends Controller {
 
         $data = array();
         $data['geolocalisation_country'] = $db->sql_to_array($res);
+        $data['user_register_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['user_register_csrf_token'] = Csrf::issueToken($_SESSION, self::USER_REGISTER_CSRF_SCOPE);
 
         $this->set('data', $data);
 
-        if (!empty($_POST['user_main'])) {
+        if (CsrfGuard::isPost($_SERVER)) {
+            $outcome = self::evaluateRegisterRequest($_POST, $_SERVER, $_SESSION);
+            if ($outcome['status'] !== 200) {
+                $msg = I18n::getTranslation(__($outcome['body']));
+                $title = I18n::getTranslation(__("Error"));
+                set_flash("error", $title, $msg);
+                header("location: " . LINK . "user/register/");
+                return;
+            }
 
             if (!empty($_COOKIE['IdUser'])) {
 
@@ -511,6 +522,29 @@ class User extends Controller {
                 exit;
             }
         }
+    }
+
+    public static function evaluateRegisterRequest(array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::USER_REGISTER_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildRegisterOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        if (empty($post['user_main']) || !is_array($post['user_main'])) {
+            return self::buildRegisterOutcome(400, "Invalid registration payload");
+        }
+
+        return self::buildRegisterOutcome(200, "");
+    }
+
+    private static function buildRegisterOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+        ];
     }
 
 /**
