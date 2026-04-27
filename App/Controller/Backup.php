@@ -540,6 +540,14 @@ class Backup extends Controller
         $this->title  = __("Schedules");
         $this->ariane = ' > <a href="#"><span class="glyphicon glyphicon-floppy-disk" style="font-size:12px"></span> '.__("Backup management").'</a> > <span class="glyphicon glyphicon-cog" style="font-size:12px"></span> '.$this->title;
 
+        $outcome = self::evaluateSettingsRequest($_SERVER);
+        if ($outcome['status'] !== 200) {
+            $this->view = false;
+            $this->layout_name = false;
+            self::sendSettingsError($outcome['status'], $outcome['body'], $outcome['headers']);
+            return;
+        }
+
         $this->di['js']->code_javascript('$("#mysql-server-").change(function () {
     data = $(this).val();
     $("#rename-database").load(GLIAL_LINK+"common/getDatabaseByServer/" + data + "/ajax>true/",
@@ -549,62 +557,6 @@ class Backup extends Controller
 });');
 
         $db = Sgbd::sql(DB_DEFAULT);
-
-        /*
-          if ($_SERVER['REQUEST_METHOD'] === "POST") {
-
-          foreach ($_POST['backup_database']as $key => $elem) {
-
-          try {
-          $db->sql_query('SET AUTOCOMMIT=0;');
-          $db->sql_query('START TRANSACTION;');
-
-          $crontab            = [];
-          $crontab['crontab'] = $_POST['crontab'][$key];
-
-          $id_crontab = $db->sql_save($crontab);
-          if (!$id_crontab) {
-          debug($crontab);
-          debug($db->sql_error());
-          throw new \Exception("PMACTRL-052 : impossible to save crontab");
-          }
-
-          $backup_database                                  = [];
-          $backup_database['backup_database']               = $elem;
-          $backup_database['backup_database']['id_crontab'] = $id_crontab;
-          $backup_database['backup_database']['is_active']  = 1;
-
-          if (!$id_backup_database = $db->sql_save($backup_database)) {
-          debug($backup_database);
-          debug($db->sql_error());
-          throw new \Exception("PMACTRL-053 : impossible to shedule this backup");
-          }
-
-          $cmd = "php ".GLIAL_INDEX." crontab monitor backup saveDb ".$id_backup_database;
-
-          Crontab::insert($crontab['crontab']['minutes'], $crontab['crontab']['hours'], $crontab['crontab']['day_of_month'], $crontab['crontab']['month'], $crontab['crontab']['day_of_week'],
-          $cmd, "Backup database with PmaControl", $id_crontab);
-
-          $crontab                       = [];
-          $crontab['crontab']['id']      = $id_crontab;
-          $crontab['crontab']['command'] = $cmd;
-
-          if (!$db->sql_save($crontab)) {
-          debug($crontab);
-          debug($db->sql_error());
-          throw new \Exception("PMACTRL-054 : impossible to set command into crontab");
-          }
-
-
-          $db->sql_query('COMMIT;');
-          } catch (\Exception $ex) {
-
-          Crontab::delete($id_crontab);
-          $db->sql_query('ROLLBACK;');
-          }
-          }
-          }
-         */
 
         $sql = "SELECT a.display_name,  b.id_mysql_server, d.*,b.id, c.ip,c.libelle as bakcup_server, f.minute,f.hour,b.database,
             f.day_of_month, f.month, f.day_of_week, g.libelle as backup_type, b.is_active
@@ -666,6 +618,38 @@ class Backup extends Controller
 
 
         $this->set('data', $data);
+    }
+
+    public static function evaluateSettingsRequest(array $server): array
+    {
+        $method = strtoupper((string) ($server['REQUEST_METHOD'] ?? 'GET'));
+        if ($method !== 'GET' && $method !== 'HEAD') {
+            return self::buildSettingsOutcome(405, 'Method Not Allowed', ['Allow' => 'GET, HEAD']);
+        }
+
+        return self::buildSettingsOutcome(200, '');
+    }
+
+    private static function buildSettingsOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+        ];
+    }
+
+    private static function sendSettingsError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+
+        if ($message !== '') {
+            echo $message;
+        }
     }
     /* used for ajax */
 
