@@ -52,6 +52,7 @@ class User extends Controller {
     private const USER_PASSWORD_RECOVER_CSRF_SCOPE = 'user.passwordRecover';
     private const USER_MAILBOX_CSRF_SCOPE = 'user.mailbox';
     private const USER_LOST_PASSWORD_CSRF_SCOPE = 'user.lostPassword';
+    private const USER_CONNECTION_CSRF_SCOPE = 'user.connection';
 
 /**
  * Prepare user state through `before`.
@@ -1541,9 +1542,25 @@ GROUP BY d.id";
 
         $this->title = __("Log on");
         $this->ariane = "> <a href=\"" . LINK . "user/\">" . __("Members") . "</a> > " . $this->title;
+        $data = array();
+        $data['user_connection_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['user_connection_csrf_token'] = Csrf::issueToken($_SESSION, self::USER_CONNECTION_CSRF_SCOPE);
+        $this->set("data", $data);
 
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
+        if (CsrfGuard::isPost($_SERVER)) {
+            $outcome = self::evaluateConnectionRequest($_POST, $_SERVER, $_SESSION);
+            if ($outcome['status'] !== 200) {
+                $msg = I18n::getTranslation(__($outcome['body']));
+                $title = I18n::getTranslation(__("Error"));
+                set_flash("error", $title, $msg);
+                header("Location: " . LINK . "user/connection/");
+                return;
+            }
+
+            $_POST['user_main']['login'] = $outcome['login'];
+            $_POST['user_main']['password'] = $outcome['password'];
+
             if ($this->di['auth']->authenticate()) {
 
 
@@ -1577,6 +1594,56 @@ GROUP BY d.id";
             header("Location: " . LINK . "user/connection/");
             exit;
         }
+    }
+
+    public static function evaluateConnectionRequest(array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::USER_CONNECTION_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildConnectionOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $credentials = self::normalizeConnectionPayload($post);
+        if ($credentials === null) {
+            return self::buildConnectionOutcome(400, "Invalid connection payload");
+        }
+
+        return self::buildConnectionOutcome(200, "", [], $credentials['login'], $credentials['password']);
+    }
+
+    public static function normalizeConnectionPayload(array $post): ?array
+    {
+        if (empty($post['user_main']) || !is_array($post['user_main'])) {
+            return null;
+        }
+
+        $login = trim((string)($post['user_main']['login'] ?? ''));
+        $password = (string)($post['user_main']['password'] ?? '');
+
+        if ($login === '' || $password === '') {
+            return null;
+        }
+
+        return [
+            'login' => $login,
+            'password' => $password,
+        ];
+    }
+
+    private static function buildConnectionOutcome(
+        int $statusCode,
+        string $message,
+        array $headers = [],
+        string $login = '',
+        string $password = ''
+    ): array {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'login' => $login,
+            'password' => $password,
+        ];
     }
 
 /**
