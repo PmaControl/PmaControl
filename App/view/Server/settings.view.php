@@ -1,6 +1,8 @@
 <?php
 
 use Glial\Html\Form\Form;
+$serverSettingsCsrfField = htmlspecialchars((string)($data['server_settings_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$serverSettingsCsrfToken = htmlspecialchars((string)($data['server_settings_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -9,7 +11,7 @@ use Glial\Html\Form\Form;
  */
 
 
-echo '<form action="" method="POST">';
+echo '<div>';
 echo '<div class="well">';
 
 echo '<div class="row">';
@@ -30,9 +32,10 @@ echo '</div>';
 
 
 echo '</div>';
-echo '</form>';
+echo '</div>';
 
 echo '<form action="" method="POST">';
+echo '<input type="hidden" name="'.$serverSettingsCsrfField.'" value="'.$serverSettingsCsrfToken.'" />';
 echo '<table class="table table-bordered table-striped" id="table">';
 echo '<tr>';
 echo '<th>'.__('Top').'</th>';
