@@ -58,7 +58,7 @@ final class GroupedFormRequest
         }
 
         foreach ($source as $field => $value) {
-            if (!is_string($field) || !array_key_exists($field, $rules) || !is_scalar($value)) {
+            if (!is_string($field) || !array_key_exists($field, $rules)) {
                 return null;
             }
 
@@ -89,6 +89,11 @@ final class GroupedFormRequest
 
     private static function normalizeValue($raw, array $rule)
     {
+        $type = (string) ($rule['type'] ?? (isset($rule['values']) ? 'enum' : 'string'));
+        if ($type === 'list') {
+            return self::normalizeListValue($raw, $rule);
+        }
+
         if (!is_scalar($raw)) {
             return null;
         }
@@ -98,7 +103,6 @@ final class GroupedFormRequest
             $text = trim((string) $rule['default']);
         }
 
-        $type = (string) ($rule['type'] ?? (isset($rule['values']) ? 'enum' : 'string'));
         if ($type === 'int') {
             if (!ctype_digit($text)) {
                 return null;
@@ -127,6 +131,10 @@ final class GroupedFormRequest
             return null;
         }
 
+        if (isset($rule['pattern']) && preg_match((string) $rule['pattern'], $text) !== 1) {
+            return null;
+        }
+
         if ($type === 'enum') {
             if (!isset($rule['values']) || !is_array($rule['values']) || !in_array($text, $rule['values'], true)) {
                 return null;
@@ -134,6 +142,51 @@ final class GroupedFormRequest
         }
 
         return $text;
+    }
+
+    private static function normalizeListValue($raw, array $rule): ?array
+    {
+        if (!is_array($raw)) {
+            return null;
+        }
+
+        $count = count($raw);
+        if (isset($rule['min_items']) && $count < (int) $rule['min_items']) {
+            return null;
+        }
+        if (isset($rule['max_items']) && $count > (int) $rule['max_items']) {
+            return null;
+        }
+
+        $itemRule = [
+            'type' => (string) ($rule['item_type'] ?? 'string'),
+        ];
+        foreach (['min', 'max', 'pattern', 'values'] as $key) {
+            $itemKey = 'item_'.$key;
+            if (array_key_exists($itemKey, $rule)) {
+                $itemRule[$key] = $rule[$itemKey];
+            }
+        }
+
+        $items = [];
+        foreach ($raw as $value) {
+            if (!is_scalar($value)) {
+                return null;
+            }
+
+            $item = self::normalizeValue($value, $itemRule);
+            if ($item === null) {
+                return null;
+            }
+
+            $items[] = $item;
+        }
+
+        if (count($items) !== count(array_unique($items, SORT_REGULAR))) {
+            return null;
+        }
+
+        return $items;
     }
 
     private static function outcome(int $statusCode, string $message, array $headers = []): array

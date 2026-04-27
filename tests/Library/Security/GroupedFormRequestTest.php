@@ -95,6 +95,41 @@ final class GroupedFormRequestTest extends TestCase
         $this->assertNull(GroupedFormRequest::normalize(['docker_server' => ['hostname' => 'docker.local', 'is_active' => 'yes']], 'docker_server', $rules));
     }
 
+    public function testNormalizeSupportsListRulesAndPatterns(): void
+    {
+        $rules = [
+            'id_mysql_server' => ['type' => 'int', 'required' => true, 'min' => 1],
+            'list' => [
+                'type' => 'list',
+                'required' => true,
+                'min_items' => 1,
+                'max_items' => 3,
+                'item_type' => 'string',
+                'item_min' => 1,
+                'item_max' => 64,
+                'item_pattern' => '/^[A-Za-z0-9_-]{1,64}$/',
+            ],
+            'path' => ['type' => 'string', 'required' => true, 'pattern' => '#^/[A-Za-z0-9._/-]{1,255}$#'],
+        ];
+
+        $this->assertSame(
+            ['id_mysql_server' => 7, 'list' => ['db1', 'db-2'], 'path' => '/mysql/backup'],
+            GroupedFormRequest::normalize([
+                'database' => [
+                    'id_mysql_server' => '7',
+                    'list' => [' db1 ', 'db-2'],
+                    'path' => '/mysql/backup',
+                ],
+            ], 'database', $rules)
+        );
+
+        $this->assertNull(GroupedFormRequest::normalize(['database' => ['id_mysql_server' => '7', 'list' => [], 'path' => '/mysql/backup']], 'database', $rules));
+        $this->assertNull(GroupedFormRequest::normalize(['database' => ['id_mysql_server' => '7', 'list' => ['db1', 'db1'], 'path' => '/mysql/backup']], 'database', $rules));
+        $this->assertNull(GroupedFormRequest::normalize(['database' => ['id_mysql_server' => '7', 'list' => ['db 1'], 'path' => '/mysql/backup']], 'database', $rules));
+        $this->assertNull(GroupedFormRequest::normalize(['database' => ['id_mysql_server' => '7', 'list' => ['db1'], 'path' => 'relative/path']], 'database', $rules));
+        $this->assertNull(GroupedFormRequest::normalize(['database' => ['id_mysql_server' => '7', 'list' => 'db1', 'path' => '/mysql/backup']], 'database', $rules));
+    }
+
     private function sameSitePostServer(): array
     {
         return [
