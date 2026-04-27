@@ -9,6 +9,7 @@ namespace App\Controller;
 
 use Glial\Synapse\Controller;
 use App\Library\Security\CsrfGuard;
+use App\Library\Security\GroupedFormRequest;
 use App\Library\Security\GroupedRowsRequest;
 use App\Library\Extraction;
 use App\Library\Mysql;
@@ -43,6 +44,7 @@ use \App\Library\Ssh;
  */
 class Docker extends Controller
 {
+    private const DOCKER_ADD_CSRF_SCOPE = 'docker.add';
     private const DOCKER_ADD_CONTAINER_CSRF_SCOPE = 'docker.addContainer';
     private const DOCKER_ADD_CONTAINER_MAX_ROWS = 64;
 
@@ -437,24 +439,25 @@ class Docker extends Controller
         // includes / autoload assumed (composer)
         // set_include_path(...) non nécessaire si tu utilises composer/autoload
 
-        $db = Sgbd::sql(DB_DEFAULT);
-
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
-            // Récupère les valeurs postées
-            $data = $_POST['docker_server'] ?? [];
-
-            // Validation basique (tu peux enrichir)
-            $hostname   = trim($data['hostname'] ?? '');
-
-            if (empty($data['port']))
-            {
-                $data['port'] = 22;
+        if (CsrfGuard::isPost($_SERVER)) {
+            $outcome = self::evaluateAddRequest($_POST, $_SERVER, $_SESSION);
+            if ($outcome['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendDockerAddError($outcome['status'], $outcome['body'], $outcome['headers']);
+                return;
             }
 
-            $port = intval($data['port']);
-            $name = trim($data['display_name'] ?? '');
-            $id_ssh_key = !empty($data['id_ssh_key']) ? intval($data['id_ssh_key']) : null;
+            $db = Sgbd::sql(DB_DEFAULT);
+
+            // Récupère les valeurs postées
+            $data = $outcome['docker_server'];
+
+            // Validation basique (tu peux enrichir)
+            $hostname   = $data['hostname'];
+            $port = $data['port'];
+            $name = $data['display_name'];
+            $id_ssh_key = $data['id_ssh_key'] > 0 ? $data['id_ssh_key'] : null;
 
             if (empty($hostname)) {
                 set_flash("error", I18n::getTranslation(__("Missing IP")), I18n::getTranslation(__("Please provide an IP address")));
@@ -577,6 +580,8 @@ class Docker extends Controller
             exit;
         }
 
+        $db = Sgbd::sql(DB_DEFAULT);
+
         // GET => préparation des selects pour la vue
         $sql = "SELECT id, libelle from geolocalisation_country where libelle != '' order by libelle asc";
         $res = $db->sql_query($sql);
@@ -592,9 +597,70 @@ class Docker extends Controller
             $data['ssh_key'][] = $tmp;
         }
 
+        $data['docker_add_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['docker_add_csrf_token'] = Csrf::issueToken($_SESSION, self::DOCKER_ADD_CSRF_SCOPE);
  
         $this->set('data', $data);
 
+    }
+
+    public static function evaluateAddRequest(array $post, array $server, array $session): array
+    {
+        $request = GroupedFormRequest::evaluate(
+            $post,
+            $server,
+            $session,
+            self::DOCKER_ADD_CSRF_SCOPE,
+            'docker_server',
+            self::dockerAddRules(),
+            'Invalid docker add payload'
+        );
+
+        if ($request['status'] !== 200) {
+            return self::buildDockerAddOutcome($request['status'], $request['body'], $request['headers']);
+        }
+
+        return self::buildDockerAddOutcome(200, '', [], $request['payload']);
+    }
+
+    public static function normalizeAddPayload(array $post): ?array
+    {
+        return GroupedFormRequest::normalize($post, 'docker_server', self::dockerAddRules());
+    }
+
+    private static function dockerAddRules(): array
+    {
+        return [
+            'display_name' => ['type' => 'string', 'default' => '', 'max' => 128],
+            'hostname' => ['type' => 'string', 'default' => '', 'max' => 255],
+            'port' => ['type' => 'int', 'default' => 22, 'min' => 1, 'max' => 65535],
+            'is_active' => ['type' => 'enum', 'default' => '1', 'values' => ['0', '1']],
+            'id_ssh_key' => ['type' => 'int', 'default' => 0, 'min' => 0],
+        ];
+    }
+
+    private static function buildDockerAddOutcome(
+        int $statusCode,
+        string $message,
+        array $headers = [],
+        ?array $dockerServer = null
+    ): array {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'docker_server' => $dockerServer,
+        ];
+    }
+
+    private static function sendDockerAddError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
 /**

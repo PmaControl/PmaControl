@@ -34,7 +34,7 @@ final class GroupedFormRequestTest extends TestCase
         );
 
         $this->assertSame(200, $outcome['status']);
-        $this->assertSame(['letter' => 'P', 'libelle' => 'Preprod', 'class' => 'warning'], $outcome['payload']);
+        $this->assertSame(['libelle' => 'Preprod', 'class' => 'warning', 'letter' => 'P'], $outcome['payload']);
     }
 
     public function testEvaluatePropagatesCsrfGuardFailure(): void
@@ -74,6 +74,25 @@ final class GroupedFormRequestTest extends TestCase
             ['libelle' => 'Preprod', 'class' => 'warning'],
             GroupedFormRequest::normalize(['environment' => ['libelle' => ' Preprod ', 'class' => 'warning']], 'environment', $rules)
         );
+    }
+
+    public function testNormalizeSupportsIntegerRulesWithDefaultsAndBounds(): void
+    {
+        $rules = [
+            'hostname' => ['type' => 'string', 'required' => true, 'max' => 255],
+            'port' => ['type' => 'int', 'default' => 22, 'min' => 1, 'max' => 65535],
+            'id_ssh_key' => ['type' => 'int', 'default' => 0, 'min' => 0],
+            'is_active' => ['type' => 'enum', 'default' => '1', 'values' => ['0', '1']],
+        ];
+
+        $this->assertSame(
+            ['hostname' => 'docker.local', 'port' => 22, 'id_ssh_key' => 0, 'is_active' => '1'],
+            GroupedFormRequest::normalize(['docker_server' => ['hostname' => ' docker.local ', 'port' => '', 'id_ssh_key' => '']], 'docker_server', $rules)
+        );
+        $this->assertNull(GroupedFormRequest::normalize(['docker_server' => ['hostname' => 'docker.local', 'port' => '0']], 'docker_server', $rules));
+        $this->assertNull(GroupedFormRequest::normalize(['docker_server' => ['hostname' => 'docker.local', 'port' => '65536']], 'docker_server', $rules));
+        $this->assertNull(GroupedFormRequest::normalize(['docker_server' => ['hostname' => 'docker.local', 'port' => '22 OR 1=1']], 'docker_server', $rules));
+        $this->assertNull(GroupedFormRequest::normalize(['docker_server' => ['hostname' => 'docker.local', 'is_active' => 'yes']], 'docker_server', $rules));
     }
 
     private function sameSitePostServer(): array
