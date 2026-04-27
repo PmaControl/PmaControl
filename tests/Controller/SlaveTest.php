@@ -127,7 +127,6 @@ final class SlaveTest extends TestCase
     public function testBuildBinlogAnalysisLagDataDeduplicatesTimestampAndPrefersSourceMetric(): void
     {
         $method = new ReflectionMethod(Slave::class, 'buildBinlogAnalysisLagData');
-        $method->setAccessible(true);
 
         Extraction::$variable[10]['name'] = 'seconds_behind_master';
         Extraction::$variable[11]['name'] = 'seconds_behind_source';

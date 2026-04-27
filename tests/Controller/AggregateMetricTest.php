@@ -107,7 +107,6 @@ final class AggregateMetricTest extends TestCase
     private function invokePrivate(string $method, array $arguments): mixed
     {
         $reflection = new ReflectionMethod(AggregateMetric::class, $method);
-        $reflection->setAccessible(true);
 
         return $reflection->invokeArgs($this->controller, $arguments);
     }
