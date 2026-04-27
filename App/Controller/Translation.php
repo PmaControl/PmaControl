@@ -5,7 +5,9 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use \Glial\I18n\I18n;
 use \Glial\Sgbd\Sgbd;
+use App\Library\Security\CsrfGuard;
 use \App\Library\Debug;
+use Glial\Security\Csrf;
 use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
@@ -25,6 +27,10 @@ use \Monolog\Handler\StreamHandler;
  */
 class Translation extends Controller
 {
+    private const TRANSLATION_ADMIN_CSRF_SCOPE = 'translation.admin_translation';
+    private const TRANSLATION_ADMIN_MAX_UPDATES = 500;
+    private const TRANSLATION_ADMIN_MAX_TEXT_LENGTH = 65535;
+
 /**
  * Stores `$module_group` for module group.
  *
@@ -95,33 +101,39 @@ class Translation extends Controller
         $this->title  = __("Translations");
         $this->ariane = "> <a href=\"\">".__("Administration")."</a> > ".$this->title;
 
+        $data = [];
+        $lg_available = explode(",", LANGUAGE_AVAILABLE);
+        $postOutcome = null;
+
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
-            if (!empty($_POST['field-to-update'])) {
-                $_POST['field-to-update'] = mb_substr($_POST['field-to-update'], 0, -1);
+            $postOutcome = self::evaluateAdminTranslationRequest($_POST, $_SERVER, $_SESSION, $lg_available);
+            if ($postOutcome['status'] !== 200) {
+                $this->view        = false;
+                $this->layout_name = false;
+                self::sendAdminTranslationError($postOutcome['status'], $postOutcome['body'], $postOutcome['headers']);
+                return;
+            }
+        }
 
-                $data_to_update = explode(";", $_POST['field-to-update']);
+        $db = Sgbd::sql(DB_DEFAULT);
 
-                foreach ($data_to_update as $key) {
+        if ($postOutcome !== null && $postOutcome['target'] !== null) {
+            $table = 'translation_'.$postOutcome['target'];
 
-                    $key_extrated = explode("-", $key);
+            foreach ($postOutcome['updates'] as $update) {
+                $data_to_save = [];
+                $data_to_save[$table]['id']             = $update['id'];
+                $data_to_save[$table]['text']           = $update['text'];
+                $data_to_save[$table]['translate_auto'] = 0;
 
-                    $data['translation_'.$_POST['none']['id_to']]['id']             = $key_extrated[1];
-                    $data['translation_'.$_POST['none']['id_to']]['text']           = $_POST[$key];
-                    $data['translation_'.$_POST['none']['id_to']]['translate_auto'] = 0;
-
-                    $db->set_history_type(5);
-                    $db->sql_save($data);
-                }
+                $db->set_history_type(5);
+                $db->sql_save($data_to_save);
             }
         }
 
         $count = 0;
 
-        $db = Sgbd::sql(DB_DEFAULT);
-
         $tables = $db->getListTable("table");
-
-        $lg_available = explode(",", LANGUAGE_AVAILABLE);
 
         foreach ($tables['table'] as $table) {
             if (mb_strstr($table, 'translation_')) {
@@ -171,6 +183,8 @@ class Translation extends Controller
 
             empty($_GET['from']) ? $data['from'] = 'en' : $data['from'] = $_GET['from'];
             empty($_GET['to']) ? $data['to']   = I18n::Get() : $data['to']   = $_GET['to'];
+            $data['translation_admin_csrf_field'] = Csrf::DEFAULT_FIELD;
+            $data['translation_admin_csrf_token'] = Csrf::issueToken($_SESSION, self::TRANSLATION_ADMIN_CSRF_SCOPE);
 
             $this->javascript                  = array("jquery-1.4.2.min.js");
             $this->di['js']->code_javascript[] = '
@@ -272,6 +286,145 @@ class Translation extends Controller
 
             $this->set("data", $data);
         }
+    }
+
+    public static function evaluateAdminTranslationRequest(
+        array $post,
+        array $server,
+        array $session,
+        array $availableLanguages
+    ): array {
+        $guard = CsrfGuard::check($post, $server, $session, self::TRANSLATION_ADMIN_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildAdminTranslationOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $payload = self::normalizeAdminTranslationPayload($post, $availableLanguages);
+        if ($payload === null) {
+            return self::buildAdminTranslationOutcome(400, 'Invalid translation payload');
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'target' => $payload['target'],
+            'updates' => $payload['updates'],
+        ];
+    }
+
+    public static function normalizeAdminTranslationPayload(array $post, array $availableLanguages): ?array
+    {
+        if (! array_key_exists('field-to-update', $post)) {
+            return [
+                'target' => null,
+                'updates' => [],
+            ];
+        }
+
+        if (! is_scalar($post['field-to-update'])) {
+            return null;
+        }
+
+        $keys = self::normalizeAdminTranslationKeys((string) $post['field-to-update']);
+        if ($keys === null) {
+            return null;
+        }
+
+        if ($keys === []) {
+            return [
+                'target' => null,
+                'updates' => [],
+            ];
+        }
+
+        $target = self::normalizeAdminTranslationTarget($post, $availableLanguages);
+        if ($target === null) {
+            return null;
+        }
+
+        $updates = [];
+        foreach ($keys as $key => $id) {
+            if (! array_key_exists($key, $post) || ! is_scalar($post[$key])) {
+                return null;
+            }
+
+            $text = (string) $post[$key];
+            if (mb_strlen($text, 'UTF-8') > self::TRANSLATION_ADMIN_MAX_TEXT_LENGTH) {
+                return null;
+            }
+
+            $updates[] = [
+                'id' => $id,
+                'text' => $text,
+            ];
+        }
+
+        return [
+            'target' => $target,
+            'updates' => $updates,
+        ];
+    }
+
+    private static function normalizeAdminTranslationKeys(string $fieldToUpdate): ?array
+    {
+        $rawKeys = array_filter(explode(';', trim($fieldToUpdate)), static fn (string $key): bool => $key !== '');
+        if (count($rawKeys) > self::TRANSLATION_ADMIN_MAX_UPDATES) {
+            return null;
+        }
+
+        $keys = [];
+        foreach ($rawKeys as $key) {
+            if (! preg_match('/^id-([1-9][0-9]{0,9})$/', $key, $matches)) {
+                return null;
+            }
+
+            if (array_key_exists($key, $keys)) {
+                return null;
+            }
+
+            $keys[$key] = (int) $matches[1];
+        }
+
+        return $keys;
+    }
+
+    private static function normalizeAdminTranslationTarget(array $post, array $availableLanguages): ?string
+    {
+        if (
+            ! isset($post['none'])
+            || ! is_array($post['none'])
+            || ! array_key_exists('id_to', $post['none'])
+            || ! is_scalar($post['none']['id_to'])
+        ) {
+            return null;
+        }
+
+        $target = (string) $post['none']['id_to'];
+        $languages = array_values(array_filter(array_map('trim', $availableLanguages), static fn (string $lang): bool => $lang !== ''));
+
+        return in_array($target, $languages, true) ? $target : null;
+    }
+
+    private static function buildAdminTranslationOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'target' => null,
+            'updates' => [],
+        ];
+    }
+
+    private static function sendAdminTranslationError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
 /**

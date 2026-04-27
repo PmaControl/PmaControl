@@ -2,6 +2,9 @@
 
 use \glial\I18n\I18n;
 
+$translationAdminCsrfField = htmlspecialchars((string) ($data['translation_admin_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$translationAdminCsrfToken = htmlspecialchars((string) ($data['translation_admin_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+
 echo '<div id="translation">';
 
 if (!empty($data['translate_auto'])) {
@@ -81,6 +84,7 @@ if (!empty($data['pagination']) && $data['count'][0]['cpt'] > TRANSLATION_ELEM_P
 
 
 echo '<form action="" method="post">';
+echo '<input type="hidden" name="'.$translationAdminCsrfField.'" value="'.$translationAdminCsrfToken.'" />';
 
 echo "<table>";
 
