@@ -6,9 +6,12 @@
  */
 
 use Glial\Html\Form\Form;
+$exportTestDechiffrementCsrfField = htmlspecialchars((string) ($data['export_test_dechiffrement_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$exportTestDechiffrementCsrfToken = htmlspecialchars((string) ($data['export_test_dechiffrement_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
 ?>
 
 <form class="form2" action="<?= LINK ?>export/test_dechiffrement" enctype="multipart/form-data" method="post">
+    <input type="hidden" name="<?= $exportTestDechiffrementCsrfField ?>" value="<?= $exportTestDechiffrementCsrfToken ?>">
     <div class="panel panel-primary">
         <div class="panel-heading">
             <h3 class="panel-title"><?= __('Import configuration') ?></h3>
