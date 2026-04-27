@@ -6,6 +6,8 @@ $clientUpdateCsrfToken = htmlspecialchars((string) ($data['client_update_csrf_to
 $clientUpdateCsrfAttributes = ' data-csrf-field="'.$clientUpdateCsrfField.'" data-csrf-token="'.$clientUpdateCsrfToken.'"';
 $clientDeleteCsrfField = htmlspecialchars((string) ($data['client_delete_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
 $clientDeleteCsrfToken = htmlspecialchars((string) ($data['client_delete_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$clientMonitoringCsrfField = htmlspecialchars((string) ($data['client_monitoring_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$clientMonitoringCsrfToken = htmlspecialchars((string) ($data['client_monitoring_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
 
 $totalAll = 0;
 $onlineAll = 0;
@@ -141,7 +143,13 @@ if (!empty($data['client'])) {
                 <label class="cl-toggle" title="<?= __('Monitoring') ?>">
                     <?php
                     $checked = ($client['is_monitored'] === "1") ? ['checked' => 'checked'] : [];
-                    $attrs = array_merge(['data-id' => $client['id'], 'class' => 'is_monitored', 'type' => 'checkbox'], $checked);
+                    $attrs = array_merge([
+                        'data-id' => $client['id'],
+                        'data-csrf-field' => $clientMonitoringCsrfField,
+                        'data-csrf-token' => $clientMonitoringCsrfToken,
+                        'class' => 'is_monitored',
+                        'type' => 'checkbox'
+                    ], $checked);
                     echo Form::input("check", "mon_".$client['id'], $attrs);
                     ?>
                     <span class="cl-toggle-track"></span>

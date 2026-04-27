@@ -36,6 +36,7 @@ class Client extends Controller
     private const CLIENT_UPDATE_VALUE_MAX_BYTES = 255;
     private const CLIENT_RESERVED_ID = 99;
     private const CLIENT_DELETE_CSRF_SCOPE = 'client.delete';
+    private const CLIENT_MONITORING_TOGGLE_CSRF_SCOPE = 'client.toggleMonitoring';
 
 /**
  * Render client state through `index`.
@@ -116,6 +117,8 @@ class Client extends Controller
         $data['client_update_csrf_token'] = Csrf::issueToken($_SESSION, self::CLIENT_UPDATE_CSRF_SCOPE);
         $data['client_delete_csrf_field'] = Csrf::DEFAULT_FIELD;
         $data['client_delete_csrf_token'] = Csrf::issueToken($_SESSION, self::CLIENT_DELETE_CSRF_SCOPE);
+        $data['client_monitoring_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['client_monitoring_csrf_token'] = Csrf::issueToken($_SESSION, self::CLIENT_MONITORING_TOGGLE_CSRF_SCOPE);
 
         $this->set('data', $data);
     }
@@ -339,22 +342,20 @@ class Client extends Controller
         $this->view        = false;
         $this->layout_name = false;
 
-        if (!self::isPostRequest($_SERVER)) {
+        $toggleRequest = self::evaluateMonitoringToggleRequest(
+            $_POST,
+            $_SERVER,
+            $_SESSION,
+            is_array($param) ? $param : []
+        );
+        if ($toggleRequest['status'] !== 200) {
             $this->respondMonitoringToggleJson([
                 'success' => false,
-                'error' => 'Method not allowed',
-            ], 405);
+                'error' => $toggleRequest['body'],
+            ], $toggleRequest['status'], $toggleRequest['headers']);
         }
 
-        try {
-            $payload = self::normalizeMonitoringTogglePayload(is_array($param) ? $param : [], $_POST);
-        } catch (\InvalidArgumentException $exception) {
-            $this->respondMonitoringToggleJson([
-                'success' => false,
-                'error' => $exception->getMessage(),
-            ], 400);
-        }
-
+        $payload = $toggleRequest['payload'];
         $db = Sgbd::sql(DB_DEFAULT);
         $sql = "UPDATE client SET `is_monitored` = ".$payload['is_monitored']." WHERE id = ".$payload['id'];
         $db->sql_query($sql);
@@ -366,6 +367,22 @@ class Client extends Controller
         ]);
     }
 
+    public static function evaluateMonitoringToggleRequest(array $post, array $server, array $session, array $param): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::CLIENT_MONITORING_TOGGLE_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildMonitoringToggleOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        try {
+            $payload = self::normalizeMonitoringTogglePayload($param, $post);
+        } catch (\InvalidArgumentException $exception) {
+            return self::buildMonitoringToggleOutcome(400, $exception->getMessage());
+        }
+
+        return self::buildMonitoringToggleOutcome(200, '', [], $payload);
+    }
+
     public static function isPostRequest(array $server): bool
     {
         return strtoupper((string) ($server['REQUEST_METHOD'] ?? 'GET')) === 'POST';
@@ -375,8 +392,9 @@ class Client extends Controller
     {
         $id = $post['id'] ?? $param[0] ?? null;
         $isMonitored = $post['is_monitored'] ?? $param[1] ?? null;
+        $normalizedId = self::normalizeMonitoringClientId($id);
 
-        if (!is_numeric($id) || (int) $id <= 0) {
+        if ($normalizedId === null) {
             throw new \InvalidArgumentException('Invalid client id');
         }
 
@@ -390,15 +408,49 @@ class Client extends Controller
         }
 
         return [
-            'id' => (int) $id,
+            'id' => $normalizedId,
             'is_monitored' => $normalizedStatus ? 1 : 0,
         ];
     }
 
-    private function respondMonitoringToggleJson(array $payload, int $statusCode = 200): void
+    private static function normalizeMonitoringClientId($value): ?int
+    {
+        if (is_int($value)) {
+            $id = $value;
+        } elseif (is_string($value)) {
+            $trimmed = trim($value);
+            if ($trimmed === '' || !ctype_digit($trimmed)) {
+                return null;
+            }
+            $id = (int) $trimmed;
+        } else {
+            return null;
+        }
+
+        if ($id <= 0 || $id === self::CLIENT_RESERVED_ID) {
+            return null;
+        }
+
+        return $id;
+    }
+
+    private static function buildMonitoringToggleOutcome(int $statusCode, string $message, array $headers = [], ?array $payload = null): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'payload' => $payload,
+        ];
+    }
+
+    private function respondMonitoringToggleJson(array $payload, int $statusCode = 200, array $headers = []): void
     {
         if (!headers_sent()) {
             http_response_code($statusCode);
+            foreach ($headers as $name => $value) {
+                header($name . ': ' . $value);
+            }
             header('Content-Type: application/json; charset=UTF-8');
         }
 
