@@ -232,9 +232,7 @@ Complete PmaControl</a>
 <li><a href="#contrat-http">3. Contrat HTTP</a>
 <ul>
 <li><a href="#get">GET</a></li>
-<li><a href="#post">POST</a></li>
-<li><a href="#put-patch">PUT / PATCH</a></li>
-<li><a href="#delete">DELETE</a></li>
+<li><a href="#methodes-mutatives">Methodes mutatives</a></li>
 <li><a href="#openapi-like">OpenAPI-like</a></li>
 </ul></li>
 <li><a href="#ressources-et-regles-metier">4. Ressources et regles
@@ -270,8 +268,8 @@ Complete PmaControl</h1>
 <h2 id="perimetre">1. Perimetre</h2>
 <p>L’API actuelle de PmaControl est exposee par
 <code>App/Controller/Api.php</code> et cible les ressources de
-configuration modifiables depuis l’interface web. Elle suit le routeur
-historique Glial et herite donc du prefixe langue.</p>
+configuration en lecture seule. Elle suit le routeur historique Glial et
+herite donc du prefixe langue.</p>
 <p>Base route:</p>
 <ul>
 <li><code>/fr/api/config/{resource}</code></li>
@@ -290,9 +288,10 @@ metier:</p>
 <li>storage-areas</li>
 <li>servers</li>
 </ul>
-<p>Le controleur traduit directement les operations CRUD de l’UI legacy,
-avec normalisation des payloads, valeurs par defaut, cast bool/int et
-chiffrement du mot de passe serveur.</p>
+<p>Le controleur expose la lecture des ressources legacy avec
+normalisation centralisee des schemas. Les methodes mutatives restent
+fermees tant qu’une authentification API dediee n’est pas
+disponible.</p>
 <h2 id="contrat-http">3. Contrat HTTP</h2>
 <h3 id="get">GET</h3>
 <ul>
@@ -301,22 +300,13 @@ enregistrements</li>
 <li><code>GET /fr/api/config/{resource}/{id}</code>: lit un
 enregistrement</li>
 </ul>
-<h3 id="post">POST</h3>
+<h3 id="methodes-mutatives">Methodes mutatives</h3>
 <ul>
-<li><code>POST /fr/api/config/{resource}</code>: cree un enregistrement
-a partir d’un JSON</li>
-</ul>
-<h3 id="put-patch">PUT / PATCH</h3>
-<ul>
-<li><code>PUT /fr/api/config/{resource}/{id}</code>: remplace ou met a
-jour l’enregistrement cible</li>
-<li><code>PATCH /fr/api/config/{resource}/{id}</code>: mise a jour
-partielle</li>
-</ul>
-<h3 id="delete">DELETE</h3>
-<ul>
-<li><code>DELETE /fr/api/config/{resource}/{id}</code>: suppression ou
-soft delete selon la ressource</li>
+<li><code>POST</code>, <code>PUT</code>, <code>PATCH</code> et
+<code>DELETE</code> retournent <code>405 Method not allowed</code> avec
+<code>Allow: GET</code>.</li>
+<li>Ces methodes ne doivent etre rouvertes qu’avec une authentification
+API dediee ou un flux navigateur muni d’un jeton CSRF.</li>
 </ul>
 <h3 id="openapi-like">OpenAPI-like</h3>
 <ul>

@@ -22,4 +22,6 @@ Set `PMACONTROL_TRUSTED_ORIGIN` in `configuration/pmacontrol.config.php` when Pm
 
 Machine-to-machine endpoints must not bypass this by accident. They need either their own authenticated API flow or a documented exemption in the ticket that introduces the endpoint. `/Webservice/pushServer` is intentionally exempt from browser CSRF tokens because it is a JSON API authenticated with HTTP Basic credentials, not a session-backed browser form; its preconditions are checked through `ApiRequestGuard` before import.
 
+`/Api/config` is intentionally read-only (`GET`) until it gets a dedicated API authentication flow. `POST`, `PUT`, `PATCH` and `DELETE` return `405 Method not allowed` with `Allow: GET`; do not re-open them as CSRF-exempt session-backed mutations.
+
 Follow [issue_workflow.md](issue_workflow.md) for issue handling, branching, comments, reviews, PRs and closure.

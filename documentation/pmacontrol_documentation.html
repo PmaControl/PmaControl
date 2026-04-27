@@ -1982,8 +1982,8 @@ Database service has been restarted</p>
 <h1 id="api-rest">api rest</h1>
 <h1 id="pmacontrol-rest-api">PmaControl REST API</h1>
 <h2 id="scope">Scope</h2>
-<p>The REST API documents and exposes the configuration I/O that is
-currently editable from the UI for these resources:</p>
+<p>The REST API documents and exposes read-only configuration I/O for
+these resources:</p>
 <ul>
 <li><code>tags</code></li>
 <li><code>clients</code></li>
@@ -1997,15 +1997,14 @@ currently editable from the UI for these resources:</p>
 <ul>
 <li><code>GET /fr/api/config/{resource}</code>: list all items.</li>
 <li><code>GET /fr/api/config/{resource}/{id}</code>: read one item.</li>
-<li><code>POST /fr/api/config/{resource}</code>: create one item from a
-JSON body.</li>
-<li><code>PUT /fr/api/config/{resource}/{id}</code>: update one item
-from a JSON body.</li>
-<li><code>PATCH /fr/api/config/{resource}/{id}</code>: partial
-update.</li>
-<li><code>DELETE /fr/api/config/{resource}/{id}</code>: delete or
-soft-delete depending on the resource policy.</li>
 </ul>
+<p><code>POST</code>, <code>PUT</code>, <code>PATCH</code> and
+<code>DELETE</code> are intentionally closed with
+<code>405 Method not allowed</code> and <code>Allow: GET</code> until a
+dedicated API authentication flow exists. They must not be re-opened as
+session-backed browser mutations without CSRF tokens, and they must not
+be documented as CSRF-exempt unless the endpoint authenticates machine
+clients independently.</p>
 <p>OpenAPI-like JSON export: <code>/fr/api/openApi</code></p>
 <h2 id="resource-payloads">Resource payloads</h2>
 <h3 id="tags"><code>tags</code></h3>

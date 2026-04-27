@@ -2,7 +2,7 @@
 
 ## 1. Perimetre
 
-L'API actuelle de PmaControl est exposee par `App/Controller/Api.php` et cible les ressources de configuration modifiables depuis l'interface web. Elle suit le routeur historique Glial et herite donc du prefixe langue.
+L'API actuelle de PmaControl est exposee par `App/Controller/Api.php` et cible les ressources de configuration en lecture seule. Elle suit le routeur historique Glial et herite donc du prefixe langue.
 
 Base route:
 
@@ -21,7 +21,7 @@ Cette API ne cherche pas encore a couvrir tout le monolithe. Elle se concentre s
 - storage-areas
 - servers
 
-Le controleur traduit directement les operations CRUD de l'UI legacy, avec normalisation des payloads, valeurs par defaut, cast bool/int et chiffrement du mot de passe serveur.
+Le controleur expose la lecture des ressources legacy avec normalisation centralisee des schemas. Les methodes mutatives restent fermees tant qu'une authentification API dediee n'est pas disponible.
 
 ## 3. Contrat HTTP
 
@@ -30,18 +30,10 @@ Le controleur traduit directement les operations CRUD de l'UI legacy, avec norma
 - `GET /fr/api/config/{resource}`: liste les enregistrements
 - `GET /fr/api/config/{resource}/{id}`: lit un enregistrement
 
-### POST
+### Methodes mutatives
 
-- `POST /fr/api/config/{resource}`: cree un enregistrement a partir d'un JSON
-
-### PUT / PATCH
-
-- `PUT /fr/api/config/{resource}/{id}`: remplace ou met a jour l'enregistrement cible
-- `PATCH /fr/api/config/{resource}/{id}`: mise a jour partielle
-
-### DELETE
-
-- `DELETE /fr/api/config/{resource}/{id}`: suppression ou soft delete selon la ressource
+- `POST`, `PUT`, `PATCH` et `DELETE` retournent `405 Method not allowed` avec `Allow: GET`.
+- Ces methodes ne doivent etre rouvertes qu'avec une authentification API dediee ou un flux navigateur muni d'un jeton CSRF.
 
 ### OpenAPI-like
 

@@ -256,7 +256,7 @@ Cette combinaison montre un systeme qui a grandi par couches successives: certai
 
 ### 5.10 Regles API et integration
 
-- l'API REST actuelle cible principalement les ressources de configuration modifiables depuis l'UI
+- l'API REST actuelle cible principalement les ressources de configuration en lecture seule; les mutations restent fermees sans authentification API dediee
 - le projet sait aussi importer des donnees par webservice et exposer des integrations Telegram / MCP
 - le style d'integration reste tres operationnel: peu d'abstraction, beaucoup de logique proche du cas d'usage
 
