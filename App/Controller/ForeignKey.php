@@ -16,6 +16,8 @@ use \Glial\Synapse\Controller;
 use \Glial\Cli\Color;
 use \App\Library\Debug;
 use \App\Library\Mysql;
+use App\Library\Security\CsrfGuard;
+use Glial\Security\Csrf;
 
 /**
  * Class responsible for foreign key workflows.
@@ -36,6 +38,8 @@ class ForeignKey extends Controller
 
     CONST BEGIN = "id%";
     CONST END = "%id";
+    private const FOREIGN_KEY_ADD_CSRF_SCOPE = 'foreign_key.add';
+    private const FOREIGN_KEY_ADD_FIELD_MAX_LENGTH = 64;
 
 /**
  * Stores `$primary_key` for primary key.
@@ -1018,15 +1022,115 @@ class ForeignKey extends Controller
             });
         });');
 
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
-            if (!empty($_POST['foreign_key_remove_prefix']['id_mysql_server']) && !empty($_POST['foreign_key_remove_prefix']['database_name']) && !empty($_POST['foreign_key_remove_prefix']['prefix'])) {
-
-                $db = Sgbd::sql(DB_DEFAULT);
-                $db->sql_save($_POST);
-                
-                header('location: '.LINK.$this->getClass().'/settingPrefix/');
+        if (CsrfGuard::isPost($_SERVER)) {
+            $addPost = self::evaluateAddPost($_POST, $_SERVER, $_SESSION);
+            if ($addPost['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendForeignKeyAddError($addPost['status'], $addPost['body'], $addPost['headers']);
+                return;
             }
+
+            $db = Sgbd::sql(DB_DEFAULT);
+            $db->sql_save(['foreign_key_remove_prefix' => $addPost['payload']]);
+
+            header('location: '.LINK.$this->getClass().'/settingPrefix/');
+            return;
         }
+
+        $data = [
+            'foreign_key_add_csrf_field' => Csrf::DEFAULT_FIELD,
+            'foreign_key_add_csrf_token' => Csrf::issueToken($_SESSION, self::FOREIGN_KEY_ADD_CSRF_SCOPE),
+        ];
+        $this->set('data', $data);
+    }
+
+    public static function evaluateAddPost(array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::FOREIGN_KEY_ADD_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildAddPostOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $payload = self::normalizeAddPayload($post);
+        if ($payload === null) {
+            return self::buildAddPostOutcome(422, 'Invalid foreign-key prefix payload');
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'payload' => $payload,
+        ];
+    }
+
+    public static function normalizeAddPayload(array $post): ?array
+    {
+        $raw = $post['foreign_key_remove_prefix'] ?? null;
+        if (!is_array($raw)) {
+            return null;
+        }
+
+        $idMysqlServer = self::normalizePositiveInteger($raw['id_mysql_server'] ?? null);
+        $databaseName = self::normalizeBoundedString($raw['database_name'] ?? null);
+        $prefix = self::normalizeBoundedString($raw['prefix'] ?? null);
+        if ($idMysqlServer === null || $databaseName === null || $prefix === null) {
+            return null;
+        }
+
+        return [
+            'id_mysql_server' => $idMysqlServer,
+            'database_name' => $databaseName,
+            'prefix' => $prefix,
+        ];
+    }
+
+    private static function normalizePositiveInteger($value): ?int
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $id = trim((string) $value);
+        if (!ctype_digit($id) || (int) $id < 1) {
+            return null;
+        }
+
+        return (int) $id;
+    }
+
+    private static function normalizeBoundedString($value): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $normalized = trim((string) $value);
+        if ($normalized === '' || strlen($normalized) > self::FOREIGN_KEY_ADD_FIELD_MAX_LENGTH) {
+            return null;
+        }
+
+        return $normalized;
+    }
+
+    private static function buildAddPostOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'payload' => [],
+        ];
+    }
+
+    private static function sendForeignKeyAddError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        echo $message;
     }
 
 /**

@@ -1,8 +1,11 @@
 <?php
 
 use Glial\Html\Form\Form;
+$foreignKeyAddCsrfField = htmlspecialchars((string) ($data['foreign_key_add_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$foreignKeyAddCsrfToken = htmlspecialchars((string) ($data['foreign_key_add_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
 ?>
 <form action="" method="post">
+    <input type="hidden" name="<?= $foreignKeyAddCsrfField ?>" value="<?= $foreignKeyAddCsrfToken ?>">
     <div class="panel panel-primary">
         <div class="panel-heading">
             <h3 class="panel-title"><?= __('Add a prefix') ?></h3>
