@@ -41,6 +41,8 @@ class Ldap extends Controller
         'check',
     ];
     private const LDAP_FIELD_MAX_LENGTH = 4096;
+    private const LDAP_GET_GROUP_FROM_USER_CSRF_SCOPE = 'ldap.getGroupFromUser';
+    private const LDAP_USERNAME_MAX_LENGTH = 128;
 
 /**
  * Stores `$module_group` for module group.
@@ -1158,7 +1160,8 @@ class Ldap extends Controller
 
             if ($r) {
 
-                $results2 = ldap_search($ds, LDAP_ROOT_DN_SEARCH, "(samaccountname={$command})", array("memberof"));
+                $escapedCommand = self::escapeLdapFilterValue((string) $command);
+                $results2 = ldap_search($ds, LDAP_ROOT_DN_SEARCH, "(samaccountname={$escapedCommand})", array("memberof"));
                 $entries2 = ldap_get_entries($ds, $results2);
 
                 return $entries2;
@@ -1185,23 +1188,89 @@ class Ldap extends Controller
  */
     public function getGroupFromUser()
     {
-        $data = array();
+        $data = array(
+            'ldap_get_group_from_user_csrf_field' => Csrf::DEFAULT_FIELD,
+            'ldap_get_group_from_user_csrf_token' => Csrf::issueToken($_SESSION, self::LDAP_GET_GROUP_FROM_USER_CSRF_SCOPE),
+        );
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            if (!empty($_POST['ldap']['user'])) {
-                $result       = $this->requestLdap($_POST['ldap']['user']);
-                $data['list'] = $result[0]['memberof'];
+        if (CsrfGuard::isPost($_SERVER)) {
+            $postOutcome = self::evaluateGetGroupFromUserRequest($_POST, $_SERVER, $_SESSION);
+            if ($postOutcome['status'] !== 200) {
+                $this->view        = false;
+                $this->layout_name = false;
+                self::sendIndexError($postOutcome['status'], $postOutcome['body'], $postOutcome['headers']);
+                return;
+            }
 
+            $user = $postOutcome['user'];
+            $result = $this->requestLdap($user);
+            $data['list'] = $result[0]['memberof'] ?? array();
+            $data['user'] = $user;
 
-                $data['user'] = $_POST['ldap']['user'];
-
-                if (!empty($data['list']['count'])) {
-                    unset($data['list']['count']);
-                }
+            if (!empty($data['list']['count'])) {
+                unset($data['list']['count']);
             }
         }
 
 
         $this->set('data', $data);
+    }
+
+    public static function evaluateGetGroupFromUserRequest(array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::LDAP_GET_GROUP_FROM_USER_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildGetGroupFromUserOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $user = self::normalizeGetGroupFromUserPayload($post);
+        if ($user === null) {
+            return self::buildGetGroupFromUserOutcome(400, 'Invalid LDAP user payload');
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'user' => $user,
+        ];
+    }
+
+    public static function normalizeGetGroupFromUserPayload(array $post): ?string
+    {
+        $value = $post['ldap']['user'] ?? null;
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $user = trim((string) $value);
+        if ($user === '' || strlen($user) > self::LDAP_USERNAME_MAX_LENGTH) {
+            return null;
+        }
+
+        if (preg_match('/\A[A-Za-z0-9._@-]+\z/', $user) !== 1) {
+            return null;
+        }
+
+        return $user;
+    }
+
+    public static function escapeLdapFilterValue(string $value): string
+    {
+        if (function_exists('ldap_escape')) {
+            return ldap_escape($value, '', LDAP_ESCAPE_FILTER);
+        }
+
+        return addcslashes($value, "\\*()\0");
+    }
+
+    private static function buildGetGroupFromUserOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'user' => null,
+        ];
     }
 }
