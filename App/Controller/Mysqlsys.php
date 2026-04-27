@@ -30,6 +30,7 @@ class Mysqlsys extends Controller {
 
     use \App\Library\Filter;
 
+    private const MYSQLSYS_INSTALL_CSRF_SCOPE = 'mysqlsys.install';
     private const MYSQLSYS_UPDATE_CONFIG_CSRF_SCOPE = 'mysqlsys.update_config';
     private const MYSQLSYS_UPDATE_CONFIG_NAME_MAX_LENGTH = 128;
     private const MYSQLSYS_UPDATE_CONFIG_VALUE_MAX_LENGTH = 4096;
@@ -280,42 +281,163 @@ class Mysqlsys extends Controller {
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT * FROM mysql_server where id='" . $_GET['mysql_server']['id'] . "'";
-        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql, $id_mysql_server, __METHOD__);
+        $idMysqlServer = self::normalizeInstallMysqlServerId($_GET);
+        if ($idMysqlServer === null) {
+            http_response_code(400);
+            echo 'Invalid MySQL server id';
+            return;
+        }
+
+        if (CsrfGuard::isPost($_SERVER)) {
+            $outcome = self::evaluateInstallRequest($_POST, $_SERVER, $_SESSION, IS_CLI);
+            if (!$outcome['allowed']) {
+                http_response_code($outcome['status']);
+                foreach ($outcome['headers'] as $name => $value) {
+                    header($name . ': ' . $value);
+                }
+                echo $outcome['body'];
+                return;
+            }
+        }
+
+        $sql = "SELECT * FROM mysql_server where id=" . $idMysqlServer;
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql, $idMysqlServer, __METHOD__);
 
 //test si "vendor/esysteme/mysql-sys/gen/" est crée et writable
 
 
-        $data = [];
+        $data = [
+            'mysqlsys_install_csrf_field' => Csrf::DEFAULT_FIELD,
+            'mysqlsys_install_csrf_token' => Csrf::issueToken($_SESSION, self::MYSQLSYS_INSTALL_CSRF_SCOPE),
+        ];
         while ($ob = $db->sql_fetch_object($res)) {
-            $cmd = 'cd ' . ROOT . '/vendor/esysteme/mysql-sys ';
-
-            
-            $cmd .= '&& ./generate_sql_file.sh -v 100 -u "\'' . $ob->login . '\'@\'localhost\'" 2>&1';
+            $cmd = self::buildGenerateSqlFileCommand((string) $ob->login, ROOT);
             $ret = shell_exec($cmd);
 
-            $out = explode("\n", $ret)[1];
-            $data['file_name'] = trim(str_replace('Wrote file:', '', $out));
+            $data['file_name'] = self::extractGeneratedSqlFileName((string) $ret);
+            if ($data['file_name'] === '') {
+                http_response_code(500);
+                echo 'Unable to generate MySQL-sys install file';
+                return;
+            }
 
-            if ($_SERVER['REQUEST_METHOD'] == "POST") {
+            if (CsrfGuard::isPost($_SERVER)) {
 
                 Crypt::$key = CRYPT_KEY;
 
-                $cmd = "mysql -h " . $ob->ip . " -u " . $ob->login . " -P " . $ob->port . " -p'" . Crypt::decrypt($ob->passwd) . "' < " . $data['file_name'] . " 2>&1";
+                $cmd = self::buildMysqlSysInstallCommand(
+                    (string) $ob->ip,
+                    (string) $ob->login,
+                    (int) $ob->port,
+                    Crypt::decrypt($ob->passwd),
+                    $data['file_name']
+                );
                 $ret = shell_exec($cmd);
 
                 if (!empty($ret)) {
 
-                    header('location: ' . LINK . 'mysqlsys/install/mysql_server:id:' . $_GET['mysql_server']['id'] . '/error_msg:' . base64_encode($ret) . '/');
+                    header('location: ' . LINK . 'mysqlsys/install/mysql_server:id:' . $idMysqlServer . '/error_msg:' . base64_encode($ret) . '/');
                 } else {
-                    header('location: ' . LINK . 'mysqlsys/index/mysql_server:id:' . $_GET['mysql_server']['id']);
+                    header('location: ' . LINK . 'mysqlsys/index/mysql_server:id:' . $idMysqlServer);
                 }
+                return;
             } else {
                 $data['file'] = file_get_contents($data['file_name']);
             }
         }
 
         $this->set('data', $data);
+    }
+
+    public static function evaluateInstallRequest(
+        array $post,
+        array $server,
+        array $session,
+        bool $isCli = false
+    ): array {
+        if (!$isCli) {
+            $guard = CsrfGuard::check($post, $server, $session, self::MYSQLSYS_INSTALL_CSRF_SCOPE);
+            if (!$guard['allowed']) {
+                return [
+                    'allowed' => false,
+                    'status' => $guard['status'],
+                    'body' => $guard['body'],
+                    'headers' => $guard['headers'],
+                    'install' => false,
+                ];
+            }
+        }
+
+        if (!self::normalizeInstallPayload($post)) {
+            return [
+                'allowed' => false,
+                'status' => 400,
+                'body' => 'Invalid MySQL-sys install payload',
+                'headers' => [],
+                'install' => false,
+            ];
+        }
+
+        return [
+            'allowed' => true,
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'install' => true,
+        ];
+    }
+
+    public static function normalizeInstallMysqlServerId(array $get): ?int
+    {
+        if (
+            empty($get['mysql_server'])
+            || !is_array($get['mysql_server'])
+            || !array_key_exists('id', $get['mysql_server'])
+        ) {
+            return null;
+        }
+
+        return self::normalizePositiveInteger($get['mysql_server']['id']);
+    }
+
+    public static function buildGenerateSqlFileCommand(string $login, string $root): string
+    {
+        $mysqlUser = "'" . str_replace("'", "\\'", $login) . "'@'localhost'";
+
+        return 'cd ' . escapeshellarg(rtrim($root, '/') . '/vendor/esysteme/mysql-sys')
+            . ' && ./generate_sql_file.sh -v 100 -u ' . escapeshellarg($mysqlUser) . ' 2>&1';
+    }
+
+    public static function buildMysqlSysInstallCommand(
+        string $host,
+        string $login,
+        int $port,
+        string $password,
+        string $fileName
+    ): string {
+        return 'mysql -h ' . escapeshellarg($host)
+            . ' -u ' . escapeshellarg($login)
+            . ' -P ' . $port
+            . ' -p' . escapeshellarg($password)
+            . ' < ' . escapeshellarg($fileName) . ' 2>&1';
+    }
+
+    public static function extractGeneratedSqlFileName(string $output): string
+    {
+        foreach (explode("\n", $output) as $line) {
+            if (strpos($line, 'Wrote file:') === 0) {
+                return trim(str_replace('Wrote file:', '', $line));
+            }
+        }
+
+        return '';
+    }
+
+    public static function normalizeInstallPayload(array $post): bool
+    {
+        return array_key_exists('install', $post)
+            && is_scalar($post['install'])
+            && trim((string) $post['install']) === '1';
     }
 
 /**
