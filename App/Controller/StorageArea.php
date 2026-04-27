@@ -22,9 +22,16 @@ use Glial\Security\Csrf;
  */
 
 class StorageArea extends Controller {
+    private const STORAGE_AREA_ADD_CSRF_SCOPE = 'storage_area.add';
+    private const STORAGE_AREA_ADD_INTEGER_FIELDS = [
+        'id_ssh_key',
+        'id_geolocalisation_city',
+        'id_geolocalisation_country',
+    ];
     private const STORAGE_AREA_UPDATE_CSRF_SCOPE = 'storage_area.update';
     private const STORAGE_AREA_UPDATE_FIELDS = ['libelle'];
     private const STORAGE_AREA_LIBELLE_MAX_LENGTH = 64;
+    private const STORAGE_AREA_IP_MAX_LENGTH = 15;
 
 /**
  * Render storage area state through `index`.
@@ -101,17 +108,24 @@ class StorageArea extends Controller {
         }
 
         $db = Sgbd::sql(DB_DEFAULT);
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
+        if (CsrfGuard::isPost($_SERVER)) {
+            $outcome = self::evaluateAddRequest($_POST, $_SERVER, $_SESSION);
+            if ($outcome['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendStorageAreaAddError($outcome['status'], $outcome['body'], $outcome['headers']);
+                return;
+            }
 
             Crypt::$key = CRYPT_KEY;
 
-            $storage_area['backup_storage_area'] = $_POST['backup_storage_area'];
+            $storage_area = $outcome['storage_area'];
 
             //debug($storage_area);
 
             $db = Sgbd::sql(DB_DEFAULT);
 
-            $sql = "SELECT * FROM ssh_key WHERE id =" . $storage_area['backup_storage_area']['id_ssh_key'] . "";
+            $sql = self::buildStorageAreaAddSshKeySql($storage_area['backup_storage_area']['id_ssh_key']);
 
             $res = $db->sql_query($sql);
 
@@ -226,9 +240,114 @@ class StorageArea extends Controller {
             $data['ssh_key'][] = $tmp;
         }
 
+        $data['storage_area_add_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['storage_area_add_csrf_token'] = Csrf::issueToken($_SESSION, self::STORAGE_AREA_ADD_CSRF_SCOPE);
         $data['menu'] = __FUNCTION__;
 
         $this->set('data', $data);
+    }
+
+    public static function evaluateAddRequest(array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::STORAGE_AREA_ADD_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildStorageAreaAddOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $storageArea = self::normalizeAddPayload($post);
+        if ($storageArea === null) {
+            return self::buildStorageAreaAddOutcome(400, "Invalid storage area add payload");
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'storage_area' => $storageArea,
+        ];
+    }
+
+    public static function normalizeAddPayload(array $post): ?array
+    {
+        if (empty($post['backup_storage_area']) || ! is_array($post['backup_storage_area'])) {
+            return null;
+        }
+
+        $storageArea = $post['backup_storage_area'];
+        foreach ($storageArea as $field => $value) {
+            if (! is_string($field) || ! is_scalar($value)) {
+                return null;
+            }
+        }
+
+        foreach (self::STORAGE_AREA_ADD_INTEGER_FIELDS as $field) {
+            $value = isset($storageArea[$field]) && is_scalar($storageArea[$field])
+                ? (string) $storageArea[$field]
+                : '';
+
+            if ($value === '' || ! ctype_digit($value) || (int) $value < 1) {
+                return null;
+            }
+
+            $storageArea[$field] = (int) $value;
+        }
+
+        if (! isset($storageArea['libelle']) || strlen((string) $storageArea['libelle']) > self::STORAGE_AREA_LIBELLE_MAX_LENGTH) {
+            return null;
+        }
+
+        $ip = isset($storageArea['ip']) ? (string) $storageArea['ip'] : '';
+        if (
+            $ip === ''
+            || strlen($ip) > self::STORAGE_AREA_IP_MAX_LENGTH
+            || filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) === false
+        ) {
+            return null;
+        }
+        $storageArea['ip'] = $ip;
+
+        if (! isset($storageArea['path']) || (string) $storageArea['path'] === '') {
+            return null;
+        }
+
+        if (! array_key_exists('port', $storageArea) || (string) $storageArea['port'] === '') {
+            $storageArea['port'] = 22;
+        } else {
+            $port = (string) $storageArea['port'];
+            if (! ctype_digit($port) || (int) $port < 1 || (int) $port > 65535) {
+                return null;
+            }
+            $storageArea['port'] = (int) $port;
+        }
+
+        return ['backup_storage_area' => $storageArea];
+    }
+
+    public static function buildStorageAreaAddSshKeySql(int $idSshKey): string
+    {
+        return "SELECT * FROM ssh_key WHERE id =" . $idSshKey;
+    }
+
+    private static function buildStorageAreaAddOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'storage_area' => null,
+        ];
+    }
+
+    private static function sendStorageAreaAddError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+
+        if ($message !== '') {
+            echo $message;
+        }
     }
 
 /**
