@@ -6,6 +6,10 @@
  */
 
 use Glial\Html\Form\Form;
+
+$treeUpdateCsrfField = htmlspecialchars((string) ($data['tree_update_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$treeUpdateCsrfToken = htmlspecialchars((string) ($data['tree_update_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$treeUpdateCsrfAttributes = ' data-csrf-field="' . $treeUpdateCsrfField . '" data-csrf-token="' . $treeUpdateCsrfToken . '"';
 ?>
 
 <form action="" method="post">
@@ -87,11 +91,11 @@ use Glial\Html\Form\Form;
                     <td><?= $line['bg'] ?></td>
                     <td><?= $line['bd'] ?></td>
                     <td><?php \Glial\Synapse\FactoryController::addNode("tree", "getCountFather", array($data['id_menu'], $line['id'])); ?><?= $line['icon'] ?></td>
-                    <td class="line-edit" data-name="icon" data-pk="<?= $line['id'] ?>" data-type="text" data-url="<?= LINK ?>tree/update" data-title="Enter icon"><?= htmlentities($line['icon']) ?></td>
-                    <td class="line-edit" data-name="title" data-pk="<?= $line['id'] ?>" data-type="text" data-url="<?= LINK ?>tree/update" data-title="Enter Title"><?= $line['title'] ?></td>
-                    <td class="line-edit" data-name="url" data-pk="<?= $line['id'] ?>" data-type="text" data-url="<?= LINK ?>tree/update" data-title="Enter URL"> <?= $line['url'] ?></td>
-                    <td class="line-edit" data-name="class" data-pk="<?= $line['id'] ?>" data-type="text" data-url="<?= LINK ?>tree/update" data-title="Enter Class"> <?= $line['class'] ?></td>
-                    <td class="line-edit" data-name="method" data-pk="<?= $line['id'] ?>" data-type="text" data-url="<?= LINK ?>tree/update" data-title="Enter Method"> <?= $line['method'] ?></td>
+                    <td class="line-edit" data-name="icon" data-pk="<?= $line['id'] ?>" data-type="text" data-url="<?= LINK ?>tree/update" data-title="Enter icon"<?= $treeUpdateCsrfAttributes ?>><?= htmlentities($line['icon']) ?></td>
+                    <td class="line-edit" data-name="title" data-pk="<?= $line['id'] ?>" data-type="text" data-url="<?= LINK ?>tree/update" data-title="Enter Title"<?= $treeUpdateCsrfAttributes ?>><?= $line['title'] ?></td>
+                    <td class="line-edit" data-name="url" data-pk="<?= $line['id'] ?>" data-type="text" data-url="<?= LINK ?>tree/update" data-title="Enter URL"<?= $treeUpdateCsrfAttributes ?>> <?= $line['url'] ?></td>
+                    <td class="line-edit" data-name="class" data-pk="<?= $line['id'] ?>" data-type="text" data-url="<?= LINK ?>tree/update" data-title="Enter Class"<?= $treeUpdateCsrfAttributes ?>> <?= $line['class'] ?></td>
+                    <td class="line-edit" data-name="method" data-pk="<?= $line['id'] ?>" data-type="text" data-url="<?= LINK ?>tree/update" data-title="Enter Method"<?= $treeUpdateCsrfAttributes ?>> <?= $line['method'] ?></td>
                     <td nowrap>
                         <a href="<?= LINK ?>tree/add/<?= $data['id_menu'] ?>/<?= $line['id'] ?>" role="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></a>
                         <a role="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-triangle-right" aria-hidden="true"></span></a>
@@ -101,7 +105,7 @@ use Glial\Html\Form\Form;
                         <a href="<?= LINK ?>tree/up/<?= $data['id_menu'] ?>/<?= $line['id'] ?>" role="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-triangle-top" aria-hidden="true"></span></a>
                         - <a href="<?= LINK ?>tree/delete/<?= $data['id_menu'] ?>/<?= $line['id'] ?>" role="button" class="btn btn-danger btn-xs"><span class="glyphicon glyphicon-trash" aria-hidden="true"></span></button>
                     </td>
-                    <td class="line-edit" data-name="active" data-pk="<?= $line['id'] ?>" data-type="text" data-url="<?= LINK ?>tree/update" data-title="Enter Active"><?= $line['active'] ?></td>
+                    <td class="line-edit" data-name="active" data-pk="<?= $line['id'] ?>" data-type="text" data-url="<?= LINK ?>tree/update" data-title="Enter Active"<?= $treeUpdateCsrfAttributes ?>><?= $line['active'] ?></td>
 
                 </tr>
 

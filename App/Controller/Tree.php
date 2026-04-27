@@ -5,7 +5,9 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use App\Library\Tree as TreeInterval;
 use App\Library\Debug;
+use App\Library\Security\CsrfGuard;
 use \Glial\Sgbd\Sgbd;
+use Glial\Security\Csrf;
 
 // https://codepen.io/gab/pen/Bxpwi
 
@@ -25,6 +27,8 @@ use \Glial\Sgbd\Sgbd;
  */
 class Tree extends Controller
 {
+    private const TREE_UPDATE_CSRF_SCOPE = 'tree.update';
+    private const TREE_UPDATE_FIELDS = ['icon', 'title', 'url', 'class', 'method', 'active'];
 
 /**
  * Render tree state through `index`.
@@ -103,6 +107,9 @@ class Tree extends Controller
 
             $data['menu'][] = $ob;
         }
+
+        $data['tree_update_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['tree_update_csrf_token'] = Csrf::issueToken($_SESSION, self::TREE_UPDATE_CSRF_SCOPE);
 
         $this->set('data', $data);
     }
@@ -242,16 +249,102 @@ class Tree extends Controller
         $this->view        = false;
         $this->layout_name = false;
 
-        $db = Sgbd::sql(DB_DEFAULT);
+        $outcome = self::evaluateUpdateRequest($_POST, $_SERVER, $_SESSION);
+        if ($outcome['status'] !== 200) {
+            self::sendTreeUpdateError($outcome['status'], $outcome['body'], $outcome['headers']);
+            return;
+        }
 
-        $sql = "UPDATE menu SET `".$_POST['name']."` = '".$_POST['value']."' WHERE id = ".$db->sql_real_escape_string($_POST['pk'])."";
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = self::buildTreeUpdateSql($outcome['update'], [$db, 'sql_real_escape_string']);
         $db->sql_query($sql);
 
         if ($db->sql_affected_rows() === 1) {
             echo "OK";
         } else {
-            header("HTTP/1.0 503 Internal Server Error");
+            self::sendTreeUpdateError(503, "Tree menu not updated");
         }
+    }
+
+    public static function evaluateUpdateRequest(array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::TREE_UPDATE_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildTreeUpdateOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $update = self::normalizeUpdatePayload($post);
+        if ($update === null) {
+            return self::buildTreeUpdateOutcome(400, "Invalid tree update payload");
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'update' => $update,
+        ];
+    }
+
+    public static function normalizeUpdatePayload(array $post): ?array
+    {
+        if (
+            ! array_key_exists('name', $post)
+            || ! array_key_exists('pk', $post)
+            || ! array_key_exists('value', $post)
+            || ! is_scalar($post['name'])
+            || ! is_scalar($post['pk'])
+            || ! is_scalar($post['value'])
+        ) {
+            return null;
+        }
+
+        $field = (string) $post['name'];
+        $id = (string) $post['pk'];
+
+        if (! in_array($field, self::TREE_UPDATE_FIELDS, true)) {
+            return null;
+        }
+
+        if (! ctype_digit($id) || (int) $id < 1) {
+            return null;
+        }
+
+        return [
+            'field' => $field,
+            'value' => (string) $post['value'],
+            'id' => (int) $id,
+        ];
+    }
+
+    public static function buildTreeUpdateSql(array $update, callable $escape): string
+    {
+        return sprintf(
+            "UPDATE menu SET `%s` = '%s' WHERE id = %d",
+            $update['field'],
+            $escape($update['value']),
+            $update['id']
+        );
+    }
+
+    private static function buildTreeUpdateOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'update' => null,
+        ];
+    }
+
+    private static function sendTreeUpdateError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
 /**
