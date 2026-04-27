@@ -7,6 +7,7 @@
 
 namespace App\Controller;
 
+use App\Library\Security\ApiRequestGuard;
 use \Glial\Synapse\Controller;
 use \Glial\Synapse\Config;
 use \Glial\Security\Crypt\Crypt;
@@ -66,50 +67,32 @@ class Webservice extends Controller
         $this->view        = false;
         $this->layout_name = false;
 
-        define (IS_CLI, true);
-
         Debug::parseDebug($param);
 
-        $jsonData = file_get_contents('php://input');
-
-        if (! $this->isJson($jsonData)) {
-            header('WWW-Authenticate: Basic realm="My Realm"');
-            header('HTTP/1.0 400 Bad request');
-            echo "{\"error\": \"JSON malformed\", \"json\" : \"$jsonData\"}"."\n";
-            exit;
+        $jsonData = (string) file_get_contents('php://input');
+        $guard = ApiRequestGuard::checkJsonPostBasicAuth($jsonData, $_SERVER);
+        if (!$guard['allowed']) {
+            self::sendPushServerGuardError($guard);
+            return;
         }
 
-        $finale_name = "/tmp/tmp.".uniqid();
-        file_put_contents($finale_name, json_encode(json_decode($jsonData)));
-        Debug::debug($jsonData);
-
-        if (!isset($_SERVER['PHP_AUTH_USER'])) {
-            header('WWW-Authenticate: Basic realm="My Realm"');
-            header('HTTP/1.0 401 Unauthorized');
-            echo '{"error": "Vous n\'êtes pas autorisé à acceder à la ressource requise, Login or password not good"}'."\n";
-            exit;
-        }
-        
         $id_user_main = $this->checkCredentials($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']);
         Debug::debug($id_user_main, "Authorized Access");
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST" || $_SERVER['REQUEST_METHOD'] === "post") {   
-            if ($id_user_main === true) {
-                $this->return['authenticate'] = "ok";
-                $this->parseServer($finale_name);
-            } else {
-                $this->return['authenticate'] = "ko";
-                $this->return['error'][]      = "Unauthorized access";
-            }
+        if ($id_user_main === true) {
+            $finale_name = "/tmp/tmp.".uniqid();
+            file_put_contents($finale_name, json_encode(json_decode($jsonData)));
+            Debug::debug($jsonData);
 
-            $db = Sgbd::sql(DB_DEFAULT);
+            $this->return['authenticate'] = "ok";
+            $this->parseServer($finale_name);
             Mysql::onAddMysqlServer();
-
-            $this->saveHistory($id_user_main, $jsonData);
         } else {
-
-            $this->return['error'][] = "This request method is not allowed : ".$_SERVER['REQUEST_METHOD'];
+            $this->return['authenticate'] = "ko";
+            $this->return['error'][]      = "Unauthorized access";
         }
+
+        $this->saveHistory($id_user_main, $jsonData);
 
         header('WWW-Authenticate: Basic realm="My Realm"');
         header('HTTP/1.1 200 OK');
@@ -649,7 +632,17 @@ class Webservice extends Controller
  * @version 1.0
  */
     function isJson($string) {
-        json_decode($string);
-        return json_last_error() === JSON_ERROR_NONE;
+        return ApiRequestGuard::isJson((string)$string);
+    }
+
+    private static function sendPushServerGuardError(array $guard): void
+    {
+        http_response_code((int)$guard['status']);
+        foreach ($guard['headers'] as $name => $value) {
+            header((string)$name . ': ' . (string)$value);
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode($guard['body'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n";
     }
 }

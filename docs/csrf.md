@@ -20,6 +20,6 @@ The same-origin comparison includes scheme, host and port. Missing `Origin` and 
 
 Set `PMACONTROL_TRUSTED_ORIGIN` in `configuration/pmacontrol.config.php` when PmaControl is behind a reverse-proxy or when `HTTP_HOST` is not guaranteed by the front server. Leave it empty only when the front server guarantees the incoming host and scheme. The value must contain the canonical origin only, for example `https://pmacontrol.example.com:8443`, without an application path.
 
-Machine-to-machine endpoints must not bypass this by accident. They need either their own authenticated API flow or a documented exemption in the ticket that introduces the endpoint.
+Machine-to-machine endpoints must not bypass this by accident. They need either their own authenticated API flow or a documented exemption in the ticket that introduces the endpoint. `/Webservice/pushServer` is intentionally exempt from browser CSRF tokens because it is a JSON API authenticated with HTTP Basic credentials, not a session-backed browser form; its preconditions are checked through `ApiRequestGuard` before import.
 
 Follow [issue_workflow.md](issue_workflow.md) for issue handling, branching, comments, reviews, PRs and closure.
