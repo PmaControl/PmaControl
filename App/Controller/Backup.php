@@ -8,9 +8,12 @@ use \Glial\Cli\Color;
 use \Glial\Security\Crypt\Crypt;
 use \Glial\Cli\Crontab;
 use \App\Library\Debug;
+use App\Library\Security\BackupAddRequest;
+use App\Library\Security\CsrfGuard;
 use App\Library\Mysql;
 use App\Library\System;
 use App\Library\Extraction;
+use Glial\Security\Csrf;
 use Ramsey\Uuid\Uuid;
 use \Glial\Sgbd\Sgbd;
 
@@ -33,6 +36,7 @@ class Backup extends Controller
 
     use \App\Library\Scp;
     const BACKUP_DIR = "/data/backup";
+    private const BACKUP_ADD_CSRF_SCOPE = 'backup.add';
 
 /**
  * Stores `$backup_dir` for backup dir.
@@ -1865,19 +1869,23 @@ $(function () {
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
+        if (CsrfGuard::isPost($_SERVER)) {
+            $outcome = self::evaluateAddRequest($_POST, $_SERVER, $_SESSION);
+            if ($outcome['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendAddError($outcome['status'], $outcome['body'], $outcome['headers']);
+                return;
+            }
+
+            $id_crontab = null;
+
             try {
                 $db->sql_query('SET AUTOCOMMIT=0;');
                 $db->sql_query('START TRANSACTION;');
 
-                $crontab            = [];
-                $crontab['crontab'] = $_POST['crontab'];
-
-                $cmd = "";
-
-                $crontab['crontab']['command'] = $cmd;
-                $crontab['crontab']['comment'] = "";
-
+                $backupPayload = $outcome['backup'];
+                $crontab = BackupAddRequest::buildCrontabRecord($backupPayload);
                 $id_crontab = $db->sql_save($crontab);
                 if (!$id_crontab) {
                     debug($crontab);
@@ -1888,20 +1896,7 @@ $(function () {
 
 
 
-                $backup_database                              = [];
-                $backup_database['backup_main']               = $_POST['backup_main'];
-                $backup_database['backup_main']['id_crontab'] = $id_crontab;
-                $backup_database['backup_main']['is_active']  = 1;
-
-                if (empty($backup_database['backup_main']['database'])) {
-                    $backup_database['backup_main']['database'] = 0;
-                } else {
-                    $backup_database['backup_main']['database'] = implode(',', $backup_database['backup_main']['database']);
-                }
-
-
-                $backup_database['backup_main']['database']      = $backup_database['backup_main']['database'];
-                $backup_database['backup_main']['date_inserted'] = date('Y-m-d H:i:s');
+                $backup_database = BackupAddRequest::buildBackupMainRecord($backupPayload, (int) $id_crontab, date('Y-m-d H:i:s'));
 
                 if (!$id_backup_database = $db->sql_save($backup_database)) {
                     debug($backup_database);
@@ -1912,8 +1907,7 @@ $(function () {
                     $php = explode(" ", shell_exec("whereis php"))[1];
                     $cmd = $php." ".GLIAL_INDEX." crontab monitor backup launchBackup ".$id_backup_database;
 
-                    $backup_database['backup_main']['id']      = $id_backup_database;
-                    $backup_database['backup_main']['command'] = $cmd;
+                    $backup_database = BackupAddRequest::attachCommand($backup_database, (int) $id_backup_database, $cmd);
 
                     $db->sql_save($backup_database);
                 }
@@ -1924,13 +1918,15 @@ $(function () {
 
 
 
-                Crontab::insert($crontab['crontab']['minute'], $crontab['crontab']['hour'], $crontab['crontab']['day_of_month'], $crontab['crontab']['month'], $crontab['crontab']['day_of_week'], $cmd,
+                Crontab::insert($backupPayload['crontab']['minute'], $backupPayload['crontab']['hour'], $backupPayload['crontab']['day_of_month'], $backupPayload['crontab']['month'], $backupPayload['crontab']['day_of_week'], $cmd,
                     "Backup database with PmaControl", $id_crontab);
 
                 $db->sql_query('COMMIT;');
             } catch (\Exception $ex) {
 
-                Crontab::delete($id_crontab);
+                if (!empty($id_crontab)) {
+                    Crontab::delete((int) $id_crontab);
+                }
                 $db->sql_query('ROLLBACK;');
             }
         }
@@ -1962,7 +1958,40 @@ $(function () {
         }
 
 
+        $data['backup_add_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['backup_add_csrf_token'] = Csrf::issueToken($_SESSION, self::BACKUP_ADD_CSRF_SCOPE);
+
         $this->set('data', $data);
+    }
+
+    public static function evaluateAddRequest(array $post, array $server, array $session): array
+    {
+        return BackupAddRequest::evaluate($post, $server, $session, self::BACKUP_ADD_CSRF_SCOPE);
+    }
+
+    public static function normalizeAddPayload(array $post): ?array
+    {
+        return BackupAddRequest::normalize($post);
+    }
+
+    public static function buildAddCrontabRecord(array $payload): array
+    {
+        return BackupAddRequest::buildCrontabRecord($payload);
+    }
+
+    public static function buildAddBackupMainRecord(array $payload, int $idCrontab, string $dateInserted): array
+    {
+        return BackupAddRequest::buildBackupMainRecord($payload, $idCrontab, $dateInserted);
+    }
+
+    private static function sendAddError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
 /**
