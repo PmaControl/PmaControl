@@ -55,7 +55,7 @@ class Graph extends Controller {
         if ($indexRequest['status'] === 405) {
             $this->view = false;
             $this->layout_name = false;
-            self::sendIndexError($indexRequest['status'], $indexRequest['body'], $indexRequest['headers']);
+            self::sendGraphError($indexRequest['status'], $indexRequest['body'], $indexRequest['headers']);
             return;
         }
 
@@ -244,7 +244,7 @@ class Graph extends Controller {
         ];
     }
 
-    private static function sendIndexError(int $statusCode, string $message, array $headers = []): void
+    private static function sendGraphError(int $statusCode, string $message, array $headers = []): void
     {
         http_response_code($statusCode);
         foreach ($headers as $name => $value) {
@@ -570,20 +570,20 @@ var myChart = new Chart(ctx, {
 
 
 
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
-            if (!empty($_POST['mysql_cluster']['id'])) {
-
-                header('location: '.LINK.$this->getClass().'/'.__FUNCTION__.'/mysql_cluster:id:'.$_POST['mysql_cluster']['id']);
-            }
-
-            if (!empty($_POST['mysql_server']['id'])) {
-
-                header('location: '.LINK.$this->getClass().'/'.__FUNCTION__.'/mysql_server:id:'.implode(',', $_POST['mysql_server']['id']));
-            }
-        } else {
-
-            Debug::debug($_GET);
+        $agregateRequest = self::evaluateAgregateRequest($_GET, $_SERVER);
+        if ($agregateRequest['status'] === 405) {
+            $this->view = false;
+            $this->layout_name = false;
+            self::sendGraphError($agregateRequest['status'], $agregateRequest['body'], $agregateRequest['headers']);
+            return;
         }
+
+        if ($agregateRequest['redirect_route'] !== '') {
+            header('location: '.LINK.$this->getClass().'/'.__FUNCTION__.'/'.$agregateRequest['redirect_route']);
+            return;
+        }
+
+        Debug::debug($_GET);
 
         //generate liste of cluster (for select)
         $sql = "select group_concat(a.id_mysql_server) as id_mysql_servers, group_concat(b.display_name) as display_name
@@ -618,6 +618,92 @@ var myChart = new Chart(ctx, {
         $this->set('data', $data);
 
 
+    }
+
+    public static function evaluateAgregateRequest(array $get, array $server): array
+    {
+        if (CsrfGuard::isPost($server)) {
+            return self::buildAgregateOutcome(405, 'Method Not Allowed', ['Allow' => 'GET']);
+        }
+
+        $filter = self::normalizeAgregateFilter($get);
+        $redirectRoute = '';
+        if (self::hasAgregateQueryString($server)) {
+            if ($filter['mysql_cluster_id'] !== '') {
+                $redirectRoute = 'mysql_cluster:id:'.$filter['mysql_cluster_id'];
+            }
+            if ($filter['mysql_server_ids'] !== '') {
+                $redirectRoute = 'mysql_server:id:'.$filter['mysql_server_ids'];
+            }
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'filter' => $filter,
+            'redirect_route' => $redirectRoute,
+        ];
+    }
+
+    public static function normalizeAgregateFilter(array $get): array
+    {
+        return [
+            'mysql_cluster_id' => self::normalizeAgregateIds($get['mysql_cluster']['id'] ?? null),
+            'mysql_server_ids' => self::normalizeAgregateIds($get['mysql_server']['id'] ?? null),
+        ];
+    }
+
+    public static function normalizeAgregateIds($value): string
+    {
+        $ids = [];
+        foreach (self::flattenAgregateIds($value) as $id) {
+            if (!ctype_digit($id) || (int) $id < 1) {
+                continue;
+            }
+
+            $ids[] = (string) (int) $id;
+        }
+
+        return implode(',', array_values(array_unique($ids)));
+    }
+
+    private static function flattenAgregateIds($value): array
+    {
+        if (is_array($value)) {
+            $ids = [];
+            foreach ($value as $item) {
+                $ids = array_merge($ids, self::flattenAgregateIds($item));
+            }
+
+            return $ids;
+        }
+
+        if (!is_scalar($value)) {
+            return [];
+        }
+
+        return array_map('trim', explode(',', (string) $value));
+    }
+
+    private static function hasAgregateQueryString(array $server): bool
+    {
+        if (!isset($server['QUERY_STRING']) || !is_scalar($server['QUERY_STRING'])) {
+            return false;
+        }
+
+        return trim((string) $server['QUERY_STRING']) !== '';
+    }
+
+    private static function buildAgregateOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'filter' => self::normalizeAgregateFilter([]),
+            'redirect_route' => '',
+        ];
     }
 
 }
