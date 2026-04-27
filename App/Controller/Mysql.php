@@ -12,6 +12,8 @@ use \App\Library\Graphviz;
 use \App\Library\Extraction2;
 use \App\Library\Mysql as Mysql2;
 use \Glial\Sgbd\Sgbd;
+use App\Library\Security\CsrfGuard;
+use Glial\Security\Csrf;
 
 /**
  * Class responsible for mysql workflows.
@@ -30,6 +32,9 @@ use \Glial\Sgbd\Sgbd;
 class Mysql extends Controller
 {
     const DEBUG = true;
+    private const MYSQL_PLAYSKOOL_CSRF_SCOPE = 'mysql.playskool';
+    private const MYSQL_PLAYSKOOL_TEXT_MAX_LENGTH = 255;
+    private const MYSQL_PLAYSKOOL_SQL_MAX_LENGTH = 65535;
 
 /**
  * Stores `$foreign_key` for foreign key.
@@ -728,17 +733,154 @@ class Mysql extends Controller
     public function playskool()
     {
         $data['dbs'] = Sgbd::getAll();
+        $data['commands'] = [];
+        $data['form'] = [
+            'login' => '',
+            'sql' => '',
+            'dbs' => [],
+        ];
+        $data['mysql_playskool_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['mysql_playskool_csrf_token'] = Csrf::issueToken($_SESSION, self::MYSQL_PLAYSKOOL_CSRF_SCOPE);
 
         sort($data['dbs']);
 
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
-            $data['ret'] = '';
-
-            foreach ($_POST['db'] as $db => $on) {
-                $data['ret'] .= "mysql -h $db -u ".$_POST['login']." -p".$_POST['password']." -e '".str_replace("'", "\'", $_POST['sql'])."' > $db.log<br />";
+            $outcome = self::evaluatePlayskoolRequest($_POST, $_SERVER, $_SESSION, $data['dbs']);
+            if (!$outcome['allowed']) {
+                $this->view = false;
+                $this->layout_name = false;
+                http_response_code($outcome['status']);
+                foreach ($outcome['headers'] as $name => $value) {
+                    header($name . ': ' . $value);
+                }
+                echo $outcome['body'];
+                return;
             }
+
+            $data['form'] = $outcome['request'];
+            $data['commands'] = self::buildPlayskoolCommands($outcome['request']);
         }
         $this->set('data', $data);
+    }
+
+    public static function evaluatePlayskoolRequest(
+        array $post,
+        array $server,
+        array $session,
+        array $availableDbs
+    ): array {
+        $guard = CsrfGuard::check($post, $server, $session, self::MYSQL_PLAYSKOOL_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return [
+                'allowed' => false,
+                'status' => $guard['status'],
+                'body' => $guard['body'],
+                'headers' => $guard['headers'],
+                'request' => null,
+            ];
+        }
+
+        $request = self::normalizePlayskoolPayload($post, $availableDbs);
+        if ($request === null) {
+            return [
+                'allowed' => false,
+                'status' => 400,
+                'body' => 'Invalid MySQL playskool payload',
+                'headers' => [],
+                'request' => null,
+            ];
+        }
+
+        return [
+            'allowed' => true,
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'request' => $request,
+        ];
+    }
+
+    public static function normalizePlayskoolPayload(array $post, array $availableDbs): ?array
+    {
+        if (
+            empty($post['db'])
+            || !is_array($post['db'])
+            || !array_key_exists('login', $post)
+            || !array_key_exists('password', $post)
+            || !array_key_exists('sql', $post)
+        ) {
+            return null;
+        }
+
+        $login = self::normalizePlayskoolText($post['login'], self::MYSQL_PLAYSKOOL_TEXT_MAX_LENGTH, false);
+        $password = self::normalizePlayskoolText($post['password'], self::MYSQL_PLAYSKOOL_TEXT_MAX_LENGTH, false);
+        $sql = self::normalizePlayskoolText($post['sql'], self::MYSQL_PLAYSKOOL_SQL_MAX_LENGTH, false);
+        if ($login === null || $password === null || $sql === null) {
+            return null;
+        }
+
+        $available = [];
+        foreach ($availableDbs as $db) {
+            if (!is_scalar($db)) {
+                continue;
+            }
+            $available[self::formatPlayskoolDbName((string) $db)] = true;
+        }
+
+        $dbs = [];
+        foreach ($post['db'] as $db => $enabled) {
+            if (!is_scalar($enabled) || !is_string($db) || !isset($available[$db])) {
+                return null;
+            }
+
+            $dbs[] = $db;
+        }
+
+        $dbs = array_values(array_unique($dbs));
+        sort($dbs);
+        if (empty($dbs)) {
+            return null;
+        }
+
+        return [
+            'dbs' => $dbs,
+            'login' => $login,
+            'password' => $password,
+            'sql' => $sql,
+        ];
+    }
+
+    public static function buildPlayskoolCommands(array $request): array
+    {
+        $commands = [];
+        foreach ($request['dbs'] as $db) {
+            $commands[] = 'MYSQL_PWD=' . escapeshellarg($request['password'])
+                . ' mysql -h ' . escapeshellarg($db)
+                . ' -u ' . escapeshellarg($request['login'])
+                . ' -e ' . escapeshellarg($request['sql'])
+                . ' > ' . escapeshellarg($db . '.log');
+        }
+
+        return $commands;
+    }
+
+    public static function formatPlayskoolDbName(string $dbName): string
+    {
+        return str_replace('_', '-', $dbName);
+    }
+
+    private static function normalizePlayskoolText($value, int $maxLength, bool $allowEmpty): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $value = trim((string) $value);
+        if ((!$allowEmpty && $value === '') || strlen($value) > $maxLength) {
+            return null;
+        }
+
+        return $value;
     }
 
 /**
