@@ -107,47 +107,8 @@ class Architecture extends Controller
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT dg.*, (dg.height * dg.width) as area, dc.date_inserted as date_refresh
-FROM dot3_graph dg
-JOIN dot3_cluster dc ON dg.id = dc.id_dot3_graph
-WHERE dc.id_dot3_information = (
-    SELECT COALESCE(
-        MAX(CASE WHEN snapshot_rank = 2 THEN id_dot3_information END),
-        MAX(CASE WHEN snapshot_rank = 1 THEN id_dot3_information END)
-    )
-    FROM (
-        SELECT id_dot3_information,
-               DENSE_RANK() OVER (ORDER BY id_dot3_information DESC) AS snapshot_rank
-        FROM dot3_cluster
-        GROUP BY id_dot3_information
-    ) ranked_snapshots
-)";
-
-/*
-        $sql = "WITH LatestDot3Information AS (
-    SELECT MAX(id_dot3_information)-1 AS max_id_dot3_information
-    FROM dot3_cluster
-)
-SELECT dg.*, (dg.height * dg.width) as area, dc.date_inserted as date_refresh
-FROM dot3_graph dg
-JOIN dot3_cluster dc ON dg.id = dc.id_dot3_graph
-JOIN LatestDot3Information ldi ON dc.id_dot3_information = ldi.max_id_dot3_information
-ORDER BY  height DESC, width desc;";
-*/
-        // Filter by selected organization if one is selected
-        $filter_conditions = "";
-        if (!empty($selected_clients)) {
-            $id_clients = implode(',', $selected_clients);
-            $filter_conditions = " AND EXISTS (
-                SELECT 1 FROM dot3_cluster__mysql_server dcms
-                INNER JOIN mysql_server ms ON ms.id = dcms.id_mysql_server
-                WHERE dcms.id_dot3_cluster = dc.id
-                AND ms.id_client IN (" . $id_clients . ")
-                AND COALESCE(ms.is_deleted, 0) = 0
-            )";
-        }
-
-        $sql .= $filter_conditions . " ORDER BY height DESC, width DESC;";
+        $selected_clients = self::removeRedundantGraphClientFilter($db, $selected_clients);
+        $sql = self::buildGraphSql($selected_clients);
 
         $data['graphs'] = array();
 
@@ -162,6 +123,66 @@ ORDER BY  height DESC, width desc;";
 
 
         $this->set('data', $data);
+    }
+
+    /**
+     * Build the Architecture graph query.
+     *
+     * @param array<int,int> $selected_clients
+     */
+    private static function buildGraphSql(array $selected_clients): string
+    {
+        $sql = "SELECT dg.id, dg.svg, dg.height, dg.width, (dg.height * dg.width) as area, dc.date_inserted as date_refresh
+FROM dot3_cluster dc
+JOIN dot3_graph dg ON dg.id = dc.id_dot3_graph
+WHERE dc.id_dot3_information = (SELECT MAX(id_dot3_information) FROM dot3_cluster)";
+
+        if (!empty($selected_clients)) {
+            $id_clients = implode(',', $selected_clients);
+            $sql .= " AND EXISTS (
+                SELECT 1 FROM dot3_cluster__mysql_server dcms
+                INNER JOIN mysql_server ms ON ms.id = dcms.id_mysql_server
+                WHERE dcms.id_dot3_cluster = dc.id
+                AND ms.id_client IN (" . $id_clients . ")
+                AND ms.is_deleted = 0
+            )";
+        }
+
+        return $sql . " ORDER BY dg.height DESC, dg.width DESC;";
+    }
+
+    /**
+     * @param mixed $db
+     * @param array<int,int> $selected_clients
+     * @return array<int,int>
+     */
+    private static function removeRedundantGraphClientFilter($db, array $selected_clients): array
+    {
+        if (empty($selected_clients)) {
+            return $selected_clients;
+        }
+
+        $res = $db->sql_query("SELECT DISTINCT id_client FROM mysql_server WHERE is_deleted = 0");
+        $active_clients = array();
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $id_client = (int) $arr['id_client'];
+            if ($id_client > 0) {
+                $active_clients[$id_client] = $id_client;
+            }
+        }
+
+        if (empty($active_clients)) {
+            return $selected_clients;
+        }
+
+        $selected_lookup = array_flip($selected_clients);
+        foreach ($active_clients as $id_client) {
+            if (!isset($selected_lookup[$id_client])) {
+                return $selected_clients;
+            }
+        }
+
+        return array();
     }
 
 /**
