@@ -191,10 +191,9 @@ final class WorkerUpdateSecurityTest extends TestCase
         $this->assertIsString($daemon);
 
         $this->assertStringContainsString('use Glial\\Security\\Csrf;', $controller);
-        $this->assertStringContainsString('use Glial\\Http\\Request;', $controller);
+        $this->assertStringContainsString('use App\\Library\\Security\\CsrfGuard;', $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::WORKER_UPDATE_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('Request::isSameSite($server)', $controller);
-        $this->assertStringContainsString('Csrf::validateToken($post, $session, self::WORKER_UPDATE_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::WORKER_UPDATE_CSRF_SCOPE)', $controller);
         $this->assertStringNotContainsString('isWorkerUpdateSourceSameSite', $controller);
 
         $this->assertStringContainsString('data-csrf-field="', $view);

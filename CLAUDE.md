@@ -10,6 +10,8 @@ PmaControl is a MySQL/MariaDB supervision platform in PHP 8.2 on the **Glial** f
 |---|---|
 | Adding / renaming a controller, action, or view (ACL cache); AJAX/JSON endpoints; URL routing; inline JS | [docs/glial_framework.md](docs/glial_framework.md) |
 | PSR-12 style, namespaces, POST-Redirect-GET, directory layout | [docs/coding_style.md](docs/coding_style.md) |
+| Adding or reviewing a browser POST that mutates state; CSRF token and Origin/Referer guard | [docs/csrf.md](docs/csrf.md) |
+| Processing tracked issues with the Codex/Claude two-pass workflow, issue comments, commit refs and PR refs | [docs/issue_workflow.md](docs/issue_workflow.md) |
 | Composer, PHPUnit, CLI invocation, local dev server, test conventions | [docs/build_test.md](docs/build_test.md) |
 | Commit messages, PRs, tooling-visibility rules, secrets / config handling | [docs/commits.md](docs/commits.md) |
 | Table / column / FK / data-type naming | [docs/database_conventions.md](docs/database_conventions.md) |

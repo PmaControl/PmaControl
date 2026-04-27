@@ -8,6 +8,7 @@
 namespace App\Controller;
 
 use App\Library\EngineV4;
+use App\Library\Security\CsrfGuard;
 
 use \App\Library\Debug;
 use App\Library\Extraction2;
@@ -944,16 +945,9 @@ class Worker extends Controller
 
     public static function evaluateKillServerWorkerRequest(array $post, array $server, array $session, array $params = []): array
     {
-        if (!Request::isMethod($server, 'POST')) {
-            return self::buildWorkerUpdateOutcome(405, 'Method Not Allowed', ['Allow' => 'POST']);
-        }
-
-        if (!Request::isSameSite($server)) {
-            return self::buildWorkerUpdateOutcome(403, 'Invalid request origin');
-        }
-
-        if (!Csrf::validateToken($post, $session, self::WORKER_KILL_SERVER_CSRF_SCOPE)) {
-            return self::buildWorkerUpdateOutcome(403, 'Invalid CSRF token');
+        $guard = CsrfGuard::check($post, $server, $session, self::WORKER_KILL_SERVER_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildWorkerUpdateOutcome($guard['status'], $guard['body'], $guard['headers']);
         }
 
         $serverId = (string)($post['id_mysql_server'] ?? $params[0] ?? '');
@@ -1416,16 +1410,9 @@ class Worker extends Controller
 
     public static function evaluateUpdateRequest(array $post, array $server, array $session): array
     {
-        if (!Request::isMethod($server, "POST")) {
-            return self::buildWorkerUpdateOutcome(405, "Method Not Allowed", ['Allow' => 'POST']);
-        }
-
-        if (!Request::isSameSite($server)) {
-            return self::buildWorkerUpdateOutcome(403, "Invalid request origin");
-        }
-
-        if (!Csrf::validateToken($post, $session, self::WORKER_UPDATE_CSRF_SCOPE)) {
-            return self::buildWorkerUpdateOutcome(403, "Invalid CSRF token");
+        $guard = CsrfGuard::check($post, $server, $session, self::WORKER_UPDATE_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildWorkerUpdateOutcome($guard['status'], $guard['body'], $guard['headers']);
         }
 
         $sql = self::buildWorkerUpdateSql($post);
