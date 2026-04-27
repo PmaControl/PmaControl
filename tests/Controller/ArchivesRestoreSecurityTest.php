@@ -113,13 +113,13 @@ final class ArchivesRestoreSecurityTest extends TestCase
         $restoreBody = substr($controller, $restoreStart, $menuStart - $restoreStart);
 
         $this->assertStringContainsString('use App\\Library\\Security\\ArchiveRestoreRequest;', $controller);
+        $this->assertStringContainsString('use App\\Library\\Archive\\ArchiveLoader;', $controller);
         $this->assertStringContainsString("private const ARCHIVES_RESTORE_CSRF_SCOPE = 'archives.restore'", $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::ARCHIVES_RESTORE_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('self::evaluateRestoreRequest($_POST, $_SERVER, $_SESSION)', $restoreBody);
-        $this->assertLessThan(strpos($restoreBody, '$this->load_archive('), strpos($restoreBody, 'self::evaluateRestoreRequest('));
-        $this->assertStringContainsString('$restore[\'id_mysql_server\']', $restoreBody);
-        $this->assertStringContainsString('$restore[\'database\']', $restoreBody);
-        $this->assertStringContainsString('$restore[\'id_cleaner_main\']', $restoreBody);
+        $this->assertLessThan(strpos($restoreBody, 'ArchiveLoader::dispatch('), strpos($restoreBody, 'self::evaluateRestoreRequest('));
+        $this->assertStringContainsString('ArchiveLoader::dispatch($this, $restore);', $restoreBody);
+        $this->assertStringNotContainsString('$this->load_archive(', $restoreBody);
         $this->assertStringNotContainsString('foreach ($_POST[\'mysql_server\']', $restoreBody);
 
         $this->assertStringContainsString('$archivesRestoreCsrfField', $view);
