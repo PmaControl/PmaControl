@@ -15,6 +15,7 @@ use \App\Library\Mysql;
 use \App\Library\Json;
 use \Glial\Sgbd\Sgbd;
 use App\Library\Security\CsrfGuard;
+use App\Library\Security\EncryptedExportRequest;
 use Glial\Security\Csrf;
 
 /*
@@ -23,8 +24,8 @@ for mysql_server => ADD SYSTEM VERSIONING PARTITION BY SYSTEM_TIME;
 
 class Export extends Controller
 {
+    private const EXPORT_IMPORT_CONF_CSRF_SCOPE = 'export.import_conf';
     private const EXPORT_TEST_DECHIFFREMENT_CSRF_SCOPE = 'export.test_dechiffrement';
-    private const EXPORT_TEST_DECHIFFREMENT_MAX_BYTES = 5242880;
 
 /**
  * Stores `$table_with_data` for table with data.
@@ -196,6 +197,9 @@ $("#export_all-all2").click(function(){
             $data['options'][] = $arr;
         }
 
+        $data['export_import_conf_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['export_import_conf_csrf_token'] = Csrf::issueToken($_SESSION, self::EXPORT_IMPORT_CONF_CSRF_SCOPE);
+
         $this->set('data', $data);
     }
 
@@ -278,8 +282,7 @@ $("#export_all-all2").click(function(){
         //Debug::$debug = true;
 
 
-        $data  = array();
-        $error = false;
+        $data = array();
 
         if (IS_CLI) {
 
@@ -289,46 +292,48 @@ $("#export_all-all2").click(function(){
             Debug::debug($file, "file");
         } else {
 
-            if ($_SERVER['REQUEST_METHOD'] === "POST") {
+            if (CsrfGuard::isPost($_SERVER)) {
+                $importPost = self::evaluateImportConfPost($_FILES, $_POST, $_SERVER, $_SESSION);
+                if ($importPost['status'] !== 200) {
+                    if ($importPost['status'] === 403 || $importPost['status'] === 405) {
+                        $this->layout_name = false;
+                        self::sendExportError($importPost['status'], $importPost['body'], $importPost['headers']);
+                        return;
+                    }
 
-                if (!empty($_FILES['export']['tmp_name']['file'])) {
-                    $file     = $_FILES['export']['tmp_name']['file'];
-                    $password = $_POST['export']['password'];
-                }
-
-                if (empty($file)) {
-                    $error = true;
-                    set_flash("error", __('Error'), __("Please select the config file"));
-                }
-
-                if (empty($password)) {
-                    $error = true;
-                    set_flash("error", __('Error'), __("Please request the password to uncrypt file"));
-                }
-
-                if ($error == true) {
+                    set_flash("error", __('Error'), __($importPost['body']));
                     header("location: ".LINK.$this->getClass()."/index");
-                    exit;
+                    return;
                 }
+
+                $file = $importPost['file'];
+                $password = $importPost['password'];
+            } else {
+                header("location: ".LINK.$this->getClass()."/index");
+                return;
             }
         }
 
 
         if (!empty($file) && !empty($password)) {
+            $json = EncryptedExportRequest::decryptFile($file, $password);
+            if ($json === null) {
+                set_flash("error", __('Error'), __("The password is not good"));
+                header("location: ".LINK.$this->getClass()."/index");
+                return;
+            }
 
-            $crypted = file_get_contents($file);
-            $json    = Chiffrement::decrypt($crypted, $password);
             Debug::debug($json, "json");
-            $data    = $this->import(array($json));
+            try {
+                $data = $this->import(array($json));
+            } catch (\Throwable $exception) {
+                set_flash("error", __('Error'), $exception->getMessage());
+                header("location: ".LINK.$this->getClass()."/index");
+                return;
+            }
 
             Debug::debug($data);
         }
-
-        $json = Chiffrement::decrypt($crypted, $password);
-
-        Debug::debug(json_encode(json_decode($json), JSON_PRETTY_PRINT), "json");
-
-        $data = $this->import(array($json));
 
         if (!empty($data['mysql']['updated'])) {
             $msg = implode(", ", $data['mysql']['updated']);
@@ -360,6 +365,24 @@ $("#export_all-all2").click(function(){
         //debug($data);
 
         $this->set('data', $data);
+    }
+
+    public static function evaluateImportConfPost(
+        array $files,
+        array $post,
+        array $server,
+        array $session,
+        bool $requireUploadedFile = true
+    ): array {
+        return EncryptedExportRequest::evaluateUploadPasswordPost(
+            $files,
+            $post,
+            $server,
+            $session,
+            self::EXPORT_IMPORT_CONF_CSRF_SCOPE,
+            'Invalid export import payload',
+            $requireUploadedFile
+        );
     }
 
 /**
@@ -920,28 +943,15 @@ $("#export_all-all2").click(function(){
         array $session,
         bool $requireUploadedFile = true
     ): array {
-        $guard = CsrfGuard::check($post, $server, $session, self::EXPORT_TEST_DECHIFFREMENT_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return self::buildTestDechiffrementOutcome($guard['status'], $guard['body'], $guard['headers']);
-        }
-
-        $fileSize = self::extractTestDechiffrementFileSize($files);
-        if ($fileSize !== null && $fileSize > self::EXPORT_TEST_DECHIFFREMENT_MAX_BYTES) {
-            return self::buildTestDechiffrementOutcome(413, 'Uploaded export file too large');
-        }
-
-        $payload = self::normalizeTestDechiffrementPayload($files, $post, $requireUploadedFile);
-        if ($payload === null) {
-            return self::buildTestDechiffrementOutcome(422, 'Invalid export test payload');
-        }
-
-        return [
-            'status' => 200,
-            'body' => '',
-            'headers' => [],
-            'file' => $payload['file'],
-            'password' => $payload['password'],
-        ];
+        return EncryptedExportRequest::evaluateUploadPasswordPost(
+            $files,
+            $post,
+            $server,
+            $session,
+            self::EXPORT_TEST_DECHIFFREMENT_CSRF_SCOPE,
+            'Invalid export test payload',
+            $requireUploadedFile
+        );
     }
 
     public static function normalizeTestDechiffrementPayload(
@@ -949,83 +959,18 @@ $("#export_all-all2").click(function(){
         array $post,
         bool $requireUploadedFile = true
     ): ?array {
-        $uploadError = $files['export']['error']['file'] ?? UPLOAD_ERR_OK;
-        if (!is_numeric($uploadError) || (int) $uploadError !== UPLOAD_ERR_OK) {
-            return null;
-        }
-
-        $file = $files['export']['tmp_name']['file'] ?? null;
-        if (!is_scalar($file)) {
-            return null;
-        }
-
-        $file = trim((string) $file);
-        if ($file === '' || ($requireUploadedFile && !is_uploaded_file($file))) {
-            return null;
-        }
-
-        $exportPost = $post['export'] ?? null;
-        if (!is_array($exportPost) || !is_scalar($exportPost['password'] ?? null)) {
-            return null;
-        }
-
-        $password = trim((string) $exportPost['password']);
-        if ($password === '') {
-            return null;
-        }
-
-        return [
-            'file' => $file,
-            'password' => $password,
-        ];
+        return EncryptedExportRequest::normalizeUploadPasswordPayload($files, $post, $requireUploadedFile);
     }
 
     public static function decryptTestDechiffrementFile(string $file, string $password): ?string
     {
-        $crypted = file_get_contents($file);
-        if ($crypted === false) {
-            return null;
-        }
-
-        set_error_handler(static function (int $severity, string $message, string $file, int $line): bool {
-            throw new \ErrorException($message, 0, $severity, $file, $line);
-        });
-
-        try {
-            $compressed = Chiffrement::decrypt($crypted, $password);
-        } catch (\Throwable $exception) {
-            return null;
-        } finally {
-            restore_error_handler();
-        }
-
+        $compressed = EncryptedExportRequest::decryptFile($file, $password);
         if (!self::isGzippedPayload($compressed)) {
             return null;
         }
 
         $json = gzuncompress($compressed);
         return is_string($json) ? $json : null;
-    }
-
-    private static function extractTestDechiffrementFileSize(array $files): ?int
-    {
-        $size = $files['export']['size']['file'] ?? null;
-        if (!is_numeric($size)) {
-            return null;
-        }
-
-        return (int) $size;
-    }
-
-    private static function buildTestDechiffrementOutcome(int $statusCode, string $message, array $headers = []): array
-    {
-        return [
-            'status' => $statusCode,
-            'body' => $message,
-            'headers' => $headers,
-            'file' => '',
-            'password' => '',
-        ];
     }
 
     private static function sendExportError(int $statusCode, string $message, array $headers = []): void
