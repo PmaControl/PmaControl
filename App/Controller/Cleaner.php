@@ -24,8 +24,12 @@ use \Glial\Sgbd\Sql\Mysql\Compare;
 use \Glial\Synapse\Basic;
 use \App\Library\Debug;
 use \App\Library\Mysql;
+use App\Library\Security\CsrfGuard;
+use App\Library\Security\GroupedFormRequest;
+use App\Library\Security\IndexedRowsRequest;
 use App\Library\Display;
 use App\Controller\Test\CleanerTest;
+use Glial\Security\Csrf;
 use \Glial\Sgbd\Sgbd;
 
 /**
@@ -66,6 +70,27 @@ class Cleaner extends Controller
     private $com_status = array();
 
     const FIELD_LOOP = "pmactrol_purge_loop";
+    private const CLEANER_SETTINGS_CSRF_SCOPE = 'cleaner.settings';
+    private const CLEANER_SETTINGS_MAX_FOREIGN_KEYS = 128;
+    private const CLEANER_SETTINGS_MAIN_RULES = [
+        'libelle' => ['type' => 'string', 'required' => true, 'min' => 1, 'max' => 50],
+        'id_mysql_server' => ['type' => 'int', 'required' => true, 'min' => 1],
+        'database' => ['type' => 'string', 'min' => 1, 'max' => 64],
+        'id_mysql_database' => ['type' => 'int', 'min' => 1],
+        'main_table' => ['type' => 'string', 'required' => true, 'min' => 1, 'max' => 64],
+        'query' => ['type' => 'string', 'required' => true, 'min' => 1],
+        'wait_time_in_sec' => ['type' => 'int', 'required' => true, 'min' => 1, 'max' => 100],
+        'cleaner_db' => ['type' => 'string', 'required' => true, 'min' => 1, 'max' => 50],
+        'prefix' => ['type' => 'string', 'default' => '', 'max' => 50],
+    ];
+    private const CLEANER_SETTINGS_FOREIGN_KEY_RULES = [
+        'constraint_schema' => ['type' => 'string', 'min' => 1, 'max' => 64],
+        'constraint_table' => ['type' => 'string', 'min' => 1, 'max' => 64],
+        'constraint_column' => ['type' => 'string', 'min' => 1, 'max' => 64],
+        'referenced_schema' => ['type' => 'string', 'min' => 1, 'max' => 64],
+        'referenced_table' => ['type' => 'string', 'min' => 1, 'max' => 64],
+        'referenced_column' => ['type' => 'string', 'min' => 1, 'max' => 64],
+    ];
 
 /**
  * Stores `$color` for color.
@@ -1059,9 +1084,9 @@ var myChart = new Chart(ctx, {
  */
     public function settings($param)
     {
-
-
-        $db = Sgbd::sql(DB_DEFAULT);
+        $data = [];
+        $data['cleaner_settings_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['cleaner_settings_csrf_token'] = Csrf::issueToken($_SESSION, self::CLEANER_SETTINGS_CSRF_SCOPE);
 
         $this->di['js']->addJavascript(array("jquery-latest.min.js", "jquery.browser.min.js",
             "jquery.autocomplete.min.js", "cleaner/add.cleaner.js"));
@@ -1070,15 +1095,25 @@ var myChart = new Chart(ctx, {
 
         $this->ariane = " > ".'<a href="'.LINK.'Cleaner/index/">'.__('Cleaner')."</a> > ".$this->title;
 
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
+        if (CsrfGuard::isPost($_SERVER)) {
+            $outcome = self::evaluateSettingsRequest($_POST, $_SERVER, $_SESSION);
+            if ($outcome['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendCleanerSettingsError($outcome['status'], $outcome['body'], $outcome['headers']);
+                return;
+            }
 
-            $data['cleaner_main'] = $_POST['cleaner_main'];
+            $db = Sgbd::sql(DB_DEFAULT);
+            $cleaner_main = [];
+            $cleaner_main['cleaner_main'] = $outcome['cleaner_main'];
 
-            $id_cleaner_main = $db->sql_save($data);
+            $id_cleaner_main = $db->sql_save($cleaner_main);
 
             if ($id_cleaner_main) {
-                foreach ($_POST['cleaner_foreign_key'] as $data) {
-                    $ob_foreign_key['cleaner_foreign_key']                    = $data;
+                $id_cleaner_foreign_key = null;
+                foreach ($outcome['cleaner_foreign_key'] as $foreign_key) {
+                    $ob_foreign_key['cleaner_foreign_key']                    = $foreign_key;
                     $ob_foreign_key['cleaner_foreign_key']['id_cleaner_main'] = $id_cleaner_main;
 
                     $id_cleaner_foreign_key = $db->sql_save($ob_foreign_key);
@@ -1086,11 +1121,13 @@ var myChart = new Chart(ctx, {
 
                 if ($id_cleaner_foreign_key) {
                     header('location: '.LINK.'Cleaner/index/');
+                    return;
                 }
             }
         }
 
 
+        $db      = Sgbd::sql(DB_DEFAULT);
         $sql     = "SELECT * FROM mysql_server order by `name`;";
         $servers = $db->sql_fetch_yield($sql);
 
@@ -1116,6 +1153,65 @@ var myChart = new Chart(ctx, {
         }
 
         $this->set('data', $data);
+    }
+
+    public static function evaluateSettingsRequest(array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::CLEANER_SETTINGS_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildCleanerSettingsOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $cleaner_main = GroupedFormRequest::normalize(
+            $post,
+            'cleaner_main',
+            self::CLEANER_SETTINGS_MAIN_RULES
+        );
+        if ($cleaner_main === null || (!array_key_exists('database', $cleaner_main) && !array_key_exists('id_mysql_database', $cleaner_main))) {
+            return self::buildCleanerSettingsOutcome(400, 'Invalid cleaner settings payload');
+        }
+
+        $cleaner_foreign_key = IndexedRowsRequest::normalize(
+            $post,
+            'cleaner_foreign_key',
+            self::CLEANER_SETTINGS_FOREIGN_KEY_RULES,
+            self::CLEANER_SETTINGS_MAX_FOREIGN_KEYS
+        );
+        if ($cleaner_foreign_key === null) {
+            return self::buildCleanerSettingsOutcome(400, 'Invalid cleaner settings payload');
+        }
+
+        return self::buildCleanerSettingsOutcome(200, '', [], $cleaner_main, $cleaner_foreign_key);
+    }
+
+    private static function buildCleanerSettingsOutcome(
+        int $statusCode,
+        string $message,
+        array $headers = [],
+        ?array $cleaner_main = null,
+        ?array $cleaner_foreign_key = null
+    ): array {
+        return [
+            'allowed' => $statusCode === 200,
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'cleaner_main' => $cleaner_main,
+            'cleaner_foreign_key' => $cleaner_foreign_key,
+        ];
+    }
+
+    private static function sendCleanerSettingsError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+
+        if ($message !== '') {
+            echo $message;
+        }
     }
 
 /**

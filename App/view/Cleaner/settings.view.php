@@ -1,9 +1,13 @@
 <?php
 
 use Glial\Html\Form\Form;
+
+$cleanerSettingsCsrfField = htmlspecialchars((string) ($data['cleaner_settings_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$cleanerSettingsCsrfToken = htmlspecialchars((string) ($data['cleaner_settings_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
 ?>
 
 <form action="" method="post">
+    <input type="hidden" name="<?= $cleanerSettingsCsrfField ?>" value="<?= $cleanerSettingsCsrfToken ?>">
     <div class="well">
 
         <div class="row">
