@@ -6,8 +6,12 @@
  */
 
 use Glial\Html\Form\Form;
+
+$treeAddCsrfField = htmlspecialchars((string) ($data['tree_add_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$treeAddCsrfToken = htmlspecialchars((string) ($data['tree_add_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
 ?>
 <form action="" method="post">
+    <input type="hidden" name="<?= $treeAddCsrfField ?>" value="<?= $treeAddCsrfToken ?>">
 
     <div class="panel panel-primary">
         <div class="panel-heading">
