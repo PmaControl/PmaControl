@@ -3,6 +3,9 @@
 
 \Glial\Synapse\FactoryController::addNode("ProxySQL", "menu", $data['param']);
 
+$proxySqlUpdateFieldCsrfField = htmlspecialchars((string) ($data['proxysql_update_field_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$proxySqlUpdateFieldCsrfToken = htmlspecialchars((string) ($data['proxysql_update_field_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$proxySqlUpdateFieldCsrfAttributes = ' data-csrf-field="'.$proxySqlUpdateFieldCsrfField.'" data-csrf-token="'.$proxySqlUpdateFieldCsrfToken.'"';
 
 $table_name = str_replace('_', ' ', $data['current']);
 $extra = $data['menu'][$table_name];
@@ -140,7 +143,7 @@ foreach ($data['table'] as $table_name)
             $pk_table = [];
             foreach($primary_key_cols as $pk)
             {
-                $pk_table[] = "$pk = '".$line[$pk]."'";
+                $pk_table[] = "$pk = '".str_replace("'", "''", (string) $line[$pk])."'";
             }
             $full_pk = implode (' AND ', $pk_table);
 
@@ -149,8 +152,11 @@ foreach ($data['table'] as $table_name)
               echo '<td style="color:#777777;">'.$elem.'</td>';
             }
             else {
-              echo '<td class="line-edit" data-name="'.$field.'" data-pk="'.$full_pk .'" data-type="text" data-url="'. LINK.'ProxySQL/updateField/'.$data['id_proxysql_server'].'/'.$table_name.'" data-title="Enter value">';
-              echo $elem.'</td>';
+              $fieldAttr = htmlspecialchars((string) $field, ENT_QUOTES, 'UTF-8');
+              $pkAttr = htmlspecialchars($full_pk, ENT_QUOTES, 'UTF-8');
+              $urlAttr = htmlspecialchars(LINK.'ProxySQL/updateField/'.$data['id_proxysql_server'].'/'.$table_name, ENT_QUOTES, 'UTF-8');
+              echo '<td class="line-edit"'.$proxySqlUpdateFieldCsrfAttributes.' data-name="'.$fieldAttr.'" data-pk="'.$pkAttr.'" data-type="text" data-url="'.$urlAttr.'" data-title="Enter value">';
+              echo htmlspecialchars((string) $elem, ENT_QUOTES, 'UTF-8').'</td>';
             }
           }
 
