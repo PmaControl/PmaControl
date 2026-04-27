@@ -5,6 +5,8 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use \Glial\I18n\I18n;
 //use \Glial\Ldap\Ldap as gg;
+use App\Library\Security\CsrfGuard;
+use Glial\Security\Csrf;
 use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
@@ -27,6 +29,19 @@ use \Glial\Sgbd\Sgbd;
  */
 class Ldap extends Controller
 {
+    private const LDAP_INDEX_CSRF_SCOPE = 'ldap.index';
+    private const LDAP_CONFIG_FIELDS = [
+        'url',
+        'port',
+        'bind_dn',
+        'root_dn',
+        'root_dn_search',
+        'bind_passwd',
+        'bind_passwd_confirm',
+        'check',
+    ];
+    private const LDAP_FIELD_MAX_LENGTH = 4096;
+
 /**
  * Stores `$module_group` for module group.
  *
@@ -136,36 +151,44 @@ class Ldap extends Controller
     });
 });');
 
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
+        $data = [
+            'ldap_index_csrf_field' => Csrf::DEFAULT_FIELD,
+            'ldap_index_csrf_token' => Csrf::issueToken($_SESSION, self::LDAP_INDEX_CSRF_SCOPE),
+        ];
 
-            if (!empty($_POST['ldap']['url'])) {
+        if (CsrfGuard::isPost($_SERVER)) {
+            $postOutcome = self::evaluateIndexPostRequest($_POST, $_SERVER, $_SESSION);
+            if ($postOutcome['status'] !== 200) {
+                $this->view        = false;
+                $this->layout_name = false;
+                self::sendIndexError($postOutcome['status'], $postOutcome['body'], $postOutcome['headers']);
+                return;
+            }
+
+            $post = $postOutcome['post'];
+
+            if (!empty($post['ldap']['url'])) {
 
                 $error = array();
 
-                $this->log("info", "POST", json_encode($_POST));
+                $this->log("info", "POST", json_encode(self::redactLdapSecrets($post)));
 
-                if (isset($_POST['ldap']['check'])) {
-                    $_POST['ldap']['check'] = 'on';
-                } else {
-                    $_POST['ldap']['check'] = 'off';
-                }
+                $url = $this->postToGet(array('ldap' => $post['ldap']), array('bind_passwd', 'bind_passwd_confirm'));
 
-                $url = $this->postToGet($_POST);
-
-                if ($this->testLdap($_POST['ldap']['url'], $_POST['ldap']['port']) !== true) {
+                if ($this->testLdap($post['ldap']['url'], $post['ldap']['port']) !== true) {
                     $error[] = "We cannot to connect to LDAP server.";
                 }
 
-                if ($this->testLdapCredential($_POST['ldap']['url'], $_POST['ldap']['port'], $_POST['ldap']['bind_dn'], $_POST['ldap']['bind_passwd']) !== true) {
+                if ($this->testLdapCredential($post['ldap']['url'], $post['ldap']['port'], $post['ldap']['bind_dn'], $post['ldap']['bind_passwd']) !== true) {
                     $error[] = "Invalid credentials (Check Bind DN and/or Bind password).";
                 }
 
 
-                $err = $this->UpdateConfigFile($_POST['ldap']);
+                $err = $this->UpdateConfigFile($post['ldap']);
 
                 $error = array_merge($err, $error);
 
-                $check = $this->testLdapCredential($_POST['ldap']['url'], $_POST['ldap']['port'], $_POST['ldap']['bind_dn'], $_POST['ldap']['bind_passwd']);
+                $check = $this->testLdapCredential($post['ldap']['url'], $post['ldap']['port'], $post['ldap']['bind_dn'], $post['ldap']['bind_passwd']);
 
 
                 clearstatcache();
@@ -188,16 +211,16 @@ class Ldap extends Controller
                 }
             }
 
-            if (!empty($_POST['ldap_group'])) {
+            if (!empty($post['ldap_group'])) {
                 $db = Sgbd::sql(DB_DEFAULT);
 
 
-                foreach ($_POST['ldap_group'] as $ldap_group) {
-                    if (empty($ldap_group['id']) || empty($ldap_group['name'])) {
+                foreach ($post['ldap_group'] as $ldap_group) {
+                    if (empty($ldap_group['name'])) {
                         $sql = "DELETE FROM `ldap_group` WHERE id_group =".$ldap_group['id'];
                         $db->sql_query($sql);
                     } else {
-                        $sql = "REPLACE INTO `ldap_group` (`id_group`,`cn`) VALUES ('".$ldap_group['id']."','".$ldap_group['name']."')";
+                        $sql = "REPLACE INTO `ldap_group` (`id_group`,`cn`) VALUES (".$ldap_group['id'].",'".$db->sql_real_escape_string($ldap_group['name'])."')";
                         $db->sql_query($sql);
 
                         $this->update_group($ldap_group['id']);
@@ -289,6 +312,175 @@ class Ldap extends Controller
         $this->set('data', $data);
     }
 
+    public static function evaluateIndexPostRequest(array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::LDAP_INDEX_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildIndexPostOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $payload = self::normalizeIndexPostPayload($post);
+        if ($payload === null) {
+            return self::buildIndexPostOutcome(400, 'Invalid LDAP index payload');
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'post' => $payload,
+        ];
+    }
+
+    public static function normalizeIndexPostPayload(array $post): ?array
+    {
+        $payload = [];
+
+        if (array_key_exists('ldap', $post)) {
+            $ldap = self::normalizeLdapConfigPayload($post['ldap']);
+            if ($ldap === null) {
+                return null;
+            }
+
+            $payload['ldap'] = $ldap;
+        }
+
+        if (array_key_exists('ldap_group', $post)) {
+            $ldapGroup = self::normalizeLdapGroupPayload($post['ldap_group']);
+            if ($ldapGroup === null) {
+                return null;
+            }
+
+            $payload['ldap_group'] = $ldapGroup;
+        }
+
+        if ($payload === []) {
+            return null;
+        }
+
+        return $payload;
+    }
+
+    public static function normalizeLdapConfigPayload($source): ?array
+    {
+        if (!is_array($source)) {
+            return null;
+        }
+
+        $ldap = array_fill_keys(self::LDAP_CONFIG_FIELDS, '');
+        foreach ($source as $field => $value) {
+            if (!is_string($field) || !in_array($field, self::LDAP_CONFIG_FIELDS, true)) {
+                return null;
+            }
+
+            if ($field === 'check') {
+                continue;
+            }
+
+            if (!is_scalar($value)) {
+                return null;
+            }
+
+            $value = trim((string) $value);
+            if (strlen($value) > self::LDAP_FIELD_MAX_LENGTH) {
+                return null;
+            }
+
+            $ldap[$field] = $value;
+        }
+
+        $ldap['check'] = array_key_exists('check', $source) ? 'on' : 'off';
+
+        return $ldap;
+    }
+
+    public static function normalizeLdapGroupPayload($source): ?array
+    {
+        if (!is_array($source)) {
+            return null;
+        }
+
+        $groups = [];
+        foreach ($source as $ldapGroup) {
+            if (!is_array($ldapGroup)) {
+                return null;
+            }
+
+            $id = self::normalizeLdapGroupId($ldapGroup['id'] ?? null);
+            $name = self::normalizeLdapGroupName($ldapGroup['name'] ?? '');
+            if ($id === null || $name === null) {
+                return null;
+            }
+
+            $groups[] = [
+                'id' => $id,
+                'name' => $name,
+            ];
+        }
+
+        return $groups;
+    }
+
+    public static function redactLdapSecrets(array $post): array
+    {
+        $redacted = $post;
+        foreach (['bind_passwd', 'bind_passwd_confirm'] as $field) {
+            if (isset($redacted['ldap'][$field])) {
+                $redacted['ldap'][$field] = '[redacted]';
+            }
+        }
+
+        return $redacted;
+    }
+
+    private static function normalizeLdapGroupId($value): ?int
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $id = trim((string) $value);
+        if (!ctype_digit($id) || (int) $id < 1) {
+            return null;
+        }
+
+        return (int) $id;
+    }
+
+    private static function normalizeLdapGroupName($value): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $name = trim((string) $value);
+        if (strlen($name) > self::LDAP_FIELD_MAX_LENGTH) {
+            return null;
+        }
+
+        return $name;
+    }
+
+    private static function buildIndexPostOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'post' => null,
+        ];
+    }
+
+    private static function sendIndexError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
+    }
+
 /**
  * Handle ldap state through `testLdap`.
  *
@@ -349,18 +541,28 @@ class Ldap extends Controller
  */
     private function postToGet($post, $exclude = array())
     {
-        global $ret, $way;
+        $ret = array();
+        $this->appendPostToGet($post, '', $exclude, $ret);
 
+        return implode('/', array_filter($ret));
+    }
+
+    private function appendPostToGet($post, $prefix, $exclude, &$ret)
+    {
         foreach ($post as $key => $val) {
+            $key = (string) $key;
+            $way = $prefix === '' ? $key : $prefix.':'.$key;
             if (is_array($val)) {
-                $way .= trim(":".$key, ":");
-                $this->postToGet($val, $exclude, array(), "");
-            } else {
-                $ret[] = $way.':'.$key.':'.urlencode($val);
+                $this->appendPostToGet($val, $way, $exclude, $ret);
+                continue;
             }
-        }
 
-        return implode('/', $ret);
+            if (in_array($key, $exclude, true)) {
+                continue;
+            }
+
+            $ret[] = $way.':'.urlencode((string) $val);
+        }
     }
 
 /**
@@ -751,8 +953,8 @@ class Ldap extends Controller
                     break;
 
                 case "LDAP_BIND_PASSWD":
-                    if (isset($_POST['ldap']['bind_passwd_confirm'])) {
-                        if ($val !== $_POST['ldap']['bind_passwd_confirm']) {
+                    if (isset($var['bind_passwd_confirm'])) {
+                        if ($val !== $var['bind_passwd_confirm']) {
                             $error[] = "The password are not the same.";
                         }
                     }
@@ -779,7 +981,7 @@ class Ldap extends Controller
 
                 case 'LDAP_ROOT_DN_SEARCH':
                     if (empty($val)) {
-                        $val = $_POST['ldap']['root_dn_search'];
+                        $val = $var['root_dn_search'];
                     }
                     break;
 
