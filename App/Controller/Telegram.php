@@ -3,7 +3,9 @@
 namespace App\Controller;
 
 use App\Library\Debug;
+use App\Library\Security\CsrfGuard;
 use Glial\I18n\I18n;
+use Glial\Security\Csrf;
 use Glial\Synapse\Controller;
 use Glial\Sgbd\Sgbd;
 
@@ -23,6 +25,10 @@ use Glial\Sgbd\Sgbd;
  */
 class Telegram extends Controller
 {
+    private const TELEGRAM_ADD_CSRF_SCOPE = 'telegram.add';
+    private const TELEGRAM_ADD_FIELDS = ['token', 'chat_id'];
+    private const TELEGRAM_ADD_MAX_FIELD_LENGTH = 255;
+
 /**
  * Render telegram state through `index`.
  *
@@ -80,26 +86,39 @@ class Telegram extends Controller
  */
     public function add()
     {
-        $db = Sgbd::sql(DB_DEFAULT);
-
         $data = [
             'bot' => [
-                'token' => $_POST['telegram_bot']['token'] ?? '',
-                'chat_id' => $_POST['telegram_bot']['chat_id'] ?? '',
+                'token' => '',
+                'chat_id' => '',
             ],
             'errors' => [],
+            'telegram_add_csrf_field' => Csrf::DEFAULT_FIELD,
+            'telegram_add_csrf_token' => Csrf::issueToken($_SESSION, self::TELEGRAM_ADD_CSRF_SCOPE),
         ];
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $outcome = self::evaluateAddRequest($_POST, $_SERVER, $_SESSION);
+            if ($outcome['status'] !== 200) {
+                $this->view        = false;
+                $this->layout_name = false;
+                self::sendTelegramAddError($outcome['status'], $outcome['body'], $outcome['headers']);
+                return;
+            }
+
+            $data['bot'] = $outcome['bot'];
             $token = trim($data['bot']['token']);
             $chatId = trim($data['bot']['chat_id']);
 
             if ($token === '') {
                 $data['errors'][] = I18n::getTranslation(__("Token is required."));
+            } elseif (! self::isTelegramTokenFormat($token)) {
+                $data['errors'][] = I18n::getTranslation(__("Token format is invalid."));
             }
 
             if ($chatId === '') {
                 $data['errors'][] = I18n::getTranslation(__("Chat id is required."));
+            } elseif (! self::isTelegramChatIdFormat($chatId)) {
+                $data['errors'][] = I18n::getTranslation(__("Chat id format is invalid."));
             }
 
             if (empty($data['errors'])) {
@@ -110,6 +129,7 @@ class Telegram extends Controller
             }
 
             if (empty($data['errors'])) {
+                $db = Sgbd::sql(DB_DEFAULT);
                 $record = [
                     'telegram_bot' => [
                         'token' => $token,
@@ -132,6 +152,92 @@ class Telegram extends Controller
         }
 
         $this->set('data', $data);
+    }
+
+    public static function evaluateAddRequest(array $post, array $server, array $session): array
+    {
+        $guard = CsrfGuard::check($post, $server, $session, self::TELEGRAM_ADD_CSRF_SCOPE);
+        if (!$guard['allowed']) {
+            return self::buildTelegramAddOutcome($guard['status'], $guard['body'], $guard['headers']);
+        }
+
+        $bot = self::normalizeAddPayload($post);
+        if ($bot === null) {
+            return self::buildTelegramAddOutcome(400, 'Invalid telegram add payload');
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'bot' => $bot,
+        ];
+    }
+
+    public static function normalizeAddPayload(array $post): ?array
+    {
+        $source = $post['telegram_bot'] ?? [];
+        if ($source === []) {
+            return [
+                'token' => '',
+                'chat_id' => '',
+            ];
+        }
+
+        if (! is_array($source)) {
+            return null;
+        }
+
+        $bot = [
+            'token' => '',
+            'chat_id' => '',
+        ];
+
+        foreach ($source as $field => $value) {
+            if (! is_string($field) || ! in_array($field, self::TELEGRAM_ADD_FIELDS, true) || ! is_scalar($value)) {
+                return null;
+            }
+
+            $value = (string) $value;
+            if (strlen($value) > self::TELEGRAM_ADD_MAX_FIELD_LENGTH) {
+                return null;
+            }
+
+            $bot[$field] = $value;
+        }
+
+        return $bot;
+    }
+
+    public static function isTelegramTokenFormat(string $token): bool
+    {
+        return preg_match('/^[0-9]+:[A-Za-z0-9_-]{20,}$/', $token) === 1;
+    }
+
+    public static function isTelegramChatIdFormat(string $chatId): bool
+    {
+        return preg_match('/^-?[0-9]+$/', $chatId) === 1
+            || preg_match('/^@[A-Za-z0-9_]{5,32}$/', $chatId) === 1;
+    }
+
+    private static function buildTelegramAddOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'bot' => null,
+        ];
+    }
+
+    private static function sendTelegramAddError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
 /**
@@ -460,4 +566,3 @@ class Telegram extends Controller
         }
     }
 }
-

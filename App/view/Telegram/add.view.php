@@ -1,5 +1,8 @@
 <?php
 
+$telegramAddCsrfField = htmlspecialchars((string) ($data['telegram_add_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$telegramAddCsrfToken = htmlspecialchars((string) ($data['telegram_add_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+
 echo '<div class="row">';
 echo '<div class="col-md-6">';
 echo '<h2>'.__("Add a Telegram bot").'</h2>';
@@ -15,6 +18,7 @@ if (!empty($data['errors'])) {
 }
 
 echo '<form method="post" action="'.LINK.'telegram/add" class="form-horizontal">';
+echo '<input type="hidden" name="'.$telegramAddCsrfField.'" value="'.$telegramAddCsrfToken.'">';
 
 echo '<div class="form-group">';
 echo '<label class="control-label">'.__("Bot token").'</label>';
