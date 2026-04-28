@@ -8,6 +8,8 @@
 namespace App\Controller;
 
 use App\Library\EngineV4;
+use App\Library\Kpi\WorkerExecutionLogger;
+use App\Library\Kpi\WorkerSkipException;
 use App\Library\Security\CsrfGuard;
 
 use \App\Library\Debug;
@@ -194,22 +196,31 @@ class Worker extends Controller
 
             $this->logger->info("[WORKER:$pid] [@Start] process id_mysql_server:$msg->id");
 
-            $db = Sgbd::sql(DB_DEFAULT, "WORKER".$pid);
-            $sql = "INSERT INTO worker_execution (id_worker_run, id_mysql_server, date_started) 
-            SELECT id, ".$msg->id.",'".date("Y-m-d H:i:s")."' from worker_run WHERE pid = ".$pid.";";
-
-            $db->sql_query($sql);
-            $id_worker_execution = $db->sql_insert_id();
-            $db->sql_close();
+            $id_worker_execution = WorkerExecutionLogger::startForWorkerPid($pid, (int)$msg->id);
             $start = microtime(true);
+            $dbCounters = WorkerExecutionLogger::snapshotDbCounters();
+            $workerStatus = 'OK';
+            $workerError = null;
+            $workerErrorMessage = null;
 
             $this->logger->debug("====> id_worker_execution ".$id_worker_execution);
 
             //do your business logic here and process this message!
+            if (function_exists('memory_reset_peak_usage')) {
+                memory_reset_peak_usage();
+            }
+
             try{
                 FactoryController::addNode($WORKER['worker_class'], $WORKER['worker_method'], array($msg->name, $msg->id, $msg->refresh, $id_worker_execution));
             }
-            catch (\Exception $e) {
+            catch (WorkerSkipException $e) {
+                $workerStatus = 'SKIPPED';
+                $workerErrorMessage = $e->getMessage();
+                $this->logger->notice("[WORKER:$pid] SKIPPED id_mysql_server:$msg->id (".$e->getMessage().")");
+            }
+            catch (\Throwable $e) {
+                $workerStatus = 'ERROR';
+                $workerError = $e;
                 $this->logger->warning("[WORKER:$pid] CRASHED with id_mysql_server:$msg->id (ERROR : ".$e->getMessage().")");
 
                 if (file_exists($worker_pid)) {
@@ -220,13 +231,19 @@ class Worker extends Controller
             {
                 $end = microtime(true);
                 $executionTime = round(($end - $start) * 1000, 0);
+                $dbMetrics = WorkerExecutionLogger::diffDbCounters($dbCounters);
 
-                $db = Sgbd::sql(DB_DEFAULT, "WORKER".$pid);
-                $sql ="UPDATE worker_execution SET date_end='".date("Y-m-d H:i:s")."', execution_time= ".$executionTime."
-                WHERE id=".$id_worker_execution.";";
-
-                $db->sql_query($sql);
-                $db->sql_close();
+                WorkerExecutionLogger::finish($id_worker_execution, [
+                    'status' => $workerStatus,
+                    'throwable' => $workerError,
+                    'error_message' => $workerErrorMessage,
+                    'execution_time_ms' => (int)$executionTime,
+                    'max_execution_time' => (int)($WORKER['max_execution_time'] ?? 0),
+                    'peak_rss_kb' => (int)ceil(memory_get_peak_usage(true) / 1024),
+                    'db_queries_count' => $dbMetrics['db_queries_count'],
+                    'db_queries_time_ms' => $dbMetrics['db_queries_time_ms'],
+                    'attempt_n' => 1,
+                ]);
 
                 // if mysql connection is down, the worker will be down too and we have to restart one
                 $this->logger->info("[WORKER:$pid] [@END] process id_mysql_server:$msg->id");
@@ -735,6 +752,8 @@ class Worker extends Controller
 
                 //$sql = "DELETE FROM worker_run WHERE id=".$ob2->id;
                 
+                WorkerExecutionLogger::markStuckForRun((int)$ob2->id);
+
                 $sql = "UPDATE worker_run SET is_working=0, date_killed='".date('Y-m-d H:i:s')."' WHERE id=".$ob2->id.";";
                 
                 Debug::sql($sql);
@@ -878,6 +897,7 @@ class Worker extends Controller
 
             if (System::isRunningPid($ob->pid))
             {
+                WorkerExecutionLogger::markKilledForRun((int)$ob->id);
                 $cmd = "kill ".$ob->pid;
                 shell_exec($cmd);    
             }
@@ -1005,6 +1025,7 @@ class Worker extends Controller
             }
 
             if (System::isRunningPid($candidatePid)) {
+                WorkerExecutionLogger::markKilledForRun((int)$ob->id);
                 shell_exec('kill '.$candidatePid);
             }
 

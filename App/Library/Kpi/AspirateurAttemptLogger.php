@@ -70,7 +70,7 @@ final class AspirateurAttemptLogger
             'result' => $result,
             'ping_seconds' => self::nullableDecimal($input['ping_seconds'] ?? $input['ping'] ?? null),
             'error_class' => self::shortString($input['error_class'] ?? null, 128),
-            'error_message' => self::shortString(self::sanitizeErrorMessage($input['error_message'] ?? null), 512),
+            'error_message' => KpiSanitizer::errorMessage($input['error_message'] ?? null, 512),
             'transient' => self::boolInt($input['transient'] ?? false),
             'triggered_state_change' => $triggeredStateChange,
             'set_readonly_reason' => self::shortString($input['set_readonly_reason'] ?? null, 255),
@@ -173,19 +173,6 @@ final class AspirateurAttemptLogger
         }
 
         return substr($value, 0, $maxLength);
-    }
-
-    private static function sanitizeErrorMessage($value): ?string
-    {
-        if ($value === null) {
-            return null;
-        }
-
-        $message = (string)$value;
-        $message = preg_replace('/((?:password|passwd|pwd|secret|token)\s*[=:]\s*)[^\s;&]+/i', '$1***', $message) ?? $message;
-        $message = preg_replace('/([a-z][a-z0-9+.-]*:\/\/[^:\s@]+):[^@\s]+@/i', '$1:***@', $message) ?? $message;
-
-        return $message;
     }
 
     private static function dateTime($value): string
