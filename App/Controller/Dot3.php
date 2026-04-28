@@ -978,7 +978,7 @@ class Dot3 extends Controller
             //Debug::debug($server, "GOOD");
             //$id_group++;
             //$tmp_group[$idproxy] = array();
-            if (!empty($server['wsrep_on']) && strtolower($server['wsrep_on']) === "on") {
+            if (self::isGaleraLikeNode($server)) {
 
                 //Debug::debug($server, "CLUSTER");
 
@@ -1003,9 +1003,9 @@ class Dot3 extends Controller
                         
                         $id_mysql_server_galera = $information['mapping'][$ip_port];
                         //Debug::debug($id_mysql_server_galera, "ID MYSQL SERVER GALERA ({$server['id_mysql_server']})");
-                        //Debug::debug($information['servers'][$id_mysql_server_galera]['wsrep_on'], "WSREP ON");
+                        //Debug::debug($information['servers'][$id_mysql_server_galera], "GALERA MEMBER");
 
-                        if ($information['servers'][$id_mysql_server_galera]['wsrep_on'] === 'ON') {
+                        if (self::isGaleraLikeNode($information['servers'][$id_mysql_server_galera] ?? array())) {
 
                             $tmp_group[$server['id_mysql_server']][] = $information['mapping'][$ip_port];
                             //TODO generate Alert instead of a debug 
@@ -1094,6 +1094,32 @@ class Dot3 extends Controller
         //Debug::debug($resultArray);
 
         return $resultArray;
+    }
+
+    private static function isGaleraLikeNode(array $server): bool
+    {
+        $wsrep_on = strtolower(trim((string)($server['wsrep_on'] ?? '')));
+        if (in_array($wsrep_on, array('on', '1', 'true', 'yes'), true)) {
+            return true;
+        }
+
+        $cluster_status = strtolower(trim((string)($server['wsrep_cluster_status'] ?? '')));
+        $local_state_comment = trim((string)($server['wsrep_local_state_comment'] ?? ''));
+        $cluster_size = (int)($server['wsrep_cluster_size'] ?? 0);
+        $cluster_name = trim((string)($server['wsrep_cluster_name'] ?? ''));
+        $cluster_address = trim((string)($server['wsrep_cluster_address'] ?? ''));
+        $incoming_addresses = trim((string)($server['wsrep_incoming_addresses'] ?? ''));
+        $provider_version = trim((string)($server['wsrep_provider_version'] ?? ''));
+
+        if ($cluster_status !== ''
+            && in_array($cluster_status, array('primary', 'non-primary', 'disconnected'), true)) {
+            return true;
+        }
+
+        return $cluster_size > 0
+            || $local_state_comment !== ''
+            || $provider_version !== ''
+            || ($cluster_name !== '' && ($cluster_address !== '' || $incoming_addresses !== ''));
     }
 
 
@@ -2123,7 +2149,7 @@ class Dot3 extends Controller
      *
      * Règle métier demandée:
      * - Si un noeud Galera actif A voit B dans wsrep_incoming_addresses
-     * - et que B existe bien côté inventaire, wsrep_on=ON mais mysql_available=0
+     * - et que B existe bien côté inventaire comme membre Galera/PXC mais mysql_available=0
      * => on affiche une flèche supplémentaire A -> B (donor -> joiner)
      *
      * NB: l'edge est purement visuelle (constraint=false + weight=0).
@@ -2152,7 +2178,7 @@ class Dot3 extends Controller
             }
 
             $viewer = $servers[$viewerId];
-            if (empty($viewer['wsrep_on']) || strtolower((string)$viewer['wsrep_on']) !== 'on') {
+            if (!self::isGaleraLikeNode($viewer)) {
                 continue;
             }
 
@@ -2183,7 +2209,7 @@ class Dot3 extends Controller
                 }
 
                 $joiner = $servers[$joinerId];
-                if (empty($joiner['wsrep_on']) || strtolower((string)$joiner['wsrep_on']) !== 'on') {
+                if (!self::isGaleraLikeNode($joiner)) {
                     continue;
                 }
 
@@ -2642,7 +2668,7 @@ class Dot3 extends Controller
             }
 
             $peer = $servers[$peerId];
-            if (empty($peer['wsrep_on']) || strtolower((string)$peer['wsrep_on']) !== 'on') {
+            if (!self::isGaleraLikeNode($peer)) {
                 continue;
             }
 
