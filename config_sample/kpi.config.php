@@ -1,0 +1,33 @@
+<?php
+
+if (!defined('KPI_BUDGET_WORKER_BUSY_PCT')) {
+    define('KPI_BUDGET_WORKER_BUSY_PCT', 90);
+}
+
+if (!defined('KPI_BUDGET_WORKER_BUSY_MIN')) {
+    define('KPI_BUDGET_WORKER_BUSY_MIN', 5);
+}
+
+if (!defined('KPI_BUDGET_WORKER_STUCK_MIN')) {
+    define('KPI_BUDGET_WORKER_STUCK_MIN', 2);
+}
+
+if (!defined('KPI_BUDGET_DAEMON_LATE_MIN')) {
+    define('KPI_BUDGET_DAEMON_LATE_MIN', 5);
+}
+
+if (!defined('KPI_BUDGET_STATE_TRANSITIONS_PER_MIN')) {
+    define('KPI_BUDGET_STATE_TRANSITIONS_PER_MIN', 2);
+}
+
+if (!defined('KPI_BUDGET_FLAPPING_MIN')) {
+    define('KPI_BUDGET_FLAPPING_MIN', 5);
+}
+
+if (!defined('KPI_BUDGET_ASPIRATEUR_FAILURES_TOTAL')) {
+    define('KPI_BUDGET_ASPIRATEUR_FAILURES_TOTAL', 10);
+}
+
+if (!defined('KPI_BUDGET_ASPIRATEUR_FAILURES_MIN')) {
+    define('KPI_BUDGET_ASPIRATEUR_FAILURES_MIN', 1);
+}
