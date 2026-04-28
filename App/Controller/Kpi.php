@@ -6,6 +6,7 @@ use App\Library\Debug;
 use App\Library\Security\CsrfGuard;
 use App\Library\Kpi\KpiDaemonDrilldown;
 use App\Library\Kpi\KpiProcessDrilldown;
+use App\Library\Kpi\KpiReadonlyDrilldown;
 use App\Library\Kpi\KpiServerDrilldown;
 use Glial\Security\Csrf;
 use Glial\Synapse\Controller;
@@ -104,6 +105,37 @@ class Kpi extends Controller
                 ], JSON_UNESCAPED_SLASHES).';'
             );
         }
+
+        $this->set('data', ['payload' => $payload]);
+    }
+
+    public function aspirateur($param)
+    {
+        Debug::parseDebug($param);
+
+        if (($param[0] ?? '') !== 'readonly') {
+            set_flash('error', 'KPI', 'Invalid aspirateur KPI drilldown.');
+            header('location: '.LINK.'server/main/');
+            return;
+        }
+
+        $serverId = isset($param[1]) && is_numeric($param[1]) ? (int)$param[1] : 0;
+        if ($serverId <= 0) {
+            set_flash('error', 'KPI', 'Invalid server id.');
+            header('location: '.LINK.'server/main/');
+            return;
+        }
+
+        $payload = KpiReadonlyDrilldown::buildPayload($serverId);
+        if (empty($payload['server'])) {
+            set_flash('error', 'KPI', 'Server not found.');
+            header('location: '.LINK.'server/main/');
+            return;
+        }
+
+        $serverName = $payload['server']['display_name'] ?? $payload['server']['name'] ?? (string)$serverId;
+        $this->title = 'KPI read_only '.$serverName;
+        $this->ariane = ' > KPI > read_only '.$serverName;
 
         $this->set('data', ['payload' => $payload]);
     }
