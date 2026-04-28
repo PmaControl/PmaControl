@@ -9,6 +9,7 @@ use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use \App\Library\Debug;
 use \App\Library\EngineV4;
+use App\Library\Kpi\EventLog;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Extraction;
 use \App\Library\Extraction2;
@@ -76,6 +77,16 @@ class Listener extends Controller
  * @psalm-var array<int|string,mixed>
  */
     static $load_listener = [];
+
+    public static function recordEvent(string $type, string $message, ?int $idServer = null, ?string $date = null, $db = null): array
+    {
+        return EventLog::recordEvent($type, $message, $idServer, $date, $db);
+    }
+
+    public static function closeEvent(string $type, ?int $idServer = null, ?string $date = null, $db = null): array
+    {
+        return EventLog::closeEvent($type, $idServer, $date, $db);
+    }
 
     /*
     contain all post treatment and alert

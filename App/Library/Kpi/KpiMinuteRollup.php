@@ -37,6 +37,7 @@ final class KpiMinuteRollup
 
             foreach ($buckets as $bucketStart) {
                 $db->sql_query(self::buildRollupSql($db, $bucketStart));
+                $alertResults[$bucketStart] = KpiBudgetAlert::evaluateBucket($db, $bucketStart);
                 $processedBuckets[] = $bucketStart;
             }
 
@@ -44,6 +45,7 @@ final class KpiMinuteRollup
                 'status' => 'OK',
                 'processed' => count($processedBuckets),
                 'buckets' => $processedBuckets,
+                'alerts' => $alertResults ?? [],
                 'now' => $now,
                 'last_bucket' => $lastBucket,
             ];
