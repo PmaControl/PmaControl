@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Library\Debug;
 use App\Library\Security\CsrfGuard;
 use App\Library\Kpi\KpiDaemonDrilldown;
+use App\Library\Kpi\KpiDashboard;
 use App\Library\Kpi\KpiFlappingDrilldown;
 use App\Library\Kpi\KpiProcessDrilldown;
 use App\Library\Kpi\KpiReadonlyDrilldown;
@@ -15,6 +16,103 @@ use Glial\Synapse\Controller;
 class Kpi extends Controller
 {
     public const KPI_PROCESS_KILL_CSRF_SCOPE = 'kpi.process.kill';
+
+    public function index($param)
+    {
+        Debug::parseDebug($param);
+
+        $payload = KpiDashboard::buildInitialPayload($_GET);
+
+        $this->title = 'KPI dashboard';
+        $this->ariane = ' > KPI > Dashboard';
+
+        $chartVersion = @filemtime(APP_DIR . DS . 'Webroot' . DS . 'js' . DS . 'chart-4.5.1.umd.min.js') ?: time();
+        $kpiDashboardVersion = @filemtime(APP_DIR . DS . 'Webroot' . DS . 'js' . DS . 'Kpi' . DS . 'index.js') ?: time();
+
+        if (!empty($this->di['js']) && is_object($this->di['js'])) {
+            $this->di['js']->addJavascript([
+                'moment.js',
+                'chartjs-adapter-moment.min.js',
+                'chart-4.5.1.umd.min.js?v='.$chartVersion,
+                'Kpi/index.js?v='.$kpiDashboardVersion,
+            ]);
+
+            $this->di['js']->code_javascript(
+                'window.kpiDashboard = '.json_encode([
+                    'refresh_interval_ms' => KpiDashboard::REFRESH_INTERVAL_MS,
+                    'urls' => [
+                        'realtime' => LINK.'Kpi/realtime/ajax:true',
+                        'series' => LINK.'Kpi/series/ajax:true',
+                    ],
+                    'realtime' => $payload['realtime'],
+                    'series' => $payload['series'],
+                    'top' => $payload['top'],
+                ], JSON_UNESCAPED_SLASHES).';'
+            );
+        }
+
+        $this->set('data', ['payload' => $payload]);
+    }
+
+    public function realtime($param)
+    {
+        Debug::parseDebug($param);
+        $this->sendDashboardJson(self::evaluateDashboardJsonRequest('realtime', $_GET, $_SERVER));
+    }
+
+    public function series($param)
+    {
+        Debug::parseDebug($param);
+        $this->sendDashboardJson(self::evaluateDashboardJsonRequest('series', $_GET, $_SERVER));
+    }
+
+    public static function evaluateDashboardJsonRequest(
+        string $endpoint,
+        array $query,
+        array $server,
+        ?callable $payloadFactory = null
+    ): array {
+        $method = strtoupper((string)($server['REQUEST_METHOD'] ?? 'GET'));
+        $headers = [
+            'Content-Type' => 'application/json; charset=UTF-8',
+            'Cache-Control' => 'no-store',
+        ];
+
+        if (!in_array($method, ['GET', 'HEAD'], true)) {
+            return [
+                'status' => 405,
+                'body' => json_encode(['error' => 'Method Not Allowed', 'code' => 405], JSON_UNESCAPED_SLASHES),
+                'headers' => $headers + ['Allow' => 'GET, HEAD'],
+            ];
+        }
+
+        if (!in_array($endpoint, ['realtime', 'series'], true)) {
+            return [
+                'status' => 404,
+                'body' => json_encode(['error' => 'Unknown KPI endpoint', 'code' => 404], JSON_UNESCAPED_SLASHES),
+                'headers' => $headers,
+            ];
+        }
+
+        if ($method === 'HEAD') {
+            return ['status' => 200, 'body' => '', 'headers' => $headers];
+        }
+
+        if ($payloadFactory !== null) {
+            $payload = $payloadFactory($endpoint, $query);
+        } elseif ($endpoint === 'realtime') {
+            $payload = KpiDashboard::buildRealtimePayload();
+        } else {
+            $payload = KpiDashboard::buildSeriesPayload($query);
+            $headers['Cache-Control'] = 'no-store, max-age=0';
+        }
+
+        return [
+            'status' => 200,
+            'body' => json_encode($payload, JSON_UNESCAPED_SLASHES),
+            'headers' => $headers,
+        ];
+    }
 
     public function server($param)
     {
@@ -273,5 +371,20 @@ class Kpi extends Controller
         }
 
         header('Location: '.LINK.'kpi/process/'.(int)$outcome['pid']);
+    }
+
+    private function sendDashboardJson(array $outcome): void
+    {
+        $this->layout_name = false;
+        $this->view = false;
+
+        http_response_code((int)$outcome['status']);
+        foreach ($outcome['headers'] as $name => $value) {
+            header($name.': '.$value);
+        }
+
+        if ((string)$outcome['body'] !== '') {
+            echo $outcome['body'];
+        }
     }
 }
