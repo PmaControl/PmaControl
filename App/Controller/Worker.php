@@ -207,7 +207,7 @@ class Worker extends Controller
 
             //do your business logic here and process this message!
             try{
-                FactoryController::addNode($WORKER['worker_class'], $WORKER['worker_method'], array($msg->name, $msg->id, $msg->refresh));
+                FactoryController::addNode($WORKER['worker_class'], $WORKER['worker_method'], array($msg->name, $msg->id, $msg->refresh, $id_worker_execution));
             }
             catch (\Exception $e) {
                 $this->logger->warning("[WORKER:$pid] CRASHED with id_mysql_server:$msg->id (ERROR : ".$e->getMessage().")");

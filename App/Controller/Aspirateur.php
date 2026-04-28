@@ -23,6 +23,7 @@ use \Glial\Sgbd\Sgbd;
 use \App\Library\Extraction;
 use \App\Library\Extraction2;
 use \App\Library\Microsecond;
+use App\Library\Kpi\AspirateurAttemptLogger;
 use App\Library\MysqlLogCollector;
 /*
 
@@ -447,11 +448,13 @@ class Aspirateur extends Controller
 
         $time_start   = microtime(true);
 
+        $error_class = null;
         try{
             $error_msg='';
             $mysql_tested = Sgbd::sql($name_server);
         }
         catch(Exception $e){
+            $error_class = get_class($e);
             $error_msg = $e->getMessage();
             Debug::debug($error_msg, "Error_MSG");
             $this->logger->emergency($error_msg." id_mysql_server:$id_mysql_server");
@@ -461,7 +464,14 @@ class Aspirateur extends Controller
             $available = empty($error_msg) ? 1 : 0;
 
             Debug::debug([$id_mysql_server, $ping, $error_msg, $available], "REPONSE MYSQL");
-            $this->setService($id_mysql_server, $ping, $error_msg, $available, 'mysql');
+            $this->setService($id_mysql_server, $ping, $error_msg, $available, 'mysql', $this->aspirateurAttemptContext($param, array(
+                'kind' => 'mysql',
+                'phase' => 'connect',
+                'connection_name' => $name_server,
+                'error_class' => $error_class,
+                'started_at' => $time_start,
+                'ended_at' => microtime(true),
+            )));
             if ($available === 0) {
                 //$mysql_tested->sql_close();
                 return false;
@@ -486,6 +496,8 @@ class Aspirateur extends Controller
                     (int)$vipConnectionPort
                 );
                 $skipBrokenMaxScaleSession = false;
+                $probe_time_start = microtime(true);
+                $probe_error_class = null;
                 try{
                     // hack to force read to switch back online after shunned in case of no query on proxy (reader)
                     $mysql_tested->sql_query("SELECT 1;");
@@ -502,6 +514,7 @@ class Aspirateur extends Controller
                     $mysql_tested->sql_query($sql);
                 }
                 catch(Exception $e){
+                    $probe_error_class = get_class($e);
                     $error_ori = $e->getMessage();
                     preg_match('/ERROR:(.*)}/', $error_ori, $output_array);
                     if (!empty($output_array[1])) {
@@ -521,7 +534,16 @@ class Aspirateur extends Controller
                         $available = 1;
                         $skipBrokenMaxScaleSession = true;
                     }
-                    $this->setService($id_mysql_server, $ping, $error_filter, $available, 'mysql');
+                    $this->setService($id_mysql_server, $ping, $error_filter, $available, 'mysql', $this->aspirateurAttemptContext($param, array(
+                        'kind' => 'mysql',
+                        'phase' => 'query',
+                        'connection_name' => $name_server,
+                        'error_class' => $probe_error_class,
+                        'transient' => $skipBrokenMaxScaleSession,
+                        'set_readonly_reason' => $available === 2 ? $this->readOnlyReasonFromConnection($mysql_tested) : null,
+                        'started_at' => $probe_time_start,
+                        'ended_at' => microtime(true),
+                    )));
 
                     if ($available === 0 && $available === 2) {
                         $mysql_tested->sql_close();
@@ -1498,12 +1520,14 @@ class Aspirateur extends Controller
             $id_mysql_server = $ob->id;
 
             $ssh = false;
+            $error_class = null;
+            $time_start = microtime(true);
             try{
                 $error_msg='';
-                $time_start = microtime(true);
                 $ssh        = Ssh::ssh($id_mysql_server);
             }
             catch(Exception $e){
+                $error_class = get_class($e);
                 $error_msg = $e->getMessage();
                 $this->logger->warning($error_msg." id_ssh_server:$id_mysql_server");
             }
@@ -1511,7 +1535,13 @@ class Aspirateur extends Controller
                 $ping = microtime(true) - $time_start;
                 $available = empty($error_msg) ? 1 : 0;
                 
-                $this->setService($id_mysql_server, $ping, $error_msg, $available, "ssh");
+                $this->setService($id_mysql_server, $ping, $error_msg, $available, "ssh", $this->aspirateurAttemptContext($param, array(
+                    'kind' => 'ssh',
+                    'phase' => 'connect',
+                    'error_class' => $error_class,
+                    'started_at' => $time_start,
+                    'ended_at' => microtime(true),
+                )));
                 $this->logger->info("id_ssh_server:".$id_mysql_server." - is_available : ".$available." - ping : ".round($ping,6));
     
                 // VERY important else we got error and we kill the worker and have to restart with a new one
@@ -1571,15 +1601,38 @@ class Aspirateur extends Controller
 
         Debug::parseDebug($param);
 
+        $time_start = microtime(true);
         $ssh = null;
         try {
             $ssh = Ssh::ssh($id_mysql_server);
         } catch (Exception $e) {
             $this->logger->warning('[MYSQL-LOG] SSH unavailable for server ' . $id_mysql_server . ' : ' . $e->getMessage());
+            AspirateurAttemptLogger::log($this->aspirateurAttemptContext($param, array(
+                'id_mysql_server' => $id_mysql_server,
+                'kind' => 'mysql_log',
+                'phase' => 'connect',
+                'result' => 0,
+                'ping_seconds' => microtime(true) - $time_start,
+                'error_class' => get_class($e),
+                'error_message' => $e->getMessage(),
+                'started_at' => $time_start,
+                'ended_at' => microtime(true),
+            )));
             return false;
         }
 
         if (empty($ssh)) {
+            AspirateurAttemptLogger::log($this->aspirateurAttemptContext($param, array(
+                'id_mysql_server' => $id_mysql_server,
+                'kind' => 'mysql_log',
+                'phase' => 'connect',
+                'result' => 0,
+                'ping_seconds' => microtime(true) - $time_start,
+                'error_class' => null,
+                'error_message' => 'SSH connection returned empty handle',
+                'started_at' => $time_start,
+                'ended_at' => microtime(true),
+            )));
             return false;
         }
 
@@ -1623,11 +1676,34 @@ class Aspirateur extends Controller
             if (!empty($events)) {
                 $this->persistMysqlLogPayloadChunks($id_mysql_server, $events, []);
             }
+        } catch (\Throwable $e) {
+            AspirateurAttemptLogger::log($this->aspirateurAttemptContext($param, array(
+                'id_mysql_server' => $id_mysql_server,
+                'kind' => 'mysql_log',
+                'phase' => 'export',
+                'result' => 0,
+                'ping_seconds' => microtime(true) - $time_start,
+                'error_class' => get_class($e),
+                'error_message' => $e->getMessage(),
+                'started_at' => $time_start,
+                'ended_at' => microtime(true),
+            )));
+            throw $e;
         } finally {
             if (is_object($ssh) && method_exists($ssh, 'disconnect')) {
                 $ssh->disconnect();
             }
         }
+
+        AspirateurAttemptLogger::log($this->aspirateurAttemptContext($param, array(
+            'id_mysql_server' => $id_mysql_server,
+            'kind' => 'mysql_log',
+            'phase' => 'export',
+            'result' => 1,
+            'ping_seconds' => microtime(true) - $time_start,
+            'started_at' => $time_start,
+            'ended_at' => microtime(true),
+        )));
 
         return true;
     }
@@ -3617,10 +3693,15 @@ GROUP BY C.ID, C.INFO;";
      * available = 2 : waiting answer
      * 
      */
-    public function setService($id_mysql_server, $ping, $error_msg, $available, $type)
+    public function setService($id_mysql_server, $ping, $error_msg, $available, $type, array $attemptContext = array())
     {
         if (! in_array($type, array('mysql', 'ssh', 'proxysql', 'maxscale', 'maxscale_service', 'mysqlrouter'))) {
             die('error');
+        }
+
+        $previousAvailable = null;
+        if (!$this->shouldSkipAspirateurAttempt($attemptContext)) {
+            $previousAvailable = $this->readPreviousServiceAvailability((int)$id_mysql_server, $type);
         }
 
         $service                              = array();
@@ -3628,6 +3709,88 @@ GROUP BY C.ID, C.INFO;";
         $service[$type.'_server'][$type.'_ping']      = round($ping, 6);
         $service[$type.'_server'][$type.'_error']     = $error_msg;
         $this->exportData($id_mysql_server,$type.'_server',$service,false);
+
+        if (!$this->shouldSkipAspirateurAttempt($attemptContext)) {
+            $attemptContext = array_merge(array(
+                'id_mysql_server' => (int)$id_mysql_server,
+                'kind' => $type,
+                'phase' => 'connect',
+                'result' => (int)$available,
+                'ping_seconds' => (float)$ping,
+                'error_message' => $error_msg,
+                'previous_result' => $previousAvailable,
+            ), $attemptContext);
+
+            AspirateurAttemptLogger::log($attemptContext);
+        }
+    }
+
+    private function getWorkerExecutionIdFromParam($param): int
+    {
+        if (!is_array($param) || !isset($param[3]) || !is_numeric($param[3])) {
+            return 0;
+        }
+
+        return (int)$param[3];
+    }
+
+    private function aspirateurAttemptContext($param, array $context = array()): array
+    {
+        return array_merge(array(
+            'id_worker_execution' => $this->getWorkerExecutionIdFromParam($param),
+        ), $context);
+    }
+
+    private function shouldSkipAspirateurAttempt(array $context): bool
+    {
+        if (empty($context['id_worker_execution']) || (int)$context['id_worker_execution'] <= 0) {
+            return true;
+        }
+
+        return isset($context['connection_name'])
+            && defined('DB_DEFAULT')
+            && (string)$context['connection_name'] === (string)DB_DEFAULT;
+    }
+
+    private function readPreviousServiceAvailability(int $idMysqlServer, string $type): ?int
+    {
+        if ($idMysqlServer <= 0) {
+            return null;
+        }
+
+        try {
+            $metric = $type.'_available';
+            $rows = Extraction2::display(array($metric), array($idMysqlServer));
+            $value = $rows[$idMysqlServer][$metric] ?? null;
+
+            return is_numeric($value) ? (int)$value : null;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    private function readOnlyReasonFromConnection($mysql): ?string
+    {
+        $values = array();
+        foreach (array('read_only', 'super_read_only') as $variableName) {
+            $res = Mysql::sqlQuerySilentCompat($mysql, "SHOW VARIABLES LIKE '".$variableName."'");
+            if ($res === false) {
+                continue;
+            }
+
+            $row = $mysql->sql_fetch_array($res, MYSQLI_ASSOC);
+            if (is_array($row)) {
+                $values[$variableName] = $row['Value'] ?? $row['VALUE'] ?? null;
+            }
+        }
+
+        if (empty($values)) {
+            return null;
+        }
+
+        $json = json_encode($values, JSON_UNESCAPED_SLASHES);
+
+        return is_string($json) ? $json : null;
     }
 
 
@@ -4636,13 +4799,15 @@ GROUP BY C.ID, C.INFO;";
 
         Debug::debug($param, "NAME_SERVER");
 
+        $error_class = null;
+        $time_start = microtime(true);
         try{
             $error_msg='';
-            $time_start = microtime(true);
             $db = Sgbd::sql("proxysql_".$id_proxysql_server);  // need try catch there
             $db->sql_select_db("main");
         }
         catch(Exception $e){
+            $error_class = get_class($e);
             $error_msg = $e->getMessage();
             $this->logger->warning($error_msg." id_proxysql_server:$id_proxysql_server");
         }
@@ -4654,7 +4819,14 @@ GROUP BY C.ID, C.INFO;";
 
             if (!empty($id_mysql_server))
             {
-                $this->setService($id_mysql_server, $ping, $error_msg, $available, "proxysql");
+                $this->setService($id_mysql_server, $ping, $error_msg, $available, "proxysql", $this->aspirateurAttemptContext($param, array(
+                    'id_proxysql_server' => (int)$id_proxysql_server,
+                    'kind' => 'proxysql',
+                    'phase' => 'connect',
+                    'error_class' => $error_class,
+                    'started_at' => $time_start,
+                    'ended_at' => microtime(true),
+                )));
             }
             
             // VERY important else we got error and we kill the worker and have to restart with a new one
@@ -5871,10 +6043,10 @@ GROUP BY C.ID, C.INFO;";
             $maxscale = $arr;
         }
 
+        $error_class = null;
+        $time_start = microtime(true);
         try{
             $error_msg= '';
-
-            $time_start   = microtime(true);
 
             set_error_handler(function ($errno, $errstr, $errfile, $errline) {
                 throw new \ErrorException($errstr, 0, $errno, $errfile, $errline);
@@ -5886,6 +6058,7 @@ GROUP BY C.ID, C.INFO;";
             }
         }
         catch(\Throwable $e){
+            $error_class = get_class($e);
             $error_msg = $e->getMessage();
             $this->logger->warning("[PMACONTROL-2005] cannot reach IP:Port : $error_msg - id_maxscale_server:$id_maxscale_server");
         }
@@ -5917,7 +6090,14 @@ GROUP BY C.ID, C.INFO;";
             $id_mysql_servers = array_values(array_unique(array_filter(array_map('intval', array_merge($id_mysql_servers, $resolvedMysqlServerIds)))));
 
             foreach($id_mysql_servers as $id_mysql_server) {
-                $this->setService($id_mysql_server, $ping, $error_msg, $available, "maxscale");
+                $this->setService($id_mysql_server, $ping, $error_msg, $available, "maxscale", $this->aspirateurAttemptContext($param, array(
+                    'id_maxscale_server' => (int)$id_maxscale_server,
+                    'kind' => 'maxscale',
+                    'phase' => 'connect',
+                    'error_class' => $error_class,
+                    'started_at' => $time_start,
+                    'ended_at' => microtime(true),
+                )));
             }
             // VERY important else we got error and we kill the worker and have to restart with a new one
 
@@ -5936,9 +6116,10 @@ GROUP BY C.ID, C.INFO;";
 
             Debug::debug($service, "SERVICE");
 
+            $service_time_start = microtime(true);
+            $service_error_class = null;
             try{
                 $error_msg = '';
-                $time_start   = microtime(true);
                 $array = MaxScale::curl($maxscale) or die($service);
 
                 Debug::debug(MaxScale::removeArraysDeeperThan( $array, 3));
@@ -5954,17 +6135,25 @@ GROUP BY C.ID, C.INFO;";
             catch (\Throwable $e) {
 
                 //echo "⚠️ Erreur inattendue capturée mais ignorée : " . $e->getMessage() . "\n";
+                $service_error_class = get_class($e);
                 $this->logger->warning($e->getMessage()." id_maxscale_server:$id_maxscale_server");
                 Debug::debug($e->getMessage(), "ERROR_MSG");
                 $error_msg = $e->getMessage();
             }
             finally
             {
-                $ping = microtime(true) - $time_start;
+                $ping = microtime(true) - $service_time_start;
                 $available = empty($error_msg) ? 1 : 0;
 
                 foreach($id_mysql_servers as $id_mysql_server) {
-                    $this->setService($id_mysql_server, $ping, $error_msg, $available, "maxscale_service");
+                    $this->setService($id_mysql_server, $ping, $error_msg, $available, "maxscale_service", $this->aspirateurAttemptContext($param, array(
+                        'id_maxscale_server' => (int)$id_maxscale_server,
+                        'kind' => 'maxscale_service',
+                        'phase' => 'query',
+                        'error_class' => $service_error_class,
+                        'started_at' => $service_time_start,
+                        'ended_at' => microtime(true),
+                    )));
                 }
             }
         }
@@ -5997,9 +6186,10 @@ GROUP BY C.ID, C.INFO;";
             $mysqlrouter = $arr;
         }
 
+        $error_class = null;
+        $time_start = microtime(true);
         try {
             $error_msg = '';
-            $time_start = microtime(true);
 
             set_error_handler(function ($errno, $errstr, $errfile, $errline) {
                 throw new \ErrorException($errstr, 0, $errno, $errfile, $errline);
@@ -6010,6 +6200,7 @@ GROUP BY C.ID, C.INFO;";
                 fclose($connection);
             }
         } catch (\Throwable $e) {
+            $error_class = get_class($e);
             $error_msg = $e->getMessage();
             $this->logger->warning("[PMACONTROL-2005] cannot reach IP:Port : $error_msg - id_mysqlrouter_server:$id_mysqlrouter_server");
         } finally {
@@ -6039,7 +6230,14 @@ GROUP BY C.ID, C.INFO;";
             $id_mysql_servers = array_values(array_unique(array_filter(array_map('intval', array_merge($id_mysql_servers, $resolvedMysqlServerIds)))));
 
             foreach ($id_mysql_servers as $id_mysql_server) {
-                $this->setService($id_mysql_server, $ping, $error_msg, $available, 'mysqlrouter');
+                $this->setService($id_mysql_server, $ping, $error_msg, $available, 'mysqlrouter', $this->aspirateurAttemptContext($param, array(
+                    'id_mysqlrouter_server' => (int)$id_mysqlrouter_server,
+                    'kind' => 'mysqlrouter',
+                    'phase' => 'connect',
+                    'error_class' => $error_class,
+                    'started_at' => $time_start,
+                    'ended_at' => microtime(true),
+                )));
             }
 
             if (empty($available)) {
