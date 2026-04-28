@@ -14,6 +14,7 @@ use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use \App\Library\Debug;
+use \App\Library\Kpi\DaemonRunLogger;
 use \App\Library\Mysql;
 use \App\Library\Microsecond;
 use \App\Library\System;
@@ -137,6 +138,8 @@ class Agent extends Controller {
         $ob = $db->sql_fetch_object($res);
 
         if ($ob->pid === "0") {
+            DaemonRunLogger::markCrashedRuns((int)$id_daemon);
+
             $php = explode(" ", shell_exec("whereis php"))[1];
 
             $debug = "";
@@ -295,6 +298,7 @@ class Agent extends Controller {
         $nextRuntime = microtime(true) + $interval;
 
         $id_loop = 0;
+        $lastChildPid = 0;
         while (true) {
             $id_loop++;
 
@@ -303,8 +307,30 @@ class Agent extends Controller {
             $db = Sgbd::sql(DB_DEFAULT);
             $sql = "SELECT * FROM daemon_main where id=" . $id;
             $res = $db->sql_query($sql);
+            $refresh_time = 1;
 
             while ($ob = $db->sql_fetch_object($res)) {
+                $refresh_time = max(1, (int) $ob->refresh_time);
+                $max_delay = max(0, (int) $ob->max_delay);
+                $cycle = DaemonRunLogger::startCycle([
+                    'id_daemon_main' => (int) $ob->id,
+                    'pid' => getmypid(),
+                    'refresh_time' => $refresh_time,
+                    'max_delay' => $max_delay,
+                    'cycle_started_at' => $time_start,
+                ]);
+
+                $skipped = false;
+                if ($lastChildPid > 0 && System::isRunningPid($lastChildPid)) {
+                    $skipped = true;
+                    $this->logger->warning("[Daemon : $id] skipped loop ".$id_loop." because child pid ".$lastChildPid." is still running");
+                    DaemonRunLogger::finishCycle($cycle, [
+                        'skipped' => true,
+                        'ended_at' => microtime(true),
+                    ]);
+
+                    continue;
+                }
 
                 $php = explode(" ", shell_exec("whereis php"))[1];
                 $cmdArgs = [$php, GLIAL_INDEX, $ob->class, $ob->method, (string)$ob->params, "loop:" . $id_loop];
@@ -317,9 +343,12 @@ class Agent extends Controller {
                 //$pid=43563456375635673;
 
                 $pid = shell_exec($cmd);
+                $lastChildPid = (int) trim((string) $pid);
                 $this->logger->debug("[".Microsecond::date()."] {pid:".trim($pid)."} " . $ob->class . "/". $ob->method . ":" . $ob->id . " " . $ob->params . "\t[loop:" . $id_loop."]" );
-
-                $refresh_time = (int) $ob->refresh_time;
+                DaemonRunLogger::finishCycle($cycle, [
+                    'skipped' => $skipped,
+                    'ended_at' => microtime(true),
+                ]);
             }
 
             // in case of mysql gone away, like this daemon restart when mysql is back
@@ -644,6 +673,8 @@ class Agent extends Controller {
             if ($ob->pid == "0" || !System::isRunningPid($ob->pid)) {
 
                 $php = explode(" ", shell_exec("whereis php"))[1];
+
+                DaemonRunLogger::markCrashedRuns((int)$ob->id);
 
                 $cmd = self::buildBackgroundCommand(
                     [$php, GLIAL_INDEX, "Agent", "launch", (string)$ob->id],
