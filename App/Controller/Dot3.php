@@ -1259,6 +1259,8 @@ class Dot3 extends Controller
 
         //Debug::debug($groups, "List of group ");
 
+        $saved_graphs = 0;
+
         foreach($groups as $group)
         {
             //echo "##########################################################\n";
@@ -1311,7 +1313,33 @@ class Dot3 extends Controller
             $file_name = Graphviz::generateDot($reference, $dot);
 
             $this->saveGraph($id_dot3_information, $file_name, $dot, $group);
+            $saved_graphs++;
         }
+
+        if (self::shouldMarkSvgGenerated((int) $id_dot3_information, $saved_graphs)) {
+            $this->markSvgGenerated((int) $id_dot3_information);
+        }
+    }
+
+    private static function shouldMarkSvgGenerated(int $id_dot3_information, int $saved_graphs): bool
+    {
+        return $id_dot3_information > 0 && $saved_graphs > 0;
+    }
+
+    private function markSvgGenerated(int $id_dot3_information): void
+    {
+        if ($id_dot3_information <= 0) {
+            return;
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT, "RUN");
+        $db->sql_query(self::buildMarkSvgGeneratedSql($id_dot3_information));
+    }
+
+    private static function buildMarkSvgGeneratedSql(int $id_dot3_information): string
+    {
+        return "UPDATE dot3_information SET is_svg_generated = " . $id_dot3_information
+            . " WHERE id = " . $id_dot3_information;
     }
 
     public function renderImportedGraphs(array $dot3Information): array

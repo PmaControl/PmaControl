@@ -12,14 +12,19 @@ final class ArchitectureQueryTest extends TestCase
         $sql = self::buildGraphSql([]);
 
         $this->assertStringContainsString('SELECT dg.id, dg.svg, dg.height, dg.width', $sql);
-        $this->assertStringContainsString(
-            'dc.id_dot3_information = (SELECT MAX(id_dot3_information) FROM dot3_cluster)',
-            $sql
-        );
+        $this->assertStringContainsString('MAX(di.is_svg_generated)', $sql);
+        $this->assertStringContainsString('di.is_svg_generated > 0', $sql);
+        $this->assertStringContainsString('dc_ready.id_dot3_information = di.is_svg_generated', $sql);
+        $this->assertStringContainsString('dc_previous.id_dot3_information <', $sql);
+        $this->assertStringContainsString('MAX(dc_any.id_dot3_information)', $sql);
         $this->assertStringContainsString('ORDER BY dg.height DESC, dg.width DESC', $sql);
         $this->assertStringNotContainsString('dg.*', $sql);
         $this->assertStringNotContainsString('DENSE_RANK', $sql);
         $this->assertStringNotContainsString('snapshot_rank', $sql);
+        $this->assertStringNotContainsString(
+            'dc.id_dot3_information = (SELECT MAX(id_dot3_information) FROM dot3_cluster)',
+            $sql
+        );
     }
 
     public function testGraphSqlUsesSelectedClientFilterWithoutCoalesce(): void

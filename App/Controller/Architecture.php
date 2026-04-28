@@ -134,7 +134,7 @@ class Architecture extends Controller
         $sql = "SELECT dg.id, dg.svg, dg.height, dg.width, (dg.height * dg.width) as area, dc.date_inserted as date_refresh
 FROM dot3_cluster dc
 JOIN dot3_graph dg ON dg.id = dc.id_dot3_graph
-WHERE dc.id_dot3_information = (SELECT MAX(id_dot3_information) FROM dot3_cluster)";
+WHERE dc.id_dot3_information = (" . self::buildLatestReadyDot3InformationSql() . ")";
 
         if (!empty($selected_clients)) {
             $id_clients = implode(',', $selected_clients);
@@ -148,6 +148,31 @@ WHERE dc.id_dot3_information = (SELECT MAX(id_dot3_information) FROM dot3_cluste
         }
 
         return $sql . " ORDER BY dg.height DESC, dg.width DESC;";
+    }
+
+    private static function buildLatestReadyDot3InformationSql(): string
+    {
+        return "COALESCE(
+    (
+        SELECT MAX(di.is_svg_generated)
+        FROM dot3_information di
+        WHERE di.is_svg_generated > 0
+        AND EXISTS (
+            SELECT 1
+            FROM dot3_cluster dc_ready
+            WHERE dc_ready.id_dot3_information = di.is_svg_generated
+        )
+    ),
+    (
+        SELECT MAX(dc_previous.id_dot3_information)
+        FROM dot3_cluster dc_previous
+        WHERE dc_previous.id_dot3_information < (
+            SELECT MAX(dc_latest.id_dot3_information)
+            FROM dot3_cluster dc_latest
+        )
+    ),
+    (SELECT MAX(dc_any.id_dot3_information) FROM dot3_cluster dc_any)
+)";
     }
 
     /**
