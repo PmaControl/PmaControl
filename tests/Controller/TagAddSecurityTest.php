@@ -155,6 +155,15 @@ final class TagAddSecurityTest extends TestCase
         $this->assertStringContainsString('method="post"', $view);
     }
 
+    public function testTagAddIsNotWhitelistedForReadOnlyRole(): void
+    {
+        $acl = file_get_contents(__DIR__ . '/../../config_sample/acl.config.ini');
+
+        $this->assertIsString($acl);
+        $this->assertStringContainsString('ReadOnly[] = "Tag/index"', $acl);
+        $this->assertStringNotContainsString('ReadOnly[] = "Tag/add"', $acl);
+    }
+
     private function sameSitePostServer(): array
     {
         return [
