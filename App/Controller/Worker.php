@@ -8,6 +8,7 @@
 namespace App\Controller;
 
 use App\Library\EngineV4;
+use App\Library\Kpi\KpiProcessDrilldown;
 use App\Library\Kpi\WorkerExecutionLogger;
 use App\Library\Kpi\WorkerSkipException;
 use App\Library\Security\CsrfGuard;
@@ -1045,6 +1046,77 @@ class Worker extends Controller
             'killed' => false,
             'message' => 'No active worker found for server '.$serverId,
         ];
+    }
+
+    public static function killByPid(int $pid, ?int $expectedStartTimeTicks = null): array
+    {
+        if ($pid <= 0) {
+            return ['killed' => false, 'message' => 'Invalid worker pid'];
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $res = $db->sql_query(self::buildActiveWorkerRunByPidSql($pid));
+        $ob = $db->sql_fetch_object($res);
+        if (!is_object($ob)) {
+            return ['killed' => false, 'message' => 'No active worker found for PID '.$pid];
+        }
+
+        $isRunning = System::isRunningPid($pid);
+        $signalSent = !$isRunning;
+        if ($isRunning) {
+            if ($expectedStartTimeTicks !== null) {
+                $currentStartTimeTicks = KpiProcessDrilldown::readStartTimeTicks($pid);
+                if ($currentStartTimeTicks === null) {
+                    return ['killed' => false, 'message' => 'Unable to verify worker PID '.$pid.' identity'];
+                }
+
+                if ($currentStartTimeTicks !== $expectedStartTimeTicks) {
+                    return ['killed' => false, 'message' => 'Worker PID '.$pid.' changed before kill'];
+                }
+            }
+
+            if (function_exists('posix_kill')) {
+                $signalSent = @posix_kill($pid, defined('SIGTERM') ? SIGTERM : 15);
+            } else {
+                shell_exec('kill '.$pid);
+                $signalSent = true;
+            }
+        }
+
+        if (!$signalSent) {
+            return ['killed' => false, 'message' => 'Unable to signal worker PID '.$pid];
+        }
+
+        WorkerExecutionLogger::markKilledForRun((int)$ob->id);
+
+        $doubleBuffer = EngineV4::getFilePid((string)$ob->name, (int)$ob->id);
+        if (is_string($doubleBuffer) && file_exists($doubleBuffer)) {
+            unlink($doubleBuffer);
+        }
+
+        $db->sql_query(self::buildMarkWorkerRunKilledSql((int)$ob->id));
+
+        return [
+            'killed' => true,
+            'message' => 'Worker PID '.$pid.' marked safe-kill',
+            'id_worker_run' => (int)$ob->id,
+        ];
+    }
+
+    public static function buildActiveWorkerRunByPidSql(int $pid): string
+    {
+        return 'SELECT a.*, b.name FROM `worker_run` a '
+            .'INNER JOIN `worker_queue` b ON a.id_worker_queue = b.id '
+            .'WHERE a.is_working = 1 AND a.pid = '.$pid.' '
+            .'ORDER BY a.id DESC LIMIT 1;';
+    }
+
+    public static function buildMarkWorkerRunKilledSql(int $idWorkerRun, ?string $dateKilled = null): string
+    {
+        $dateKilled = str_replace("'", "''", $dateKilled ?? date('Y-m-d H:i:s'));
+
+        return "UPDATE worker_run SET is_working=0, is_safe_kill=1, date_killed='".$dateKilled."' "
+            .'WHERE id='.$idWorkerRun.';';
     }
 
     private static function getSafeWorkerRedirectUrl(array $server): string
