@@ -141,7 +141,7 @@ CREATE TABLE IF NOT EXISTS `dot3_run` (
 
 CREATE TABLE IF NOT EXISTS `dot3_run_group` (
   `id_dot3_run` INT UNSIGNED NOT NULL,
-  `group_kind` ENUM('master_slave','proxysql','innodb_cluster','vip','galera','maxscale','imported') NOT NULL,
+  `group_kind` ENUM('master_slave','proxysql','innodb_cluster','vip','galera','maxscale','imported','mysqlrouter') NOT NULL,
   `duration_ms` INT UNSIGNED NULL,
   `nodes` INT UNSIGNED NULL,
   `edges` INT UNSIGNED NULL,

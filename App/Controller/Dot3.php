@@ -8,6 +8,7 @@
 namespace App\Controller;
 
 use App\Library\Graphviz;
+use App\Library\Kpi\Dot3KpiRecorder;
 use Exception;
 use \Glial\Synapse\Controller;
 use App\Library\Extraction;
@@ -1268,82 +1269,106 @@ class Dot3 extends Controller
     public function run($param)
     {
         Debug::parseDebug($param);
-        $db = Sgbd::sql(DB_DEFAULT);
+        $dot3KpiStartedAt = microtime(true);
+        $idDot3Run = Dot3KpiRecorder::startRun([
+            'started_at' => $dot3KpiStartedAt,
+        ]);
+        $dot3Kpi = array(
+            'groups_total' => null,
+            'nodes_total' => null,
+            'edges_total' => null,
+            'dot_size_bytes' => 0,
+            'svg_size_bytes' => 0,
+        );
 
-        // reset volatile cache for each run
-        self::$unknown_proxy_nodes = array();
-        self::$missing_mapping = array();
+        try {
+            // reset volatile cache for each run
+            self::$unknown_proxy_nodes = array();
+            self::$missing_mapping = array();
 
-        $id_dot3_information = $this->generateInformation($param);
+            $id_dot3_information = $this->generateInformation($param);
         
-        //$id_dot3_information = 2356819;
-        $info = self::getInformation($id_dot3_information);
+            //$id_dot3_information = 2356819;
+            $info = self::getInformation($id_dot3_information);
 
-        //TODO : add if date > now => return true to not was time to regenerate dot for nothing
+            //TODO : add if date > now => return true to not was time to regenerate dot for nothing
 
-        $groups = $this->getGroup(array($id_dot3_information));
+            $groups = $this->getGroup(array($id_dot3_information, $idDot3Run));
+            $groupMetrics = Dot3KpiRecorder::measureGroups($groups);
+            $dot3Kpi['groups_total'] = count($groups);
+            $dot3Kpi['nodes_total'] = $groupMetrics['nodes'];
+            $dot3Kpi['edges_total'] = $groupMetrics['edges'];
 
-        //Debug::debug($groups, "List of group ");
+            //Debug::debug($groups, "List of group ");
 
-        $saved_graphs = 0;
+            $saved_graphs = 0;
 
-        foreach($groups as $group)
-        {
-            //echo "##########################################################\n";
-
-            if (! in_array(149, $group))
+            foreach($groups as $group)
             {
-                //continue;
+                //echo "##########################################################\n";
+
+                if (! in_array(149, $group))
+                {
+                    //continue;
+                }
+
+
+                self::$rank_same = array();
+                self::$build_galera = array();
+                self::$build_innodb_cluster = array();
+                self::$build_mysqlrouter = array();
+                self::$build_ms = array();
+                self::$build_server = array();
+
+                //Debug::debug($group, "GROUP");
+            
+                //Debug::debug(self::$build_galera);
+
+                $this->buildServer(array($id_dot3_information, $group));
+
+                // il faut builder les serveur avant Galera => Galera va surcharger le noeud en cas de desync / donor / non-primary
+                $this->buildGaleraCluster(array($id_dot3_information, $group));
+                $this->buildInnoDBCluster(array($id_dot3_information, $group));
+                $this->buildGroupMysqlRouter(array($id_dot3_information, $group));
+
+                // Edge informative pour SST (joiner offline vu dans incoming_addresses d'un noeud actif)
+                // constraint=false pour ne pas déformer le layout du cluster.
+                $this->buildGaleraSstHintLink(array($id_dot3_information, $group));
+
+                $this->buildLink(array($id_dot3_information, $group));
+                $this->buildLinkVIP(array($id_dot3_information, $group));
+                //Debug::debug($group, "GROUP");
+
+                $this->buildLinkBetweenProxySQL(array($id_dot3_information, $group));
+                $this->linkMysqlRouter(array($id_dot3_information, $group));
+
+                //$this->linkProxySQLAdmin(array($id_dot3_information, $group));
+                $this->linkHostGroup(array($id_dot3_information, $group));
+
+                $this->linkMaxScale(array($id_dot3_information, $group));
+
+                $dot = $this->writeDot();
+
+                //Debug::debug($dot, "DOT");
+
+                $reference = md5(json_encode($group));
+                $file_name = Graphviz::generateDot($reference, $dot);
+                $sizes = Dot3KpiRecorder::measureGraphFiles($file_name, $dot);
+                $dot3Kpi['dot_size_bytes'] += (int)$sizes['dot_size_bytes'];
+                $dot3Kpi['svg_size_bytes'] += (int)($sizes['svg_size_bytes'] ?? 0);
+
+                $this->saveGraph($id_dot3_information, $file_name, $dot, $group);
+                $saved_graphs++;
             }
 
-
-            self::$rank_same = array();
-            self::$build_galera = array();
-            self::$build_innodb_cluster = array();
-            self::$build_mysqlrouter = array();
-            self::$build_ms = array();
-            self::$build_server = array();
-
-            //Debug::debug($group, "GROUP");
-            
-            //Debug::debug(self::$build_galera);
-
-            $this->buildServer(array($id_dot3_information, $group));
-
-            // il faut builder les serveur avant Galera => Galera va surcharger le noeud en cas de desync / donor / non-primary
-            $this->buildGaleraCluster(array($id_dot3_information, $group));
-            $this->buildInnoDBCluster(array($id_dot3_information, $group));
-            $this->buildGroupMysqlRouter(array($id_dot3_information, $group));
-
-            // Edge informative pour SST (joiner offline vu dans incoming_addresses d'un noeud actif)
-            // constraint=false pour ne pas déformer le layout du cluster.
-            $this->buildGaleraSstHintLink(array($id_dot3_information, $group));
-
-            $this->buildLink(array($id_dot3_information, $group));
-            $this->buildLinkVIP(array($id_dot3_information, $group));
-            //Debug::debug($group, "GROUP");
-
-            $this->buildLinkBetweenProxySQL(array($id_dot3_information, $group));
-            $this->linkMysqlRouter(array($id_dot3_information, $group));
-
-            //$this->linkProxySQLAdmin(array($id_dot3_information, $group));
-            $this->linkHostGroup(array($id_dot3_information, $group));
-
-            $this->linkMaxScale(array($id_dot3_information, $group));
-
-            $dot = $this->writeDot();
-
-            //Debug::debug($dot, "DOT");
-
-            $reference = md5(json_encode($group));
-            $file_name = Graphviz::generateDot($reference, $dot);
-
-            $this->saveGraph($id_dot3_information, $file_name, $dot, $group);
-            $saved_graphs++;
-        }
-
-        if (self::shouldMarkSvgGenerated((int) $id_dot3_information, $saved_graphs)) {
-            $this->markSvgGenerated((int) $id_dot3_information);
+            if (self::shouldMarkSvgGenerated((int) $id_dot3_information, $saved_graphs)) {
+                $this->markSvgGenerated((int) $id_dot3_information);
+            }
+        } finally {
+            Dot3KpiRecorder::finishRun($idDot3Run, array_merge($dot3Kpi, [
+                'started_at' => $dot3KpiStartedAt,
+                'ended_at' => microtime(true),
+            ]));
         }
     }
 
@@ -1789,24 +1814,39 @@ class Dot3 extends Controller
         //Debug::parseDebug($param);
 
         $id_dot3_information = $param[0];
+        $idDot3Run = !empty($param[1]) ? (int)$param[1] : null;
         $dot3_information = self::getInformation($id_dot3_information);
 
         self::$galera = array();
         self::$innodb_cluster = array();
         self::$mysqlrouter = array();
 
-        $galera = $this->generateGroupGalera($dot3_information['information']);
+        $galera = $this->generateMeasuredGroup('galera', $idDot3Run, function () use ($dot3_information) {
+            return $this->generateGroupGalera($dot3_information['information']);
+        });
         //Debug::debug($galera, "GALERA");
 
-        $innodb_cluster = $this->generateGroupInnoDBCluster($dot3_information['information']);
-        $mysqlrouter = $this->generateGroupMysqlRouter($dot3_information['information']);
+        $innodb_cluster = $this->generateMeasuredGroup('innodb_cluster', $idDot3Run, function () use ($dot3_information) {
+            return $this->generateGroupInnoDBCluster($dot3_information['information']);
+        });
+        $mysqlrouter = $this->generateMeasuredGroup('mysqlrouter', $idDot3Run, function () use ($dot3_information) {
+            return $this->generateGroupMysqlRouter($dot3_information['information']);
+        });
 
-        $master_slave = $this->generateGroupMasterSlave($dot3_information['information']);
-        $proxysql = $this->generateGroupProxySQL($dot3_information['information']);
+        $master_slave = $this->generateMeasuredGroup('master_slave', $idDot3Run, function () use ($dot3_information) {
+            return $this->generateGroupMasterSlave($dot3_information['information']);
+        });
+        $proxysql = $this->generateMeasuredGroup('proxysql', $idDot3Run, function () use ($dot3_information) {
+            return $this->generateGroupProxySQL($dot3_information['information']);
+        });
 
-        $maxscale = $this->generateGroupMaxScale($dot3_information['information']);
+        $maxscale = $this->generateMeasuredGroup('maxscale', $idDot3Run, function () use ($dot3_information) {
+            return $this->generateGroupMaxScale($dot3_information['information']);
+        });
 
-        $vip = $this->generateGroupVip($dot3_information['information']);
+        $vip = $this->generateMeasuredGroup('vip', $idDot3Run, function () use ($dot3_information) {
+            return $this->generateGroupVip($dot3_information['information']);
+        });
         
 
         $group = $this->array_merge_group(array_merge($galera, $innodb_cluster, $mysqlrouter, $master_slave, $proxysql, $maxscale, $vip));
@@ -1814,6 +1854,25 @@ class Dot3 extends Controller
        //Debug::debug($group, "GROUP");
         //die();
         return $group;
+    }
+
+    private function generateMeasuredGroup(string $kind, ?int $idDot3Run, callable $callback): array
+    {
+        $startedAt = microtime(true);
+        $groups = $callback();
+        if (!is_array($groups)) {
+            $groups = array();
+        }
+
+        $endedAt = microtime(true);
+        $metrics = Dot3KpiRecorder::measureGroups($groups);
+        Dot3KpiRecorder::recordGroup($idDot3Run, $kind, [
+            'duration_ms' => Dot3KpiRecorder::durationMs($startedAt, $endedAt),
+            'nodes' => $metrics['nodes'],
+            'edges' => $metrics['edges'],
+        ]);
+
+        return $groups;
     }
 
 /**

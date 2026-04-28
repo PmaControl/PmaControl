@@ -87,6 +87,7 @@ final class KpiSchemaTest extends TestCase
         $dot3RunGroup = $this->tableDefinition('dot3_run_group');
 
         $this->assertStringContainsString('PRIMARY KEY (`id_dot3_run`, `group_kind`)', $dot3RunGroup);
+        $this->assertStringContainsString("'mysqlrouter'", $dot3RunGroup);
         $this->assertStringContainsString(
             'CONSTRAINT `fk_dot3_group_run` FOREIGN KEY (`id_dot3_run`) REFERENCES `dot3_run` (`id`) ON DELETE CASCADE',
             $dot3RunGroup
