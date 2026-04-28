@@ -104,6 +104,75 @@ final class KpiBudgetAlertTest extends TestCase
         }
     }
 
+    public function testFlappingOpensEventAfterFiveConsecutiveBreachingBuckets(): void
+    {
+        $probe = $this->runMysql('SELECT 1;', ['--skip-column-names'], true);
+        if ($probe['exitCode'] !== 0 || trim($probe['stdout']) !== '1') {
+            self::markTestSkipped('Local mysql client is not available or cannot connect.');
+        }
+
+        $database = 'pmacontrol_kpi_flapping_test_' . getmypid() . '_' . bin2hex(random_bytes(3));
+        $databaseIdentifier = $this->quoteIdentifier($database);
+        $this->runMysql("DROP DATABASE IF EXISTS {$databaseIdentifier}; CREATE DATABASE {$databaseIdentifier} DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;");
+
+        try {
+            $this->runMysql($this->fixtureSchema(), ["--database={$database}"]);
+            $this->runMysql(<<<'SQL'
+INSERT INTO kpi_minute
+  (bucket_start, aspirateur_failures_total, worker_busy_pct, worker_stuck_count, daemon_late_count, state_transitions_total)
+VALUES
+  ('2026-04-28 12:00:00', 0, 0.00, 0, 0, 3),
+  ('2026-04-28 12:01:00', 0, 0.00, 0, 0, 3),
+  ('2026-04-28 12:02:00', 0, 0.00, 0, 0, 4),
+  ('2026-04-28 12:03:00', 0, 0.00, 0, 0, 3),
+  ('2026-04-28 12:04:00', 0, 0.00, 0, 0, 3);
+SQL, ["--database={$database}"]);
+
+            $result = KpiBudgetAlert::evaluateBucket($this->mysqlCliDb($database), '2026-04-28 12:04:00', $this->flappingOverrides());
+
+            $this->assertTrue($result['kpi_flapping']['breaching']);
+            $this->assertSame('opened', $result['kpi_flapping']['event']['action']);
+            $opened = $this->runMysql("SELECT COUNT(*), MIN(type), MIN(date_start), MAX(date_end) FROM event_log;", ["--database={$database}", '--skip-column-names']);
+            $this->assertSame("1\tkpi_flapping\t2026-04-28 12:04:00.000000\tNULL", trim($opened['stdout']));
+        } finally {
+            $this->runMysql("DROP DATABASE IF EXISTS {$databaseIdentifier};", [], true);
+        }
+    }
+
+    public function testFlappingDoesNotOpenEventForIsolatedTransition(): void
+    {
+        $probe = $this->runMysql('SELECT 1;', ['--skip-column-names'], true);
+        if ($probe['exitCode'] !== 0 || trim($probe['stdout']) !== '1') {
+            self::markTestSkipped('Local mysql client is not available or cannot connect.');
+        }
+
+        $database = 'pmacontrol_kpi_flapping_test_' . getmypid() . '_' . bin2hex(random_bytes(3));
+        $databaseIdentifier = $this->quoteIdentifier($database);
+        $this->runMysql("DROP DATABASE IF EXISTS {$databaseIdentifier}; CREATE DATABASE {$databaseIdentifier} DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;");
+
+        try {
+            $this->runMysql($this->fixtureSchema(), ["--database={$database}"]);
+            $this->runMysql(<<<'SQL'
+INSERT INTO kpi_minute
+  (bucket_start, aspirateur_failures_total, worker_busy_pct, worker_stuck_count, daemon_late_count, state_transitions_total)
+VALUES
+  ('2026-04-28 12:00:00', 0, 0.00, 0, 0, 0),
+  ('2026-04-28 12:01:00', 0, 0.00, 0, 0, 3),
+  ('2026-04-28 12:02:00', 0, 0.00, 0, 0, 0),
+  ('2026-04-28 12:03:00', 0, 0.00, 0, 0, 0),
+  ('2026-04-28 12:04:00', 0, 0.00, 0, 0, 0);
+SQL, ["--database={$database}"]);
+
+            $result = KpiBudgetAlert::evaluateBucket($this->mysqlCliDb($database), '2026-04-28 12:04:00', $this->flappingOverrides());
+
+            $this->assertFalse($result['kpi_flapping']['breaching']);
+            $opened = $this->runMysql("SELECT COUNT(*) FROM event_log;", ["--database={$database}", '--skip-column-names']);
+            $this->assertSame('0', trim($opened['stdout']));
+        } finally {
+            $this->runMysql("DROP DATABASE IF EXISTS {$databaseIdentifier};", [], true);
+        }
+    }
+
     public function testKpiRollupCallsBudgetAlertAndConfigSampleExists(): void
     {
         $rollup = file_get_contents(__DIR__.'/../../../App/Library/Kpi/KpiMinuteRollup.php');
@@ -229,6 +298,20 @@ SQL;
                 return $rows;
             }
         };
+    }
+
+    private function flappingOverrides(): array
+    {
+        return [
+            'worker_busy_pct' => 999,
+            'worker_busy_min' => 5,
+            'worker_stuck_min' => 5,
+            'daemon_late_min' => 5,
+            'state_transitions_per_min' => 2,
+            'flapping_min' => 5,
+            'aspirateur_failures_total' => 999,
+            'aspirateur_failures_min' => 1,
+        ];
     }
 
     /**

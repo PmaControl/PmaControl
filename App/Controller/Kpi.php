@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Library\Debug;
 use App\Library\Security\CsrfGuard;
 use App\Library\Kpi\KpiDaemonDrilldown;
+use App\Library\Kpi\KpiFlappingDrilldown;
 use App\Library\Kpi\KpiProcessDrilldown;
 use App\Library\Kpi\KpiReadonlyDrilldown;
 use App\Library\Kpi\KpiServerDrilldown;
@@ -136,6 +137,43 @@ class Kpi extends Controller
         $serverName = $payload['server']['display_name'] ?? $payload['server']['name'] ?? (string)$serverId;
         $this->title = 'KPI read_only '.$serverName;
         $this->ariane = ' > KPI > read_only '.$serverName;
+
+        $this->set('data', ['payload' => $payload]);
+    }
+
+    public function flapping($param)
+    {
+        Debug::parseDebug($param);
+
+        $payload = KpiFlappingDrilldown::buildGlobalPayload();
+
+        $this->title = 'KPI flapping';
+        $this->ariane = ' > KPI > Flapping';
+
+        $this->set('data', ['payload' => $payload]);
+    }
+
+    public function router($param)
+    {
+        Debug::parseDebug($param);
+
+        $routerId = isset($param[0]) && is_numeric($param[0]) ? (int)$param[0] : 0;
+        if ($routerId <= 0) {
+            set_flash('error', 'KPI', 'Invalid MySQL Router id.');
+            header('location: '.LINK.'Kpi/flapping');
+            return;
+        }
+
+        $payload = KpiFlappingDrilldown::buildRouterPayload($routerId);
+        if (empty($payload['router'])) {
+            set_flash('error', 'KPI', 'MySQL Router not found.');
+            header('location: '.LINK.'Kpi/flapping');
+            return;
+        }
+
+        $routerName = $payload['router']['display_name'] ?? (string)$routerId;
+        $this->title = 'KPI router '.$routerName;
+        $this->ariane = ' > KPI > Router '.$routerName;
 
         $this->set('data', ['payload' => $payload]);
     }
