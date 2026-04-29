@@ -27,6 +27,7 @@ use \App\Library\Mysql;
 use App\Library\Security\CsrfGuard;
 use App\Library\Security\GroupedFormRequest;
 use App\Library\Security\IndexedRowsRequest;
+use App\Library\Security\PositiveIntegerSelection;
 use App\Library\SelectorOptions;
 use App\Library\Display;
 use App\Controller\Test\CleanerTest;
@@ -703,12 +704,38 @@ var myChart = new Chart(ctx, {
     public function treatment($param)
     {
 
+        $idCleaner = self::normalizeCleanerMainId($param[0] ?? null);
+        if ($idCleaner === null) {
+            $this->view = false;
+            $this->layout_name = false;
+            self::sendCleanerTreatmentError(400, 'Invalid cleaner id');
+            return;
+        }
+
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql                = "SELECT * FROM `pmacli_drain_process` WHERE `id_cleaner_main`='".$param[0]."' ORDER BY date_start DESC LIMIT 100";
+        $sql                = "SELECT * FROM `pmacli_drain_process` WHERE `id_cleaner_main` = ".$idCleaner." ORDER BY date_start DESC LIMIT 100";
         $data['treatment']  = $db->sql_fetch_yield($sql);
-        $data['id_cleaner'] = $param[0];
+        $data['id_cleaner'] = $idCleaner;
         $this->set('data', $data);
+    }
+
+    public static function normalizeCleanerMainId($value): ?int
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $ids = PositiveIntegerSelection::normalizeList($value, 1);
+
+        return $ids[0] ?? null;
+    }
+
+    private static function sendCleanerTreatmentError(int $statusCode, string $message): void
+    {
+        http_response_code($statusCode);
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
 /**
