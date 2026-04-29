@@ -417,8 +417,7 @@ class Mysql
         $charsets = ['utf8mb4', 'utf8'];
         if (isset($db->link) && $db->link instanceof \mysqli) {
             $serverInfo = $db->link->server_info ?? '';
-            $numVer = preg_replace('/[^0-9.].*/', '', $serverInfo);
-            if ($numVer !== '' && version_compare($numVer, '5.5.3', '<')) {
+            if (MysqlVersion::lessThan($serverInfo, '5.5.3')) {
                 $charsets = ['utf8'];
             }
         }

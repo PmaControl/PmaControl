@@ -894,7 +894,7 @@ class BinlogAnalyzer
             // Pick highest version that is >= requested
             ksort($candidates, SORT_NATURAL);
             foreach ($candidates as $ver => $path) {
-                if (version_compare($ver, $majorMinor, '>=')) {
+                if (MysqlVersion::atLeast($ver, $majorMinor)) {
                     return $path;
                 }
             }
@@ -966,15 +966,14 @@ class BinlogAnalyzer
     {
         $analysis = $this->getAnalysis();
         $version = $analysis['mysql_version'] ?? '';
-        $isMariaDB = (stripos($version, 'mariadb') !== false);
+        $isMariaDB = MysqlVersion::isMariaDb($version);
 
         if ($isMariaDB) {
             return $this->parseGtidEventsMariaDB();
         }
 
         // MySQL 5.x doesn't have transaction_length/last_committed — use MariaDB-style Xid parsing
-        $numericVersion = preg_replace('/[^0-9.]/', '', $version);
-        if (version_compare($numericVersion, '8.0', '<')) {
+        if (!MysqlVersion::atLeast($version, '8.0')) {
             return $this->parseGtidEventsMariaDB();
         }
 
@@ -1213,13 +1212,13 @@ class BinlogAnalyzer
     private function parseVolumePerSecond(): array
     {
         $analysis = $this->getAnalysis();
-        $isMariaDB = (stripos($analysis['mysql_version'] ?? '', 'mariadb') !== false);
+        $version = $analysis['mysql_version'] ?? '';
+        $isMariaDB = MysqlVersion::isMariaDb($version);
 
         $cmd = $this->buildBinlogCmd(false);
 
         // MySQL 8+ has transaction_length in GTID events; MySQL 5.x and MariaDB don't
-        $version = $analysis['mysql_version'] ?? '';
-        $hasTxnLength = !$isMariaDB && version_compare(preg_replace('/[^0-9.]/', '', $version), '8.0', '>=');
+        $hasTxnLength = !$isMariaDB && MysqlVersion::atLeast($version, '8.0');
 
         if ($hasTxnLength) {
             // MySQL 8+: use transaction_length from GTID events
