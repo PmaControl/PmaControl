@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Library\Security\CsrfGuard;
+use App\Library\Security\SessionFixationGuard;
 use Glial\Security\Csrf;
 use \Glial\Synapse\Controller;
 use \Glial\I18n\I18n;
@@ -1509,7 +1510,10 @@ GROUP BY d.id";
             $_POST['user_main']['login'] = $outcome['login'];
             $_POST['user_main']['password'] = $outcome['password'];
 
-            if ($this->di['auth']->authenticate()) {
+            $authenticated = (bool) $this->di['auth']->authenticate();
+            SessionFixationGuard::enforceRegenerationAfterSuccessfulAuthentication($authenticated);
+
+            if ($authenticated) {
 
 
                 $id_user = $this->di['auth']->getIdUserTriingLogin();
@@ -1614,6 +1618,7 @@ GROUP BY d.id";
  */
     function logout() {
         $this->di['auth']->logout();
+        SessionFixationGuard::regenerateActiveSession();
 
         header("Location: " . LINK . "user/connection/");
         exit;
@@ -1684,6 +1689,7 @@ GROUP BY d.id";
         $_SERVER['REQUEST_METHOD'] = "POST";
 
         $ret = $this->di['auth']->authenticate();
+        SessionFixationGuard::enforceRegenerationAfterSuccessfulAuthentication((bool) $ret);
         $id_user = $this->di['auth']->getIdUserTriingLogin();
 
         if (!empty($id_user)) {
