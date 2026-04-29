@@ -38,6 +38,7 @@ final class MysqlVersionTest extends TestCase
     {
         return [
             'null is not comparable' => [null, '5.0.0', '>=', false],
+            'null is not less or equal' => [null, '5.6', '<=', false],
             'empty is not comparable' => ['', '5.0.0', '<', false],
             'invalid is not comparable' => ['not-a-version', '5.0.0', '>=', false],
             'mysql 5.0.1 at least 5.0.1' => ['5.0.1-log', '5.0.1', '>=', true],
