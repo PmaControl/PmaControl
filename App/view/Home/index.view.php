@@ -1,4 +1,6 @@
 <?php
+use App\Library\Format;
+
 $s = $data['servers'];
 $d = $data['daemons'];
 $r = $data['replication'];
@@ -199,6 +201,36 @@ $versionColors = ['MariaDB' => '#003545', 'MySQL' => '#e97b00', 'Percona' => '#c
             +<?= count($data['unavailable_servers']) - 8 ?> <?= __('more') ?>
         </div>
         <?php endif; ?>
+    </div>
+</div>
+<?php endif; ?>
+
+<?php if (!empty($data['orphan_refreshes'])): ?>
+<div class="hm-card" style="margin-bottom:16px;border-left:4px solid #f59e0b">
+    <div class="hm-card-head" style="background:linear-gradient(135deg,#92400e,#b45309)">
+        <span><i class="fa fa-hdd-o"></i> <?= __('Orphan refresh dumps') ?> (<?= count($data['orphan_refreshes']) ?>)</span>
+        <span class="hm-badge" style="color:#fff"><?= Format::bytes((int) $data['orphan_refreshes_total_size']) ?></span>
+    </div>
+    <div class="hm-card-body" style="padding:8px 16px">
+        <?php foreach ($data['orphan_refreshes'] as $orphan): ?>
+        <div class="hm-alert" style="background:#fffbeb;border-left-color:#f59e0b">
+            <i class="fa fa-archive" style="color:#b45309"></i>
+            <span class="hm-alert-name" style="color:#92400e">
+                <?= htmlspecialchars((string) $orphan['path'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>
+            </span>
+            <span class="hm-alert-msg" style="color:#92400e">
+                <?= Format::bytes((int) $orphan['size_bytes']) ?>
+                — <?= (int) round(((int) $orphan['age_seconds']) / 3600) ?> h
+                <?php if (!empty($orphan['related_job_id'])): ?>
+                    —
+                    <a href="<?= LINK ?>job/index" style="color:#92400e;text-decoration:underline">
+                        job #<?= (int) $orphan['related_job_id'] ?>
+                    </a>
+                    <?= htmlspecialchars((string) ($orphan['related_job_status'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>
+                <?php endif; ?>
+            </span>
+        </div>
+        <?php endforeach; ?>
     </div>
 </div>
 <?php endif; ?>

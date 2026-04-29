@@ -6,6 +6,7 @@ use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
 use App\Library\Extraction2;
 use App\Library\Format;
+use App\Library\OrphanRefreshScanner;
 use App\Library\System;
 
 class Home extends Controller {
@@ -141,7 +142,18 @@ class Home extends Controller {
             $data['ts_rows'] = (int)($row['total'] ?? 0);
         }
 
-        // ── 9. Stuck binlog analyses ──
+        // ── 9. Orphan /database/refresh dumps (issue #584) ──
+        $data['orphan_refreshes']            = [];
+        $data['orphan_refreshes_total_size'] = 0;
+        try {
+            $orphanReport = OrphanRefreshScanner::scan();
+            $data['orphan_refreshes']            = $orphanReport['orphans'];
+            $data['orphan_refreshes_total_size'] = $orphanReport['total_size_bytes'];
+        } catch (\Throwable $e) {
+            // Never break /home for a disk-scan failure.
+        }
+
+        // ── 10. Stuck binlog analyses ──
         $data['stuck_analyses'] = [];
         $sql = "SELECT ba.id, ba.id_mysql_server, ba.created_at, ba.time_start, ba.time_end,
                        ms.display_name, ms.ip, TIMESTAMPDIFF(MINUTE, ba.created_at, NOW()) AS minutes_ago
