@@ -19,6 +19,7 @@ use \Glial\Sgbd\Sgbd;
 use \App\Library\Extraction;
 use \App\Library\Param;
 use \App\Library\Available;
+use App\Library\MysqlServer;
 use App\Library\Security\CsrfGuard;
 use App\Library\Security\GroupedFormRequest;
 use App\Library\Security\Identifier;
@@ -392,11 +393,23 @@ class Database extends Controller
         $data['database_refresh_csrf_field'] = Csrf::DEFAULT_FIELD;
         $data['database_refresh_csrf_token'] = Csrf::issueToken($_SESSION, self::DATABASE_REFRESH_CSRF_SCOPE);
 
+        // Issue #567: pre-select every database returned by the AJAX call
+        // EXCEPT the four MySQL system schemas. The user can still uncheck
+        // anything; this just makes the common case "refresh all user data"
+        // a one-click flow instead of N clicks.
+        $systemSchemasJson = json_encode(MysqlServer::SYSTEM_SCHEMAS);
         $this->di['js']->code_javascript('$("#database-id_mysql_server__from").change(function () {
     data = $(this).val();
     $("#database-list").load(GLIAL_LINK+"common/getDatabaseByServer/" + data + "/ajax>true/",
        function(){
-	$("#database-list").selectpicker("refresh");
+        var SYSTEM_SCHEMAS = '.$systemSchemasJson.';
+        var preselected = $("#database-list option").map(function () {
+            return this.value;
+        }).get().filter(function (db) {
+            return db !== "" && SYSTEM_SCHEMAS.indexOf(db.toLowerCase()) === -1;
+        });
+        $("#database-list").selectpicker("refresh");
+        $("#database-list").selectpicker("val", preselected);
     });
 });
 ');

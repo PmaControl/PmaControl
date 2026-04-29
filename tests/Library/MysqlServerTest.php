@@ -28,6 +28,45 @@ final class MysqlServerTest extends TestCase
         $this->assertStringNotContainsString('is_deleted', $sql);
     }
 
+    public function testSystemSchemasConstantCoversTheFourMysqlReservedNames(): void
+    {
+        // #567: keep the canonical list. Casing matches MySQL's lowercase
+        // SHOW DATABASES output; comparisons are done case-insensitively
+        // by isSystemSchema().
+        $this->assertSame(
+            ['information_schema', 'performance_schema', 'mysql', 'sys'],
+            MysqlServer::SYSTEM_SCHEMAS
+        );
+    }
+
+    public function testIsSystemSchemaRecognizesTheFourReservedNames(): void
+    {
+        foreach (MysqlServer::SYSTEM_SCHEMAS as $name) {
+            $this->assertTrue(
+                MysqlServer::isSystemSchema($name),
+                $name.' must be recognized as a system schema'
+            );
+        }
+    }
+
+    public function testIsSystemSchemaIsCaseInsensitive(): void
+    {
+        $this->assertTrue(MysqlServer::isSystemSchema('MYSQL'));
+        $this->assertTrue(MysqlServer::isSystemSchema('Information_Schema'));
+        $this->assertTrue(MysqlServer::isSystemSchema('Performance_SCHEMA'));
+        $this->assertTrue(MysqlServer::isSystemSchema('Sys'));
+    }
+
+    public function testIsSystemSchemaRejectsUserDatabasesAndEdgeCases(): void
+    {
+        $this->assertFalse(MysqlServer::isSystemSchema('myapp'));
+        $this->assertFalse(MysqlServer::isSystemSchema('production'));
+        $this->assertFalse(MysqlServer::isSystemSchema('mysql_backup'));   // similar prefix, not equal
+        $this->assertFalse(MysqlServer::isSystemSchema('information'));    // similar prefix, not equal
+        $this->assertFalse(MysqlServer::isSystemSchema(''));
+        $this->assertFalse(MysqlServer::isSystemSchema(null));
+    }
+
     public function testDbLinkControllersDelegateToSharedHelper(): void
     {
         foreach ($this->dbLinkControllers() as $controller => $path) {
