@@ -23,7 +23,7 @@
         "esysteme/mysql-sys": "1.6.*",
         "ninsuo/php-shared-memory": "*",
         "geerlingguy/ping": "*",
-	"ramsey/uuid":"3.*",
+	"ramsey/uuid":"^4.7",
         "jfcherng/php-diff": "^6.2",
         "phpmyadmin/sql-parser": "^5.1",
         "phpseclib/phpseclib": "~3.0",
