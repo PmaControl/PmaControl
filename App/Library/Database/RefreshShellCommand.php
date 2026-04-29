@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Library\Database;
 
+use App\Library\ShellCommand;
 use App\Library\Security\Identifier;
 
 final class RefreshShellCommand
@@ -16,18 +17,23 @@ final class RefreshShellCommand
         string $database,
         string $path
     ): string {
-        $toDump = '';
+        $command = ShellCommand::of('mydumper')
+            ->option('-h', $host)
+            ->option('-u', $login)
+            ->option('-p', $password)
+            ->intOption('-P', $port);
+
         if ($database !== 'ALL') {
-            $toDump = ' -B '.escapeshellarg($database);
+            $command->option('-B', $database);
         }
 
-        return 'mydumper -h '.escapeshellarg($host)
-            .' -u '.escapeshellarg($login)
-            .' -p '.escapeshellarg($password)
-            .' -P '.(int) $port
-            .$toDump
-            .' -G -E -R -o '.escapeshellarg($path)
-            .' 2>&1 ';
+        return $command
+            ->flag('-G')
+            ->flag('-E')
+            ->flag('-R')
+            ->option('-o', $path)
+            ->mergeStderrIntoStdout()
+            ->toString().' ';
     }
 
     public static function buildLoadCommand(
@@ -38,17 +44,21 @@ final class RefreshShellCommand
         string $database,
         string $path
     ): string {
-        $toDump = '';
+        $command = ShellCommand::of('myloader')
+            ->option('-h', $host)
+            ->option('-u', $login)
+            ->option('-p', $password)
+            ->intOption('-P', $port)
+            ->flag('-o');
+
         if ($database !== 'ALL') {
-            $toDump = ' -s '.escapeshellarg($database);
+            $command->option('-s', $database);
         }
 
-        return 'myloader -h '.escapeshellarg($host)
-            .' -u '.escapeshellarg($login)
-            .' -p '.escapeshellarg($password)
-            .' -P '.(int) $port
-            .' -o'.$toDump.' -d '.escapeshellarg($path)
-            .' 2>&1';
+        return $command
+            ->option('-d', $path)
+            ->mergeStderrIntoStdout()
+            ->toString();
     }
 
     public static function buildWorkerCommand(
@@ -76,12 +86,16 @@ final class RefreshShellCommand
             $uuid,
         );
 
-        $cmd = implode(' ', array_map('escapeshellarg', $args));
+        $cmd = ShellCommand::fromArguments($args);
         if ($debug === true) {
-            $cmd .= ' --debug';
+            $cmd->flag('--debug');
         }
 
-        return $cmd.' > '.escapeshellarg($log).' 2> '.escapeshellarg($logError).' & echo $!';
+        return $cmd
+            ->redirect(1, '>', $log)
+            ->redirect(2, '>', $logError)
+            ->inBackgroundCapturingPid()
+            ->toString();
     }
 
     public static function removeMysqlMetadataFiles(string $path): void

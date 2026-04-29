@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Library\Archive;
 
+use App\Library\ShellCommand;
 use App\Library\Security\Identifier;
 
 final class MysqlRestoreCommand
@@ -117,10 +118,17 @@ final class MysqlRestoreCommand
             throw new \InvalidArgumentException('Invalid database name');
         }
 
-        return 'pv -- '.escapeshellarg($dumpPath)
-            .' | mysql --defaults-extra-file='.escapeshellarg($defaultsFile)
-            .' --database='.escapeshellarg($database)
-            .' 2> '.escapeshellarg($logPath);
+        $pv = ShellCommand::of('pv')
+            ->flag('--')
+            ->arg($dumpPath);
+        $mysql = ShellCommand::of('mysql')
+            ->option('--defaults-extra-file', $defaultsFile, '=')
+            ->option('--database', $database, '=');
+
+        return $pv
+            ->pipeTo($mysql)
+            ->redirect(2, '>', $logPath)
+            ->toString();
     }
 
     public static function deleteFile(?string $path): void
