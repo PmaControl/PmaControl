@@ -8748,7 +8748,6 @@ Cette étape permet de synchroniser les alias DNS basés sur
   - `/MasterSlave/AssociateServerByLevel`
   - `/MasterSlave/compareVersions`
   - `/MasterSlave/generatePair`
-  - `/Mysql/parsecnf`
   - `/Database/rename`
   - `/Database/rename -> App/view/Database/rename.view.php`
   - `/Database/create_trigger`

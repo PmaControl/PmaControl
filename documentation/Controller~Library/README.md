@@ -704,12 +704,6 @@ Generated automatically from `App/Controller` and `App/Library`.
 - Summary: `documentation/Controller~Library/Param.md`
 - Methods: 1
 
-## ParseCnf
-
-- Kind: class
-- Summary: `documentation/Controller~Library/ParseCnf.md`
-- Methods: 2
-
 ## Partition
 
 - Kind: class
