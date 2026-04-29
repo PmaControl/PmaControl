@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Library\Debug;
 use App\Library\MetricAggregate;
+use App\Library\Security\Identifier;
 use Glial\Sgbd\Sgbd;
 use Glial\Synapse\Controller;
 use Monolog\Formatter\LineFormatter;
@@ -446,16 +447,12 @@ ORDER BY `PARTITION_ORDINAL_POSITION`";
 
     private function quoteIdentifier(string $identifier): string
     {
-        if (!$this->isSafeIdentifier($identifier)) {
-            throw new \InvalidArgumentException("Unsafe SQL identifier: ".$identifier);
-        }
-
-        return "`".$identifier."`";
+        return Identifier::quoteStrictSqlIdentifier($identifier);
     }
 
     private function isSafeIdentifier(string $identifier): bool
     {
-        return preg_match('/^[A-Za-z0-9_]+$/', $identifier) === 1;
+        return Identifier::isStrictSqlIdentifier($identifier);
     }
 
     private function resolveStartTime($db, string $table, int $idMysqlServer, int $bootstrapLookback, int $overlap): string

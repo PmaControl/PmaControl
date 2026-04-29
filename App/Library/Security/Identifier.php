@@ -7,6 +7,7 @@ namespace App\Library\Security;
 final class Identifier
 {
     public const DATABASE_NAME_PATTERN = '/^[A-Za-z0-9_-]{1,64}$/';
+    public const STRICT_SQL_IDENTIFIER_PATTERN = '/\A[A-Za-z_][A-Za-z0-9_]{0,63}\z/';
     public const ACCOUNT_NAME_PATTERN = '/^[A-Za-z0-9_-]{1,64}$/';
     public const HOST_PATTERN = '/^[A-Za-z0-9_.:%-]{1,255}$/';
     public const PRIVILEGE_PATTERN = '/^[A-Z][A-Z _]{0,24}$/';
@@ -29,6 +30,27 @@ final class Identifier
         }
 
         return '`' . str_replace('`', '``', $identifier) . '`';
+    }
+
+    public static function isStrictSqlIdentifier(string $identifier): bool
+    {
+        return preg_match(self::STRICT_SQL_IDENTIFIER_PATTERN, $identifier) === 1;
+    }
+
+    public static function quoteStrictSqlIdentifier(string $identifier): string
+    {
+        if (!self::isStrictSqlIdentifier($identifier)) {
+            throw new \InvalidArgumentException('Unsafe SQL identifier: ' . $identifier);
+        }
+
+        return '`' . $identifier . '`';
+    }
+
+    public static function quoteStrictSqlIdentifierOrFallback(string $identifier, string $fallback): string
+    {
+        return self::isStrictSqlIdentifier($identifier)
+            ? self::quoteStrictSqlIdentifier($identifier)
+            : self::quoteStrictSqlIdentifier($fallback);
     }
 
     public static function normalizeDatabaseNameList(string $names, int $maxItems = 64): ?array

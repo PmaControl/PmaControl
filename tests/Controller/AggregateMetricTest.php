@@ -78,6 +78,16 @@ final class AggregateMetricTest extends TestCase
         );
     }
 
+    public function testPartitionSqlRejectsUnsafeIdentifier(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->invokePrivate('buildDropPartitionsSql', [
+            'aggregate_metric_10s',
+            ['1bad'],
+        ]);
+    }
+
     public function testPartitionRetentionPathDropsPartitionsWithoutDelete(): void
     {
         $db = new AggregateMetricFakeDb([

@@ -7,6 +7,7 @@ namespace App\Controller;
 use App\Library\Extraction;
 use App\Library\Extraction2;
 use App\Library\MysqlVersion;
+use App\Library\Security\Identifier;
 use \Glial\Synapse\Controller;
 use \App\Library\Mysql;
 use \App\Library\Debug;
@@ -2253,9 +2254,12 @@ public function digest($param)
     // 4) Index & cardinalité
     $data['index_info'] = [];
     foreach ($data['tables'] as $tbl) {
-        $table_name = $tbl['table'];
+        $table_name = (string) ($tbl['table'] ?? '');
 
-        $sql_idx = "SHOW INDEX FROM `".$extra->sql_real_escape_string($table_name)."`";
+        $sql_idx = self::buildDigestShowIndexSql($table_name);
+        if ($sql_idx === null) {
+            continue;
+        }
         $res_idx = $extra->sql_query($sql_idx);
 
         while ($row = $extra->sql_fetch_array($res_idx, MYSQLI_ASSOC)) {
@@ -2300,6 +2304,15 @@ public function digest($param)
 
     $this->set('data', $data);
 }
+
+    private static function buildDigestShowIndexSql(string $tableName): ?string
+    {
+        if (!Identifier::isStrictSqlIdentifier($tableName)) {
+            return null;
+        }
+
+        return "SHOW INDEX FROM ".Identifier::quoteStrictSqlIdentifier($tableName);
+    }
 
 
 
