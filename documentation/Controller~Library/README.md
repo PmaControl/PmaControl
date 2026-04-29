@@ -692,12 +692,6 @@ Generated automatically from `App/Controller` and `App/Library`.
 - Summary: `documentation/Controller~Library/Ollama.md`
 - Methods: 1
 
-## OllamaClient
-
-- Kind: class
-- Summary: `documentation/Controller~Library/OllamaClient.md`
-- Methods: 2
-
 ## Param
 
 - Kind: class
