@@ -11,6 +11,8 @@ use App\Library\SysTooltips;
 $data = $data ?? array();
 $selectedMysqlServerId = $data['selected_mysql_server_id'] ?? null;
 $selectedMysqlServerFound = !empty($data['selected_mysql_server_found']);
+$mysqlsysVersion = htmlspecialchars((string) ($data['variables'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+$mysqlsysVersionUnsupported = !empty($data['mysqlsys_version_unsupported']);
 $mysqlsysUpdateConfigCsrfField = htmlspecialchars((string) ($data['mysqlsys_update_config_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
 $mysqlsysUpdateConfigCsrfToken = htmlspecialchars((string) ($data['mysqlsys_update_config_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
 $mysqlsysUpdateConfigCsrfAttributes = ' data-csrf-field="'.$mysqlsysUpdateConfigCsrfField.'" data-csrf-token="'.$mysqlsysUpdateConfigCsrfToken.'"';
@@ -191,13 +193,13 @@ if ($selectedMysqlServerId !== null && $selectedMysqlServerFound) {
             </div>
         </div>
         <?php
-    } elseif (version_compare($data['variables'], "5.6", "<=")) {
+    } elseif ($mysqlsysVersionUnsupported) {
 
         echo '<div class="well" style="border-left-color: #5cb85c;   border-left-width: 10px;">
             <p><b>Error :</b></p>';
 
         echo "This version of MySQL / MariaDB / Percona Server is not compatible with mysql-sys !<br />"
-        . " mysql-sys require version of MySQL / MariaDB / Percona Server 5.6 (<b>" . $data['variables'] . "</b>) at minimum.";
+        . " mysql-sys require version of MySQL / MariaDB / Percona Server 5.6 (<b>" . $mysqlsysVersion . "</b>) at minimum.";
 
         echo '</div>';
     } elseif (empty($data['innodb'])) {
@@ -211,7 +213,7 @@ if ($selectedMysqlServerId !== null && $selectedMysqlServerFound) {
         echo '<div class="well" style="border-left-color: #5cb85c;   border-left-width: 10px;">
             <p><b>Install:</b></p>';
 
-        echo 'Your version of MySQL / MariaDB / Percona Server: <b>' . $data['variables'] . "</b><br />";
+        echo 'Your version of MySQL / MariaDB / Percona Server: <b>' . $mysqlsysVersion . "</b><br />";
         echo 'mysql-sys is not yet installed on this server, do you want to install it ? ';
         echo '<a href="' . LINK . 'mysqlsys/install/mysql_server:id:' . (int) $selectedMysqlServerId . '" role="button" class="btn btn-primary">Install MySQL-sys</a>';
 

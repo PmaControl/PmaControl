@@ -8,6 +8,7 @@ use \Glial\I18n\I18n;
 use \Glial\Sgbd\Sgbd;
 use App\Library\Security\CsrfGuard;
 use App\Library\Mysql;
+use App\Library\MysqlVersion;
 use App\Library\Debug;
 use Glial\Security\Csrf;
 
@@ -74,6 +75,8 @@ class Mysqlsys extends Controller {
         $selectedMysqlServerId = self::normalizeIndexMysqlServerId($_GET);
         $data['selected_mysql_server_id'] = $selectedMysqlServerId;
         $data['selected_mysql_server_found'] = false;
+        $data['variables'] = '';
+        $data['mysqlsys_version_unsupported'] = false;
 
         // get server available
         $available = Common::getAvailable();
@@ -147,6 +150,7 @@ class Mysqlsys extends Controller {
             }
 
             $data['variables'] = $remote->getVersion();
+            $data['mysqlsys_version_unsupported'] = self::isMysqlSysUnsupportedVersion($data['variables']);
         }
         $data['mysqlsys_update_config_csrf_field'] = Csrf::DEFAULT_FIELD;
         $data['mysqlsys_update_config_csrf_token'] = Csrf::issueToken($_SESSION, self::MYSQLSYS_UPDATE_CONFIG_CSRF_SCOPE);
@@ -183,6 +187,11 @@ class Mysqlsys extends Controller {
         }
 
         return self::normalizePositiveInteger($get['mysql_server']['id']);
+    }
+
+    public static function isMysqlSysUnsupportedVersion(?string $version): bool
+    {
+        return MysqlVersion::compare($version, '5.6', '<=');
     }
 
     private function enrichSchemaUnusedIndexes($remote, array $rows, int $idMysqlServer): array
