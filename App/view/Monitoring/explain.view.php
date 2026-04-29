@@ -9,11 +9,9 @@ use App\Library\SysTooltips;
 if (!empty($data['table'])) {
 
 
-    $table_sql = [];
-
     $i = 0;
     echo '<table class="table table-condensed table-bordered table-striped">';
-    foreach ($data['table'] as $key => $line) {
+    foreach ($data['table'] as $line) {
         $i++;
 
 
@@ -22,19 +20,8 @@ if (!empty($data['table'])) {
             echo '<tr>';
 
             echo '<th>'.__("Top").'</th>';
-            $j = 0;
-            foreach ($line as $var => $val) {
+            foreach (array_keys($line) as $var) {
                 echo SysTooltips::th($var);
-
-                if ($var == 'SQL_TEXT') {
-                    $id_sql = $j;
-                } else if ($var == 'CURRENT_SCHEMA') {
-                    $id_schema = $j;
-                }
-
-
-
-                $j++;
             }
             echo '</tr>';
         }
@@ -43,30 +30,14 @@ if (!empty($data['table'])) {
         echo '<tr>';
         echo '<td>'.$i.'</td>';
 
-        $k = 0;
-        foreach ($line as $var => $val) {
-            echo '<td>'.$val.'</td>';
-
-            if ($k == $id_sql) {
-                $table_sql[$line['CURRENT_SCHEMA']] = $val;
-            }
-
-            $k++;
+        foreach ($line as $val) {
+            echo '<td>'.htmlspecialchars((string) $val, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8').'</td>';
         }
 
         echo '</tr>';
 
-        
-        //print_r($val);
     }
     echo "</table>";
-
-
-    print_r($table_sql);
-    // explain !!
-
-    
 } else {
     echo "<b>No data</b>";
 }
-
