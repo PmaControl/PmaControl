@@ -11,6 +11,7 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use App\Library\Tree as TreeInterval;
 use App\Library\PluginPackage;
+use App\Library\Security\SafeRedirect;
 use \Glial\Sgbd\Sgbd;
 
 /**
@@ -584,7 +585,7 @@ SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','
         $db->sql_query($sql);
         $this->clearAclCache();
 
-        $this->redirectTo($_SERVER['HTTP_REFERER'] ?? LINK.'plugin/index');
+        $this->redirectTo(SafeRedirect::refererOrFallback($_SERVER, LINK.'plugin/index'));
     }
 
     private function findSqlScript($pluginDirectory, $filename)
