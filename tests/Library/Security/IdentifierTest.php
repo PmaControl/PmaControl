@@ -30,6 +30,24 @@ final class IdentifierTest extends TestCase
         $this->assertNull(Identifier::normalizeDatabaseNameList(str_repeat('a', 65)));
     }
 
+    public function testSqlIdentifierQuoting(): void
+    {
+        $this->assertTrue(Identifier::isSqlIdentifier('orders_2024'));
+        $this->assertTrue(Identifier::isSqlIdentifier('orders-2024'));
+        $this->assertSame('`orders_2024`', Identifier::quoteSqlIdentifier('orders_2024'));
+        $this->assertSame('`orders-2024`', Identifier::quoteSqlIdentifier('orders-2024'));
+
+        $this->assertFalse(Identifier::isSqlIdentifier('orders`2024'));
+        $this->assertFalse(Identifier::isSqlIdentifier('orders 2024'));
+    }
+
+    public function testSqlIdentifierQuotingRejectsUnsafePayload(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        Identifier::quoteSqlIdentifier('orders`2024');
+    }
+
     public function testSqlAccountHostAndPrivilegeAllowlists(): void
     {
         $this->assertTrue(Identifier::isAccountName('app_user'));

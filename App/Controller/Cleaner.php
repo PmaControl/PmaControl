@@ -26,6 +26,7 @@ use \App\Library\Debug;
 use \App\Library\Mysql;
 use App\Library\Security\CsrfGuard;
 use App\Library\Security\GroupedFormRequest;
+use App\Library\Security\Identifier;
 use App\Library\Security\IndexedRowsRequest;
 use App\Library\Security\PositiveIntegerSelection;
 use App\Library\SelectorOptions;
@@ -1089,23 +1090,39 @@ var myChart = new Chart(ctx, {
     {
 
         $this->layout_name = false;
-        $db                = Sgbd::sql(DB_DEFAULT);
-
-        $sql = "SELECT id,name FROM mysql_server WHERE id = '".$db->sql_real_escape_string($_GET['id_mysql_server'])."';";
-        $res = $db->sql_query($sql);
-
-        while ($ob = $db->sql_fetch_object($res)) {
-            $id_server = $ob->id;
-            $db_clean  = Sgbd::sql($ob->name);
+        $request = self::normalizeGetColumnByTableRequest($param, $_GET);
+        if ($request === null) {
+            $this->view = false;
+            self::sendCleanerGetColumnByTableError(400, 'Invalid cleaner column request');
+            return;
         }
 
-        $sql = "show index from `".$_GET['schema']."`.`".$param[0]."`";
+        $db                = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT id,name FROM mysql_server WHERE id = ".$request['id_mysql_server']." LIMIT 1;";
+        $res = $db->sql_query($sql);
+
+        $db_clean = null;
+        while ($ob = $db->sql_fetch_object($res)) {
+            $db_clean = Sgbd::sql($ob->name);
+        }
+
+        if ($db_clean === null) {
+            $this->view = false;
+            self::sendCleanerGetColumnByTableError(404, 'MySQL server not found');
+            return;
+        }
+
+        $sql = "show index from "
+            . Identifier::quoteSqlIdentifier($request['schema'])
+            . "."
+            . Identifier::quoteSqlIdentifier($request['table']);
 //$sql = "SELECT TABLE_NAME from `information_schema`.`TABLES` WHERE `TABLE_SCHEMA` = '".$database."' AND TABLE_TYPE = 'BASE TABLE' ORDER BY TABLE_NAME";
 
         $res2 = $db_clean->sql_query($sql);
 
         $data['column'] = [];
-        while ($ob             = $db->sql_fetch_object($res2)) {
+        while ($ob             = $db_clean->sql_fetch_object($res2)) {
             $tmp            = [];
             $tmp['id']      = $ob->Column_name;
             $tmp['libelle'] = $ob->Column_name;
@@ -1114,6 +1131,55 @@ var myChart = new Chart(ctx, {
         }
 
         $this->set("data", $data);
+    }
+
+    public static function normalizeGetColumnByTableRequest(array $param, array $get): ?array
+    {
+        $idMysqlServer = self::normalizeCleanerColumnServerId($get['id_mysql_server'] ?? null);
+        $schema = self::normalizeCleanerSqlIdentifier($get['schema'] ?? null);
+        $table = self::normalizeCleanerSqlIdentifier($param[0] ?? null);
+
+        if ($idMysqlServer === null || $schema === null || $table === null) {
+            return null;
+        }
+
+        return [
+            'id_mysql_server' => $idMysqlServer,
+            'schema' => $schema,
+            'table' => $table,
+        ];
+    }
+
+    private static function normalizeCleanerColumnServerId($value): ?int
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $ids = PositiveIntegerSelection::normalizeList($value, 1);
+
+        return $ids[0] ?? null;
+    }
+
+    private static function normalizeCleanerSqlIdentifier($value): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $identifier = trim((string) $value);
+        if (!Identifier::isSqlIdentifier($identifier)) {
+            return null;
+        }
+
+        return $identifier;
+    }
+
+    private static function sendCleanerGetColumnByTableError(int $statusCode, string $message): void
+    {
+        http_response_code($statusCode);
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
 /**
