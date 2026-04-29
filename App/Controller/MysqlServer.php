@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Library\Display;
 use App\Library\MysqlLogCollector;
+use App\Library\ServerCapabilities;
 use Glial\Security\Crypt\Crypt;
 use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
@@ -118,9 +119,7 @@ class MysqlServer extends Controller
             return false;
         }
 
-        return $db->checkVersion(['MySQL' => '8.0'])
-            || $db->checkVersion(['Percona Server' => '8.0'])
-            || $db->checkVersion(['Percona' => '8.0']);
+        return ServerCapabilities::supports($db, 'performance_schema_processlist_modern');
     }
 
 /**
@@ -479,7 +478,10 @@ class MysqlServer extends Controller
                 $metadataLockEnabled = in_array($id_mysql_server, $metadataLockServerIds, true);
             }
 
-            if ($db->checkVersion(array('Percona Server' => '5.6')) && ! $db->checkVersion(array('Percona Server' => '5.7')))
+            if (
+                ServerCapabilities::supports($db, 'percona_processlist_56')
+                && ! ServerCapabilities::supports($db, 'percona_processlist_57')
+            )
             {
                 $sql = "SHOW FULL PROCESSLIST";
             }

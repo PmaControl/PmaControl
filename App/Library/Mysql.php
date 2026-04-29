@@ -492,11 +492,11 @@ class Mysql
             return $sql;
         }
 
-        if ($db->checkVersion(array('MariaDB'=> '10.1.1'))) {
+        if (ServerCapabilities::supports($db, 'information_schema_max_statement_time')) {
             return "SET STATEMENT MAX_STATEMENT_TIME = ".$timeoutSeconds." FOR ".$sql;
         }
 
-        if ($db->checkVersion(array('MySQL' => '5.7'))) {
+        if (ServerCapabilities::supports($db, 'select_max_execution_time_hint')) {
             if (stripos($sql, 'MAX_EXECUTION_TIME(') !== false) {
                 return $sql;
             }

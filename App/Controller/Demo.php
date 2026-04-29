@@ -13,6 +13,7 @@ use App\Library\Extraction2;
 use App\Library\Format;
 use App\Library\Debug;
 use App\Library\Mysql;
+use App\Library\ServerCapabilities;
 use \Glial\Sgbd\Sgbd;
 use App\Library\Chiffrement;
 
@@ -413,7 +414,7 @@ class Demo extends Controller {
         $db_master = Sgbd::sql($mysql_server[$id_mysql_server__master]['name']);
         $db_slave = Sgbd::sql($mysql_server[$id_mysql_server__slave]['name']);
 
-        if ($db_master->checkVersion(array('MySQL' => '8.4', 'Percona Server' => '8.4'))) {
+        if (ServerCapabilities::supports($db_master, 'show_binary_log_status')) {
             $res = $db_master->sql_query("SHOW BINARY LOG STATUS");
         } else {
             $res = $db_master->sql_query("SHOW MASTER STATUS");

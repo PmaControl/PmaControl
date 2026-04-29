@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use App\Library\Mysql;
+use App\Library\ServerCapabilities;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Debug;
 use \App\Library\Available;
@@ -32,7 +33,7 @@ class MysqlUser extends Controller
 
     public static function getExportAccountsSql($db): string
     {
-        if ($db->checkVersion(array('MariaDB' => '10.0'))) {
+        if (ServerCapabilities::supports($db, 'mysql_user_is_role_column')) {
             return "SELECT User as `user`,`Host` as `host` FROM mysql.user WHERE BINARY is_role = BINARY 'N' ORDER by user,host";
         }
 
