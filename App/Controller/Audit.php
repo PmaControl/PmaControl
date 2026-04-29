@@ -1766,27 +1766,15 @@ La suppression des index inutilisés permet donc d’améliorer les performances
     {
         echo "==== Difference de configuration entre les serveurs ====\n";
 
-        $id_mysql_servers = explode(',',$param[0]);
-        
-        Debug::debug($id_mysql_servers, 'wfdgwdf');
-
-        $sql = "SELECT
-            variable_name,";
-
-        $inter = array();
-        foreach($id_mysql_servers as $id_mysql_server)
-        {
-            Debug::debug($id_mysql_server, 'id_mysql_server');
-            $inter[] = " LEFT(MAX(CASE WHEN id_mysql_server = ".$id_mysql_server." THEN value END),50) AS value_server".$id_mysql_server." ";
+        $id_mysql_servers = ServerIdSelection::normalizeList($param[0] ?? null);
+        if ($id_mysql_servers === null) {
+            $this->view = false;
+            $this->layout_name = false;
+            echo "Invalid audit config selection\n";
+            return;
         }
 
-        $sql .= implode(',', $inter);
-            
-        $sql .= " FROM global_variable
-        WHERE id_mysql_server IN (".$param[0].")
-        GROUP BY variable_name
-        HAVING COUNT(DISTINCT value) > 1
-        ORDER BY variable_name;";
+        $sql = self::buildConfigDiffSql($id_mysql_servers);
 
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -1804,6 +1792,23 @@ La suppression des index inutilisés permet donc d’améliorer les performances
 
         $this->displayTable(array($data));
 
+    }
+
+    public static function buildConfigDiffSql(array $id_mysql_servers): string
+    {
+        $inter = array();
+        foreach ($id_mysql_servers as $id_mysql_server)
+        {
+            $id_mysql_server = (int) $id_mysql_server;
+            $inter[] = " LEFT(MAX(CASE WHEN id_mysql_server = ".$id_mysql_server." THEN value END),50) AS value_server".$id_mysql_server." ";
+        }
+
+        return "SELECT
+            variable_name,".implode(',', $inter)." FROM global_variable
+        WHERE id_mysql_server IN (".ServerIdSelection::toCsv($id_mysql_servers).")
+        GROUP BY variable_name
+        HAVING COUNT(DISTINCT value) > 1
+        ORDER BY variable_name;";
     }
 
 /*
