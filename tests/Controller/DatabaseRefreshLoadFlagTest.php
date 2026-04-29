@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Library\Database\RefreshShellCommand;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -41,9 +42,18 @@ final class DatabaseRefreshLoadFlagTest extends TestCase
 
     public function testDatabaseLoadUsesSourceDbFilter(): void
     {
-        $this->assertMatchesRegularExpression(
-            '/\$to_dump\s*=\s*[\'"]-s\s/s',
-            $this->loadBody,
+        $cmd = RefreshShellCommand::buildLoadCommand(
+            '127.0.0.1',
+            'loader',
+            'secret',
+            3306,
+            'app_db',
+            '/tmp/pmacontrol-refresh'
+        );
+
+        $this->assertStringContainsString(
+            ' -o -s '.escapeshellarg('app_db').' -d ',
+            $cmd,
             'databaseLoad() must use myloader -s (filter by source DB) when restoring a single DB from a multi-DB dump (#579)'
         );
     }
@@ -53,9 +63,18 @@ final class DatabaseRefreshLoadFlagTest extends TestCase
         // myloader's -B/--database renames every file in the dump dir into
         // the same target — exactly the cross-loading bug of #579. The flag
         // must not appear in the per-DB cmd builder.
-        $this->assertDoesNotMatchRegularExpression(
-            '/\$to_dump\s*=\s*[\'"]-B\s/s',
-            $this->loadBody,
+        $cmd = RefreshShellCommand::buildLoadCommand(
+            '127.0.0.1',
+            'loader',
+            'secret',
+            3306,
+            'app_db',
+            '/tmp/pmacontrol-refresh'
+        );
+
+        $this->assertStringNotContainsString(
+            ' -B ',
+            $cmd,
             'databaseLoad() must NOT pass -B to myloader — it loads every dumped DB into the same target (#579)'
         );
     }
@@ -64,14 +83,19 @@ final class DatabaseRefreshLoadFlagTest extends TestCase
     {
         // Sanity: the assembled $cmd interpolates $to_dump between -o and -d.
         $this->assertStringContainsString(
-            '-o $to_dump -d ',
+            'RefreshShellCommand::buildLoadCommand',
             $this->loadBody,
-            'databaseLoad() must inject the per-DB flag ($to_dump) into the myloader command between -o and -d'
+            'databaseLoad() must delegate the escaped myloader command to the shared refresh shell builder'
         );
-        $this->assertStringContainsString(
-            'myloader',
-            $this->loadBody,
-            'databaseLoad() must invoke myloader'
+
+        $cmd = RefreshShellCommand::buildLoadCommand(
+            '127.0.0.1',
+            'loader',
+            'secret',
+            3306,
+            'app_db',
+            '/tmp/pmacontrol-refresh'
         );
+        $this->assertStringContainsString('myloader', $cmd, 'databaseLoad() must invoke myloader');
     }
 }
