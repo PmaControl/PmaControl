@@ -22,9 +22,12 @@ use \App\Library\Available;
 use App\Library\MysqlServer;
 use App\Library\SelectorOptions;
 use App\Library\Database\Renamer;
+use App\Library\Database\RefreshShellCommand;
+use App\Library\Filesystem\SafeDirectory;
 use App\Library\Security\CsrfGuard;
 use App\Library\Security\GroupedFormRequest;
 use App\Library\Security\Identifier;
+use App\Library\Security\PositiveIntegerSelection;
 use \Glial\I18n\I18n;
 use \Glial\Cli\Table;
 use \Glial\Synapse\FactoryController;
@@ -514,6 +517,7 @@ class Database extends Controller
         }
         echo $message;
     }
+
     /*
      * example : ./glial database databaseRefresh  82 83 drupal_home '/mysql/backup'
      *
@@ -525,13 +529,25 @@ class Database extends Controller
 
         Debug::parseDebug($param);
 
-        $id_mysql_server__source = $param[0];
-        $id_mysql_server__target = $param[1];
-        $databases               = explode(",", $param[2]);
-        $path                    = $param[3];
-        $uuid                    = $param[4];
+        $id_mysql_server__source = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        $id_mysql_server__target = PositiveIntegerSelection::normalizeSingle($param[1] ?? null);
+        $rawDatabases            = $param[2] ?? null;
+        $databases               = is_scalar($rawDatabases)
+            ? Identifier::normalizeDatabaseNameList((string) $rawDatabases)
+            : null;
+        $path                    = $param[3] ?? null;
+        $uuid                    = is_scalar($param[4] ?? null) ? trim((string) $param[4]) : '';
+        $directory               = SafeDirectory::buildTemporaryChildPath($path, 'pmacontrol-refresh-');
 
-        $directory = $path."/".uniqid();
+        if (
+            $id_mysql_server__source === null
+            || $id_mysql_server__target === null
+            || $databases === null
+            || $directory === null
+            || !Uuid::isValid($uuid)
+        ) {
+            throw new \InvalidArgumentException('Invalid database refresh CLI payload');
+        }
 
         if (count($databases) > 1) {
 
@@ -540,24 +556,27 @@ class Database extends Controller
             $database = end($databases);
         }
 
-        $this->databaseDump(array($id_mysql_server__source, $database, $directory));
+        try {
+            $this->databaseDump(array($id_mysql_server__source, $database, $directory));
 
 //shell_exec("cd ".$directory." && rename 's///g' ".);
 
-        $metadata = file_get_contents($directory."/metadata");
+            $metadata = file_get_contents($directory."/metadata");
 
-        echo $metadata."\n";
+            echo $metadata."\n";
 
 //Mysql::set_db($db);
 //$ob = Mysql::getServerInfo($id_mysql_server__source);
 //echo "CHANGE MASTER TO MASTER_HOST='".$ob->ip."', MASTER_PORT=".$ob->port.", MASTER_USER='', MASTER_PORT='',
 //    MASTER_LOG_FILE='".gg."', MASTER_LOG_POS=;\n";
 
-        $this->databaseLoad(array($id_mysql_server__target, implode(",", $databases), $directory));
+            $this->databaseLoad(array($id_mysql_server__target, implode(",", $databases), $directory));
 
-        FactoryController::addNode("Job", "callback", array($uuid), FactoryController::RESULT);
+            FactoryController::addNode("Job", "callback", array($uuid), FactoryController::RESULT);
+        } finally {
+            SafeDirectory::removeTree($directory);
+        }
 
-        shell_exec("rm -rvf ".$directory);
     }
     /*
      * example
@@ -571,9 +590,17 @@ class Database extends Controller
 
         Debug::parseDebug($param);
 
-        $id_mysql_server = $param[0];
-        $database        = $param[1];
-        $path            = $param[2];
+        $id_mysql_server = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        $database        = is_scalar($param[1] ?? null) ? trim((string) $param[1]) : '';
+        $path            = is_scalar($param[2] ?? null) ? trim((string) $param[2]) : '';
+
+        if (
+            $id_mysql_server === null
+            || !Identifier::isSafeAbsolutePath($path)
+            || ($database !== 'ALL' && !Identifier::isDatabaseName($database))
+        ) {
+            throw new \InvalidArgumentException('Invalid database dump CLI payload');
+        }
 
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -587,12 +614,14 @@ class Database extends Controller
 
         if (!empty($ob)) {
             $password = Chiffrement::decrypt($ob->passwd);
-            $to_dump  = "";
-
-            if ($database != "ALL") {
-                $to_dump = " -B '".$database."' ";
-            }
-            $cmd = "mydumper -h ".$ob->ip." -u ".$ob->login." -p ".$password." -P ".$ob->port." ".$to_dump." -G -E -R -o ".$path." 2>&1 ";
+            $cmd = RefreshShellCommand::buildDumpCommand(
+                (string) $ob->ip,
+                (string) $ob->login,
+                (string) $password,
+                (int) $ob->port,
+                $database,
+                $path
+            );
             Debug::debug($cmd);
 
             $msg = shell_exec($cmd);
@@ -614,9 +643,17 @@ class Database extends Controller
     {
         Debug::parseDebug($param);
 
-        $id_mysql_server = $param[0];
-        $databases       = $param[1];
-        $path            = $param[2];
+        $id_mysql_server = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        $databases       = is_scalar($param[1] ?? null) ? trim((string) $param[1]) : '';
+        $path            = is_scalar($param[2] ?? null) ? trim((string) $param[2]) : '';
+
+        if (
+            $id_mysql_server === null
+            || !Identifier::isSafeAbsolutePath($path)
+            || ($databases !== 'ALL' && Identifier::normalizeDatabaseNameList($databases) === null)
+        ) {
+            throw new \InvalidArgumentException('Invalid database load CLI payload');
+        }
 
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -637,11 +674,11 @@ class Database extends Controller
 
             if ($databases != "ALL") {
 
-                $db_to_import = explode(",", $databases);
+                $db_to_import = Identifier::normalizeDatabaseNameList($databases);
                 $specify_db   = true;
             } else {
 
-                shell_exec("rm ".$path."/mysql.*.sql");
+                RefreshShellCommand::removeMysqlMetadataFiles($path);
 
                 $specify_db   = false;
                 $db_to_import = array('NA');
@@ -659,10 +696,19 @@ class Database extends Controller
                     // Issue #579: must be -s/--source-db (filter dump by source DB),
                     // NOT -B/--database (which renames everything in the dump dir
                     // into a single target and cross-loads other DBs).
-                    $to_dump = '-s '.$db_to_load;
+                    $to_dump = $db_to_load;
+                } else {
+                    $to_dump = 'ALL';
                 }
 
-                $cmd = "myloader -h ".$ob->ip." -u ".$ob->login." -p ".$password." -P ".$ob->port." -o $to_dump -d ".$path." 2>&1";
+                $cmd = RefreshShellCommand::buildLoadCommand(
+                    (string) $ob->ip,
+                    (string) $ob->login,
+                    (string) $password,
+                    (int) $ob->port,
+                    $to_dump,
+                    $path
+                );
                 Debug::debug($cmd, "cmd");
                 $msg = shell_exec($cmd);
 
@@ -980,20 +1026,41 @@ END;";
     {
         Debug::parseDebug($param);
 
-        $id_mysql_server__source = $param[0];
-        $id_mysql_server__target = $param[1];
-        $databases               = explode(",", $param[2]);
-        $path                    = $param[3];
+        $id_mysql_server__source = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        $id_mysql_server__target = PositiveIntegerSelection::normalizeSingle($param[1] ?? null);
+        $rawDatabases            = $param[2] ?? null;
+        $databases               = is_scalar($rawDatabases)
+            ? Identifier::normalizeDatabaseNameList((string) $rawDatabases)
+            : null;
+        $path                    = SafeDirectory::normalizeBaseDirectory($param[3] ?? null);
+
+        if (
+            $id_mysql_server__source === null
+            || $id_mysql_server__target === null
+            || $databases === null
+            || $path === null
+        ) {
+            throw new \InvalidArgumentException('Invalid database refresh job payload');
+        }
 
         $uuid = Uuid::uuid4()->toString();
 
         $log       = TMP."log/".$this->getClass()."-".__FUNCTION__."-".uniqid().'.log';
         $log_error = TMP."log/".$this->getClass()."-".__FUNCTION__."-".uniqid().'.error.log';
 
-        $php = explode(" ", shell_exec("whereis php"))[1];
-
-        $cmd = $php." ".GLIAL_INDEX." ".$this->getClass()." databaseRefresh ".$id_mysql_server__source." ".$id_mysql_server__target." '"
-            .implode(",", $databases)."' '".$path."' ".$uuid." --debug > ".$log." 2> ".$log_error." & echo $!";
+        $cmd = RefreshShellCommand::buildWorkerCommand(
+            PHP_BINARY,
+            GLIAL_INDEX,
+            $this->getClass(),
+            $id_mysql_server__source,
+            $id_mysql_server__target,
+            $databases,
+            $path,
+            $uuid,
+            $log,
+            $log_error,
+            Debug::$debug === true
+        );
 
         Debug::debug($cmd);
 
