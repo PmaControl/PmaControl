@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Controller\Dashboard;
+use App\Library\Html;
 use PHPUnit\Framework\TestCase;
 
 final class DashboardJsonFilterTest extends TestCase
@@ -122,5 +123,27 @@ final class DashboardJsonFilterTest extends TestCase
         $this->assertStringNotContainsString('header("location: ".LINK."Dashboard/json/', $jsonBody);
         $this->assertStringContainsString('method="get"', $view);
         $this->assertStringNotContainsString('method="post"', $view);
+    }
+
+    public function testHtmlEscapeEncodesDashboardValues(): void
+    {
+        $this->assertSame(
+            '&lt;script&gt;alert(&#039;x&#039;)&lt;/script&gt;&quot;',
+            Html::escape('<script>alert(\'x\')</script>"')
+        );
+    }
+
+    public function testJsonViewEscapesStoredHtmlSinks(): void
+    {
+        $view = (string) file_get_contents(__DIR__ . '/../../App/view/Dashboard/json.view.php');
+
+        $this->assertStringContainsString("Html::escape(\$elem['date'] ?? '')", $view);
+        $this->assertStringContainsString('Html::escape($header)', $view);
+        $this->assertStringContainsString('Html::escape(print_r($value, true))', $view);
+        $this->assertStringContainsString('Html::escape($value)', $view);
+        $this->assertStringContainsString('\\SqlFormatter::format((string) $value)', $view);
+        $this->assertStringContainsString('!is_array($value)', $view);
+        $this->assertStringNotContainsString('print_r($value);', $view);
+        $this->assertStringNotContainsString('" . $value . "</td>"', $view);
     }
 }
