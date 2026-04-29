@@ -17,6 +17,20 @@ final class Identifier
         return preg_match(self::DATABASE_NAME_PATTERN, $name) === 1;
     }
 
+    public static function isSqlIdentifier(string $identifier): bool
+    {
+        return self::isDatabaseName($identifier);
+    }
+
+    public static function quoteSqlIdentifier(string $identifier): string
+    {
+        if (!self::isSqlIdentifier($identifier)) {
+            throw new \InvalidArgumentException('Invalid SQL identifier');
+        }
+
+        return '`' . str_replace('`', '``', $identifier) . '`';
+    }
+
     public static function normalizeDatabaseNameList(string $names, int $maxItems = 64): ?array
     {
         $items = [];
