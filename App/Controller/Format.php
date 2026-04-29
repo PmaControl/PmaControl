@@ -8,6 +8,7 @@
 namespace App\Controller;
 
 use \Glial\Synapse\Controller;
+use App\Library\Http\HttpOutcome;
 use App\Library\Security\CsrfGuard;
 use Glial\Security\Csrf;
 
@@ -85,25 +86,22 @@ class Format extends Controller
     {
         $guard = CsrfGuard::check($post, $server, $session, self::FORMAT_INDEX_CSRF_SCOPE);
         if (!$guard['allowed']) {
-            return self::buildIndexPostOutcome($guard['status'], $guard['body'], $guard['headers']);
+            return HttpOutcome::fromGuard($guard, ['sql' => '', 'hash' => '']);
         }
 
         $sql = self::normalizeSqlPayload($post);
         if ($sql === null) {
-            return self::buildIndexPostOutcome(422, 'Invalid SQL payload');
+            return HttpOutcome::error(422, 'Invalid SQL payload', [], ['sql' => '', 'hash' => '']);
         }
 
         if (strlen($sql) > self::FORMAT_SQL_MAX_BYTES) {
-            return self::buildIndexPostOutcome(413, 'SQL payload too large');
+            return HttpOutcome::error(413, 'SQL payload too large', [], ['sql' => '', 'hash' => '']);
         }
 
-        return [
-            'status' => 200,
-            'body' => '',
-            'headers' => [],
+        return HttpOutcome::ok([
             'sql' => $sql,
             'hash' => md5($sql),
-        ];
+        ]);
     }
 
     public static function normalizeSqlPayload(array $post): ?string
@@ -209,17 +207,6 @@ class Format extends Controller
     private static function isFormatSqlHash(string $hash): bool
     {
         return preg_match('/\\A[a-f0-9]{32}\\z/i', $hash) === 1;
-    }
-
-    private static function buildIndexPostOutcome(int $statusCode, string $message, array $headers = []): array
-    {
-        return [
-            'status' => $statusCode,
-            'body' => $message,
-            'headers' => $headers,
-            'sql' => '',
-            'hash' => '',
-        ];
     }
 
     private static function sendFormatError(int $statusCode, string $message, array $headers = []): void

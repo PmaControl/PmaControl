@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use Glial\I18n\I18n;
 use Glial\Synapse\Controller;
+use App\Library\Http\HttpOutcome;
 use App\Library\Http\HttpResponse;
 use App\Library\Security\CsrfGuard;
 use App\Library\Post;
@@ -141,20 +142,15 @@ class Tag extends Controller {
     {
         $guard = CsrfGuard::check($post, $server, $session, self::TAG_ADD_CSRF_SCOPE);
         if (!$guard['allowed']) {
-            return self::buildTagAddOutcome($guard['status'], $guard['body'], $guard['headers']);
+            return HttpOutcome::fromGuard($guard, ['tag' => null]);
         }
 
         $tag = self::normalizeAddPayload($post);
         if ($tag === null) {
-            return self::buildTagAddOutcome(400, 'Invalid tag add payload');
+            return HttpOutcome::error(400, 'Invalid tag add payload', [], ['tag' => null]);
         }
 
-        return [
-            'status' => 200,
-            'body' => '',
-            'headers' => [],
-            'tag' => $tag,
-        ];
+        return HttpOutcome::ok(['tag' => $tag]);
     }
 
     public static function normalizeAddPayload(array $post): ?array
@@ -189,16 +185,6 @@ class Tag extends Controller {
             'name' => $tag['name'],
             'color' => $tag['color'],
             'background' => $tag['background'],
-        ];
-    }
-
-    private static function buildTagAddOutcome(int $statusCode, string $message, array $headers = []): array
-    {
-        return [
-            'status' => $statusCode,
-            'body' => $message,
-            'headers' => $headers,
-            'tag' => null,
         ];
     }
 
@@ -251,20 +237,15 @@ class Tag extends Controller {
     {
         $guard = CsrfGuard::check($post, $server, $session, self::TAG_UPDATE_CSRF_SCOPE);
         if (!$guard['allowed']) {
-            return self::buildTagUpdateOutcome($guard['status'], $guard['body'], $guard['headers']);
+            return HttpOutcome::fromGuard($guard, ['update' => null]);
         }
 
         $update = self::normalizeUpdatePayload($post);
         if ($update === null) {
-            return self::buildTagUpdateOutcome(400, "Invalid tag update payload");
+            return HttpOutcome::error(400, "Invalid tag update payload", [], ['update' => null]);
         }
 
-        return [
-            'status' => 200,
-            'body' => '',
-            'headers' => [],
-            'update' => $update,
-        ];
+        return HttpOutcome::ok(['update' => $update]);
     }
 
     public static function normalizeUpdatePayload(array $post): ?array
@@ -306,16 +287,6 @@ class Tag extends Controller {
             $escape($update['value']),
             $update['id']
         );
-    }
-
-    private static function buildTagUpdateOutcome(int $statusCode, string $message, array $headers = []): array
-    {
-        return [
-            'status' => $statusCode,
-            'body' => $message,
-            'headers' => $headers,
-            'update' => null,
-        ];
     }
 
     private static function sendTagUpdateError(int $statusCode, string $message, array $headers = []): void
