@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Library\Display;
 use App\Library\MysqlLogCollector;
+use App\Library\Security\SafeRedirect;
 use App\Library\ServerCapabilities;
 use Glial\Security\Crypt\Crypt;
 use \Glial\Synapse\Controller;
@@ -4445,8 +4446,8 @@ class MysqlServer extends Controller
             return;
         }
 
-        // Mode WEB : retour page précédente (fallback sur dashboard)
-        $back = $_SERVER['HTTP_REFERER'] ?? "/serverdashboard/main/{$id_mysql_server}";
+        // Mode WEB : retour page précédente same-site (fallback sur dashboard)
+        $back = SafeRedirect::refererOrFallback($_SERVER, "/serverdashboard/main/{$id_mysql_server}");
         header("Location: " . $back);
         exit;
     }
@@ -4497,7 +4498,7 @@ class MysqlServer extends Controller
             return;
         }
 
-        $back = $_SERVER['HTTP_REFERER'] ?? "/serverdashboard/main/{$id_mysql_server}";
+        $back = SafeRedirect::refererOrFallback($_SERVER, "/serverdashboard/main/{$id_mysql_server}");
         header("Location: " . $back);
         exit;
     }
@@ -4537,7 +4538,7 @@ class MysqlServer extends Controller
             WHERE id = ".$id_mysql_server." LIMIT 1";
         $db->sql_query($sql);
 
-        $back = $_SERVER['HTTP_REFERER'] ?? (LINK."MysqlServer/main/".$id_mysql_server."/pmacontrol");
+        $back = SafeRedirect::refererOrFallback($_SERVER, LINK."MysqlServer/main/".$id_mysql_server."/pmacontrol");
         header("Location: " . $back);
         exit;
     }
