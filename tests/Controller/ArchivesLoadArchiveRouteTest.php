@@ -24,6 +24,11 @@ final class ArchivesLoadArchiveRouteTest extends TestCase
         $this->assertStringContainsString('final class ArchiveLoader', $loader);
         $this->assertStringContainsString('public static function dispatch(Archives $controller, array $payload): void', $loader);
         $this->assertStringContainsString('$controller->load(array($idArchiveLoad));', $loader);
-        $this->assertStringContainsString('Archives load ".$idArchiveLoad', $loader);
+        $this->assertStringContainsString('PHP_BINARY', $loader);
+        $this->assertStringContainsString("'Archives'", $loader);
+        $this->assertStringContainsString("'load'", $loader);
+        $this->assertStringContainsString("array_map('escapeshellarg', \$command)", $loader);
+        $this->assertStringContainsString("escapeshellarg(TMP.'archive_'.\$idCleanerMain.'_'.\$database.'.sql')", $loader);
+        $this->assertStringNotContainsString('whereis php', $loader);
     }
 }

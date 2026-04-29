@@ -6,6 +6,7 @@
 namespace App\Controller;
 
 use App\Library\Archive\ArchiveLoader;
+use App\Library\Archive\MysqlRestoreCommand;
 use App\Library\Security\ArchiveRestoreRequest;
 use Glial\Security\Csrf;
 use \Glial\Synapse\Controller;
@@ -485,8 +486,6 @@ var myChart = new Chart(ctx, {
 
                 $conf = Sgbd::getParam($mysqlservertoload);
 
-                Debug::debug($conf, "Conf from getParam");
-
                 if (!empty($conf['crypted']) && $conf['crypted'] === "1") {
                     $conf['password'] = Crypt::decrypt($conf['password']);
                 }
@@ -498,29 +497,43 @@ var myChart = new Chart(ctx, {
 
 
                 //to prevent old stuff we archived, like enum with empty choice or duble choice
-                shell_exec("sed -i '1iSET sql_mode=\"ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION\";' ".$stats['file_path']);
+                $exit = 1;
+                $log_mysql = null;
+                $defaults_file = null;
+                $restore_exception = null;
 
-                $log_mysql = "/tmp/".uniqid();
+                try {
+                    MysqlRestoreCommand::prefixDumpWithSqlMode($stats['file_path']);
 
-                $cmd = "pv ".$stats['file_path']." | mysql -h ".$conf['hostname']." -P ".$conf['port']." -u ".$conf['user']." -p'{password}' ".$database." 2> ".$log_mysql;
+                    $log_mysql = MysqlRestoreCommand::createErrorLogFile();
+                    $defaults_file = MysqlRestoreCommand::createClientDefaultsFile($conf);
+                    $cmd = MysqlRestoreCommand::buildLoadCommand($defaults_file, $stats['file_path'], $database, $log_mysql);
 
-                Debug::debug($cmd);
-                $cmd = str_replace("{password}", $conf['password'], $cmd);
-
-                $db->sql_close(); // to prevent lost of connextion for inactivity
-                passthru($cmd, $exit);
-                $db = Sgbd::sql(DB_DEFAULT);
+                    $db->sql_close(); // to prevent lost of connextion for inactivity
+                    passthru($cmd, $exit);
+                    $db = Sgbd::sql(DB_DEFAULT);
+                } catch (\Throwable $exception) {
+                    $restore_exception = $exception;
+                    $exit = 1;
+                    $db = Sgbd::sql(DB_DEFAULT);
+                } finally {
+                    MysqlRestoreCommand::deleteFile($defaults_file);
+                }
 
                 if ($exit !== 0) {
 
                     $main_error = true;
 
                     $sql_error = "";
-                    $sql_error = file_get_contents($log_mysql);
+                    if ($restore_exception instanceof \Throwable) {
+                        $sql_error = $restore_exception->getMessage();
+                    } elseif ($log_mysql !== null && is_file($log_mysql)) {
+                        $sql_error = file_get_contents($log_mysql);
+                    }
 
                     $msg = "We could'nt load this file '".$stats['file_path']."' to mysql [".$sql_error."]";
 
-                    unlink($log_mysql);
+                    MysqlRestoreCommand::deleteFile($log_mysql);
 
                     $this->log("info", "MYSQL", $msg);
 
@@ -549,6 +562,8 @@ var myChart = new Chart(ctx, {
 
                     $size += $archive['size_sql'];
                 }
+
+                MysqlRestoreCommand::deleteFile($log_mysql);
 
                 unlink($stats['file_path']);
 
