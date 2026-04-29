@@ -436,9 +436,22 @@ class Database extends Controller
                 $refresh['path'],
                 $debug,
             );
-            $this->addRefresh($elems);
 
+            // Issue #570: addRefresh() lazily autoloads vendor classes (e.g.
+            // Ramsey\Uuid\UuidFactory). In dev mode (display_errors=1 forced
+            // by Bootstrap.php) any deprecation/warning emitted during the
+            // autoload would be flushed to the response, causing the
+            // header() below to fail with "headers already sent" and stranding
+            // the user on /database/refresh instead of /job/index.
+            // Buffer the addRefresh() output so any warning is contained.
+            ob_start();
+            $this->addRefresh($elems);
+            ob_end_clean();
+
+            $this->view = false;
+            $this->layout_name = false;
             header("location: ".LINK."job/index");
+            return;
         }
 
 
