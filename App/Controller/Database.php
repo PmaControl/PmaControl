@@ -20,6 +20,7 @@ use \App\Library\Extraction;
 use \App\Library\Param;
 use \App\Library\Available;
 use App\Library\MysqlServer;
+use App\Library\SelectorOptions;
 use App\Library\Security\CsrfGuard;
 use App\Library\Security\GroupedFormRequest;
 use App\Library\Security\Identifier;
@@ -1867,16 +1868,7 @@ END;";
 
         $db_to_get_db = Mysql::getDbLink($id_mysql_server);
 
-        $sql  = "SHOW DATABASES";
-        $res2 = $db_to_get_db->sql_query($sql);
-
-        $data['databases'] = [];
-        while ($ob                = $db_to_get_db->sql_fetch_object($res2)) {
-            $tmp                 = [];
-            $tmp['id']           = $ob->Database;
-            $tmp['libelle']      = $ob->Database;
-            $data['databases'][] = $tmp;
-        }
+        $data['databases'] = SelectorOptions::databaseNamesFromConnection($db_to_get_db);
 
         $this->set("data", $data);
         return $data;

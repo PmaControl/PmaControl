@@ -1,11 +1,3 @@
 <?php
 
-
-use \Glial\Html\Form\Form;
-
-
-
-$options = array_merge(array("data-live-search" => "true", "class" => "selectpicker"), $data['options']);
-
-
-echo Form::Select($data['table'],$data['field'], $data['variable'],"",$options);
+require __DIR__ . '/_ts_variable_select_partial.view.php';

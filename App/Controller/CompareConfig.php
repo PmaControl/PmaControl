@@ -14,6 +14,7 @@ use \Glial\Sgbd\Sql\Mysql\Compare as CompareTable;
 use \App\Library\Debug;
 use \App\Library\Mysql;
 use App\Library\MysqlServer;
+use App\Library\SelectorOptions;
 use App\Library\Security\CompareMainSelection;
 use \Glial\Sgbd\Sgbd;
 
@@ -811,16 +812,7 @@ class CompareConfig extends Controller {
 
         $db_to_get_db = $this->getDbLinkFromId($id_mysql_server);
 
-        $sql = "SHOW DATABASES";
-        $res2 = $db_to_get_db->sql_query($sql);
-
-        $data['databases'] = [];
-        while ($ob = $db_to_get_db->sql_fetch_object($res2)) {
-            $tmp = [];
-            $tmp['id'] = $ob->Database;
-            $tmp['libelle'] = $ob->Database;
-            $data['databases'][] = $tmp;
-        }
+        $data['databases'] = SelectorOptions::databaseNamesFromConnection($db_to_get_db);
 
         $this->set("data", $data);
         return $data;
