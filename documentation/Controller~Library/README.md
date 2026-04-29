@@ -698,12 +698,6 @@ Generated automatically from `App/Controller` and `App/Library`.
 - Summary: `documentation/Controller~Library/OllamaClient.md`
 - Methods: 2
 
-## Os
-
-- Kind: trait
-- Summary: `documentation/Controller~Library/Os.md`
-- Methods: 1
-
 ## Param
 
 - Kind: class

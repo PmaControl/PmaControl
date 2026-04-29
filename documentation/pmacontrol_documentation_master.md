@@ -8720,14 +8720,13 @@ Cette étape permet de synchroniser les alias DNS basés sur
   - `App/view/Server/main.view.php:358`
   - `App/view/Server/main.view.php:359`
   - `...` (34 occurrences supplémentaires)
-- Références autres (lib/model): 23
+- Références autres (lib/model): 22
   - `App/Library/Galera.php:257`
   - `App/Library/Filter.php:181`
   - `App/Library/Param.php:24`
   - `App/Library/Graphviz.php:547`
   - `App/Library/Graphviz.php:561`
   - `App/Library/Graphviz.php:1319`
-  - `App/Library/Os.php:129`
   - `App/Library/Git.php:28`
   - `App/Library/Git.php:29`
   - `App/Library/Format.php:20`
