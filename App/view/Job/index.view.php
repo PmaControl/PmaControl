@@ -4,6 +4,12 @@
 
 use SensioLabs\AnsiConverter\AnsiToHtmlConverter;
 
+/*
+ * Issue #580 — bound log/error cells to ~10 lines × 1000 px with a
+ * scrollbar, monospace + black background preserved. The auto-scroll
+ * JS below pins the view on the LAST line (most relevant: current
+ * status / latest CRITICAL).
+ */
 function getBadge($status)
 {
 
@@ -37,6 +43,29 @@ function getBadge($status)
     return $color;
 }
 ?>
+<style>
+.job-log {
+    background-color: #000;
+    color: #ddd;
+    padding: 5px;
+    margin: 0;
+    font-family: monospace;
+    /* ~10 lines (1.4em line-height × 10) + padding */
+    max-height: 14em;
+    max-width: 1000px;
+    overflow: auto;       /* both axes — vertical scroll for >10 lines, horizontal for long mydumper command lines */
+    white-space: pre;     /* keep mydumper lines on one line; the horizontal scrollbar handles long lines */
+}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    /* Issue #580: focus the LAST line of every log/error pre, so the
+     * operator sees the current status / latest CRITICAL without scrolling. */
+    document.querySelectorAll('.job-log').forEach(function (el) {
+        el.scrollTop = el.scrollHeight;
+    });
+});
+</script>
 <div class="panel panel-primary">
     <div class="panel-heading">
         <h3 class="panel-title"><?= __('Listing') ?></h3>
@@ -93,12 +122,12 @@ function getBadge($status)
 
             <td><?php
                 if (!empty($job['log_msg'])) {
-                    echo '<pre id="data_log" style="background-color: black; overflow: auto;  padding: 5px; font-family: monospace;">'.$job['log_msg'].'</pre>';
+                    echo '<pre class="job-log">'.$job['log_msg'].'</pre>';
                 }
                 ?></td>
             <td><?php
                 if (!empty($job['error_msg'])) {
-                    echo '<pre id="data_log" style="background-color: black; overflow: auto; max-height:400px; max-width:500px; padding: 5px; font-family: monospace;">'.$job['error_msg'].'</pre>';
+                    echo '<pre class="job-log">'.$job['error_msg'].'</pre>';
                 }
                 ?></td>
 
