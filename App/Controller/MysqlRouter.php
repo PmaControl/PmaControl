@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Library\Debug;
+use App\Library\Http\HttpResponse;
 use App\Library\Mysql;
 use App\Library\Security\CsrfGuard;
 use Glial\Sgbd\Sgbd;
@@ -130,11 +131,7 @@ class MysqlRouter extends Controller
             if (!$outcome['allowed']) {
                 $this->view = false;
                 $this->layout_name = false;
-                http_response_code($outcome['status']);
-                foreach ($outcome['headers'] as $name => $value) {
-                    header($name . ': ' . $value);
-                }
-                echo $outcome['body'];
+                HttpResponse::sendOutcome($outcome, null);
                 return;
             }
 

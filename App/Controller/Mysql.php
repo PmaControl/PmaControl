@@ -12,6 +12,7 @@ use \App\Library\Graphviz;
 use \App\Library\Extraction2;
 use \App\Library\Mysql as Mysql2;
 use \Glial\Sgbd\Sgbd;
+use App\Library\Http\HttpResponse;
 use App\Library\Network\HostResolver;
 use App\Library\Security\CsrfGuard;
 use App\Library\Security\Identifier;
@@ -754,11 +755,7 @@ class Mysql extends Controller
             if (!$outcome['allowed']) {
                 $this->view = false;
                 $this->layout_name = false;
-                http_response_code($outcome['status']);
-                foreach ($outcome['headers'] as $name => $value) {
-                    header($name . ': ' . $value);
-                }
-                echo $outcome['body'];
+                HttpResponse::sendOutcome($outcome, null);
                 return;
             }
 
@@ -1760,11 +1757,7 @@ class Mysql extends Controller
             if (!$outcome['allowed']) {
                 $this->view = false;
                 $this->layout_name = false;
-                http_response_code($outcome['status']);
-                foreach ($outcome['headers'] as $name => $value) {
-                    header($name . ': ' . $value);
-                }
-                echo $outcome['body'];
+                HttpResponse::sendOutcome($outcome, null);
                 return;
             }
 

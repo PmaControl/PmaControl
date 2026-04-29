@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Library\Debug;
+use App\Library\Http\HttpResponse;
 use App\Library\Security\CsrfGuard;
 use App\Library\Kpi\KpiDaemonDrilldown;
 use App\Library\Kpi\KpiDashboard;
@@ -378,13 +379,6 @@ class Kpi extends Controller
         $this->layout_name = false;
         $this->view = false;
 
-        http_response_code((int)$outcome['status']);
-        foreach ($outcome['headers'] as $name => $value) {
-            header($name.': '.$value);
-        }
-
-        if ((string)$outcome['body'] !== '') {
-            echo $outcome['body'];
-        }
+        HttpResponse::sendOutcome($outcome, null);
     }
 }

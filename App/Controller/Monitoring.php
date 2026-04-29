@@ -6,6 +6,7 @@ use \Glial\Synapse\Controller;
 use \Glial\Html\Pagination\Pagination;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Debug;
+use App\Library\Http\HttpResponse;
 
 /**
  * Class responsible for monitoring workflows.
@@ -169,11 +170,7 @@ class Monitoring extends Controller
         if (!$outcome['allowed']) {
             $this->view = false;
             $this->layout_name = false;
-            http_response_code($outcome['status']);
-            foreach ($outcome['headers'] as $name => $value) {
-                header($name . ': ' . $value);
-            }
-            echo $outcome['body'];
+            HttpResponse::sendOutcome($outcome, null);
             return;
         }
 

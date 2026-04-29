@@ -7,6 +7,7 @@ use \App\Library\Debug;
 use \App\Library\Mysql;
 use \App\Library\Extraction;
 use \App\Library\Extraction2;
+use App\Library\Http\HttpResponse;
 use App\Library\Security\CsrfGuard;
 use App\Library\Security\Identifier;
 use \Glial\Sgbd\Sgbd;
@@ -1959,11 +1960,7 @@ class ProxySQL extends Controller
 
         $outcome = self::evaluateUpdateFieldRequest($param, $_POST, $_SERVER, $_SESSION);
         if (!$outcome['allowed']) {
-            http_response_code($outcome['status']);
-            foreach ($outcome['headers'] as $name => $value) {
-                header($name . ': ' . $value);
-            }
-            echo $outcome['body'];
+            HttpResponse::sendOutcome($outcome, null);
             return;
         }
 
