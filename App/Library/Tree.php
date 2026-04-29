@@ -7,6 +7,7 @@
 
 namespace App\Library;
 
+use App\Library\Security\PositiveIntegerSelection;
 use \App\Library\Debug;
 
 /**
@@ -131,25 +132,29 @@ class Tree
  */
     public function delete($id)
     {
-        $sql = "SELECT * FROM `".$this->table_name."` WHERE `".$this->fields['id']."`='".$id."'";
+        $id = self::normalizePositiveInteger($id, 'tree id');
+
+        $sql = "SELECT * FROM `".$this->table_name."` WHERE `".$this->fields['id']."`=".$id;
 
         $ob       = $this->db->sql_fetch_object($this->db->sql_query($sql));
-        $interval = $ob->{$this->fields['bd']} - $ob->{$this->fields['bg']} + 1;
+        $bg       = self::normalizePositiveInteger($ob->{$this->fields['bg']}, 'tree left bound');
+        $bd       = self::normalizePositiveInteger($ob->{$this->fields['bd']}, 'tree right bound');
+        $interval = $bd - $bg + 1;
 
-        $sql2 = "DELETE FROM `".$this->table_name."` WHERE `".$this->fields['bg']."` >= ".$ob->{$this->fields['bg']}."
-            AND `".$this->fields['bd']."` <= '".$ob->{$this->fields['bd']}."'".$this->extraWhere();
+        $sql2 = "DELETE FROM `".$this->table_name."` WHERE `".$this->fields['bg']."` >= ".$bg."
+            AND `".$this->fields['bd']."` <= ".$bd.$this->extraWhere();
 
         $this->db->sql_query($sql2);
 
 
         $sql3 = "UPDATE `".$this->table_name."` SET `".$this->fields['bd']."` = `".$this->fields['bd']."` - ".$interval."
-            WHERE `".$this->fields['bd']."` >= ".$ob->{$this->fields['bd']}.$this->extraWhere();
+            WHERE `".$this->fields['bd']."` >= ".$bd.$this->extraWhere();
 
         $this->db->sql_query($sql3);
 
 
         $sql4 = "UPDATE `".$this->table_name."` SET `".$this->fields['bg']."` = `".$this->fields['bg']."` - ".$interval."
-            WHERE `".$this->fields['bg']."` >= ".$ob->{$this->fields['bg']}.$this->extraWhere();
+            WHERE `".$this->fields['bg']."` >= ".$bg.$this->extraWhere();
 
         $this->db->sql_query($sql4);
 
@@ -176,13 +181,30 @@ class Tree
  */
     private function extraWhere()
     {
+        if ($this->options === []) {
+            return "";
+        }
 
         $extra = array();
         foreach ($this->options as $key => $val) {
-            $extra[] = "`".$key."` = '".$val."'";
+            if (! is_string($key) || preg_match('/^[A-Za-z0-9_]+$/', $key) !== 1) {
+                throw new \InvalidArgumentException('Invalid tree option key');
+            }
+
+            $extra[] = "`".$key."` = ".self::normalizePositiveInteger($val, 'tree option value');
         }
 
         return " AND ".implode(" AND ", $extra);
+    }
+
+    private static function normalizePositiveInteger($value, string $label): int
+    {
+        $id = PositiveIntegerSelection::normalizeSingle($value);
+        if ($id === null) {
+            throw new \InvalidArgumentException('Invalid '.$label);
+        }
+
+        return $id;
     }
 
 /**
@@ -211,26 +233,30 @@ class Tree
  */
     public function add($leaf, $id_parent = NULL)
     {
+        $parentId = $id_parent === null || $id_parent === "NULL"
+            ? null
+            : self::normalizePositiveInteger($id_parent, 'tree parent id');
 
-        if ($id_parent === "NULL") {
+        if ($parentId === null) {
             $bg        = 1;
             $bd        = 2;
             $id_parent = NULL;
         } else {
-            $sql = "SELECT * FROM `".$this->table_name."` WHERE `".$this->fields['id']."` = ".$this->db->sql_real_escape_string($id_parent);
+            $id_parent = $parentId;
+            $sql = "SELECT * FROM `".$this->table_name."` WHERE `".$this->fields['id']."` = ".$id_parent;
 
             $res = $this->db->sql_query($sql);
 
             while ($ob = $this->db->sql_fetch_object($res)) {
-                $bg        = $ob->{$this->fields['bg']};
-                $bd        = $ob->{$this->fields['bd']};
-                $id_parent = $ob->{$this->fields['id']};
+                $bg        = self::normalizePositiveInteger($ob->{$this->fields['bg']}, 'tree left bound');
+                $bd        = self::normalizePositiveInteger($ob->{$this->fields['bd']}, 'tree right bound');
+                $id_parent = self::normalizePositiveInteger($ob->{$this->fields['id']}, 'tree id');
             }
 
-            $sql2 = "UPDATE `".$this->table_name."` SET `".$this->fields['bd']."` = `".$this->fields['bd']."` + 2 WHERE `".$this->fields['bd']."` >= '".$bd."'";
+            $sql2 = "UPDATE `".$this->table_name."` SET `".$this->fields['bd']."` = `".$this->fields['bd']."` + 2 WHERE `".$this->fields['bd']."` >= ".$bd;
             $this->db->sql_query($sql2);
 
-            $sql3 = "UPDATE `".$this->table_name."` SET `".$this->fields['bg']."` = `".$this->fields['bg']."` + 2 WHERE `".$this->fields['bg']."` >= '".$bd."'";
+            $sql3 = "UPDATE `".$this->table_name."` SET `".$this->fields['bg']."` = `".$this->fields['bg']."` + 2 WHERE `".$this->fields['bg']."` >= ".$bd;
             $this->db->sql_query($sql3);
 
 
@@ -285,6 +311,7 @@ class Tree
  */
     public function up($id) // remonte d'un cran un item dans le menu sans effet dans l'arbre recursif
     {
+        $id = self::normalizePositiveInteger($id, 'tree id');
         $bornes = $this->getInterval($id);
 
         $sql2 = "WITH a as (select `".$this->fields['bg']."` from `".$this->table_name."` where `".$this->fields['id']."`=".$id.") "
@@ -296,8 +323,8 @@ class Tree
         $res2 = $this->db->sql_query($sql2);
 
         while ($ob2 = $this->db->sql_fetch_object($res2)) {
-            $bg_d = $ob2->{$this->fields['bg']};
-            $bd_d = $ob2->{$this->fields['bd']};
+            $bg_d = self::normalizePositiveInteger($ob2->{$this->fields['bg']}, 'tree left bound');
+            $bd_d = self::normalizePositiveInteger($ob2->{$this->fields['bd']}, 'tree right bound');
         }
 
         $ofset     = $bornes['bd'] - $bornes['bg'] + 1;
@@ -358,6 +385,7 @@ class Tree
  */
     public function countFather($id)
     {
+        $id = self::normalizePositiveInteger($id, 'tree id');
 
         $bornes = $this->getInterval($id);
 
@@ -394,14 +422,15 @@ class Tree
  */
     private function getInterval($id)
     {
+        $id = self::normalizePositiveInteger($id, 'tree id');
         $sql = "SELECT * FROM `".$this->table_name."` WHERE `".$this->fields['id']."` =".$id;
         $res = $this->db->sql_query($sql);
 
         $ret = [];
 
         while ($ob = $this->db->sql_fetch_object($res)) {
-            $ret['bg'] = $ob->{$this->fields['bg']};
-            $ret['bd'] = $ob->{$this->fields['bd']};
+            $ret['bg'] = self::normalizePositiveInteger($ob->{$this->fields['bg']}, 'tree left bound');
+            $ret['bd'] = self::normalizePositiveInteger($ob->{$this->fields['bd']}, 'tree right bound');
         }
 
         return $ret;
@@ -430,15 +459,16 @@ class Tree
  */
     public function getfather($id)
     {
+        $id = self::normalizePositiveInteger($id, 'tree id');
 
         $sql = "SELECT * FROM `".$this->table_name."` WHERE `".$this->fields['id_parent']."` = ".$id."";
         $res = $this->db->sql_query($sql);
 
         $ret = array();
         while ($ob  = $this->db->sql_fetch_object($res)) {
-            $ret['bg'] = $ob->{$this->fields['bg']};
-            $ret['bd'] = $ob->{$this->fields['bd']};
-            $ret['id'] = $ob->{$this->fields['id']};
+            $ret['bg'] = self::normalizePositiveInteger($ob->{$this->fields['bg']}, 'tree left bound');
+            $ret['bd'] = self::normalizePositiveInteger($ob->{$this->fields['bd']}, 'tree right bound');
+            $ret['id'] = self::normalizePositiveInteger($ob->{$this->fields['id']}, 'tree id');
         }
 
         return $ret;
@@ -467,6 +497,7 @@ class Tree
  */
     public function left($id)
     {
+        $id = self::normalizePositiveInteger($id, 'tree id');
         $bornes = $this->getInterval($id);
 
         $current_father = $this->getfather($id);
@@ -556,4 +587,3 @@ class Tree
 ";
     }
 }
-

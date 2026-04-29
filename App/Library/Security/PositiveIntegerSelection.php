@@ -8,6 +8,33 @@ final class PositiveIntegerSelection
 {
     public const DEFAULT_MAX_IDS = 64;
 
+    public static function normalizeSingle($raw, ?int $maxValue = null): ?int
+    {
+        if (!is_scalar($raw)) {
+            return null;
+        }
+
+        $id = trim((string) $raw);
+        if ($id === '' || !ctype_digit($id)) {
+            return null;
+        }
+
+        $normalized = ltrim($id, '0');
+        if ($normalized === '') {
+            return null;
+        }
+
+        $maximum = (string) ($maxValue ?? PHP_INT_MAX);
+        if (
+            strlen($normalized) > strlen($maximum)
+            || (strlen($normalized) === strlen($maximum) && strcmp($normalized, $maximum) > 0)
+        ) {
+            return null;
+        }
+
+        return (int) $normalized;
+    }
+
     public static function normalizeList($raw, int $maxIds = self::DEFAULT_MAX_IDS, ?int $maxValue = null): ?array
     {
         if (is_array($raw)) {
@@ -33,21 +60,12 @@ final class PositiveIntegerSelection
 
         $ids = [];
         foreach ($values as $value) {
-            if (!is_scalar($value)) {
+            $id = self::normalizeSingle($value, $maxValue);
+            if ($id === null) {
                 return null;
             }
 
-            $id = trim((string) $value);
-            if ($id === '' || !ctype_digit($id) || (int) $id < 1) {
-                return null;
-            }
-
-            $value = (int) $id;
-            if ($maxValue !== null && $value > $maxValue) {
-                return null;
-            }
-
-            $ids[] = $value;
+            $ids[] = $id;
         }
 
         if ($ids === [] || count($ids) > $maxIds || count($ids) !== count(array_unique($ids))) {
