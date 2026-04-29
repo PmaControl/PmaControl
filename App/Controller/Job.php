@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use \Glial\Synapse\Controller;
+use App\Library\Database\RefreshArtifact;
 use App\Library\Mydumper;
 use App\Library\System;
 use App\Library\Debug;
@@ -84,6 +85,11 @@ class Job extends Controller {
             $error = Mydumper::ParseLog($converter->convert($error));
             $ob['error_msg'] = $error;
 
+            // Issue #583: surface a single boolean for the view, so it
+            // doesn't have to combine row-level checks with a filesystem
+            // probe on its own.
+            $ob['can_restart_load_only'] = RefreshArtifact::isResumable($ob)
+                && is_dir((string) ($ob['artifact_path'] ?? ''));
 
             $data['jobs'][] = $ob;
         }

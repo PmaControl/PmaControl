@@ -22,6 +22,7 @@ use \App\Library\Available;
 use App\Library\MysqlServer;
 use App\Library\SelectorOptions;
 use App\Library\Database\Renamer;
+use App\Library\Database\RefreshArtifact;
 use App\Library\Database\RefreshShellCommand;
 use App\Library\Filesystem\SafeDirectory;
 use App\Library\Security\CsrfGuard;
@@ -556,25 +557,45 @@ class Database extends Controller
             $database = end($databases);
         }
 
+        // Issue #583: track dump and load as separate phases so a failed
+        // load can be resumed without re-running mydumper. The dump tree
+        // is now removed only on a successful load — otherwise we keep
+        // it on disk and surface it in /job/index for a `Restart load only`.
+        $phaseDb = Sgbd::sql(DB_DEFAULT);
+        $loadOk = false;
         try {
-            $this->databaseDump(array($id_mysql_server__source, $database, $directory));
+            RefreshArtifact::markDumpRunning($phaseDb, $uuid, $directory);
+            try {
+                $this->databaseDump(array($id_mysql_server__source, $database, $directory));
+            } catch (\Throwable $e) {
+                RefreshArtifact::markDumpError($phaseDb, $uuid);
+                throw $e;
+            }
 
-//shell_exec("cd ".$directory." && rename 's///g' ".);
+            RefreshArtifact::markDumpSuccess(
+                $phaseDb,
+                $uuid,
+                RefreshArtifact::measureSizeKb($directory)
+            );
 
             $metadata = file_get_contents($directory."/metadata");
-
             echo $metadata."\n";
 
-//Mysql::set_db($db);
-//$ob = Mysql::getServerInfo($id_mysql_server__source);
-//echo "CHANGE MASTER TO MASTER_HOST='".$ob->ip."', MASTER_PORT=".$ob->port.", MASTER_USER='', MASTER_PORT='',
-//    MASTER_LOG_FILE='".gg."', MASTER_LOG_POS=;\n";
-
-            $this->databaseLoad(array($id_mysql_server__target, implode(",", $databases), $directory));
+            RefreshArtifact::markLoadRunning($phaseDb, $uuid);
+            try {
+                $this->databaseLoad(array($id_mysql_server__target, implode(",", $databases), $directory));
+            } catch (\Throwable $e) {
+                RefreshArtifact::markLoadError($phaseDb, $uuid);
+                throw $e;
+            }
+            RefreshArtifact::markLoadSuccess($phaseDb, $uuid);
+            $loadOk = true;
 
             FactoryController::addNode("Job", "callback", array($uuid), FactoryController::RESULT);
         } finally {
-            SafeDirectory::removeTree($directory);
+            if ($loadOk) {
+                SafeDirectory::removeTree($directory);
+            }
         }
 
     }
@@ -719,6 +740,127 @@ class Database extends Controller
         }
 
         throw new \Exception("PMACTRL-387 : Impossible to find the MySQL server with the id : ".$id_mysql_server);
+    }
+
+    /*
+     * Issue #583 — UI entry point: restart only the load phase of an
+     * existing /database/refresh job, reusing the dump artefact still
+     * on disk. Never re-runs mydumper.
+     */
+    public function restartLoadOnly($param)
+    {
+        $this->view = false;
+        $this->layout_name = false;
+
+        $id_job = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        if ($id_job === null) {
+            http_response_code(400);
+            echo "Invalid job id";
+            return;
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT * FROM job WHERE id = ".(int) $id_job;
+        $res = $db->sql_query($sql);
+        $row = null;
+        while ($ar = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $row = $ar;
+        }
+
+        if ($row === null || !RefreshArtifact::isResumable($row)) {
+            http_response_code(409);
+            echo "Job is not resumable";
+            return;
+        }
+
+        $artifactPath = (string) $row['artifact_path'];
+        if (!is_dir($artifactPath)) {
+            http_response_code(409);
+            echo "Dump artefact missing on disk";
+            return;
+        }
+
+        $payload = json_decode((string) $row['param'], true);
+        if (!is_array($payload) || count($payload) < 4) {
+            http_response_code(409);
+            echo "Job payload is not parsable";
+            return;
+        }
+
+        $id_mysql_server__target = PositiveIntegerSelection::normalizeSingle($payload[1] ?? null);
+        $databases = is_scalar($payload[2] ?? null)
+            ? Identifier::normalizeDatabaseNameList((string) $payload[2])
+            : null;
+        if ($id_mysql_server__target === null || $databases === null) {
+            http_response_code(409);
+            echo "Job payload validation failed";
+            return;
+        }
+
+        $uuid = (string) $row['uuid'];
+        $debug = Debug::$debug === true ? '--debug' : '';
+
+        $php = explode(" ", shell_exec("whereis php"))[1];
+        $cmd = $php." ".GLIAL_INDEX." ".$this->getClass()." databaseRefreshLoadOnly "
+            .escapeshellarg((string) $id_mysql_server__target)." "
+            .escapeshellarg(implode(',', $databases))." "
+            .escapeshellarg($artifactPath)." "
+            .escapeshellarg($uuid)
+            .($debug !== '' ? ' '.$debug : '');
+        Debug::debug($cmd);
+        shell_exec($cmd.' > /dev/null 2>&1 &');
+
+        header("location: ".LINK."job/index");
+    }
+
+    /*
+     * Issue #583 — worker counterpart of restartLoadOnly. Runs
+     * databaseLoad against the existing artefact and updates the phase
+     * columns. Never re-dumps.
+     *
+     * example: ./glial database databaseRefreshLoadOnly 220 'account,einvoicing' /srv/backup/abc <uuid>
+     */
+    public function databaseRefreshLoadOnly($param)
+    {
+        Debug::parseDebug($param);
+
+        $id_mysql_server__target = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        $rawDatabases            = $param[1] ?? null;
+        $databases               = is_scalar($rawDatabases)
+            ? Identifier::normalizeDatabaseNameList((string) $rawDatabases)
+            : null;
+        $artifactPath            = is_scalar($param[2] ?? null) ? trim((string) $param[2]) : '';
+        $uuid                    = is_scalar($param[3] ?? null) ? trim((string) $param[3]) : '';
+
+        if (
+            $id_mysql_server__target === null
+            || $databases === null
+            || !Identifier::isSafeAbsolutePath($artifactPath)
+            || !is_dir($artifactPath)
+            || !Uuid::isValid($uuid)
+        ) {
+            throw new \InvalidArgumentException('Invalid databaseRefreshLoadOnly CLI payload');
+        }
+
+        $phaseDb = Sgbd::sql(DB_DEFAULT);
+        $loadOk = false;
+        try {
+            RefreshArtifact::markLoadRunning($phaseDb, $uuid);
+            try {
+                $this->databaseLoad(array($id_mysql_server__target, implode(",", $databases), $artifactPath));
+            } catch (\Throwable $e) {
+                RefreshArtifact::markLoadError($phaseDb, $uuid);
+                throw $e;
+            }
+            RefreshArtifact::markLoadSuccess($phaseDb, $uuid);
+            $loadOk = true;
+
+            FactoryController::addNode("Job", "callback", array($uuid), FactoryController::RESULT);
+        } finally {
+            if ($loadOk) {
+                SafeDirectory::removeTree($artifactPath);
+            }
+        }
     }
 
 /**
