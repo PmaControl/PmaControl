@@ -655,7 +655,10 @@ class Database extends Controller
                         continue;
                     }
 
-                    $to_dump = '-B '.$db_to_load;
+                    // Issue #579: must be -s/--source-db (filter dump by source DB),
+                    // NOT -B/--database (which renames everything in the dump dir
+                    // into a single target and cross-loads other DBs).
+                    $to_dump = '-s '.$db_to_load;
                 }
 
                 $cmd = "myloader -h ".$ob->ip." -u ".$ob->login." -p ".$password." -P ".$ob->port." -o $to_dump -d ".$path." 2>&1";
