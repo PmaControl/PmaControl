@@ -8,6 +8,7 @@
 namespace App\Controller;
 
 use App\Library\Security\ApiRequestGuard;
+use App\Library\Security\SecretComparison;
 use \Glial\Synapse\Controller;
 use \Glial\Synapse\Config;
 use \Glial\Security\Crypt\Crypt;
@@ -304,21 +305,19 @@ class Webservice extends Controller
         Debug::sql($sql);
 
         $res = $db->sql_query($sql);
+        $isAuthenticated = false;
 
         while ($ob = $db->sql_fetch_object($res)) {
             Debug::debug($ob, "value");
 
             $pw_from_db = Crypt::decrypt($ob->password, CRYPT_KEY);
 
-            Debug::debug($pw_from_db, "remote");
-            Debug::debug($password, "database");
-
-            if ($pw_from_db === $password) {
-                return true;
+            if (SecretComparison::equals((string) $pw_from_db, (string) $password)) {
+                $isAuthenticated = true;
             }
         }
 
-        return false;
+        return $isAuthenticated;
     }
 
 /**

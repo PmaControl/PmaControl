@@ -71,6 +71,41 @@ final class WebserviceTest extends TestCase
         $this->assertStringNotContainsString('CsrfGuard::check', $source);
     }
 
+    public function testCheckCredentialsUsesMutualizedConstantTimeComparison(): void
+    {
+        $source = file_get_contents(__DIR__ . '/../../App/Controller/Webservice.php');
+
+        $this->assertIsString($source);
+        $method = self::extractCheckCredentialsSource($source);
+
+        $this->assertStringContainsString('use App\\Library\\Security\\SecretComparison;', $source);
+        $this->assertStringContainsString(
+            'SecretComparison::equals((string) $pw_from_db, (string) $password)',
+            $method
+        );
+        $this->assertStringNotContainsString('$pw_from_db === $password', $method);
+    }
+
+    public function testCheckCredentialsDoesNotLeakPasswordOrReturnInsideLoop(): void
+    {
+        $source = file_get_contents(__DIR__ . '/../../App/Controller/Webservice.php');
+
+        $this->assertIsString($source);
+        $method = self::extractCheckCredentialsSource($source);
+
+        $this->assertStringNotContainsString('Debug::debug($pw_from_db', $method);
+        $this->assertStringNotContainsString('Debug::debug($password', $method);
+        $this->assertStringNotContainsString('return true;', $method);
+        $this->assertStringContainsString('return $isAuthenticated;', $method);
+
+        $loopPosition = strpos($method, 'while ($ob = $db->sql_fetch_object($res))');
+        $returnPosition = strrpos($method, 'return $isAuthenticated;');
+
+        $this->assertIsInt($loopPosition);
+        $this->assertIsInt($returnPosition);
+        $this->assertLessThan($returnPosition, $loopPosition);
+    }
+
     public function testLegacyJsonCheckDelegatesToApiGuard(): void
     {
         $controller = new TestableWebservice('Controller', 'View', []);
@@ -90,6 +125,19 @@ final class WebserviceTest extends TestCase
         $this->assertIsInt($credentialCheck);
         $this->assertIsInt($temporaryWrite);
         $this->assertLessThan($temporaryWrite, $credentialCheck);
+    }
+
+    private static function extractCheckCredentialsSource(string $source): string
+    {
+        $start = strpos($source, 'private function checkCredentials');
+
+        self::assertIsInt($start);
+
+        $end = strpos($source, "\n/**", $start);
+
+        self::assertIsInt($end);
+
+        return substr($source, $start, $end - $start);
     }
 }
 
