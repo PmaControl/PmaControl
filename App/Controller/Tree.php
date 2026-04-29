@@ -6,6 +6,7 @@ use \Glial\Synapse\Controller;
 use App\Library\Tree as TreeInterval;
 use App\Library\Debug;
 use App\Library\Security\CsrfGuard;
+use App\Library\Security\PositiveIntegerSelection;
 use \Glial\Sgbd\Sgbd;
 use Glial\Security\Csrf;
 
@@ -55,8 +56,10 @@ class Tree extends Controller
  */
     public function index($param)
     {
-        if (empty($param[0])) {
-            $param[0] = 1;
+        $idMenu = self::normalizeRoutePositiveInteger($param, 0, 1);
+        if ($idMenu === null) {
+            $this->rejectInvalidTreeRoute();
+            return;
         }
 
         $indexRequest = self::evaluateIndexRequest($_GET, $_SERVER);
@@ -75,7 +78,7 @@ class Tree extends Controller
         $this->di['js']->addJavascript(array('bootstrap-editable.min.js', 'Tree/index.js'));
         $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
 
-        $data['id_menu'] = $param[0];
+        $data['id_menu'] = $idMenu;
         /*
           $this->di['js']->code_javascript('$(function () {  $(\'[data-toggle="popover"]\').popover({trigger:"hover"}) });');
           $this->di['js']->code_javascript('
@@ -149,12 +152,32 @@ class Tree extends Controller
             return null;
         }
 
-        $id = (string) $get['menu']['id'];
-        if (! ctype_digit($id) || (int) $id < 1) {
+        return PositiveIntegerSelection::normalizeSingle($get['menu']['id']);
+    }
+
+    public static function normalizeRoutePositiveInteger(array $param, int $offset, ?int $fallback = null): ?int
+    {
+        if (! array_key_exists($offset, $param) || $param[$offset] === '') {
+            return $fallback;
+        }
+
+        return PositiveIntegerSelection::normalizeSingle($param[$offset]);
+    }
+
+    /**
+     * @return int|string|null Returns the legacy string NULL for root node creation.
+     */
+    public static function normalizeRouteTreeParentId(array $param, int $offset)
+    {
+        if (! array_key_exists($offset, $param)) {
             return null;
         }
 
-        return (int) $id;
+        if (is_scalar($param[$offset]) && strtoupper(trim((string) $param[$offset])) === 'NULL') {
+            return 'NULL';
+        }
+
+        return self::normalizeRoutePositiveInteger($param, $offset);
     }
 
     private static function buildTreeIndexOutcome(int $statusCode, string $message, array $headers = []): array
@@ -173,6 +196,21 @@ class Tree extends Controller
         foreach ($headers as $name => $value) {
             header($name . ': ' . $value);
         }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
+    }
+
+    private function rejectInvalidTreeRoute(): void
+    {
+        $this->view        = false;
+        $this->layout_name = false;
+
+        self::sendTreeRouteError(400, 'Invalid tree route');
+    }
+
+    private static function sendTreeRouteError(int $statusCode, string $message): void
+    {
+        http_response_code($statusCode);
         header('Content-Type: text/plain; charset=UTF-8');
         echo $message;
     }
@@ -200,10 +238,14 @@ class Tree extends Controller
  */
     public function delete($param)
     {
-        $db = Sgbd::sql(DB_DEFAULT);
+        $id_menu = self::normalizeRoutePositiveInteger($param, 0);
+        $id      = self::normalizeRoutePositiveInteger($param, 1);
+        if ($id_menu === null || $id === null) {
+            $this->rejectInvalidTreeRoute();
+            return;
+        }
 
-        $id_menu = $param[0];
-        $id      = $param[1];
+        $db = Sgbd::sql(DB_DEFAULT);
 
         $tree = new TreeInterval($db, "menu", array(), array("group_id" => $id_menu));
         $tree->delete($id);
@@ -234,8 +276,12 @@ class Tree extends Controller
  */
     public function add($param)
     {
-        $id_menu   = $param[0];
-        $id_parent = $param[1];
+        $id_menu   = self::normalizeRoutePositiveInteger($param, 0);
+        $id_parent = self::normalizeRouteTreeParentId($param, 1);
+        if ($id_menu === null || $id_parent === null) {
+            $this->rejectInvalidTreeRoute();
+            return;
+        }
 
         if (CsrfGuard::isPost($_SERVER)) {
             $this->view        = false;
@@ -344,9 +390,13 @@ class Tree extends Controller
 
         Debug::parseDebug($param);
 
+        $id_menu = self::normalizeRoutePositiveInteger($param, 0);
+        $id      = self::normalizeRoutePositiveInteger($param, 1);
+        if ($id_menu === null || $id === null) {
+            $this->rejectInvalidTreeRoute();
+            return;
+        }
         $db      = Sgbd::sql(DB_DEFAULT);
-        $id_menu = $param[0];
-        $id      = $param[1];
         $tree    = new TreeInterval($db, "menu", array("id_parent" => "parent_id"), array("group_id" => $id_menu));
 
         $tree->up($id);
@@ -505,8 +555,12 @@ class Tree extends Controller
     {
 
 
-        $id_menu = $param[0];
-        $id      = $param[1];
+        $id_menu = self::normalizeRoutePositiveInteger($param, 0);
+        $id      = self::normalizeRoutePositiveInteger($param, 1);
+        if ($id_menu === null || $id === null) {
+            $this->rejectInvalidTreeRoute();
+            return;
+        }
 
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -541,8 +595,12 @@ class Tree extends Controller
  */
     public function left($param)
     {
-        $id_menu = $param[0];
-        $id      = $param[1];
+        $id_menu = self::normalizeRoutePositiveInteger($param, 0);
+        $id      = self::normalizeRoutePositiveInteger($param, 1);
+        if ($id_menu === null || $id === null) {
+            $this->rejectInvalidTreeRoute();
+            return;
+        }
         $db      = Sgbd::sql(DB_DEFAULT);
         $tree    = new TreeInterval($db, "menu", array("id_parent" => "parent_id"), array("group_id" => $id_menu));
 
