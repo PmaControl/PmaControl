@@ -38,6 +38,7 @@ use \Glial\Synapse\Javascript;
 use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
+use App\Library\Security\CookieSecurity;
 use Glial\Synapse\Glial;
 
 $TIME_START = microtime(true);
@@ -46,6 +47,9 @@ $TIME_START = microtime(true);
 require ROOT.DS.'vendor/autoload.php';
 
 if (!IS_CLI) {
+    $cookieTrustedProxies = CookieSecurity::trustedProxies();
+    CookieSecurity::configureSessionCookies($_SERVER, $cookieTrustedProxies);
+    CookieSecurity::registerOutgoingCookieHardener($_SERVER, $cookieTrustedProxies);
     session_start();
 }
 
@@ -111,8 +115,19 @@ if (!IS_CLI) {
     $url   = $route->get_routes();
 
     if (isset($_GET['lg'])) {
-        $_SESSION['language'] = $_GET['lg'];
-        SetCookie("language", $_GET['lg'], time() + 60 * 60 * 24 * 365, "/", $_SERVER['SERVER_NAME'], false, true);
+        $_SESSION['language'] = (string) $_GET['lg'];
+        if (defined('LANGUAGE_AVAILABLE') && in_array($_SESSION['language'], explode(",", LANGUAGE_AVAILABLE), true)) {
+            CookieSecurity::setCookie(
+                "language",
+                $_SESSION['language'],
+                time() + 60 * 60 * 24 * 365,
+                $_SERVER,
+                "/",
+                (string) ($_SERVER['SERVER_NAME'] ?? ''),
+                true,
+                $cookieTrustedProxies ?? []
+            );
+        }
     }
 }
 
@@ -301,4 +316,3 @@ if ((DEBUG && (!IS_CLI) && (!IS_AJAX)) && empty($_GET['ajax'])) {
     echo '</div>';
 }
     
-

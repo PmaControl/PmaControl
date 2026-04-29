@@ -8,6 +8,7 @@ One topic per file. Load only what the current task needs.
 ## Conventions
 - [coding_style.md](coding_style.md) — PSR-12, namespaces, POST-Redirect-GET, file layout
 - [csrf.md](csrf.md) — CSRF token and same-site Origin/Referer guard for mutating POSTs
+- [security_cookies.md](security_cookies.md) — session/auth cookie hardening and HTTPS/proxy deployment settings
 - [issue_workflow.md](issue_workflow.md) — tracked issue workflow with two-pass review, comments, PR and merge links
 - [commits.md](commits.md) — commit format, PR guidelines, tooling visibility, secrets handling
 - [build_test.md](build_test.md) — composer, PHPUnit, CLI invocation, local dev server, test conventions
