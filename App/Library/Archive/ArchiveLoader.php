@@ -19,8 +19,6 @@ final class ArchiveLoader
         $database = (string) $payload['database'];
         $idCleanerMain = (int) $payload['id_cleaner_main'];
 
-        $php = explode(" ", shell_exec("whereis php"))[1];
-
         $archiveLoad = array();
         $archiveLoad['archive_load']['id_cleaner_main'] = $idCleanerMain;
         $archiveLoad['archive_load']['id_mysql_server'] = $idMysqlServer;
@@ -39,8 +37,7 @@ final class ArchiveLoader
                 $controller->load(array($idArchiveLoad));
                 $pid = getmypid();
             } else {
-                $cmd = $php." ".GLIAL_INDEX." Archives load ".$idArchiveLoad." >> "
-                    .TMP."archive_".$idCleanerMain."_".$database.".sql & echo $!";
+                $cmd = self::buildLoadCommand($idArchiveLoad, $idCleanerMain, $database);
 
                 Debug::debug($cmd);
 
@@ -68,5 +65,21 @@ final class ArchiveLoader
         $msg   = I18n::getTranslation(__("Impossible to save : ")."'".print_r($db->sql_error())."'");
         $title = I18n::getTranslation(__("Loading"));
         set_flash("error", $title, $msg);
+    }
+
+    private static function buildLoadCommand(int $idArchiveLoad, int $idCleanerMain, string $database): string
+    {
+        $command = array(
+            PHP_BINARY,
+            GLIAL_INDEX,
+            'Archives',
+            'load',
+            (string) $idArchiveLoad,
+        );
+
+        return implode(' ', array_map('escapeshellarg', $command))
+            .' >> '
+            .escapeshellarg(TMP.'archive_'.$idCleanerMain.'_'.$database.'.sql')
+            .' & echo $!';
     }
 }
