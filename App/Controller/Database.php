@@ -21,6 +21,7 @@ use \App\Library\Param;
 use \App\Library\Available;
 use App\Library\MysqlServer;
 use App\Library\SelectorOptions;
+use App\Library\Database\Renamer;
 use App\Library\Security\CsrfGuard;
 use App\Library\Security\GroupedFormRequest;
 use App\Library\Security\Identifier;
@@ -815,345 +816,26 @@ class Database extends Controller
         $OLD_DB          = $param[1];
         $NEW_DB          = $param[2];
         $AP              = $param[3] ?? "";
+        if ($AP === "--force") {
+            $AP = "";
+        }
 
         $db = Sgbd::sql(DB_DEFAULT);
+        $serverRef = $db->sql_real_escape_string((string) $id_mysql_server);
 
-        $sql = "SELECT * FROM `mysql_server` where `id`='".$id_mysql_server."'"
+        $sql = "SELECT * FROM `mysql_server` where `id`='".$serverRef."'"
             ." UNION ALL "
-            ."SELECT * FROM `mysql_server` where `display_name`='".$id_mysql_server."'";
+            ."SELECT * FROM `mysql_server` where `display_name`='".$serverRef."'";
 
         Debug::sql($sql);
 
         $res = $db->sql_query($sql);
 
+        $nb_renamed = 0;
         while ($ob = $db->sql_fetch_object($res)) {
-
             $db2 = Sgbd::sql($ob->name);
 
-            $sql101       = "SELECT count(1) as cpt FROM `information_schema`.`SCHEMATA` WHERE `SCHEMA_NAME`= '".$NEW_DB."';";
-            $res101       = $db2->sql_query($sql101);
-            $TARGET_EXIST = false;
-
-            while ($ob101 = $db2->sql_fetch_object($res101)) {
-
-                if ($ob101->cpt > 0) {
-                    if ($FORCE_TARGET === false) {
-
-                        throw new \Exception("The target database exist already : '".$NEW_DB."'", 2518);
-                    }
-                    $TARGET_EXIST = true;
-                }
-            }
-
-
-            $sql3 = "SELECT `DEFAULT_CHARACTER_SET_NAME` FROM `information_schema`.`SCHEMATA` WHERE `SCHEMA_NAME`= '".$OLD_DB."';";
-            $res3 = $db2->sql_query($sql3);
-
-            if ($db2->sql_num_rows($res3) != 1) {
-                Debug::sql($sql3);
-                throw new \Exception("Impossible to find the database '".$OLD_DB."' to rename", 2518);
-            }
-
-            while ($ob3 = $db2->sql_fetch_object($res3)) {
-                if ($TARGET_EXIST === false) {
-                    $db2->sql_query("CREATE DATABASE  `".$NEW_DB."` DEFAULT CHARACTER SET ".$ob3->DEFAULT_CHARACTER_SET_NAME);
-                }
-            }
-
-// backup trigger view
-
-            $db2->sql_select_db($OLD_DB);
-
-            $OLD = $this->getObject(array($id_mysql_server, $OLD_DB));
-
-            $sql6 = "SHOW TRIGGERS FROM `".$OLD_DB."`";
-            $res6 = $db2->sql_query($sql6);
-
-            $triggers = array();
-            while ($ob6      = $db2->sql_fetch_array($res6, MYSQLI_ASSOC)) {
-
-                $sql21 = "SHOW CREATE TRIGGER `".$OLD_DB."`.`".$ob6['Trigger']."`";
-                Debug::sql($sql21);
-                $res21 = $db2->sql_query($sql21);
-
-                while ($ob21 = $db2->sql_fetch_array($res21, MYSQLI_ASSOC)) {
-
-                    $triggers[$ob6['Trigger']] = str_replace('@'.$OLD_DB.'.', '@'.$NEW_DB.'.', $ob21['SQL Original Statement']);
-                    $triggers[$ob6['Trigger']] = str_replace('`'.$OLD_DB.'`.', '`'.$NEW_DB.'`.', $triggers[$ob6['Trigger']]).";";
-                }
-
-                $sql8 = "DROP TRIGGER `".$ob6['Trigger']."`;";
-                Debug::debug($sql8);
-
-                $db2->sql_query($sql8);
-            }
-
-// VIEW
-//get Orderby
-// dependance des vues entre elles
-
-            $sql20 = "SELECT  views.TABLE_NAME As `View`, tab.TABLE_NAME AS `Input`
-FROM information_schema.`TABLES` AS tab
-INNER JOIN information_schema.VIEWS AS views
-ON views.VIEW_DEFINITION LIKE CONCAT('% `',tab.TABLE_NAME,'`%') AND tab.TABLE_SCHEMA='".$OLD_DB."' AND views.TABLE_SCHEMA='".$OLD_DB."' AND tab.TABLE_TYPE = 'VIEW'
-UNION
-SELECT views.TABLE_NAME As `View`, tab.TABLE_NAME AS `Input`
-FROM information_schema.`TABLES` AS tab
-INNER JOIN information_schema.VIEWS AS views
-ON views.VIEW_DEFINITION LIKE CONCAT('%`',tab.TABLE_SCHEMA,'`.`',tab.TABLE_NAME,'`%') AND tab.TABLE_SCHEMA='".$OLD_DB."' AND views.TABLE_SCHEMA='".$OLD_DB."' AND tab.TABLE_TYPE = 'VIEW';";
-
-//            Debug::sql($sql20));
-
-            $res20 = $db2->sql_query($sql20);
-
-            $childs    = array();
-            $fathers   = array();
-            $relations = array();
-            while ($ob20      = $db2->sql_fetch_array($res20, MYSQLI_ASSOC)) {
-                $fathers[]                  = $ob20['View'];
-                $childs[]                   = $ob20['Input'];
-                $relations[$ob20['View']][] = $ob20['Input'];
-            }
-
-            Debug::debug($relations, "Relations");
-
-            $level = array();
-            $i     = 0;
-            while ($last  = count($relations) != 0) {
-
-                $temp = $relations;
-
-                foreach ($temp as $father_name => $tab_father) {
-                    foreach ($tab_father as $key_child => $table_child) {
-                        if (!in_array($table_child, array_keys($relations))) {
-
-                            if (empty($level[$i]) || !in_array($table_child, $level[$i])) {
-                                $level[$i][] = $table_child;
-                            }
-                            unset($relations[$father_name][$key_child]);
-                        }
-                    }
-                }
-                $temp = $relations;
-
-// retirer les tableaux vides, et remplissage avec clefs
-                foreach ($temp as $key => $tmp) {
-                    if (count($tmp) == 0) {
-                        unset($relations[$key]);
-                        if (empty($level[$i + 1]) || !in_array($key, $level[$i + 1])) {
-                            $level[$i + 1][] = $key;
-                        }
-                    }
-                }
-
-                if ($last == count($relations)) {
-                    $cas_found = false;
-
-//cas de deux chemins differents pour arriver à la même table enfant
-                    $temp = $relations;
-                    foreach ($temp as $key1 => $tab2) {
-                        foreach ($tab2 as $key2 => $val) {
-                            foreach ($level as $tab3) {
-                                if (in_array($val, $tab3)) {
-                                    unset($relations[$key1][$key2]);
-                                    $cas_found = true;
-                                }
-                            }
-                        }
-                    }
-
-                    if (!$cas_found) {
-                        echo "\n";
-                        debug($tab2);
-                        debug($level);
-                        debug($relations);
-                        throw new \Exception("PMACTRL-334 Circular definition (elem <-> elem)");
-                    }
-                }
-
-                sort($level[$i]);
-                $i++;
-            }
-
-            Debug::debug($level, "LEVEL");
-
-            $orderby = "";
-            foreach ($level as $name) {
-                $orderby .= implode("','", $name);
-            }
-
-            $sql9 = "select `table_name` FROM `information_schema`.`tables` where `table_schema`='".$OLD_DB."' AND `TABLE_TYPE`='VIEW' ORDER BY FIELD(`table_name`, '".$orderby."') DESC, `table_name`;";
-            Debug::sql($sql9);
-
-            $res9  = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db2, $sql9, $id_mysql_server, __METHOD__);
-            $views = array();
-            $sql11 = array();
-            while ($ob9   = $db2->sql_fetch_array($res9, MYSQLI_ASSOC)) {
-
-                $sql10 = "SHOW CREATE VIEW `".$OLD_DB."`.`".$ob9['table_name']."`";
-                Debug::sql($sql10);
-                $res10 = $db2->sql_query($sql10);
-
-                while ($ob10 = $db2->sql_fetch_array($res10, MYSQLI_ASSOC)) {
-                    $views[$ob9['table_name']] = str_replace('`'.$OLD_DB.'`', '`'.$NEW_DB.'`', $ob10['Create View']);
-                }
-
-                $sql11[] = "DROP VIEW `".$OLD_DB."`.`".$ob9['table_name']."`;";
-                //Debug::debug($sql11);
-                //$db2->sql_query($sql11);
-            }
-
-            // c'est dégeux il faudrait d'abord crée tous les objets dans la nouvelle base, faire le diff et après faire le ménage
-            foreach ($sql11 as $sql111) {
-                Debug::debug($sql111);
-                $db2->sql_query($sql111);
-            }
-
-// backup functions
-
-            $functions = array();
-
-            $sql13 = "SHOW FUNCTION STATUS where Db='".$OLD_DB."'";
-            Debug::debug($sql13);
-            $res13 = $db2->sql_query($sql13);
-
-            while ($ob13 = $db2->sql_fetch_object($res13)) {
-
-                $sql14 = "SHOW CREATE function `".$OLD_DB."`.`".$ob13->Name."`";
-                Debug::debug($sql14);
-                $res14 = $db2->sql_query($sql14);
-                while ($ob14  = $db2->sql_fetch_array($res14, MYSQLI_ASSOC)) {
-
-                    $functions[] = $ob14['Create Function'].";";
-                }
-
-
-                $sql15 = "DROP function `".$OLD_DB."`.`".$ob13->Name."`;";
-                Debug::debug($sql15);
-                $db2->sql_query($sql15);
-            }
-
-
-//procedures
-
-            $sql17 = "SHOW PROCEDURE STATUS WHERE db = '".$OLD_DB."';";
-            Debug::debug($sql17);
-            $res17 = $db2->sql_query($sql17);
-
-            $procedures = array();
-            while ($ob17       = $db2->sql_fetch_object($res17)) {
-
-                $sql18 = "SHOW CREATE procedure `".$OLD_DB."`.`".$ob17->Name."`";
-                $res18 = $db2->sql_query($sql18);
-                while ($ob18  = $db2->sql_fetch_array($res18, MYSQLI_ASSOC)) {
-
-                    $procedures[] = $ob18['Create Procedure'].";";
-                }
-
-                $sql18 = "DROP procedure `".$OLD_DB."`.`".$ob17->Name."`;";
-                Debug::debug($sql18);
-                $db2->sql_query($sql18);
-            }
-
-
-
-// DÉPLACEMENT DES TABLES
-
-            $sql2 = "SELECT `table_name` FROM `information_schema`.`tables` WHERE `table_schema`='".$OLD_DB."' AND `TABLE_TYPE`='BASE TABLE';";
-            Debug::debug($sql2);
-            $res2 = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db2, $sql2, $id_mysql_server, __METHOD__);
-
-            $nb_renamed = 0;
-            while ($ob2        = $db2->sql_fetch_object($res2)) {
-                $sql3 = " RENAME TABLE `".$OLD_DB."`.`".$ob2->table_name."` TO `".$NEW_DB."`.`".$ob2->table_name."`;";
-
-                Debug::debug($sql3);
-                $nb_renamed += 1;
-                $db2->sql_query($sql3);
-            }
-
-
-            $db2->sql_select_db($NEW_DB);
-
-            foreach ($functions as $function) {
-                $sql16 = $function;
-
-                $db2->sql_multi_query($sql16);
-            }
-
-            foreach ($level as $niveau) {
-                foreach ($niveau as $view_name) {
-                    $sql12 = $views[$view_name];
-
-                    $db2->sql_query($sql12);
-                    unset($views[$view_name]);
-                }
-            }
-
-            foreach ($views as $view) {
-                $sql12 = $view;
-                Debug::sql($sql12);
-                $db2->sql_query($sql12);
-            }
-
-            foreach ($procedures as $procedure) {
-                $sql19 = $procedure;
-                Debug::sql($sql19);
-                $db2->sql_multi_query($sql19);
-            }
-
-
-            foreach ($triggers as $trigger) {
-                $sql7 = $trigger;
-                Debug::sql($sql7);
-                $db2->sql_multi_query($sql7);
-            }
-
-
-            if (!empty($AP)) {
-                $grants = $this->getChangeGrant($db2, $OLD_DB, $NEW_DB);
-                foreach ($grants as $grant) {
-                    if (!empty($AP)) {
-                        $db2->sql_query($grant);
-
-                        echo $grant."\n";
-                    }
-                }
-            }
-
-            $NEW = $this->getObject(array($id_mysql_server, $NEW_DB));
-
-            $exit  = false;
-            $table = new Table(0);
-            $table->addHeader(array("Object", $OLD_DB, $NEW_DB));
-
-            foreach ($NEW['result'] as $key => $nb) {
-                $table->addLine(array($key, $OLD['result'][$key], $nb));
-
-                if ($OLD['result'][$key] != $nb) {
-                    $exit = true;
-                }
-            }
-
-            // if no more object in source we allow to drop table in case of --force
-
-
-            echo $table->Display();
-
-            if ($exit === true) {
-                Throw new \Exception('We forgot to migrate objects ! (we did not drop old DB)', 5174);
-            }
-
-// DROP DATABASE IF NO OBJECT
-            $sql4 = "select count(1) as cpt from information_schema.tables where table_schema='".$OLD_DB."';";
-            $res4 = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db2, $sql4, $id_mysql_server, __METHOD__);
-
-            while ($ob4 = $db2->sql_fetch_object($res4)) {
-
-                if ($ob4->cpt === "0") {
-                    $db2->sql_query("DROP DATABASE `".$OLD_DB."`;");
-                }
-            }
+            $nb_renamed = Renamer::rename($db2, $OLD_DB, $NEW_DB, !empty($AP), $FORCE_TARGET, $id_mysql_server);
         }
 
         return $nb_renamed;
@@ -1270,30 +952,7 @@ END;";
  */
     public function getChangeGrant($db_link, $OLD_DB, $NEW_DB)
     {
-        // to upgrade to do with `mariadb.sys`@`localhost`
-        $grants = array();
-        $revoke = array();
-
-        $users = Mysql::exportAllUser($db_link);
-        foreach ($users as $user) {
-
-            //Debug::debug($user);
-            $pos = strpos($user, "`".$OLD_DB."`.");
-
-            if ($pos !== false) {
-
-                //add test if found (compare after and before)
-                $revoke[] = str_replace(array(" TO ", "GRANT"), array(" FROM ", "REVOKE"), $user).";";
-
-                $grants[] = str_replace("`".$OLD_DB."`", "`".$NEW_DB."`", $user).";";
-            }
-        }
-
-        $data = array_merge($revoke, $grants);
-
-        Debug::debug($data, "GRANTS");
-
-        return $data;
+        return Renamer::getChangeGrant($db_link, (string) $OLD_DB, (string) $NEW_DB);
     }
 
 /**
@@ -2732,43 +2391,24 @@ LEFT JOIN `".$database__ori."`.`".$table__ori."` a ON 1=1";
         $database        = $param[1];
 
         $db = Sgbd::sql(DB_DEFAULT, "dhgsrht");
+        $serverRef = $db->sql_real_escape_string((string) $id_mysql_server);
 
-        $sql = "SELECT * FROM `mysql_server` where `id`='".$id_mysql_server."'"
+        $sql = "SELECT * FROM `mysql_server` where `id`='".$serverRef."'"
             ." UNION ALL "
-            ."SELECT * FROM `mysql_server` where `display_name`='".$id_mysql_server."'";
+            ."SELECT * FROM `mysql_server` where `display_name`='".$serverRef."'";
 
         $res = $db->sql_query($sql);
 
+        $db2 = null;
         while ($ob = $db->sql_fetch_object($res)) {
-
             $db2 = Sgbd::sql($ob->name);
         }
 
-        $sql2 = "SELECT `DEFAULT_CHARACTER_SET_NAME` FROM `information_schema`.`SCHEMATA` WHERE `SCHEMA_NAME`= '".$database."';";
-        $res2 = $db2->sql_query($sql2);
-
-        if ($db2->sql_num_rows($res2) != 1) {
-            Debug::sql($sql2);
-            throw new \Exception("Impossible to find the database '".$database."' to rename", 4576);
+        if ($db2 === null) {
+            throw new \Exception("Impossible to find the mysql server '".$id_mysql_server."'", 4576);
         }
 
-        $query['TRIGGER']   = "select trigger_name from information_schema.triggers where trigger_schema ='{DB}'";
-        $query['FUNCTION']  = "show function status WHERE Db ='{DB}';";
-        $query['PROCEDURE'] = "show procedure status WHERE Db ='{DB}'";
-        $query['TABLE']     = "select TABLE_NAME from information_schema.tables where TABLE_SCHEMA = '{DB}' AND TABLE_TYPE='BASE TABLE' order by TABLE_NAME;";
-        $query['VIEW']      = "select TABLE_NAME from information_schema.tables where TABLE_SCHEMA = '{DB}' AND TABLE_TYPE='VIEW' order by TABLE_NAME;";
-        $query['EVENT']     = "SHOW EVENTS FROM `{DB}`";
-
-        $data['result'] = array();
-
-        foreach ($query as $key => $to_execute) {
-            $sql3 = str_replace('{DB}', $database, $to_execute);
-            $res3 = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db2, $sql3, $id_mysql_server, __METHOD__);
-
-            $data['result'][$key] = $db2->sql_num_rows($res3);
-        }
-
-
+        $data = Renamer::getObjectCounts($db2, (string) $database, $id_mysql_server);
         Debug::debug($data);
 
         return $data;
