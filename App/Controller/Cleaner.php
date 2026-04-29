@@ -25,6 +25,7 @@ use \Glial\Synapse\Basic;
 use \App\Library\Debug;
 use App\Library\Http\HttpOutcome;
 use \App\Library\Mysql;
+use App\Library\ServerCapabilities;
 use App\Library\Security\CsrfGuard;
 use App\Library\Security\GroupedFormRequest;
 use App\Library\Security\Identifier;
@@ -5186,7 +5187,7 @@ objDiv.scrollTop = objDiv.scrollHeight;
     {
 
 
-        if ($db->checkVersion(array("MariaDB" => "5.5.21"))) {
+        if (ServerCapabilities::supports($db, 'mariadb_skip_replication_variable')) {
             // https://mariadb.com/kb/en/selectively-skipping-replication-of-binlog-events/
             $sql = 'SET @@skip_replication = ON;';
             Debug::debug(Color::getColoredString($sql, "yellow"));

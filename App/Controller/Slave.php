@@ -10,6 +10,7 @@ use App\Library\Extraction;
 use App\Library\Extraction2;
 use App\Library\Mysql;
 use App\Library\Debug;
+use App\Library\ServerCapabilities;
 use App\Controller\Tunnel;
 use App\Library\Security\CsrfGuard;
 use \Glial\Sgbd\Sgbd;
@@ -1840,7 +1841,7 @@ var chart = new Chart(ctx, {
         $old_master = getDbLink($id_mysql_server__old_master);
         $new_master = getDbLink($id_mysql_server__new_master);
 
-        if ($new_master->checkVersion(array('MySQL' => '8.4', 'Percona Server' => '8.4'))) {
+        if (ServerCapabilities::supports($new_master, 'show_binary_log_status')) {
             $sql = "SHOW BINARY LOG STATUS";
         } else {
             $sql = "SHOW MASTER STATUS";

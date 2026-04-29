@@ -10,6 +10,7 @@ use App\Library\Security\CsrfGuard;
 use App\Library\Http\HttpResponse;
 use App\Library\Mysql;
 use App\Library\MysqlVersion;
+use App\Library\ServerCapabilities;
 use App\Library\Debug;
 use Glial\Security\Csrf;
 
@@ -128,7 +129,7 @@ class Mysqlsys extends Controller {
             //$sql = "UPDATE sys.sys_config SET value = '100000' where variable ='statement_truncate_len';";
             //$remote->sql_query($sql);
             //fin patch
-                if ($remote->checkVersion(array('MariaDB'=> '10.1.1'))) {
+                if (ServerCapabilities::supports($remote, 'information_schema_max_statement_time')) {
                     $sql = "SET STATEMENT MAX_STATEMENT_TIME = 10 FOR SELECT * FROM `sys`.`" . $_GET['mysqlsys'] . "` LIMIT 200";
                 }
                 else {

@@ -20,6 +20,7 @@ use App\Library\System;
 use App\Library\Mysql;
 use App\Library\MysqlVersion;
 use App\Library\Proxy;
+use App\Library\ServerCapabilities;
 use App\Library\Sql\WhereBuilder;
 use App\Library\EngineV4;
 use \Glial\Sgbd\Sgbd;
@@ -3263,7 +3264,7 @@ class Aspirateur extends Controller
         }
 
         // TEMPORARY => from MariaDB 10.3
-        if ($mysql_tested->checkVersion(array("MariaDB", "10.3"), array("Percona", "5.7"), array("MySQL", "5.7")))
+        if (ServerCapabilities::supports($mysql_tested, 'information_schema_tables_temporary_column'))
         {
             $sql = "select TABLE_CATALOG , TABLE_SCHEMA , TABLE_NAME, TABLE_TYPE , ENGINE,  ROW_FORMAT,
          TABLE_COLLATION, CREATE_OPTIONS, TABLE_COMMENT, TEMPORARY
@@ -5392,7 +5393,7 @@ GROUP BY C.ID, C.INFO;";
     {
         $time = 0;
 
-        if ($db_link->checkVersion(array('MySQL' => '5.1', 'Percona Server' => '5.1', 'MariaDB' => '5.1'))) {
+        if (ServerCapabilities::supports($db_link, 'processlist_supported')) {
             $time = intval($time);
 
             if ($isSingleStore)
@@ -5409,7 +5410,7 @@ GROUP BY C.ID, C.INFO;";
                 WHERE p.command NOT IN ('Sleep', 'Binlog Dump')
                 AND p.user NOT IN ('system user', 'event_scheduler') AND TIME > ".$time;
             }
-            else if ($db_link->checkVersion(array('MySQL' => '8.0')))
+            else if (ServerCapabilities::supports($db_link, 'mysql8_processlist_trx_columns'))
             {
                 $sql  = "SELECT p.*,
                 IFNULL(t.trx_rows_locked, '0')        AS trx_rows_locked,
@@ -5577,11 +5578,11 @@ GROUP BY C.ID, C.INFO;";
 
     private function getInformationSchemaTablesQuery($db)
     {
-        if ($db->checkVersion(array('MariaDB'=> '10.1.1'))) {
+        if (ServerCapabilities::supports($db, 'information_schema_max_statement_time')) {
             return "SET STATEMENT MAX_STATEMENT_TIME = 10 FOR SELECT * FROM information_schema.tables;";
         }
 
-        if ($db->checkVersion(array('MySQL' => '5.7'))) {
+        if (ServerCapabilities::supports($db, 'select_max_execution_time_hint')) {
             return "SELECT /*+ MAX_EXECUTION_TIME(10000) */ * FROM information_schema.tables;";
         }
 
@@ -5824,7 +5825,7 @@ GROUP BY C.ID, C.INFO;";
         if ($ob->cpt == "1")
         {
             // if MARIADB ask limit 10 sec max
-            if ($db->checkVersion(array('MariaDB'=> '10.1.1'))) {
+            if (ServerCapabilities::supports($db, 'information_schema_max_statement_time')) {
                 $sql = "SET STATEMENT MAX_STATEMENT_TIME = 10 FOR SELECT * from information_schema.disks;";
             }
             else{
