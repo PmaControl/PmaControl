@@ -56,6 +56,20 @@ function getBadge($status)
     overflow: auto;       /* both axes — vertical scroll for >10 lines, horizontal for long mydumper command lines */
     white-space: pre;     /* keep mydumper lines on one line; the horizontal scrollbar handles long lines */
 }
+/* Issue #597: same height/width contract for the param column, but
+ * with a light viewer-style background — the param JSON pretty-print
+ * is structured data, not console output. */
+.job-param {
+    background-color: #f8f9fa;
+    color: #1f2937;
+    padding: 5px;
+    margin: 0;
+    font-family: monospace;
+    max-height: 14em;
+    max-width: 600px;
+    overflow: auto;
+    white-space: pre;
+}
 </style>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -96,7 +110,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 <td><?= $i ?></td>
                 <td><?= $job['class'] ?></td>
                 <td><?= $job['method'] ?></td>
-                <td style="max-width:200px; overflow-wrap: break-word;"><?= json_encode(json_decode($job['param'], true), JSON_PRETTY_PRINT) ?></td>
+                <td><pre class="job-param"><?= htmlspecialchars(
+                    (string) (json_encode(json_decode($job['param'], true), JSON_PRETTY_PRINT) ?: ''),
+                    ENT_QUOTES | ENT_SUBSTITUTE,
+                    'UTF-8'
+                ) ?></pre></td>
                 <td><?= $job['date_start'] ?></td>
                 <td><?= $job['date_end'] ?></td>
                 <td><?= $job['pid'] ?></td>
