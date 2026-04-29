@@ -18,6 +18,7 @@ use \App\Library\Kpi\DaemonRunLogger;
 use \App\Library\Mysql;
 use \App\Library\Microsecond;
 use \App\Library\System;
+use App\Library\ShellCommand;
 use \Glial\Sgbd\Sgbd;
 
 /**
@@ -694,14 +695,11 @@ class Agent extends Controller {
      */
     private static function buildBackgroundCommand(array $args, string $logFile): string
     {
-        $quotedArgs = array_map(
-            static function ($arg): string {
-                return escapeshellarg((string)$arg);
-            },
-            $args
-        );
-
-        return implode(" ", $quotedArgs) . " >> " . escapeshellarg($logFile) . " 2>&1 & echo $!";
+        return ShellCommand::fromArguments($args)
+            ->redirect(1, '>>', $logFile)
+            ->mergeStderrIntoStdout()
+            ->inBackgroundCapturingPid()
+            ->toString();
     }
 
     /*

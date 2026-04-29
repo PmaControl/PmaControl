@@ -39,11 +39,12 @@ final class ArchivesRestoreLoadCommandSecurityTest extends TestCase
         $this->assertStringNotContainsString('Debug::debug($cmd)', $loadBody);
         $this->assertStringNotContainsString('Debug::debug($conf', $loadBody);
 
-        $this->assertStringContainsString('--defaults-extra-file=', $helper);
-        $this->assertStringContainsString('escapeshellarg($dumpPath)', $helper);
-        $this->assertStringContainsString('escapeshellarg($defaultsFile)', $helper);
-        $this->assertStringContainsString('escapeshellarg($database)', $helper);
-        $this->assertStringContainsString('escapeshellarg($logPath)', $helper);
+        $this->assertStringContainsString('use App\\Library\\ShellCommand;', $helper);
+        $this->assertStringContainsString('--defaults-extra-file', $helper);
+        $this->assertStringContainsString('->arg($dumpPath)', $helper);
+        $this->assertStringContainsString("->option('--defaults-extra-file', \$defaultsFile, '=')", $helper);
+        $this->assertStringContainsString("->option('--database', \$database, '=')", $helper);
+        $this->assertStringContainsString("->redirect(2, '>', \$logPath)", $helper);
         $this->assertStringContainsString('password=', $helper);
         $this->assertStringNotContainsString("-p'{password}'", $helper);
     }
