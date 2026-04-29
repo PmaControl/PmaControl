@@ -177,8 +177,6 @@
 <li><a href="#administration-1">Administration</a></li>
 <li><a href="#agent">Agent</a></li>
 <li><a href="#agent-1">Agent</a></li>
-<li><a href="#ai">Ai</a></li>
-<li><a href="#ai-1">Ai</a></li>
 <li><a href="#alert">Alert</a></li>
 <li><a href="#alert-1">Alert</a></li>
 <li><a href="#alias">Alias</a></li>
@@ -334,8 +332,6 @@ href="#dependencytreegenerator-1">DependencyTreeGenerator</a></li>
 <li><a href="#mysqlsys-1">Mysqlsys</a></li>
 <li><a href="#myxplain">Myxplain</a></li>
 <li><a href="#myxplain-1">Myxplain</a></li>
-<li><a href="#ollama">Ollama</a></li>
-<li><a href="#ollama-1">Ollama</a></li>
 <li><a href="#partition">Partition</a></li>
 <li><a href="#partition-1">Partition</a></li>
 <li><a href="#percona">Percona</a></li>
@@ -418,7 +414,6 @@ href="#dependencytreegenerator-1">DependencyTreeGenerator</a></li>
 <li><a href="#acl">Acl</a></li>
 <li><a href="#administration">Administration</a></li>
 <li><a href="#agent">Agent</a></li>
-<li><a href="#ai">Ai</a></li>
 <li><a href="#alert">Alert</a></li>
 <li><a href="#alias">Alias</a></li>
 <li><a href="#alter">Alter</a></li>
@@ -496,7 +491,6 @@ href="#dependencytreegenerator-1">DependencyTreeGenerator</a></li>
 <li><a href="#mysqluser">MysqlUser</a></li>
 <li><a href="#mysqlsys">Mysqlsys</a></li>
 <li><a href="#myxplain">Myxplain</a></li>
-<li><a href="#ollama">Ollama</a></li>
 <li><a href="#partition">Partition</a></li>
 <li><a href="#percona">Percona</a></li>
 <li><a href="#phpliveregex">PhpLiveRegex</a></li>
@@ -539,7 +533,7 @@ href="#dependencytreegenerator-1">DependencyTreeGenerator</a></li>
 <h1 id="documentation-controllers">Documentation Controllers</h1>
 <ul>
 <li>Source: <code>/srv/www/pmacontrol/App/Controller</code></li>
-<li>Documents: 121</li>
+<li>Documents: 119</li>
 </ul>
 <h2 id="index-1">Index</h2>
 <ul>
@@ -547,7 +541,6 @@ href="#dependencytreegenerator-1">DependencyTreeGenerator</a></li>
 <li><a href="Acl.md">Acl</a></li>
 <li><a href="Administration.md">Administration</a></li>
 <li><a href="Agent.md">Agent</a></li>
-<li><a href="Ai.md">Ai</a></li>
 <li><a href="Alert.md">Alert</a></li>
 <li><a href="Alias.md">Alias</a></li>
 <li><a href="Alter.md">Alter</a></li>
@@ -626,7 +619,6 @@ href="DependencyTreeGenerator.md">DependencyTreeGenerator</a></li>
 <li><a href="MysqlUser.md">MysqlUser</a></li>
 <li><a href="Mysqlsys.md">Mysqlsys</a></li>
 <li><a href="Myxplain.md">Myxplain</a></li>
-<li><a href="Ollama.md">Ollama</a></li>
 <li><a href="Partition.md">Partition</a></li>
 <li><a href="Percona.md">Percona</a></li>
 <li><a href="PhpLiveRegex.md">PhpLiveRegex</a></li>
@@ -732,18 +724,6 @@ agent state through <code>tailCustom</code>.</p></li>
 <code>check_daemon</code>.</p></li>
 <li><p><code>check_queue($param)</code>: Handle agent state through
 <code>check_queue</code>.</p></li>
-</ul>
-<div style="page-break-after: always;">
-
-</div>
-<h1 id="ai">Ai</h1>
-<h1 id="ai-1">Ai</h1>
-<ul>
-<li><p>Type: class</p></li>
-<li><p>Namespace: <code>App\Controller</code></p></li>
-<li><p>Source: <code>App/Controller/Ai.php</code></p></li>
-<li><p><code>index($param)</code>: Render ai state through
-<code>index</code>.</p></li>
 </ul>
 <div style="page-break-after: always;">
 
@@ -2370,8 +2350,8 @@ through <code>test_dechiffrement</code>.</p></li>
 <li><p>Type: class</p></li>
 <li><p>Namespace: <code>App\Controller</code></p></li>
 <li><p>Source: <code>App/Controller/ForeignKey.php</code></p></li>
-<li><p><code>autoDetect($param)</code>: Handle foreign key state
-through <code>autoDetect</code>.</p></li>
+<li><p><code>autoDetect($param)</code>: Handle foreign key state through
+<code>autoDetect</code>.</p></li>
 <li><p><code>import($param)</code>: Handle foreign key state through
 <code>import</code>.</p></li>
 <li><p><code>autoId($param)</code>: Handle foreign key state through
@@ -2870,20 +2850,24 @@ through <code>afterUpdateVariable</code>.</p></li>
 <li><p>Type: class</p></li>
 <li><p>Namespace: <code>App\Controller</code></p></li>
 <li><p>Source: <code>App/Controller/Llm.php</code></p></li>
+<li><p><code>index($param)</code>: Render llm state through
+<code>index</code>.</p></li>
 <li><p><code>analyze($param)</code>: Handle llm state through
 <code>analyze</code>.</p></li>
-<li><p><code>extractInput($param)</code>: Handle llm state through
-<code>extractInput</code>.</p></li>
-<li><p><code>checkLLMAvailability()</code>: Handle llm state through
-<code>checkLLMAvailability</code>.</p></li>
-<li><p><code>callLLM($input)</code>: Handle llm state through
+<li><p><code>buildViewData()</code>: Build llm view data through
+<code>buildViewData</code>.</p></li>
+<li><p><code>handleIndexPost($post, $server, $session)</code>: Handle
+llm POST state through <code>handleIndexPost</code>.</p></li>
+<li><p><code>loadLlmConfig()</code>: Load llm configuration through
+<code>loadLlmConfig</code>.</p></li>
+<li><p><code>callLLM($input, $config)</code>: Handle llm request through
 <code>callLLM</code>.</p></li>
-<li><p><code>buildSystemPrompt()</code>: Handle llm state through
-<code>buildSystemPrompt</code>.</p></li>
-<li><p><code>parseLLMResponse($raw)</code>: Handle llm state through
-<code>parseLLMResponse</code>.</p></li>
-<li><p><code>handleNonOkStatus($parsed)</code>: Handle llm state through
-<code>handleNonOkStatus</code>.</p></li>
+<li><p><code>buildAnalysisResult($parsed)</code>: Build llm analysis
+result through <code>buildAnalysisResult</code>.</p></li>
+<li><p><code>displayCliResult($parsed)</code>: Render llm CLI result
+through <code>displayCliResult</code>.</p></li>
+<li><p><code>redirectTo($url)</code>: Redirect llm request through
+<code>redirectTo</code>.</p></li>
 </ul>
 <div style="page-break-after: always;">
 
@@ -3154,18 +3138,6 @@ state through <code>getUserNeverConnected</code>.</p></li>
 <code>index</code>.</p></li>
 <li><p><code>import()</code>: Handle myxplain state through
 <code>import</code>.</p></li>
-</ul>
-<div style="page-break-after: always;">
-
-</div>
-<h1 id="ollama">Ollama</h1>
-<h1 id="ollama-1">Ollama</h1>
-<ul>
-<li><p>Type: class</p></li>
-<li><p>Namespace: <code>App\Controller</code></p></li>
-<li><p>Source: <code>App/Controller/Ollama.php</code></p></li>
-<li><p><code>index($param)</code>: Render ollama state through
-<code>index</code>.</p></li>
 </ul>
 <div style="page-break-after: always;">
 

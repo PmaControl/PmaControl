@@ -1,7 +1,7 @@
 # Documentation Controllers
 
 - Source: `/srv/www/pmacontrol/App/Controller`
-- Documents: 121
+- Documents: 119
 
 ## Index
 
@@ -9,7 +9,6 @@
 - [Acl](Acl.md)
 - [Administration](Administration.md)
 - [Agent](Agent.md)
-- [Ai](Ai.md)
 - [Alert](Alert.md)
 - [Alias](Alias.md)
 - [Alter](Alter.md)
@@ -87,7 +86,6 @@
 - [MysqlUser](MysqlUser.md)
 - [Mysqlsys](Mysqlsys.md)
 - [Myxplain](Myxplain.md)
-- [Ollama](Ollama.md)
 - [Partition](Partition.md)
 - [Percona](Percona.md)
 - [PhpLiveRegex](PhpLiveRegex.md)

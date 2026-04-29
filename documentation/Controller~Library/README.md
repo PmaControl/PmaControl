@@ -26,12 +26,6 @@ Generated automatically from `App/Controller` and `App/Library`.
 - Summary: `documentation/Controller~Library/Agent.md`
 - Methods: 9
 
-## Ai
-
-- Kind: class
-- Summary: `documentation/Controller~Library/Ai.md`
-- Methods: 1
-
 ## Alert
 
 - Kind: class
@@ -582,7 +576,7 @@ Generated automatically from `App/Controller` and `App/Library`.
 
 - Kind: class
 - Summary: `documentation/Controller~Library/Llm.md`
-- Methods: 7
+- Methods: 9
 
 ## Log
 
@@ -679,12 +673,6 @@ Generated automatically from `App/Controller` and `App/Library`.
 - Kind: class
 - Summary: `documentation/Controller~Library/Ofuscate.md`
 - Methods: 2
-
-## Ollama
-
-- Kind: class
-- Summary: `documentation/Controller~Library/Ollama.md`
-- Methods: 1
 
 ## Param
 
