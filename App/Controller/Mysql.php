@@ -12,6 +12,7 @@ use \App\Library\Graphviz;
 use \App\Library\Extraction2;
 use \App\Library\Mysql as Mysql2;
 use \Glial\Sgbd\Sgbd;
+use App\Library\Network\HostResolver;
 use App\Library\Security\CsrfGuard;
 use App\Library\Security\Identifier;
 use App\Library\Security\PositiveIntegerSelection;
@@ -2481,22 +2482,23 @@ class Mysql extends Controller
         $slaves  = $default->isSlave();
 
         foreach ($slaves as $slave) {
-            if (!filter_var($slave['Master_Host'], FILTER_VALIDATE_IP)) {
+            $masterHost = $slave['Master_Host'] ?? '';
+            if (!is_scalar($masterHost)) {
+                continue;
+            }
 
-                $list_ip_destinations = trim(shell_exec("getent hosts ".$slave['Master_Host']." | awk '{print $1}'"));
-                $ips                  = explode("\n", $list_ip_destinations);
+            $masterHost = trim((string) $masterHost);
+            if ($masterHost === '' || filter_var($masterHost, FILTER_VALIDATE_IP)) {
+                continue;
+            }
 
-                foreach ($ips as $ip_destination) {
+            foreach (HostResolver::resolveIpv4Addresses($masterHost) as $ip_destination) {
+                $data = array();
+                $data['alias_dns']['dns']         = $masterHost;
+                $data['alias_dns']['port']        = $slave['Master_Port'] ?? '';
+                $data['alias_dns']['destination'] = $ip_destination;
 
-                    if (!filter_var($ip_destination, FILTER_VALIDATE_IP)) {
-
-                        $data['alias_dns']['dns']         = $slave['Master_Host'];
-                        $data['alias_dns']['port']        = $slave['Master_Port'];
-                        $data['alias_dns']['destination'] = $ip_destination;
-
-                        $default->sql_save($data);
-                    }
-                }
+                $default->sql_save($data);
             }
         }
     }
