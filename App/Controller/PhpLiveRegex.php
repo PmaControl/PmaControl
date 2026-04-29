@@ -7,6 +7,7 @@
 
 namespace App\Controller;
 
+use App\Library\Http\HttpResponse;
 use App\Library\Security\CsrfGuard;
 use \Glial\Synapse\Controller;
 use Glial\Security\Csrf;
@@ -90,11 +91,7 @@ class PhpLiveRegex extends Controller
 
         $outcome = self::evaluateRequest($_POST, $_SERVER, $_SESSION, IS_CLI);
         if (!$outcome['allowed']) {
-            http_response_code($outcome['status']);
-            foreach ($outcome['headers'] as $name => $value) {
-                header($name . ': ' . $value);
-            }
-            echo $outcome['body'];
+            HttpResponse::sendOutcome($outcome, null);
             return;
         }
 

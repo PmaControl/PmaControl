@@ -7,6 +7,7 @@ use \Glial\Security\Crypt\Crypt;
 use \Glial\I18n\I18n;
 use \Glial\Sgbd\Sgbd;
 use App\Library\Security\CsrfGuard;
+use App\Library\Http\HttpResponse;
 use App\Library\Mysql;
 use App\Library\MysqlVersion;
 use App\Library\Debug;
@@ -63,11 +64,7 @@ class Mysqlsys extends Controller {
 
         $outcome = self::evaluateIndexRequest($_SERVER);
         if (!$outcome['allowed']) {
-            http_response_code($outcome['status']);
-            foreach ($outcome['headers'] as $name => $value) {
-                header($name . ': ' . $value);
-            }
-            echo $outcome['body'];
+            HttpResponse::sendOutcome($outcome, null);
             return;
         }
 
@@ -329,11 +326,7 @@ class Mysqlsys extends Controller {
         if (CsrfGuard::isPost($_SERVER)) {
             $outcome = self::evaluateInstallRequest($_POST, $_SERVER, $_SESSION, IS_CLI);
             if (!$outcome['allowed']) {
-                http_response_code($outcome['status']);
-                foreach ($outcome['headers'] as $name => $value) {
-                    header($name . ': ' . $value);
-                }
-                echo $outcome['body'];
+                HttpResponse::sendOutcome($outcome, null);
                 return;
             }
         }
@@ -640,11 +633,7 @@ class Mysqlsys extends Controller {
 
         $outcome = self::evaluateUpdateConfigRequest($_POST, $_SERVER, $_SESSION, IS_CLI);
         if (!$outcome['allowed']) {
-            http_response_code($outcome['status']);
-            foreach ($outcome['headers'] as $name => $value) {
-                header($name . ': ' . $value);
-            }
-            echo $outcome['body'];
+            HttpResponse::sendOutcome($outcome, null);
             return;
         }
 
