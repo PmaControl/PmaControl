@@ -160,6 +160,43 @@ final class StorageAreaUpdateSecurityTest extends TestCase
         $this->assertStringContainsString('params[csrfField] = csrfToken;', $javascript);
     }
 
+    public function testLegacyStorageAreaInlineEditScriptIsRemoved(): void
+    {
+        $this->assertFileDoesNotExist(__DIR__ . '/../../App/Webroot/js/StorageArea/index.js');
+    }
+
+    public function testNoControllerLoadsLegacyStorageAreaInlineEditScript(): void
+    {
+        $controllerFiles = glob(__DIR__ . '/../../App/Controller/*.php') ?: [];
+
+        $this->assertNotEmpty($controllerFiles);
+
+        foreach ($controllerFiles as $controllerFile) {
+            $source = (string) file_get_contents($controllerFile);
+
+            $this->assertStringNotContainsString(
+                'StorageArea/index.js',
+                $source,
+                basename($controllerFile) . ' must use Tree/index.js for CSRF-aware inline editing'
+            );
+
+            if (basename($controllerFile) === 'StorageArea.php') {
+                $sourceWithoutWhitespace = preg_replace('/\s+/', '', $source) ?? $source;
+
+                $this->assertStringNotContainsString(
+                    "getClass().'/index.js'",
+                    $sourceWithoutWhitespace,
+                    'StorageArea.php must not load a controller-relative index.js'
+                );
+                $this->assertStringNotContainsString(
+                    'getClass()."/index.js"',
+                    $sourceWithoutWhitespace,
+                    'StorageArea.php must not load a controller-relative index.js'
+                );
+            }
+        }
+    }
+
     private function sameSitePostServer(): array
     {
         return [
