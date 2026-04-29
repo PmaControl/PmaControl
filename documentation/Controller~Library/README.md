@@ -278,12 +278,6 @@ Generated automatically from `App/Controller` and `App/Library`.
 - Summary: `documentation/Controller~Library/Debug.md`
 - Methods: 13
 
-## Decoupage
-
-- Kind: trait
-- Summary: `documentation/Controller~Library/Decoupage.md`
-- Methods: 15
-
 ## Demo
 
 - Kind: class
