@@ -13,6 +13,8 @@ use \App\Library\Extraction2;
 use \App\Library\Mysql as Mysql2;
 use \Glial\Sgbd\Sgbd;
 use App\Library\Security\CsrfGuard;
+use App\Library\Security\Identifier;
+use App\Library\Security\PositiveIntegerSelection;
 use Glial\Security\Csrf;
 
 /**
@@ -911,17 +913,32 @@ class Mysql extends Controller
 
         Debug::parseDebug($param);
 
-        $id_mysql_server = $param[0];
-        $database        = $param[1];
+        $request = self::normalizeGraphRequest($param);
+        if ($request === null) {
+            $this->view = false;
+            self::sendMysqlGraphError(400, 'Invalid MySQL graph request');
+            return;
+        }
+
+        $id_mysql_server = $request['id_mysql_server'];
+        $database        = $request['database'];
+        $graphParam      = [$id_mysql_server, $database];
 
         $default = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT name,display_name FROM mysql_server WHERE id=".intval($id_mysql_server);
+        $sql = "SELECT name,display_name FROM mysql_server WHERE id=".$id_mysql_server." LIMIT 1";
         $res = $default->sql_query($sql);
 
+        $name_connect = null;
         while ($ob = $default->sql_fetch_object($res)) {
             $name_connect         = $ob->name;
             $data['display_name'] = $ob->display_name;
+        }
+
+        if ($name_connect === null) {
+            $this->view = false;
+            self::sendMysqlGraphError(404, 'MySQL server not found');
+            return;
         }
 
         $table_to_purge = array();
@@ -946,13 +963,12 @@ class Mysql extends Controller
         $type = $path_parts['extension'];
         $file = $path_parts['filename'];
 
-        $sql = "SELECT * FROM `INFORMATION_SCHEMA`.`TABLES` 
-        WHERE TABLE_SCHEMA ='".$param[1]."' AND TABLE_TYPE IN ('BASE TABLE', 'SYSTEM VERSIONED') ORDER BY TABLE_NAME;";
+        $sql = self::buildGraphTablesQuery($db, $database);
         Debug::sql($sql);
 
-        $liste_table_connected = $this->tableListLinked($param);
+        $liste_table_connected = $this->tableListLinked($graphParam);
 
-        $tables = $db->sql_fetch_yield(Mysql::protectInformationSchemaTablesQuery($db, $sql, $param[0]));
+        $tables = $db->sql_fetch_yield(Mysql::protectInformationSchemaTablesQuery($db, $sql, $id_mysql_server));
 
         $fp = fopen($path.'/'.$file.'.dot', "w");
 
@@ -996,7 +1012,7 @@ class Mysql extends Controller
                 fwrite($fp, '<tr><td colspan="2" bgcolor="grey" align="left">'.$table['ENGINE'].' ('.$table['ROW_FORMAT'].')</td></tr>'.PHP_EOL);
                 fwrite($fp, '<tr><td colspan="2" bgcolor="grey" align="left">total of '.$table['TABLE_ROWS'].'</td></tr>');
 
-                $sql = "SELECT * FROM information_schema.`COLUMNS` WHERE TABLE_SCHEMA = '".$param[1]."' AND TABLE_NAME ='".$table['TABLE_NAME']."' ORDER BY ORDINAL_POSITION;";
+                $sql = self::buildGraphColumnsQuery($db, $database, (string) $table['TABLE_NAME']);
 
                 //Debug::sql($sql);
 
@@ -1025,7 +1041,7 @@ class Mysql extends Controller
                 // GET FKS real and virtual
                 //$columns = $this->getColumns(array($id_mysql_server, $database));
 
-                $contraints = $this->getForeignKey($param);
+                $contraints = $this->getForeignKey($graphParam);
 
                 foreach ($contraints as $contraint) {
 
@@ -1111,6 +1127,72 @@ class Mysql extends Controller
         }
 
         $this->set('data', $data);
+    }
+
+    public static function normalizeGraphRequest(array $param): ?array
+    {
+        $serverId = self::normalizeMysqlGraphServerId($param[0] ?? null);
+        $database = self::normalizeMysqlGraphDatabase($param[1] ?? null);
+
+        if ($serverId === null || $database === null) {
+            return null;
+        }
+
+        return [
+            'id_mysql_server' => $serverId,
+            'database' => $database,
+        ];
+    }
+
+    public static function buildGraphTablesQuery($db, string $database): string
+    {
+        $databaseSql = $db->sql_real_escape_string($database);
+
+        return "SELECT * FROM `INFORMATION_SCHEMA`.`TABLES` "
+            ."WHERE TABLE_SCHEMA = '".$databaseSql."' "
+            ."AND TABLE_TYPE IN ('BASE TABLE', 'SYSTEM VERSIONED') ORDER BY TABLE_NAME;";
+    }
+
+    public static function buildGraphColumnsQuery($db, string $database, string $table): string
+    {
+        $databaseSql = $db->sql_real_escape_string($database);
+        $tableSql = $db->sql_real_escape_string($table);
+
+        return "SELECT * FROM information_schema.`COLUMNS` "
+            ."WHERE TABLE_SCHEMA = '".$databaseSql."' "
+            ."AND TABLE_NAME = '".$tableSql."' ORDER BY ORDINAL_POSITION;";
+    }
+
+    private static function normalizeMysqlGraphServerId($value): ?int
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $ids = PositiveIntegerSelection::normalizeList($value, 1);
+
+        return $ids[0] ?? null;
+    }
+
+    private static function normalizeMysqlGraphDatabase($value): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $database = trim((string) $value);
+        if (!Identifier::isDatabaseName($database)) {
+            return null;
+        }
+
+        return $database;
+    }
+
+    private static function sendMysqlGraphError(int $statusCode, string $message): void
+    {
+        http_response_code($statusCode);
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
 /**
@@ -2506,19 +2588,25 @@ class Mysql extends Controller
     {
         Debug::parseDebug($param);
 
-        $id_mysql_sever = $param[0];
-        $database = $param[1];
+        $request = self::normalizeGraphRequest($param);
+        if ($request === null) {
+            return [];
+        }
+
+        $id_mysql_server = $request['id_mysql_server'];
+        $database        = $request['database'];
 
         $db = Sgbd::sql(DB_DEFAULT);
+        $databaseSql = $db->sql_real_escape_string($database);
 
         $sql2 = "SELECT table_name FROM `information_schema`.`KEY_COLUMN_USAGE` "
-            ."WHERE `CONSTRAINT_SCHEMA` ='".$database."' "
-            ."AND `REFERENCED_TABLE_SCHEMA`='".$database."' "
+            ."WHERE `CONSTRAINT_SCHEMA` ='".$databaseSql."' "
+            ."AND `REFERENCED_TABLE_SCHEMA`='".$databaseSql."' "
             ."AND `REFERENCED_TABLE_NAME` IS NOT NULL
                           UNION
              SELECT REFERENCED_TABLE_NAME as table_name FROM `information_schema`.`KEY_COLUMN_USAGE` "
-            ."WHERE `CONSTRAINT_SCHEMA` ='".$database."' "
-            ."AND `REFERENCED_TABLE_SCHEMA`='".$database."' "
+            ."WHERE `CONSTRAINT_SCHEMA` ='".$databaseSql."' "
+            ."AND `REFERENCED_TABLE_SCHEMA`='".$databaseSql."' "
             ."AND `REFERENCED_TABLE_NAME` IS NOT NULL";
 
         $res2 = $db->sql_query($sql2);
@@ -2531,9 +2619,9 @@ class Mysql extends Controller
         Debug::debug(count($liste_table_1), "Natural Foreign keys");
 
         $sql1 = "SELECT distinct a.`constraint_table` as table_name
-         FROM `foreign_key_virtual` a WHERE `constraint_schema` = '".$database."' AND a.id_mysql_server = ".$id_mysql_sever."
+         FROM `foreign_key_virtual` a WHERE `constraint_schema` = '".$databaseSql."' AND a.id_mysql_server = ".$id_mysql_server."
          UNION SELECT distinct b.`referenced_table` as table_name
-         FROM `foreign_key_virtual` b WHERE `referenced_schema` = '".$database."' AND b.id_mysql_server = ".$id_mysql_sever.";
+         FROM `foreign_key_virtual` b WHERE `referenced_schema` = '".$databaseSql."' AND b.id_mysql_server = ".$id_mysql_server.";
         ";
         Debug::sql($sql1);
 
@@ -2579,16 +2667,22 @@ class Mysql extends Controller
     {
         Debug::parseDebug($param);
 
-        $id_mysql_server = $param[0];
-        $database        = $param[1];
+        $request = self::normalizeGraphRequest($param);
+        if ($request === null) {
+            return [];
+        }
+
+        $id_mysql_server = $request['id_mysql_server'];
+        $database        = $request['database'];
 
         $db = Sgbd::sql(DB_DEFAULT);
+        $databaseSql = $db->sql_real_escape_string($database);
 
         $sql = "select constraint_schema as CONSTRAINT_SCHEMA,constraint_table as TABLE_NAME,constraint_column as COLUMN_NAME,
             referenced_schema as REFERENCED_TABLE_SCHEMA, referenced_table as REFERENCED_TABLE_NAME, referenced_column as REFERENCED_COLUMN_NAME
             from foreign_key_virtual
             WHERE id_mysql_server = ".$id_mysql_server."
-            AND constraint_schema = '".$database."';";
+            AND constraint_schema = '".$databaseSql."';";
 
         Debug::sql($sql);
 
@@ -2634,15 +2728,21 @@ class Mysql extends Controller
 
         Debug::parseDebug($param);
 
-        $id_mysql_server = $param[0];
-        $database        = $param[1];
+        $request = self::normalizeGraphRequest($param);
+        if ($request === null) {
+            return [];
+        }
+
+        $id_mysql_server = $request['id_mysql_server'];
+        $database        = $request['database'];
 
         $db = Mysql2::getDbLink($id_mysql_server);
+        $databaseSql = $db->sql_real_escape_string($database);
 
         $sql = "SELECT CONSTRAINT_SCHEMA,TABLE_NAME,COLUMN_NAME, REFERENCED_TABLE_SCHEMA, REFERENCED_TABLE_NAME,REFERENCED_COLUMN_NAME"
             ." FROM `information_schema`.`KEY_COLUMN_USAGE` "
-            ."WHERE `CONSTRAINT_SCHEMA` ='".$database."' "
-            ."AND `REFERENCED_TABLE_SCHEMA`='".$database."' "
+            ."WHERE `CONSTRAINT_SCHEMA` ='".$databaseSql."' "
+            ."AND `REFERENCED_TABLE_SCHEMA`='".$databaseSql."' "
             ."AND `REFERENCED_TABLE_NAME` IS NOT NULL  ";
 
         Debug::sql($sql);
@@ -2688,8 +2788,15 @@ class Mysql extends Controller
     {
         Debug::parseDebug($param);
 
-        $fk1 = $this->getRealForeignKey($param);
-        $fk2 = $this->getVirtualForeignKey($param);
+        $request = self::normalizeGraphRequest($param);
+        if ($request === null) {
+            return [];
+        }
+
+        $graphParam = [$request['id_mysql_server'], $request['database']];
+
+        $fk1 = $this->getRealForeignKey($graphParam);
+        $fk2 = $this->getVirtualForeignKey($graphParam);
 
         //debug($fk2);
 
