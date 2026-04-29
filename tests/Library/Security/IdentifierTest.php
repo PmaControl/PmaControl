@@ -48,6 +48,35 @@ final class IdentifierTest extends TestCase
         Identifier::quoteSqlIdentifier('orders`2024');
     }
 
+    public function testStrictSqlIdentifierAllowlist(): void
+    {
+        $this->assertTrue(Identifier::isStrictSqlIdentifier('orders_2024'));
+        $this->assertTrue(Identifier::isStrictSqlIdentifier('_scratch'));
+        $this->assertTrue(Identifier::isStrictSqlIdentifier('a'.str_repeat('b', 63)));
+
+        $this->assertFalse(Identifier::isStrictSqlIdentifier(''));
+        $this->assertFalse(Identifier::isStrictSqlIdentifier('1orders'));
+        $this->assertFalse(Identifier::isStrictSqlIdentifier('orders-2024'));
+        $this->assertFalse(Identifier::isStrictSqlIdentifier('orders 2024'));
+        $this->assertFalse(Identifier::isStrictSqlIdentifier('orders`2024'));
+        $this->assertFalse(Identifier::isStrictSqlIdentifier("orders\n"));
+        $this->assertFalse(Identifier::isStrictSqlIdentifier("orders\0"));
+        $this->assertFalse(Identifier::isStrictSqlIdentifier('a'.str_repeat('b', 64)));
+    }
+
+    public function testStrictSqlIdentifierQuoting(): void
+    {
+        $this->assertSame('`orders_2024`', Identifier::quoteStrictSqlIdentifier('orders_2024'));
+        $this->assertSame('`fallback`', Identifier::quoteStrictSqlIdentifierOrFallback('orders-2024', 'fallback'));
+    }
+
+    public function testStrictSqlIdentifierQuotingRejectsUnsafePayload(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        Identifier::quoteStrictSqlIdentifier('orders`2024');
+    }
+
     public function testSqlAccountHostAndPrivilegeAllowlists(): void
     {
         $this->assertTrue(Identifier::isAccountName('app_user'));

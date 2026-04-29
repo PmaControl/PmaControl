@@ -8,6 +8,7 @@ use \App\Library\Mysql;
 use \App\Library\Extraction;
 use \App\Library\Extraction2;
 use App\Library\Security\CsrfGuard;
+use App\Library\Security\Identifier;
 use \Glial\Sgbd\Sgbd;
 use Glial\Security\Csrf;
 use \Monolog\Logger;
@@ -2065,7 +2066,9 @@ class ProxySQL extends Controller
 
     public static function buildUpdateFieldSql(array $update, callable $escape): string
     {
-        return "UPDATE `".$update['table']."` SET `".$update['field']."` = '".$escape($update['value'])."' WHERE ".$update['pk'].";";
+        return "UPDATE ".Identifier::quoteStrictSqlIdentifier((string) $update['table'])
+            ." SET ".Identifier::quoteStrictSqlIdentifier((string) $update['field'])
+            ." = '".$escape($update['value'])."' WHERE ".$update['pk'].";";
     }
 
     private static function normalizePositiveInteger($value): ?int
@@ -2099,7 +2102,7 @@ class ProxySQL extends Controller
         }
 
         $identifier = trim((string) $value);
-        if ($identifier === '' || strlen($identifier) > 64 || preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $identifier) !== 1) {
+        if (!Identifier::isStrictSqlIdentifier($identifier)) {
             return null;
         }
 

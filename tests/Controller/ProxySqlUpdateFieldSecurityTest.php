@@ -95,6 +95,7 @@ final class ProxySqlUpdateFieldSecurityTest extends TestCase
         $this->assertNull(ProxySQL::normalizeUpdateFieldPayload(['5 OR 1=1', 'mysql_users'], $post));
         $this->assertNull(ProxySQL::normalizeUpdateFieldPayload(['5', 'runtime_mysql_users'], $post));
         $this->assertNull(ProxySQL::normalizeUpdateFieldPayload(['5', 'mysql_users;DROP'], $post));
+        $this->assertNull(ProxySQL::normalizeUpdateFieldPayload(['5', 'mysql_users'], array_replace($post, ['name' => 'active-state'])));
         $this->assertNull(ProxySQL::normalizeUpdateFieldPayload(['5', 'mysql_users'], array_replace($post, ['name' => 'active` = 0 --'])));
         $this->assertNull(ProxySQL::normalizeUpdateFieldPayload(['5', 'mysql_users'], array_replace($post, ['name' => ['active']])));
         $this->assertNull(ProxySQL::normalizeUpdateFieldPayload(['5', 'mysql_users'], array_replace($post, ['value' => ['1']])));
