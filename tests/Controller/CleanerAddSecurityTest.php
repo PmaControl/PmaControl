@@ -20,8 +20,8 @@ final class CleanerAddSecurityTest extends TestCase
             $session
         );
 
-        $this->assertTrue($outcome['allowed']);
         $this->assertSame(200, $outcome['status']);
+        $this->assertArrayNotHasKey('allowed', $outcome);
         $this->assertSame(
             [
                 'id' => 0,
@@ -59,8 +59,8 @@ final class CleanerAddSecurityTest extends TestCase
     {
         $outcome = Cleaner::evaluateAddRequest([], ['REQUEST_METHOD' => 'GET'], []);
 
-        $this->assertFalse($outcome['allowed']);
         $this->assertSame(405, $outcome['status']);
+        $this->assertArrayNotHasKey('allowed', $outcome);
         $this->assertSame('POST', $outcome['headers']['Allow']);
         $this->assertNull($outcome['cleaner_main']);
     }
@@ -81,8 +81,8 @@ final class CleanerAddSecurityTest extends TestCase
             $session
         );
 
-        $this->assertFalse($outcome['allowed']);
         $this->assertSame(403, $outcome['status']);
+        $this->assertArrayNotHasKey('allowed', $outcome);
         $this->assertSame('Invalid request origin', $outcome['body']);
         $this->assertNull($outcome['cleaner_main']);
     }
@@ -135,8 +135,8 @@ final class CleanerAddSecurityTest extends TestCase
         foreach ($this->invalidPayloads($token) as $post) {
             $outcome = Cleaner::evaluateAddRequest($post, $server, $session);
 
-            $this->assertFalse($outcome['allowed']);
             $this->assertSame(400, $outcome['status']);
+            $this->assertArrayNotHasKey('allowed', $outcome);
             $this->assertSame('Invalid cleaner add payload', $outcome['body']);
             $this->assertNull($outcome['cleaner_main']);
         }

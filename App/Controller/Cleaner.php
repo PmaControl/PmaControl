@@ -23,6 +23,7 @@ use \Monolog\Handler\StreamHandler;
 use \Glial\Sgbd\Sql\Mysql\Compare;
 use \Glial\Synapse\Basic;
 use \App\Library\Debug;
+use App\Library\Http\HttpOutcome;
 use \App\Library\Mysql;
 use App\Library\Security\CsrfGuard;
 use App\Library\Security\GroupedFormRequest;
@@ -945,30 +946,15 @@ var myChart = new Chart(ctx, {
         );
 
         if ($request['status'] !== 200) {
-            return self::buildCleanerAddOutcome($request['status'], $request['body'], $request['headers']);
+            return HttpOutcome::build($request['status'], $request['body'], $request['headers'], ['cleaner_main' => null]);
         }
 
-        return self::buildCleanerAddOutcome(200, '', [], $request['payload']);
+        return HttpOutcome::ok(['cleaner_main' => $request['payload']]);
     }
 
     public static function normalizeAddPayload(array $post): ?array
     {
         return GroupedFormRequest::normalize($post, 'cleaner_main', self::CLEANER_ADD_MAIN_RULES);
-    }
-
-    private static function buildCleanerAddOutcome(
-        int $statusCode,
-        string $message,
-        array $headers = [],
-        ?array $cleaner_main = null
-    ): array {
-        return [
-            'allowed' => $statusCode === 200,
-            'status' => $statusCode,
-            'body' => $message,
-            'headers' => $headers,
-            'cleaner_main' => $cleaner_main,
-        ];
     }
 
     private static function sendCleanerAddError(int $statusCode, string $message, array $headers = []): void
@@ -1332,7 +1318,7 @@ var myChart = new Chart(ctx, {
     {
         $guard = CsrfGuard::check($post, $server, $session, self::CLEANER_SETTINGS_CSRF_SCOPE);
         if (!$guard['allowed']) {
-            return self::buildCleanerSettingsOutcome($guard['status'], $guard['body'], $guard['headers']);
+            return HttpOutcome::fromGuard($guard, ['cleaner_main' => null, 'cleaner_foreign_key' => null]);
         }
 
         $cleaner_main = GroupedFormRequest::normalize(
@@ -1341,7 +1327,7 @@ var myChart = new Chart(ctx, {
             self::CLEANER_SETTINGS_MAIN_RULES
         );
         if ($cleaner_main === null || (!array_key_exists('database', $cleaner_main) && !array_key_exists('id_mysql_database', $cleaner_main))) {
-            return self::buildCleanerSettingsOutcome(400, 'Invalid cleaner settings payload');
+            return HttpOutcome::error(400, 'Invalid cleaner settings payload', [], ['cleaner_main' => null, 'cleaner_foreign_key' => null]);
         }
 
         $cleaner_foreign_key = IndexedRowsRequest::normalize(
@@ -1351,27 +1337,13 @@ var myChart = new Chart(ctx, {
             self::CLEANER_SETTINGS_MAX_FOREIGN_KEYS
         );
         if ($cleaner_foreign_key === null) {
-            return self::buildCleanerSettingsOutcome(400, 'Invalid cleaner settings payload');
+            return HttpOutcome::error(400, 'Invalid cleaner settings payload', [], ['cleaner_main' => null, 'cleaner_foreign_key' => null]);
         }
 
-        return self::buildCleanerSettingsOutcome(200, '', [], $cleaner_main, $cleaner_foreign_key);
-    }
-
-    private static function buildCleanerSettingsOutcome(
-        int $statusCode,
-        string $message,
-        array $headers = [],
-        ?array $cleaner_main = null,
-        ?array $cleaner_foreign_key = null
-    ): array {
-        return [
-            'allowed' => $statusCode === 200,
-            'status' => $statusCode,
-            'body' => $message,
-            'headers' => $headers,
+        return HttpOutcome::ok([
             'cleaner_main' => $cleaner_main,
             'cleaner_foreign_key' => $cleaner_foreign_key,
-        ];
+        ]);
     }
 
     private static function sendCleanerSettingsError(int $statusCode, string $message, array $headers = []): void
