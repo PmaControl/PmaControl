@@ -11,6 +11,7 @@ use \App\Library\Debug;
 use App\Library\Security\BackupAddRequest;
 use App\Library\Security\CsrfGuard;
 use App\Library\Mysql;
+use App\Library\MysqlVersion;
 use App\Library\System;
 use App\Library\Extraction;
 use Glial\Security\Csrf;
@@ -37,6 +38,7 @@ class Backup extends Controller
     use \App\Library\Scp;
     const BACKUP_DIR = "/data/backup";
     private const BACKUP_ADD_CSRF_SCOPE = 'backup.add';
+    private const MYSQL_DUMP_SLAVE_MIN_VERSION = '5.5.3';
 
 /**
  * Stores `$backup_dir` for backup dir.
@@ -1022,6 +1024,7 @@ class Backup extends Controller
         $MS->setInstance($db_to_backup);
 
         $server_config = $db_to_backup->getParams();
+        $version = $db_to_backup->getVersion();
 
         debug($backup['id_connection']);
         debug($server_config);
@@ -1066,7 +1069,7 @@ class Backup extends Controller
         }
 
         if ($slave) {
-            if (version_compare($version, "5.5.3", ">")) {
+            if (self::supportsDumpSlaveOption($version)) {
                 $extra .= " --dump-slave=2";
             }
         }
@@ -1147,7 +1150,7 @@ class Backup extends Controller
             }
         } while ($continue);
 
-        if (!strpos("dump-slave", $extra) && $slave) {
+        if (!self::hasDumpSlaveOption($extra) && $slave) {
             $start_slave = "START SLAVE;"; //because option --dump-slave restart replication after made the dump
             if ($db_to_backup->isMultiMaster()) {
                 $start_slave = "START ALL SLAVES;";
@@ -1201,6 +1204,16 @@ class Backup extends Controller
         echo "\n";
 
         return false;
+    }
+
+    public static function supportsDumpSlaveOption(?string $version): bool
+    {
+        return MysqlVersion::compare($version, self::MYSQL_DUMP_SLAVE_MIN_VERSION, '>');
+    }
+
+    public static function hasDumpSlaveOption(string $extra): bool
+    {
+        return str_contains($extra, '--dump-slave=2');
     }
 
 /**
