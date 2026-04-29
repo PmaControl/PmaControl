@@ -1142,12 +1142,6 @@ documentation</a></li>
 <li><a href="#clés-étrangères-118">Clés étrangères</a></li>
 <li><a href="#corrélation-code-php-118">Corrélation Code PHP</a></li>
 </ul></li>
-<li><a href="#table-sharding">Table <code>sharding</code></a>
-<ul>
-<li><a href="#colonnes-119">Colonnes</a></li>
-<li><a href="#clés-étrangères-119">Clés étrangères</a></li>
-<li><a href="#corrélation-code-php-119">Corrélation Code PHP</a></li>
-</ul></li>
 <li><a href="#table-ssh_key">Table <code>ssh_key</code></a>
 <ul>
 <li><a href="#colonnes-120">Colonnes</a></li>
@@ -14903,7 +14897,6 @@ update=<code>n/a</code></li>
 <li><code>App/Library/Display.php:29</code></li>
 <li><code>App/Library/Display.php:64</code></li>
 <li><code>App/Library/Transfer.php:168</code></li>
-<li><code>App/Library/Decoupage.php:263</code></li>
 <li><code>...</code> (52 occurrences supplémentaires)</li>
 </ul></li>
 <li>Écrans/Routes probables:
@@ -16592,100 +16585,6 @@ update=<code>n/a</code></li>
 <li><code>/Scan/save</code></li>
 <li><code>/Plugin/copyfile</code></li>
 <li><code>/Plugin/logpluginfile</code></li>
-</ul></li>
-</ul>
-<h2 id="table-sharding">Table <code>sharding</code></h2>
-<ul>
-<li>Rôle: Rôle à confirmer: table présente dans le schéma mais peu
-référencée explicitement dans le code applicatif.</li>
-<li>Modèle PHP:
-<code>App/model/IdentifierPmacontrol/sharding.php</code></li>
-<li>Type/engine: <code>BASE TABLE</code> / <code>InnoDB</code></li>
-<li>Volumétrie (estimateur moteur): rows=<code>4</code>,
-data=<code>16384</code>, index=<code>16384</code></li>
-<li>Collation: <code>utf8mb3_general_ci</code></li>
-<li>Dates: create=<code>2024-09-15 01:05:23</code>,
-update=<code>n/a</code></li>
-</ul>
-<h3 id="colonnes-119">Colonnes</h3>
-<table style="width:100%;">
-<colgroup>
-<col style="width: 18%" />
-<col style="width: 13%" />
-<col style="width: 13%" />
-<col style="width: 13%" />
-<col style="width: 13%" />
-<col style="width: 13%" />
-<col style="width: 13%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: right;">#</th>
-<th>Colonne</th>
-<th>Type</th>
-<th>Null</th>
-<th>Défaut</th>
-<th>Clé</th>
-<th>Extra</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: right;">1</td>
-<td><code>id</code></td>
-<td><code>int(11)</code></td>
-<td><code>NO</code></td>
-<td><code>NULL</code></td>
-<td><code>PRI</code></td>
-<td><code>auto_increment</code></td>
-</tr>
-<tr class="even">
-<td style="text-align: right;">2</td>
-<td><code>name</code></td>
-<td><code>varchar(250)</code></td>
-<td><code>NO</code></td>
-<td><code>NULL</code></td>
-<td><code>|</code></td>
-<td></td>
-</tr>
-<tr class="odd">
-<td style="text-align: right;">3</td>
-<td><code>prefix</code></td>
-<td><code>varchar(20)</code></td>
-<td><code>NO</code></td>
-<td><code>NULL</code></td>
-<td><code>UNI</code></td>
-<td><code>| | 4 | `date` | `datetime` | `NO` | `NULL` |</code></td>
-</tr>
-</tbody>
-</table>
-<h3 id="clés-étrangères-119">Clés étrangères</h3>
-<ul>
-<li>Aucune FK explicite détectée dans
-<code>information_schema.key_column_usage</code>.</li>
-</ul>
-<h3 id="corrélation-code-php-119">Corrélation Code PHP</h3>
-<ul>
-<li>Références contrôleurs: 2
-<ul>
-<li><code>App/Controller/Scan.php:27</code></li>
-<li><code>App/Controller/Export.php:27</code></li>
-</ul></li>
-<li>Références vues: 0</li>
-<li>Références autres (lib/model): 7
-<ul>
-<li><code>App/Library/Decoupage.php:19</code></li>
-<li><code>App/Library/Decoupage.php:29</code></li>
-<li><code>App/Library/Decoupage.php:34</code></li>
-<li><code>App/Library/Decoupage.php:55</code></li>
-<li><code>App/Library/Decoupage.php:81</code></li>
-<li><code>App/Library/Decoupage.php:306</code></li>
-<li><code>App/Library/Decoupage.php:331</code></li>
-</ul></li>
-<li>Écrans/Routes probables:
-<ul>
-<li>Aucun écran direct détecté (table potentiellement technique ou
-utilisée indirectement).</li>
 </ul></li>
 </ul>
 <h2 id="table-ssh_key">Table <code>ssh_key</code></h2>

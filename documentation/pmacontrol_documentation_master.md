@@ -6268,7 +6268,7 @@ Cette étape permet de synchroniser les alias DNS basés sur
   - `App/view/Server/password.view.php:27`
   - `App/view/Server/password.view.php:37`
   - `...` (96 occurrences supplémentaires)
-- Références autres (lib/model): 62
+- Références autres (lib/model): 61
   - `App/Mutual/Bigdata.php:27`
   - `App/Library/Util.php:58`
   - `App/Library/Galera.php:281`
@@ -6278,7 +6278,6 @@ Cette étape permet de synchroniser les alias DNS basés sur
   - `App/Library/Display.php:29`
   - `App/Library/Display.php:64`
   - `App/Library/Transfer.php:168`
-  - `App/Library/Decoupage.php:263`
   - `...` (52 occurrences supplémentaires)
 - Écrans/Routes probables:
   - `/Aspirateur/tryMysqlConnection`
@@ -7054,46 +7053,6 @@ Cette étape permet de synchroniser les alias DNS basés sur
   - `/Scan/save`
   - `/Plugin/copyfile`
   - `/Plugin/logpluginfile`
-
-## Table `sharding`
-
-- Rôle: Rôle à confirmer: table présente dans le schéma mais peu référencée explicitement dans le code applicatif.
-- Modèle PHP: `App/model/IdentifierPmacontrol/sharding.php`
-- Type/engine: `BASE TABLE` / `InnoDB`
-- Volumétrie (estimateur moteur): rows=`4`, data=`16384`, index=`16384`
-- Collation: `utf8mb3_general_ci`
-- Dates: create=`2024-09-15 01:05:23`, update=`n/a`
-
-### Colonnes
-
-| # | Colonne | Type | Null | Défaut | Clé | Extra |
-|---:|---|---|---|---|---|---|
-| 1 | `id` | `int(11)` | `NO` | `NULL` | `PRI` | `auto_increment` |
-| 2 | `name` | `varchar(250)` | `NO` | `NULL` | `` | `` |
-| 3 | `prefix` | `varchar(20)` | `NO` | `NULL` | `UNI` | `` |
-| 4 | `date` | `datetime` | `NO` | `NULL` | `` | `` |
-| 5 | `table_link` | `varchar(64)` | `NO` | `NULL` | `` | `` |
-
-### Clés étrangères
-
-- Aucune FK explicite détectée dans `information_schema.key_column_usage`.
-
-### Corrélation Code PHP
-
-- Références contrôleurs: 2
-  - `App/Controller/Scan.php:27`
-  - `App/Controller/Export.php:27`
-- Références vues: 0
-- Références autres (lib/model): 7
-  - `App/Library/Decoupage.php:19`
-  - `App/Library/Decoupage.php:29`
-  - `App/Library/Decoupage.php:34`
-  - `App/Library/Decoupage.php:55`
-  - `App/Library/Decoupage.php:81`
-  - `App/Library/Decoupage.php:306`
-  - `App/Library/Decoupage.php:331`
-- Écrans/Routes probables:
-  - Aucun écran direct détecté (table potentiellement technique ou utilisée indirectement).
 
 ## Table `ssh_key`
 

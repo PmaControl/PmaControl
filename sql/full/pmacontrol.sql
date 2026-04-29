@@ -163531,37 +163531,6 @@ INSERT INTO `mysqlsys_config_export` VALUES (6,'schema_table_statistics','table_
 UNLOCK TABLES;
 
 --
--- Table structure for table `sharding`
---
-
-DROP TABLE IF EXISTS `sharding`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
-CREATE TABLE `sharding` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(250) NOT NULL,
-  `prefix` varchar(20) NOT NULL,
-  `date` datetime NOT NULL,
-  `table_link` varchar(64) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `prefix` (`prefix`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `sharding`
---
-
-LOCK TABLES `sharding` WRITE;
-/*!40000 ALTER TABLE `sharding` DISABLE KEYS */;
-INSERT INTO `sharding` VALUES (1,'slave','slave','2017-01-24 14:22:24','mysql_replication_thread__Connection_name');
-INSERT INTO `sharding` VALUES (2,'variables','variables','2017-02-21 16:15:07','mysql_server');
-INSERT INTO `sharding` VALUES (3,'status','status','2017-02-21 16:15:22','mysql_server');
-INSERT INTO `sharding` VALUES (4,'master','master','2017-02-21 16:15:35','mysql_server');
-/*!40000 ALTER TABLE `sharding` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `tag`
 --
 

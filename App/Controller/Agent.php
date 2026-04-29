@@ -36,8 +36,6 @@ use \Glial\Sgbd\Sgbd;
  */
 class Agent extends Controller {
 
-    use \App\Library\Decoupage;
-
 /**
  * Stores `$debug` for debug.
  *
@@ -461,10 +459,6 @@ class Agent extends Controller {
                 debug($data);
                 debug($db->sql_error());
                 //throw new Exception(''. $db->sql_error());
-            } else {
-
-                //$this->OnAddServer(array($id_mysql_server));
-                //echo $data['mysql_server']['name'] . PHP_EOL;
             }
         }
 
