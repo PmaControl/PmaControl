@@ -364,11 +364,10 @@ class Aspirateur extends Controller
 
     private function getSchemaQuery(string $version = '', string $versionComment = ''): string
     {
-        $isMariaDB = (stripos($version, 'MariaDB') !== false) || (stripos($versionComment, 'MariaDB') !== false);
-        $numVersion = preg_replace('/[^0-9.].*/', '', $version);
+        $isMariaDB = MysqlVersion::isMariaDb($version, $versionComment);
 
         // SCHEMA_COMMENT exists only in MariaDB >= 10.5
-        $hasSchemaComment = $isMariaDB && version_compare($numVersion, '10.5.0', '>=');
+        $hasSchemaComment = $isMariaDB && MysqlVersion::atLeast($version, '10.5.0');
 
         return "SELECT
             SCHEMA_NAME AS schema_name,
@@ -3871,8 +3870,7 @@ GROUP BY C.ID, C.INFO;";
         }
 
         // @@version_comment exists since MySQL 5.0.1
-        $numV = preg_replace('/[^0-9.].*/', '', $srvVersion);
-        if ($numV !== '' && version_compare($numV, '5.0.1', '>=')) {
+        if (MysqlVersion::atLeast($srvVersion, '5.0.1')) {
             $resC = Mysql::sqlQuerySilentCompat($mysql_tested, "SELECT @@version_comment AS c");
             if ($resC && $rowC = $mysql_tested->sql_fetch_array($resC, MYSQLI_ASSOC)) {
                 $srvComment = $rowC['c'] ?? '';
@@ -3881,7 +3879,7 @@ GROUP BY C.ID, C.INFO;";
 
         // information_schema exists since MySQL 5.0; skip schemata query on older servers.
         $res = false;
-        if ($numV === '' || version_compare($numV, '5.0.0', '>=')) {
+        if (MysqlVersion::numeric($srvVersion) === '' || MysqlVersion::atLeast($srvVersion, '5.0.0')) {
             $res = Mysql::sqlQuerySilentCompat($mysql_tested, $this->getSchemaQuery($srvVersion, $srvComment));
         }
 
@@ -4399,19 +4397,17 @@ GROUP BY C.ID, C.INFO;";
     ): ?string {
         if (
             $isSingleStore
-            || stripos($version, 'SingleStore') !== false
-            || stripos($versionComment, 'SingleStore') !== false
+            || MysqlVersion::isSingleStore($version, $versionComment)
         ) {
             return null;
         }
 
-        $numVer = preg_replace('/[^0-9.].*/', '', $version);
-        if ($numVer === '') {
+        if (MysqlVersion::numeric($version) === '') {
             return null;
         }
 
-        $isMariaDB = (stripos($version, 'MariaDB') !== false) || (stripos($versionComment, 'MariaDB') !== false);
-        if (!$isMariaDB && version_compare($numVer, '8.4.0', '>=')) {
+        $isMariaDB = MysqlVersion::isMariaDb($version, $versionComment);
+        if (!$isMariaDB && MysqlVersion::atLeast($version, '8.4.0')) {
             return "SHOW BINARY LOG STATUS";
         }
 
@@ -4551,20 +4547,15 @@ GROUP BY C.ID, C.INFO;";
 
     private function shouldProbeGroupReplication(string $version, string $versionComment = ''): bool
     {
-        if (stripos($version, 'MariaDB') !== false || stripos($versionComment, 'MariaDB') !== false) {
+        if (MysqlVersion::isMariaDb($version, $versionComment)) {
             return false;
         }
 
-        if (stripos($version, 'SingleStore') !== false || stripos($versionComment, 'SingleStore') !== false) {
+        if (MysqlVersion::isSingleStore($version, $versionComment)) {
             return false;
         }
 
-        $numVer = preg_replace('/[^0-9.].*/', '', $version);
-        if ($numVer === '') {
-            return false;
-        }
-
-        return version_compare($numVer, '5.7.17', '>=');
+        return MysqlVersion::atLeast($version, '5.7.17');
     }
 
     private function remoteInformationSchemaRowExists($db, string $table, array $filters): ?bool
@@ -5189,12 +5180,12 @@ GROUP BY C.ID, C.INFO;";
         $mysql_tested = ($id_mysql_server == (int) $id_mysql_server) ? Mysql::getDbLink($id_mysql_server) : Sgbd::sql($id_mysql_server);
 
         // information_schema doesn't exist before MySQL 5.0
-        $numVer = '';
+        $serverInfo = '';
         if (isset($mysql_tested->link) && $mysql_tested->link instanceof \mysqli) {
-            $numVer = preg_replace('/[^0-9.].*/', '', $mysql_tested->link->server_info ?? '');
+            $serverInfo = $mysql_tested->link->server_info ?? '';
         }
 
-        if ($numVer !== '' && version_compare($numVer, '5.0.0', '<')) {
+        if (MysqlVersion::lessThan($serverInfo, '5.0.0')) {
             $db_esc = $mysql_tested->sql_real_escape_string($database);
             $tbl_esc = $mysql_tested->sql_real_escape_string($table);
             $res = Mysql::sqlQuerySilentCompat($mysql_tested,

@@ -20,12 +20,34 @@ final class MysqlVersion
 
     public static function atLeast(?string $version, string $minimum): bool
     {
+        return self::compare($version, $minimum, '>=');
+    }
+
+    public static function lessThan(?string $version, string $maximum): bool
+    {
+        return self::compare($version, $maximum, '<');
+    }
+
+    public static function compare(?string $version, string $reference, string $operator): bool
+    {
         $numeric = self::numeric($version);
         if ($numeric === '') {
             return false;
         }
 
-        return version_compare($numeric, $minimum, '>=');
+        return version_compare($numeric, $reference, $operator);
+    }
+
+    public static function isMariaDb(?string $version, ?string $versionComment = ''): bool
+    {
+        return stripos((string) $version, 'MariaDB') !== false
+            || stripos((string) $versionComment, 'MariaDB') !== false;
+    }
+
+    public static function isSingleStore(?string $version, ?string $versionComment = ''): bool
+    {
+        return stripos((string) $version, 'SingleStore') !== false
+            || stripos((string) $versionComment, 'SingleStore') !== false;
     }
 
     public static function supportsInnodbMetrics(?string $version, bool $isSingleStore): bool
