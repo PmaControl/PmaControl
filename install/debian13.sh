@@ -1,6 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=install/lib/harden_network.sh
+. "${SCRIPT_DIR}/lib/harden_network.sh"
+
 DEV_MOD=0
 VERSION_MARIADB="11.8"
 VERSION_PHP="8.5"
@@ -11,6 +15,10 @@ SSH_PRIVATE_KEY_FILE=""
 SSH_PUBLIC_KEY_FILE=""
 RESET_EXISTING_CHECKOUT=0
 FORCE_REINSTALL=0
+PMACTRL_DB_HOST="${PMACTRL_DB_HOST:-127.0.0.1}"
+PMACTRL_HARDEN_DB_BIND="${PMACTRL_HARDEN_DB_BIND:-1}"
+PMACTRL_DB_BIND_ADDRESS="${PMACTRL_DB_BIND_ADDRESS:-127.0.0.1,::1}"
+PMACTRL_RPCBIND_POLICY="${PMACTRL_RPCBIND_POLICY:-disable}"
 
 generate_password()
 {
@@ -492,6 +500,8 @@ main()
 
     install_base_packages
     install_mariadb
+    pmactrl_harden_mariadb_bind
+    pmactrl_harden_rpcbind
     install_php "${VERSION_PHP}"
     configure_apache
     clone_repo

@@ -25,6 +25,9 @@ existing installer.
 | `PMACTRL_DB_NAME` | `pmacontrol` | Application database name. |
 | `PMACTRL_DB_USER` | `pmacontrol` | MariaDB user created for the app. |
 | `PMACTRL_DB_PASSWORD` | generated | MariaDB password. |
+| `PMACTRL_HARDEN_DB_BIND` | `1` | Harden MariaDB bind address. Use `auto` to do this only when the app DB host is local, or `0` to skip. |
+| `PMACTRL_DB_BIND_ADDRESS` | `127.0.0.1,::1` | MariaDB addresses written to `/etc/mysql/mariadb.conf.d/90-pmacontrol-network.cnf`. |
+| `PMACTRL_RPCBIND_POLICY` | `disable` | `disable`, `mask`, or `leave` for `rpcbind.socket` / `rpcbind.service`. |
 | `PMACTRL_ADMIN_LOGIN` | `admin` | Initial admin login. |
 | `PMACTRL_ADMIN_PASSWORD` | generated | Initial admin password. |
 | `PMACTRL_ORGANIZATION` | `PmaControl` | Initial organization name. |
@@ -46,6 +49,41 @@ By default, the script is conservative on an existing installation:
   `configuration/db.config.ini.php` already exists.
 
 Use `PMACTRL_FORCE_REINSTALL=1` only on disposable hosts or test containers.
+
+## Network Hardening
+
+The installer uses the shared `install/lib/harden_network.sh` helper after
+MariaDB configuration.
+
+On local DB installs, the default writes
+`/etc/mysql/mariadb.conf.d/90-pmacontrol-network.cnf` with:
+
+```ini
+[mysqld]
+bind-address = 127.0.0.1,::1
+```
+
+Set `PMACTRL_HARDEN_DB_BIND=0` when the host intentionally serves MariaDB to
+remote clients, set `PMACTRL_HARDEN_DB_BIND=auto` to harden only local DB
+installs, or set `PMACTRL_DB_BIND_ADDRESS` to an explicit allowlist.
+
+`rpcbind` is not required by PmaControl. The default
+`PMACTRL_RPCBIND_POLICY=disable` stops and disables existing `rpcbind` units. If
+`nfs-common` is installed, the helper leaves `rpcbind` enabled unless
+`PMACTRL_RPCBIND_POLICY=mask` is set, to avoid breaking NFS clients.
+
+Validate listeners after installation:
+
+```bash
+ss -lntup | egrep ':(111|3306)\b' || true
+```
+
+From a separate test container, repeat the network scan and expect ports `111`
+and `3306` to be closed or filtered unless explicitly allowed:
+
+```bash
+nmap -Pn -n -sT -T2 --max-rate 20 -p 111,3306 <pmacontrol-host-ip>
+```
 
 ## CI
 

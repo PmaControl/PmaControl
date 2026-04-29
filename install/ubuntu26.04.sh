@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=install/lib/harden_network.sh
+. "${SCRIPT_DIR}/lib/harden_network.sh"
+
 export DEBIAN_FRONTEND=noninteractive
 export UCF_FORCE_CONFOLD=1
 export UCF_FORCE_CONFFNEW=1
@@ -16,6 +20,9 @@ PMACTRL_DB_USER="${PMACTRL_DB_USER:-pmacontrol}"
 PMACTRL_DB_HOST="${PMACTRL_DB_HOST:-127.0.0.1}"
 PMACTRL_DB_PORT="${PMACTRL_DB_PORT:-3306}"
 PMACTRL_DB_PASSWORD="${PMACTRL_DB_PASSWORD:-}"
+PMACTRL_HARDEN_DB_BIND="${PMACTRL_HARDEN_DB_BIND:-1}"
+PMACTRL_DB_BIND_ADDRESS="${PMACTRL_DB_BIND_ADDRESS:-127.0.0.1,::1}"
+PMACTRL_RPCBIND_POLICY="${PMACTRL_RPCBIND_POLICY:-disable}"
 PMACTRL_ADMIN_LOGIN="${PMACTRL_ADMIN_LOGIN:-admin}"
 PMACTRL_ADMIN_EMAIL="${PMACTRL_ADMIN_EMAIL:-admin@example.com}"
 PMACTRL_ADMIN_FIRSTNAME="${PMACTRL_ADMIN_FIRSTNAME:-PmaControl}"
@@ -57,6 +64,8 @@ Options:
 Environment:
   PMACTRL_INSTALL_DIR, PMACTRL_REPO_URL, PMACTRL_GIT_BRANCH
   PMACTRL_DB_NAME, PMACTRL_DB_USER, PMACTRL_DB_HOST, PMACTRL_DB_PORT, PMACTRL_DB_PASSWORD
+  PMACTRL_HARDEN_DB_BIND=1, PMACTRL_DB_BIND_ADDRESS=127.0.0.1,::1
+  PMACTRL_RPCBIND_POLICY=disable|mask|leave
   PMACTRL_ADMIN_LOGIN, PMACTRL_ADMIN_EMAIL, PMACTRL_ADMIN_PASSWORD
   PMACTRL_ORGANIZATION, PMACTRL_WEBROOT
   PMACTRL_FORCE_REINSTALL=1, PMACTRL_DRY_RUN=1, PMACTRL_KEEP_CONFIG=1
@@ -523,6 +532,8 @@ main()
     install_packages
     prepare_repository
     configure_mariadb
+    pmactrl_harden_mariadb_bind
+    pmactrl_harden_rpcbind
     configure_php
     configure_apache
     install_composer_dependencies
