@@ -756,9 +756,21 @@ class Ldap extends Controller
             $r  = ldap_bind($ds, LDAP_BIND_DN, LDAP_BIND_PASSWD);     // connexion anonyme, typique
 
             if ($r) {
-                $results = ldap_search($ds, LDAP_ROOT_DN, "(samaccountname=".$ob->login.")", array("memberof"));
+                $login = isset($ob->login) ? (string) $ob->login : '';
+                if ($login === '') {
+                    continue;
+                }
+
+                $escapedLogin = self::escapeLdapFilterValue($login);
+                $results = ldap_search($ds, LDAP_ROOT_DN, "(samaccountname={$escapedLogin})", array("memberof"));
+                if ($results === false) {
+                    continue;
+                }
 
                 $entries = ldap_get_entries($ds, $results);
+                if (!is_array($entries) || !isset($entries[0]['memberof']) || !is_array($entries[0]['memberof'])) {
+                    continue;
+                }
 
                 $memberof = $entries[0]['memberof'];
 
