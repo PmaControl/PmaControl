@@ -596,18 +596,6 @@ Generated automatically from `App/Controller` and `App/Library`.
 - Summary: `documentation/Controller~Library/Llm.md`
 - Methods: 7
 
-## Load
-
-- Kind: class
-- Summary: `documentation/Controller~Library/Load.md`
-- Methods: 6
-
-## Load2
-
-- Kind: class
-- Summary: `documentation/Controller~Library/Load2.md`
-- Methods: 6
-
 ## Log
 
 - Kind: class
@@ -1033,4 +1021,3 @@ Generated automatically from `App/Controller` and `App/Library`.
 - Kind: class
 - Summary: `documentation/Controller~Library/implode.md`
 - Methods: 19
-

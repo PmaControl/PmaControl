@@ -76,7 +76,7 @@ Le code se structure de facto autour des domaines ci-dessous:
    - generation d'arbres de dependances, vues cluster, cartes de flux
 
 4. **Sauvegarde, archivage et restauration**
-   - `Backup`, `Archives`, `Recover`, `StorageArea`, `Load`
+   - `Backup`, `Archives`, `Recover`, `StorageArea`
    - orchestration de dumps, archives, transferts, restauration cible
 
 5. **Qualite du schema et hygiene**

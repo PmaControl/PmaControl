@@ -167,7 +167,7 @@ Le code se structure de facto autour des domaines ci-dessous:
    - generation d'arbres de dependances, vues cluster, cartes de flux
 
 4. **Sauvegarde, archivage et restauration**
-   - `Backup`, `Archives`, `Recover`, `StorageArea`, `Load`
+   - `Backup`, `Archives`, `Recover`, `StorageArea`
    - orchestration de dumps, archives, transferts, restauration cible
 
 5. **Qualite du schema et hygiene**
@@ -398,7 +398,6 @@ Le code fait un usage massif de `shell_exec`, `passthru` et de commandes shell c
 
 - `App/Controller/Backup.php`
 - `App/Controller/Aspirateur.php`
-- `App/Controller/Load.php`
 
 Risque:
 

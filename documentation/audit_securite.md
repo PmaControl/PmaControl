@@ -39,7 +39,6 @@ Le code fait un usage massif de `shell_exec`, `passthru` et de commandes shell c
 
 - `App/Controller/Backup.php`
 - `App/Controller/Aspirateur.php`
-- `App/Controller/Load.php`
 
 Risque:
 

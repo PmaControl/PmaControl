@@ -74,8 +74,6 @@
 - [Ldap](#ldap)
 - [Listener](#listener)
 - [Llm](#llm)
-- [Load](#load)
-- [Load2](#load2)
 - [Log](#log)
 - [MasterSlave](#masterslave)
 - [MaxScale](#maxscale)
@@ -131,7 +129,7 @@
 # Documentation Controllers
 
 - Source: `/srv/www/pmacontrol/App/Controller`
-- Documents: 122
+- Documents: 121
 
 ## Index
 
@@ -206,8 +204,6 @@
 - [Ldap](Ldap.md)
 - [Listener](Listener.md)
 - [Llm](Llm.md)
-- [Load](Load.md)
-- [Load2](Load2.md)
 - [Log](Log.md)
 - [MasterSlave](MasterSlave.md)
 - [MaxScale](MaxScale.md)
@@ -1750,40 +1746,6 @@
 - `buildSystemPrompt()`: Handle llm state through `buildSystemPrompt`.
 - `parseLLMResponse($raw)`: Handle llm state through `parseLLMResponse`.
 - `handleNonOkStatus($parsed)`: Handle llm state through `handleNonOkStatus`.
-
-<div style="page-break-after: always;"></div>
-
-# Load
-
-# Load
-
-- Type: class
-- Namespace: `App\Controller`
-- Source: `App/Controller/Load.php`
-
-- `exec($param)`: Handle load state through `exec`.
-- `waitPosition($db, $file, $position)`: Handle load state through `waitPosition`.
-- `install($db_order)`: Handle load state through `install`.
-- `log($sql)`: Handle load state through `log`.
-- `getLogAndPos($filename)`: Retrieve load state through `getLogAndPos`.
-- `cmd($cmd)`: Handle load state through `cmd`.
-
-<div style="page-break-after: always;"></div>
-
-# Load2
-
-# Load2
-
-- Type: class
-- Namespace: `App\Controller`
-- Source: `App/Controller/Load2.php`
-
-- `exec($param)`: Handle load2 state through `exec`.
-- `waitPosition($db, $file, $position)`: Handle load2 state through `waitPosition`.
-- `install($db_order)`: Handle load2 state through `install`.
-- `log($sql)`: Handle load2 state through `log`.
-- `getLogAndPos($filename)`: Retrieve load2 state through `getLogAndPos`.
-- `cmd($cmd)`: Handle load2 state through `cmd`.
 
 <div style="page-break-after: always;"></div>
 
