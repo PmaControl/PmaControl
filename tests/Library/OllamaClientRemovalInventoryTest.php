@@ -14,6 +14,7 @@ final class OllamaClientRemovalInventoryTest extends TestCase
         $root = dirname(__DIR__, 2);
 
         foreach ([
+            'App/Controller/Ollama.php',
             'App/Library/Ollama.php',
             'documentation/Controller~Library/OllamaClient.md',
         ] as $path) {

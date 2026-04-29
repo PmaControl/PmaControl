@@ -7,7 +7,6 @@
 - [Acl](#acl)
 - [Administration](#administration)
 - [Agent](#agent)
-- [Ai](#ai)
 - [Alert](#alert)
 - [Alias](#alias)
 - [Alter](#alter)
@@ -85,7 +84,6 @@
 - [MysqlUser](#mysqluser)
 - [Mysqlsys](#mysqlsys)
 - [Myxplain](#myxplain)
-- [Ollama](#ollama)
 - [Partition](#partition)
 - [Percona](#percona)
 - [PhpLiveRegex](#phpliveregex)
@@ -129,7 +127,7 @@
 # Documentation Controllers
 
 - Source: `/srv/www/pmacontrol/App/Controller`
-- Documents: 121
+- Documents: 119
 
 ## Index
 
@@ -137,7 +135,6 @@
 - [Acl](Acl.md)
 - [Administration](Administration.md)
 - [Agent](Agent.md)
-- [Ai](Ai.md)
 - [Alert](Alert.md)
 - [Alias](Alias.md)
 - [Alter](Alter.md)
@@ -215,7 +212,6 @@
 - [MysqlUser](MysqlUser.md)
 - [Mysqlsys](Mysqlsys.md)
 - [Myxplain](Myxplain.md)
-- [Ollama](Ollama.md)
 - [Partition](Partition.md)
 - [Percona](Percona.md)
 - [PhpLiveRegex](PhpLiveRegex.md)
@@ -311,18 +307,6 @@
 - `tailCustom($filepath, $lines, $adaptive)`: Handle agent state through `tailCustom`.
 - `check_daemon()`: Handle agent state through `check_daemon`.
 - `check_queue($param)`: Handle agent state through `check_queue`.
-
-<div style="page-break-after: always;"></div>
-
-# Ai
-
-# Ai
-
-- Type: class
-- Namespace: `App\Controller`
-- Source: `App/Controller/Ai.php`
-
-- `index($param)`: Render ai state through `index`.
 
 <div style="page-break-after: always;"></div>
 
@@ -1768,13 +1752,15 @@
 - Namespace: `App\Controller`
 - Source: `App/Controller/Llm.php`
 
+- `index($param)`: Render llm state through `index`.
 - `analyze($param)`: Handle llm state through `analyze`.
-- `extractInput($param)`: Handle llm state through `extractInput`.
-- `checkLLMAvailability()`: Handle llm state through `checkLLMAvailability`.
-- `callLLM($input)`: Handle llm state through `callLLM`.
-- `buildSystemPrompt()`: Handle llm state through `buildSystemPrompt`.
-- `parseLLMResponse($raw)`: Handle llm state through `parseLLMResponse`.
-- `handleNonOkStatus($parsed)`: Handle llm state through `handleNonOkStatus`.
+- `buildViewData()`: Build llm view data through `buildViewData`.
+- `handleIndexPost($post, $server, $session)`: Handle llm POST state through `handleIndexPost`.
+- `loadLlmConfig()`: Load llm configuration through `loadLlmConfig`.
+- `callLLM($input, $config)`: Handle llm request through `callLLM`.
+- `buildAnalysisResult($parsed)`: Build llm analysis result through `buildAnalysisResult`.
+- `displayCliResult($parsed)`: Render llm CLI result through `displayCliResult`.
+- `redirectTo($url)`: Redirect llm request through `redirectTo`.
 
 <div style="page-break-after: always;"></div>
 
@@ -1976,18 +1962,6 @@
 
 - `index($param)`: Render myxplain state through `index`.
 - `import()`: Handle myxplain state through `import`.
-
-<div style="page-break-after: always;"></div>
-
-# Ollama
-
-# Ollama
-
-- Type: class
-- Namespace: `App\Controller`
-- Source: `App/Controller/Ollama.php`
-
-- `index($param)`: Render ollama state through `index`.
 
 <div style="page-break-after: always;"></div>
 
