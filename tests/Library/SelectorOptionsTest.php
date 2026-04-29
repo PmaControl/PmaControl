@@ -113,7 +113,7 @@ final class SelectorOptionsTest extends TestCase
             ],
         ]);
         $jsonDb = new SelectorOptionsFakeDb([
-            "SELECT * from ts_variable WHERE type ='JSON';" => [
+            "SELECT * from ts_variable WHERE `type` = 'JSON';" => [
                 ['id' => 9, 'from' => 'sys', 'name' => 'schema_table_statistics'],
             ],
         ]);

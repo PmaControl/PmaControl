@@ -20,6 +20,7 @@ use App\Library\System;
 use App\Library\Mysql;
 use App\Library\MysqlVersion;
 use App\Library\Proxy;
+use App\Library\Sql\WhereBuilder;
 use App\Library\EngineV4;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Extraction;
@@ -4565,16 +4566,12 @@ GROUP BY C.ID, C.INFO;";
             return false;
         }
 
-        $where = array();
-        foreach ($filters as $column => $value) {
-            $where[] = $column." = '".$db->sql_real_escape_string((string)$value)."'";
-        }
-
-        if (empty($where)) {
+        $where = WhereBuilder::where($db, $filters);
+        if ($where === '') {
             return false;
         }
 
-        $sql = "SELECT 1 FROM information_schema.".$table." WHERE ".implode(' AND ', $where)." LIMIT 1";
+        $sql = "SELECT 1 FROM information_schema.".$table." ".$where." LIMIT 1";
         $res = Mysql::sqlQuerySilentCompat($db, $sql);
         if ($res === false) {
             return null;

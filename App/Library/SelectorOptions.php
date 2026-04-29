@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Library;
 
 use App\Library\Security\Identifier;
+use App\Library\Sql\WhereBuilder;
 
 final class SelectorOptions
 {
@@ -136,7 +137,7 @@ final class SelectorOptions
         if ($type === null) {
             $sql = 'SELECT * FROM ts_variable order by `from`, `name`;';
         } else {
-            $sql = "SELECT * from ts_variable WHERE type ='".$db->sql_real_escape_string($type)."';";
+            $sql = 'SELECT * from ts_variable ' . WhereBuilder::where($db, ['type' => $type]) . ';';
         }
 
         $res = $db->sql_query($sql);
