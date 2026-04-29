@@ -183,12 +183,8 @@ class Slave extends Controller
             : 'slave_parallel_workers';
     }
 
-    private function normalizeReplicationLagGraphRows($rows): array
+    private function normalizeReplicationLagGraphRows(iterable $rows): array
     {
-        if (empty($rows)) {
-            return [];
-        }
-
         return $this->normalizeReplicationLagRows(
             $rows,
             static function (array $row): string {
@@ -200,12 +196,8 @@ class Slave extends Controller
         );
     }
 
-    private function normalizeReplicationLagPointRows(array $rows): array
+    private function normalizeReplicationLagPointRows(iterable $rows): array
     {
-        if (empty($rows)) {
-            return [];
-        }
-
         return $this->normalizeReplicationLagRows(
             $rows,
             static function (array $row): string {
@@ -214,7 +206,7 @@ class Slave extends Controller
         );
     }
 
-    private function normalizeReplicationLagRows(array $rows, callable $buildKey): array
+    private function normalizeReplicationLagRows(iterable $rows, callable $buildKey): array
     {
         $normalized = [];
 

@@ -277,6 +277,106 @@ final class SlaveTest extends TestCase
         $this->assertSame([], $method->invoke($this->slave, []));
     }
 
+    public function testNormalizeReplicationLagGraphRowsAcceptsEmptyTraversable(): void
+    {
+        $method = new ReflectionMethod(Slave::class, 'normalizeReplicationLagGraphRows');
+
+        $this->assertSame([], $method->invoke($this->slave, new ArrayIterator([])));
+    }
+
+    public function testNormalizeReplicationLagGraphRowsAcceptsTraversable(): void
+    {
+        $method = new ReflectionMethod(Slave::class, 'normalizeReplicationLagGraphRows');
+
+        Extraction::$variable[10]['name'] = 'seconds_behind_master';
+        Extraction::$variable[11]['name'] = 'seconds_behind_source';
+
+        $rows = new ArrayIterator([
+            [
+                'id_mysql_server' => 1,
+                'connection_name' => 'chan1',
+                'id_ts_variable' => 10,
+                'day' => '2026-04-29',
+                'graph' => '{x:1,y:11}',
+            ],
+            [
+                'id_mysql_server' => 1,
+                'connection_name' => 'chan1',
+                'id_ts_variable' => 11,
+                'day' => '2026-04-29',
+                'graph' => '{x:1,y:3}',
+            ],
+        ]);
+
+        $normalized = $method->invoke($this->slave, $rows);
+
+        $this->assertCount(1, $normalized);
+        $this->assertSame(11, $normalized[0]['id_ts_variable']);
+        $this->assertSame('{x:1,y:3}', $normalized[0]['graph']);
+    }
+
+    public function testNormalizeReplicationLagGraphRowsKeepsSourceWhenTraversableOrderIsReversed(): void
+    {
+        $method = new ReflectionMethod(Slave::class, 'normalizeReplicationLagGraphRows');
+
+        Extraction::$variable[10]['name'] = 'seconds_behind_master';
+        Extraction::$variable[11]['name'] = 'seconds_behind_source';
+
+        $rows = new ArrayIterator([
+            [
+                'id_mysql_server' => 1,
+                'connection_name' => 'chan1',
+                'id_ts_variable' => 11,
+                'day' => '2026-04-29',
+                'graph' => '{x:1,y:3}',
+            ],
+            [
+                'id_mysql_server' => 1,
+                'connection_name' => 'chan1',
+                'id_ts_variable' => 10,
+                'day' => '2026-04-29',
+                'graph' => '{x:1,y:11}',
+            ],
+        ]);
+
+        $normalized = $method->invoke($this->slave, $rows);
+
+        $this->assertCount(1, $normalized);
+        $this->assertSame(11, $normalized[0]['id_ts_variable']);
+        $this->assertSame('{x:1,y:3}', $normalized[0]['graph']);
+    }
+
+    public function testNormalizeReplicationLagPointRowsAcceptsTraversable(): void
+    {
+        $method = new ReflectionMethod(Slave::class, 'normalizeReplicationLagPointRows');
+
+        Extraction::$variable[10]['name'] = 'seconds_behind_master';
+        Extraction::$variable[11]['name'] = 'seconds_behind_source';
+
+        $rows = new ArrayIterator([
+            [
+                'id_mysql_server' => 1,
+                'connection_name' => 'chan1',
+                'id_ts_variable' => 10,
+                'date' => '2026-04-29 10:00:00',
+                'value' => '11',
+            ],
+            [
+                'id_mysql_server' => 1,
+                'connection_name' => 'chan1',
+                'id_ts_variable' => 11,
+                'date' => '2026-04-29 10:00:00',
+                'value' => '3',
+            ],
+        ]);
+
+        $normalized = $method->invoke($this->slave, $rows);
+
+        $this->assertCount(1, $normalized);
+        $this->assertSame(11, $normalized[0]['id_ts_variable']);
+        $this->assertSame('3', $normalized[0]['value']);
+    }
+
     public function testNormalizeReplicationLagGraphRowsSingleRowPassthrough(): void
     {
         $method = new ReflectionMethod(Slave::class, 'normalizeReplicationLagGraphRows');
