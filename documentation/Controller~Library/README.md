@@ -440,12 +440,6 @@ Generated automatically from `App/Controller` and `App/Library`.
 - Summary: `documentation/Controller~Library/ForeignKey.md`
 - Methods: 31
 
-## ForeignKey
-
-- Kind: class
-- Summary: `documentation/Controller~Library/ForeignKey.md`
-- Methods: 2
-
 ## Format
 
 - Kind: class
