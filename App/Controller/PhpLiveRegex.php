@@ -9,6 +9,7 @@ namespace App\Controller;
 
 use App\Library\Http\HttpResponse;
 use App\Library\Security\CsrfGuard;
+use App\Library\Security\PayloadValidator;
 use \Glial\Synapse\Controller;
 use Glial\Security\Csrf;
 
@@ -148,16 +149,20 @@ class PhpLiveRegex extends Controller
 
     public static function normalizeEvaluatePayload(array $post): ?array
     {
-        foreach (['regex_1', 'regex_2', 'replacement', 'examples'] as $field) {
-            if (!array_key_exists($field, $post) || !is_scalar($post[$field])) {
-                return null;
-            }
+        $payload = PayloadValidator::validate($post, [
+            'regex_1' => 'string',
+            'regex_2' => 'string',
+            'replacement' => 'string',
+            'examples' => 'string',
+        ]);
+        if ($payload === null) {
+            return null;
         }
 
-        $regex = self::normalizeEvaluateText($post['regex_1'], self::PHPLIVEREGEX_REGEX_MAX_LENGTH);
-        $options = self::normalizeEvaluateOptions($post['regex_2']);
-        $replacement = self::normalizeEvaluateText($post['replacement'], self::PHPLIVEREGEX_REPLACEMENT_MAX_LENGTH);
-        $examples = self::normalizeEvaluateText($post['examples'], self::PHPLIVEREGEX_EXAMPLES_MAX_LENGTH);
+        $regex = self::normalizeEvaluateText($payload['regex_1'], self::PHPLIVEREGEX_REGEX_MAX_LENGTH);
+        $options = self::normalizeEvaluateOptions($payload['regex_2']);
+        $replacement = self::normalizeEvaluateText($payload['replacement'], self::PHPLIVEREGEX_REPLACEMENT_MAX_LENGTH);
+        $examples = self::normalizeEvaluateText($payload['examples'], self::PHPLIVEREGEX_EXAMPLES_MAX_LENGTH);
 
         if ($regex === null || $options === null || $replacement === null || $examples === null) {
             return null;

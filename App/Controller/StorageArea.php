@@ -11,6 +11,7 @@ use \phpseclib3\Crypt\PublicKeyLoader;
 use \App\Library\Debug;
 use \App\Library\Post;
 use App\Library\Security\CsrfGuard;
+use App\Library\Security\InlineEditRequest;
 use \Glial\Sgbd\Sgbd;
 use Glial\Security\Csrf;
 
@@ -704,38 +705,11 @@ class StorageArea extends Controller {
 
     public static function normalizeUpdatePayload(array $post): ?array
     {
-        if (
-            ! array_key_exists('name', $post)
-            || ! array_key_exists('pk', $post)
-            || ! array_key_exists('value', $post)
-            || ! is_scalar($post['name'])
-            || ! is_scalar($post['pk'])
-            || ! is_scalar($post['value'])
-        ) {
-            return null;
-        }
-
-        $field = (string) $post['name'];
-        $id = (string) $post['pk'];
-        $value = (string) $post['value'];
-
-        if (! in_array($field, self::STORAGE_AREA_UPDATE_FIELDS, true)) {
-            return null;
-        }
-
-        if (! ctype_digit($id) || (int) $id < 1) {
-            return null;
-        }
-
-        if (strlen($value) > self::STORAGE_AREA_LIBELLE_MAX_LENGTH) {
-            return null;
-        }
-
-        return [
-            'field' => $field,
-            'value' => $value,
-            'id' => (int) $id,
-        ];
+        return InlineEditRequest::normalize(
+            $post,
+            self::STORAGE_AREA_UPDATE_FIELDS,
+            self::STORAGE_AREA_LIBELLE_MAX_LENGTH
+        );
     }
 
     public static function buildStorageAreaUpdateSql(array $update, callable $escape): string

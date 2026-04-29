@@ -6,6 +6,7 @@ use \Glial\Synapse\Controller;
 use App\Library\Tree as TreeInterval;
 use App\Library\Debug;
 use App\Library\Security\CsrfGuard;
+use App\Library\Security\InlineEditRequest;
 use App\Library\Security\PositiveIntegerSelection;
 use \Glial\Sgbd\Sgbd;
 use Glial\Security\Csrf;
@@ -471,33 +472,7 @@ class Tree extends Controller
 
     public static function normalizeUpdatePayload(array $post): ?array
     {
-        if (
-            ! array_key_exists('name', $post)
-            || ! array_key_exists('pk', $post)
-            || ! array_key_exists('value', $post)
-            || ! is_scalar($post['name'])
-            || ! is_scalar($post['pk'])
-            || ! is_scalar($post['value'])
-        ) {
-            return null;
-        }
-
-        $field = (string) $post['name'];
-        $id = (string) $post['pk'];
-
-        if (! in_array($field, self::TREE_UPDATE_FIELDS, true)) {
-            return null;
-        }
-
-        if (! ctype_digit($id) || (int) $id < 1) {
-            return null;
-        }
-
-        return [
-            'field' => $field,
-            'value' => (string) $post['value'],
-            'id' => (int) $id,
-        ];
+        return InlineEditRequest::normalize($post, self::TREE_UPDATE_FIELDS, PHP_INT_MAX);
     }
 
     public static function buildTreeUpdateSql(array $update, callable $escape): string

@@ -28,6 +28,7 @@ use App\Library\Filesystem\SafeDirectory;
 use App\Library\Security\CsrfGuard;
 use App\Library\Security\GroupedFormRequest;
 use App\Library\Security\Identifier;
+use App\Library\Security\InlineEditRequest;
 use App\Library\Security\PositiveIntegerSelection;
 use \Glial\I18n\I18n;
 use \Glial\Cli\Table;
@@ -1870,34 +1871,20 @@ END;";
 
     public static function normalizeSizeUpdatePayload(array $post): ?array
     {
-        if (
-            ! array_key_exists('name', $post)
-            || ! array_key_exists('pk', $post)
-            || ! array_key_exists('value', $post)
-            || ! is_scalar($post['name'])
-            || ! is_scalar($post['pk'])
-            || ! is_scalar($post['value'])
-        ) {
+        $update = InlineEditRequest::normalize($post, self::DATABASE_SIZE_UPDATE_FIELDS, PHP_INT_MAX);
+        if ($update === null) {
             return null;
         }
 
-        $field = (string) $post['name'];
-        if (! in_array($field, self::DATABASE_SIZE_UPDATE_FIELDS, true)) {
-            return null;
-        }
-
-        $id = self::normalizeUnsignedInteger((string) $post['pk']);
-        if ($id === null || $id < 1) {
-            return null;
-        }
+        $field = $update['field'];
 
         if ($field === 'min' || $field === 'max') {
-            $value = self::normalizeDatabaseSizeBytes((string) $post['value']);
+            $value = self::normalizeDatabaseSizeBytes($update['value']);
             if ($value === null) {
                 return null;
             }
         } else {
-            $value = self::normalizeDatabaseSizeTextField($field, $post['value']);
+            $value = self::normalizeDatabaseSizeTextField($field, $update['value']);
             if ($value === null) {
                 return null;
             }
@@ -1906,7 +1893,7 @@ END;";
         return [
             'field' => $field,
             'value' => $value,
-            'id' => $id,
+            'id' => $update['id'],
         ];
     }
 
