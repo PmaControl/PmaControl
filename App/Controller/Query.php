@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Library\Extraction;
 use App\Library\Extraction2;
+use App\Library\MysqlVersion;
 use \Glial\Synapse\Controller;
 use \App\Library\Mysql;
 use \App\Library\Debug;
@@ -31,6 +32,7 @@ class Query extends Controller {
     const TABLE_NAME = 'tmp_setdefault';
     const TABLE_SCHEMA = 'dba';
     const LOG_FILE = TMP . "log/query.log";
+    private const TEXT_BLOB_DEFAULT_MIN_VERSION = '10.2';
 
             // ajouter tout mot-clé à exclure
 /**
@@ -196,6 +198,11 @@ SQL;
         }
     }
 
+    public static function supportsTextBlobDefaults(?string $version): bool
+    {
+        return MysqlVersion::atLeast($version, self::TEXT_BLOB_DEFAULT_MIN_VERSION);
+    }
+
     /**
      * setDefault
      *
@@ -224,7 +231,7 @@ SQL;
             Debug::debug($field, "field");
             // remove default value for blob and text : https://mariadb.com/kb/en/blob/
             if (in_array($field->data_type, array('tinytext', 'text', 'mediumtext', 'longtext', 'tinyblob', 'blob', 'mediumblob', 'longblob'))) {
-                if (version_compare($db->getVersion(), 10.2, '<')) {
+                if (!self::supportsTextBlobDefaults($db->getVersion())) {
                     continue;
                 }
             }
@@ -280,7 +287,7 @@ SQL;
             Debug::debug($field, "field");
             // remove default value for blob and text : https://mariadb.com/kb/en/blob/
             if (in_array($field->data_type, array('tinytext', 'text', 'mediumtext', 'longtext', 'tinyblob', 'blob', 'mediumblob', 'longblob'))) {
-                if (version_compare($db->getVersion(), 10.2, '<')) {
+                if (!self::supportsTextBlobDefaults($db->getVersion())) {
                     continue;
                 }
             }
