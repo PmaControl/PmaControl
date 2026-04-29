@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Library\Extraction;
 use App\Library\Debug;
+use App\Library\MysqlServer;
 use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
 
@@ -295,13 +296,7 @@ class Common extends Controller
             $this->layout_name = false;
         }
 
-        $db  = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT id,name FROM mysql_server WHERE id = '".$db->sql_real_escape_string($id_db)."' WHERE id_deleted=0;";
-        $res = $db->sql_query($sql);
-
-        while ($ob = $db->sql_fetch_object($res)) {
-            $db_link = Sgbd::sql($ob->name);
-        }
+        $db_link = MysqlServer::getDbLinkFromId($id_db);
 
         if (empty($db_link)) {
             throw new \Exception('PMACTRL-478 : impossible to find DB link with mysql_server.id = "'.$id_db.'".', 478);

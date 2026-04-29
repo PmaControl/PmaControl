@@ -13,6 +13,7 @@ use Glial\I18n\I18n;
 use \Glial\Sgbd\Sql\Mysql\Compare as CompareTable;
 use App\Library\Diff;
 use App\Library\Mysql;
+use App\Library\MysqlServer;
 use App\Library\Security\CompareMainSelection;
 use \Glial\Sgbd\Sgbd;
 
@@ -870,15 +871,7 @@ class Compare extends Controller {
             $this->layout_name = false;
         }
 
-        $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT id,name FROM mysql_server WHERE id = '" . $db->sql_real_escape_string($id_db) . "';";
-        $res = $db->sql_query($sql);
-
-        while ($ob = $db->sql_fetch_object($res)) {
-            $db_link = Sgbd::sql($ob->name);
-        }
-
-        return $db_link;
+        return MysqlServer::getDbLinkFromId($id_db);
     }
 
 }
