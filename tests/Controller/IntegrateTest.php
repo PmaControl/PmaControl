@@ -196,6 +196,105 @@ final class IntegrateTest extends TestCase
         }
     }
 
+    public function testSharedMemoryReaderRejectsTopLevelGadgetWithoutWakeup(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'pmacontrol-integrate-pivot-');
+        $this->assertIsString($file);
+        SharedMemoryReaderWakeupProbe::$wakeupCalled = false;
+
+        try {
+            file_put_contents($file, serialize(new SharedMemoryReaderWakeupProbe()));
+
+            $this->assertNull(SharedMemoryReader::read($file, $reason));
+
+            $this->assertFalse(SharedMemoryReaderWakeupProbe::$wakeupCalled);
+            $this->assertSame('invalid stored entity', $reason);
+        } finally {
+            if (is_file($file)) {
+                unlink($file);
+            }
+        }
+    }
+
+    public function testSharedMemoryReaderRejectsNestedGadgetWithoutWakeup(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'pmacontrol-integrate-pivot-');
+        $this->assertIsString($file);
+        SharedMemoryReaderWakeupProbe::$wakeupCalled = false;
+
+        $data = new stdClass();
+        $data->payload = new SharedMemoryReaderWakeupProbe();
+
+        $entity = new StoredEntity();
+        $entity->setData($data);
+
+        try {
+            file_put_contents($file, serialize($entity));
+
+            $this->assertNull(SharedMemoryReader::read($file, $reason));
+
+            $this->assertFalse(SharedMemoryReaderWakeupProbe::$wakeupCalled);
+            $this->assertSame('invalid stored entity: disallowed payload class', $reason);
+        } finally {
+            if (is_file($file)) {
+                unlink($file);
+            }
+        }
+    }
+
+    public function testSharedMemoryReaderRejectsArrayNestedGadgetWithoutWakeup(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'pmacontrol-integrate-pivot-');
+        $this->assertIsString($file);
+        SharedMemoryReaderWakeupProbe::$wakeupCalled = false;
+
+        $data = new stdClass();
+        $data->payload = [new SharedMemoryReaderWakeupProbe()];
+
+        $entity = new StoredEntity();
+        $entity->setData($data);
+
+        try {
+            file_put_contents($file, serialize($entity));
+
+            $this->assertNull(SharedMemoryReader::read($file, $reason));
+
+            $this->assertFalse(SharedMemoryReaderWakeupProbe::$wakeupCalled);
+            $this->assertSame('invalid stored entity: disallowed payload class', $reason);
+        } finally {
+            if (is_file($file)) {
+                unlink($file);
+            }
+        }
+    }
+
+    public function testSharedMemoryReaderPreservesNestedStdClass(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'pmacontrol-integrate-pivot-');
+        $this->assertIsString($file);
+
+        $data = new stdClass();
+        $data->mysql_server = (object) ['ok' => true];
+
+        $entity = new StoredEntity();
+        $entity->setData($data);
+
+        try {
+            file_put_contents($file, serialize($entity));
+
+            $payload = SharedMemoryReader::read($file, $reason);
+
+            $this->assertNull($reason);
+            $this->assertInstanceOf(stdClass::class, $payload);
+            $this->assertInstanceOf(stdClass::class, $payload->mysql_server);
+            $this->assertTrue($payload->mysql_server->ok);
+        } finally {
+            if (is_file($file)) {
+                unlink($file);
+            }
+        }
+    }
+
     public function testPayloadLockPreventsSecondOwnerForSameFile(): void
     {
         $controller = new TestableIntegrate('Controller', 'View', []);
@@ -261,6 +360,16 @@ final class IntegrateTest extends TestCase
             @unlink($newer);
             @rmdir($dir);
         }
+    }
+}
+
+final class SharedMemoryReaderWakeupProbe
+{
+    public static bool $wakeupCalled = false;
+
+    public function __wakeup(): void
+    {
+        self::$wakeupCalled = true;
     }
 }
 

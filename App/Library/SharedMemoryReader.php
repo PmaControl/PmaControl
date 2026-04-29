@@ -9,6 +9,13 @@ use Fuz\Component\SharedMemory\Entity\StoredEntity;
  */
 class SharedMemoryReader
 {
+    private const ALLOWED_CLASSES = [
+        StoredEntity::class,
+        \stdClass::class,
+    ];
+
+    private const MAX_PAYLOAD_SCAN_DEPTH = 32;
+
     public static function read(string $file, ?string &$reason = null)
     {
         $reason = null;
@@ -57,7 +64,9 @@ class SharedMemoryReader
         });
 
         try {
-            $stored_entity = unserialize($contents);
+            $stored_entity = unserialize($contents, [
+                'allowed_classes' => self::ALLOWED_CLASSES,
+            ]);
         } finally {
             restore_error_handler();
         }
@@ -71,7 +80,49 @@ class SharedMemoryReader
             return null;
         }
 
-        return $stored_entity->getData();
+        $data = $stored_entity->getData();
+        if (!$data instanceof \stdClass) {
+            $reason = 'invalid stored entity data';
+            return null;
+        }
+
+        if (self::containsDisallowedPayloadClass($data)) {
+            $reason = 'invalid stored entity: disallowed payload class';
+            return null;
+        }
+
+        return $data;
+    }
+
+    private static function containsDisallowedPayloadClass($value, int $depth = 0): bool
+    {
+        if ($depth > self::MAX_PAYLOAD_SCAN_DEPTH) {
+            return true;
+        }
+
+        if (is_object($value)) {
+            if (get_class($value) === '__PHP_Incomplete_Class') {
+                return true;
+            }
+
+            if (!$value instanceof \stdClass) {
+                return true;
+            }
+
+            $value = get_object_vars($value);
+        }
+
+        if (!is_array($value)) {
+            return false;
+        }
+
+        foreach ($value as $child) {
+            if (self::containsDisallowedPayloadClass($child, $depth + 1)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static function describeOwner(string $file): string
