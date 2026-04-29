@@ -8,6 +8,16 @@ use Glial\Sgbd\Sgbd;
 
 final class MysqlServer
 {
+    /**
+     * Schema names that MySQL/MariaDB ships and that pmacontrol must not
+     * treat as user data — for backups, cross-server refresh, schema diff,
+     * etc.
+     *
+     * Casing matches MySQL's lowercase output of SHOW DATABASES; comparisons
+     * must be case-insensitive (cf. self::isSystemSchema()).
+     */
+    public const SYSTEM_SCHEMAS = ['information_schema', 'performance_schema', 'mysql', 'sys'];
+
     public static function buildDbLinkSql($idDb, bool $excludeDeleted = true): string
     {
         $sql = 'SELECT id,name FROM mysql_server WHERE id = '.(int) $idDb;
@@ -30,5 +40,14 @@ final class MysqlServer
         }
 
         return $dbLink;
+    }
+
+    public static function isSystemSchema(?string $name): bool
+    {
+        if ($name === null || $name === '') {
+            return false;
+        }
+
+        return in_array(strtolower($name), self::SYSTEM_SCHEMAS, true);
     }
 }

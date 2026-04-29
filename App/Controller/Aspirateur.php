@@ -7,6 +7,7 @@ use App\Controller\ProxySQL;
 use App\Controller\MaxScale;
 use App\Controller\MysqlRouter;
 use App\Library\Available;
+use App\Library\MysqlServer;
 use \Glial\Synapse\Controller;
 use Fuz\Component\SharedMemory\Storage\StorageFile;
 use Fuz\Component\SharedMemory\SharedMemory;
@@ -5494,7 +5495,6 @@ GROUP BY C.ID, C.INFO;";
         }
 
         $ret = array();
-        $systemSchemas = array('information_schema', 'performance_schema', 'mysql', 'sys');
 
         $res = $db->sql_query("SHOW DATABASES;");
         while ($arr = $db->sql_fetch_array($res, MYSQLI_NUM)) {
@@ -5504,7 +5504,7 @@ GROUP BY C.ID, C.INFO;";
                 continue;
             }
 
-            if (!$includeSystemSchemas && in_array($database, $systemSchemas, true)) {
+            if (!$includeSystemSchemas && MysqlServer::isSystemSchema($database)) {
                 continue;
             }
 
