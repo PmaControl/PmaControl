@@ -15,6 +15,7 @@ One topic per file. Load only what the current task needs.
 
 ## Database
 - [database_conventions.md](database_conventions.md) — table / column / FK / data type naming
+- [rename_database_cli.md](rename_database_cli.md) — `bin/rename_database.php` modes, flags and safety rules
 - [time_series_tables.md](time_series_tables.md) — `ts_*` tables existence check
 - [group_replication.md](group_replication.md) — InnoDB cluster, MySQL vs MariaDB replication syntax
 - [data_geoip.md](data_geoip.md) — GeoIP country / city lookup tables
