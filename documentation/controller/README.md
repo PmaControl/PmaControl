@@ -1,7 +1,7 @@
 # Documentation Controllers
 
 - Source: `/srv/www/pmacontrol/App/Controller`
-- Documents: 122
+- Documents: 121
 
 ## Index
 
@@ -76,8 +76,6 @@
 - [Ldap](Ldap.md)
 - [Listener](Listener.md)
 - [Llm](Llm.md)
-- [Load](Load.md)
-- [Load2](Load2.md)
 - [Log](Log.md)
 - [MasterSlave](MasterSlave.md)
 - [MaxScale](MaxScale.md)

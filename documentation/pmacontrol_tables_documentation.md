@@ -4321,7 +4321,7 @@
 
 ### Corrélation Code PHP
 
-- Références contrôleurs: 159
+- Références contrôleurs: 150
   - `App/Controller/Aspirateur.php:286`
   - `App/Controller/Aspirateur.php:303`
   - `App/Controller/Aspirateur.php:1790`
@@ -4333,15 +4333,6 @@
   - `App/Controller/Backup.php:1966`
   - `App/Controller/Backup.php:1973`
   - `App/Controller/Backup.php:1977`
-  - `App/Controller/Load.php:127`
-  - `App/Controller/Load.php:137`
-  - `App/Controller/Load.php:144`
-  - `App/Controller/Load.php:180`
-  - `App/Controller/Load.php:186`
-  - `App/Controller/Load.php:195`
-  - `App/Controller/Load.php:200`
-  - `App/Controller/Load.php:228`
-  - `App/Controller/Load.php:235`
   - `...` (139 occurrences supplémentaires)
 - Références vues: 32
   - `App/view/Job/index.view.php:56`
@@ -4373,9 +4364,6 @@
   - `/Backup/runBackup`
   - `/Backup/doBackup`
   - `/Backup/getLogFile`
-  - `/Load/waitPosition`
-  - `/Load/install`
-  - `/Load/log`
   - `/Upgrade/executePatch`
   - `/Archives/load`
   - `/Worker/test`
