@@ -48,7 +48,7 @@ final class GroupedFormRequest
             }
 
             if (array_key_exists('default', $rule)) {
-                $default = self::normalizeValue($rule['default'], $rule);
+                $default = PayloadValidator::normalizeValue($rule['default'], $rule);
                 if ($default === null) {
                     return null;
                 }
@@ -63,7 +63,7 @@ final class GroupedFormRequest
             }
 
             $rule = $rules[$field];
-            $payloadValue = self::normalizeValue($value, $rule);
+            $payloadValue = PayloadValidator::normalizeValue($value, $rule);
             if ($payloadValue === null) {
                 return null;
             }
@@ -85,108 +85,6 @@ final class GroupedFormRequest
         }
 
         return $orderedPayload;
-    }
-
-    private static function normalizeValue($raw, array $rule)
-    {
-        $type = (string) ($rule['type'] ?? (isset($rule['values']) ? 'enum' : 'string'));
-        if ($type === 'list') {
-            return self::normalizeListValue($raw, $rule);
-        }
-
-        if (!is_scalar($raw)) {
-            return null;
-        }
-
-        $text = trim((string) $raw);
-        if ($text === '' && array_key_exists('default', $rule)) {
-            $text = trim((string) $rule['default']);
-        }
-
-        if ($type === 'int') {
-            if (!ctype_digit($text)) {
-                return null;
-            }
-
-            $value = (int) $text;
-            if (isset($rule['min']) && $value < (int) $rule['min']) {
-                return null;
-            }
-            if (isset($rule['max']) && $value > (int) $rule['max']) {
-                return null;
-            }
-
-            return $value;
-        }
-
-        if (!in_array($type, ['string', 'enum'], true)) {
-            return null;
-        }
-
-        if (isset($rule['max']) && strlen($text) > (int) $rule['max']) {
-            return null;
-        }
-
-        if (isset($rule['min']) && strlen($text) < (int) $rule['min']) {
-            return null;
-        }
-
-        if (isset($rule['pattern']) && preg_match((string) $rule['pattern'], $text) !== 1) {
-            return null;
-        }
-
-        if ($type === 'enum') {
-            if (!isset($rule['values']) || !is_array($rule['values']) || !in_array($text, $rule['values'], true)) {
-                return null;
-            }
-        }
-
-        return $text;
-    }
-
-    private static function normalizeListValue($raw, array $rule): ?array
-    {
-        if (!is_array($raw)) {
-            return null;
-        }
-
-        $count = count($raw);
-        if (isset($rule['min_items']) && $count < (int) $rule['min_items']) {
-            return null;
-        }
-        if (isset($rule['max_items']) && $count > (int) $rule['max_items']) {
-            return null;
-        }
-
-        $itemRule = [
-            'type' => (string) ($rule['item_type'] ?? 'string'),
-        ];
-        foreach (['min', 'max', 'pattern', 'values'] as $key) {
-            $itemKey = 'item_'.$key;
-            if (array_key_exists($itemKey, $rule)) {
-                $itemRule[$key] = $rule[$itemKey];
-            }
-        }
-
-        $items = [];
-        foreach ($raw as $value) {
-            if (!is_scalar($value)) {
-                return null;
-            }
-
-            $item = self::normalizeValue($value, $itemRule);
-            if ($item === null) {
-                return null;
-            }
-
-            $items[] = $item;
-        }
-
-        if (count($items) !== count(array_unique($items, SORT_REGULAR))) {
-            return null;
-        }
-
-        return $items;
     }
 
     private static function outcome(int $statusCode, string $message, array $headers = []): array

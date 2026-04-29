@@ -10,6 +10,7 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use App\Library\Http\HttpOutcome;
 use App\Library\Security\CsrfGuard;
+use App\Library\Security\PayloadValidator;
 use Glial\Security\Csrf;
 
 /**
@@ -106,11 +107,14 @@ class Format extends Controller
 
     public static function normalizeSqlPayload(array $post): ?string
     {
-        if (!array_key_exists('sql', $post) || !is_scalar($post['sql'])) {
+        $payload = PayloadValidator::validate($post, [
+            'sql' => 'string',
+        ]);
+        if ($payload === null) {
             return null;
         }
 
-        return (string) $post['sql'];
+        return $payload['sql'];
     }
 
     public static function storeSqlInSession(array &$session, string $hash, string $sql, ?int $now = null): void
