@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Library\MysqlVersion;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -84,9 +85,15 @@ final class AspirateurVersionGuardTest extends TestCase
     #[\PHPUnit\Framework\Attributes\DataProvider('innodbMetricsProvider')]
     public function testInnodbMetricsGuard(string $version, bool $expected): void
     {
-        $numVer = self::numVersion($version);
-        $result = version_compare($numVer, '5.6.0', '>=');
+        $result = MysqlVersion::supportsInnodbMetrics($version, false);
         $this->assertSame($expected, $result, "INNODB_METRICS guard for $version");
+    }
+
+    public function testInnodbMetricsGuardSkipsMissingVersionAndSingleStore(): void
+    {
+        $this->assertFalse(MysqlVersion::supportsInnodbMetrics(null, false));
+        $this->assertFalse(MysqlVersion::supportsInnodbMetrics('', false));
+        $this->assertFalse(MysqlVersion::supportsInnodbMetrics('8.0.44', true));
     }
 
     public static function innodbMetricsProvider(): array
