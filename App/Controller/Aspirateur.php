@@ -17,6 +17,7 @@ use \App\Library\Debug;
 use \App\Library\Ssh;
 use App\Library\System;
 use App\Library\Mysql;
+use App\Library\MysqlVersion;
 use App\Library\Proxy;
 use App\Library\EngineV4;
 use \Glial\Sgbd\Sgbd;
@@ -760,7 +761,7 @@ class Aspirateur extends Controller
         if ((time()+$id_mysql_server)%(10*$refresh) < $refresh)
         {
             // INNODB_METRICS exists since MySQL 5.6 / MariaDB 10.0
-            if (!$isSingleStore && version_compare($numVer, '5.6.0', '>=')) {
+            if ($this->shouldCollectInnodbMetrics($detectedVersion, $isSingleStore)) {
                 $data = array();
                 $data['innodb_metrics'] = $this->getInnodbMetrics($name_server);
                 $this->exportData($id_mysql_server, "mysql_innodb_metrics", $data, false);
@@ -4633,6 +4634,11 @@ GROUP BY C.ID, C.INFO;";
         $db = Sgbd::sql($name_server);
 
         return $this->collectInnodbMetricsFromConnection($db);
+    }
+
+    private function shouldCollectInnodbMetrics(?string $detectedVersion, bool $isSingleStore): bool
+    {
+        return MysqlVersion::supportsInnodbMetrics($detectedVersion, $isSingleStore);
     }
 
     private function collectInnodbMetricsFromConnection($db): array
