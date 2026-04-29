@@ -22,6 +22,7 @@ final class AspirateurVersionCompareCallSiteTest extends TestCase
             'Aspirateur controller' => ['App/Controller/Aspirateur.php'],
             'Mysql library charset guard' => ['App/Library/Mysql.php'],
             'Binlog analyzer version guards' => ['App/Library/BinlogAnalyzer.php'],
+            'Query default guards' => ['App/Controller/Query.php'],
         ];
     }
 
