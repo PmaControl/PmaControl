@@ -507,7 +507,10 @@ class CheckConfig extends Controller
             $this->layout_name = false;
         }
 
-        return MysqlServer::getDbLinkFromId($id_db);
+        // TODO #561: CheckConfig did not filter mysql_server.is_deleted=0
+        // before the #559 mutualization. Preserve the legacy behavior with
+        // excludeDeleted=false until the followup audits the workflow.
+        return MysqlServer::getDbLinkFromId($id_db, false);
     }
 
 /**
