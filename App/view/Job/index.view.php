@@ -130,6 +130,17 @@ document.addEventListener('DOMContentLoaded', function () {
                     echo __("options : ")."<br />";
                     echo '<a href="'.LINK.'job/restart/'.$job['id'].'/" type="button" class="btn btn-primary btn-xs"><i class="fa fa-refresh fa-spin"></i> '.__('Restart').'</a><br/>';
                     echo '<a href="'.LINK.'job/restart/'.$job['id'].'/--debug" type="button" style="margin-top:4px;" class="btn btn-warning btn-xs"><i class="fa fa-cog fa-spin"></i> '.__('Debug').'</a><br/>';
+
+                    // Issue #583: load-only restart, only when the dump succeeded
+                    // and the artefact is still on disk and not expired.
+                    if (!empty($job['can_restart_load_only'])) {
+                        echo '<a href="'.LINK.'database/restartLoadOnly/'.(int) $job['id'].'/"'
+                            .' type="button" style="margin-top:4px;"'
+                            .' class="btn btn-success btn-xs"'
+                            .' title="'.htmlspecialchars((string) ($job['artifact_path'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8').'">'
+                            .'<i class="fa fa-fast-forward"></i> '
+                            .__('Restart load only').'</a><br/>';
+                    }
                     //echo '<a href="'.LINK.'job/restart/'.$job['id'].'/" type="button" class="btn btn-danger btn-xs">'.__('Kill').'</a>';
                 }
 
