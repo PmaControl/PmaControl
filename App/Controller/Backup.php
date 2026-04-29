@@ -12,6 +12,7 @@ use App\Library\Security\BackupAddRequest;
 use App\Library\Security\CsrfGuard;
 use App\Library\Mysql;
 use App\Library\MysqlVersion;
+use App\Library\SelectorOptions;
 use App\Library\System;
 use App\Library\Extraction;
 use Glial\Security\Csrf;
@@ -674,18 +675,12 @@ class Backup extends Controller
         $this->layout_name = false;
         $db                = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT id,name FROM mysql_database WHERE id_mysql_server = '".$db->sql_real_escape_string($param[0])."';";
-
-        $res = $db->sql_query($sql);
-
-        $data['databases'] = [];
-        while ($ob                = $db->sql_fetch_object($res)) {
-            $tmp            = [];
-            $tmp['id']      = $ob->id;
-            $tmp['libelle'] = $ob->name;
-
-            $data['databases'][] = $tmp;
-        }
+        $data['databases'] = SelectorOptions::recordedDatabasesByServerId(
+            $db,
+            $param[0] ?? null,
+            'id',
+            'name'
+        );
 
 
         $this->set("data", $data);

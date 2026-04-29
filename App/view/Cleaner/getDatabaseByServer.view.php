@@ -1,7 +1,3 @@
 <?php
 
-
-use \Glial\Html\Form\Form;
-
-Form::setAjax(true);
-echo Form::select("mysql_database", "id", $data['databases']);
+require __DIR__ . '/../Common/_basic_database_select_partial.view.php';

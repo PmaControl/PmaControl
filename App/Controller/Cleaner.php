@@ -27,6 +27,7 @@ use \App\Library\Mysql;
 use App\Library\Security\CsrfGuard;
 use App\Library\Security\GroupedFormRequest;
 use App\Library\Security\IndexedRowsRequest;
+use App\Library\SelectorOptions;
 use App\Library\Display;
 use App\Controller\Test\CleanerTest;
 use Glial\Security\Csrf;
@@ -970,25 +971,26 @@ var myChart = new Chart(ctx, {
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT id,name FROM mysql_server WHERE id = '".$db->sql_real_escape_string($param[0])."';";
+        $id_mysql_server = (int) ($param[0] ?? 0);
+        if ($id_mysql_server <= 0) {
+            $data['databases'] = array();
+            $this->set("data", $data);
+            return $data;
+        }
+
+        $sql = "SELECT id,name FROM mysql_server WHERE id = ".$id_mysql_server.";";
         $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql, $this->id_mysql_server, __METHOD__);
 
+        $db_to_get_db = null;
         while ($ob = $db->sql_fetch_object($res)) {
 
 
             $db_to_get_db = Sgbd::sql($ob->name);
         }
 
-        $sql = "SHOW DATABASES";
-        $res = $db_to_get_db->sql_query($sql);
-
-        $data['databases'] = [];
-        while ($ob                = $db_to_get_db->sql_fetch_object($res)) {
-            $tmp                 = [];
-            $tmp['id']           = $ob->Database;
-            $tmp['libelle']      = $ob->Database;
-            $data['databases'][] = $tmp;
-        }
+        $data['databases'] = $db_to_get_db === null
+            ? array()
+            : SelectorOptions::databaseNamesFromConnection($db_to_get_db);
 
 
         $this->set("data", $data);

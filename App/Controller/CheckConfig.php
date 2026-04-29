@@ -7,6 +7,7 @@ use \App\Library\Debug;
 use \App\Library\Mysql;
 use App\Library\MysqlServer;
 use App\Library\Security\ServerIdSelection;
+use App\Library\SelectorOptions;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Extraction;
 
@@ -451,29 +452,12 @@ class CheckConfig extends Controller
             return true;
         }
 
-        $max = count($id_mysql_servers);
-
-        $data['db'] = array();
-        foreach ($id_mysql_servers as $id_mysql_server) {
-            $db_to_get_db = $this->getDbLinkFromId($id_mysql_server);
-
-            $sql  = "SHOW DATABASES";
-            $res2 = $db_to_get_db->sql_query($sql);
-
-
-            while ($ob = $db_to_get_db->sql_fetch_object($res2)) {
-                $data['db'][] = $ob->Database;
+        $data['databases'] = SelectorOptions::sharedDatabaseNamesByServerIds(
+            $id_mysql_servers,
+            function ($id_mysql_server) {
+                return $this->getDbLinkFromId($id_mysql_server);
             }
-        }
-
-        $database = array_count_values($data['db']);
-
-        foreach ($database as $db => $count) {
-            $tmp                 = [];
-            $tmp['id']           = $db;
-            $tmp['libelle']      = "(".$count."/".$max.") ".$db;
-            $data['databases'][] = $tmp;
-        }
+        );
 
         $this->set("data", $data);
         return $data;

@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Library\Extraction;
 use App\Library\Debug;
 use App\Library\MysqlServer;
+use App\Library\SelectorOptions;
 use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
 
@@ -245,21 +246,10 @@ class Common extends Controller
             }
         }
 
+        $data['databases'] = array();
         if (!empty($id_mysql_server)) {
             $db_to_get_db = $this->getDbLinkFromId($id_mysql_server);
-
-            $sql  = "SHOW DATABASES";
-            $res2 = $db_to_get_db->sql_query($sql);
-
-            $data['databases'] = [];
-            while ($ob                = $db_to_get_db->sql_fetch_object($res2)) {
-                $tmp                 = [];
-                $tmp['id']           = $ob->Database;
-                $tmp['libelle']      = $ob->Database;
-                $data['databases'][] = $tmp;
-            }
-        } else {
-            $data['databases'] = array();
+            $data['databases'] = SelectorOptions::databaseNamesFromConnection($db_to_get_db);
         }
 
         //debug($data['databases']);
@@ -335,21 +325,13 @@ class Common extends Controller
         $id_mysql_server = $param[0];
         $database        = $param[1];
 
-        $db_to_get_db = $this->getDbLinkFromId($id_mysql_server);
-
-        $sql = "use ".$database.";";
-        $db_to_get_db->sql_query($sql);
-
-        $tables = $db_to_get_db->getListTable();
-
-
-        $data['tables'] = [];
-        foreach ($tables['table'] as $table) {
-            $tmp              = [];
-            $tmp['id']        = $table;
-            $tmp['libelle']   = $table;
-            $data['tables'][] = $tmp;
-        }
+        $data['tables'] = SelectorOptions::tableNamesByServerIdAndDatabase(
+            $id_mysql_server,
+            (string) $database,
+            function ($id_mysql_server) {
+                return $this->getDbLinkFromId($id_mysql_server);
+            }
+        );
 
         $this->set("data", $data);
         return $data;
@@ -537,20 +519,7 @@ class Common extends Controller
 
 
 
-        $sql = "SELECT * FROM ts_variable order by `from`, `name`;";
-
-        $res = $db->sql_query($sql);
-
-        $data['variable'] = array();
-        while ($ob               = $db->sql_fetch_object($res)) {
-            $tmp            = [];
-            $tmp['id']      = $ob->from.'::'.$ob->name;
-            //$tmp['error']   = $ob->error;
-            $tmp['libelle'] = $ob->from.'::'.$ob->name."";
-
-            $tmp['extra'] = array("data-content" => "<small class='text-muted'>".$ob->from."</small> ".$ob->name);
-            $data['variable'][] = $tmp;
-        }
+        $data['variable'] = SelectorOptions::timeSeriesVariables($db, null, 'qualified');
 
         $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
         $this->set('data', $data);
@@ -610,21 +579,7 @@ class Common extends Controller
 
 
 
-        $sql = "SELECT * from ts_variable WHERE type ='JSON';";
-
-        $res = $db->sql_query($sql);
-
-
-        while ($ob = $db->sql_fetch_object($res))
-        {
-            $tmp = array();
-            $tmp['id'] = $ob->id;
-            $tmp['libelle'] = $ob->from."::".$ob->name;
-            $tmp['extra'] = array("data-content" => "<small class='text-muted'>".$ob->from."</small> ".$ob->name);
-
-            $data['variable'][] = $tmp;
-
-        }
+        $data['variable'] = SelectorOptions::timeSeriesVariables($db, 'JSON', 'id');
 
 
         $this->set('data', $data);

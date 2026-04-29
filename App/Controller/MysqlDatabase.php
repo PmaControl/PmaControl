@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use \App\Library\Mysql;
+use App\Library\SelectorOptions;
 use \Glial\Sgbd\Sgbd;
 
 /**
@@ -163,24 +164,20 @@ class MysqlDatabase extends Controller
     {
         $this->di['js']->addJavascript(array('bootstrap-select.min.js', 'Common/getDatabaseByServer.js'));
 
-        $id_mysql_server = $param[0];
-        $options = (array) $param[1];
+        $id_mysql_server = $param[0] ?? null;
+        $options = (array) ($param[1] ?? array());
         $data['options'] = $options;
 
         if (!empty($id_mysql_server)) {
             $db_to_get_db = Sgbd::sql(DB_DEFAULT);
 
-            $sql  = "select id,schema_name from mysql_database where id_mysql_server=".$id_mysql_server." ORDER BY schema_name;";
-            $res2 = $db_to_get_db->sql_query($sql);
-
-            $data['databases'] = [];
-            while ($ob                = $db_to_get_db->sql_fetch_object($res2)) {
-                $tmp                 = [];
-                $tmp['id']           = $ob->id;
-                $tmp['libelle']      = $ob->schema_name;
-                $data['databases'][] = $tmp;
-
-            }
+            $data['databases'] = SelectorOptions::recordedDatabasesByServerId(
+                $db_to_get_db,
+                $id_mysql_server,
+                'id',
+                'schema_name',
+                'schema_name'
+            );
         } else {
             $data['databases'] = array();
         }
