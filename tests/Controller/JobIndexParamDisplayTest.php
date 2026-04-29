@@ -62,9 +62,9 @@ final class JobIndexParamDisplayTest extends TestCase
             '.job-param must cap height to ~10 lines (14em) (#597)'
         );
         $this->assertMatchesRegularExpression(
-            '/\.job-param\s*\{[^}]*max-width:\s*600px/s',
+            '/\.job-param\s*\{[^}]*max-width:\s*350px/s',
             $this->view,
-            '.job-param must cap width to 600px (#597)'
+            '.job-param must cap width to 350px (param is structured data — narrower than .job-log)'
         );
         $this->assertMatchesRegularExpression(
             '/\.job-param\s*\{[^}]*overflow:\s*auto/s',

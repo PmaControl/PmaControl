@@ -66,7 +66,7 @@ function getBadge($status)
     margin: 0;
     font-family: monospace;
     max-height: 14em;
-    max-width: 600px;
+    max-width: 350px;
     overflow: auto;
     white-space: pre;
 }
