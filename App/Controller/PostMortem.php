@@ -4,6 +4,7 @@
 namespace App\Controller;
 
 use \Glial\Synapse\Controller;
+use App\Library\ChartPayload;
 use App\Library\Extraction;
 use App\Library\Display;
 use App\Library\Debug;
@@ -95,59 +96,18 @@ class PostMortem extends Controller
         $slaves = Extraction::extract(array("status::memory_used"), array(1), "10 minutes", true, true);
 
 
-        $color = array("orange" => "rgb(255, 159, 64)",
-            "blue" => "rgb(54, 162, 235)",
-            "red" => "rgb(255, 99, 132)",
-            "yellow" => "rgb(255, 205, 86)",
-            "green" => "rgb(75, 192, 192)",
-            "purple" => "rgb(153, 102, 255)",
-            "grey" => "rgb(201, 203, 207)"
+        $legacyChart = ChartPayload::legacyExtraction(
+            $slaves,
+            static function (array $slave): string {
+                return Display::srvjs($slave['id_mysql_server']);
+            },
+            [
+                'alpha' => 0.1,
+                'aggregate_formatter' => [self::class, 'format'],
+            ]
         );
-
-
-        $alpha = 0.1;
-        $background = array("orange" => "rgba(255, 159, 64, $alpha)",
-            "blue" => "rgba(54, 162, 235, $alpha)",
-            "red" => "rgba(255, 99, 132, $alpha)",
-            "yellow" => "rgba(255, 205, 86, $alpha)",
-            "green" => "rgba(75, 192, 192, $alpha)",
-            "purple" => "rgba(153, 102, 255, $alpha)",
-            "grey" => "rgba(201, 203, 207, $alpha)"
-        );
-
-
-
-        $graph   = array();
-        $tooltip = "var agregat = []\n";
-        $i       = 0;
-        foreach ($slaves as $slave) {
-            Debug::debug($slave);
-
-            $coul = next($color);
-            $back = next($background);
-
-            $label = 'server'.$slave['id_mysql_server'];
-
-            $graph[] = '{
-                label: "'.Display::srvjs($slave['id_mysql_server']).'",
-                data: ['.$slave['graph'].'],
-                borderColor: "'.$coul.'",
-                fill:true,
-                pointBackgroundColor: "'.$back.'",
-                borderWidth: 2,
-                pointRadius: 0,
-                lineTension: 0,
-                backgroundColor: "'.$back.'",
-                interpolate: true,
-                showLine: true,
-            }';
-
-
-            $tooltip .= 'agregat["'.$i.'"] = " -'."\t".'Min : '.self::format($slave['min']).' - Max : '.self::format($slave['max']).' - Avg : '
-                .' '.self::format($slave['avg']).' -'."\t".'Std : '.round(sqrt($slave['std']), 2).'"'."\n";
-
-            $i++;
-        }
+        $graph   = $legacyChart['datasets_js'];
+        $tooltip = $legacyChart['tooltip_js'];
 
 
 

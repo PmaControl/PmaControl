@@ -1748,35 +1748,12 @@ class PmmDashboardCatalog
 
     private static function buildDataset(string $label, array $data, array $color, bool $fill = false): array
     {
-        return [
-            'label' => $label,
-            'data' => $data,
-            'borderColor' => $color['border'],
-            'backgroundColor' => $color['fill'],
-            'fill' => $fill,
-            'borderWidth' => 2,
-            'tension' => 0.18,
-            'pointRadius' => 0,
-        ];
+        return ChartPayload::dataset($label, $data, $color, $fill);
     }
 
     private static function buildColorPalette(int $count): array
     {
-        $palette = [
-            ['border' => 'rgba(37, 99, 235, 1)', 'fill' => 'rgba(37, 99, 235, 0.16)'],
-            ['border' => 'rgba(5, 150, 105, 1)', 'fill' => 'rgba(5, 150, 105, 0.16)'],
-            ['border' => 'rgba(220, 38, 38, 1)', 'fill' => 'rgba(220, 38, 38, 0.16)'],
-            ['border' => 'rgba(245, 158, 11, 1)', 'fill' => 'rgba(245, 158, 11, 0.16)'],
-            ['border' => 'rgba(124, 58, 237, 1)', 'fill' => 'rgba(124, 58, 237, 0.16)'],
-            ['border' => 'rgba(8, 145, 178, 1)', 'fill' => 'rgba(8, 145, 178, 0.16)'],
-        ];
-
-        $colors = [];
-        for ($i = 0; $i < $count; $i++) {
-            $colors[] = $palette[$i % count($palette)];
-        }
-
-        return $colors;
+        return ChartPayload::colorPalette($count);
     }
 
     private static function buildMetricCard(string $label, $value, string $source, string $pmmEquivalent): array
