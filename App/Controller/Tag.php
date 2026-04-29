@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use Glial\I18n\I18n;
 use Glial\Synapse\Controller;
+use App\Library\Http\HttpResponse;
 use App\Library\Security\CsrfGuard;
 use App\Library\Post;
 use \Glial\Sgbd\Sgbd;
@@ -203,12 +204,7 @@ class Tag extends Controller {
 
     private static function sendTagAddError(int $statusCode, string $message, array $headers = []): void
     {
-        http_response_code($statusCode);
-        foreach ($headers as $name => $value) {
-            header($name . ': ' . $value);
-        }
-        header('Content-Type: text/plain; charset=UTF-8');
-        echo $message;
+        HttpResponse::sendError($statusCode, $message, $headers);
     }
 
 /**
@@ -324,12 +320,7 @@ class Tag extends Controller {
 
     private static function sendTagUpdateError(int $statusCode, string $message, array $headers = []): void
     {
-        http_response_code($statusCode);
-        foreach ($headers as $name => $value) {
-            header($name . ': ' . $value);
-        }
-        header('Content-Type: text/plain; charset=UTF-8');
-        echo $message;
+        HttpResponse::sendError($statusCode, $message, $headers);
     }
 
 }
