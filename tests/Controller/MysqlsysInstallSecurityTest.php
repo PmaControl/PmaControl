@@ -179,7 +179,7 @@ final class MysqlsysInstallSecurityTest extends TestCase
 
         $this->assertStringContainsString("private const MYSQLSYS_INSTALL_CSRF_SCOPE = 'mysqlsys.install'", $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::MYSQLSYS_INSTALL_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::MYSQLSYS_INSTALL_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::MYSQLSYS_INSTALL_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('evaluateInstallRequest($_POST, $_SERVER, $_SESSION, IS_CLI)', $controller);
         $this->assertStringContainsString('$sql = "SELECT * FROM mysql_server where id=" . $idMysqlServer;', $controller);
         $this->assertStringContainsString('$idMysqlServer, __METHOD__', $controller);

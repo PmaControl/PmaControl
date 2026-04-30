@@ -309,9 +309,8 @@ class Tree extends Controller
 
     public static function evaluateAddRequest(array $post, array $server, array $session): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::TREE_ADD_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return self::buildTreeAddOutcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::TREE_ADD_CSRF_SCOPE)) {
+            return self::buildTreeAddOutcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         $menu = self::normalizeAddPayload($post);
@@ -452,9 +451,8 @@ class Tree extends Controller
 
     public static function evaluateUpdateRequest(array $post, array $server, array $session): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::TREE_UPDATE_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return self::buildTreeUpdateOutcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::TREE_UPDATE_CSRF_SCOPE)) {
+            return self::buildTreeUpdateOutcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         $update = self::normalizeUpdatePayload($post);

@@ -291,9 +291,8 @@ $("#ssh_key-id").change(function() {
 
     public static function evaluateIndexRequest(array $post, array $server, array $session): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::INDEX_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return self::buildIndexOutcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::INDEX_CSRF_SCOPE)) {
+            return self::buildIndexOutcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         $payload = self::normalizeIndexPayload($post);

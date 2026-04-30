@@ -25,7 +25,7 @@ final class LlmSqlAssistantTest extends TestCase
 
         $this->assertStringContainsString('use App\\Library\\Llm\\SqlAssistant;', $controller);
         $this->assertStringContainsString('public const LLM_ANALYZE_CSRF_SCOPE', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::LLM_ANALYZE_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::LLM_ANALYZE_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString("\$this->redirectTo(LINK . 'llm/index')", $controller);
         $this->assertStringContainsString('is_file($configFile)', $controller);
         $this->assertStringContainsString('CURLOPT_FOLLOWLOCATION => false', $controller);

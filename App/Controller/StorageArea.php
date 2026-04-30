@@ -250,9 +250,8 @@ class StorageArea extends Controller {
 
     public static function evaluateAddRequest(array $post, array $server, array $session): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::STORAGE_AREA_ADD_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return self::buildStorageAreaAddOutcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::STORAGE_AREA_ADD_CSRF_SCOPE)) {
+            return self::buildStorageAreaAddOutcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         $storageArea = self::normalizeAddPayload($post);
@@ -685,9 +684,8 @@ class StorageArea extends Controller {
 
     public static function evaluateUpdateRequest(array $post, array $server, array $session): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::STORAGE_AREA_UPDATE_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return self::buildStorageAreaUpdateOutcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::STORAGE_AREA_UPDATE_CSRF_SCOPE)) {
+            return self::buildStorageAreaUpdateOutcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         $update = self::normalizeUpdatePayload($post);

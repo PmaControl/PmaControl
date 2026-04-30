@@ -127,7 +127,7 @@ final class UserConnectionSecurityTest extends TestCase
 
         $this->assertStringContainsString('private const USER_CONNECTION_CSRF_SCOPE', $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::USER_CONNECTION_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::USER_CONNECTION_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::USER_CONNECTION_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('name="<?=$userConnectionCsrfField?>"', $view);
         $this->assertStringContainsString('value="<?=$userConnectionCsrfToken?>"', $view);
     }

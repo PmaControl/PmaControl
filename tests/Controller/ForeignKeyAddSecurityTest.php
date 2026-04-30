@@ -99,7 +99,7 @@ final class ForeignKeyAddSecurityTest extends TestCase
 
         $this->assertStringContainsString('use App\\Library\\Security\\CsrfGuard;', $controller);
         $this->assertStringContainsString('use Glial\\Security\\Csrf;', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::FOREIGN_KEY_ADD_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::FOREIGN_KEY_ADD_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::FOREIGN_KEY_ADD_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString("\$db->sql_save(['foreign_key_remove_prefix' => \$addPost['payload']]);", $controller);
         $this->assertStringNotContainsString('$db->sql_save($_POST)', $controller);

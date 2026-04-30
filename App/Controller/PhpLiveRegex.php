@@ -115,13 +115,12 @@ class PhpLiveRegex extends Controller
     public static function evaluateRequest(array $post, array $server, array $session, bool $isCli = false): array
     {
         if (!$isCli) {
-            $guard = CsrfGuard::check($post, $server, $session, self::PHPLIVEREGEX_EVALUATE_CSRF_SCOPE);
-            if (!$guard['allowed']) {
+            if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::PHPLIVEREGEX_EVALUATE_CSRF_SCOPE)) {
                 return [
                     'allowed' => false,
-                    'status' => $guard['status'],
-                    'body' => $guard['body'],
-                    'headers' => $guard['headers'],
+                    'status' => $failure['status'],
+                    'body' => $failure['body'],
+                    'headers' => $failure['headers'],
                     'payload' => null,
                 ];
             }

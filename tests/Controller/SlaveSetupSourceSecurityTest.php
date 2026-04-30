@@ -184,7 +184,7 @@ final class SlaveSetupSourceSecurityTest extends TestCase
 
         $this->assertStringContainsString("private const SLAVE_SETUP_SOURCE_CSRF_SCOPE = 'slave.setup_source'", $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::SLAVE_SETUP_SOURCE_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::SLAVE_SETUP_SOURCE_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::SLAVE_SETUP_SOURCE_CSRF_SCOPE)', $controller);
         $this->assertIsInt($setupPosition);
         $this->assertIsInt($evaluatePosition);
         $this->assertIsInt($dbPosition);

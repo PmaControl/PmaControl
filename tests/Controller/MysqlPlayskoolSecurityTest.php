@@ -138,7 +138,7 @@ final class MysqlPlayskoolSecurityTest extends TestCase
         $this->assertStringContainsString('use Glial\\Security\\Csrf;', $controller);
         $this->assertStringContainsString("private const MYSQL_PLAYSKOOL_CSRF_SCOPE = 'mysql.playskool'", $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::MYSQL_PLAYSKOOL_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::MYSQL_PLAYSKOOL_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::MYSQL_PLAYSKOOL_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('evaluatePlayskoolRequest($_POST, $_SERVER, $_SESSION, $data[\'dbs\'])', $controller);
         $this->assertStringContainsString('buildPlayskoolCommands($outcome[\'request\'])', $controller);
 

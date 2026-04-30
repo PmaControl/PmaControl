@@ -18,9 +18,8 @@ final class GroupedRowsRequest
         string $invalidPayloadMessage,
         int $maxRows = self::DEFAULT_MAX_ROWS
     ): array {
-        $guard = CsrfGuard::check($post, $server, $session, $scope);
-        if (!$guard['allowed']) {
-            return self::outcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, $scope)) {
+            return self::outcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         $rows = self::normalize($post, $group, $rules, $maxRows);

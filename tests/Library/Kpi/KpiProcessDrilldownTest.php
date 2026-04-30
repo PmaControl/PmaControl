@@ -102,7 +102,7 @@ final class KpiProcessDrilldownTest extends TestCase
         $this->assertIsString($view);
         $this->assertIsString($worker);
         $this->assertStringContainsString("KPI_PROCESS_KILL_CSRF_SCOPE = 'kpi.process.kill'", $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::KPI_PROCESS_KILL_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::KPI_PROCESS_KILL_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('KpiProcessDrilldown::buildPayload', $controller);
         $this->assertStringContainsString('http_response_code(404)', $controller);
         $this->assertStringContainsString('Mark safe kill', $view);

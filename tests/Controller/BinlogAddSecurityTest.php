@@ -163,7 +163,7 @@ final class BinlogAddSecurityTest extends TestCase
         $this->assertStringContainsString('type="hidden"', $view);
         $this->assertStringContainsString('method="post"', $view);
 
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, $scope)', $request);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, $scope)', $request);
         $this->assertStringContainsString('GroupedFormRequest::normalize(', $request);
         $this->assertStringContainsString('ByteSize::parse(', $request);
         $this->assertStringContainsString('final class ByteSize', $byteSize);

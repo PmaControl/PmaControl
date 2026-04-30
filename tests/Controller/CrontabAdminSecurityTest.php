@@ -152,8 +152,8 @@ final class CrontabAdminSecurityTest extends TestCase
 
         $this->assertStringContainsString("private const ADMIN_CRONTAB_ADD_CSRF_SCOPE = 'crontab.admin_crontab.add'", $controller);
         $this->assertStringContainsString("private const ADMIN_CRONTAB_DELETE_CSRF_SCOPE = 'crontab.admin_crontab.delete'", $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::ADMIN_CRONTAB_ADD_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::ADMIN_CRONTAB_DELETE_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::ADMIN_CRONTAB_ADD_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::ADMIN_CRONTAB_DELETE_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('evaluateAdminCrontabAddRequest($_POST, $_SERVER, $_SESSION)', $adminBody);
         $this->assertStringContainsString('evaluateAdminCrontabDeleteRequest($_POST, $_SERVER, $_SESSION)', $adminBody);
         $this->assertStringContainsString('CliCrontab::insert(', $adminBody);

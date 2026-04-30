@@ -180,7 +180,7 @@ final class BackupAddSecurityTest extends TestCase
         $this->assertStringContainsString('type="hidden"', $view);
         $this->assertStringContainsString('method="post"', $view);
 
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, $scope)', $request);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, $scope)', $request);
         $this->assertStringContainsString('GroupedFormRequest::normalize($post, \'backup_main\', self::backupMainRules())', $request);
         $this->assertStringContainsString('GroupedFormRequest::normalize($post, \'crontab\', self::crontabRules())', $request);
     }

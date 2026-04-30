@@ -135,7 +135,7 @@ final class TreeUpdateSecurityTest extends TestCase
         $this->assertStringContainsString('use App\\Library\\Security\\CsrfGuard;', $controller);
         $this->assertStringContainsString("private const TREE_UPDATE_CSRF_SCOPE = 'tree.update'", $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::TREE_UPDATE_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::TREE_UPDATE_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::TREE_UPDATE_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('private const TREE_UPDATE_FIELDS', $controller);
 
         $this->assertStringContainsString('$treeUpdateCsrfAttributes', $view);

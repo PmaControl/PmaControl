@@ -168,7 +168,7 @@ final class ClientDeleteSecurityTest extends TestCase
         $this->assertStringContainsString('use App\\Library\\Security\\CsrfGuard;', $controller);
         $this->assertStringContainsString("private const CLIENT_DELETE_CSRF_SCOPE = 'client.delete'", $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::CLIENT_DELETE_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::CLIENT_DELETE_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::CLIENT_DELETE_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('self::evaluateDeleteRequest($_POST, $_SERVER, $_SESSION, is_array($param) ? $param : [])', $controller);
         $this->assertStringContainsString('private const CLIENT_RESERVED_ID = 99', $controller);
 

@@ -1317,9 +1317,8 @@ var myChart = new Chart(ctx, {
 
     public static function evaluateSettingsRequest(array $post, array $server, array $session): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::CLEANER_SETTINGS_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return HttpOutcome::fromGuard($guard, ['cleaner_main' => null, 'cleaner_foreign_key' => null]);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::CLEANER_SETTINGS_CSRF_SCOPE)) {
+            return HttpOutcome::error($failure['status'], $failure['body'], $failure['headers'], ['cleaner_main' => null, 'cleaner_foreign_key' => null]);
         }
 
         $cleaner_main = GroupedFormRequest::normalize(

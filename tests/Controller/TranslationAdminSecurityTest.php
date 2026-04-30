@@ -156,7 +156,7 @@ final class TranslationAdminSecurityTest extends TestCase
 
         $this->assertStringContainsString("private const TRANSLATION_ADMIN_CSRF_SCOPE = 'translation.admin_translation'", $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::TRANSLATION_ADMIN_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::TRANSLATION_ADMIN_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::TRANSLATION_ADMIN_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('Sgbd::sql(DB_DEFAULT)', $controller);
         $this->assertStringContainsString("'translation_'.\$postOutcome['target']", $controller);
 

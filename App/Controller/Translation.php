@@ -294,9 +294,8 @@ class Translation extends Controller
         array $session,
         array $availableLanguages
     ): array {
-        $guard = CsrfGuard::check($post, $server, $session, self::TRANSLATION_ADMIN_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return self::buildAdminTranslationOutcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::TRANSLATION_ADMIN_CSRF_SCOPE)) {
+            return self::buildAdminTranslationOutcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         $payload = self::normalizeAdminTranslationPayload($post, $availableLanguages);

@@ -111,7 +111,7 @@ final class AliasIndexSecurityTest extends TestCase
 
         $this->assertStringContainsString("private const ALIAS_INDEX_CSRF_SCOPE = 'alias.index'", $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::ALIAS_INDEX_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::ALIAS_INDEX_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::ALIAS_INDEX_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('self::evaluateIndexPostRequest($_POST, $_SERVER, $_SESSION)', $controller);
         $this->assertStringContainsString('self::upsertAliasDnsFromRow($indexRequest[\'alias\'])', $controller);
 

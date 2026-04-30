@@ -156,7 +156,7 @@ final class DatabaseSizeUpdateSecurityTest extends TestCase
         $this->assertStringContainsString('use App\\Library\\Security\\CsrfGuard;', $controller);
         $this->assertStringContainsString("private const DATABASE_SIZE_UPDATE_CSRF_SCOPE = 'database.size.update'", $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::DATABASE_SIZE_UPDATE_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::DATABASE_SIZE_UPDATE_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::DATABASE_SIZE_UPDATE_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString("array('bootstrap-editable.min.js', 'Tree/index.js')", $controller);
         $this->assertStringNotContainsString('Tag::TAG_UPDATE_CSRF_SCOPE', $controller);
 

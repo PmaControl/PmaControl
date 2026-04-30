@@ -149,7 +149,7 @@ final class PhpLiveRegexEvaluateSecurityTest extends TestCase
 
         $this->assertStringContainsString("private const PHPLIVEREGEX_EVALUATE_CSRF_SCOPE = 'phpliveregex.evaluate'", $source);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::PHPLIVEREGEX_EVALUATE_CSRF_SCOPE)', $source);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::PHPLIVEREGEX_EVALUATE_CSRF_SCOPE)', $source);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::PHPLIVEREGEX_EVALUATE_CSRF_SCOPE)', $source);
         $this->assertStringContainsString('evaluateRequest($_POST, $_SERVER, $_SESSION, IS_CLI)', $source);
         $this->assertStringContainsString('$fcts = $this->pregView($payload[\'regex_1\']', $source);
         $this->assertStringNotContainsString('file_put_contents("/tmp/gg"', $source);

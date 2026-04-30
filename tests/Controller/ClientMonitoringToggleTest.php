@@ -197,7 +197,7 @@ final class ClientMonitoringToggleTest extends TestCase
 
         $this->assertStringContainsString("private const CLIENT_MONITORING_TOGGLE_CSRF_SCOPE = 'client.toggleMonitoring'", $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::CLIENT_MONITORING_TOGGLE_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::CLIENT_MONITORING_TOGGLE_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::CLIENT_MONITORING_TOGGLE_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('self::evaluateMonitoringToggleRequest(', $controller);
         $this->assertStringContainsString('Content-Type: application/json; charset=UTF-8', $controller);
 

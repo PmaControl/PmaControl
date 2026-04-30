@@ -146,7 +146,7 @@ final class MysqlsysUpdateConfigSecurityTest extends TestCase
         $this->assertStringContainsString('use Glial\\Security\\Csrf;', $controller);
         $this->assertStringContainsString("private const MYSQLSYS_UPDATE_CONFIG_CSRF_SCOPE = 'mysqlsys.update_config'", $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::MYSQLSYS_UPDATE_CONFIG_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::MYSQLSYS_UPDATE_CONFIG_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::MYSQLSYS_UPDATE_CONFIG_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('evaluateUpdateConfigRequest($_POST, $_SERVER, $_SESSION, IS_CLI)', $controller);
 
         $this->assertStringContainsString('$mysqlsysUpdateConfigCsrfAttributes', $view);

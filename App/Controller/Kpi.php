@@ -304,12 +304,11 @@ class Kpi extends Controller
 
     public static function evaluateProcessKillRequest(array $post, array $server, array $session, array $params = []): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::KPI_PROCESS_KILL_CSRF_SCOPE);
-        if (!$guard['allowed']) {
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::KPI_PROCESS_KILL_CSRF_SCOPE)) {
             return [
-                'status' => $guard['status'],
-                'body' => $guard['body'],
-                'headers' => $guard['headers'],
+                'status' => $failure['status'],
+                'body' => $failure['body'],
+                'headers' => $failure['headers'],
                 'pid' => null,
                 'start_time_ticks' => null,
             ];

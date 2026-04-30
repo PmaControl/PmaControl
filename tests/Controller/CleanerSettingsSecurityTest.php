@@ -181,7 +181,7 @@ final class CleanerSettingsSecurityTest extends TestCase
         $this->assertStringContainsString('use Glial\\Security\\Csrf;', $controller);
         $this->assertStringContainsString("private const CLEANER_SETTINGS_CSRF_SCOPE = 'cleaner.settings'", $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::CLEANER_SETTINGS_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::CLEANER_SETTINGS_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::CLEANER_SETTINGS_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('GroupedFormRequest::normalize(', $controller);
         $this->assertStringContainsString('IndexedRowsRequest::normalize(', $controller);
         $this->assertIsInt($settingsPosition);

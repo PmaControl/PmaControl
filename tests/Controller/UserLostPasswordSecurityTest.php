@@ -116,7 +116,7 @@ final class UserLostPasswordSecurityTest extends TestCase
 
         $this->assertStringContainsString('private const USER_LOST_PASSWORD_CSRF_SCOPE', $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::USER_LOST_PASSWORD_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::USER_LOST_PASSWORD_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::USER_LOST_PASSWORD_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('name="<?=$userLostPasswordCsrfField?>"', $view);
         $this->assertStringContainsString('value="<?=$userLostPasswordCsrfToken?>"', $view);
     }

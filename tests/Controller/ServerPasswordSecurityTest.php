@@ -138,7 +138,7 @@ final class ServerPasswordSecurityTest extends TestCase
 
         $this->assertStringContainsString("private const SERVER_PASSWORD_CSRF_SCOPE = 'server.password'", $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::SERVER_PASSWORD_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::SERVER_PASSWORD_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::SERVER_PASSWORD_CSRF_SCOPE)', $controller);
         $this->assertIsInt($guardPosition);
         $this->assertIsInt($encryptPosition);
         $this->assertLessThan($encryptPosition, $guardPosition);

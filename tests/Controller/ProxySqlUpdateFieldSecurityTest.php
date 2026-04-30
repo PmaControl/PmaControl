@@ -161,7 +161,7 @@ final class ProxySqlUpdateFieldSecurityTest extends TestCase
         $this->assertStringContainsString('use Glial\\Security\\Csrf;', $controller);
         $this->assertStringContainsString("private const PROXYSQL_UPDATE_FIELD_CSRF_SCOPE = 'proxysql.update_field'", $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::PROXYSQL_UPDATE_FIELD_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::PROXYSQL_UPDATE_FIELD_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::PROXYSQL_UPDATE_FIELD_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString("array('bootstrap-editable.min.js', 'Tree/index.js')", $controller);
         $this->assertStringNotContainsString('$(".line-edit").editable();', $controller);
 

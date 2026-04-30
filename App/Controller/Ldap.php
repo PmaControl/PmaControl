@@ -316,9 +316,8 @@ class Ldap extends Controller
 
     public static function evaluateIndexPostRequest(array $post, array $server, array $session): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::LDAP_INDEX_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return self::buildIndexPostOutcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::LDAP_INDEX_CSRF_SCOPE)) {
+            return self::buildIndexPostOutcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         $payload = self::normalizeIndexPostPayload($post);
@@ -1230,9 +1229,8 @@ class Ldap extends Controller
 
     public static function evaluateGetGroupFromUserRequest(array $post, array $server, array $session): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::LDAP_GET_GROUP_FROM_USER_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return self::buildGetGroupFromUserOutcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::LDAP_GET_GROUP_FROM_USER_CSRF_SCOPE)) {
+            return self::buildGetGroupFromUserOutcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         $user = self::normalizeGetGroupFromUserPayload($post);

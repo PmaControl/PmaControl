@@ -68,7 +68,7 @@ final class WebserviceTest extends TestCase
         $this->assertIsString($source);
         $this->assertStringContainsString('use App\\Library\\Security\\ApiRequestGuard;', $source);
         $this->assertStringContainsString('ApiRequestGuard::checkJsonPostBasicAuth($jsonData, $_SERVER)', $source);
-        $this->assertStringNotContainsString('CsrfGuard::check', $source);
+        $this->assertStringNotContainsString('CsrfGuard::', $source);
     }
 
     public function testCheckCredentialsUsesMutualizedConstantTimeComparison(): void

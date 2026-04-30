@@ -1693,9 +1693,8 @@ var myChart = new Chart(ctx, {
 
     public static function evaluateSettingsRequest(array $post, array $server, array $session): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::SERVER_SETTINGS_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return self::buildSettingsOutcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::SERVER_SETTINGS_CSRF_SCOPE)) {
+            return self::buildSettingsOutcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         $settings = self::normalizeSettingsPayload($post);
@@ -2208,9 +2207,8 @@ var myChart = new Chart(ctx, {
 
     public static function evaluatePasswordRequest(array $param, array $post, array $server, array $session): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::SERVER_PASSWORD_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return self::buildPasswordOutcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::SERVER_PASSWORD_CSRF_SCOPE)) {
+            return self::buildPasswordOutcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         $password = self::normalizePasswordPayload($param, $post);

@@ -116,7 +116,7 @@ final class UserPasswordRecoverSecurityTest extends TestCase
 
         $this->assertStringContainsString('private const USER_PASSWORD_RECOVER_CSRF_SCOPE', $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::USER_PASSWORD_RECOVER_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::USER_PASSWORD_RECOVER_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::USER_PASSWORD_RECOVER_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('<input type="hidden"', $view);
         $this->assertStringContainsString('$userPasswordRecoverCsrfField', $view);
         $this->assertStringContainsString('$userPasswordRecoverCsrfToken', $view);

@@ -837,12 +837,11 @@ class Cluster extends Controller
 
     public static function evaluateViewDotPostRequest(array $post, array $server, array $session): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::VIEW_DOT_CSRF_SCOPE);
-        if (!$guard['allowed']) {
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::VIEW_DOT_CSRF_SCOPE)) {
             return [
-                'status' => $guard['status'],
-                'body' => $guard['body'],
-                'headers' => $guard['headers'],
+                'status' => $failure['status'],
+                'body' => $failure['body'],
+                'headers' => $failure['headers'],
             ];
         }
 

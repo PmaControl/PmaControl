@@ -145,7 +145,7 @@ final class TelegramAddSecurityTest extends TestCase
         $this->assertStringContainsString("private const TELEGRAM_ADD_CSRF_SCOPE = 'telegram.add'", $controller);
         $this->assertStringContainsString('private const TELEGRAM_ADD_FIELDS', $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::TELEGRAM_ADD_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::TELEGRAM_ADD_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::TELEGRAM_ADD_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('$this->view        = false;', $controller);
         $this->assertStringContainsString('$db = Sgbd::sql(DB_DEFAULT);', $controller);
 

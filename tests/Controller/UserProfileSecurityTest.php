@@ -145,7 +145,7 @@ final class UserProfileSecurityTest extends TestCase
 
         $this->assertStringContainsString('private const USER_PROFILE_CSRF_SCOPE', $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::USER_PROFILE_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::USER_PROFILE_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::USER_PROFILE_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('<input type="hidden"', $view);
         $this->assertStringContainsString('$userProfileCsrfField', $view);
         $this->assertStringContainsString('$userProfileCsrfToken', $view);

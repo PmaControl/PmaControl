@@ -161,7 +161,7 @@ final class SlaveStartBinlogAnalysisSecurityTest extends TestCase
         $this->assertStringContainsString('use Glial\\Security\\Csrf;', $controller);
         $this->assertStringContainsString("private const SLAVE_BINLOG_ANALYSIS_START_CSRF_SCOPE = 'slave.binlog_analysis.start'", $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::SLAVE_BINLOG_ANALYSIS_START_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::SLAVE_BINLOG_ANALYSIS_START_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::SLAVE_BINLOG_ANALYSIS_START_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('sendStartBinlogAnalysisError($outcome[', $controller);
 
         $this->assertStringContainsString('$slaveBinlogAnalysisStartCsrfField', $view);

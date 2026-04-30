@@ -207,9 +207,8 @@ class Ssh extends Controller
 
     public static function evaluateSaveRequest(array $post, array $server, array $session): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::SSH_SAVE_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return self::buildSshSaveOutcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::SSH_SAVE_CSRF_SCOPE)) {
+            return self::buildSshSaveOutcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         $sshKey = self::normalizeSavePayload($post);

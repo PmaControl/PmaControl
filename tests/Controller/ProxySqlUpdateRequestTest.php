@@ -196,7 +196,7 @@ final class ProxySqlUpdateRequestTest extends TestCase
 
         $this->assertStringContainsString("private const PROXYSQL_UPDATE_CSRF_SCOPE = 'proxysql.update'", $source);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::PROXYSQL_UPDATE_CSRF_SCOPE)', $source);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::PROXYSQL_UPDATE_CSRF_SCOPE)', $source);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::PROXYSQL_UPDATE_CSRF_SCOPE)', $source);
         $this->assertStringContainsString('evaluateUpdateRequest($param, $_POST, $_SERVER, $_SESSION, IS_CLI)', $source);
         $this->assertStringContainsString(', true, 303);', $source);
     }

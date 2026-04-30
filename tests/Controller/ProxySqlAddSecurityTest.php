@@ -144,7 +144,7 @@ final class ProxySqlAddSecurityTest extends TestCase
 
         $this->assertStringContainsString("private const PROXYSQL_ADD_CSRF_SCOPE = 'proxysql.add'", $source);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::PROXYSQL_ADD_CSRF_SCOPE)', $source);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::PROXYSQL_ADD_CSRF_SCOPE)', $source);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::PROXYSQL_ADD_CSRF_SCOPE)', $source);
         $this->assertStringContainsString('evaluateAddRequest($_POST, $_SERVER, $_SESSION, IS_CLI)', $source);
         $this->assertStringContainsString('$this->insertProxySqlAdmin($outcome[\'proxysql\'])', $source);
     }

@@ -85,9 +85,8 @@ class Format extends Controller
 
     public static function evaluateIndexPost(array $post, array $server, array $session): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::FORMAT_INDEX_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return HttpOutcome::fromGuard($guard, ['sql' => '', 'hash' => '']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::FORMAT_INDEX_CSRF_SCOPE)) {
+            return HttpOutcome::error($failure['status'], $failure['body'], $failure['headers'], ['sql' => '', 'hash' => '']);
         }
 
         $sql = self::normalizeSqlPayload($post);

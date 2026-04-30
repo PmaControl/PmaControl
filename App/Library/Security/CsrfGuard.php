@@ -75,6 +75,26 @@ final class CsrfGuard
         return self::outcome(true, 200, '');
     }
 
+    public static function ensureOrFail(
+        array $post,
+        array $server,
+        array $session,
+        string $scope,
+        ?string $trustedOrigin = null,
+        string $field = Csrf::DEFAULT_FIELD
+    ): ?array {
+        $guard = self::check($post, $server, $session, $scope, $trustedOrigin, $field);
+        if ($guard['allowed']) {
+            return null;
+        }
+
+        return [
+            'status' => $guard['status'],
+            'body' => $guard['body'],
+            'headers' => $guard['headers'],
+        ];
+    }
+
     private static function outcome(bool $allowed, int $status, string $body, array $headers = []): array
     {
         return [

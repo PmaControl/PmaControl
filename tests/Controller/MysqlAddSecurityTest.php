@@ -126,7 +126,7 @@ final class MysqlAddSecurityTest extends TestCase
         $this->assertStringContainsString('use Glial\\Security\\Csrf;', $controller);
         $this->assertStringContainsString("private const MYSQL_ADD_CSRF_SCOPE = 'mysql.add'", $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::MYSQL_ADD_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::MYSQL_ADD_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::MYSQL_ADD_CSRF_SCOPE)', $controller);
         $this->assertIsInt($addPosition);
         $this->assertIsInt($evaluatePosition);
         $this->assertIsInt($dbPosition);

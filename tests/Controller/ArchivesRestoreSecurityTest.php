@@ -127,7 +127,7 @@ final class ArchivesRestoreSecurityTest extends TestCase
         $this->assertStringContainsString('type="hidden"', $view);
         $this->assertStringContainsString('method="post"', $view);
 
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, $scope)', $request);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, $scope)', $request);
         $this->assertStringContainsString('PositiveIntegerSelection::normalizeList($post[\'id_cleaner_main\'], 1)', $request);
         $this->assertStringContainsString('Identifier::isDatabaseName($database)', $request);
     }
