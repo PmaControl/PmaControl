@@ -1,12 +1,17 @@
 <?php
 
 use App\Library\Security\CsrfRender;
+use App\Library\Html;
 
 use Glial\Html\Form\Form;
 
 $sshSaveCsrfField = CsrfRender::field($data, 'ssh_save');
 $sshSaveCsrfToken = CsrfRender::token($data, 'ssh_save');
 $sshSaveCsrfInput = '<input type="hidden" name="'.$sshSaveCsrfField.'" value="'.$sshSaveCsrfToken.'">';
+$sessionSshKey = is_array($_SESSION['ssh_key'] ?? null) ? $_SESSION['ssh_key'] : [];
+$dataSshKey = is_array($data['ssh_key'] ?? null) ? $data['ssh_key'] : [];
+$sshPublicKeyValue = Html::escape($dataSshKey['public_key'] ?? $sessionSshKey['public_key'] ?? '');
+$sshPrivateKeyValue = Html::escape($dataSshKey['private_key'] ?? $sessionSshKey['private_key'] ?? '');
 ?>
 <form action="" method="post">
     <?= $sshSaveCsrfInput ?>
@@ -30,11 +35,10 @@ $sshSaveCsrfInput = '<input type="hidden" name="'.$sshSaveCsrfField.'" value="'.
             </div>
             <div class="row">
                 <div class="col-md-5">Public key
-                    <textarea name="ssh_key[public_key]" id="ssh_key-key_pub" class="form-control" rows="15" placeholder="ssh-rsa AAAA... user@example.com"><?= $_SESSION['ssh_key']['public_key']
-                            ?? ""; ?></textarea>
+                    <textarea name="ssh_key[public_key]" id="ssh_key-key_pub" class="form-control" rows="15" placeholder="ssh-rsa AAAA... user@example.com"><?= $sshPublicKeyValue ?></textarea>
                 </div>
                 <div class="col-md-5">Private key
-                    <textarea name="ssh_key[private_key]" id="ssh_key-key_priv" class="form-control" rows="15" placeholder="Paste the private key generated for this account"><?= $_SESSION['ssh_key']['private_key'] ?? "" ?></textarea>
+                    <textarea name="ssh_key[private_key]" id="ssh_key-key_priv" class="form-control" rows="15" placeholder="Paste the private key generated for this account"><?= $sshPrivateKeyValue ?></textarea>
                 </div>
                 <?php
                 unset($_SESSION['ssh_key']['public_key']);
