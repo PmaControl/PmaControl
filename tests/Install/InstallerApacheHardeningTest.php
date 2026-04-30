@@ -51,6 +51,18 @@ final class InstallerApacheHardeningTest extends TestCase
         self::assertStringContainsString('Require all denied', $this->apacheConf);
     }
 
+    public function testApacheConfDeniesVcsMetadataAndDependencyManifests(): void
+    {
+        self::assertStringContainsString('(?:\\.git|\\.svn|\\.hg|\\.bzr)', $this->apacheConf);
+        self::assertStringContainsString('composer\\.(?:json|lock)', $this->apacheConf);
+        self::assertStringContainsString('package(?:-lock)?\\.json', $this->apacheConf);
+        self::assertStringContainsString('yarn\\.lock', $this->apacheConf);
+        self::assertStringContainsString('pnpm-lock\\.yaml', $this->apacheConf);
+        self::assertStringContainsString('Gemfile(?:\\.lock)?', $this->apacheConf);
+        self::assertStringContainsString('Pipfile(?:\\.lock)?', $this->apacheConf);
+        self::assertStringContainsString('\\.env(?:\\..*)?', $this->apacheConf);
+    }
+
     public function testSharedHelperInstallsApacheAndHttpdHardeningConfigs(): void
     {
         self::assertStringContainsString('pmactrl_harden_apache_docroot()', $this->helper);
