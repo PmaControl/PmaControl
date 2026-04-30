@@ -199,9 +199,6 @@ $("#ssh_key-id").change(function() {
 
                     if ($this->testConnection($ob->ip, $public) === true) {
                         Debug::debug($postPayload['mysql_server']['login_ssh'] . "@" . $ob->ip . " : " . 'CONNECTION OK !');
-                        //Debug::debug($path_private_key);
-
-
 
                         $tmp = array();
                         $tmp['link__mysql_server__ssh_key']['id_mysql_server'] = $ob->id;
@@ -420,13 +417,7 @@ $("#ssh_key-id").change(function() {
         $ssh2 = new SSH2($ip);
         $rsa = new RSA();
 
-
-        Debug::debug($path_private_key);
-
         $priv_key = $this->parseUserKey($path_private_key, self::KEY_PRIVATE);
-
-
-        Debug::debug($priv_key);
 
         if ($priv_key !== false) {
 
@@ -586,9 +577,6 @@ $("#ssh_key-id").change(function() {
         Debug::parseDebug($param);
 
 
-        Debug::debug($param);
-
-
         $server = $param[0];
         $private = $param[1];
         $public = $param[2];
@@ -653,11 +641,7 @@ $("#ssh_key-id").change(function() {
 
 
 
-        Debug::debug(shell_exec("cat " . $file_name_pub_key));
-
         Ssh::put($ip, $port, $prikey['user'], $prikey['key'], $file_name_pub_key, $dest_path);
-
-        Debug::debug(Ssh::$ssh->exec("cat " . $dest_path));
 
 
         if ($prikey['user'] === "root") {
@@ -771,8 +755,6 @@ $("#ssh_key-id").change(function() {
 
         $data['key'] = $key;
         $data['user'] = $login;
-
-        Debug::debug($data);
 
         return $data;
     }

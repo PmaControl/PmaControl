@@ -7,6 +7,7 @@
 
 namespace App\Library;
 
+use App\Library\Security\SecretRedactor;
 use \Glial\Cli\Color;
 use \Glial\Cli\Table;
 
@@ -340,15 +341,17 @@ class Debug
     static function debug($string, $var = "", $font_color="grey", $background_color="blue")
     {
         if (self::$debug) {
+            $label = is_scalar($var) ? SecretRedactor::text((string) $var) : $var;
+            $string = SecretRedactor::debugValue($string, is_scalar($var) ? (string) $var : "");
 
             self::head();
 
-            if (!empty($var)) {
+            if (!empty($label)) {
 
                 if (IS_CLI) {
-                    echo Color::getColoredString($var, $font_color, $background_color)." ";
+                    echo Color::getColoredString((string) $label, $font_color, $background_color)." ";
                 } else {
-                    echo $var."<br>";
+                    echo $label."<br>";
                 }
             }
 
@@ -359,7 +362,7 @@ class Debug
 
                     print_r($string);
                 } else {
-                    echo $var."<br>";
+                    echo $label."<br>";
                     echo "<pre>";
                     print_r($string);
                     echo "</pre>";
@@ -406,6 +409,8 @@ class Debug
     {
         if (self::$debug) {
             self::head();
+            $sql = SecretRedactor::text($sql);
+            $var = is_scalar($var) ? SecretRedactor::text((string) $var) : $var;
 
             if (!empty($var)) {
                 if (IS_CLI) {
@@ -579,4 +584,3 @@ class Debug
         //echo \Glial\Cli\Color::getColoredString("[".date('Y-m-d H:i:s')."]", "purple")." ";
     }
 }
-

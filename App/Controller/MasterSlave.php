@@ -436,7 +436,7 @@ class MasterSlave extends Controller {
         MASTER_LOG_FILE='".$FILE."',
         MASTER_LOG_POS=".$POSITION.";";
 
-        Debug::debug("mysql -h $ip_slave -P $port_slave -u $login_slave -p$password_slave", 'STRING MYSQL');
+        Debug::debug("mysql -h $ip_slave -P $port_slave -u $login_slave -p[redacted]", 'STRING MYSQL');
 
 
         $db_slave->sql_query($sql3);

@@ -4911,7 +4911,7 @@ GROUP BY C.ID, C.INFO;";
                         $res3 = $mysql_to_link->sql_query($sql3);
                         $password_hash = null;
                         while ($ob = $mysql_to_link->sql_fetch_object($res3)){
-                            Debug::debug($ob, "password");
+                            Debug::debug($user, "mysql.user");
                             // il faut recupérer le bon
                             $password_hash = $ob->password;
                         }
@@ -4931,9 +4931,9 @@ GROUP BY C.ID, C.INFO;";
                                 $db->sql_query($sql5);
 
                                 $password_hash_sql = $db->sql_real_escape_string((string)$password_hash);
-                                $sql4 = "INSERT INTO mysql_users(username,password,default_hostgroup,default_schema) 
+                                $sql4 = "INSERT INTO mysql_users(username,password,default_hostgroup,default_schema)
                                 VALUES ('".$user_sql."','".$password_hash_sql."',".$default_hostgroup.",'');";
-                                Debug::sql($sql4);
+                                Debug::sql(str_replace("'".$password_hash_sql."'", "'[redacted]'", $sql4));
                                 $db->sql_query($sql4);
                                 $user_inserted = true;
 

@@ -7,6 +7,8 @@
 
 namespace App\Library;
 
+use App\Library\Security\SecretRedactor;
+
 /**
  * Class responsible for mydumper workflows.
  *
@@ -64,25 +66,7 @@ class Mydumper
      */
     static public function redactPasswords(string $log): string
     {
-        $patterns = [
-            // --password=foo  /  --password foo
-            '/(--password)([= ])([^\s"\'<>|&;]+)/',
-            // -p=foo
-            '/(-p)(=)([^\s"\'<>|&;]+)/',
-            // -p foo  (space). Negative lookbehind on letters/dashes avoids
-            // matching things like "tcp foo" or "drop foo".
-            '/(?<![A-Za-z0-9-])(-p)( )([^\s"\'<>|&;-][^\s"\'<>|&;]*)/',
-            // -pfoo (no separator).
-            '/(?<![A-Za-z0-9-])(-p)([^\s"\'<>|&;= -][^\s"\'<>|&;]*)/',
-        ];
-        $replacements = [
-            '$1$2******',
-            '$1$2******',
-            '$1$2******',
-            '$1******',
-        ];
-
-        return (string) preg_replace($patterns, $replacements, $log);
+        return SecretRedactor::commandLinePasswords($log);
     }
 
 /**

@@ -423,7 +423,7 @@ class Ssh extends Controller
 
             $res = $db->sql_save($data);
             if (!$res) {
-                debug($data);
+                Debug::debug('ssh key save failed', 'Ssh::save');
 
                 throw new \Exception("PMACTRL-031 : Impossible to save ssh key");
             }
@@ -1025,12 +1025,7 @@ AND b.id NOT IN (select id from z)";
 
         $login_successfull = true;
 
-
-        Debug::debug(Chiffrement::decrypt($key['private_key']), "PRIVATE KEY");
-
         $rsa = PublicKeyLoader::load(Chiffrement::decrypt($key['private_key']));
-
-        Debug::debug($rsa);
         /*
         if (RSA::loadFormat('OpenSSH', file_get_contents($key['private_key'])) === false) {
         //if ($rsa->loadKey($key['private_key']) === false) {
