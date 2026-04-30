@@ -18,7 +18,14 @@ final class KpiServerDrilldown
     {
         $serverId = max(0, $serverId);
         $now = self::dateTimeObject($options['now'] ?? 'now');
-        $since = self::dateTime($now->modify('-24 hours'));
+        $windowStart = array_key_exists('window_start', $options)
+            ? self::dateTimeObject($options['window_start'])
+            : $now->modify('-24 hours');
+        if ($windowStart > $now) {
+            $windowStart = $now->modify('-24 hours');
+        }
+
+        $since = self::dateTime($windowStart);
         $warnings = [];
         $degraded = false;
 
@@ -39,7 +46,7 @@ final class KpiServerDrilldown
             }
 
             try {
-                $timeline = self::fetchTimeline($serverId, $now);
+                $timeline = self::fetchTimeline($serverId, $windowStart, $now);
             } catch (\Throwable $e) {
                 $degraded = true;
                 $warnings[] = 'Server state timeline is unavailable: '.KpiSanitizer::errorMessage($e->getMessage(), 256);
@@ -283,10 +290,10 @@ final class KpiServerDrilldown
         ];
     }
 
-    private static function fetchTimeline(int $serverId, \DateTimeImmutable $now): array
+    private static function fetchTimeline(int $serverId, \DateTimeImmutable $start, \DateTimeImmutable $end): array
     {
-        $end = self::minuteStart($now);
-        $start = $end->modify('-24 hours');
+        $start = self::minuteStart($start);
+        $end = self::minuteStart($end);
         $rows = [];
 
         $result = Extraction2::extract(

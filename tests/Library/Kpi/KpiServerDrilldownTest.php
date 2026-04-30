@@ -90,6 +90,8 @@ final class KpiServerDrilldownTest extends TestCase
         $this->assertStringContainsString("'error_class' => 'mysql_error'", $source);
         $this->assertStringContainsString('Current server status is unavailable', $source);
         $this->assertStringContainsString('Server state timeline is unavailable', $source);
+        $this->assertStringContainsString("array_key_exists('window_start', \$options)", $source);
+        $this->assertStringContainsString('fetchTimeline($serverId, $windowStart, $now)', $source);
     }
 
     public function testViewAndJavascriptExposeExpectedCharts(): void
