@@ -17,10 +17,13 @@ final class RouteExposureBootstrapTest extends TestCase
         $guardPosition = strpos($bootstrap, 'RouteExposurePolicy::denialReason');
         $aclPosition = strpos($bootstrap, '$acl = new Acl(CONFIG."acl.config.ini");');
         $dispatchPosition = strpos($bootstrap, 'FactoryController::rootNode($_SYSTEM');
+        $apacheModePosition = strpos($bootstrap, '} else {  //mode with apache');
 
         $this->assertIsInt($guardPosition);
         $this->assertIsInt($aclPosition);
         $this->assertIsInt($dispatchPosition);
+        $this->assertIsInt($apacheModePosition);
+        $this->assertGreaterThan($apacheModePosition, $guardPosition, 'Route exposure must only run in the HTTP branch, not CLI dispatch.');
         $this->assertLessThan($aclPosition, $guardPosition, 'Route exposure must be checked before ACL wildcard permissions.');
         $this->assertLessThan($dispatchPosition, $guardPosition, 'Route exposure must be checked before controller dispatch.');
         $this->assertStringContainsString("Blocked non-exposed controller route", $bootstrap);
@@ -43,5 +46,24 @@ final class RouteExposureBootstrapTest extends TestCase
         }
 
         $this->assertStringNotContainsString("'server/password'", $policy);
+    }
+
+    public function testIssue511CliOnlyControllersAreVersionedInSharedPolicy(): void
+    {
+        $policy = strtolower((string) file_get_contents(self::ROOT . '/App/Library/Security/RouteExposurePolicy.php'));
+
+        foreach ([
+            "'aspirateur'",
+            "'ventilateur'",
+            "'control'",
+            "'integrate'",
+            "'integratelog'",
+            "'aggregatemetric'",
+        ] as $controller) {
+            $this->assertStringContainsString($controller, $policy);
+        }
+
+        $this->assertStringContainsString("'listener/checkall'", $policy);
+        $this->assertStringNotContainsString("'listener/status'", $policy);
     }
 }

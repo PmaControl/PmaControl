@@ -28,7 +28,17 @@ Every public method declared on an `App/Controller/*` class is discovered as an 
 
 - Keep helpers and CLI-only routines `protected` or `private` whenever possible.
 - If a legacy public action must not be exposed over HTTP, classify it in `App\Library\Security\RouteExposurePolicy`.
+- If an entire legacy controller is only a collector, worker, or maintenance CLI
+  entrypoint, classify the controller itself in `RouteExposurePolicy` instead of
+  adding one guard per action.
+- Use exact route entries when a mostly-worker controller still has a deliberate
+  diagnostic/UI action. For example, worker actions can be denied while keeping a
+  status action available to the Daemon page.
 - Do not rely on the menu as a security boundary. The menu is navigation; ACL and route exposure policy are the security controls.
+- Moving controller logic into `App\Service\Collector`, `App\Service\Worker`, or
+  `App\Service\Metric` should be done in small follow-up PRs. The first safety
+  step is to remove non-UI workers from HTTP routing without changing CLI
+  daemon dispatch.
 
 ## ACL / routing cache — IMPORTANT
 
