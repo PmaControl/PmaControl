@@ -1,6 +1,7 @@
 <?php
 
 use App\Library\Display;
+use App\Library\Html;
 
 //to move
 function setColor($type)
@@ -25,22 +26,23 @@ function getrgba($label, $alpha)
     list($r, $g, $b) = setColor($label);
     return "rgba(".$r.", ".$g.", ".$b.", ".$alpha.")";
 }
-if (!empty($_GET['id_mysql_server'])) {
+$filterIdMysqlServer = $data['filter_id_mysql_server'] ?? null;
+$filterVariable = (string)($data['filter_variable'] ?? '');
 
-    if (empty($_GET['variable'])) {
-        $_GET['variable'] = '';
-    }
-
-    echo '<a href="'.LINK.'variable/index/id_mysql_server:/variable:'.$_GET['variable'].'" class="btn btn-warning active">Filter: '.Display::srv($_GET['id_mysql_server'], true).'</a>';
-    
+if (!empty($filterIdMysqlServer)) {
+    $filterVariableSegment = rawurlencode($filterVariable);
+    $clearServerUrl = Html::escape(LINK.'variable/index/id_mysql_server:/variable:'.$filterVariableSegment);
+    echo '<a href="'.$clearServerUrl.'" class="btn btn-warning active">Filter: '
+        .Display::srv((int)$filterIdMysqlServer, true).'</a>';
 }
 echo ' ';
 
-if (! empty($_GET['variable'])) {
-    echo '<a href="'.LINK.'variable/index/variable:" class="btn btn-warning active">Filter: '.$_GET['variable'].'</a>';
+if ($filterVariable !== '') {
+    $clearVariableUrl = Html::escape(LINK.'variable/index/variable:');
+    echo '<a href="'.$clearVariableUrl.'" class="btn btn-warning active">Filter: '.Html::escape($filterVariable).'</a>';
     echo '<br><br>';
 }
-elseif(!empty($_GET['id_mysql_server'])) {
+elseif (!empty($filterIdMysqlServer)) {
     echo '<br><br>';
 }
 
@@ -59,20 +61,30 @@ $i = 0;
 foreach ($data['variable'] as $elem) {
     $i++;
 
-    if (strlen($elem['value']) > 100)
-    {
-        $elem['value'] = substr($elem['value'], 0,100).'...';
+    $serverId = (int)($elem['id_mysql_server'] ?? 0);
+    $variableName = (string)($elem['variable_name'] ?? '');
+    $value = (string)($elem['value'] ?? '');
+    $date = (string)($elem['date'] ?? '');
+    $time = (string)($elem['time'] ?? '');
+    $day = (string)($elem['day'] ?? '');
+
+    if (strlen($value) > 100) {
+        $value = substr($value, 0, 100).'...';
     }
 
+    $serverUrl = Html::escape(LINK.'variable/index/id_mysql_server:'.$serverId);
+    $variableUrl = Html::escape(
+        LINK.'variable/index/id_mysql_server:'.$serverId.'/variable:'.rawurlencode($variableName)
+    );
 
     echo '<tr>';
     echo '<td>'.$i.'</td>';
-    echo '<td>'.Display::srv($elem['id_mysql_server'], true, LINK."variable/index/id_mysql_server:".$elem['id_mysql_server']).'</td>';
-    echo '<td><a href="'.LINK.'variable/index/id_mysql_server:'.$elem['id_mysql_server'].'/variable:'.$elem['variable_name'].'">'.$elem['variable_name'].'</a></td>';
-    echo '<td>'.$elem['value'].'</td>';
+    echo '<td>'.Display::srv($serverId, true, $serverUrl).'</td>';
+    echo '<td><a href="'.$variableUrl.'">'.Html::escape($variableName).'</a></td>';
+    echo '<td>'.Html::escape($value).'</td>';
 
-    echo '<td style="background: '.getrgba($elem['date'], 0.5).'"> '.__($elem['day']).' '.$elem['date'].'</td>';
-    echo '<td style="background: '.getrgba($elem['time'], 0.5).'">'.$elem['time'].'</td>';
+    echo '<td style="background: '.getrgba($date, 0.5).'"> '.Html::escape(__($day)).' '.Html::escape($date).'</td>';
+    echo '<td style="background: '.getrgba($time, 0.5).'">'.Html::escape($time).'</td>';
     echo '</tr>';
 }
 
