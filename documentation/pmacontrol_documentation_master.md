@@ -5488,7 +5488,7 @@ Cette étape permet de synchroniser les alias DNS basés sur
 
 ## Table `link__mysql_server__tag`
 
-- Rôle: Table métier utilisée par Demo::getTestServer, Demo::dropDemo, MasterSlave::getTestServer, Server::stopRefresh, Server::settings.
+- Rôle: Table métier utilisée par Demo::getTestServer, Demo::dropDemo, Server::stopRefresh, Server::settings.
 - Modèle PHP: `App/model/IdentifierPmacontrol/link__mysql_server__tag.php`
 - Type/engine: `BASE TABLE` / `InnoDB`
 - Volumétrie (estimateur moteur): rows=`71`, data=`16384`, index=`32768`
@@ -5512,7 +5512,6 @@ Cette étape permet de synchroniser les alias DNS basés sur
 - Références contrôleurs: 7
   - `App/Controller/Demo.php:41`
   - `App/Controller/Demo.php:430`
-  - `App/Controller/MasterSlave.php:40`
   - `App/Controller/Server.php:398`
   - `App/Controller/Server.php:932`
   - `App/Controller/Server.php:939`
@@ -5525,7 +5524,6 @@ Cette étape permet de synchroniser les alias DNS basés sur
 - Écrans/Routes probables:
   - `/Demo/getTestServer`
   - `/Demo/dropDemo`
-  - `/MasterSlave/getTestServer`
   - `/Server/stopRefresh`
   - `/Server/settings`
   - `/Server/settings -> App/view/Server/settings.view.php`
@@ -7358,7 +7356,6 @@ Cette étape permet de synchroniser les alias DNS basés sur
 ### Corrélation Code PHP
 
 - Références contrôleurs: 28
-  - `App/Controller/MasterSlave.php:41`
   - `App/Controller/Server.php:397`
   - `App/Controller/Server.php:399`
   - `App/Controller/Server.php:403`
@@ -7402,7 +7399,6 @@ Cette étape permet de synchroniser les alias DNS basés sur
   - `App/Library/Mysql.php:284`
   - `App/Library/Database.php:22`
 - Écrans/Routes probables:
-  - `/MasterSlave/getTestServer`
   - `/Server/stopRefresh`
   - `/Server/settings`
   - `/Server/settings -> App/view/Server/settings.view.php`
@@ -8744,10 +8740,6 @@ Cette étape permet de synchroniser les alias DNS basés sur
   - `/Upgrade/needUpgrade`
   - `/Upgrade/updateConfig`
   - `/Worker/getListofWorkingServer`
-  - `/MasterSlave/getTestServer`
-  - `/MasterSlave/AssociateServerByLevel`
-  - `/MasterSlave/compareVersions`
-  - `/MasterSlave/generatePair`
   - `/Database/rename`
   - `/Database/rename -> App/view/Database/rename.view.php`
   - `/Database/create_trigger`

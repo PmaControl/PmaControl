@@ -20,6 +20,8 @@ final class RouteExposurePolicy
         'integrate' => 'Shared-memory integration controller is CLI-only and processes collector payloads.',
         'integratelog' => 'Log integration controller is CLI-only and processes local collector payloads.',
         'aggregatemetric' => 'Metric rollup controller is CLI-only and runs aggregation jobs.',
+        'demo' => 'Legacy lab controller runs replication setup, GRANTs and shell commands; HTTP execution is unsafe.',
+        'masterslave' => 'Removed duplicate lab replication controller; keep blocked as a tombstone if it is reintroduced.',
     ];
 
     /**

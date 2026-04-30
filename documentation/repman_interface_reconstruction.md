@@ -323,7 +323,6 @@ Les zones suivantes de PmaControl sont réutilisables conceptuellement :
 - supervision cluster/réplication :
   - `App/Controller/Cluster.php`
   - `App/Controller/Replication.php`
-  - `App/Controller/MasterSlave.php`
   - `App/Controller/Galera.php`
 - supervision serveur :
   - `App/Controller/Server.php`

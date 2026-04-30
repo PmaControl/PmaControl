@@ -584,12 +584,6 @@ Generated automatically from `App/Controller` and `App/Library`.
 - Summary: `documentation/Controller~Library/Log.md`
 - Methods: 2
 
-## MasterSlave
-
-- Kind: class
-- Summary: `documentation/Controller~Library/MasterSlave.md`
-- Methods: 10
-
 ## MaxScale
 
 - Kind: class

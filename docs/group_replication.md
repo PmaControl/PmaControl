@@ -26,7 +26,7 @@ Each node shows `GR Role` and `GR State` rows, colored by status (green=PRIMARY,
 
 ## MySQL vs MariaDB syntax — always branch on `$db->getServerType()`
 
-Replication actions (`activateGtid`, `deactivateGtid`, `startSlave`, `stopSlave`, `skipCounter`, `setupSource`, `setParallelThreads`) implemented in `App/Controller/MasterSlave.php`, `Slave.php`, etc., must branch:
+Replication actions (`activateGtid`, `deactivateGtid`, `startSlave`, `stopSlave`, `skipCounter`, `setupSource`, `setParallelThreads`) implemented in `Slave.php` and related replication controllers must branch:
 
 | | MariaDB | MySQL 8+ |
 |---|---|---|

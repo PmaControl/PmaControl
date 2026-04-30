@@ -52,6 +52,8 @@ final class RouteExposurePolicyTest extends TestCase
             ['Integrate', 'integrateAll'],
             ['IntegrateLog', 'integrateAll'],
             ['AggregateMetric', 'aggregateRecentByServer'],
+            ['Demo', 'install'],
+            ['MasterSlave', 'setUpDemo'],
         ] as [$controller, $action]) {
             $this->assertTrue(
                 RouteExposurePolicy::isDeniedWebRoute($controller, $action),

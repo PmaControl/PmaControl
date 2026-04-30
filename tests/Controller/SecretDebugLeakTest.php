@@ -24,7 +24,6 @@ final class SecretDebugLeakTest extends TestCase
     {
         $ssh = file_get_contents(__DIR__ . '/../../App/Controller/Ssh.php');
         $deployRsaKey = file_get_contents(__DIR__ . '/../../App/Controller/DeployRsaKey.php');
-        $masterSlave = file_get_contents(__DIR__ . '/../../App/Controller/MasterSlave.php');
         $demo = file_get_contents(__DIR__ . '/../../App/Controller/Demo.php');
         $mysql = file_get_contents(__DIR__ . '/../../App/Controller/Mysql.php');
         $aspirateur = file_get_contents(__DIR__ . '/../../App/Controller/Aspirateur.php');
@@ -32,7 +31,6 @@ final class SecretDebugLeakTest extends TestCase
 
         $this->assertIsString($ssh);
         $this->assertIsString($deployRsaKey);
-        $this->assertIsString($masterSlave);
         $this->assertIsString($demo);
         $this->assertIsString($mysql);
         $this->assertIsString($aspirateur);
@@ -50,8 +48,7 @@ final class SecretDebugLeakTest extends TestCase
         $this->assertStringNotContainsString('Debug::debug(Ssh::$ssh->exec("cat " . $dest_path))', $deployRsaKey);
         $this->assertStringNotContainsString('Debug::debug($data)', $deployRsaKey);
 
-        $this->assertStringNotContainsString('-p$password_slave', $masterSlave);
-        $this->assertStringContainsString('-p[redacted]', $masterSlave);
+        $this->assertFileDoesNotExist(__DIR__ . '/../../App/Controller/MasterSlave.php');
 
         $this->assertStringNotContainsString('-p$mysql_password2', $demo);
         $this->assertStringNotContainsString('-p$password_slave', $demo);
