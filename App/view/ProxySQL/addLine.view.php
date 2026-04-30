@@ -1,5 +1,7 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 $data = $data ?? array();
 if (! is_array($data) || empty($data)) {
     echo '<div class="alert alert-warning">'.__('ProxySQL context is missing').'</div>';
@@ -27,8 +29,8 @@ $current = (string) $data['current'];
 $id_proxysql_server = (string) $data['id_proxysql_server'];
 $current_human = str_replace('_', ' ', $current);
 $back_link = LINK.'ProxySQL/config/'.$id_proxysql_server.'/'.$current.'/';
-$proxySqlAddLineCsrfField = htmlspecialchars((string) ($data['proxysql_addline_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$proxySqlAddLineCsrfToken = htmlspecialchars((string) ($data['proxysql_addline_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$proxySqlAddLineCsrfField = CsrfRender::field($data, 'proxysql_addline');
+$proxySqlAddLineCsrfToken = CsrfRender::token($data, 'proxysql_addline');
 
 echo '&nbsp;&nbsp;&nbsp;'; 
 echo '<div class="btn-group" role="group" aria-label="Default button group">';

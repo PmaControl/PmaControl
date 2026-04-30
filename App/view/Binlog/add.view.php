@@ -1,9 +1,11 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 use Glial\Html\Form\Form;
 
-$binlogAddCsrfField = htmlspecialchars((string) ($data['binlog_add_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$binlogAddCsrfToken = htmlspecialchars((string) ($data['binlog_add_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$binlogAddCsrfField = CsrfRender::field($data, 'binlog_add');
+$binlogAddCsrfToken = CsrfRender::token($data, 'binlog_add');
 ?>
 
 

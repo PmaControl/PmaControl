@@ -1,8 +1,10 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 $router = $data['router'] ?? [];
-$mysqlRouterAddCsrfField = htmlspecialchars((string) ($data['mysqlrouter_add_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$mysqlRouterAddCsrfToken = htmlspecialchars((string) ($data['mysqlrouter_add_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$mysqlRouterAddCsrfField = CsrfRender::field($data, 'mysqlrouter_add');
+$mysqlRouterAddCsrfToken = CsrfRender::token($data, 'mysqlrouter_add');
 
 $displayName = htmlspecialchars((string) ($router['display_name'] ?? 'MySQL Router Admin'), ENT_QUOTES, 'UTF-8');
 $hostname = htmlspecialchars((string) ($router['hostname'] ?? ''), ENT_QUOTES, 'UTF-8');

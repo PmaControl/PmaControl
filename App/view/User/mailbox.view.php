@@ -1,14 +1,8 @@
 <?php
-$userMailboxCsrfField = htmlspecialchars(
-	(string)($data['user_mailbox_csrf_field'] ?? '_csrf_token'),
-	ENT_QUOTES,
-	'UTF-8'
-);
-$userMailboxCsrfToken = htmlspecialchars(
-	(string)($data['user_mailbox_csrf_token'] ?? ''),
-	ENT_QUOTES,
-	'UTF-8'
-);
+use App\Library\Security\CsrfRender;
+
+$userMailboxCsrfField = CsrfRender::field($data, 'user_mailbox');
+$userMailboxCsrfToken = CsrfRender::token($data, 'user_mailbox');
 
 $this->data['options'] = array("all_mails", "inbox", "sent_mail", "trash", "compose");
 ($data['request'] === "compose") ? $class1 = 'btBlueTest' : $class1 = 'btGreyLite';

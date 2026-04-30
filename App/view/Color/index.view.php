@@ -1,7 +1,9 @@
 <?php
 
-$colorIndexCsrfField = htmlspecialchars((string)($data['color_index_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$colorIndexCsrfToken = htmlspecialchars((string)($data['color_index_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+use App\Library\Security\CsrfRender;
+
+$colorIndexCsrfField = CsrfRender::field($data, 'color_index');
+$colorIndexCsrfToken = CsrfRender::token($data, 'color_index');
 $selectedColorType = (string)($_GET['type'] ?? '');
 $escapedSelectedColorType = htmlspecialchars($selectedColorType, ENT_QUOTES, 'UTF-8');
 

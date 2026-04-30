@@ -78,8 +78,8 @@ final class LlmSqlAssistantTest extends TestCase
         $view = (string) file_get_contents($root . '/App/view/Llm/index.view.php');
 
         $this->assertStringContainsString('method="POST"', $view);
-        $this->assertStringContainsString("\$data['llm_analyze_csrf_field']", $view);
-        $this->assertStringContainsString("\$data['llm_analyze_csrf_token']", $view);
+        $this->assertStringContainsString('use App\\Library\\Security\\CsrfRender;', $view);
+        $this->assertStringContainsString("CsrfRender::hiddenInput(\$data, 'llm_analyze')", $view);
         $this->assertStringContainsString('disabled="disabled"', $view);
     }
 

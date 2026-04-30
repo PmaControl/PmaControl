@@ -1,9 +1,11 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 use Glial\Html\Form\Form;
 
-$backupAddCsrfField = htmlspecialchars((string) ($data['backup_add_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$backupAddCsrfToken = htmlspecialchars((string) ($data['backup_add_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$backupAddCsrfField = CsrfRender::field($data, 'backup_add');
+$backupAddCsrfToken = CsrfRender::token($data, 'backup_add');
 ?>
 
 <form action="" method="post">

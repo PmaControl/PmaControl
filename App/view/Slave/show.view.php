@@ -1,5 +1,7 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 use Glial\Html\Form\Form;
 use App\Library\Display;
 
@@ -7,8 +9,8 @@ use App\Library\Display;
 
 $slaveBinlogAnalysisStartCsrfField = (string)($data['slave_binlog_analysis_start_csrf_field'] ?? '_csrf_token');
 $slaveBinlogAnalysisStartCsrfToken = (string)($data['slave_binlog_analysis_start_csrf_token'] ?? '');
-$slaveSetupSourceCsrfField = htmlspecialchars((string)($data['slave_setup_source_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$slaveSetupSourceCsrfToken = htmlspecialchars((string)($data['slave_setup_source_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$slaveSetupSourceCsrfField = CsrfRender::field($data, 'slave_setup_source');
+$slaveSetupSourceCsrfToken = CsrfRender::token($data, 'slave_setup_source');
 
 $isMariaDB = isset($data['server_type']) && stripos($data['server_type'], 'mariadb') !== false;
 $isMySQLNewSyntax = !$isMariaDB && isset($data['server_version']) && version_compare((string)$data['server_version'], '8.0.22', '>=');

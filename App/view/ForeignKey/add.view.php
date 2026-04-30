@@ -1,8 +1,10 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 use Glial\Html\Form\Form;
-$foreignKeyAddCsrfField = htmlspecialchars((string) ($data['foreign_key_add_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$foreignKeyAddCsrfToken = htmlspecialchars((string) ($data['foreign_key_add_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$foreignKeyAddCsrfField = CsrfRender::field($data, 'foreign_key_add');
+$foreignKeyAddCsrfToken = CsrfRender::token($data, 'foreign_key_add');
 ?>
 <form action="" method="post">
     <input type="hidden" name="<?= $foreignKeyAddCsrfField ?>" value="<?= $foreignKeyAddCsrfToken ?>">

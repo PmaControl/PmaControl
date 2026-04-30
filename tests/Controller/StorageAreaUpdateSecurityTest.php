@@ -151,8 +151,7 @@ final class StorageAreaUpdateSecurityTest extends TestCase
         $this->assertStringNotContainsString('UPDATE menu SET `', $controller);
 
         $this->assertStringContainsString('$storageAreaUpdateCsrfAttributes', $view);
-        $this->assertStringContainsString('data-csrf-field="', $view);
-        $this->assertStringContainsString('data-csrf-token="', $view);
+        $this->assertStringContainsString("CsrfRender::attributes(\$data, 'storage_area_update')", $view);
         $this->assertStringContainsString('storagearea/update', $view);
         $this->assertStringContainsString("data-pk=\"<?= (int) \$storage['id_backup_storage_area'] ?>\"", $view);
         $this->assertStringNotContainsString("data-pk=\"<?= \$storage['id'] ?>\"", $view);

@@ -1,14 +1,8 @@
 <?php
-$userProfileCsrfField = htmlspecialchars(
-	(string)($data['user_profile_csrf_field'] ?? '_csrf_token'),
-	ENT_QUOTES,
-	'UTF-8'
-);
-$userProfileCsrfToken = htmlspecialchars(
-	(string)($data['user_profile_csrf_token'] ?? ''),
-	ENT_QUOTES,
-	'UTF-8'
-);
+use App\Library\Security\CsrfRender;
+
+$userProfileCsrfField = CsrfRender::field($data, 'user_profile');
+$userProfileCsrfToken = CsrfRender::token($data, 'user_profile');
 
 echo "<div id=\"menu_admin_crop\">";
 echo "<div class=\"title_box\"><a href=\"\">" . __('Photo') . "</a></div>";

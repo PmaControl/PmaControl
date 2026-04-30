@@ -1,4 +1,7 @@
 <?php
+
+use App\Library\Security\CsrfRender;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -8,9 +11,7 @@
 
 
 
-$tagUpdateCsrfField = htmlspecialchars((string) ($data['tag_update_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$tagUpdateCsrfToken = htmlspecialchars((string) ($data['tag_update_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
-$tagUpdateCsrfAttributes = ' data-csrf-field="'.$tagUpdateCsrfField.'" data-csrf-token="'.$tagUpdateCsrfToken.'"';
+$tagUpdateCsrfAttributes = CsrfRender::attributes($data, 'tag_update');
 
 echo '<table class="table table-bordered table-striped" id="table">';
 echo '<tr>';

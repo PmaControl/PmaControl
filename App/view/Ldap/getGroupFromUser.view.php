@@ -1,9 +1,11 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 use Glial\Html\Form\Form;
 
-$ldapGetGroupFromUserCsrfField = htmlspecialchars((string) ($data['ldap_get_group_from_user_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$ldapGetGroupFromUserCsrfToken = htmlspecialchars((string) ($data['ldap_get_group_from_user_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$ldapGetGroupFromUserCsrfField = CsrfRender::field($data, 'ldap_get_group_from_user');
+$ldapGetGroupFromUserCsrfToken = CsrfRender::token($data, 'ldap_get_group_from_user');
 ?>
 <form action="" method="post">
     <input type="hidden" name="<?= $ldapGetGroupFromUserCsrfField ?>" value="<?= $ldapGetGroupFromUserCsrfToken ?>">

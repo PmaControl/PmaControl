@@ -1,4 +1,7 @@
 <?php
+
+use App\Library\Security\CsrfRender;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -7,8 +10,8 @@
 
 use Glial\Html\Form\Form;
 
-$checkDataOnClusterCsrfField = htmlspecialchars((string) ($data['check_data_on_cluster_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$checkDataOnClusterCsrfToken = htmlspecialchars((string) ($data['check_data_on_cluster_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$checkDataOnClusterCsrfField = CsrfRender::field($data, 'check_data_on_cluster');
+$checkDataOnClusterCsrfToken = CsrfRender::token($data, 'check_data_on_cluster');
 
 function setColor($type)
 {

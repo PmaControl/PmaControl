@@ -1,6 +1,9 @@
 <?php
-$formatIndexCsrfField = htmlspecialchars((string) ($data['format_index_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$formatIndexCsrfToken = htmlspecialchars((string) ($data['format_index_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+
+use App\Library\Security\CsrfRender;
+
+$formatIndexCsrfField = CsrfRender::field($data, 'format_index');
+$formatIndexCsrfToken = CsrfRender::token($data, 'format_index');
 $formatSql = htmlspecialchars((string) ($data['sql'] ?? ''), ENT_QUOTES, 'UTF-8');
 ?>
 <form action="" method="post">

@@ -1,14 +1,8 @@
 <?php
-$userPasswordRecoverCsrfField = htmlspecialchars(
-    (string)($data['user_password_recover_csrf_field'] ?? '_csrf_token'),
-    ENT_QUOTES,
-    'UTF-8'
-);
-$userPasswordRecoverCsrfToken = htmlspecialchars(
-    (string)($data['user_password_recover_csrf_token'] ?? ''),
-    ENT_QUOTES,
-    'UTF-8'
-);
+use App\Library\Security\CsrfRender;
+
+$userPasswordRecoverCsrfField = CsrfRender::field($data, 'user_password_recover');
+$userPasswordRecoverCsrfToken = CsrfRender::token($data, 'user_password_recover');
 
 echo '<div style="width:1000px; margin-left:auto; margin-right:auto; padding:0" class="well">';
 

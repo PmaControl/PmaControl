@@ -1,8 +1,10 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 use Glial\Html\Form\Form;
-$serverSettingsCsrfField = htmlspecialchars((string)($data['server_settings_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$serverSettingsCsrfToken = htmlspecialchars((string)($data['server_settings_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$serverSettingsCsrfField = CsrfRender::field($data, 'server_settings');
+$serverSettingsCsrfToken = CsrfRender::token($data, 'server_settings');
 
 /*
  * To change this license header, choose License Headers in Project Properties.

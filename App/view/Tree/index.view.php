@@ -1,4 +1,7 @@
 <?php
+
+use App\Library\Security\CsrfRender;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -7,9 +10,7 @@
 
 use Glial\Html\Form\Form;
 
-$treeUpdateCsrfField = htmlspecialchars((string) ($data['tree_update_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$treeUpdateCsrfToken = htmlspecialchars((string) ($data['tree_update_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
-$treeUpdateCsrfAttributes = ' data-csrf-field="' . $treeUpdateCsrfField . '" data-csrf-token="' . $treeUpdateCsrfToken . '"';
+$treeUpdateCsrfAttributes = CsrfRender::attributes($data, 'tree_update');
 ?>
 
 <form action="" method="get">

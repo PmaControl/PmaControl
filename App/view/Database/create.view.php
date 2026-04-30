@@ -1,4 +1,7 @@
 <?php
+
+use App\Library\Security\CsrfRender;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -7,8 +10,8 @@
 
 use Glial\Html\Form\Form;
 
-$databaseCreateCsrfField = htmlspecialchars((string) ($data['database_create_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$databaseCreateCsrfToken = htmlspecialchars((string) ($data['database_create_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$databaseCreateCsrfField = CsrfRender::field($data, 'database_create');
+$databaseCreateCsrfToken = CsrfRender::token($data, 'database_create');
 
 if (!empty($data['compte'])) {
     echo '<ul class="list-group">';

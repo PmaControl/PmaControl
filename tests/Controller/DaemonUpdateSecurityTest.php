@@ -134,8 +134,7 @@ final class DaemonUpdateSecurityTest extends TestCase
         $this->assertStringNotContainsString('$_POST[\'name\']', $updateBody);
         $this->assertStringNotContainsString('$_POST[\'value\']', $updateBody);
         $this->assertStringNotContainsString('sql_real_escape_string($_POST[\'pk\'])', $updateBody);
-        $this->assertStringContainsString('data-csrf-field="', $view);
-        $this->assertStringContainsString('data-csrf-token="', $view);
+        $this->assertStringContainsString("CsrfRender::attributes(\$data, 'daemon_update')", $view);
         $this->assertStringContainsString('daemon/update', $view);
         $this->assertStringContainsString('params[csrfField] = csrfToken;', $javascript);
     }

@@ -1,5 +1,7 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 $payload = $data['payload'] ?? [];
 $context = $payload['context'] ?? [];
 $proc = $payload['proc'] ?? [];
@@ -93,7 +95,7 @@ function kpi_process_duration($value): string
             <span class="kp-pill <?= !empty($proc['alive']) ? 'up' : 'down' ?>"><?= !empty($proc['alive']) ? 'ALIVE' : 'DEAD' ?></span>
             <?php if (!empty($kill['available'])): ?>
                 <form method="post" action="<?= kpi_process_h(LINK.'kpi/process/'.$pid.'/kill') ?>" onsubmit="return confirm('Mark this worker for safe kill?');" style="margin:0">
-                    <input type="hidden" name="<?= kpi_process_h($data['kill_csrf_field'] ?? '_csrf_token') ?>" value="<?= kpi_process_h($data['kill_csrf_token'] ?? '') ?>">
+                    <?= CsrfRender::hiddenInput($data, 'kill') ?>
                     <input type="hidden" name="pid" value="<?= kpi_process_h($pid) ?>">
                     <input type="hidden" name="start_time_ticks" value="<?= kpi_process_h($proc['start_time_ticks'] ?? '') ?>">
                     <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-stop"></i> Mark safe kill</button>

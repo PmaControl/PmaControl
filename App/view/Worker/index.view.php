@@ -1,9 +1,10 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 use \Glial\Synapse\FactoryController;
 
-$worker_update_csrf_token = htmlspecialchars((string) ($data['worker_update_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
-$worker_update_csrf_field = htmlspecialchars((string) ($data['worker_update_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$workerUpdateCsrfAttributes = CsrfRender::attributes($data, 'worker_update');
 
  if (empty($_GET['ajax'])) {
 
@@ -40,8 +41,8 @@ foreach ($data['worker'] as $daemon) {
     echo '<td>'.$daemon['name'].'</td>';
    // echo '<td class="line-edit" data-name="thread_concurency" data-pk="'.$daemon['id'].'" data-type="text" data-url="'.LINK.'daemon/update" data-title="Enter class">'.$daemon['thread_concurency'].'</td>';
   //  echo '<td>'.$daemon['max_delay'].'</td>';
-    echo '<td class="line-edit" data-name="nb_worker" data-pk="'.$daemon['id'].'" data-type="text" data-url="'.LINK.'worker/update" data-title="Enter class" data-csrf-field="'.$worker_update_csrf_field.'" data-csrf-token="'.$worker_update_csrf_token.'">'.$daemon['nb_worker'].'</td>';
-    echo '<td class="line-edit" data-name="queue_number" data-pk="'.$daemon['id'].'" data-type="text" data-url="'.LINK.'worker/update" data-title="Enter class" data-csrf-field="'.$worker_update_csrf_field.'" data-csrf-token="'.$worker_update_csrf_token.'">'.$daemon['queue_number'].'</td>';
+    echo '<td class="line-edit" data-name="nb_worker" data-pk="'.$daemon['id'].'" data-type="text" data-url="'.LINK.'worker/update" data-title="Enter class"'.$workerUpdateCsrfAttributes.'>'.$daemon['nb_worker'].'</td>';
+    echo '<td class="line-edit" data-name="queue_number" data-pk="'.$daemon['id'].'" data-type="text" data-url="'.LINK.'worker/update" data-title="Enter class"'.$workerUpdateCsrfAttributes.'>'.$daemon['queue_number'].'</td>';
   //  echo '<td>'.$daemon['nb_msg'].'</td>';
   //  echo '<td>'.$daemon['queue_number'].'</td>';
 

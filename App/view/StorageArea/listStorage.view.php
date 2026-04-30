@@ -1,4 +1,7 @@
 <?php
+
+use App\Library\Security\CsrfRender;
+
 \Glial\Synapse\FactoryController::addNode("StorageArea", "menu");
 
 function format($bytes, $decimals = 2)
@@ -8,9 +11,7 @@ function format($bytes, $decimals = 2)
     return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor))." ".@$sz[$factor]."o";
 }
 
-$storageAreaUpdateCsrfField = htmlspecialchars((string) ($data['storage_area_update_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$storageAreaUpdateCsrfToken = htmlspecialchars((string) ($data['storage_area_update_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
-$storageAreaUpdateCsrfAttributes = ' data-csrf-field="'.$storageAreaUpdateCsrfField.'" data-csrf-token="'.$storageAreaUpdateCsrfToken.'"';
+$storageAreaUpdateCsrfAttributes = CsrfRender::attributes($data, 'storage_area_update');
 ?>
 <div class="panel panel-primary">
     <div class="panel-heading">

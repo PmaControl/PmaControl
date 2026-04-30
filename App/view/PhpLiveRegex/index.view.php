@@ -1,7 +1,10 @@
 <?php
+
+use App\Library\Security\CsrfRender;
+
 $data = $data ?? array();
-$phpLiveRegexCsrfField = htmlspecialchars((string) ($data['phpliveregex_evaluate_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$phpLiveRegexCsrfToken = htmlspecialchars((string) ($data['phpliveregex_evaluate_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$phpLiveRegexCsrfField = CsrfRender::field($data, 'phpliveregex_evaluate');
+$phpLiveRegexCsrfToken = CsrfRender::token($data, 'phpliveregex_evaluate');
 ?>
 <div class="container" id="php-live-regex" data-csrf-field="<?= $phpLiveRegexCsrfField ?>" data-csrf-token="<?= $phpLiveRegexCsrfToken ?>">
     <div class="row well well-sm" style="padding-bottom: 18px">

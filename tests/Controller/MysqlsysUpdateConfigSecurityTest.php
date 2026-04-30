@@ -150,8 +150,7 @@ final class MysqlsysUpdateConfigSecurityTest extends TestCase
         $this->assertStringContainsString('evaluateUpdateConfigRequest($_POST, $_SERVER, $_SESSION, IS_CLI)', $controller);
 
         $this->assertStringContainsString('$mysqlsysUpdateConfigCsrfAttributes', $view);
-        $this->assertStringContainsString('data-csrf-field="', $view);
-        $this->assertStringContainsString('data-csrf-token="', $view);
+        $this->assertStringContainsString("CsrfRender::attributes(\$data, 'mysqlsys_update_config')", $view);
         $this->assertStringContainsString("data-url=\"' . LINK . 'mysqlsys/updateConfig\"", $view);
 
         $this->assertStringContainsString('params[csrfField] = csrfToken;', $javascript);

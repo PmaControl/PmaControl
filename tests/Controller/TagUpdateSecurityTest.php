@@ -139,8 +139,7 @@ final class TagUpdateSecurityTest extends TestCase
         $this->assertStringContainsString('private const TAG_UPDATE_FIELDS', $tagController);
 
         $this->assertStringContainsString('$tagUpdateCsrfAttributes', $tagView);
-        $this->assertStringContainsString('data-csrf-field="', $tagView);
-        $this->assertStringContainsString('data-csrf-token="', $tagView);
+        $this->assertStringContainsString("CsrfRender::attributes(\$data, 'tag_update')", $tagView);
         $this->assertStringContainsString('tag/update', $tagView);
         $this->assertStringContainsString('params[csrfField] = csrfToken;', $javascript);
     }

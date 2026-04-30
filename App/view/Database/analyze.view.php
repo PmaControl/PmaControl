@@ -5,13 +5,14 @@
  * and open the template in the editor.
  */
 
+use App\Library\Security\CsrfRender;
 use Glial\Html\Form\Form;
 
 ?>
 
 <form action="<?= LINK ?>database/analyze" method="POST">
     <?= Form::input("analyze", "analyze", array("type" => "hidden", "value"=>"1")); ?>
-    <input type="hidden" name="<?= $data['database_analyze_csrf_field'] ?>" value="<?= $data['database_analyze_csrf_token'] ?>" />
+    <?= CsrfRender::hiddenInput($data, 'database_analyze') ?>
     <div class="panel panel-primary">
         <div class="panel-heading">
             <h3 class="panel-title"><?= __('Automatic updating indexes statistics') ?> (ANALYZE TABLE `XXXX`)</h3>

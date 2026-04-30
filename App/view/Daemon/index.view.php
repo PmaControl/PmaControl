@@ -1,10 +1,10 @@
 <?php
 
+use App\Library\Security\CsrfRender;
 
 use \Glial\Synapse\FactoryController;
 
-$daemon_update_csrf_token = htmlspecialchars((string) ($data['daemon_update_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
-$daemon_update_csrf_field = htmlspecialchars((string) ($data['daemon_update_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
+$daemonUpdateCsrfAttributes = CsrfRender::attributes($data, 'daemon_update');
 
 if (empty($_GET['ajax'])) {
     echo '<div id="daemon-index">';
@@ -35,7 +35,7 @@ foreach ($data['daemon'] as $daemon) {
     echo '<td>'.$daemon['date'].'</td>';
    // echo '<td class="line-edit" data-name="thread_concurency" data-pk="'.$daemon['id'].'" data-type="text" data-url="'.LINK.'daemon/update" data-title="Enter class">'.$daemon['thread_concurency'].'</td>';
   //  echo '<td>'.$daemon['max_delay'].'</td>';
-    echo '<td class="line-edit" data-name="refresh_time" data-pk="'.$daemon['id'].'" data-type="text" data-url="'.LINK.'daemon/update" data-title="Enter class" data-csrf-field="'.$daemon_update_csrf_field.'" data-csrf-token="'.$daemon_update_csrf_token.'">'.$daemon['refresh_time'].'</td>';
+    echo '<td class="line-edit" data-name="refresh_time" data-pk="'.$daemon['id'].'" data-type="text" data-url="'.LINK.'daemon/update" data-title="Enter class"'.$daemonUpdateCsrfAttributes.'>'.$daemon['refresh_time'].'</td>';
   //  echo '<td class="line-edit" data-name="queue_number" data-pk="'.$daemon['id'].'" data-type="text" data-url="'.LINK.'daemon/update" data-title="Enter class">'.$daemon['queue_number'].'</td>';
   //  echo '<td>'.$daemon['nb_msg'].'</td>';
     if ($daemon['is_enabled']) {

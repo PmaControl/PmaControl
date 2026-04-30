@@ -166,8 +166,7 @@ final class ProxySqlUpdateFieldSecurityTest extends TestCase
         $this->assertStringNotContainsString('$(".line-edit").editable();', $controller);
 
         $this->assertStringContainsString('$proxySqlUpdateFieldCsrfAttributes', $view);
-        $this->assertStringContainsString('data-csrf-field="', $view);
-        $this->assertStringContainsString('data-csrf-token="', $view);
+        $this->assertStringContainsString("CsrfRender::attributes(\$data, 'proxysql_update_field')", $view);
         $this->assertStringContainsString("LINK.'ProxySQL/updateField/'", $view);
 
         $this->assertStringContainsString('params[csrfField] = csrfToken;', $javascript);

@@ -1,10 +1,12 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 use Glial\Html\Form\Form;
 
 $data = $data ?? array();
-$proxySqlAddCsrfField = htmlspecialchars((string) ($data['proxysql_add_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$proxySqlAddCsrfToken = htmlspecialchars((string) ($data['proxysql_add_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$proxySqlAddCsrfField = CsrfRender::field($data, 'proxysql_add');
+$proxySqlAddCsrfToken = CsrfRender::token($data, 'proxysql_add');
 
 if (empty($_GET['ssh']['password'])) {
     $_GET['ssh']['password'] = 22;
