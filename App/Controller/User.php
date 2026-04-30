@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Library\Security\AuthToken;
 use App\Library\Security\CsrfGuard;
 use App\Library\Security\SessionFixationGuard;
 use Glial\Security\Csrf;
@@ -54,6 +55,8 @@ class User extends Controller {
     private const USER_MAILBOX_CSRF_SCOPE = 'user.mailbox';
     private const USER_LOST_PASSWORD_CSRF_SCOPE = 'user.lostPassword';
     private const USER_CONNECTION_CSRF_SCOPE = 'user.connection';
+    private const USER_CONFIRM_TOKEN_TTL_SECONDS = 604800;
+    private const USER_RESET_TOKEN_TTL_SECONDS = 3600;
 
 /**
  * Prepare user state through `before`.
@@ -463,7 +466,10 @@ class User extends Controller {
             $data['user_main']['date_last_login'] = date("Y-m-d H:i:s");
             $data['user_main']['date_last_connected'] = date("Y-m-d H:i:s");
             $data['user_main']['date_created'] = date("c");
-            $data['user_main']['key_auth'] = sha1(uniqid());
+            $confirmationToken = AuthToken::generateToken();
+            $data['user_main']['key_auth'] = '';
+            $data['user_main']['confirm_token_hash'] = AuthToken::hashToken($confirmationToken);
+            $data['user_main']['confirm_token_expires_at'] = AuthToken::expiresAt(self::USER_CONFIRM_TOKEN_TTL_SECONDS);
             $data['user_main']['name'] = mb_convert_case($data['user_main']['name'], MB_CASE_UPPER, "UTF-8");
             $data['user_main']['id_group'] = 2;
 
@@ -505,16 +511,21 @@ class User extends Controller {
 
 
                 $subject = __("Confirm your registration on ") . SITE_NAME;
+                $confirmationUrl = AuthToken::buildHttpsUrl(
+                    $_SERVER,
+                    LINK . 'user/confirmation/' . rawurlencode($data['user_main']['email']) . "/" . $confirmationToken
+                );
+                $confirmationUrlHtml = htmlspecialchars($confirmationUrl, ENT_QUOTES, 'UTF-8');
 
                 $msg = __('Hello') . ' ' . $data['user_main']['firstname'] . ' ' . $data['user_main']['name'] . ' !<br />
-				' . __('Thank you for registering on ') . ' <a href="' . SITE_URL . '">' . SITE_NAME . '</a><br />
-				<br />
-				' . __("To finalise your registration, please click on the confirmation link below. Once you've done this, your registration will be complete.") . '<br />
-				' . __('Please') . ' <a href="' . 'http://' . $_SERVER['SERVER_NAME'] . LINK . 'user/confirmation/' . $data['user_main']['email'] . "/" . $data['user_main']['key_auth'] . '"> ' . __('click here') . '</a> ' . __('to confirm your registration
-				or copy and paste the following URL into your browser:') . '
-				' . 'http://' . $_SERVER['SERVER_NAME'] . LINK . 'user/confirmation/' . $data['user_main']['email'] . '/' . $data['user_main']['key_auth'] . '<br />
-                <br />
-				' . __('Many thanks');
+					' . __('Thank you for registering on ') . ' <a href="' . SITE_URL . '">' . SITE_NAME . '</a><br />
+					<br />
+					' . __("To finalise your registration, please click on the confirmation link below. Once you've done this, your registration will be complete.") . '<br />
+					' . __('Please') . ' <a href="' . $confirmationUrlHtml . '"> ' . __('click here') . '</a> ' . __('to confirm your registration
+					or copy and paste the following URL into your browser:') . '
+					' . $confirmationUrlHtml . '<br />
+	                <br />
+					' . __('Many thanks');
 
 
                 $msg = I18n::getTranslation($msg);
@@ -636,18 +647,26 @@ class User extends Controller {
 
                 $recover = array();
                 $recover['user_main']['id'] = $ob->id;
-                $recover['user_main']['key_auth'] = sha1(uniqid());
+                $resetToken = AuthToken::generateToken();
+                $recover['user_main']['key_auth'] = '';
+                $recover['user_main']['reset_token_hash'] = AuthToken::hashToken($resetToken);
+                $recover['user_main']['reset_token_expires_at'] = AuthToken::expiresAt(self::USER_RESET_TOKEN_TTL_SECONDS);
                 if (!$db->sql_save($recover)) {
                     die('problem with set key_auth');
                 }
 
                 $subject = __("Instructions to Recover your password on : ") . " " . SITE_NAME . "";
+                $resetUrl = AuthToken::buildHttpsUrl(
+                    $_SERVER,
+                    LINK . 'user/password_recover/' . rawurlencode($ob->email) . '/' . $resetToken
+                );
+                $resetUrlHtml = htmlspecialchars($resetUrl, ENT_QUOTES, 'UTF-8');
                 $msg = __('Hello') . ' ' . $ob->firstname . ' ' . $ob->name . ' !<br />
-				<br />
-				' . __("To finalise of recover your password, please click on the following link :") . '<br />
-				' . 'http://' . $_SERVER['SERVER_NAME'] . '/en/' . 'user/password_recover/' . $ob->email . '/' . $recover['user_main']['key_auth'] . '<br />
-                <br />
-				' . __('Many thanks');
+					<br />
+					' . __("To finalise of recover your password, please click on the following link :") . '<br />
+					' . $resetUrlHtml . '<br />
+	                <br />
+					' . __('Many thanks');
 
                 $subject = I18n::getTranslation($subject);
                 $msg = I18n::getTranslation($msg);
@@ -761,12 +780,18 @@ class User extends Controller {
             }
         }
 
-        $sql = "SELECT * FROM user_main WHERE email='" . $db->sql_real_escape_string($param[0]) . "'
-				AND key_auth='" . $db->sql_real_escape_string($param[1]) . "'";
+        $email = rawurldecode((string)($param[0] ?? ''));
+        $token = rawurldecode((string)($param[1] ?? ''));
+        $sql = "SELECT * FROM user_main WHERE email='" . $db->sql_real_escape_string($email) . "'";
 
         $res = $db->sql_query($sql);
+        $ob = $db->sql_num_rows($res) === 1 ? $db->sql_fetch_object($res) : null;
 
-        if ($db->sql_num_rows($res) === 0) {
+        if ($ob === null || !AuthToken::verifyToken(
+            $token,
+            $ob->reset_token_hash ?? '',
+            $ob->reset_token_expires_at ?? null
+        )) {
             $title = I18n::getTranslation(__("Error"));
             $msg = I18n::getTranslation(__("This link to recover your password is not valid anymore. Make a new request."));
             set_flash("error", $title, $msg);
@@ -775,47 +800,17 @@ class User extends Controller {
             exit;
         } else {
             if ($isPost) {
+                $tmp = array();
+                $tmp['user_main']['id'] = $ob->id;
+                $tmp['user_main']['key_auth'] = "";
+                $tmp['user_main']['reset_token_hash'] = null;
+                $tmp['user_main']['reset_token_expires_at'] = null;
+                $tmp['user_main']['password'] = $this->di['auth']->hash_password($ob->login, $outcome['password']);
+                $_POST['user_main']['password2'] = $this->di['auth']->hash_password($ob->login, $outcome['password']);
 
-                $ob = $db->sql_fetch_object($res);
+                $password_non_hash = $outcome['password'];
 
-                $recover = array();
-                $recover['user_main']['id'] = $ob->id;
-                $recover['user_main']['password'] = $outcome['password'];
-
-
-                if ($db->sql_save($recover)) {
-                    $tmp = array();
-                    $tmp['user_main']['id'] = $ob->id;
-                    $tmp['user_main']['key_auth'] = "";
-                    $tmp['user_main']['password'] = $this->di['auth']->hash_password($ob->login, $outcome['password']);
-                    $_POST['user_main']['password2'] = $this->di['auth']->hash_password($ob->login, $outcome['password']);
-
-
-                    $password_non_hash = $outcome['password'];
-
-                    if (!$db->sql_save($tmp)) {
-                        $error = $db->sql_error();
-                        print_r($error);
-                        print_r($tmp);
-
-                        die('problem with delete key_auth');
-                    }
-
-                    /*
-                      debug($ob->login);
-                      debug($password_non_hash);
-                      exit;
-                     */
-                    $this->establishSession($ob->login, $password_non_hash);
-
-
-                    $title = I18n::getTranslation(__("Success"));
-                    $msg = I18n::getTranslation(__("Your password has been updated successfully"));
-
-                    set_flash("success", $title, $msg);
-                    header("location: " . LINK . ROUTE_DEFAULT);
-                    exit;
-                } else {
+                if (!$db->sql_save($tmp)) {
                     $error = $db->sql_error();
                     $_SESSION['ERROR'] = $error;
 
@@ -826,6 +821,21 @@ class User extends Controller {
                     header("location: " . LINK . "user/password_recover/" . $param[0] . "/" . $param[1]);
                     exit;
                 }
+
+                /*
+                  debug($ob->login);
+                  debug($password_non_hash);
+                  exit;
+                 */
+                $this->establishSession($ob->login, $password_non_hash);
+
+
+                $title = I18n::getTranslation(__("Success"));
+                $msg = I18n::getTranslation(__("Your password has been updated successfully"));
+
+                set_flash("success", $title, $msg);
+                header("location: " . LINK . ROUTE_DEFAULT);
+                exit;
             }
         }
     }
@@ -988,18 +998,29 @@ class User extends Controller {
         $db = Sgbd::sql(DB_DEFAULT);
 
 
-        $sql = "SELECT * FROM user_main WHERE email = '" . $db->sql_real_escape_string($data[0]) . "'";
+        $email = rawurldecode((string)($data[0] ?? ''));
+        $token = rawurldecode((string)($data[1] ?? ''));
+        $sql = "SELECT * FROM user_main WHERE email = '" . $db->sql_real_escape_string($email) . "'";
         $res = $db->sql_query($sql);
 
         if ($db->sql_num_rows($res) == 1) {
             $ob = $db->sql_fetch_object($res);
 
-            if (($ob->key_auth == $data[1]) && !empty($ob->key_auth)) {
+            if (AuthToken::verifyToken(
+                $token,
+                $ob->confirm_token_hash ?? '',
+                $ob->confirm_token_expires_at ?? null
+            )) {
                 $type = "success";
                 $title = "New user account confirmed !";
                 $msg = "Your registration is now complete !";
 
-                $sql = "UPDATE user_main SET is_valid = 1, key_auth ='',id_group=2  WHERE email = '" . $db->sql_real_escape_string($data[0]) . "'";
+                $sql = "UPDATE user_main
+                    SET is_valid = 1,
+                        key_auth = '',
+                        confirm_token_hash = NULL,
+                        confirm_token_expires_at = NULL
+                    WHERE id = " . (int) $ob->id;
                 $db->sql_query($sql);
 
 /**
