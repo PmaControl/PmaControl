@@ -39,6 +39,7 @@ use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use App\Library\Security\CookieSecurity;
+use App\Library\Security\RouteExposurePolicy;
 use Glial\Synapse\Glial;
 
 $TIME_START = microtime(true);
@@ -211,6 +212,21 @@ if (IS_CLI) {
     $_SYSTEM['controller'] = \Glial\Utility\Inflector::camelize($url['controller']);
     $_SYSTEM['action']     = $url['action'];
     $_SYSTEM['param']      = $url['param'];
+
+    $routeExposureDenialReason = RouteExposurePolicy::denialReason($_SYSTEM['controller'], $_SYSTEM['action']);
+    if ($routeExposureDenialReason !== null) {
+        $blockedResource = RouteExposurePolicy::resourceName($_SYSTEM['controller'], $_SYSTEM['action']);
+        $log->warning('Blocked non-exposed controller route', [
+            'resource' => $blockedResource,
+            'reason' => $routeExposureDenialReason,
+            'remote_addr' => $_SERVER['REMOTE_ADDR'] ?? '',
+        ]);
+
+        set_flash("error", __("Error 404"),
+            __("Page not found")." : ".__("Sorry, the page you requested :")." \"".$blockedResource."\" ".__("is not on this server. Please contact us if you have questions or concerns"));
+        header("location: ".LINK."ErrorWeb/error404/".$_SYSTEM['controller']."/".$_SYSTEM['action']);
+        Glial::getOut();
+    }
 
     $acl = new Acl(CONFIG."acl.config.ini");
 
