@@ -16,7 +16,11 @@ use \Glial\Synapse\Controller;
 use \Glial\Cli\Color;
 use \App\Library\Debug;
 use \App\Library\Mysql;
+use App\Library\Http\HttpResponse;
 use App\Library\Security\CsrfGuard;
+use App\Library\Security\Identifier;
+use App\Library\Security\PositiveIntegerSelection;
+use App\Library\Security\SafeRedirect;
 use Glial\Security\Csrf;
 
 /**
@@ -39,6 +43,7 @@ class ForeignKey extends Controller
     CONST BEGIN = "id%";
     CONST END = "%id";
     private const FOREIGN_KEY_ADD_CSRF_SCOPE = 'foreign_key.add';
+    public const FOREIGN_KEY_MUTATION_CSRF_SCOPE = 'foreign_key.mutation';
     private const FOREIGN_KEY_ADD_FIELD_MAX_LENGTH = 64;
 
 /**
@@ -75,15 +80,17 @@ class ForeignKey extends Controller
     {
         $this->view = false;
         Debug::parseDebug($param);
-        //$id_mysql_server = $param[0];
 
-        $this->autoId($param);
+        $request = self::evaluateForeignKeyContextMutationRequest($param, $_POST, $_SERVER, $_SESSION, IS_CLI);
+        if (!$request['allowed']) {
+            HttpResponse::sendOutcome($request);
+            return;
+        }
+
+        $this->autoId($request['param']);
 
         if ( ! IS_CLI){
-
-            $location = $_SERVER['HTTP_REFERER'];
-            header("location: $location");
-            //exit;
+            header('location: '.SafeRedirect::refererOrFallback($_SERVER, self::foreignKeyFallbackUrl($request['param'])));
         }
     }
 
@@ -112,15 +119,17 @@ class ForeignKey extends Controller
     {
         $this->view = false;
         Debug::parseDebug($param);
-        //$id_mysql_server = $param[0];
 
-        $this->importRealForeignKey($param);
+        $request = self::evaluateForeignKeyContextMutationRequest($param, $_POST, $_SERVER, $_SESSION, IS_CLI);
+        if (!$request['allowed']) {
+            HttpResponse::sendOutcome($request);
+            return;
+        }
+
+        $this->importRealForeignKey($request['param']);
 
         if ( ! IS_CLI){
-
-            $location = $_SERVER['HTTP_REFERER'];
-            header("location: $location");
-            //exit;
+            header('location: '.SafeRedirect::refererOrFallback($_SERVER, self::foreignKeyFallbackUrl($request['param'])));
         }
     }
 
@@ -149,9 +158,11 @@ class ForeignKey extends Controller
     {
         Debug::parseDebug($param);
 
-        $id_mysql_server = $param[0];
-        $database = $param[0];
-        
+        $id_mysql_server = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        if ($id_mysql_server === null) {
+            return;
+        }
+
         $default         = Sgbd::sql(DB_DEFAULT);
 
         $sql = "DELETE FROM foreign_key_virtual WHERE (id_mysql_server ='".$id_mysql_server."' OR id_mysql_server__link=".$id_mysql_server.")
@@ -460,8 +471,16 @@ class ForeignKey extends Controller
         Debug::parseDebug($param);
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $id_mysql_server = $param[0];
-        $database = $param[1];
+        $route = self::normalizeServerDatabaseRoute($param);
+        if ($route === null) {
+            $this->view = false;
+            HttpResponse::sendError(400, 'Invalid foreign-key route');
+            return;
+        }
+
+        $id_mysql_server = $route['id_mysql_server'];
+        $database = $route['database'];
+        $param = $route['param'];
 
         $sql = "SELECT * FROM foreign_key_virtual WHERE id_mysql_server = ".$id_mysql_server." 
         AND (constraint_schema ='".$database."' OR referenced_schema ='".$database."')";
@@ -475,7 +494,10 @@ class ForeignKey extends Controller
         }
 
         $data['real_fk'] = Mysql::getRealForeignKey($param);
+        $data['param'] = $param;
+        $data = self::withForeignKeyMutationCsrf($data);
         $this->set('data', $data);
+        $this->set('param', $param);
     }
 
 
@@ -930,13 +952,19 @@ class ForeignKey extends Controller
         $this->view = false;
         Debug::parseDebug($param);
 
-        $id_foreign_key_virtual = $param[0];
+        $request = self::evaluateForeignKeyIdMutationRequest($param, $_POST, $_SERVER, $_SESSION, IS_CLI);
+        if (!$request['allowed']) {
+            HttpResponse::sendOutcome($request);
+            return;
+        }
+
+        $id_foreign_key_virtual = $request['id'];
 
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT id_mysql_server,constraint_schema,constraint_table, constraint_column,
         referenced_schema, referenced_table, referenced_column
-        FROM `foreign_key_virtual` WHERE id =".$id_foreign_key_virtual."";
+        FROM `foreign_key_virtual` WHERE id =".(int) $id_foreign_key_virtual."";
 
         $res = $db->sql_query($sql);
 
@@ -947,8 +975,7 @@ class ForeignKey extends Controller
         }
 
         if ( ! IS_CLI){
-            $location = $_SERVER['HTTP_REFERER'];
-            header("location: $location");
+            header('location: '.SafeRedirect::refererOrFallback($_SERVER, LINK.'ForeignKey/index'));
         }
     }
 
@@ -1071,7 +1098,7 @@ class ForeignKey extends Controller
             return null;
         }
 
-        $idMysqlServer = self::normalizePositiveInteger($raw['id_mysql_server'] ?? null);
+        $idMysqlServer = PositiveIntegerSelection::normalizeSingle($raw['id_mysql_server'] ?? null);
         $databaseName = self::normalizeBoundedString($raw['database_name'] ?? null);
         $prefix = self::normalizeBoundedString($raw['prefix'] ?? null);
         if ($idMysqlServer === null || $databaseName === null || $prefix === null) {
@@ -1083,20 +1110,6 @@ class ForeignKey extends Controller
             'database_name' => $databaseName,
             'prefix' => $prefix,
         ];
-    }
-
-    private static function normalizePositiveInteger($value): ?int
-    {
-        if (!is_scalar($value)) {
-            return null;
-        }
-
-        $id = trim((string) $value);
-        if (!ctype_digit($id) || (int) $id < 1) {
-            return null;
-        }
-
-        return (int) $id;
     }
 
     private static function normalizeBoundedString($value): ?string
@@ -1132,6 +1145,216 @@ class ForeignKey extends Controller
         echo $message;
     }
 
+    public static function evaluateForeignKeyIdMutationRequest(
+        array $param,
+        array $post,
+        array $server,
+        array $session,
+        bool $isCli = false
+    ): array {
+        if (!$isCli) {
+            if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::FOREIGN_KEY_MUTATION_CSRF_SCOPE)) {
+                return self::buildForeignKeyRequestOutcome(false, $failure['status'], $failure['body'], $failure['headers']);
+            }
+        }
+
+        $id = self::resolvePositiveIntegerMutationId($param, $post, $isCli);
+        if ($id === null) {
+            return self::buildForeignKeyRequestOutcome(false, 400, 'Invalid foreign-key id');
+        }
+
+        return self::buildForeignKeyRequestOutcome(true, 200, '', [], $id, [$id]);
+    }
+
+    public static function evaluateForeignKeyContextMutationRequest(
+        array $param,
+        array $post,
+        array $server,
+        array $session,
+        bool $isCli = false
+    ): array {
+        if (!$isCli) {
+            if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::FOREIGN_KEY_MUTATION_CSRF_SCOPE)) {
+                return self::buildForeignKeyRequestOutcome(false, $failure['status'], $failure['body'], $failure['headers']);
+            }
+        }
+
+        $context = self::resolveMutationContext($param, $post, $isCli);
+        if ($context === null) {
+            return self::buildForeignKeyRequestOutcome(false, 400, 'Invalid foreign-key route');
+        }
+
+        return self::buildForeignKeyRequestOutcome(
+            true,
+            200,
+            '',
+            [],
+            $context['id_mysql_server'],
+            $context['param']
+        );
+    }
+
+    public static function normalizeServerDatabaseRoute(array $param): ?array
+    {
+        $idMysqlServer = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        $database = self::normalizeDatabaseName($param[1] ?? null);
+        if ($idMysqlServer === null || $database === null) {
+            return null;
+        }
+
+        return [
+            'id_mysql_server' => $idMysqlServer,
+            'database' => $database,
+            'param' => [$idMysqlServer, $database],
+        ];
+    }
+
+    private static function resolvePositiveIntegerMutationId(array $param, array $post, bool $isCli): ?int
+    {
+        if ($isCli) {
+            return PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        }
+
+        $postId = PositiveIntegerSelection::normalizeSingle($post['id'] ?? null);
+        if ($postId === null) {
+            return null;
+        }
+
+        if (array_key_exists(0, $param) && $param[0] !== '' && $param[0] !== null) {
+            $routeId = PositiveIntegerSelection::normalizeSingle($param[0]);
+            if ($routeId === null || $routeId !== $postId) {
+                return null;
+            }
+        }
+
+        return $postId;
+    }
+
+    private static function resolveMutationContext(array $param, array $post, bool $isCli): ?array
+    {
+        if ($isCli) {
+            $idMysqlServer = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+            if ($idMysqlServer === null) {
+                return null;
+            }
+
+            $database = array_key_exists(1, $param) && $param[1] !== '' && $param[1] !== null
+                ? self::normalizeDatabaseName($param[1])
+                : null;
+            if (array_key_exists(1, $param) && $param[1] !== '' && $param[1] !== null && $database === null) {
+                return null;
+            }
+
+            return self::buildMutationContext($idMysqlServer, $database);
+        }
+
+        $idMysqlServer = PositiveIntegerSelection::normalizeSingle($post['id_mysql_server'] ?? null);
+        if ($idMysqlServer === null) {
+            return null;
+        }
+
+        $database = array_key_exists('database', $post) && $post['database'] !== ''
+            ? self::normalizeDatabaseName($post['database'])
+            : null;
+        if (array_key_exists('database', $post) && $post['database'] !== '' && $database === null) {
+            return null;
+        }
+
+        if (!self::routeMatchesPostedContext($param, $idMysqlServer, $database)) {
+            return null;
+        }
+
+        return self::buildMutationContext($idMysqlServer, $database);
+    }
+
+    private static function routeMatchesPostedContext(array $param, int $idMysqlServer, ?string $database): bool
+    {
+        if (array_key_exists(0, $param) && $param[0] !== '' && $param[0] !== null) {
+            $routeId = PositiveIntegerSelection::normalizeSingle($param[0]);
+            if ($routeId === null || $routeId !== $idMysqlServer) {
+                return false;
+            }
+        }
+
+        if (array_key_exists(1, $param) && $param[1] !== '' && $param[1] !== null) {
+            $routeDatabase = self::normalizeDatabaseName($param[1]);
+            if ($routeDatabase === null || $routeDatabase !== $database) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static function buildMutationContext(int $idMysqlServer, ?string $database): array
+    {
+        $normalizedParam = [$idMysqlServer];
+        if ($database !== null) {
+            $normalizedParam[] = $database;
+        }
+
+        return [
+            'id_mysql_server' => $idMysqlServer,
+            'database' => $database,
+            'param' => $normalizedParam,
+        ];
+    }
+
+    private static function normalizeDatabaseName($value): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $database = trim((string) $value);
+        if ($database === '' || !Identifier::isDatabaseName($database)) {
+            return null;
+        }
+
+        return $database;
+    }
+
+    private static function buildForeignKeyRequestOutcome(
+        bool $allowed,
+        int $status,
+        string $body,
+        array $headers = [],
+        ?int $id = null,
+        array $param = []
+    ): array {
+        return [
+            'allowed' => $allowed,
+            'status' => $status,
+            'body' => $body,
+            'headers' => $headers,
+            'id' => $id,
+            'param' => $param,
+        ];
+    }
+
+    private static function withForeignKeyMutationCsrf(array $data): array
+    {
+        $data['foreign_key_mutation_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['foreign_key_mutation_csrf_token'] = Csrf::issueToken($_SESSION, self::FOREIGN_KEY_MUTATION_CSRF_SCOPE);
+
+        return $data;
+    }
+
+    private static function foreignKeyFallbackUrl(array $param): string
+    {
+        $idMysqlServer = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        if ($idMysqlServer === null) {
+            return LINK.'ForeignKey/index';
+        }
+
+        $database = array_key_exists(1, $param) ? self::normalizeDatabaseName($param[1]) : null;
+        if ($database === null) {
+            return LINK.'ForeignKey/index';
+        }
+
+        return LINK.'ForeignKey/fill/'.$idMysqlServer.'/'.$database;
+    }
+
 /**
  * Handle foreign key state through `dropForeignKey`.
  *
@@ -1157,16 +1380,21 @@ class ForeignKey extends Controller
     {
         $this->view = false;
         Debug::parseDebug($param);
-        $id_foreign_key_remove_prefix = $param[0];
+        $request = self::evaluateForeignKeyIdMutationRequest($param, $_POST, $_SERVER, $_SESSION, IS_CLI);
+        if (!$request['allowed']) {
+            HttpResponse::sendOutcome($request);
+            return;
+        }
+
+        $id_foreign_key_remove_prefix = $request['id'];
 
         $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "DELETE FROM foreign_key_remove_prefix WHERE id=".$id_foreign_key_remove_prefix."";
+        $sql = "DELETE FROM foreign_key_remove_prefix WHERE id=".(int) $id_foreign_key_remove_prefix."";
 
         $res = $db->sql_query($sql);
 
         if ( ! IS_CLI){
-            $location = $_SERVER['HTTP_REFERER'];
-            header("location: $location");
+            header('location: '.SafeRedirect::refererOrFallback($_SERVER, LINK.'ForeignKey/index'));
         }
 
     }
@@ -1197,16 +1425,21 @@ class ForeignKey extends Controller
         $this->view = false;
         Debug::parseDebug($param);
 
-        $id_foreign_key_virtual = $param[0];
+        $request = self::evaluateForeignKeyIdMutationRequest($param, $_POST, $_SERVER, $_SESSION, IS_CLI);
+        if (!$request['allowed']) {
+            HttpResponse::sendOutcome($request);
+            return;
+        }
+
+        $id_foreign_key_virtual = $request['id'];
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "DELETE FROM `foreign_key_virtual` WHERE id =".$id_foreign_key_virtual."";
+        $sql = "DELETE FROM `foreign_key_virtual` WHERE id =".(int) $id_foreign_key_virtual."";
         $db->sql_query($sql);
 
         if ( ! IS_CLI){
-            $location = $_SERVER['HTTP_REFERER'];
-            header("location: $location");
+            header('location: '.SafeRedirect::refererOrFallback($_SERVER, LINK.'ForeignKey/index'));
         }
     }
 
@@ -1236,13 +1469,18 @@ class ForeignKey extends Controller
 
         Debug::parseDebug($param);
 
-        $id_mysql_server = $param[0];
-        $database        = $param[1];
+        $route = self::normalizeServerDatabaseRoute($param);
+        if ($route === null) {
+            return [];
+        }
+
+        $id_mysql_server = $route['id_mysql_server'];
+        $database        = $route['database'];
 
         $db = Mysql::getDbLink($id_mysql_server);
 
         $sql = "SELECT * FROM `foreign_key_real` WHERE id_mysql_server = ".$id_mysql_server." AND "
-            ." (constraint_schema = '".$database."' OR 	referenced_schema = '".$database."'";
+            ." (constraint_schema = '".$database."' OR 	referenced_schema = '".$database."')";
 
         Debug::sql($sql);
 
@@ -1271,8 +1509,17 @@ class ForeignKey extends Controller
     {
         Debug::parseDebug($param);
 
-        $id_mysql_server = $param[0];
-        $database        = $param[1] ?? false;
+        $id_mysql_server = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        if ($id_mysql_server === null) {
+            return;
+        }
+
+        $database = array_key_exists(1, $param) && $param[1] !== '' && $param[1] !== null
+            ? self::normalizeDatabaseName($param[1])
+            : false;
+        if (array_key_exists(1, $param) && $param[1] !== '' && $param[1] !== null && $database === null) {
+            return;
+        }
 
         $db = Mysql::getDbLink($id_mysql_server);
         $default = Sgbd::sql(DB_DEFAULT);
@@ -1405,8 +1652,16 @@ class ForeignKey extends Controller
         Debug::parseDebug($param);
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $id_mysql_server = $param[0];
-        $database = $param[1];
+        $route = self::normalizeServerDatabaseRoute($param);
+        if ($route === null) {
+            $this->view = false;
+            HttpResponse::sendError(400, 'Invalid foreign-key route');
+            return;
+        }
+
+        $id_mysql_server = $route['id_mysql_server'];
+        $database = $route['database'];
+        $param = $route['param'];
 
         $sql = "SELECT * FROM foreign_key_virtual WHERE id_mysql_server = ".$id_mysql_server." 
         AND (constraint_schema ='".$database."' OR referenced_schema ='".$database."')
@@ -1420,9 +1675,8 @@ class ForeignKey extends Controller
             $data['virtual_fk'][] = $ob;
         }
 
-        $this->set('data', $data);
-
         $data['param'] = $param;
+        $data = self::withForeignKeyMutationCsrf($data);
         $this->set('data', $data);
         $this->set('param', $param);
     }
@@ -1455,8 +1709,16 @@ class ForeignKey extends Controller
         Debug::parseDebug($param);
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $id_mysql_server = $param[0];
-        $database = $param[1];
+        $route = self::normalizeServerDatabaseRoute($param);
+        if ($route === null) {
+            $this->view = false;
+            HttpResponse::sendError(400, 'Invalid foreign-key route');
+            return;
+        }
+
+        $id_mysql_server = $route['id_mysql_server'];
+        $database = $route['database'];
+        $param = $route['param'];
 
         $_GET['mysql_server']['id'] = $id_mysql_server;
 
@@ -1475,6 +1737,7 @@ class ForeignKey extends Controller
    
 
         $data['param'] = $param;
+        $data = self::withForeignKeyMutationCsrf($data);
         $this->set('data', $data);
         $this->set('param', $param);
     }
@@ -1509,8 +1772,16 @@ class ForeignKey extends Controller
         Debug::parseDebug($param);
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $id_mysql_server = $param[0];
-        $database = $param[1];
+        $route = self::normalizeServerDatabaseRoute($param);
+        if ($route === null) {
+            $this->view = false;
+            HttpResponse::sendError(400, 'Invalid foreign-key route');
+            return;
+        }
+
+        $id_mysql_server = $route['id_mysql_server'];
+        $database = $route['database'];
+        $param = $route['param'];
 
         $sql = "SELECT * FROM foreign_key_proposal WHERE id_mysql_server = ".$id_mysql_server." 
         AND (constraint_schema ='".$database."' OR referenced_schema ='".$database."') 
@@ -1525,6 +1796,7 @@ class ForeignKey extends Controller
         }
 
         $data['param'] = $param;
+        $data = self::withForeignKeyMutationCsrf($data);
         $this->set('data', $data);
         $this->set('param', $param);
     }
@@ -1559,8 +1831,16 @@ class ForeignKey extends Controller
         Debug::parseDebug($param);
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $id_mysql_server = $param[0];
-        $database = $param[1];
+        $route = self::normalizeServerDatabaseRoute($param);
+        if ($route === null) {
+            $this->view = false;
+            HttpResponse::sendError(400, 'Invalid foreign-key route');
+            return;
+        }
+
+        $id_mysql_server = $route['id_mysql_server'];
+        $database = $route['database'];
+        $param = $route['param'];
 
         $sql = "SELECT * FROM foreign_key_blacklist WHERE id_mysql_server = ".$id_mysql_server." 
         AND (constraint_schema ='".$database."' OR referenced_schema ='".$database."') 
@@ -1575,6 +1855,7 @@ class ForeignKey extends Controller
         }
 
         $data['param'] = $param;
+        $data = self::withForeignKeyMutationCsrf($data);
         $this->set('data', $data);
         $this->set('param', $param);
     }

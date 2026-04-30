@@ -1,3 +1,26 @@
+<?php
+use App\Library\Security\CsrfRender;
+
+$foreignKeyMutationInput = CsrfRender::hiddenInput($data, 'foreign_key_mutation');
+$escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8', false);
+$foreignKeyActionForm = static function (
+    string $action,
+    string $label,
+    string $labelClass,
+    array $fields
+) use ($foreignKeyMutationInput, $escape): string {
+    $html = '<form method="post" action="'.$action.'" style="display:inline">';
+    $html .= $foreignKeyMutationInput;
+    foreach ($fields as $name => $value) {
+        $html .= '<input type="hidden" name="'.$escape($name).'" value="'.$escape($value).'">';
+    }
+    $html .= '<button type="submit" class="btn btn-link" style="border:0;background:transparent;padding:0">';
+    $html .= '<big><span class="label '.$labelClass.'">'.$escape($label).'</span></big>';
+    $html .= '</button></form>';
+
+    return $html;
+};
+?>
 <div >
   <div style="float:left; padding-right:10px;"><?= \Glial\Synapse\FactoryController::addNode("MysqlServer", "menu", $data['param']); ?></div>
   <div style="float:left; padding-right:10px;"><?= \Glial\Synapse\FactoryController::addNode("MysqlDatabase", "menu", $data['param']); ?></div>
@@ -6,7 +29,12 @@
 <div style="clear:both"></div>
 <br />
 <?php
-echo '<a href="'.LINK.'ForeignKey/import/'.$param[0].'/'.$param[1].'/" role="button" class="btn btn-primary">'.__('Import foreign keys').'</a>';
+echo '<form method="post" action="'.LINK.'ForeignKey/import/" style="display:inline">';
+echo $foreignKeyMutationInput;
+echo '<input type="hidden" name="id_mysql_server" value="'.$escape($param[0]).'">';
+echo '<input type="hidden" name="database" value="'.$escape($param[1]).'">';
+echo '<button type="submit" class="btn btn-primary">'.__('Import foreign keys').'</button>';
+echo '</form>';
 ?>
 <br /><br />
 <div class="panel panel-primary">
@@ -46,8 +74,12 @@ foreach($data['real_fk'] as $key => $fk ){
     echo '<td>'.$fk['referenced_column'].'</td>';
     echo '<td>'.$fk['date_inserted'].'</td>';
     echo '<td>'
-    . '<a href="'.LINK.'ForeignKey/dropForeignKey/'.$fk['id'].'"><big><span class="label label-danger">Remove foreign key</span></big></a>'
-    . '</label>'
+    . $foreignKeyActionForm(
+        LINK.'ForeignKey/dropForeignKey/',
+        'Remove foreign key',
+        'label-danger',
+        ['id' => $fk['id']]
+    )
     . '</td>';
     echo '</tr>';
 

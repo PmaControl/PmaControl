@@ -1,5 +1,32 @@
 <?php
-echo '<a href="'.LINK.'ForeignKey/autoDetect/'.$param[0].'/'.$param[1].'/" role="button" class="btn btn-primary">'.__('Auto generate virtual foreign keys').'</a>';
+use App\Library\Security\CsrfRender;
+
+$foreignKeyMutationInput = CsrfRender::hiddenInput($data, 'foreign_key_mutation');
+$escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8', false);
+$foreignKeyActionForm = static function (
+    string $action,
+    string $label,
+    string $labelClass,
+    array $fields
+) use ($foreignKeyMutationInput, $escape): string {
+    $html = '<form method="post" action="'.$action.'" style="display:inline">';
+    $html .= $foreignKeyMutationInput;
+    foreach ($fields as $name => $value) {
+        $html .= '<input type="hidden" name="'.$escape($name).'" value="'.$escape($value).'">';
+    }
+    $html .= '<button type="submit" class="btn btn-link" style="border:0;background:transparent;padding:0">';
+    $html .= '<big><span class="label '.$labelClass.'">'.$escape($label).'</span></big>';
+    $html .= '</button></form>';
+
+    return $html;
+};
+
+echo '<form method="post" action="'.LINK.'ForeignKey/autoDetect/" style="display:inline">';
+echo $foreignKeyMutationInput;
+echo '<input type="hidden" name="id_mysql_server" value="'.$escape($param[0]).'">';
+echo '<input type="hidden" name="database" value="'.$escape($param[1]).'">';
+echo '<button type="submit" class="btn btn-primary">'.__('Auto generate virtual foreign keys').'</button>';
+echo '</form>';
 ?>
 <br /><br />
 <div class="panel panel-primary">
@@ -39,10 +66,19 @@ foreach($data['virtual_fk'] as $key => $fk ){
     echo '<td>'.$fk['referenced_column'].'</td>';
     echo '<td>'.$fk['date_inserted'].'</td>';
     echo '<td>'
-    . '<a href="'.LINK.'ForeignKey/addForeignKey/'.$fk['id'].'"><big><span class="label label-success">'.__("Add real foreign key").'</span></big></a>'
-            ."&nbsp;"
-    . '<a href="'.LINK.'ForeignKey/rmForeignKey/'.$fk['id'].'"><big><span class="label label-primary cursor">'.__("Remove virtual foreign key").'</span></big><a/>'
-    . '</label>'
+    . $foreignKeyActionForm(
+        LINK.'ForeignKey/addForeignKey/',
+        __("Add real foreign key"),
+        'label-success',
+        ['id' => $fk['id']]
+    )
+    ."&nbsp;"
+    . $foreignKeyActionForm(
+        LINK.'ForeignKey/rmForeignKey/',
+        __("Remove virtual foreign key"),
+        'label-primary cursor',
+        ['id' => $fk['id']]
+    )
     . '</td>';
     echo '</tr>';
 

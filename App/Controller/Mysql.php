@@ -953,6 +953,8 @@ class Mysql extends Controller
         $data['file']            = $file_name;
         $data['database']        = $database;
         $data['id_mysql_server'] = $id_mysql_server;
+        $data['foreign_key_mutation_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['foreign_key_mutation_csrf_token'] = Csrf::issueToken($_SESSION, ForeignKey::FOREIGN_KEY_MUTATION_CSRF_SCOPE);
 
         $path_parts = pathinfo($file_name);
 
