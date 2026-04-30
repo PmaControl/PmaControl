@@ -78,7 +78,7 @@ final class MysqlServerTest extends TestCase
                 $controller.' must import the shared mysql server helper'
             );
             $this->assertMatchesRegularExpression(
-                '/MysqlServer::getDbLinkFromId\(\$id_db(,\s*false)?\)/',
+                '/MysqlServer::getDbLinkFromId\(\$(?:id_db|idDb)(,\s*false)?\)/',
                 $source,
                 $controller.' must delegate getDbLinkFromId to App\\Library\\MysqlServer'
             );
@@ -129,14 +129,13 @@ final class MysqlServerTest extends TestCase
 
     public function testLegacyControllersOptOutOfFilterUntilFollowup(): void
     {
-        // #561 followup: Compare/CompareConfig/CheckConfig/CheckDataOnCluster
+        // #561 followup: Compare/CheckConfig/CheckDataOnCluster
         // historically did NOT filter mysql_server.is_deleted=0. Preserve that
         // behavior explicitly until the audit decides per endpoint. Any switch
         // to the default (filtered) call must be a deliberate diff that
         // updates this assertion.
         $legacy = [
-            'Compare' => __DIR__.'/../../App/Controller/Compare.php',
-            'CompareConfig' => __DIR__.'/../../App/Controller/CompareConfig.php',
+            'SchemaCompareEngine' => __DIR__.'/../../App/Library/Compare/SchemaCompareEngine.php',
             'CheckConfig' => __DIR__.'/../../App/Controller/CheckConfig.php',
             'CheckDataOnCluster' => __DIR__.'/../../App/Controller/CheckDataOnCluster.php',
         ];
@@ -144,8 +143,8 @@ final class MysqlServerTest extends TestCase
         foreach ($legacy as $controller => $path) {
             $source = (string) file_get_contents($path);
 
-            $this->assertStringContainsString(
-                'MysqlServer::getDbLinkFromId($id_db, false)',
+            $this->assertMatchesRegularExpression(
+                '/MysqlServer::getDbLinkFromId\(\$(?:id_db|idDb),\s*false\)/',
                 $source,
                 $controller.' must keep legacy semantics by passing excludeDeleted=false until #561 is closed'
             );
@@ -163,8 +162,7 @@ final class MysqlServerTest extends TestCase
 
         return [
             'Common' => $root.'/App/Controller/Common.php',
-            'Compare' => $root.'/App/Controller/Compare.php',
-            'CompareConfig' => $root.'/App/Controller/CompareConfig.php',
+            'SchemaCompareEngine' => $root.'/App/Library/Compare/SchemaCompareEngine.php',
             'CheckConfig' => $root.'/App/Controller/CheckConfig.php',
             'CheckDataOnCluster' => $root.'/App/Controller/CheckDataOnCluster.php',
         ];

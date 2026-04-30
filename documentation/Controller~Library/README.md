@@ -198,13 +198,19 @@ Generated automatically from `App/Controller` and `App/Library`.
 
 - Kind: class
 - Summary: `documentation/Controller~Library/Compare.md`
-- Methods: 12
+- Methods: 6
 
 ## CompareConfig
 
 - Kind: class
 - Summary: `documentation/Controller~Library/CompareConfig.md`
-- Methods: 12
+- Methods: 2
+
+## SchemaCompareEngine
+
+- Kind: class
+- Summary: `documentation/Controller~Library/SchemaCompareEngine.md`
+- Methods: 8
 
 ## Control
 

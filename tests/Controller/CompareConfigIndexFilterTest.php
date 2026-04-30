@@ -68,20 +68,40 @@ final class CompareConfigIndexFilterTest extends TestCase
     {
         $controller = (string)file_get_contents(__DIR__ . '/../../App/Controller/CompareConfig.php');
         $indexStart = strpos($controller, 'function index($param)');
-        $checkConfigStart = strpos($controller, 'private function checkConfig');
+        $evaluateStart = strpos($controller, 'public static function evaluateIndexRequest');
 
         $this->assertNotFalse($indexStart);
-        $this->assertNotFalse($checkConfigStart);
-        $indexBody = substr($controller, $indexStart, $checkConfigStart - $indexStart);
+        $this->assertNotFalse($evaluateStart);
+        $indexBody = substr($controller, $indexStart, $evaluateStart - $indexStart);
 
         $this->assertStringContainsString('CompareMainSelection::evaluate($get, $server)', $controller);
         $this->assertStringContainsString('self::evaluateIndexRequest($_GET, $_SERVER)', $indexBody);
-        $this->assertStringContainsString('CompareMainSelection::applyToGet($selection)', $indexBody);
-        $this->assertStringContainsString('CompareMainSelection::toRoute($selection)', $indexBody);
+        $this->assertStringContainsString('CompareMainSelection::toRoute($indexRequest[\'selection\'])', $indexBody);
         $this->assertStringContainsString('$this->view = false;', $indexBody);
         $this->assertStringContainsString("header('location: ' . LINK . 'compare/index'", $indexBody);
         $this->assertStringNotContainsString('$_POST', $indexBody);
         $this->assertStringNotContainsString('REQUEST_METHOD\'] == "POST"', $indexBody);
+    }
+
+    public function testCompareConfigNoLongerContainsDuplicatedCompareEngine(): void
+    {
+        $controller = (string)file_get_contents(__DIR__ . '/../../App/Controller/CompareConfig.php');
+
+        foreach ([
+            'function checkConfig',
+            'function analyse',
+            'function compareTable',
+            'function execMulti',
+            'function compareListObject',
+            'function menu',
+            'function generateGet',
+            'function getObjectDiff',
+            'function compareObject',
+            'function getDatabaseByServer',
+            'function getDbLinkFromId',
+        ] as $method) {
+            $this->assertStringNotContainsString($method, $controller);
+        }
     }
 
     private function validGet(): array

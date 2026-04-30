@@ -56,7 +56,6 @@ final class SelectorOptionsUsageTest extends TestCase
             'App/Controller/Common.php',
             'App/Controller/Database.php',
             'App/Controller/Compare.php',
-            'App/Controller/CompareConfig.php',
             'App/Controller/Backup.php',
             'App/Controller/Cleaner.php',
             'App/Controller/MysqlDatabase.php',
