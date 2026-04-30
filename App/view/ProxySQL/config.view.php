@@ -7,6 +7,7 @@ use App\Library\Security\CsrfRender;
 $proxySqlUpdateCsrfField = CsrfRender::field($data, 'proxysql_update');
 $proxySqlUpdateCsrfToken = CsrfRender::token($data, 'proxysql_update');
 $proxySqlUpdateFieldCsrfAttributes = CsrfRender::attributes($data, 'proxysql_update_field');
+$proxySqlDeleteLineCsrfInput = CsrfRender::hiddenInput($data, 'proxysql_delete_line');
 
 $table_name = str_replace('_', ' ', $data['current']);
 $extra = $data['menu'][$table_name];
@@ -164,7 +165,20 @@ foreach ($data['table'] as $table_name)
 
           if (! isset($extra['insert_or_delete']))
           {
-            echo '<td style="padding:2px;"><a class="btn-xs btn btn-danger" href="'.LINK.'ProxySQL/deleteLine/'.$data['id_proxysql_server'].'/'.$table_name.'/'.base64_encode($full_pk).'/">'.__('Delete').'</a></td>';
+            $deleteAction = htmlspecialchars(LINK.'ProxySQL/deleteLine', ENT_QUOTES, 'UTF-8');
+            $deleteId = htmlspecialchars((string) $data['id_proxysql_server'], ENT_QUOTES, 'UTF-8');
+            $deleteCurrent = htmlspecialchars((string) $data['current'], ENT_QUOTES, 'UTF-8');
+            $deleteTable = htmlspecialchars((string) $table_name, ENT_QUOTES, 'UTF-8');
+            $deletePk = htmlspecialchars($full_pk, ENT_QUOTES, 'UTF-8');
+
+            echo '<td style="padding:2px;"><form method="post" action="'.$deleteAction.'" style="display:inline; margin:0;">'
+              .$proxySqlDeleteLineCsrfInput
+              .'<input type="hidden" name="id_proxysql_server" value="'.$deleteId.'">'
+              .'<input type="hidden" name="current" value="'.$deleteCurrent.'">'
+              .'<input type="hidden" name="table" value="'.$deleteTable.'">'
+              .'<input type="hidden" name="pk" value="'.$deletePk.'">'
+              .'<button type="submit" class="btn-xs btn btn-danger">'.__('Delete').'</button>'
+              .'</form></td>';
           }
           
           echo '</tr>';

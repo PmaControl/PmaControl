@@ -10,6 +10,8 @@ use \App\Library\Extraction2;
 use App\Library\Http\HttpResponse;
 use App\Library\Security\CsrfGuard;
 use App\Library\Security\Identifier;
+use App\Library\Security\PositiveIntegerSelection;
+use App\Library\Security\SafeRedirect;
 use \Glial\Sgbd\Sgbd;
 use Glial\Security\Csrf;
 use \Monolog\Logger;
@@ -76,8 +78,21 @@ class ProxySQL extends Controller
     private const PROXYSQL_UPDATE_TARGETS = ['MEMORY', 'DISK', 'RUNTIME', 'CONFIG'];
     private const PROXYSQL_UPDATE_FIELD_CSRF_SCOPE = 'proxysql.update_field';
     private const PROXYSQL_ADD_LINE_CSRF_SCOPE = 'proxysql.add_line';
+    private const PROXYSQL_DELETE_LINE_CSRF_SCOPE = 'proxysql.delete_line';
     private const PROXYSQL_UPDATE_FIELD_TABLES = [
         'global_variables',
+        'mysql_query_rules',
+        'mysql_servers',
+        'mysql_replication_hostgroups',
+        'mysql_group_replication_hostgroups',
+        'mysql_galera_hostgroups',
+        'mysql_aws_aurora_hostgroups',
+        'mysql_hostgroup_attributes',
+        'mysql_users',
+        'proxysql_servers',
+        'scheduler',
+    ];
+    private const PROXYSQL_DELETE_LINE_TABLES = [
         'mysql_query_rules',
         'mysql_servers',
         'mysql_replication_hostgroups',
@@ -1379,6 +1394,8 @@ class ProxySQL extends Controller
         $data['proxysql_update_csrf_token'] = Csrf::issueToken($_SESSION, self::PROXYSQL_UPDATE_CSRF_SCOPE);
         $data['proxysql_update_field_csrf_field'] = Csrf::DEFAULT_FIELD;
         $data['proxysql_update_field_csrf_token'] = Csrf::issueToken($_SESSION, self::PROXYSQL_UPDATE_FIELD_CSRF_SCOPE);
+        $data['proxysql_delete_line_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['proxysql_delete_line_csrf_token'] = Csrf::issueToken($_SESSION, self::PROXYSQL_DELETE_LINE_CSRF_SCOPE);
 
         if (empty($id_proxysql_server)) {
             throw new \Exception(__FUNCTION__ . ' should have id_proxysql_server in parameter');
@@ -2067,16 +2084,7 @@ class ProxySQL extends Controller
 
     private static function normalizePositiveInteger($value): ?int
     {
-        if (!is_scalar($value)) {
-            return null;
-        }
-
-        $value = trim((string) $value);
-        if ($value === '' || !ctype_digit($value) || (int) $value < 1) {
-            return null;
-        }
-
-        return (int) $value;
+        return PositiveIntegerSelection::normalizeSingle($value);
     }
 
     private static function normalizeUpdateFieldTable($value): ?string
@@ -2145,43 +2153,139 @@ class ProxySQL extends Controller
  */
     public function deleteLine($param)
     {
-        $id_proxysql_server = $param[0];
-        $table = $param[1];
-        $where = base64_decode($param[2]);
-
         $this->view        = false;
         $this->layout_name = false;
- 
-        $_GET['ajax'] = true;
 
-        try{
+        $outcome = self::evaluateDeleteLineRequest($param, $_POST, $_SERVER, $_SESSION, IS_CLI);
+        if (!$outcome['allowed']) {
+            HttpResponse::sendOutcome($outcome, null);
+            return;
+        }
 
-        
+        $delete = $outcome['delete'];
 
-            $db = Sgbd::sql("proxysql_".$id_proxysql_server);
+        try {
+            $db = Sgbd::sql("proxysql_".$delete['id_proxysql_server']);
 
-            //UPDATE menu SET `variable_value` = 'truefghdfh' WHERE id = variable_value
-            $sql = "DELETE FROM `".$table."` WHERE ".$where.";";
+            $sql = self::buildDeleteLineSql($delete);
 
-            $this->logger->emergency($sql." DELETE");
+            $this->logger->emergency($sql." DELETE [id_proxysql_server:".$delete['id_proxysql_server']."]");
             $db->sql_query($sql);
-    
+
             if ($db->sql_affected_rows() == 1) {
 
                 set_flash( "success", "Title", "INfo");
-                header("location: " . $_SERVER['HTTP_REFERER']);
-                
             } else {
                 set_flash( "warning", "Title", "INfo");
-                header("location: " . $_SERVER['HTTP_REFERER']);
-                
             }
-        }
-        catch(\Exception $e){
+        } catch(\Exception $e) {
             set_flash( "error", "Title", "INfo");
-            header("location: " . $_SERVER['HTTP_REFERER']);
         }
 
+        if (! IS_CLI) {
+            header(
+                "location: "
+                . SafeRedirect::refererOrFallback(
+                    $_SERVER,
+                    self::proxysqlConfigUrl($delete['id_proxysql_server'], $delete['current'])
+                )
+            );
+        }
+    }
+
+    public static function evaluateDeleteLineRequest(
+        array $param,
+        array $post,
+        array $server,
+        array $session,
+        bool $isCli = false
+    ): array {
+        if (!$isCli) {
+            if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::PROXYSQL_DELETE_LINE_CSRF_SCOPE)) {
+                return [
+                    'allowed' => false,
+                    'status' => $failure['status'],
+                    'body' => $failure['body'],
+                    'headers' => $failure['headers'],
+                    'delete' => null,
+                ];
+            }
+        }
+
+        $delete = self::normalizeDeleteLinePayload($param, $post);
+        if ($delete === null) {
+            return [
+                'allowed' => false,
+                'status' => 400,
+                'body' => 'Invalid ProxySQL delete payload',
+                'headers' => [],
+                'delete' => null,
+            ];
+        }
+
+        return [
+            'allowed' => true,
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'delete' => $delete,
+        ];
+    }
+
+    public static function normalizeDeleteLinePayload(array $param, array $post): ?array
+    {
+        unset($param);
+
+        if (
+            !isset($post['id_proxysql_server'], $post['current'], $post['table'], $post['pk'])
+            || !is_scalar($post['current'])
+            || !is_scalar($post['table'])
+            || !is_scalar($post['pk'])
+        ) {
+            return null;
+        }
+
+        $idProxysqlServer = self::normalizePositiveInteger($post['id_proxysql_server']);
+        $current = self::normalizeConfigCurrent($post['current']);
+        $table = self::normalizeDeleteLineTable($post['table']);
+        $pk = self::normalizePrimaryKeyPredicate($post['pk']);
+
+        if ($idProxysqlServer === null || $current === null || $table === null || $pk === null) {
+            return null;
+        }
+
+        return [
+            'id_proxysql_server' => $idProxysqlServer,
+            'current' => $current,
+            'table' => $table,
+            'pk' => $pk,
+        ];
+    }
+
+    public static function buildDeleteLineSql(array $delete): string
+    {
+        return "DELETE FROM ".Identifier::quoteStrictSqlIdentifier((string) $delete['table'])
+            ." WHERE ".$delete['pk'].";";
+    }
+
+    private static function normalizeDeleteLineTable($value): ?string
+    {
+        $table = self::normalizeSqlIdentifier($value);
+        if ($table === null || !in_array($table, self::PROXYSQL_DELETE_LINE_TABLES, true)) {
+            return null;
+        }
+
+        return $table;
+    }
+
+    private static function normalizeConfigCurrent($value): ?string
+    {
+        return self::normalizeSqlIdentifier($value);
+    }
+
+    private static function proxysqlConfigUrl(int $idProxysqlServer, string $current): string
+    {
+        return LINK.'ProxySQL/config/'.$idProxysqlServer.'/'.$current.'/';
     }
 
 /**
