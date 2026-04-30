@@ -8,6 +8,7 @@ final class Identifier
 {
     public const DATABASE_NAME_PATTERN = '/^[A-Za-z0-9_-]{1,64}$/';
     public const STRICT_SQL_IDENTIFIER_PATTERN = '/\A[A-Za-z_][A-Za-z0-9_]{0,63}\z/';
+    public const MYSQL_VARIABLE_NAME_PATTERN = '/\A[A-Za-z0-9_-]{1,128}\z/';
     public const ACCOUNT_NAME_PATTERN = '/^[A-Za-z0-9_-]{1,64}$/';
     public const HOST_PATTERN = '/^[A-Za-z0-9_.:%-]{1,255}$/';
     public const PRIVILEGE_PATTERN = '/^[A-Z][A-Z _]{0,24}$/';
@@ -78,6 +79,21 @@ final class Identifier
         }
 
         return $uniqueItems;
+    }
+
+    public static function isMysqlVariableName(string $name): bool
+    {
+        return preg_match(self::MYSQL_VARIABLE_NAME_PATTERN, $name) === 1;
+    }
+
+    public static function normalizeMysqlVariableName($raw): ?string
+    {
+        if (!is_scalar($raw)) {
+            return null;
+        }
+
+        $name = trim((string) $raw);
+        return self::isMysqlVariableName($name) ? $name : null;
     }
 
     public static function isAccountName(string $account): bool
