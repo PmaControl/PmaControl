@@ -7,6 +7,8 @@ use \Glial\Security\Crypt\Crypt;
 use \Glial\I18n\I18n;
 use \Glial\Sgbd\Sgbd;
 use App\Library\Security\CsrfGuard;
+use App\Library\Security\PositiveIntegerSelection;
+use App\Library\Security\SafeRedirect;
 use App\Library\Http\HttpResponse;
 use App\Library\Mysql;
 use App\Library\MysqlVersion;
@@ -35,6 +37,9 @@ class Mysqlsys extends Controller {
 
     private const MYSQLSYS_INSTALL_CSRF_SCOPE = 'mysqlsys.install';
     private const MYSQLSYS_UPDATE_CONFIG_CSRF_SCOPE = 'mysqlsys.update_config';
+    private const MYSQLSYS_RESET_CSRF_SCOPE = 'mysqlsys.reset';
+    private const MYSQLSYS_DROP_CSRF_SCOPE = 'mysqlsys.drop';
+    private const MYSQLSYS_DROP_CONFIRM_VALUE = 'DROP_SYS';
     private const MYSQLSYS_UPDATE_CONFIG_NAME_MAX_LENGTH = 128;
     private const MYSQLSYS_UPDATE_CONFIG_VALUE_MAX_LENGTH = 4096;
 
@@ -73,6 +78,7 @@ class Mysqlsys extends Controller {
         $selectedMysqlServerId = self::normalizeIndexMysqlServerId($_GET);
         $data['selected_mysql_server_id'] = $selectedMysqlServerId;
         $data['selected_mysql_server_found'] = false;
+        $data['selected_mysql_server_name'] = '';
         $data['variables'] = '';
         $data['mysqlsys_version_unsupported'] = false;
 
@@ -93,6 +99,7 @@ class Mysqlsys extends Controller {
             if ($selectedMysqlServerId !== null && (int) $ob->id === $selectedMysqlServerId) {
                 $link_name = $ob->name;
                 $data['selected_mysql_server_found'] = true;
+                $data['selected_mysql_server_name'] = (string) $ob->name;
             }
         }
 
@@ -152,6 +159,10 @@ class Mysqlsys extends Controller {
         }
         $data['mysqlsys_update_config_csrf_field'] = Csrf::DEFAULT_FIELD;
         $data['mysqlsys_update_config_csrf_token'] = Csrf::issueToken($_SESSION, self::MYSQLSYS_UPDATE_CONFIG_CSRF_SCOPE);
+        $data['mysqlsys_reset_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['mysqlsys_reset_csrf_token'] = Csrf::issueToken($_SESSION, self::MYSQLSYS_RESET_CSRF_SCOPE);
+        $data['mysqlsys_drop_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['mysqlsys_drop_csrf_token'] = Csrf::issueToken($_SESSION, self::MYSQLSYS_DROP_CSRF_SCOPE);
         $this->set('data', $data);
     }
 
@@ -526,8 +537,13 @@ class Mysqlsys extends Controller {
         $this->view = false;
         $this->layout_name = false;
 
+        $outcome = self::evaluateResetRequest($param, $_POST, $_SERVER, $_SESSION, IS_CLI);
+        if (!$outcome['allowed']) {
+            HttpResponse::sendOutcome($outcome, null);
+            return;
+        }
 
-        $id_mysql_server = $param[0];
+        $id_mysql_server = $outcome['id_mysql_server'];
 
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -540,7 +556,9 @@ class Mysqlsys extends Controller {
         $sql = "SELECT name, ".$case." FROM mysql_server a WHERE 1=1 " . self::getFilter() . " AND id=" . $id_mysql_server;
         $res = $db->sql_query($sql);
 
+        $found = false;
         while ($ob = $db->sql_fetch_object($res)) {
+            $found = true;
 
             $remote = Sgbd::sql($ob->name);
 
@@ -548,11 +566,16 @@ class Mysqlsys extends Controller {
             $remote->sql_multi_query($sql);
         }
 
+        if (!$found) {
+            HttpResponse::sendOutcome(self::mysqlsysMutationFailure(404, 'MySQL server not found'), null);
+            return;
+        }
+
         //$msg = I18n::getTranslation(__("The statistics has been reseted"));
         //$title = I18n::getTranslation(__("Success"));
         //set_flash("success", $title, $msg);
 
-        header("location: " . $_SERVER['HTTP_REFERER']);
+        header("location: " . SafeRedirect::refererOrFallback($_SERVER, self::mysqlsysIndexUrl($id_mysql_server)));
     }
 
 /**
@@ -581,8 +604,13 @@ class Mysqlsys extends Controller {
         $this->view = false;
         $this->layout_name = false;
 
+        $outcome = self::evaluateDropRequest($param, $_POST, $_SERVER, $_SESSION, IS_CLI);
+        if (!$outcome['allowed']) {
+            HttpResponse::sendOutcome($outcome, null);
+            return;
+        }
 
-        $id_mysql_server = $param[0];
+        $id_mysql_server = $outcome['id_mysql_server'];
 
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -591,7 +619,17 @@ class Mysqlsys extends Controller {
         $sql = "SELECT name FROM mysql_server a WHERE 1=1 " . self::getFilter() . " AND id=" . $id_mysql_server;
         $res = $db->sql_query($sql);
 
+        $found = false;
         while ($ob = $db->sql_fetch_object($res)) {
+            $found = true;
+
+            if (!self::isDropConfirmationServerNameValid($outcome['confirm_server_name'], (string) $ob->name)) {
+                HttpResponse::sendOutcome(
+                    self::mysqlsysMutationFailure(400, 'Invalid MySQL-sys drop confirmation'),
+                    null
+                );
+                return;
+            }
 
             $remote = Sgbd::sql($ob->name);
 
@@ -599,11 +637,57 @@ class Mysqlsys extends Controller {
             $remote->sql_multi_query($sql);
         }
 
+        if (!$found) {
+            HttpResponse::sendOutcome(self::mysqlsysMutationFailure(404, 'MySQL server not found'), null);
+            return;
+        }
+
         $msg = I18n::getTranslation(__("MySQL-sys has been uninstalled"));
         $title = I18n::getTranslation(__("Success"));
         set_flash("success", $title, $msg);
 
-        header("location: " . $_SERVER['HTTP_REFERER']);
+        header("location: " . SafeRedirect::refererOrFallback($_SERVER, self::mysqlsysIndexUrl($id_mysql_server)));
+    }
+
+    public static function evaluateResetRequest(
+        array $param,
+        array $post,
+        array $server,
+        array $session,
+        bool $isCli = false
+    ): array {
+        return self::evaluateMysqlsysMutationRequest(
+            $param,
+            $post,
+            $server,
+            $session,
+            self::MYSQLSYS_RESET_CSRF_SCOPE,
+            false,
+            $isCli
+        );
+    }
+
+    public static function evaluateDropRequest(
+        array $param,
+        array $post,
+        array $server,
+        array $session,
+        bool $isCli = false
+    ): array {
+        return self::evaluateMysqlsysMutationRequest(
+            $param,
+            $post,
+            $server,
+            $session,
+            self::MYSQLSYS_DROP_CSRF_SCOPE,
+            true,
+            $isCli
+        );
+    }
+
+    public static function isDropConfirmationServerNameValid(?string $confirmation, string $serverName): bool
+    {
+        return $confirmation !== null && hash_equals($serverName, $confirmation);
     }
 
 /**
@@ -728,16 +812,114 @@ class Mysqlsys extends Controller {
 
     private static function normalizePositiveInteger($value): ?int
     {
+        return PositiveIntegerSelection::normalizeSingle($value);
+    }
+
+    private static function evaluateMysqlsysMutationRequest(
+        array $param,
+        array $post,
+        array $server,
+        array $session,
+        string $scope,
+        bool $requiresDropConfirmation,
+        bool $isCli
+    ): array {
+        if (!$isCli) {
+            if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, $scope)) {
+                return self::mysqlsysMutationFailure(
+                    $failure['status'],
+                    $failure['body'],
+                    $failure['headers']
+                );
+            }
+        }
+
+        $idMysqlServer = self::resolveMysqlsysMutationServerId($param, $post, !$isCli);
+        if ($idMysqlServer === null) {
+            return self::mysqlsysMutationFailure(400, 'Invalid MySQL server id');
+        }
+
+        $confirmServerName = null;
+        if ($requiresDropConfirmation) {
+            if (!self::hasDropConfirmationIntent($post)) {
+                return self::mysqlsysMutationFailure(400, 'Invalid MySQL-sys drop confirmation');
+            }
+
+            $confirmServerName = self::normalizeDropConfirmationServerName($post['confirm_server_name'] ?? null);
+            if ($confirmServerName === null) {
+                return self::mysqlsysMutationFailure(400, 'Invalid MySQL-sys drop confirmation');
+            }
+        }
+
+        return [
+            'allowed' => true,
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'id_mysql_server' => $idMysqlServer,
+            'param' => [$idMysqlServer],
+            'confirm_server_name' => $confirmServerName,
+        ];
+    }
+
+    private static function resolveMysqlsysMutationServerId(
+        array $param,
+        array $post,
+        bool $requirePostId
+    ): ?int {
+        $postId = PositiveIntegerSelection::normalizeSingle($post['id_mysql_server'] ?? null);
+        if ($requirePostId && $postId === null) {
+            return null;
+        }
+
+        $routeHasId = array_key_exists(0, $param) && $param[0] !== null && $param[0] !== '';
+        $routeId = $routeHasId ? PositiveIntegerSelection::normalizeSingle($param[0]) : null;
+        if ($routeHasId && $routeId === null) {
+            return null;
+        }
+
+        if ($postId !== null && $routeId !== null && $postId !== $routeId) {
+            return null;
+        }
+
+        return $postId ?? $routeId;
+    }
+
+    private static function hasDropConfirmationIntent(array $post): bool
+    {
+        return isset($post['confirm'])
+            && is_scalar($post['confirm'])
+            && trim((string) $post['confirm']) === self::MYSQLSYS_DROP_CONFIRM_VALUE;
+    }
+
+    private static function normalizeDropConfirmationServerName($value): ?string
+    {
         if (!is_scalar($value)) {
             return null;
         }
 
-        $value = trim((string) $value);
-        if ($value === '' || !ctype_digit($value) || (int) $value < 1) {
-            return null;
-        }
+        $serverName = trim((string) $value);
+        return $serverName === '' ? null : $serverName;
+    }
 
-        return (int) $value;
+    private static function mysqlsysMutationFailure(int $status, string $body, array $headers = []): array
+    {
+        return [
+            'allowed' => false,
+            'status' => $status,
+            'body' => $body,
+            'headers' => $headers,
+            'id_mysql_server' => null,
+            'param' => null,
+            'confirm_server_name' => null,
+        ];
+    }
+
+    private static function mysqlsysIndexUrl(int $idMysqlServer): string
+    {
+        $link = defined('LINK') ? LINK : '/';
+
+        return $link . 'mysqlsys/index/mysql_server:id:' . $idMysqlServer;
     }
 
     private static function normalizeSysConfigName($value): ?string
