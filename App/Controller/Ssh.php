@@ -10,6 +10,7 @@ use \Monolog\Handler\StreamHandler;
 use \App\Library\Debug;
 use \App\Library\Ssh as SshLib;
 use App\Library\Security\CsrfGuard;
+use App\Library\Security\PositiveIntegerSelection;
 use App\Library\Post;
 use \Glial\I18n\I18n;
 use \Glial\Sgbd\Sgbd;
@@ -42,6 +43,10 @@ class Ssh extends Controller
     private const SSH_SAVE_FIELD_LIMITS = [
         'name' => 64,
         'user' => 64,
+    ];
+    private const SSH_KEY_SELECT_COLUMNS = [
+        '*' => '*',
+        'public_key' => 'public_key',
     ];
 
 /**
@@ -271,6 +276,15 @@ class Ssh extends Controller
             . "' and user = '"
             . $escape($user)
             . "'";
+    }
+
+    public static function buildSshKeyByIdSql(int $idSshKey, string $columns = '*'): string
+    {
+        if (!isset(self::SSH_KEY_SELECT_COLUMNS[$columns])) {
+            throw new \InvalidArgumentException('Invalid SSH key select columns');
+        }
+
+        return "SELECT " . self::SSH_KEY_SELECT_COLUMNS[$columns] . " FROM ssh_key WHERE id = " . $idSshKey;
     }
 
     private static function buildSshSaveOutcome(int $statusCode, string $message, array $headers = []): array
@@ -1086,13 +1100,17 @@ echo $ssh->getLog();
  */
     public function display_public($param)
     {
-        $id_ssh_key = $param[0];
-
         $this->view        = false;
         $this->layout_name = false;
 
+        $id_ssh_key = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        if ($id_ssh_key === null) {
+            http_response_code(400);
+            return;
+        }
+
         $db  = Sgbd::sql(DB_DEFAULT);
-        $sql = "select public_key from ssh_key where id =".$id_ssh_key;
+        $sql = self::buildSshKeyByIdSql($id_ssh_key, 'public_key');
 
         $res = $db->sql_query($sql);
 
@@ -1218,7 +1236,15 @@ echo $ssh->getLog();
  */
     public function edit($param)
     {
-        $id_ssh_key            = $param[0];
+        $id_ssh_key = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        if ($id_ssh_key === null) {
+            $this->view = false;
+            if (!IS_CLI) {
+                header("location: ".LINK.$this->getClass()."/index");
+            }
+            return;
+        }
+
         $_GET['ssh_key']['id'] = $id_ssh_key;
 
         $this->add(array());
@@ -1227,9 +1253,6 @@ echo $ssh->getLog();
 // ajout de la bonne vue
         $this->view = "add";
 
-
-        $id_ssh_key = $param[0];
-
         $this->title = '<span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>'." ".__("Edit a key SSH");
 
 
@@ -1237,13 +1260,15 @@ echo $ssh->getLog();
 
             $db = Sgbd::sql(DB_DEFAULT);
 
-            $sql = "SELECT * FROM ssh_key WHERE id = ".$id_ssh_key;
+            $sql = self::buildSshKeyByIdSql($id_ssh_key);
             $res = $db->sql_query($sql);
 
             while ($ob = $db->sql_fetch_object($res)) {
+                $data = $this->get()['data'] ?? [];
 
-                $_SESSION['ssh_key']['private_key'] = Chiffrement::decrypt($ob->private_key);
-                $_SESSION['ssh_key']['public_key']  = Chiffrement::decrypt($ob->public_key);
+                $data['ssh_key']['private_key'] = Chiffrement::decrypt($ob->private_key);
+                $data['ssh_key']['public_key']  = Chiffrement::decrypt($ob->public_key);
+                $this->set('data', $data);
                 $_GET['ssh_key']['user']            = $ob->user;
                 $_GET['ssh_key']['name']            = $ob->name;
                 $_GET['ssh_key']['id']              = $ob->id;
