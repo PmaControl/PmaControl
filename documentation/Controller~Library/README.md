@@ -38,12 +38,6 @@ Generated automatically from `App/Controller` and `App/Library`.
 - Summary: `documentation/Controller~Library/Alias.md`
 - Methods: 13
 
-## Alter
-
-- Kind: class
-- Summary: `documentation/Controller~Library/Alter.md`
-- Methods: 4
-
 ## Api
 
 - Kind: class

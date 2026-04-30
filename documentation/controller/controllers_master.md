@@ -9,7 +9,6 @@
 - [Agent](#agent)
 - [Alert](#alert)
 - [Alias](#alias)
-- [Alter](#alter)
 - [Api](#api)
 - [Architecture](#architecture)
 - [Archives](#archives)
@@ -127,7 +126,7 @@
 # Documentation Controllers
 
 - Source: `/srv/www/pmacontrol/App/Controller`
-- Documents: 119
+- Documents: 118
 
 ## Index
 
@@ -137,7 +136,6 @@
 - [Agent](Agent.md)
 - [Alert](Alert.md)
 - [Alias](Alias.md)
-- [Alter](Alter.md)
 - [Api](Api.md)
 - [Architecture](Architecture.md)
 - [Archives](Archives.md)
@@ -345,21 +343,6 @@
 - `extractIpList($raw)`: Handle alias state through `extractIpList`.
 - `addAliasFromWsrepNodeAddress($param)`: Create alias state through `addAliasFromWsrepNodeAddress`.
 - `clearAliasDnsCache()`: Handle alias state through `clearAliasDnsCache`.
-
-<div style="page-break-after: always;"></div>
-
-# Alter
-
-# Alter
-
-- Type: class
-- Namespace: `App\Controller`
-- Source: `App/Controller/Alter.php`
-
-- `dropsp($param)`: Handle alter state through `dropsp`.
-- `slave($param)`: Handle alter state through `slave`.
-- `user($param)`: Handle alter state through `user`.
-- `dropRoot($param)`: Handle alter state through `dropRoot`.
 
 <div style="page-break-after: always;"></div>
 

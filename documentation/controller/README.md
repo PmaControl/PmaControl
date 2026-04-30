@@ -1,7 +1,7 @@
 # Documentation Controllers
 
 - Source: `/srv/www/pmacontrol/App/Controller`
-- Documents: 119
+- Documents: 118
 
 ## Index
 
@@ -11,7 +11,6 @@
 - [Agent](Agent.md)
 - [Alert](Alert.md)
 - [Alias](Alias.md)
-- [Alter](Alter.md)
 - [Api](Api.md)
 - [Architecture](Architecture.md)
 - [Archives](Archives.md)
