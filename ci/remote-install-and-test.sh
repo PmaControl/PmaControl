@@ -16,6 +16,13 @@ if [[ ! -d /srv/www/pmacontrol ]]; then
     exit 1
 fi
 
+# shellcheck source=install/lib/install_secrets.sh
+. /srv/www/pmacontrol/install/lib/install_secrets.sh
+trap cleanup_install_ssh_key EXIT
+trap 'cleanup_install_ssh_key; exit 129' HUP
+trap 'cleanup_install_ssh_key; exit 130' INT
+trap 'cleanup_install_ssh_key; exit 143' TERM
+
 # shellcheck disable=SC1091
 . /etc/os-release
 OS_KEY="${ID}-${VERSION_ID}"
@@ -90,6 +97,7 @@ apt-get install -y \
     mariadb-plugin-rocksdb \
     mariadb-server \
     net-tools \
+    openssh-client \
     rsync \
     sudo \
     unzip \
@@ -156,6 +164,10 @@ GRANT ALL ON *.* TO pmacontrol@'127.0.0.1' IDENTIFIED BY '${PMA_DB_PASS}' WITH G
 FLUSH PRIVILEGES;
 EOF
 
+generate_install_ssh_key
+ssh_private_key_json=$(json_escape_file "${SSH_PRIVATE_KEY_FILE}")
+ssh_public_key_json=$(json_escape_file "${SSH_PUBLIC_KEY_FILE}")
+
 cat > /tmp/pmacontrol-ci-config.json <<EOF
 {
   "mysql": {
@@ -204,8 +216,8 @@ cat > /tmp/pmacontrol-ci-config.json <<EOF
   }],
   "ssh": [{
     "user": "pmacontrol",
-    "private key": "-----BEGIN RSA PRIVATE KEY-----\\nCI\\n-----END RSA PRIVATE KEY-----\\n",
-    "public key": "ssh-rsa CI ci@runner"
+    "private key": ${ssh_private_key_json},
+    "public key": ${ssh_public_key_json}
   }]
 }
 EOF

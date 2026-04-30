@@ -6,6 +6,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "${SCRIPT_DIR}/lib/harden_network.sh"
 # shellcheck source=install/lib/harden_apache.sh
 . "${SCRIPT_DIR}/lib/harden_apache.sh"
+# shellcheck source=install/lib/install_secrets.sh
+. "${SCRIPT_DIR}/lib/install_secrets.sh"
 
 DEV_MOD=0
 VERSION_MARIADB="11.8"
@@ -22,59 +24,6 @@ PMACTRL_HARDEN_DB_BIND="${PMACTRL_HARDEN_DB_BIND:-1}"
 PMACTRL_DB_BIND_ADDRESS="${PMACTRL_DB_BIND_ADDRESS:-127.0.0.1,::1}"
 PMACTRL_RPCBIND_POLICY="${PMACTRL_RPCBIND_POLICY:-disable}"
 PMACTRL_HARDEN_APACHE_DOCROOT="${PMACTRL_HARDEN_APACHE_DOCROOT:-1}"
-
-generate_password()
-{
-    local generated=""
-
-    if command -v openssl >/dev/null 2>&1; then
-        generated=$(openssl rand -base64 48 | tr -d '/+=' | tr -d '\n' | head -c 32 || true)
-    fi
-
-    if [[ ${#generated} -lt 32 ]]; then
-        generated=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 || true)
-    fi
-
-    if [[ ${#generated} -lt 32 ]]; then
-        echo "Unable to generate a secure password." >&2
-        exit 1
-    fi
-
-    printf '%s\n' "${generated}"
-}
-
-cleanup_install_ssh_key()
-{
-    if [[ -n "${SSH_KEY_DIR}" && -d "${SSH_KEY_DIR}" ]]; then
-        rm -rf "${SSH_KEY_DIR}"
-    fi
-}
-
-json_escape_string()
-{
-    printf '%s' "$1" | jq -Rs .
-}
-
-json_escape_file()
-{
-    jq -Rs . < "$1"
-}
-
-generate_install_ssh_key()
-{
-    local hostname_value
-
-    cleanup_install_ssh_key
-    SSH_KEY_DIR=$(mktemp -d /tmp/pmacontrol-install-ssh.XXXXXX)
-    chmod 700 "${SSH_KEY_DIR}"
-    SSH_PRIVATE_KEY_FILE="${SSH_KEY_DIR}/id_rsa"
-    SSH_PUBLIC_KEY_FILE="${SSH_PRIVATE_KEY_FILE}.pub"
-    hostname_value=$(hostname -f 2>/dev/null || hostname)
-
-    ssh-keygen -q -t rsa -b 4096 -m PEM -N "" -C "pmacontrol@${hostname_value}" -f "${SSH_PRIVATE_KEY_FILE}"
-    chmod 600 "${SSH_PRIVATE_KEY_FILE}"
-    chmod 644 "${SSH_PUBLIC_KEY_FILE}"
-}
 
 pwd_pmacontrol=""
 pwd_admin=""
@@ -127,6 +76,9 @@ cleanup_install_artifacts()
 }
 
 trap cleanup_install_artifacts EXIT
+trap 'cleanup_install_artifacts; exit 129' HUP
+trap 'cleanup_install_artifacts; exit 130' INT
+trap 'cleanup_install_artifacts; exit 143' TERM
 
 get_os_codename()
 {
