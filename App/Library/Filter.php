@@ -7,6 +7,7 @@
 
 namespace App\Library;
 
+use App\Library\Security\ServerFilterWhere;
 use \Glial\Sgbd\Sgbd;
 
 
@@ -53,37 +54,7 @@ trait Filter
  */
     static private function getFilter($id_mysql_server = array(), $alias = 'a')
     {
-
-        $where = "";
-        if (!empty($_GET['environment']['libelle'])) {
-            $environment = $_GET['environment']['libelle'];
-        }
-        if (!empty($_SESSION['environment']['libelle']) && empty($_GET['environment']['libelle'])) {
-            $environment                    = $_SESSION['environment']['libelle'];
-            $_GET['environment']['libelle'] = $environment;
-        }
-
-        if (!empty($_SESSION['client']['libelle'])) {
-            $client = $_SESSION['client']['libelle'];
-        }
-        if (!empty($_GET['client']['libelle']) && empty($_GET['client']['libelle'])) {
-            $client                    = $_GET['client']['libelle'];
-            $_GET['client']['libelle'] = $client;
-        }
-
-        if (!empty($environment)) {
-            $where .= " AND `".$alias."`.id_environment IN (".implode(',', json_decode($environment, true)).")";
-        }
-        if (!empty($client)) {
-            $where .= " AND `".$alias."`.id_client IN (".implode(',', json_decode($client, true)).")";
-        }
-
-        if (! empty($id_mysql_server))
-        {
-            $where .= " AND `".$alias."`.id IN (".implode(',', $id_mysql_server).") ";
-        }
-
-        return $where;
+        return ServerFilterWhere::build($_GET, $_SESSION, $id_mysql_server, $alias);
     }
 
     
