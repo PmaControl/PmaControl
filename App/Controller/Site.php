@@ -12,6 +12,11 @@ use Glial\Synapse\Controller;
  * This class belongs to the PmaControl application layer and documents the
  * public surface consumed by controllers, services, static analysis tools and IDEs.
  *
+ * Public marketing route classification is declared in
+ * App\Library\PublicRouteCatalog for issue #513. This controller is
+ * intentionally outside the admin menu while issue #522 decides the canonical
+ * website front.
+ *
  * @category PmaControl
  * @package App
  * @subpackage Controller
