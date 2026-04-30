@@ -5,6 +5,10 @@ use App\Library\Security\CsrfRender;
 use Glial\Html\Form\Form;
 $serverSettingsCsrfField = CsrfRender::field($data, 'server_settings');
 $serverSettingsCsrfToken = CsrfRender::token($data, 'server_settings');
+$serverRemoveCsrfField = CsrfRender::field($data, 'server_remove');
+$serverRemoveCsrfToken = CsrfRender::token($data, 'server_remove');
+$serverRemoveForms = [];
+$serverRemoveConfirm = htmlspecialchars(__('Remove this server?'), ENT_QUOTES, 'UTF-8');
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -171,7 +175,13 @@ foreach ($data['servers'] as $server) {
 
 
     if ($server['name'] != DB_DEFAULT) {
-        echo ' <a class="btn-xs btn btn-danger" href="'.LINK.'server/remove/'.$server['id'].'">'.__('Remove').'</a>';
+        $idServer = (int)$server['id'];
+        $serverRemoveFormId = 'server-remove-'.$idServer;
+        $serverRemoveForms[] = '<form id="'.$serverRemoveFormId.'" method="post" action="'.LINK.'server/remove/'.$idServer.'" style="display:none">'
+            .'<input type="hidden" name="'.$serverRemoveCsrfField.'" value="'.$serverRemoveCsrfToken.'" />'
+            .'<input type="hidden" name="id_server" value="'.$idServer.'" />'
+            .'</form>';
+        echo ' <button type="submit" form="'.$serverRemoveFormId.'" class="btn-xs btn btn-danger" data-confirm="'.$serverRemoveConfirm.'" onclick="return confirm(this.getAttribute(\'data-confirm\'));">'.__('Remove').'</button>';
     }
     echo '</td>';
 
@@ -189,6 +199,7 @@ echo '</table>';
 echo '<input type="hidden" name="settings" value="1" />';
 echo '<button type="submit" class="btn btn-primary">'.__("Update").'</button>';
 echo '</form>';
+echo implode("\n", $serverRemoveForms);
 
 echo '<script>
 (function () {

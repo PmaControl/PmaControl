@@ -13,7 +13,9 @@ use \App\Library\Mysql;
 use \App\Library\EngineV4;
 use App\Library\Display;
 use App\Library\EngineMemoryBreakdown;
+use App\Library\Http\HttpResponse;
 use App\Library\Security\CsrfGuard;
+use App\Library\Security\RouteMutationRequest;
 use App\Library\ServerStateTimeline;
 
 use App\Library\Chiffrement;
@@ -44,6 +46,9 @@ class Server extends Controller
     private const SERVER_SETTINGS_CSRF_SCOPE = 'server.settings';
     private const SERVER_SETTINGS_DISPLAY_NAME_MAX_LENGTH = 255;
     private const SERVER_PASSWORD_CSRF_SCOPE = 'server.password';
+    private const SERVER_ACKNOWLEDGE_CSRF_SCOPE = 'server.acknowledge';
+    private const SERVER_RETRACT_CSRF_SCOPE = 'server.retract';
+    private const SERVER_REMOVE_CSRF_SCOPE = 'server.remove';
     private const SERVER_PASSWORD_LOGIN_MAX_LENGTH = 128;
     private const SERVER_PASSWORD_VALUE_MAX_LENGTH = 1024;
     private const SERVER_ID_FILTER_INTERVALS = [
@@ -501,6 +506,10 @@ class Server extends Controller
         $data['processing'] = $this->getDaemonRunning(['mysql']);
         $data['worker_kill_csrf_field'] = Csrf::DEFAULT_FIELD;
         $data['worker_kill_csrf_token'] = Csrf::issueToken($_SESSION, Worker::WORKER_KILL_SERVER_CSRF_SCOPE);
+        $data['server_acknowledge_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['server_acknowledge_csrf_token'] = Csrf::issueToken($_SESSION, self::SERVER_ACKNOWLEDGE_CSRF_SCOPE);
+        $data['server_retract_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['server_retract_csrf_token'] = Csrf::issueToken($_SESSION, self::SERVER_RETRACT_CSRF_SCOPE);
 
         // GeoIP: lookup country for each server IP (IPv4 + IPv6) via range join
         // Skip loopback / private / reserved ranges — they are never in the GeoIP table
@@ -1687,6 +1696,8 @@ var myChart = new Chart(ctx, {
 
         $data['server_settings_csrf_field'] = Csrf::DEFAULT_FIELD;
         $data['server_settings_csrf_token'] = Csrf::issueToken($_SESSION, self::SERVER_SETTINGS_CSRF_SCOPE);
+        $data['server_remove_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['server_remove_csrf_token'] = Csrf::issueToken($_SESSION, self::SERVER_REMOVE_CSRF_SCOPE);
 
         $this->set('data', $data);
     }
@@ -2279,6 +2290,83 @@ var myChart = new Chart(ctx, {
         echo $message;
     }
 
+    public static function evaluateAcknowledgeRequest(array $post, array $server, array $session, array $param): array
+    {
+        return self::evaluateServerMutationRequest(
+            $post,
+            $server,
+            $session,
+            $param,
+            self::SERVER_ACKNOWLEDGE_CSRF_SCOPE
+        );
+    }
+
+    public static function evaluateRetractRequest(array $post, array $server, array $session, array $param): array
+    {
+        return self::evaluateServerMutationRequest(
+            $post,
+            $server,
+            $session,
+            $param,
+            self::SERVER_RETRACT_CSRF_SCOPE
+        );
+    }
+
+    public static function evaluateRemoveRequest(array $post, array $server, array $session, array $param): array
+    {
+        return self::evaluateServerMutationRequest(
+            $post,
+            $server,
+            $session,
+            $param,
+            self::SERVER_REMOVE_CSRF_SCOPE
+        );
+    }
+
+    public static function buildAcknowledgeSql(int $idServer, int $idUser): string
+    {
+        return "UPDATE mysql_server SET is_acknowledged=".$idUser." WHERE id=".$idServer." LIMIT 1;";
+    }
+
+    public static function buildRetractSql(int $idServer): string
+    {
+        return "UPDATE mysql_server SET is_acknowledged=0 WHERE id=".$idServer." LIMIT 1;";
+    }
+
+    public static function buildRemoveSelectSql(int $idServer): string
+    {
+        return "SELECT name FROM mysql_server WHERE id=".$idServer." LIMIT 1;";
+    }
+
+    public static function buildRemoveSql(int $idServer): string
+    {
+        return "UPDATE mysql_server SET is_deleted=1 WHERE id=".$idServer." LIMIT 1;";
+    }
+
+    private static function evaluateServerMutationRequest(
+        array $post,
+        array $server,
+        array $session,
+        array $param,
+        string $scope
+    ): array {
+        $outcome = RouteMutationRequest::evaluate(
+            $post,
+            $server,
+            $session,
+            $param,
+            $scope,
+            'Invalid server id'
+        );
+
+        return [
+            'status' => $outcome['status'],
+            'body' => $outcome['body'],
+            'headers' => $outcome['headers'],
+            'id_server' => $outcome['id'],
+        ];
+    }
+
 /**
  * Handle server state through `acknowledge`.
  *
@@ -2303,15 +2391,24 @@ var myChart = new Chart(ctx, {
     public function acknowledge($param)
     {
         $this->view = false;
+        $this->layout_name = false;
 
-        $id_server = $param[0];
+        $outcome = self::evaluateAcknowledgeRequest($_POST, $_SERVER, $_SESSION, is_array($param) ? $param : []);
+        if ($outcome['status'] !== 200) {
+            HttpResponse::sendOutcome($outcome);
+            return;
+        }
+
+        $id_server = $outcome['id_server'];
+        $id_user = (int) ($this->di['auth']->getUser()->id ?? 0);
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "UPDATE mysql_server set is_acknowledged='".($this->di['auth']->getUser()->id)."' WHERE id=".$id_server.";";
+        $sql = self::buildAcknowledgeSql($id_server, $id_user);
         $db->sql_query($sql);
 
         header("location: ".LINK.$this->getClass()."/main/");
+        exit;
     }
 
 /**
@@ -2337,27 +2434,35 @@ var myChart = new Chart(ctx, {
  */
     public function remove($param)
     {
+        $this->view = false;
+        $this->layout_name = false;
+
+        $outcome = self::evaluateRemoveRequest($_POST, $_SERVER, $_SESSION, is_array($param) ? $param : []);
+        if ($outcome['status'] !== 200) {
+            HttpResponse::sendOutcome($outcome);
+            return;
+        }
 
         Debug::parseDebug($param);
-        $this->view = false;
-        $id_server  = (int)$param[0];
+        $id_server  = $outcome['id_server'];
 
         $db = Sgbd::sql(DB_DEFAULT);
 
         // pour eviter d'effacer la base de PmaControl !!!
-        $sql = "SELECT * FROM mysql_server WHERE id=".$id_server.";";
+        $sql = self::buildRemoveSelectSql($id_server);
         $res = $db->sql_query($sql);
         Debug::sql($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
             if ($ob->name != DB_DEFAULT) {
-                $sql = "UPDATE mysql_server SET is_deleted=1 WHERE id=".$id_server.";";
+                $sql = self::buildRemoveSql($id_server);
                 $db->sql_query($sql);
                 Debug::sql($sql);
             }
         }
 
         header("location: ".LINK.$this->getClass()."/settings/");
+        exit;
     }
 
 /**
@@ -2591,15 +2696,23 @@ var myChart = new Chart(ctx, {
     public function retract($param)
     {
         $this->view = false;
+        $this->layout_name = false;
 
-        $id_server = $param[0];
+        $outcome = self::evaluateRetractRequest($_POST, $_SERVER, $_SESSION, is_array($param) ? $param : []);
+        if ($outcome['status'] !== 200) {
+            HttpResponse::sendOutcome($outcome);
+            return;
+        }
+
+        $id_server = $outcome['id_server'];
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "UPDATE mysql_server set is_acknowledged='0' WHERE id=".$id_server.";";
+        $sql = self::buildRetractSql($id_server);
         $db->sql_query($sql);
 
         header("location: ".LINK.$this->getClass()."/main/");
+        exit;
     }
 
 

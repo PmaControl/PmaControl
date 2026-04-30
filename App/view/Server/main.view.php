@@ -79,6 +79,10 @@ if (!empty($data['servers'])) {
 
 $workerKillCsrfField = CsrfRender::field($data, 'worker_kill');
 $workerKillCsrfToken = CsrfRender::token($data, 'worker_kill');
+$serverAcknowledgeCsrfField = CsrfRender::field($data, 'server_acknowledge');
+$serverAcknowledgeCsrfToken = CsrfRender::token($data, 'server_acknowledge');
+$serverRetractCsrfField = CsrfRender::field($data, 'server_retract');
+$serverRetractCsrfToken = CsrfRender::token($data, 'server_retract');
 
 if (empty($_GET['ajax'])):
 ?>
@@ -508,10 +512,18 @@ if (empty($data['servers'])) {
                         <a href="<?= LINK ?>GaleraCluster/setNodeAsPrimary/<?= (int)$server['id'] ?>" class="btn btn-danger btn-xs"><i class="fa fa-play"></i> PRIMARY</a>
                     <?php endif; ?>
                     <?php if (empty($extra['mysql_available']) && $isEffectiveMonitored && $server['is_acknowledged'] === "0"): ?>
-                        <a href="<?= LINK ?>server/acknowledge/<?= (int)$server['id'] ?>" class="btn btn-primary btn-xs"><i class="fa fa-star"></i> ACK</a>
+                        <form method="post" action="<?= LINK ?>server/acknowledge/<?= (int)$server['id'] ?>">
+                            <input type="hidden" name="<?= $serverAcknowledgeCsrfField ?>" value="<?= $serverAcknowledgeCsrfToken ?>">
+                            <input type="hidden" name="id_server" value="<?= (int)$server['id'] ?>">
+                            <button type="submit" class="btn btn-primary btn-xs"><i class="fa fa-star"></i> ACK</button>
+                        </form>
                     <?php endif; ?>
                     <?php if ($server['is_acknowledged'] !== "0"): ?>
-                        <a href="<?= LINK ?>server/retract/<?= (int)$server['id'] ?>" class="btn btn-default btn-xs"><i class="fa fa-star-o"></i> Retract</a>
+                        <form method="post" action="<?= LINK ?>server/retract/<?= (int)$server['id'] ?>">
+                            <input type="hidden" name="<?= $serverRetractCsrfField ?>" value="<?= $serverRetractCsrfToken ?>">
+                            <input type="hidden" name="id_server" value="<?= (int)$server['id'] ?>">
+                            <button type="submit" class="btn btn-default btn-xs"><i class="fa fa-star-o"></i> Retract</button>
+                        </form>
                     <?php endif; ?>
                 </div>
             <?php endif; ?>
