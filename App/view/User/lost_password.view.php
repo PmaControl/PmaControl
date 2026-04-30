@@ -16,18 +16,11 @@ echo "</table>";
 echo "</form>";
 */
 
+use App\Library\Security\CsrfRender;
 use Glial\Html\Form\Form;
 
-$userLostPasswordCsrfField = htmlspecialchars(
-    (string)($data['user_lost_password_csrf_field'] ?? '_csrf_token'),
-    ENT_QUOTES,
-    'UTF-8'
-);
-$userLostPasswordCsrfToken = htmlspecialchars(
-    (string)($data['user_lost_password_csrf_token'] ?? ''),
-    ENT_QUOTES,
-    'UTF-8'
-);
+$userLostPasswordCsrfField = CsrfRender::field($data, 'user_lost_password');
+$userLostPasswordCsrfToken = CsrfRender::token($data, 'user_lost_password');
 
 ?>
 

@@ -24,4 +24,21 @@ Machine-to-machine endpoints must not bypass this by accident. They need either 
 
 `/Api/config` is intentionally read-only (`GET`) until it gets a dedicated API authentication flow. `POST`, `PUT`, `PATCH` and `DELETE` return `405 Method not allowed` with `Allow: GET`; do not re-open them as CSRF-exempt session-backed mutations.
 
+## View rendering
+
+Controllers expose CSRF values to views with the standard keys `<scope>_csrf_field` and `<scope>_csrf_token`.
+Render them through `App\Library\Security\CsrfRender` so output escaping stays centralized:
+
+```php
+<?= CsrfRender::hiddenInput($data, 'database_create') ?>
+```
+
+For inline edit or AJAX attributes, use the leading-space attribute helper:
+
+```php
+<td<?= CsrfRender::attributes($data, 'tree_update') ?>></td>
+```
+
+`CsrfRender` only renders existing values; it does not issue tokens and does not validate requests.
+
 Follow [issue_workflow.md](issue_workflow.md) for issue handling, branching, comments, reviews, PRs and closure.

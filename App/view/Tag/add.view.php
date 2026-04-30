@@ -1,9 +1,12 @@
 <?php
+
+use App\Library\Security\CsrfRender;
+
 use Glial\Html\Form\Form;
 use Glial\I18n\I18n;
 
-$tagAddCsrfField = htmlspecialchars((string) ($data['tag_add_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$tagAddCsrfToken = htmlspecialchars((string) ($data['tag_add_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$tagAddCsrfField = CsrfRender::field($data, 'tag_add');
+$tagAddCsrfToken = CsrfRender::token($data, 'tag_add');
 ?>
 <form action="" method="post">
     <input type="hidden" name="<?= $tagAddCsrfField ?>" value="<?= $tagAddCsrfToken ?>">

@@ -1,5 +1,7 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 use \Glial\Synapse\FactoryController;
 use \App\Library\Graphviz;
 
@@ -32,8 +34,8 @@ $selectedImportGraph = $data['import_selected_graph'] ?? [];
 $selectedImportGraphIndex = $data['import_selected_graph_index'] ?? null;
 $importPayload = (string) ($data['import_payload'] ?? '');
 $isImported = !empty($importBundle['graphs']);
-$viewDotCsrfField = htmlspecialchars((string) ($data['view_dot_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$viewDotCsrfToken = htmlspecialchars((string) ($data['view_dot_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$viewDotCsrfField = CsrfRender::field($data, 'view_dot');
+$viewDotCsrfToken = CsrfRender::token($data, 'view_dot');
 ?>
 
 <style>

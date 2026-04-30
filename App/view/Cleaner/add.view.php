@@ -1,9 +1,11 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 use Glial\Html\Form\Form;
 
-$cleanerAddCsrfField = htmlspecialchars((string) ($data['cleaner_add_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$cleanerAddCsrfToken = htmlspecialchars((string) ($data['cleaner_add_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$cleanerAddCsrfField = CsrfRender::field($data, 'cleaner_add');
+$cleanerAddCsrfToken = CsrfRender::token($data, 'cleaner_add');
 ?>
 
 

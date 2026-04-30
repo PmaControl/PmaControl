@@ -1,4 +1,7 @@
 <?php
+
+use App\Library\Security\CsrfRender;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -6,8 +9,8 @@
  */
 
 use Glial\Html\Form\Form;
-$serverPasswordCsrfField = htmlspecialchars((string)($data['server_password_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$serverPasswordCsrfToken = htmlspecialchars((string)($data['server_password_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$serverPasswordCsrfField = CsrfRender::field($data, 'server_password');
+$serverPasswordCsrfToken = CsrfRender::token($data, 'server_password');
 ?>
 
 

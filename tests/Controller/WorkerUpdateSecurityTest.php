@@ -196,8 +196,7 @@ final class WorkerUpdateSecurityTest extends TestCase
         $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::WORKER_UPDATE_CSRF_SCOPE)', $controller);
         $this->assertStringNotContainsString('isWorkerUpdateSourceSameSite', $controller);
 
-        $this->assertStringContainsString('data-csrf-field="', $view);
-        $this->assertStringContainsString('data-csrf-token="', $view);
+        $this->assertStringContainsString("CsrfRender::attributes(\$data, 'worker_update')", $view);
         $this->assertStringContainsString('worker/update', $view);
         $this->assertStringContainsString("params[csrfField] = csrfToken;", $javascript);
         $this->assertStringContainsString('window.pmacontrolInitLineEdit', $javascript);

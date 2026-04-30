@@ -1,16 +1,9 @@
 <?php
 // <input autocomplete="off" class="textfield" type="text" name="usernameInput" id="usernameInput" size="26" onkeypress="eturn checkEnter(event);">
+use App\Library\Security\CsrfRender;
 use Glial\Html\Form\Form;
-$userConnectionCsrfField = htmlspecialchars(
-    (string)($data['user_connection_csrf_field'] ?? '_csrf_token'),
-    ENT_QUOTES,
-    'UTF-8'
-);
-$userConnectionCsrfToken = htmlspecialchars(
-    (string)($data['user_connection_csrf_token'] ?? ''),
-    ENT_QUOTES,
-    'UTF-8'
-);
+$userConnectionCsrfField = CsrfRender::field($data, 'user_connection');
+$userConnectionCsrfToken = CsrfRender::token($data, 'user_connection');
 ?>
 
 <div class="container">

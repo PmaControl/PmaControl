@@ -1,5 +1,7 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 use Glial\Html\Form\Form;
 use App\Library\Display;
 
@@ -21,8 +23,8 @@ use App\Library\Display;
  * select server
  *
  */
-$deployRsaKeyIndexCsrfField = htmlspecialchars((string) ($data['deploy_rsa_key_index_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$deployRsaKeyIndexCsrfToken = htmlspecialchars((string) ($data['deploy_rsa_key_index_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$deployRsaKeyIndexCsrfField = CsrfRender::field($data, 'deploy_rsa_key_index');
+$deployRsaKeyIndexCsrfToken = CsrfRender::token($data, 'deploy_rsa_key_index');
 ?>
 <div class="well">
     <?= \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array()); ?>

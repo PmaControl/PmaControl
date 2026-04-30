@@ -1,4 +1,7 @@
 <?php
+
+use App\Library\Security\CsrfRender;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -13,9 +16,7 @@ $selectedMysqlServerId = $data['selected_mysql_server_id'] ?? null;
 $selectedMysqlServerFound = !empty($data['selected_mysql_server_found']);
 $mysqlsysVersion = htmlspecialchars((string) ($data['variables'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 $mysqlsysVersionUnsupported = !empty($data['mysqlsys_version_unsupported']);
-$mysqlsysUpdateConfigCsrfField = htmlspecialchars((string) ($data['mysqlsys_update_config_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$mysqlsysUpdateConfigCsrfToken = htmlspecialchars((string) ($data['mysqlsys_update_config_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
-$mysqlsysUpdateConfigCsrfAttributes = ' data-csrf-field="'.$mysqlsysUpdateConfigCsrfField.'" data-csrf-token="'.$mysqlsysUpdateConfigCsrfToken.'"';
+$mysqlsysUpdateConfigCsrfAttributes = CsrfRender::attributes($data, 'mysqlsys_update_config');
 
 echo '<div class="well">';
 

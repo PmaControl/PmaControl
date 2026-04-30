@@ -1,9 +1,12 @@
 <?php
+
+use App\Library\Security\CsrfRender;
+
 // $data['software'] = [ ['id'=>..,'libelle'=>..], ... ]
 // $data['majors'][software_id] = [ ['id'=>major,'libelle'=>major], ... ]
 // $data['tags'][software_id][major] = [ ['id'=>id_image,'libelle'=>tag], ... ]
-$dockerAddContainerCsrfField = htmlspecialchars((string) ($data['docker_add_container_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$dockerAddContainerCsrfToken = htmlspecialchars((string) ($data['docker_add_container_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$dockerAddContainerCsrfField = CsrfRender::field($data, 'docker_add_container');
+$dockerAddContainerCsrfToken = CsrfRender::token($data, 'docker_add_container');
 ?>
 
 

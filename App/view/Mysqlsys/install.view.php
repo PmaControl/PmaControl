@@ -1,4 +1,7 @@
 <?php
+
+use App\Library\Security\CsrfRender;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -8,8 +11,8 @@
 echo '<div>';
 
 
-$mysqlsysInstallCsrfField = htmlspecialchars((string)($data['mysqlsys_install_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$mysqlsysInstallCsrfToken = htmlspecialchars((string)($data['mysqlsys_install_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$mysqlsysInstallCsrfField = CsrfRender::field($data, 'mysqlsys_install');
+$mysqlsysInstallCsrfToken = CsrfRender::token($data, 'mysqlsys_install');
 $fileName = htmlspecialchars((string)($data['file_name'] ?? ''), ENT_QUOTES, 'UTF-8');
 
 echo 'path of script to execute : '.$fileName;

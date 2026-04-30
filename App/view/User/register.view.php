@@ -1,19 +1,12 @@
 <?php
 
+use App\Library\Security\CsrfRender;
 use Glial\Html\Form\Form;
 
 //debug($_SESSION);
 
-$userRegisterCsrfField = htmlspecialchars(
-    (string)($data['user_register_csrf_field'] ?? '_csrf_token'),
-    ENT_QUOTES,
-    'UTF-8'
-);
-$userRegisterCsrfToken = htmlspecialchars(
-    (string)($data['user_register_csrf_token'] ?? ''),
-    ENT_QUOTES,
-    'UTF-8'
-);
+$userRegisterCsrfField = CsrfRender::field($data, 'user_register');
+$userRegisterCsrfToken = CsrfRender::token($data, 'user_register');
 
 echo '<div style="width:1000px; margin-left:auto; margin-right:auto; padding:0" class="well">';
 

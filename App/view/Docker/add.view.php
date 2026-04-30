@@ -1,9 +1,11 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 use Glial\Html\Form\Form;
 
-$dockerAddCsrfField = htmlspecialchars((string) ($data['docker_add_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$dockerAddCsrfToken = htmlspecialchars((string) ($data['docker_add_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$dockerAddCsrfField = CsrfRender::field($data, 'docker_add');
+$dockerAddCsrfToken = CsrfRender::token($data, 'docker_add');
 ?>
 <form action="<?= LINK ?>docker/add" method="post">
     <input type="hidden" name="<?= $dockerAddCsrfField ?>" value="<?= $dockerAddCsrfToken ?>">

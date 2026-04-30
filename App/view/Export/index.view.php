@@ -1,10 +1,12 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 use Glial\Html\Form\Form;
-$exportConfCsrfField = htmlspecialchars((string) ($data['export_conf_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$exportConfCsrfToken = htmlspecialchars((string) ($data['export_conf_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
-$exportImportConfCsrfField = htmlspecialchars((string) ($data['export_import_conf_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$exportImportConfCsrfToken = htmlspecialchars((string) ($data['export_import_conf_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$exportConfCsrfField = CsrfRender::field($data, 'export_conf');
+$exportConfCsrfToken = CsrfRender::token($data, 'export_conf');
+$exportImportConfCsrfField = CsrfRender::field($data, 'export_import_conf');
+$exportImportConfCsrfToken = CsrfRender::token($data, 'export_import_conf');
 ?>
 
 <div class="row">

@@ -1,19 +1,12 @@
 <?php
 
+use App\Library\Security\CsrfRender;
 use \Glial\Html\Form\Form;
 
 //http://www.estrildidae.net/fr/user/confirmation/claude.festor@free.fr/498c2742abf4e0f396188cdfe779ca91b4531782
 
-$userUpdateIdGroupCsrfField = htmlspecialchars(
-    (string)($data['user_update_idgroup_csrf_field'] ?? '_csrf_token'),
-    ENT_QUOTES,
-    'UTF-8'
-);
-$userUpdateIdGroupCsrfToken = htmlspecialchars(
-    (string)($data['user_update_idgroup_csrf_token'] ?? ''),
-    ENT_QUOTES,
-    'UTF-8'
-);
+$userUpdateIdGroupCsrfField = CsrfRender::field($data, 'user_update_idgroup');
+$userUpdateIdGroupCsrfToken = CsrfRender::token($data, 'user_update_idgroup');
 
 echo '<form action="'.LINK.'user/update_idgroup" method="post">';
 echo '<input type="hidden" name="'.$userUpdateIdGroupCsrfField.'" value="'.$userUpdateIdGroupCsrfToken.'">';

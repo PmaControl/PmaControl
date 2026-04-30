@@ -1,5 +1,7 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 $h = static fn ($value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 $config = $data['config'] ?? [];
 $result = $data['result'] ?? null;
@@ -9,7 +11,7 @@ $enabled = !empty($config['enabled']);
 ?>
 
 <form action="<?= LINK ?>llm/index" method="POST">
-    <input type="hidden" name="<?= $h($data['llm_analyze_csrf_field']) ?>" value="<?= $h($data['llm_analyze_csrf_token']) ?>" />
+    <?= CsrfRender::hiddenInput($data, 'llm_analyze') ?>
 
     <div class="panel panel-primary">
         <div class="panel-heading">

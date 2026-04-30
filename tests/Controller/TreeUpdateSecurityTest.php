@@ -139,8 +139,7 @@ final class TreeUpdateSecurityTest extends TestCase
         $this->assertStringContainsString('private const TREE_UPDATE_FIELDS', $controller);
 
         $this->assertStringContainsString('$treeUpdateCsrfAttributes', $view);
-        $this->assertStringContainsString('data-csrf-field="', $view);
-        $this->assertStringContainsString('data-csrf-token="', $view);
+        $this->assertStringContainsString("CsrfRender::attributes(\$data, 'tree_update')", $view);
         $this->assertStringContainsString('tree/update', $view);
         $this->assertStringContainsString('params[csrfField] = csrfToken;', $javascript);
     }

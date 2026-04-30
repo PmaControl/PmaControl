@@ -1,14 +1,15 @@
 <?php
 
 use App\Library\Display;
+use App\Library\Security\CsrfRender;
 
 function alias_h($value)
 {
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 }
 
-$aliasIndexCsrfField = alias_h($data['alias_index_csrf_field'] ?? '_csrf_token');
-$aliasIndexCsrfToken = alias_h($data['alias_index_csrf_token'] ?? '');
+$aliasIndexCsrfField = CsrfRender::field($data, 'alias_index');
+$aliasIndexCsrfToken = CsrfRender::token($data, 'alias_index');
 
 echo '<div style="margin-bottom:15px">';
 echo '<a href="'.LINK.'alias/updateAlias/" class="btn btn-primary" style="font-size:12px; margin-right:8px"><span class="glyphicon glyphicon-refresh" style="font-size:12px"></span> Get aliases</a>';

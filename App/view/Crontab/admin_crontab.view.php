@@ -1,14 +1,9 @@
 <?php
+use App\Library\Security\CsrfRender;
 use Glial\Html\Form\Form;
 
-$csrf = isset($data['__csrf']) && is_array($data['__csrf']) ? $data['__csrf'] : array();
-unset($data['__csrf']);
-
-$csrf_field = htmlspecialchars((string)($csrf['field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$add_csrf_token = htmlspecialchars((string)($csrf['add_token'] ?? ''), ENT_QUOTES, 'UTF-8');
-$delete_csrf_token = htmlspecialchars((string)($csrf['delete_token'] ?? ''), ENT_QUOTES, 'UTF-8');
-$add_csrf_input = "<input type=\"hidden\" name=\"".$csrf_field."\" value=\"".$add_csrf_token."\" />";
-$delete_csrf_input = "<input type=\"hidden\" name=\"".$csrf_field."\" value=\"".$delete_csrf_token."\" />";
+$add_csrf_input = CsrfRender::hiddenInput($data, 'crontab_add');
+$delete_csrf_input = CsrfRender::hiddenInput($data, 'crontab_delete');
 
 echo "<div id=\"crontab\">";
 

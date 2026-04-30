@@ -1,13 +1,14 @@
 <?php
+
+use App\Library\Security\CsrfRender;
+
 use Glial\Html\Form\Form;
 
-$clientUpdateCsrfField = htmlspecialchars((string) ($data['client_update_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$clientUpdateCsrfToken = htmlspecialchars((string) ($data['client_update_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
-$clientUpdateCsrfAttributes = ' data-csrf-field="'.$clientUpdateCsrfField.'" data-csrf-token="'.$clientUpdateCsrfToken.'"';
-$clientDeleteCsrfField = htmlspecialchars((string) ($data['client_delete_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$clientDeleteCsrfToken = htmlspecialchars((string) ($data['client_delete_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
-$clientMonitoringCsrfField = htmlspecialchars((string) ($data['client_monitoring_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$clientMonitoringCsrfToken = htmlspecialchars((string) ($data['client_monitoring_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$clientUpdateCsrfAttributes = CsrfRender::attributes($data, 'client_update');
+$clientDeleteCsrfField = CsrfRender::field($data, 'client_delete');
+$clientDeleteCsrfToken = CsrfRender::token($data, 'client_delete');
+$clientMonitoringCsrfField = CsrfRender::field($data, 'client_monitoring');
+$clientMonitoringCsrfToken = CsrfRender::token($data, 'client_monitoring');
 
 $totalAll = 0;
 $onlineAll = 0;

@@ -1,9 +1,11 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 use \glial\I18n\I18n;
 
-$translationAdminCsrfField = htmlspecialchars((string) ($data['translation_admin_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$translationAdminCsrfToken = htmlspecialchars((string) ($data['translation_admin_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$translationAdminCsrfField = CsrfRender::field($data, 'translation_admin');
+$translationAdminCsrfToken = CsrfRender::token($data, 'translation_admin');
 
 echo '<div id="translation">';
 

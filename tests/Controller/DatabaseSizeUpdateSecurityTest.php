@@ -161,8 +161,7 @@ final class DatabaseSizeUpdateSecurityTest extends TestCase
         $this->assertStringNotContainsString('Tag::TAG_UPDATE_CSRF_SCOPE', $controller);
 
         $this->assertStringContainsString('$databaseSizeUpdateCsrfAttributes', $view);
-        $this->assertStringContainsString('data-csrf-field="', $view);
-        $this->assertStringContainsString('data-csrf-token="', $view);
+        $this->assertStringContainsString("CsrfRender::attributes(\$data, 'database_size_update')", $view);
         $this->assertStringContainsString('database/sizeUpdate', $view);
         $this->assertStringNotContainsString('tag/update', $view);
         $this->assertStringContainsString('data-name="label"', $view);

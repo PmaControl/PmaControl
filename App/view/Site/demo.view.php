@@ -1,7 +1,10 @@
 <?php
+
+use App\Library\Security\CsrfRender;
+
 $phone = $site_common['phone'] ?? '+33 6 63 28 27 47';
-$siteDemoCsrfField = htmlspecialchars((string)($data['site_demo_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$siteDemoCsrfToken = htmlspecialchars((string)($data['site_demo_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$siteDemoCsrfField = CsrfRender::field($data, 'site_demo');
+$siteDemoCsrfToken = CsrfRender::token($data, 'site_demo');
 
 if (!function_exists('pmac_site_lang')) {
     function pmac_site_lang(array $texts = [], string $tag = 'span', string $class = '')

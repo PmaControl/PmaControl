@@ -1,11 +1,13 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 //debug($_POST);
 
 $data = $data ?? [];
 $form = $data['form'] ?? [];
-$mysqlPlayskoolCsrfField = htmlspecialchars((string)($data['mysql_playskool_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$mysqlPlayskoolCsrfToken = htmlspecialchars((string)($data['mysql_playskool_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$mysqlPlayskoolCsrfField = CsrfRender::field($data, 'mysql_playskool');
+$mysqlPlayskoolCsrfToken = CsrfRender::token($data, 'mysql_playskool');
 $login = htmlspecialchars((string)($form['login'] ?? ''), ENT_QUOTES, 'UTF-8');
 $sql = htmlspecialchars((string)($form['sql'] ?? ''), ENT_QUOTES, 'UTF-8');
 $selectedDbs = array_fill_keys($form['dbs'] ?? [], true);

@@ -1,9 +1,11 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 use Glial\Html\Form\Form;
 
-$ldapIndexCsrfField = htmlspecialchars((string) ($data['ldap_index_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$ldapIndexCsrfToken = htmlspecialchars((string) ($data['ldap_index_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$ldapIndexCsrfField = CsrfRender::field($data, 'ldap_index');
+$ldapIndexCsrfToken = CsrfRender::token($data, 'ldap_index');
 ?>
 <form action="" method="post">
     <input type="hidden" name="<?= $ldapIndexCsrfField ?>" value="<?= $ldapIndexCsrfToken ?>">

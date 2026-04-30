@@ -1,4 +1,7 @@
 <?php
+
+use App\Library\Security\CsrfRender;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -15,8 +18,8 @@ function human_filesize($bytes, $decimals = 2)
 use \Glial\Html\Form\Form;
 use \Glial\Synapse\FactoryController;
 
-$archivesRestoreCsrfField = htmlspecialchars((string)($data['archives_restore_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$archivesRestoreCsrfToken = htmlspecialchars((string)($data['archives_restore_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$archivesRestoreCsrfField = CsrfRender::field($data, 'archives_restore');
+$archivesRestoreCsrfToken = CsrfRender::token($data, 'archives_restore');
 
 echo '<div class="well">';
 \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());

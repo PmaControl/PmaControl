@@ -161,8 +161,7 @@ final class ClientUpdateSecurityTest extends TestCase
         $this->assertStringNotContainsString('$_POST[\'value\']', $controller);
 
         $this->assertStringContainsString('$clientUpdateCsrfAttributes', $view);
-        $this->assertStringContainsString('data-csrf-field="', $view);
-        $this->assertStringContainsString('data-csrf-token="', $view);
+        $this->assertStringContainsString("CsrfRender::attributes(\$data, 'client_update')", $view);
         $this->assertStringContainsString('client/update', $view);
 
         $this->assertStringContainsString('params[csrfField] = csrfToken;', $javascript);

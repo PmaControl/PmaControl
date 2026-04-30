@@ -1,4 +1,7 @@
 <?php
+
+use App\Library\Security\CsrfRender;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -7,8 +10,8 @@
 
 use Glial\Html\Form\Form;
 
-$benchmarkBenchCsrfField = htmlspecialchars((string) ($data['benchmark_bench_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$benchmarkBenchCsrfToken = htmlspecialchars((string) ($data['benchmark_bench_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$benchmarkBenchCsrfField = CsrfRender::field($data, 'benchmark_bench');
+$benchmarkBenchCsrfToken = CsrfRender::token($data, 'benchmark_bench');
 
 //Debug::debug($data);
 

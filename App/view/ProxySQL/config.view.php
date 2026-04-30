@@ -1,13 +1,12 @@
 <?php
 
+use App\Library\Security\CsrfRender;
 
 \Glial\Synapse\FactoryController::addNode("ProxySQL", "menu", $data['param']);
 
-$proxySqlUpdateCsrfField = htmlspecialchars((string) ($data['proxysql_update_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$proxySqlUpdateCsrfToken = htmlspecialchars((string) ($data['proxysql_update_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
-$proxySqlUpdateFieldCsrfField = htmlspecialchars((string) ($data['proxysql_update_field_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$proxySqlUpdateFieldCsrfToken = htmlspecialchars((string) ($data['proxysql_update_field_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
-$proxySqlUpdateFieldCsrfAttributes = ' data-csrf-field="'.$proxySqlUpdateFieldCsrfField.'" data-csrf-token="'.$proxySqlUpdateFieldCsrfToken.'"';
+$proxySqlUpdateCsrfField = CsrfRender::field($data, 'proxysql_update');
+$proxySqlUpdateCsrfToken = CsrfRender::token($data, 'proxysql_update');
+$proxySqlUpdateFieldCsrfAttributes = CsrfRender::attributes($data, 'proxysql_update_field');
 
 $table_name = str_replace('_', ' ', $data['current']);
 $extra = $data['menu'][$table_name];

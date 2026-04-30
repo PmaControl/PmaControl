@@ -1,7 +1,9 @@
 <?php
 
-$telegramAddCsrfField = htmlspecialchars((string) ($data['telegram_add_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$telegramAddCsrfToken = htmlspecialchars((string) ($data['telegram_add_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+use App\Library\Security\CsrfRender;
+
+$telegramAddCsrfField = CsrfRender::field($data, 'telegram_add');
+$telegramAddCsrfToken = CsrfRender::token($data, 'telegram_add');
 
 echo '<div class="row">';
 echo '<div class="col-md-6">';

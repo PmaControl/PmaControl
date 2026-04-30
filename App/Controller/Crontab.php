@@ -162,11 +162,10 @@ class Crontab extends Controller {
         $this->title = __("Crontab");
         $this->ariane = "> <a href=\"" . LINK . "administration/\">" . __("Administration") . "</a> > " . $this->title;
         $data = $this->view();
-        $data['__csrf'] = [
-            'field' => Csrf::DEFAULT_FIELD,
-            'add_token' => Csrf::issueToken($_SESSION, self::ADMIN_CRONTAB_ADD_CSRF_SCOPE),
-            'delete_token' => Csrf::issueToken($_SESSION, self::ADMIN_CRONTAB_DELETE_CSRF_SCOPE),
-        ];
+        $data['crontab_add_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['crontab_add_csrf_token'] = Csrf::issueToken($_SESSION, self::ADMIN_CRONTAB_ADD_CSRF_SCOPE);
+        $data['crontab_delete_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['crontab_delete_csrf_token'] = Csrf::issueToken($_SESSION, self::ADMIN_CRONTAB_DELETE_CSRF_SCOPE);
         $this->set("data", $data);
         //}
 

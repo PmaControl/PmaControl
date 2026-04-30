@@ -147,8 +147,7 @@ final class EnvironmentUpdateSecurityTest extends TestCase
         $this->assertStringNotContainsString('$_POST[\'value\']', $controller);
 
         $this->assertStringContainsString('$environmentUpdateCsrfAttributes', $view);
-        $this->assertStringContainsString('data-csrf-field="', $view);
-        $this->assertStringContainsString('data-csrf-token="', $view);
+        $this->assertStringContainsString("CsrfRender::attributes(\$data, 'environment_update')", $view);
         $this->assertStringContainsString("data-pk=\"' . (int) \$env['id'] . '\"", $view);
         $this->assertStringContainsString('environment/update', $view);
 

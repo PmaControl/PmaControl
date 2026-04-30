@@ -95,8 +95,8 @@ final class DatabaseAnalyzeSecurityTest extends TestCase
         $this->assertStringContainsString('$analyzeRequest[\'payload\']', $analyzeBody);
         $this->assertStringNotContainsString('$_POST[\'database\'][__FUNCTION__]', $analyzeBody);
         $this->assertStringNotContainsString('$_POST[\'analyze\'][\'id_mysql_server\']', $analyzeBody);
-        $this->assertStringContainsString('name="<?= $data[\'database_analyze_csrf_field\'] ?>"', $view);
-        $this->assertStringContainsString('value="<?= $data[\'database_analyze_csrf_token\'] ?>"', $view);
+        $this->assertStringContainsString('use App\\Library\\Security\\CsrfRender;', $view);
+        $this->assertStringContainsString("CsrfRender::hiddenInput(\$data, 'database_analyze')", $view);
         $this->assertStringContainsString('Form::input("analyze", "analyze"', $view);
         $this->assertStringContainsString('method="POST"', $view);
     }

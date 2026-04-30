@@ -1,5 +1,7 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 use Glial\Html\Form\Form;
 use \Glial\Synapse\FactoryController;
 use App\Library\Display;
@@ -75,8 +77,8 @@ if (!empty($data['servers'])) {
     }
 }
 
-$workerKillCsrfField = htmlspecialchars((string)($data['worker_kill_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$workerKillCsrfToken = htmlspecialchars((string)($data['worker_kill_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$workerKillCsrfField = CsrfRender::field($data, 'worker_kill');
+$workerKillCsrfToken = CsrfRender::token($data, 'worker_kill');
 
 if (empty($_GET['ajax'])):
 ?>

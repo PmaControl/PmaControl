@@ -1,4 +1,7 @@
 <?php
+
+use App\Library\Security\CsrfRender;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -25,9 +28,7 @@ function getUnit($bytes, $format = false)
 
     return $res;
 }
-$databaseSizeUpdateCsrfField = htmlspecialchars((string) ($data['database_size_update_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$databaseSizeUpdateCsrfToken = htmlspecialchars((string) ($data['database_size_update_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
-$databaseSizeUpdateCsrfAttributes = ' data-csrf-field="'.$databaseSizeUpdateCsrfField.'" data-csrf-token="'.$databaseSizeUpdateCsrfToken.'"';
+$databaseSizeUpdateCsrfAttributes = CsrfRender::attributes($data, 'database_size_update');
 
 echo '<table class="table table-bordered table-striped" id="table">';
 echo '<tr>';

@@ -1,11 +1,13 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 use Glial\Html\Form\Form;
 
 $isProxyChecked = !empty($_GET['mysql_server']['is_proxy']) && (string) $_GET['mysql_server']['is_proxy'] !== '0';
 $isVipChecked   = !empty($_GET['mysql_server']['is_vip']) && (string) $_GET['mysql_server']['is_vip'] !== '0';
-$mysqlAddCsrfField = htmlspecialchars((string)($data['mysql_add_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$mysqlAddCsrfToken = htmlspecialchars((string)($data['mysql_add_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$mysqlAddCsrfField = CsrfRender::field($data, 'mysql_add');
+$mysqlAddCsrfToken = CsrfRender::token($data, 'mysql_add');
 ?>
 <form action="" method="post">
     <input type="hidden" name="<?= $mysqlAddCsrfField ?>" value="<?= $mysqlAddCsrfToken ?>">

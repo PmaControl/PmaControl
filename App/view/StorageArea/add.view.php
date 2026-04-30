@@ -1,11 +1,13 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 use Glial\Html\Form\Form;
 
 \Glial\Synapse\FactoryController::addNode("StorageArea", "menu", array($data['menu']));
 
-$storageAreaAddCsrfField = htmlspecialchars((string) ($data['storage_area_add_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8');
-$storageAreaAddCsrfToken = htmlspecialchars((string) ($data['storage_area_add_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8');
+$storageAreaAddCsrfField = CsrfRender::field($data, 'storage_area_add');
+$storageAreaAddCsrfToken = CsrfRender::token($data, 'storage_area_add');
 $storageAreaAddCsrfInput = '<input type="hidden" name="'.$storageAreaAddCsrfField.'" value="'.$storageAreaAddCsrfToken.'">';
 ?>
 
