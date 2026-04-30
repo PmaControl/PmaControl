@@ -483,10 +483,10 @@ class Demo extends Controller {
         MASTER_LOG_POS=".$POSITION.";";
 
         Debug::debug("mysql -h $ip_slave -P ".$mysql_server[$id_mysql_server__master]['port'].""
-        ." -u $mysql_user -p$mysql_password2", 'STRING MYSQL MASTER (user replicate)');
+        ." -u $mysql_user -p[redacted]", 'STRING MYSQL MASTER (user replicate)');
         
         
-        Debug::debug("mysql -h $ip_slave -P $port_slave -u $login_slave -p$password_slave", 'STRING MYSQL');
+        Debug::debug("mysql -h $ip_slave -P $port_slave -u $login_slave -p[redacted]", 'STRING MYSQL');
 
         Debug::sql($sql3, "THE CHANNEL !");
         $db_slave->sql_query($sql3);

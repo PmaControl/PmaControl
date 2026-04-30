@@ -1,6 +1,7 @@
 <?php
 
 
+use App\Library\Security\SecretRedactor;
 use \Glial\Cli\Color;
 
 
@@ -31,6 +32,7 @@ define('YEAR', 31536000);
  */
 function debug(mixed $var, $showHtml = false, $showFrom = true)
 {
+    $var = SecretRedactor::debugValue($var);
     
     if (IS_CLI) {
         $calledFrom = debug_backtrace();

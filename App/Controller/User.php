@@ -822,11 +822,6 @@ class User extends Controller {
                     exit;
                 }
 
-                /*
-                  debug($ob->login);
-                  debug($password_non_hash);
-                  exit;
-                 */
                 $this->establishSession($ob->login, $password_non_hash);
 
 

@@ -588,38 +588,6 @@ class Mysql extends Controller
         }
     }
 
-/**
- * Handle mysql state through `uncrypt`.
- *
- * This routine may read or mutate framework state, superglobals or persistence layers.
- *
- * @return void Returned value for uncrypt.
- * @phpstan-return void
- * @psalm-return void
- * @see self::uncrypt()
- * @example /fr/mysql/uncrypt
- * @category PmaControl
- * @package App
- * @subpackage Controller
- * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
- * @license GPL-3.0
- * @since 5.0
- * @version 1.0
- */
-    function uncrypt()
-    {
-        $this->view = false;
-        Crypt::$key = CRYPT_KEY;
-
-        $sql = "SELECT * from mysql_server";
-        $db  = Sgbd::sql(DB_DEFAULT);
-
-        $res = $db->sql_query($sql);
-
-        while ($ob = $db->sql_fetch_object($res)) {
-            debug(Crypt::decrypt($ob->passwd));
-        }
-    }
     /*
       SELECT SUBSTRING_INDEX(host, ':', 1) AS host_short,
       GROUP_CONCAT(DISTINCT USER)   AS users,
