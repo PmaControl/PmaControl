@@ -6,8 +6,11 @@ namespace App\Controller;
 
 use App\Library\Extraction;
 use App\Library\Extraction2;
+use App\Library\Graphviz;
 use App\Library\MysqlVersion;
 use App\Library\Security\Identifier;
+use App\Library\Sql\QueryGraphDotBuilder;
+use App\Library\Sql\QueryGraphExtractor;
 use \Glial\Synapse\Controller;
 use \App\Library\Mysql;
 use \App\Library\Debug;
@@ -739,48 +742,7 @@ SQL;
  * @version 1.0
  */
     function extractTablesFromSQL(string $sql): array {
-        $tables = [];
-
-        // Nettoyage sommaire pour éviter les faux positifs dans les commentaires ou chaînes
-        $sql = preg_replace('/--.*?(\r?\n|$)|\/\*.*?\*\//s', ' ', $sql); // commentaires
-        $sql = preg_replace('/(["\']).*?\1/s', '?', $sql); // chaînes en quote
-
-        // Pattern général : FROM, JOIN, INTO, UPDATE, DELETE FROM
-        $regex = '/
-            (?i)\b
-            (?:from|join|update|into|delete\s+from)      # mots-clés SQL
-            \s+
-            (?:                                           # soit base.table
-                `?([a-zA-Z0-9_]+)`?\.`?([a-zA-Z0-9_]+)`?  # avec base
-            |
-                `?([a-zA-Z0-9_]+)`?                       # ou juste table
-            )
-            (?:\s+partition\s*\([^)]+\))?                 # ignore PARTITION si présent
-            (?:\s+as)?\s+`?[a-zA-Z0-9_]+`?                # ignore alias éventuel
-            ?
-            /x';
-
-        $matches = [];
-
-        if (preg_match_all($regex, $sql, $matches, PREG_SET_ORDER)) {
-            foreach ($matches as $match) {
-                if (!empty($match[1]) && !empty($match[2])) {
-                    // base.table
-                    $tables[] = [
-                        'database' => $match[1],
-                        'table'    => $match[2]
-                    ];
-                } elseif (!empty($match[3])) {
-                    // juste table
-                    $tables[] = [
-                        'database' => null,
-                        'table'    => $match[3]
-                    ];
-                }
-            }
-        }
-
-        return $tables;
+        return QueryGraphExtractor::extractTablesFromSql($sql);
     }
 
 
@@ -807,39 +769,7 @@ SQL;
  * @version 1.0
  */
     function extractTablesAndAliases(string $sql): array {
-        $tables = [];
-
-        // Nettoyer : commentaires et chaînes de caractères
-        $sql = preg_replace('/--.*?(\r?\n|$)|\/\*.*?\*\//s', ' ', $sql);
-        $sql = preg_replace('/(["\']).*?\1/s', '?', $sql);
-
-        // REGEX corrigée
-        $regex = '/
-            \b(?:from|join|update|into|delete\s+from)\s+       # mots-clés
-            (?:
-                `?([a-zA-Z0-9_]+)`?\.`?([a-zA-Z0-9_]+)`?        # base.table
-                |
-                `?([a-zA-Z0-9_]+)`?                             # ou juste table
-            )
-            (?:\s+partition\s*\([^)]+\))?                       # PARTITION ignoré
-            \s+(?:as\s+)?`?([a-zA-Z0-9_]+)`?                    # alias après partition
-        /ix';
-
-        if (preg_match_all($regex, $sql, $matches, PREG_SET_ORDER)) {
-            foreach ($matches as $m) {
-                $database = $m[1] ?? null;
-                $table    = $m[2] ?? $m[3];
-                $alias    = $m[4] ?? null;
-
-                $tables[] = [
-                    'database' => $database,
-                    'table'    => $table,
-                    'alias'    => $alias,
-                ];
-            }
-        }
-
-        return $tables;
+        return QueryGraphExtractor::extractTablesAndAliases($sql);
     }
 
 
@@ -865,69 +795,7 @@ SQL;
  * @version 1.0
  */
     function extractTablesWithOffsets(string $sql): array {
-        $results = [];
-
-        $reserved = [
-        'on','left','right','inner','outer','cross','where','group','having','order','limit',
-        'union','join','from','into','using','natural','and','or','not','when','then','else',
-        'end','case','as','select','desc','asc','window','over'
-        ];
-
-        // Nettoyage (on garde les positions, donc on n'altère pas les longueurs)
-        $cleanSql = preg_replace_callback('/(["\']).*?\1|--.*?$|\/\*.*?\*\//ms', function ($m) {
-            return str_repeat(' ', strlen($m[0])); // preserve length with spaces
-        }, $sql);
-
-        // REGEX : FROM / JOIN / etc + [db.]table + partition + alias
-        $regex = '/
-            \b(from|join|update|into|delete\s+from)\s+                   # clause
-            (?:`?([a-zA-Z0-9_]+)`?\.`?([a-zA-Z0-9_]+)`?                  # db.table
-            |
-            `?([a-zA-Z0-9_]+)`?)                                         # ou table seule
-            (?:\s+partition\s*\([^)]+\))?                                # partition ignorée
-            (?:\s+(?:as\s+)?(["\'`]?)([a-zA-Z0-9_]+)\\5)?                # alias
-        /ix';
-
-        if (preg_match_all($regex, $cleanSql, $matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER)) {
-
-            Debug::debug($matches);
-
-            foreach ($matches as $m) {
-                $offset = $m[0][1];
-                $line = substr_count(substr($cleanSql, 0, $offset), "\n") + 1;
-
-                $database = $m[2][0] ?? null;
-                $table    = empty($m[3][0])?  $m[4][0] : $m[3][0]; 
-                //$alias    = $m[5][0] ?? null;
-
-                $quote    = $m[5][0] ?? null; // ' " `
-                $aliasRaw = $m[6][0] ?? null;
-
-                if ($aliasRaw !== null) {
-                    $alias = $aliasRaw;
-                    $isQuoted = in_array($quote, ['`', '"', "'"], true);
-
-                    // Si non quoted ET mot-clé => on ignore
-                    if (!$isQuoted && in_array(strtolower($alias), $reserved, true)) {
-                        $alias = null;
-                    }
-                } else {
-                    $alias = null;
-                }
-
-                $results[] = [
-                    'database' => $database,
-                    'table'    => $table,
-                    'alias'    => $alias,
-                    'offset'   => $offset,
-                    'line'     => $line,
-                ];
-            }
-        }
-
-        // test case : https://chatgpt.com/c/685d6a2d-56e4-8006-a371-bb7682c00f9f
-
-        return $results;
+        return QueryGraphExtractor::extractTablesWithOffsets($sql);
     }
 
 /**
@@ -2156,7 +2024,7 @@ public function digest($param)
 {
     Debug::parseDebug($param);
 
-    $id_mysql_server = $param[0];
+    $id_mysql_server = (int)$param[0];
     $schema_name     = $param[1];
     $digest          = $param[2];
 
@@ -2174,7 +2042,8 @@ public function digest($param)
     // 1) Charger métadonnées digest (local)
     $sql = "SELECT id, digest_text, digest
             FROM mysql_digest
-            WHERE digest = '".$db->sql_real_escape_string($digest)."'";
+            WHERE digest = '".$db->sql_real_escape_string($digest)."'
+            LIMIT 1";
               
 
 
@@ -2201,7 +2070,7 @@ public function digest($param)
 
     // Fallback si digest non présent localement
     if (empty($data)) {
-        $sql_fb = "SELECT SCHEMA_NAME, DIGEST_TEXT, DIGEST
+        $sql_fb = "SELECT SCHEMA_NAME AS schema_name, DIGEST_TEXT AS digest_text, DIGEST AS digest
                    FROM performance_schema.events_statements_summary_by_digest
                    WHERE DIGEST = '".$extra->sql_real_escape_string($digest)."'
                    LIMIT 1";
@@ -2216,6 +2085,8 @@ public function digest($param)
             throw new \Exception("Digest '$digest' not found locally or on server $id_mysql_server");
         }
     }
+
+    $data = self::normalizeDigestRecord($data, $id_mysql_server, $schema_name, $digest);
 
     // 2) Récupérer l'exemple réel (non normalisé)
     $sql_real = "SELECT SQL_TEXT
@@ -2243,7 +2114,7 @@ public function digest($param)
     $data['sql_text'] = $arr2['SQL_TEXT'];
 
     // 3) Extraction tables + alias
-    $data['tables'] = $this->extractTablesWithOffsets($data['sql_text']);
+    $data['tables'] = QueryGraphExtractor::extractTablesWithOffsets($data['sql_text']);
     foreach ($data['tables'] as $key => $tbl) {
         if (empty($tbl['alias'])) {
             $data['tables'][$key]['alias'] = $tbl['table'];
@@ -2312,6 +2183,220 @@ public function digest($param)
         }
 
         return "SHOW INDEX FROM ".Identifier::quoteStrictSqlIdentifier($tableName);
+    }
+
+    public static function buildDigestPath(int $idMysqlServer, string $schemaName, string $digest): string
+    {
+        return 'Query/digest/'.$idMysqlServer.'/'.rawurlencode($schemaName === '' ? 'NULL' : $schemaName).'/'.rawurlencode($digest).'/';
+    }
+
+    public static function buildGraphPath(int $idMysqlServer, string $schemaName, string $digest): string
+    {
+        return 'Query/graph/'.$idMysqlServer.'/'.rawurlencode($schemaName === '' ? 'NULL' : $schemaName).'/'.rawurlencode($digest).'/';
+    }
+
+    public static function evaluateGraphRequest(array $get, array $server, array $param): array
+    {
+        if (strtoupper((string)($server['REQUEST_METHOD'] ?? 'GET')) !== 'GET') {
+            return [
+                'allowed' => false,
+                'status' => 405,
+                'body' => 'Method Not Allowed',
+                'headers' => ['Allow' => 'GET'],
+            ];
+        }
+
+        if (array_key_exists('sql', $get)) {
+            return [
+                'allowed' => false,
+                'status' => 400,
+                'body' => 'Raw SQL input is not accepted on this route.',
+                'headers' => [],
+            ];
+        }
+
+        $route = self::normalizeGraphRoute($param);
+        if ($route === null) {
+            return [
+                'allowed' => false,
+                'status' => 400,
+                'body' => 'Invalid query graph route.',
+                'headers' => [],
+            ];
+        }
+
+        return [
+            'allowed' => true,
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'id_mysql_server' => $route['id_mysql_server'],
+            'schema_name' => $route['schema_name'],
+            'digest' => $route['digest'],
+        ];
+    }
+
+    public function graph($param)
+    {
+        Debug::parseDebug($param);
+
+        $outcome = self::evaluateGraphRequest($_GET, $_SERVER, $param);
+        if (!$outcome['allowed']) {
+            $this->sendGraphError($outcome);
+            return;
+        }
+
+        $idMysqlServer = (int)$outcome['id_mysql_server'];
+        $schemaName = (string)$outcome['schema_name'];
+        $digest = (string)$outcome['digest'];
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $extra = Mysql::getDbLink($idMysqlServer, "EXTRA");
+
+        if ($schemaName !== '') {
+            $extra->sql_select_db($schemaName);
+        }
+
+        $data = self::loadDigestRecord($db, $extra, $idMysqlServer, $schemaName, $digest);
+        $data['sql_text'] = self::loadDigestSqlText($extra, $digest, (string)$data['digest_text']);
+        $data['graph'] = QueryGraphExtractor::extract($data['sql_text']);
+        $data['dot'] = QueryGraphDotBuilder::build($data['graph']);
+        $data['digest_href'] = self::buildDigestPath($idMysqlServer, $schemaName, $digest);
+
+        $reference = 'query_graph_'.substr(sha1($idMysqlServer."\0".$schemaName."\0".$digest), 0, 16);
+        if (!is_dir(TMP.'dot')) {
+            mkdir(TMP.'dot', 0775, true);
+        }
+        $data['svg_path'] = Graphviz::generateDot($reference, $data['dot']);
+        $data['graphviz_error'] = Graphviz::getLastGenerateDotError();
+        $data['svg'] = is_file($data['svg_path']) ? (string)file_get_contents($data['svg_path']) : '';
+
+        $this->set('data', $data);
+    }
+
+    private static function normalizeGraphRoute(array $param): ?array
+    {
+        $idMysqlServer = self::normalizeGraphId($param[0] ?? null);
+        $schemaName = self::normalizeGraphText($param[1] ?? null, 255, true);
+        $digest = self::normalizeGraphDigest($param[2] ?? null);
+
+        if ($idMysqlServer === null || $schemaName === null || $digest === null) {
+            return null;
+        }
+
+        if (strtoupper($schemaName) === 'NULL') {
+            $schemaName = '';
+        }
+
+        return [
+            'id_mysql_server' => $idMysqlServer,
+            'schema_name' => $schemaName,
+            'digest' => $digest,
+        ];
+    }
+
+    private static function normalizeGraphId($value): ?int
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $value = trim((string)$value);
+        if ($value === '' || !ctype_digit($value) || (int)$value < 1) {
+            return null;
+        }
+
+        return (int)$value;
+    }
+
+    private static function normalizeGraphText($value, int $maxLength, bool $allowEmpty): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $value = trim(rawurldecode((string)$value));
+        if ((!$allowEmpty && $value === '') || strlen($value) > $maxLength) {
+            return null;
+        }
+
+        return $value;
+    }
+
+    private static function normalizeGraphDigest($value): ?string
+    {
+        $digest = self::normalizeGraphText($value, 128, false);
+        if ($digest === null || preg_match('/^[A-Fa-f0-9]{16,128}$/', $digest) !== 1) {
+            return null;
+        }
+
+        return strtoupper($digest);
+    }
+
+    private function sendGraphError(array $outcome): void
+    {
+        $this->view = false;
+        $this->layout_name = false;
+        http_response_code((int)$outcome['status']);
+
+        foreach ($outcome['headers'] as $name => $value) {
+            header($name.': '.$value);
+        }
+
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $outcome['body'];
+    }
+
+    private static function loadDigestRecord($db, $extra, int $idMysqlServer, string $schemaName, string $digest): array
+    {
+        $sql = "SELECT id, digest_text, digest
+            FROM mysql_digest
+            WHERE digest = '".$db->sql_real_escape_string($digest)."'
+            LIMIT 1";
+
+        $res = $db->sql_query($sql);
+        $data = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+
+        if (empty($data)) {
+            $sqlFallback = "SELECT NULL AS id, SCHEMA_NAME AS schema_name, DIGEST_TEXT AS digest_text, DIGEST AS digest
+                FROM performance_schema.events_statements_summary_by_digest
+                WHERE DIGEST = '".$extra->sql_real_escape_string($digest)."'
+                LIMIT 1";
+
+            $resFallback = $extra->sql_query($sqlFallback);
+            $data = $extra->sql_fetch_array($resFallback, MYSQLI_ASSOC);
+
+            if (empty($data)) {
+                throw new \Exception("Digest '$digest' not found locally or on server $idMysqlServer");
+            }
+        }
+
+        return self::normalizeDigestRecord($data, $idMysqlServer, $schemaName, $digest);
+    }
+
+    private static function normalizeDigestRecord(array $data, int $idMysqlServer, string $schemaName, string $digest): array
+    {
+        $data['id_mysql_server'] = $idMysqlServer;
+        $data['schema_name'] = $schemaName;
+        $data['digest'] = (string)($data['digest'] ?? $data['DIGEST'] ?? $digest);
+        $data['digest_text'] = (string)($data['digest_text'] ?? $data['DIGEST_TEXT'] ?? '');
+
+        return $data;
+    }
+
+    private static function loadDigestSqlText($extra, string $digest, string $fallbackSql): string
+    {
+        $sql = "SELECT SQL_TEXT
+            FROM performance_schema.events_statements_history_long
+            WHERE DIGEST = '".$extra->sql_real_escape_string($digest)."'
+            AND SQL_TEXT IS NOT NULL
+            ORDER BY EVENT_ID DESC
+            LIMIT 1";
+
+        $res = $extra->sql_query($sql);
+        $row = $extra->sql_fetch_array($res, MYSQLI_ASSOC);
+
+        return empty($row['SQL_TEXT']) ? $fallbackSql : (string)$row['SQL_TEXT'];
     }
 
 

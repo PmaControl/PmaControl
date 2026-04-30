@@ -1,8 +1,24 @@
 <?php
 use App\Controller\Query;
+
+$h = static fn($value): string => htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+$graphHref = '';
+if (!empty($data['id_mysql_server']) && !empty($data['digest'])) {
+    $graphHref = LINK . Query::buildGraphPath(
+        (int)$data['id_mysql_server'],
+        (string)($data['schema_name'] ?? ''),
+        (string)$data['digest']
+    );
+}
 ?>
 
 <div class="container" style="width:100%">
+  <?php if ($graphHref !== ''): ?>
+    <p>
+      <a class="btn btn-info btn-sm" href="<?= $h($graphHref) ?>"><?= __("Query graph") ?></a>
+    </p>
+  <?php endif; ?>
+
   <div class="row">
 
     <!-- Normalized Query -->

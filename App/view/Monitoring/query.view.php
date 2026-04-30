@@ -6,6 +6,7 @@
  */
 
 use \Glial\Html\Form\Form;
+use App\Controller\Query;
 
 echo '<div class="well">';
 echo '<form action="" method="get" class="form-inline">';
@@ -81,10 +82,20 @@ if (!$data['error']) {
         //echo '<td>' . $event['DIGEST'] . '</td>';
         echo '<td>'.number_format($event['COUNT_STAR'], 0, '.', ' ').'</td>';
 
+        $graphLink = '';
+        if (!empty($event['DIGEST']) && !empty($data['id_server'])) {
+            $graphHref = LINK . Query::buildGraphPath(
+                (int)$data['id_server'],
+                (string)($event['SCHEMA_NAME'] ?? ''),
+                (string)$event['DIGEST']
+            );
+            $graphLink = '<a class="btn btn-xs btn-info" href="'.htmlspecialchars($graphHref, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8').'">Graph</a><br />';
+        }
+
         echo '<td>'
         // todo : to improve and check config of performance shema
         //.'<a href="'.LINK.'monitoring/explain/mysql_server:id:'.$data['id_server'].'/digest:'.$event['DIGEST'].'">'.$event['DIGEST'].'</a>'.'<br />'
-        .\SqlFormatter::format($sql).'</td>';
+        .$graphLink.\SqlFormatter::format($sql).'</td>';
 
         if (!empty($event['SUM_ROWS_AFFECTED'])) {
             echo '<td>'.number_format(round($event['SUM_ROWS_AFFECTED'] / $event['COUNT_STAR'], 2), 0, '.', ' ').'</td>';
