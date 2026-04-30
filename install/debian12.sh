@@ -2,11 +2,16 @@
 set +x
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=install/lib/harden_apache.sh
+. "${SCRIPT_DIR}/lib/harden_apache.sh"
+
 DEV_MOD=0
 password=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
 pwd_pmacontrol=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
 pwd_admin=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
 VERSION_MARIADB="10.11"
+PMACTRL_HARDEN_APACHE_DOCROOT="${PMACTRL_HARDEN_APACHE_DOCROOT:-1}"
 
 while getopts 'hp:v:d' flag; do
   case "${flag}" in
@@ -86,6 +91,7 @@ sed -i  's#;date.timezone =#date.timezone = Europe/Paris#g' /etc/php/8.2/cli/php
 sed -i 's/\/var\/www/\/srv\/www/g' /etc/apache2/apache2.conf
 sed -i 's/\/var\/www\/html/\/srv\/www/g' /etc/apache2/sites-enabled/000-default.conf
 awk '/AllowOverride/ && ++i==3 {sub(/None/,"All")}1' /etc/apache2/apache2.conf > /tmp/xfgh && mv /tmp/xfgh /etc/apache2/apache2.conf
+pmactrl_harden_apache_docroot
 
 mkdir -p /srv/www/
 cd /srv/www/

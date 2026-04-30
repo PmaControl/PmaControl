@@ -4,6 +4,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=install/lib/harden_network.sh
 . "${SCRIPT_DIR}/lib/harden_network.sh"
+# shellcheck source=install/lib/harden_apache.sh
+. "${SCRIPT_DIR}/lib/harden_apache.sh"
 
 DEV_MOD=0
 VERSION_MARIADB="11.8"
@@ -19,6 +21,7 @@ PMACTRL_DB_HOST="${PMACTRL_DB_HOST:-127.0.0.1}"
 PMACTRL_HARDEN_DB_BIND="${PMACTRL_HARDEN_DB_BIND:-1}"
 PMACTRL_DB_BIND_ADDRESS="${PMACTRL_DB_BIND_ADDRESS:-127.0.0.1,::1}"
 PMACTRL_RPCBIND_POLICY="${PMACTRL_RPCBIND_POLICY:-disable}"
+PMACTRL_HARDEN_APACHE_DOCROOT="${PMACTRL_HARDEN_APACHE_DOCROOT:-1}"
 
 generate_password()
 {
@@ -297,6 +300,7 @@ configure_apache()
     sed -i 's#/var/www/html#/srv/www#g' /etc/apache2/sites-enabled/000-default.conf
     awk '/AllowOverride/ && ++i==3 {sub(/None/,"All")}1' /etc/apache2/apache2.conf > /tmp/apache2.conf.pmacontrol
     mv /tmp/apache2.conf.pmacontrol /etc/apache2/apache2.conf
+    pmactrl_harden_apache_docroot
     systemctl restart apache2
 }
 

@@ -4,6 +4,8 @@ set -Eeuo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=install/lib/harden_network.sh
 . "${SCRIPT_DIR}/lib/harden_network.sh"
+# shellcheck source=install/lib/harden_apache.sh
+. "${SCRIPT_DIR}/lib/harden_apache.sh"
 
 export DEBIAN_FRONTEND=noninteractive
 export UCF_FORCE_CONFOLD=1
@@ -23,6 +25,7 @@ PMACTRL_DB_PASSWORD="${PMACTRL_DB_PASSWORD:-}"
 PMACTRL_HARDEN_DB_BIND="${PMACTRL_HARDEN_DB_BIND:-1}"
 PMACTRL_DB_BIND_ADDRESS="${PMACTRL_DB_BIND_ADDRESS:-127.0.0.1,::1}"
 PMACTRL_RPCBIND_POLICY="${PMACTRL_RPCBIND_POLICY:-disable}"
+PMACTRL_HARDEN_APACHE_DOCROOT="${PMACTRL_HARDEN_APACHE_DOCROOT:-1}"
 PMACTRL_ADMIN_LOGIN="${PMACTRL_ADMIN_LOGIN:-admin}"
 PMACTRL_ADMIN_EMAIL="${PMACTRL_ADMIN_EMAIL:-admin@example.com}"
 PMACTRL_ADMIN_FIRSTNAME="${PMACTRL_ADMIN_FIRSTNAME:-PmaControl}"
@@ -66,6 +69,7 @@ Environment:
   PMACTRL_DB_NAME, PMACTRL_DB_USER, PMACTRL_DB_HOST, PMACTRL_DB_PORT, PMACTRL_DB_PASSWORD
   PMACTRL_HARDEN_DB_BIND=1, PMACTRL_DB_BIND_ADDRESS=127.0.0.1,::1
   PMACTRL_RPCBIND_POLICY=disable|mask|leave
+  PMACTRL_HARDEN_APACHE_DOCROOT=1
   PMACTRL_ADMIN_LOGIN, PMACTRL_ADMIN_EMAIL, PMACTRL_ADMIN_PASSWORD
   PMACTRL_ORGANIZATION, PMACTRL_WEBROOT
   PMACTRL_FORCE_REINSTALL=1, PMACTRL_DRY_RUN=1, PMACTRL_KEEP_CONFIG=1
@@ -269,6 +273,7 @@ configure_apache()
     run sed -i 's#/var/www/html#/srv/www#g' /etc/apache2/sites-enabled/000-default.conf
     run sed -i 's#/var/www#/srv/www#g' /etc/apache2/apache2.conf
     run_shell "awk '/AllowOverride/ && ++i==3 {sub(/None/,\"All\")}1' /etc/apache2/apache2.conf > /tmp/apache2.conf.pmacontrol && mv /tmp/apache2.conf.pmacontrol /etc/apache2/apache2.conf"
+    pmactrl_harden_apache_docroot
     run systemctl restart apache2
 }
 
