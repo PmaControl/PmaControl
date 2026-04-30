@@ -8,6 +8,8 @@ use App\Library\ChartPayload;
 use App\Library\Extraction;
 use App\Library\Display;
 use App\Library\Debug;
+use App\Library\Format;
+use App\Library\PostMortem\PostMortemReport;
 
 /**
  * Class responsible for post mortem workflows.
@@ -25,6 +27,18 @@ use App\Library\Debug;
  */
 class PostMortem extends Controller
 {
+
+    public function index($param)
+    {
+        Debug::parseDebug($param);
+
+        $serverId = PostMortemReport::normalizeServerId((array)$param);
+        $payload = PostMortemReport::buildPayload($serverId, $_GET);
+
+        $this->title = $serverId > 0 ? 'Post-mortem server '.$serverId : 'Post-mortem';
+        $this->ariane = ' > Tools > Post-mortem';
+        $this->set('data', ['payload' => $payload]);
+    }
 
 /**
  * Handle post mortem state through `format`.
@@ -56,11 +70,8 @@ class PostMortem extends Controller
         if (empty($bytes)) {
             return "";
         }
-        $sz = ' KMGTP';
 
-        $factor = (int) floor(log($bytes) / log(1024));
-
-        return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor))." ".@$sz[$factor]."o";
+        return Format::bytes($bytes, $decimals);
     }
 
 /**
