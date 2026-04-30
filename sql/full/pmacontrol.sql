@@ -176153,7 +176153,7 @@ CREATE TABLE `webservice_history_main` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `id_user_main` int(11) NOT NULL,
   `user` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL COMMENT 'redacted legacy field; Basic Auth password is never stored',
   `date` datetime NOT NULL,
   `logon` int(11) NOT NULL,
   `message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
