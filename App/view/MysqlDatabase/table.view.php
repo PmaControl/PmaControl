@@ -5,21 +5,7 @@ use \Glial\Synapse\FactoryController;
 if (!function_exists('formatBytesToKbMbTb')) {
     function formatBytesToKbMbTb($bytes)
     {
-        $bytes = (float) $bytes;
-
-        if ($bytes >= 1099511627776) { // 1024^4
-            return number_format($bytes / 1099511627776, 2).' TB';
-        }
-        
-        if ($bytes >= 1073741824) { // 1024^3
-            return number_format($bytes / 1073741824, 2).' GB';
-        }
-
-        if ($bytes >= 1048576) { // 1024^2
-            return number_format($bytes / 1048576, 2).' MB';
-        }
-
-        return number_format($bytes / 1024, 2).' KB';
+        return \App\Library\Format::bytes($bytes, 2, 'si', array('min_unit' => 1));
     }
 }
 

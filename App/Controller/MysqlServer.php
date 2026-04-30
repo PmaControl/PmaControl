@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Library\Display;
+use App\Library\Format;
 use App\Library\MysqlLogCollector;
 use App\Library\Security\SafeRedirect;
 use App\Library\ServerCapabilities;
@@ -2771,20 +2772,7 @@ class MysqlServer extends Controller
  */
     private static function formatBytesToMbGb($bytes): string
     {
-        if ($bytes === null || $bytes === '') {
-            return 'n/a';
-        }
-
-        $bytes = (float) $bytes;
-
-        $oneGb = 1024 * 1024 * 1024;
-        $oneMb = 1024 * 1024;
-
-        if ($bytes >= $oneGb) {
-            return number_format($bytes / $oneGb, 2).' GB';
-        }
-
-        return number_format($bytes / $oneMb, 2).' MB';
+        return Format::bytesOrNa($bytes, 2, 'si', array('min_unit' => 2));
     }
 
 /**
@@ -2810,30 +2798,7 @@ class MysqlServer extends Controller
  */
     private static function formatBytesToMbGbTb($bytes): string
     {
-        if ($bytes === null || $bytes === '') {
-            return 'n/a';
-        }
-
-        $bytes = (float) $bytes;
-
-        $oneTb = 1024 * 1024 * 1024 * 1024;
-        $oneGb = 1024 * 1024 * 1024;
-        $oneMb = 1024 * 1024;
-        $oneKb = 1024;
-
-        if ($bytes >= $oneTb) {
-            return number_format($bytes / $oneTb, 2).' TB';
-        }
-
-        if ($bytes >= $oneGb) {
-            return number_format($bytes / $oneGb, 2).' GB';
-        }
-
-        if ($bytes >= $oneMb) {
-            return number_format($bytes / $oneMb, 2).' MB';
-        }
-
-        return number_format($bytes / $oneKb, 2).' KB';
+        return Format::bytesOrNa($bytes, 2, 'si', array('min_unit' => 1));
     }
 
 /**
@@ -2859,34 +2824,11 @@ class MysqlServer extends Controller
  */
     private static function formatBytesHuman($bytes): string
     {
-        if ($bytes === null || $bytes === '' || !is_numeric($bytes)) {
-            return 'n/a';
+        if (is_numeric($bytes) && abs((float)$bytes) < 1024) {
+            return Format::bytesOrNa($bytes, 0, 'si', array('zero' => '0 B'));
         }
 
-        $bytes = (float) $bytes;
-
-        $oneTb = 1024 * 1024 * 1024 * 1024;
-        $oneGb = 1024 * 1024 * 1024;
-        $oneMb = 1024 * 1024;
-        $oneKb = 1024;
-
-        if ($bytes >= $oneTb) {
-            return number_format($bytes / $oneTb, 2).' TB';
-        }
-
-        if ($bytes >= $oneGb) {
-            return number_format($bytes / $oneGb, 2).' GB';
-        }
-
-        if ($bytes >= $oneMb) {
-            return number_format($bytes / $oneMb, 2).' MB';
-        }
-
-        if ($bytes >= $oneKb) {
-            return number_format($bytes / $oneKb, 2).' KB';
-        }
-
-        return number_format($bytes, 0).' B';
+        return Format::bytesOrNa($bytes, 2, 'si');
     }
 
 /**

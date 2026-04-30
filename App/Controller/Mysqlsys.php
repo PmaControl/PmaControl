@@ -14,6 +14,7 @@ use App\Library\Mysql;
 use App\Library\MysqlVersion;
 use App\Library\ServerCapabilities;
 use App\Library\Debug;
+use App\Library\Format;
 use Glial\Security\Csrf;
 
 
@@ -293,14 +294,7 @@ class Mysqlsys extends Controller {
 
     private static function formatBytes(int $bytes): string
     {
-        if ($bytes <= 0) {
-            return '0 o';
-        }
-
-        $units = ['o', 'Ko', 'Mo', 'Go', 'To'];
-        $factor = min(count($units) - 1, (int)floor(log($bytes, 1024)));
-
-        return number_format($bytes / (1024 ** $factor), 2, '.', ' ').' '.$units[$factor];
+        return Format::bytesZero($bytes, 2, 'fr', array('thousands_separator' => ' '));
     }
 
 

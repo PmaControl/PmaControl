@@ -12,15 +12,7 @@ function getUnit($bytes, $format = false)
     if (empty($bytes)) {
         return "0";
     }
-    $sz     = ' KMGTPE';
-    $factor = (int) floor(log($bytes) / log(1024));
-
-    $res = array();
-
-    $res['factor']  = $factor;
-    $res['unit']    = $sz[$factor];
-    $res['value']   = $bytes / pow(1024, $factor);
-    $res['arrondi'] = ceil($res['value']) * pow(1024, $factor);
+    $res = \App\Library\Format::byteParts($bytes, 'mysql');
 
     if ($format) {
         return $res['value'].$res['unit'];

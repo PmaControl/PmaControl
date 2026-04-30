@@ -940,16 +940,10 @@ class EngineMemoryBreakdown
             return 'n/a';
         }
 
-        $bytes = (float)$bytes;
-        if ($bytes <= 0) {
-            return '0 B';
-        }
-
-        $units = ['B', 'KiB', 'MiB', 'GiB', 'TiB'];
-        $power = (int)floor(log($bytes, 1024));
-        $power = max(0, min($power, count($units) - 1));
-
-        return round($bytes / (1024 ** $power), 2).' '.$units[$power];
+        return Format::bytes($bytes, 2, 'iec', array(
+            'zero' => '0 B',
+            'trim_trailing_zeros' => true,
+        ));
     }
 
     private static function formatScalar($value): string

@@ -8,14 +8,7 @@
 if (!function_exists('formatElapsed')) {
     function formatElapsed($seconds)
     {
-        $seconds = max(0, (int) $seconds);
-        if ($seconds < 60) {
-            return $seconds.'s';
-        }
-        if ($seconds < 3600) {
-            return sprintf('%dm %02ds', intdiv($seconds, 60), $seconds % 60);
-        }
-        return sprintf('%dh %02dm', intdiv($seconds, 3600), intdiv($seconds % 3600, 60));
+        return \App\Library\Format::elapsedCompact($seconds);
     }
 }
 

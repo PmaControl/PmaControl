@@ -64,7 +64,7 @@ class Chartjs extends Controller
         Debug::parseDebug($param);
 
         //$this->di['js']->addJavascript(array("moment.js", "Chart.bundle.js")); //, "hammer.min.js", "chartjs-plugin-zoom.js")
-        $this->di['js']->addJavascript(array("moment.js", "chart.min.js", "chartjs-plugin-crosshair.js"));
+        $this->di['js']->addJavascript(array("moment.js", "chart.min.js", "chartjs-plugin-crosshair.js", "formatters.js"));
         $slaves = Extraction::extract(array("status::com_select", "status::com_insert", "status::com_update", "status::com_delete"), array($id_mysql_server), $date, true, true);
 
 
@@ -87,7 +87,7 @@ class Chartjs extends Controller
                 ticks:
                 {
                     callback: function(value, index, values){
-                        return FileConvertSize(value)
+                        return PmaFormat.number(value)
                     },
                 }
             }]";
@@ -114,16 +114,6 @@ class Chartjs extends Controller
 // //..' -  Max : '.self::format($slave['max']).' - Avg : '.self::format($slave['avg']).' - Std : '.$slave['std'].'"
         $this->di['js']->code_javascript('
 "use strict";
-
-function FileConvertSize(aSize){
-
-    return Math.round((aSize + Number.EPSILON) * 100) / 100;
-    aSize = Math.abs(parseInt(aSize, 10));
-    var def = [[1, "octets"], [1024, "ko"], [1024*1024, "Mo"], [1024*1024*1024, "Go"], [1024*1024*1024*1024, "To"]];
-    for(var i=0; i<def.length; i++){
-            if(aSize<def[i][0]) return (aSize/def[i-1][0]).toFixed(2)+" "+def[i-1][1];
-    }
-}
 
 '.$tooltip.'
 
@@ -227,7 +217,7 @@ options:
                     if (label) {
                         label += " : ";
                     }
-                    label += FileConvertSize(tooltipItem.yLabel);
+                    label += PmaFormat.number(tooltipItem.yLabel);
                     /* label += agregat[tooltipItem.datasetIndex]; */
                     return label;
                 }
