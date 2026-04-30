@@ -6,8 +6,9 @@ namespace App\Library\Security;
 
 final class ClusterDataCheckRequest
 {
-    public const MAX_SQL_BYTES = 65535;
+    public const MAX_SQL_BYTES = 4096;
     public const MAX_SERVER_IDS = 64;
+    private const READ_ONLY_SQL_ERROR = 'Statement must be read-only';
 
     public static function evaluate(array $post, array $server, array $session, string $scope): array
     {
@@ -24,8 +25,13 @@ final class ClusterDataCheckRequest
             return self::outcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
-        $selection = self::normalize($post);
+        $normalization = self::normalizeWithStatus($post);
+        $selection = $normalization['selection'];
         if ($selection === null || !self::isComplete($selection)) {
+            if ($normalization['error'] === 'read_only_sql') {
+                return self::outcome(422, self::READ_ONLY_SQL_ERROR);
+            }
+
             return self::outcome(400, 'Invalid cluster data check payload');
         }
 
@@ -34,41 +40,49 @@ final class ClusterDataCheckRequest
 
     public static function normalize(array $source): ?array
     {
+        return self::normalizeWithStatus($source)['selection'];
+    }
+
+    private static function normalizeWithStatus(array $source): array
+    {
         if (!isset($source['mysql_cluster']) && !isset($source['sql'])) {
-            return self::emptySelection();
+            return self::normalization(self::emptySelection());
         }
 
         if (!isset($source['mysql_cluster']) || !is_array($source['mysql_cluster'])) {
-            return null;
+            return self::normalization(null, 'invalid');
         }
 
         foreach ($source['mysql_cluster'] as $field => $value) {
             if (!is_string($field) || !in_array($field, ['id', 'database'], true)) {
-                return null;
+                return self::normalization(null, 'invalid');
             }
         }
 
         $ids = ServerIdSelection::normalizeList($source['mysql_cluster']['id'] ?? null, self::MAX_SERVER_IDS);
         if ($ids === null) {
-            return null;
+            return self::normalization(null, 'invalid');
         }
 
         $database = self::normalizeDatabase($source['mysql_cluster']['database'] ?? null);
         if ($database === null) {
-            return null;
+            return self::normalization(null, 'invalid');
         }
 
         $sql = self::normalizeSql($source['sql'] ?? null);
         if ($sql === null) {
-            return null;
+            return self::normalization(
+                null,
+                self::isReadOnlySqlViolation($source['sql'] ?? null) ? 'read_only_sql' : 'invalid'
+            );
         }
 
-        return [
+        return self::normalization([
             'ids' => $ids,
             'id_list' => implode(',', $ids),
             'database' => $database,
             'sql' => $sql,
-        ];
+        ]);
     }
 
     public static function isComplete(array $selection): bool
@@ -125,7 +139,26 @@ final class ClusterDataCheckRequest
             return null;
         }
 
-        return $sql;
+        return SqlReadOnlyGuard::isReadOnly($sql) ? $sql : null;
+    }
+
+    private static function isReadOnlySqlViolation($raw): bool
+    {
+        if (!is_scalar($raw)) {
+            return false;
+        }
+
+        $rawSql = (string) $raw;
+        if (strpos($rawSql, "\0") !== false) {
+            return false;
+        }
+
+        $sql = trim($rawSql);
+        if ($sql === '' || strlen($sql) > self::MAX_SQL_BYTES) {
+            return false;
+        }
+
+        return !SqlReadOnlyGuard::isReadOnly($sql);
     }
 
     private static function emptySelection(): array
@@ -145,6 +178,14 @@ final class ClusterDataCheckRequest
             'body' => $message,
             'headers' => $headers,
             'selection' => $selection,
+        ];
+    }
+
+    private static function normalization(?array $selection, ?string $error = null): array
+    {
+        return [
+            'selection' => $selection,
+            'error' => $error,
         ];
     }
 }

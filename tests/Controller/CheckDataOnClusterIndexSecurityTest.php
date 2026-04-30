@@ -121,6 +121,21 @@ final class CheckDataOnClusterIndexSecurityTest extends TestCase
         }
     }
 
+    public function testIndexRequestRejectsWriteSqlAfterValidCsrf(): void
+    {
+        $session = [];
+        $token = Csrf::issueToken($session, 'check_data_on_cluster.index');
+        $server = $this->sameSitePostServer();
+
+        foreach ($this->writeSqlPayloads($token) as $post) {
+            $outcome = CheckDataOnCluster::evaluateIndexRequest($post, $server, $session);
+
+            $this->assertSame(422, $outcome['status']);
+            $this->assertSame('Statement must be read-only', $outcome['body']);
+            $this->assertNull($outcome['selection']);
+        }
+    }
+
     public function testIndexUsesPostCsrfWithoutExecutingSqlFromGet(): void
     {
         $controller = (string)file_get_contents(__DIR__ . '/../../App/Controller/CheckDataOnCluster.php');
@@ -132,6 +147,10 @@ final class CheckDataOnClusterIndexSecurityTest extends TestCase
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::INDEX_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('$selection[\'id_list\']', $controller);
         $this->assertStringContainsString('$db_link->sql_query($selection[\'sql\'])', $controller);
+        $this->assertStringContainsString('SET SESSION TRANSACTION READ ONLY', $controller);
+        $this->assertStringContainsString('START TRANSACTION READ ONLY', $controller);
+        $this->assertStringContainsString('ROLLBACK', $controller);
+        $this->assertStringContainsString('SET SESSION TRANSACTION READ WRITE', $controller);
         $this->assertStringNotContainsString('sql_query($_GET[\'sql\'])', $controller);
         $this->assertStringNotContainsString('urlencode($_POST[\'sql\'])', $controller);
         $this->assertStringNotContainsString('$_POST[\'mysql_cluster\'][\'id\']', $controller);
@@ -173,6 +192,17 @@ final class CheckDataOnClusterIndexSecurityTest extends TestCase
             $this->validPost($token, ['sql' => '']),
             $this->validPost($token, ['sql' => ['SHOW VARIABLES']]),
             $this->validPost($token, ['sql' => "SELECT " . chr(0)]),
+        ];
+    }
+
+    private function writeSqlPayloads(string $token): array
+    {
+        return [
+            $this->validPost($token, ['sql' => 'UPDATE mysql_server SET name = name']),
+            $this->validPost($token, ['sql' => 'DROP TABLE mysql.user']),
+            $this->validPost($token, ['sql' => 'SELECT 1; DROP TABLE mysql.user']),
+            $this->validPost($token, ['sql' => '/*x*/ UPDATE mysql_server SET name = name']),
+            $this->validPost($token, ['sql' => 'SELECT * FROM mysql_server FOR UPDATE']),
         ];
     }
 
