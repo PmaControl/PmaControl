@@ -115,7 +115,7 @@ OpenAPI-like JSON export: `/fr/api/openApi`
   "fingerprint": "1C40621E1D34ABB2EC9BAB9CEE261D5193E099E0",
   "user": "vpg",
   "public_key": "ssh-ed25519 AAAA...",
-  "private_key": "-----BEGIN OPENSSH PRIVATE KEY-----\n...\n-----END OPENSSH PRIVATE KEY-----",
+  "private_key": "<redacted-private-key-pem>",
   "type": "ED25519",
   "bit": 256,
   "comment": "PmaControl"
