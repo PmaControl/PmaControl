@@ -8,10 +8,12 @@
 namespace App\Library;
 
 //use phpseclib\Crypt\RSA;
+use phpseclib3\Crypt\PublicKeyLoader;
 use phpseclib3\Net\SSH2;
 use phpseclib3\Net\SFTP;
 use App\Library\Chiffrement;
 use App\Library\Debug;
+use Glial\Sgbd\Sgbd;
 
 /**
  * Class responsible for transfer workflows.
@@ -110,6 +112,7 @@ class Transfer
 
 
 
+            $key = null;
             if (!empty($ob->private_key)) {
                 $pv_key = Chiffrement::decrypt($ob->private_key);
             }
@@ -119,8 +122,7 @@ class Transfer
 
             // priorité a la clef privé si les 2 sont remplie
             if (!empty($pv_key)) {
-                $key = new RSA();
-                $key->loadKey($pv_key);
+                $key = PublicKeyLoader::load($pv_key);
             }
 
             if (!$sftp->login($ob->user, $key)) {
@@ -140,7 +142,7 @@ class Transfer
 
             Debug::debug(pathinfo($dst), "Path_info");
 
-            $ssh->exec("mkdir -p ".$dst_dir);
+            $sftp->mkdir($dst_dir, -1, true);
 
             Debug::debug($dst_dir, "mkdir -p");
 
@@ -152,7 +154,7 @@ class Transfer
 
             $data['size'] = $sftp->size($dst);
 
-            $md5 = $ssh->exec("md5sum ".$dst);
+            $md5 = $ssh->exec(ShellCommand::remoteMd5sum($dst));
 
             $data['md5']      = explode(" ", $md5)[0];
             $data['pathfile'] = $dst;
@@ -221,9 +223,9 @@ class Transfer
 
 
         // priorité a la clef privé si les 2 sont remplie
+        $key = null;
         if (!empty($server['private_key'])) {
-            $key = new RSA();
-            $key->loadKey($server['private_key']);
+            $key = PublicKeyLoader::load($server['private_key']);
         }
 
         if (!$sftp->login($server['user'], $key)) {
@@ -243,7 +245,7 @@ class Transfer
 
         $data['size'] = $sftp->size($src);
 
-        $md5 = $ssh->exec("md5sum ".$src." 2>1 >> /dev/null");
+        $md5 = $ssh->exec(ShellCommand::remoteMd5sum($src));
 
         $data['md5'] = explode(" ", $md5)[0];
 
@@ -302,4 +304,3 @@ class Transfer
         return $ret;
     }
 }
-

@@ -17,6 +17,7 @@ use App\Library\Security\IndexedRowsRequest;
 use Glial\I18n\I18n;
 use \App\Library\Debug;
 use \App\Library\Ssh;
+use App\Library\ShellCommand;
 use App\Library\Chiffrement;
 use Glial\Security\Csrf;
 use \Glial\Sgbd\Sgbd;
@@ -621,7 +622,9 @@ $("#ssh_key-id").change(function() {
 
 
         //$ip, $port = 22, $user, $password
-        if (Ssh::connect($ip, $port, $prikey['user'], $prikey['key']) !== false) {
+        $sshConnection = Ssh::connect($ip, $port, $prikey['user'], $prikey['key']);
+        if ($sshConnection !== false) {
+            Ssh::$ssh = $sshConnection;
             Debug::debug($prikey['user'] . "@" . $ip . ":" . $port . " - SSH successfull !");
         } else {
             Debug::debug($prikey['user'] . "@" . $ip . ":" . $port . " - SSH failed ! ");
@@ -629,49 +632,54 @@ $("#ssh_key-id").change(function() {
         }
 
 
-        $tmp_file = uniqid();
+        if (!ShellCommand::isSafeUnixUsername($pubkey['user'])) {
+            return "Invalid remote SSH username: " . $pubkey['user'];
+        }
+
+        $tmp_file = 'pmacontrol-' . bin2hex(random_bytes(16));
         $file_name_pub_key = "/tmp/" . $tmp_file;
         file_put_contents($file_name_pub_key, $pubkey['key'] . "\n");
 
-        if ($pubkey['user'] === "root") {
-            $dest_path = '/root/' . $tmp_file;
-        } else {
-            $dest_path = '/home/' . $pubkey['user'] . '/' . $tmp_file;
+        $dest_path = ShellCommand::remoteTempPathForUser($pubkey['user'], $tmp_file);
+        if ($dest_path === null) {
+            if (substr($file_name_pub_key, 0, 4) === "/tmp/") {
+                unlink($file_name_pub_key);
+            }
+
+            return "Invalid remote temporary path for SSH username: " . $pubkey['user'];
         }
 
 
 
-        Ssh::put($ip, $port, $prikey['user'], $prikey['key'], $file_name_pub_key, $dest_path);
+        if (Ssh::put($ip, $port, $prikey['user'], $prikey['key'], $file_name_pub_key, $dest_path) === false) {
+            if (substr($file_name_pub_key, 0, 4) === "/tmp/") {
+                unlink($file_name_pub_key);
+            }
+
+            return "SCP upload failed";
+        }
+
+        $appendCommand = ShellCommand::remoteMkdirAndAppendFile('/root/.ssh', $dest_path, '/root/.ssh/authorized_keys');
+        $cleanupCommand = ShellCommand::remoteRemoveFile($dest_path);
 
 
         if ($prikey['user'] === "root") {
 
-            $cmd = "mkdir -p /root/.ssh && cat " . $dest_path . " >> /root/.ssh/authorized_keys\n";
+            $cmd = $appendCommand . "\n";
 
             Debug::debug($prikey['user'] . "@" . $ip . "> " . $cmd, "CMD");
-            $res = Ssh::$ssh->exec($cmd, "return");
+            $res = $sshConnection->exec($cmd, "return");
 
             Debug::debug($res);
+            $sshConnection->exec($cleanupCommand);
         } else {
 
 
-            // @todo  this time need to test
-            Ssh::$ssh->setTimeout(1);
-            $output = Ssh::$ssh->read('/.*@.*[$|#]/');
-            Debug::debug($output);
-
-            Ssh::$ssh->write("sudo su -\n");
-            Ssh::$ssh->setTimeout(1);
-
-            Ssh::$ssh->write($password . "\n");
-            $output = Ssh::$ssh->read('/.*@.*[$|#]/');
-            Debug::debug($output);
-
-            Ssh::$ssh->write("whoami\n");
-            Ssh::$ssh->write("mkdir -p /root/.ssh && cat /home/" . $pubkey['user'] . "/" . $tmp_file . " >> /root/.ssh/authorized_keys\n");
-
-            $output = Ssh::$ssh->read('/.*@.*[$|#]/');
-            Debug::debug($output);
+            $cmd = ShellCommand::sudoShell($appendCommand) . "\n";
+            Debug::debug($prikey['user'] . "@" . $ip . "> " . $cmd, "CMD");
+            $res = $sshConnection->exec($cmd, "return");
+            Debug::debug($res);
+            $sshConnection->exec(ShellCommand::sudoShell($cleanupCommand));
         }
 
 
