@@ -129,7 +129,7 @@ final class DeployRsaKeyIndexSecurityTest extends TestCase
         $this->assertIsInt($savePosition);
         $this->assertLessThan($deployPosition, $guardPosition);
         $this->assertLessThan($savePosition, $guardPosition);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::INDEX_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::INDEX_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('IndexedRowsRequest::normalize(', $controller);
 
         $this->assertStringContainsString('$deployRsaKeyIndexCsrfField', $view);

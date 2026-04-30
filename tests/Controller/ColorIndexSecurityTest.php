@@ -91,7 +91,7 @@ final class ColorIndexSecurityTest extends TestCase
 
         $this->assertStringContainsString("private const COLOR_INDEX_CSRF_SCOPE = 'color.index'", $controller);
         $this->assertStringContainsString('self::evaluateIndexRequest($_POST, $_SERVER, $_SESSION)', $indexBody);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::COLOR_INDEX_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::COLOR_INDEX_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::COLOR_INDEX_CSRF_SCOPE)', $controller);
         $this->assertStringNotContainsString('foreach ($_POST[\'dot3_legend\']', $indexBody);
         $this->assertStringContainsString('$colorIndexCsrfField', $view);

@@ -141,7 +141,7 @@ final class SshSaveSecurityTest extends TestCase
 
         $this->assertStringContainsString("private const SSH_SAVE_CSRF_SCOPE = 'ssh.save'", $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::SSH_SAVE_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::SSH_SAVE_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::SSH_SAVE_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('buildSshKeyLookupSql($fingerprint, $keys[', $controller);
         $this->assertStringNotContainsString('$_POST[\'ssh_key\'][\'user\']', $controller);
 

@@ -146,9 +146,8 @@ class Color extends Controller
 
     public static function evaluateIndexRequest(array $post, array $server, array $session): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::COLOR_INDEX_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return self::buildIndexOutcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::COLOR_INDEX_CSRF_SCOPE)) {
+            return self::buildIndexOutcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         $rows = self::normalizeIndexPayload($post);

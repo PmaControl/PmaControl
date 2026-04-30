@@ -138,7 +138,7 @@ final class SiteDemoSecurityTest extends TestCase
         $this->assertStringContainsString('use Glial\\Security\\Csrf;', $controller);
         $this->assertStringContainsString("private const SITE_DEMO_CSRF_SCOPE = 'site.demo'", $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::SITE_DEMO_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::SITE_DEMO_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::SITE_DEMO_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('method="post"', $view);
         $this->assertStringContainsString('$siteDemoCsrfField', $view);
         $this->assertStringContainsString('$siteDemoCsrfToken', $view);

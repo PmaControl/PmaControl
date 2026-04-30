@@ -139,7 +139,7 @@ final class StorageAreaAddSecurityTest extends TestCase
 
         $this->assertStringContainsString("private const STORAGE_AREA_ADD_CSRF_SCOPE = 'storage_area.add'", $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::STORAGE_AREA_ADD_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::STORAGE_AREA_ADD_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::STORAGE_AREA_ADD_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('buildStorageAreaAddSshKeySql($storage_area[', $controller);
         $this->assertStringNotContainsString('SELECT * FROM ssh_key WHERE id =" . $storage_area', $controller);
 

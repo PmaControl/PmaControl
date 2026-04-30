@@ -141,9 +141,8 @@ class Tag extends Controller {
 
     public static function evaluateAddRequest(array $post, array $server, array $session): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::TAG_ADD_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return HttpOutcome::fromGuard($guard, ['tag' => null]);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::TAG_ADD_CSRF_SCOPE)) {
+            return HttpOutcome::error($failure['status'], $failure['body'], $failure['headers'], ['tag' => null]);
         }
 
         $tag = self::normalizeAddPayload($post);
@@ -236,9 +235,8 @@ class Tag extends Controller {
 
     public static function evaluateUpdateRequest(array $post, array $server, array $session): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::TAG_UPDATE_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return HttpOutcome::fromGuard($guard, ['update' => null]);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::TAG_UPDATE_CSRF_SCOPE)) {
+            return HttpOutcome::error($failure['status'], $failure['body'], $failure['headers'], ['update' => null]);
         }
 
         $update = self::normalizeUpdatePayload($post);

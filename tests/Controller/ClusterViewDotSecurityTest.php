@@ -106,7 +106,7 @@ final class ClusterViewDotSecurityTest extends TestCase
         $this->assertLessThan($importPosition, $guardPosition);
         $this->assertLessThan($previewPosition, $guardPosition);
         $this->assertStringContainsString("private const VIEW_DOT_CSRF_SCOPE = 'cluster.view_dot'", $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::VIEW_DOT_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::VIEW_DOT_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::VIEW_DOT_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('$viewDotCsrfField', $view);
         $this->assertStringContainsString('$viewDotCsrfToken', $view);

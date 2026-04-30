@@ -145,7 +145,7 @@ final class UserMailboxSecurityTest extends TestCase
         $this->assertStringContainsString('mailbox as private legacyMailbox', $controller);
         $this->assertStringContainsString('private const USER_MAILBOX_CSRF_SCOPE', $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::USER_MAILBOX_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::USER_MAILBOX_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::USER_MAILBOX_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('$this->legacyMailbox($param)', $controller);
         $this->assertStringContainsString('<input type="hidden"', $view);
         $this->assertStringContainsString('$userMailboxCsrfField', $view);

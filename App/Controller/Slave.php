@@ -1979,9 +1979,8 @@ var chart = new Chart(ctx, {
 
     public static function evaluateSetupSourceRequest(array $param, array $post, array $server, array $session): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::SLAVE_SETUP_SOURCE_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return self::buildSetupSourceOutcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::SLAVE_SETUP_SOURCE_CSRF_SCOPE)) {
+            return self::buildSetupSourceOutcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         $request = self::normalizeSetupSourcePayload($param, $post);
@@ -2869,9 +2868,8 @@ var chart = new Chart(ctx, {
 
     public static function evaluateStartBinlogAnalysisRequest(array $param, array $post, array $server, array $session): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::SLAVE_BINLOG_ANALYSIS_START_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return self::buildStartBinlogAnalysisOutcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::SLAVE_BINLOG_ANALYSIS_START_CSRF_SCOPE)) {
+            return self::buildStartBinlogAnalysisOutcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         $request = self::normalizeStartBinlogAnalysisPayload($param, $post);

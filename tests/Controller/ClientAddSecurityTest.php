@@ -146,7 +146,7 @@ final class ClientAddSecurityTest extends TestCase
 
         $this->assertStringContainsString("private const CLIENT_ADD_CSRF_SCOPE = 'client.add'", $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::CLIENT_ADD_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::CLIENT_ADD_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::CLIENT_ADD_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('self::evaluateAddRequest($_POST, $_SERVER, $_SESSION)', $controller);
         $this->assertStringContainsString('sql_save($client)', $controller);
 

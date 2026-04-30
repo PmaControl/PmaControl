@@ -20,9 +20,8 @@ final class ClusterDataCheckRequest
             return self::outcome(405, 'Method Not Allowed', ['Allow' => 'GET, HEAD, POST']);
         }
 
-        $guard = CsrfGuard::check($post, $server, $session, $scope);
-        if (!$guard['allowed']) {
-            return self::outcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, $scope)) {
+            return self::outcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         $selection = self::normalize($post);

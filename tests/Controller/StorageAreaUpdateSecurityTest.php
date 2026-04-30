@@ -144,7 +144,7 @@ final class StorageAreaUpdateSecurityTest extends TestCase
         $this->assertStringContainsString('use App\\Library\\Security\\CsrfGuard;', $controller);
         $this->assertStringContainsString("private const STORAGE_AREA_UPDATE_CSRF_SCOPE = 'storage_area.update'", $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::STORAGE_AREA_UPDATE_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::STORAGE_AREA_UPDATE_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::STORAGE_AREA_UPDATE_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('private const STORAGE_AREA_UPDATE_FIELDS', $controller);
         $this->assertStringContainsString("array('bootstrap-editable.min.js', 'Tree/index.js')", $controller);
         $this->assertStringContainsString('UPDATE backup_storage_area', $controller);

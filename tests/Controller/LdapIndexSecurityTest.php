@@ -194,7 +194,7 @@ final class LdapIndexSecurityTest extends TestCase
 
         $this->assertStringContainsString("private const LDAP_INDEX_CSRF_SCOPE = 'ldap.index'", $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::LDAP_INDEX_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::LDAP_INDEX_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::LDAP_INDEX_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('self::evaluateIndexPostRequest($_POST, $_SERVER, $_SESSION)', $controller);
         $this->assertStringContainsString('$db->sql_real_escape_string($ldap_group[\'name\'])', $controller);
         $this->assertStringContainsString('json_encode(self::redactLdapSecrets($post))', $controller);

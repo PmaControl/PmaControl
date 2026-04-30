@@ -131,9 +131,8 @@ class User extends Controller {
 
     public static function evaluateMailboxRequest(array $post, array $server, array $session, array $params): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::USER_MAILBOX_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return self::buildMailboxOutcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::USER_MAILBOX_CSRF_SCOPE)) {
+            return self::buildMailboxOutcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         if (($params[0] ?? '') !== 'compose') {
@@ -555,9 +554,8 @@ class User extends Controller {
 
     public static function evaluateRegisterRequest(array $post, array $server, array $session): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::USER_REGISTER_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return self::buildRegisterOutcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::USER_REGISTER_CSRF_SCOPE)) {
+            return self::buildRegisterOutcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         if (empty($post['user_main']) || !is_array($post['user_main'])) {
@@ -679,9 +677,8 @@ class User extends Controller {
 
     public static function evaluateLostPasswordRequest(array $post, array $server, array $session): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::USER_LOST_PASSWORD_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return self::buildLostPasswordOutcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::USER_LOST_PASSWORD_CSRF_SCOPE)) {
+            return self::buildLostPasswordOutcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         $email = self::normalizeLostPasswordPayload($post);
@@ -835,9 +832,8 @@ class User extends Controller {
 
     public static function evaluatePasswordRecoverRequest(array $post, array $server, array $session): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::USER_PASSWORD_RECOVER_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return self::buildPasswordRecoverOutcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::USER_PASSWORD_RECOVER_CSRF_SCOPE)) {
+            return self::buildPasswordRecoverOutcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         $password = self::normalizePasswordRecoverPayload($post);
@@ -1213,9 +1209,8 @@ GROUP BY d.id";
         array $params,
         array $site
     ): array {
-        $guard = CsrfGuard::check($post, $server, $session, self::USER_PROFILE_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return self::buildProfileOutcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::USER_PROFILE_CSRF_SCOPE)) {
+            return self::buildProfileOutcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         $message = self::normalizeProfileMessagePayload($post);
@@ -1550,9 +1545,8 @@ GROUP BY d.id";
 
     public static function evaluateConnectionRequest(array $post, array $server, array $session): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::USER_CONNECTION_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return self::buildConnectionOutcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::USER_CONNECTION_CSRF_SCOPE)) {
+            return self::buildConnectionOutcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         $credentials = self::normalizeConnectionPayload($post);
@@ -1760,9 +1754,8 @@ GROUP BY d.id";
 
     public static function evaluateUpdateIdGroupRequest(array $post, array $server, array $session): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::USER_UPDATE_IDGROUP_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return self::buildUpdateIdGroupOutcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::USER_UPDATE_IDGROUP_CSRF_SCOPE)) {
+            return self::buildUpdateIdGroupOutcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         $updates = self::normalizeUpdateIdGroupPayload($post);

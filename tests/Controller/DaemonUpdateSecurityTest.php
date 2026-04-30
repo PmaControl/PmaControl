@@ -129,7 +129,7 @@ final class DaemonUpdateSecurityTest extends TestCase
         $this->assertStringContainsString('use App\\Library\\Security\\CsrfGuard;', $controller);
         $this->assertStringContainsString("private const DAEMON_UPDATE_CSRF_SCOPE = 'daemon.update'", $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::DAEMON_UPDATE_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::DAEMON_UPDATE_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::DAEMON_UPDATE_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('evaluateUpdateRequest($_POST, $_SERVER, $_SESSION)', $updateBody);
         $this->assertStringNotContainsString('$_POST[\'name\']', $updateBody);
         $this->assertStringNotContainsString('$_POST[\'value\']', $updateBody);

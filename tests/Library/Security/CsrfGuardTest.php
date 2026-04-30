@@ -90,4 +90,99 @@ final class CsrfGuardTest extends TestCase
         $this->assertTrue($outcome['allowed']);
         $this->assertSame(200, $outcome['status']);
     }
+
+    public function testEnsureOrFailReturnsNullOnValidPost(): void
+    {
+        $session = [];
+        $token = Csrf::issueToken($session, 'worker.update');
+
+        $failure = CsrfGuard::ensureOrFail(
+            [Csrf::DEFAULT_FIELD => $token],
+            [
+                'REQUEST_METHOD' => 'POST',
+                'HTTPS' => 'on',
+                'HTTP_HOST' => 'pmacontrol.test',
+                'HTTP_REFERER' => 'https://pmacontrol.test/pmacontrol/fr/Worker/index',
+            ],
+            $session,
+            'worker.update'
+        );
+
+        $this->assertNull($failure);
+    }
+
+    public function testEnsureOrFailReturnsFailurePayloadOnGet(): void
+    {
+        $failure = CsrfGuard::ensureOrFail([], ['REQUEST_METHOD' => 'GET'], [], 'worker.update');
+
+        $this->assertSame([
+            'status' => 405,
+            'body' => 'Method Not Allowed',
+            'headers' => ['Allow' => 'POST'],
+        ], $failure);
+        $this->assertArrayNotHasKey('allowed', $failure);
+    }
+
+    public function testEnsureOrFailReturnsFailurePayloadOnInvalidOrigin(): void
+    {
+        $failure = CsrfGuard::ensureOrFail(
+            [],
+            [
+                'REQUEST_METHOD' => 'POST',
+                'HTTPS' => 'on',
+                'HTTP_HOST' => 'pmacontrol.test',
+                'HTTP_ORIGIN' => 'https://attacker.test',
+            ],
+            [],
+            'worker.update'
+        );
+
+        $this->assertSame([
+            'status' => 403,
+            'body' => 'Invalid request origin',
+            'headers' => [],
+        ], $failure);
+    }
+
+    public function testEnsureOrFailReturnsFailurePayloadOnInvalidToken(): void
+    {
+        $failure = CsrfGuard::ensureOrFail(
+            [],
+            [
+                'REQUEST_METHOD' => 'POST',
+                'HTTPS' => 'on',
+                'HTTP_HOST' => 'pmacontrol.test',
+                'HTTP_REFERER' => 'https://pmacontrol.test/pmacontrol/fr/Worker/index',
+            ],
+            [],
+            'worker.update'
+        );
+
+        $this->assertSame([
+            'status' => 403,
+            'body' => 'Invalid CSRF token',
+            'headers' => [],
+        ], $failure);
+    }
+
+    public function testEnsureOrFailRespectsTrustedOriginOverride(): void
+    {
+        $session = [];
+        $token = Csrf::issueToken($session, 'worker.update');
+
+        $failure = CsrfGuard::ensureOrFail(
+            [Csrf::DEFAULT_FIELD => $token],
+            [
+                'REQUEST_METHOD' => 'POST',
+                'HTTPS' => 'off',
+                'HTTP_HOST' => 'attacker.test',
+                'HTTP_ORIGIN' => 'https://pmacontrol.example',
+            ],
+            $session,
+            'worker.update',
+            'https://pmacontrol.example/'
+        );
+
+        $this->assertNull($failure);
+    }
 }

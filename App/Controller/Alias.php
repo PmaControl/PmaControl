@@ -107,9 +107,8 @@ class Alias extends Controller
 
     public static function evaluateIndexPostRequest(array $post, array $server, array $session): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::ALIAS_INDEX_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return self::buildIndexPostOutcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::ALIAS_INDEX_CSRF_SCOPE)) {
+            return self::buildIndexPostOutcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         $alias = self::normalizeIndexPayload($post);

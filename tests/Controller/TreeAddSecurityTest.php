@@ -135,7 +135,7 @@ final class TreeAddSecurityTest extends TestCase
         $this->assertStringContainsString("private const TREE_ADD_CSRF_SCOPE = 'tree.add'", $controller);
         $this->assertStringContainsString('private const TREE_ADD_FIELDS', $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::TREE_ADD_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::TREE_ADD_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::TREE_ADD_CSRF_SCOPE)', $controller);
         $this->assertMatchesRegularExpression(
             '/if \\(CsrfGuard::isPost\\(\\$_SERVER\\)\\) \\{\\s+\\$this->view\\s*=\\s*false;\\s+\\$this->layout_name\\s*=\\s*false;/s',
             $controller

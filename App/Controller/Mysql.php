@@ -771,13 +771,12 @@ class Mysql extends Controller
         array $session,
         array $availableDbs
     ): array {
-        $guard = CsrfGuard::check($post, $server, $session, self::MYSQL_PLAYSKOOL_CSRF_SCOPE);
-        if (!$guard['allowed']) {
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::MYSQL_PLAYSKOOL_CSRF_SCOPE)) {
             return [
                 'allowed' => false,
-                'status' => $guard['status'],
-                'body' => $guard['body'],
-                'headers' => $guard['headers'],
+                'status' => $failure['status'],
+                'body' => $failure['body'],
+                'headers' => $failure['headers'],
                 'request' => null,
             ];
         }
@@ -1954,13 +1953,12 @@ class Mysql extends Controller
 
     public static function evaluateAddRequest(array $post, array $server, array $session): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::MYSQL_ADD_CSRF_SCOPE);
-        if (!$guard['allowed']) {
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::MYSQL_ADD_CSRF_SCOPE)) {
             return [
                 'allowed' => false,
-                'status' => $guard['status'],
-                'body' => $guard['body'],
-                'headers' => $guard['headers'],
+                'status' => $failure['status'],
+                'body' => $failure['body'],
+                'headers' => $failure['headers'],
                 'mysql_server' => null,
             ];
         }

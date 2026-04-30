@@ -192,9 +192,8 @@ class Client extends Controller
 
     public static function evaluateAddRequest(array $post, array $server, array $session): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::CLIENT_ADD_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return self::buildClientAddOutcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::CLIENT_ADD_CSRF_SCOPE)) {
+            return self::buildClientAddOutcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         $client = self::normalizeAddPayload($post);
@@ -441,9 +440,8 @@ class Client extends Controller
 
     public static function evaluateMonitoringToggleRequest(array $post, array $server, array $session, array $param): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::CLIENT_MONITORING_TOGGLE_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return self::buildMonitoringToggleOutcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::CLIENT_MONITORING_TOGGLE_CSRF_SCOPE)) {
+            return self::buildMonitoringToggleOutcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         try {
@@ -605,9 +603,8 @@ class Client extends Controller
 
     public static function evaluateDeleteRequest(array $post, array $server, array $session, array $param): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::CLIENT_DELETE_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return self::buildClientDeleteOutcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::CLIENT_DELETE_CSRF_SCOPE)) {
+            return self::buildClientDeleteOutcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         $idClient = self::normalizeDeleteClientId($param[0] ?? null);

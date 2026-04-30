@@ -24,9 +24,8 @@ final class EncryptedExportRequest
         string $passwordField = 'password',
         string $passwordConfirmField = 'password2'
     ): array {
-        $guard = CsrfGuard::check($post, $server, $session, $scope);
-        if (!$guard['allowed']) {
-            return self::outcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, $scope)) {
+            return self::outcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         $payload = self::normalizePasswordPairPayload($post, $maxPasswordBytes, $group, $passwordField, $passwordConfirmField);
@@ -61,9 +60,8 @@ final class EncryptedExportRequest
         string $fileField = 'file',
         string $passwordField = 'password'
     ): array {
-        $guard = CsrfGuard::check($post, $server, $session, $scope);
-        if (!$guard['allowed']) {
-            return self::outcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, $scope)) {
+            return self::outcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         $fileSize = self::extractFileSize($files, $group, $fileField);

@@ -1851,9 +1851,8 @@ END;";
 
     public static function evaluateSizeUpdateRequest(array $post, array $server, array $session): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::DATABASE_SIZE_UPDATE_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return self::buildDatabaseSizeUpdateOutcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::DATABASE_SIZE_UPDATE_CSRF_SCOPE)) {
+            return self::buildDatabaseSizeUpdateOutcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         $update = self::normalizeSizeUpdatePayload($post);

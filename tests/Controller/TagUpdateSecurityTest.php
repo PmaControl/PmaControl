@@ -135,7 +135,7 @@ final class TagUpdateSecurityTest extends TestCase
         $this->assertStringContainsString('use App\\Library\\Security\\CsrfGuard;', $tagController);
         $this->assertStringContainsString("public const TAG_UPDATE_CSRF_SCOPE = 'tag.update'", $tagController);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::TAG_UPDATE_CSRF_SCOPE)', $tagController);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::TAG_UPDATE_CSRF_SCOPE)', $tagController);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::TAG_UPDATE_CSRF_SCOPE)', $tagController);
         $this->assertStringContainsString('private const TAG_UPDATE_FIELDS', $tagController);
 
         $this->assertStringContainsString('$tagUpdateCsrfAttributes', $tagView);

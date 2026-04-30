@@ -93,9 +93,8 @@ final class Llm extends Controller
             'result' => null,
         ];
 
-        $guard = CsrfGuard::check($post, $server, $session, self::LLM_ANALYZE_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return array_replace($base, ['error' => $guard['body']]);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::LLM_ANALYZE_CSRF_SCOPE)) {
+            return array_replace($base, ['error' => $failure['body']]);
         }
 
         $validation = SqlAssistant::validateRuntimeConfig($config);

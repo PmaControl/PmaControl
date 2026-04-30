@@ -151,7 +151,7 @@ final class FormatIndexSecurityTest extends TestCase
 
         $this->assertStringContainsString('use App\\Library\\Security\\CsrfGuard;', $controller);
         $this->assertStringContainsString('use Glial\\Security\\Csrf;', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::FORMAT_INDEX_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::FORMAT_INDEX_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::FORMAT_INDEX_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('name="<?= $formatIndexCsrfField ?>"', $view);
         $this->assertStringContainsString('value="<?= $formatIndexCsrfToken ?>"', $view);

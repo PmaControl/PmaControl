@@ -115,7 +115,7 @@ final class UserUpdateIdGroupSecurityTest extends TestCase
 
         $this->assertStringContainsString('use App\\Library\\Security\\CsrfGuard;', $controller);
         $this->assertStringContainsString('Csrf::issueToken(', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::USER_UPDATE_IDGROUP_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::USER_UPDATE_IDGROUP_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('<input type="hidden"', $view);
         $this->assertStringContainsString('$userUpdateIdGroupCsrfField', $view);
         $this->assertStringContainsString('$userUpdateIdGroupCsrfToken', $view);

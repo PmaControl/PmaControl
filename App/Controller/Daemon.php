@@ -292,9 +292,8 @@ class Daemon extends Controller
 
     public static function evaluateUpdateRequest(array $post, array $server, array $session): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::DAEMON_UPDATE_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return self::buildDaemonUpdateOutcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::DAEMON_UPDATE_CSRF_SCOPE)) {
+            return self::buildDaemonUpdateOutcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         $sql = self::buildDaemonUpdateSql($post);

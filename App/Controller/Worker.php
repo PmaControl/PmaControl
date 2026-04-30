@@ -966,9 +966,8 @@ class Worker extends Controller
 
     public static function evaluateKillServerWorkerRequest(array $post, array $server, array $session, array $params = []): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::WORKER_KILL_SERVER_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return self::buildWorkerUpdateOutcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::WORKER_KILL_SERVER_CSRF_SCOPE)) {
+            return self::buildWorkerUpdateOutcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         $serverId = (string)($post['id_mysql_server'] ?? $params[0] ?? '');
@@ -1503,9 +1502,8 @@ class Worker extends Controller
 
     public static function evaluateUpdateRequest(array $post, array $server, array $session): array
     {
-        $guard = CsrfGuard::check($post, $server, $session, self::WORKER_UPDATE_CSRF_SCOPE);
-        if (!$guard['allowed']) {
-            return self::buildWorkerUpdateOutcome($guard['status'], $guard['body'], $guard['headers']);
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::WORKER_UPDATE_CSRF_SCOPE)) {
+            return self::buildWorkerUpdateOutcome($failure['status'], $failure['body'], $failure['headers']);
         }
 
         $sql = self::buildWorkerUpdateSql($post);

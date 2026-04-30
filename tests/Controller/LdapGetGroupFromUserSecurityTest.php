@@ -126,7 +126,7 @@ final class LdapGetGroupFromUserSecurityTest extends TestCase
 
         $this->assertStringContainsString("private const LDAP_GET_GROUP_FROM_USER_CSRF_SCOPE = 'ldap.getGroupFromUser'", $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::LDAP_GET_GROUP_FROM_USER_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::LDAP_GET_GROUP_FROM_USER_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::LDAP_GET_GROUP_FROM_USER_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('self::evaluateGetGroupFromUserRequest($_POST, $_SERVER, $_SESSION)', $controller);
         $this->assertStringContainsString('self::escapeLdapFilterValue((string) $command)', $controller);
         $this->assertStringNotContainsString('requestLdap($_POST[\'ldap\'][\'user\'])', $controller);

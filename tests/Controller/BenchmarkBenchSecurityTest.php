@@ -183,7 +183,7 @@ final class BenchmarkBenchSecurityTest extends TestCase
         $this->assertStringContainsString('type="hidden"', $view);
         $this->assertStringContainsString('method="post"', $view);
 
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, $scope)', $request);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, $scope)', $request);
         $this->assertStringContainsString('PositiveIntegerSelection::normalizeList($post[\'mysql_server\'][\'id\'], 64)', $request);
         $this->assertStringContainsString('GroupedFormRequest::normalize($post, \'benchmark_main\', self::benchmarkMainRules())', $request);
     }

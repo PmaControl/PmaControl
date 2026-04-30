@@ -143,7 +143,7 @@ final class TagAddSecurityTest extends TestCase
         $this->assertStringContainsString('private const TAG_ADD_FIELDS', $controller);
         $this->assertStringContainsString('use App\\Library\\Http\\HttpResponse;', $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::TAG_ADD_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::TAG_ADD_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::TAG_ADD_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('HttpResponse::sendError($statusCode, $message, $headers);', $controller);
         $this->assertMatchesRegularExpression(
             '/if \\(CsrfGuard::isPost\\(\\$_SERVER\\)\\) \\{\\s+\\$this->view\\s*=\\s*false;\\s+\\$this->layout_name\\s*=\\s*false;/s',

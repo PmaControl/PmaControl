@@ -146,7 +146,7 @@ final class ServerSettingsSecurityTest extends TestCase
         $this->assertStringContainsString('use App\\Library\\Security\\CsrfGuard;', $controller);
         $this->assertStringContainsString("private const SERVER_SETTINGS_CSRF_SCOPE = 'server.settings'", $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::SERVER_SETTINGS_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::SERVER_SETTINGS_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::SERVER_SETTINGS_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString('$serverSettingsCsrfField', $view);
         $this->assertStringContainsString('$serverSettingsCsrfToken', $view);
         $this->assertStringContainsString('<input type="hidden"', $view);

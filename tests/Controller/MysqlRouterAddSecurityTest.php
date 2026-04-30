@@ -139,7 +139,7 @@ final class MysqlRouterAddSecurityTest extends TestCase
         $this->assertStringContainsString('use Glial\\Security\\Csrf;', $controller);
         $this->assertStringContainsString("private const MYSQLROUTER_ADD_CSRF_SCOPE = 'mysqlrouter.add'", $controller);
         $this->assertStringContainsString('Csrf::issueToken($_SESSION, self::MYSQLROUTER_ADD_CSRF_SCOPE)', $controller);
-        $this->assertStringContainsString('CsrfGuard::check($post, $server, $session, self::MYSQLROUTER_ADD_CSRF_SCOPE)', $controller);
+        $this->assertStringContainsString('CsrfGuard::ensureOrFail($post, $server, $session, self::MYSQLROUTER_ADD_CSRF_SCOPE)', $controller);
         $this->assertStringContainsString("header('location: ' . LINK . 'MysqlRouter/index');", $controller);
         $this->assertIsInt($addPosition);
         $this->assertIsInt($evaluatePosition);
