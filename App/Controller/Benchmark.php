@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use \App\Library\Debug;
 use App\Library\Security\BenchmarkBenchRequest;
+use App\Library\Security\ControllerActionSelection;
 use App\Library\Security\CsrfGuard;
 use App\Library\Security\PositiveIntegerSelection;
 use Glial\Security\Csrf;
@@ -41,6 +42,7 @@ class Benchmark extends Controller
     const SHADOW                    = "0.2";
     const DIRECTORY_LUA_SYSBENCH_05 = "/usr/local/sysbench/tests/db/";
     const DIRECTORY_LUA_SYSBENCH_1  = "/usr/share/sysbench/";
+    private const BENCHMARK_INDEX_DEFAULT_TAB = 'graph';
     private const BENCHMARK_BENCH_CSRF_SCOPE = 'benchmark.bench';
 
 /**
@@ -934,22 +936,29 @@ Threads fairness:
         $data['menu']['graph']['icone'] = '<i class="fa fa-area-chart" aria-hidden="true"></i>';
         $data['menu']['graph']['path']  = LINK.$this->getClass().'/'.__FUNCTION__.'/graph';
 
-        if (!empty($param[0])) {
-            if (in_array($param[0], array_keys($data['menu']))) {
-                $_GET['path'] = LINK.$this->getClass().'/'.__FUNCTION__.'/'.$param[0];
-            }
-        }
-
-        if (empty($_GET['path']) && empty($param[0])) {
-            $_GET['path'] = $data['menu']['graph']['path'];
-            $param[0]     = 'graph';
-        }
-
-        if (empty($_GET['path'])) {
-            $_GET['path'] = 'graph';
-        }
+        $selectedTab = self::evaluateIndexTab($param, array_keys($data['menu']), self::BENCHMARK_INDEX_DEFAULT_TAB);
+        $data['selected_benchmark_tab']  = $selectedTab;
+        $data['selected_benchmark_path'] = $data['menu'][$selectedTab]['path'];
 
         $this->set("data", $data);
+    }
+
+    public static function benchmarkIndexTabs(): array
+    {
+        return array('bench', 'current', 'graph');
+    }
+
+    public static function evaluateIndexTab(
+        array $param,
+        ?array $allowedTabs = null,
+        string $defaultTab = self::BENCHMARK_INDEX_DEFAULT_TAB
+    ): string
+    {
+        return ControllerActionSelection::normalize(
+            $param[0] ?? null,
+            $allowedTabs ?? self::benchmarkIndexTabs(),
+            $defaultTab
+        );
     }
 
 /**
