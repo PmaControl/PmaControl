@@ -33,4 +33,28 @@ final class UtilTest extends TestCase
         $this->assertStringContainsString('`srv`.id_client IN (5)', $sql);
         $this->assertStringContainsString('`srv`.id IN (9,10)', $sql);
     }
+
+    public function testPrivateGetFilterReadsClientFromGetAndRejectsInjectedServerIds(): void
+    {
+        $_GET['client']['libelle'] = json_encode([5], JSON_THROW_ON_ERROR);
+
+        $reflection = new ReflectionClass(Util::class);
+        $method = $reflection->getMethod('getFilter');
+
+        $validSql = $method->invoke(null, [], 'srv');
+        $this->assertStringContainsString('`srv`.id_client IN (5)', $validSql);
+
+        $invalidSql = $method->invoke(null, ['9) OR 1=1 -- '], 'srv');
+        $this->assertSame(' AND 0=1', $invalidSql);
+        $this->assertStringNotContainsString('OR 1=1', $invalidSql);
+    }
+
+    public function testUtilUsesSharedServerFilterWhere(): void
+    {
+        $source = (string) file_get_contents(__DIR__ . '/../../App/Library/Util.php');
+
+        $this->assertStringContainsString('use App\\Library\\Security\\ServerFilterWhere;', $source);
+        $this->assertStringContainsString('ServerFilterWhere::build($_GET, $_SESSION, $id_mysql_server, $alias)', $source);
+        $this->assertStringNotContainsString('json_decode($client, true)', $source);
+    }
 }
