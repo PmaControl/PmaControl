@@ -68,9 +68,11 @@ final class MysqlsysIndexFilterTest extends TestCase
         $this->assertStringContainsString('$selectedMysqlServerId = self::normalizeIndexMysqlServerId($_GET);', $controller);
         $this->assertStringContainsString('$data[\'selected_mysql_server_id\'] = $selectedMysqlServerId;', $controller);
         $this->assertStringContainsString('$data[\'selected_mysql_server_found\'] = false;', $controller);
+        $this->assertStringContainsString('$data[\'selected_mysql_server_name\'] = \'\';', $controller);
         $this->assertStringContainsString('$data[\'variables\'] = \'\';', $controller);
         $this->assertStringContainsString('$data[\'mysqlsys_version_unsupported\'] = false;', $controller);
         $this->assertStringContainsString('$data[\'selected_mysql_server_found\'] = true;', $controller);
+        $this->assertStringContainsString('$data[\'selected_mysql_server_name\'] = (string) $ob->name;', $controller);
         $this->assertStringContainsString('(int) $ob->id === $selectedMysqlServerId', $controller);
         $this->assertStringContainsString('$id_mysql_server = $selectedMysqlServerId;', $controller);
         $this->assertStringContainsString('self::isMysqlSysUnsupportedVersion($data[\'variables\'])', $controller);
@@ -92,8 +94,14 @@ final class MysqlsysIndexFilterTest extends TestCase
         $this->assertStringContainsString('$params[] = \'mysql_server:id:\' . (int) $selectedMysqlServerId;', $view);
         $this->assertStringContainsString('$url = remove(array("mysqlsys"), $selectedMysqlServerId);', $view);
         $this->assertStringContainsString('data-pk="\' . (int) $selectedMysqlServerId', $view);
+        $this->assertStringContainsString('action="\' . LINK . \'Mysqlsys/reset"', $view);
+        $this->assertStringContainsString('action="\' . LINK . \'Mysqlsys/drop"', $view);
+        $this->assertStringContainsString('method="post"', $view);
+        $this->assertStringContainsString("CsrfRender::hiddenInput(\$data, 'mysqlsys_reset')", $view);
+        $this->assertStringContainsString("CsrfRender::hiddenInput(\$data, 'mysqlsys_drop')", $view);
+        $this->assertStringNotContainsString('<a href="\' . LINK . \'Mysqlsys/reset/', $view);
+        $this->assertStringNotContainsString('<a href="\' . LINK . \'Mysqlsys/drop/', $view);
         $this->assertStringContainsString('} elseif ($mysqlsysVersionUnsupported) {', $view);
         $this->assertStringNotContainsString('version_compare(', $view);
-        $this->assertStringNotContainsString('method="POST"', $view);
     }
 }

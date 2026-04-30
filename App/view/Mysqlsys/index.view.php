@@ -14,9 +14,22 @@ use App\Library\SysTooltips;
 $data = $data ?? array();
 $selectedMysqlServerId = $data['selected_mysql_server_id'] ?? null;
 $selectedMysqlServerFound = !empty($data['selected_mysql_server_found']);
+$selectedMysqlServerNameRaw = (string)($data['selected_mysql_server_name'] ?? '');
+$selectedMysqlServerName = htmlspecialchars($selectedMysqlServerNameRaw, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+$selectedMysqlServerNameJsonRaw = json_encode($selectedMysqlServerNameRaw, JSON_HEX_APOS | JSON_HEX_QUOT);
+if ($selectedMysqlServerNameJsonRaw === false) {
+    $selectedMysqlServerNameJsonRaw = '""';
+}
+$selectedMysqlServerNameJson = htmlspecialchars(
+    $selectedMysqlServerNameJsonRaw,
+    ENT_QUOTES | ENT_SUBSTITUTE,
+    'UTF-8'
+);
 $mysqlsysVersion = htmlspecialchars((string) ($data['variables'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 $mysqlsysVersionUnsupported = !empty($data['mysqlsys_version_unsupported']);
 $mysqlsysUpdateConfigCsrfAttributes = CsrfRender::attributes($data, 'mysqlsys_update_config');
+$mysqlsysResetCsrfInput = CsrfRender::hiddenInput($data, 'mysqlsys_reset');
+$mysqlsysDropCsrfInput = CsrfRender::hiddenInput($data, 'mysqlsys_drop');
 
 echo '<div class="well">';
 
@@ -58,15 +71,28 @@ echo ' ';
 
 
 echo '<button type="submit" class="btn btn-primary">Filter</button>';
+echo '</form>';
 
 if ($selectedMysqlServerId !== null && $selectedMysqlServerFound) {
-    echo ' ';
-    echo '<a href="' . LINK . 'Mysqlsys/reset/' . (int) $selectedMysqlServerId . '" class="btn btn-warning" role="button" title="This option will truncate all table of PERFORMANCE_SCHEMA to reset statistiques in MySQL-sys" aria-pressed="true">Reset Statistics</a>';
-    echo ' ';
-    echo '<a href="' . LINK . 'Mysqlsys/drop/' . (int) $selectedMysqlServerId . '" class="btn btn-danger" role="button" aria-pressed="true" title="This will DROP DATABASE `sys`; after this you can reinstall Mysql-sys for new version for example">Uninstall MySQL-sys</a>';
+    echo '<div class="mysqlsys-actions" style="margin-top: 8px;">';
+    echo '<form action="' . LINK . 'Mysqlsys/reset" method="post" style="display: inline-block; margin-right: 8px;">';
+    echo $mysqlsysResetCsrfInput;
+    echo '<input type="hidden" name="id_mysql_server" value="' . (int) $selectedMysqlServerId . '">';
+    echo '<button type="submit" class="btn btn-warning" title="This option will truncate all table of PERFORMANCE_SCHEMA to reset statistiques in MySQL-sys">Reset Statistics</button>';
+    echo '</form>';
+
+    echo '<form action="' . LINK . 'Mysqlsys/drop" method="post" style="display: inline-block;" onsubmit="return confirm(\'DROP DATABASE sys on \' + ' . $selectedMysqlServerNameJson . ' + \'?\');">';
+    echo $mysqlsysDropCsrfInput;
+    echo '<input type="hidden" name="id_mysql_server" value="' . (int) $selectedMysqlServerId . '">';
+    echo '<label class="checkbox-inline" title="Confirm DROP DATABASE sys">';
+    echo '<input type="checkbox" name="confirm" value="DROP_SYS" required> DROP_SYS';
+    echo '</label> ';
+    echo '<input type="text" class="form-control input-sm" name="confirm_server_name" value="" placeholder="' . $selectedMysqlServerName . '" aria-label="Confirm MySQL server name" required style="display: inline-block; width: 180px;"> ';
+    echo '<button type="submit" class="btn btn-danger" title="This will DROP DATABASE `sys`; after this you can reinstall Mysql-sys for new version for example">Uninstall MySQL-sys</button>';
+    echo '</form>';
+    echo '</div>';
 }
 
-echo '</form>';
 echo '</div>';
 
 //debug($data['innodb']);
