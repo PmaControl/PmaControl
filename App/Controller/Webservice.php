@@ -8,6 +8,7 @@
 namespace App\Controller;
 
 use App\Library\Security\ApiRequestGuard;
+use App\Library\Security\SecretRedactor;
 use App\Library\Security\SecretComparison;
 use \Glial\Synapse\Controller;
 use \Glial\Synapse\Config;
@@ -83,7 +84,6 @@ class Webservice extends Controller
         if ($id_user_main === true) {
             $finale_name = "/tmp/tmp.".uniqid();
             file_put_contents($finale_name, json_encode(json_decode($jsonData)));
-            Debug::debug($jsonData);
 
             $this->return['authenticate'] = "ok";
             $this->parseServer($finale_name);
@@ -308,8 +308,6 @@ class Webservice extends Controller
         $isAuthenticated = false;
 
         while ($ob = $db->sql_fetch_object($res)) {
-            Debug::debug($ob, "value");
-
             $pw_from_db = Crypt::decrypt($ob->password, CRYPT_KEY);
 
             if (SecretComparison::equals((string) $pw_from_db, (string) $password)) {
@@ -345,16 +343,12 @@ class Webservice extends Controller
     {
         $data = Json::getDataFromFile($filename);
 
-        Debug::debug($data, "data");
-
         $db = Sgbd::sql(DB_DEFAULT);
 
         foreach ($data as $server_type => $servers) {
             foreach ($servers as $server) {
                 switch ($server_type) {
                     case 'mysql':
-
-                        Debug::debug($server, "SERVER");
 
                         Mysql::addMysqlServer($server);
                         break;
@@ -417,17 +411,16 @@ class Webservice extends Controller
 
         $data                                            = array();
         $data['webservice_history_main']['id_user_main'] = $id_user_main;
-        $data['webservice_history_main']['user']         = $_SERVER['PHP_AUTH_USER'];
-        $data['webservice_history_main']['password']     = $_SERVER['PHP_AUTH_PW'];
+        $data['webservice_history_main']['user']         = $_SERVER['PHP_AUTH_USER'] ?? '';
+        $data['webservice_history_main']['password']     = SecretRedactor::redactedValue();
         $data['webservice_history_main']['date']         = date('Y-m-d H:i:s');
         $data['webservice_history_main']['logon']        = $logon;
-        $data['webservice_history_main']['message']      = $json;
-        $data['webservice_history_main']['remote_addr']  = $_SERVER["REMOTE_ADDR"];
+        $data['webservice_history_main']['message']      = SecretRedactor::jsonPayload((string)$json);
 
         $res = $db->sql_save($data);
 
         if (!$res) {
-            Debug::debug($data);
+            Debug::debug('webservice history save failed', 'Webservice::saveHistory');
         }
     }
     /*     * ************************ */

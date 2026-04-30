@@ -93,6 +93,7 @@ final class WebserviceTest extends TestCase
         $this->assertIsString($source);
         $method = self::extractCheckCredentialsSource($source);
 
+        $this->assertStringNotContainsString('Debug::debug($ob', $method);
         $this->assertStringNotContainsString('Debug::debug($pw_from_db', $method);
         $this->assertStringNotContainsString('Debug::debug($password', $method);
         $this->assertStringNotContainsString('return true;', $method);
@@ -104,6 +105,60 @@ final class WebserviceTest extends TestCase
         $this->assertIsInt($loopPosition);
         $this->assertIsInt($returnPosition);
         $this->assertLessThan($returnPosition, $loopPosition);
+    }
+
+    public function testPushServerDoesNotDumpRawJsonPayload(): void
+    {
+        $source = file_get_contents(__DIR__ . '/../../App/Controller/Webservice.php');
+
+        $this->assertIsString($source);
+        $method = self::extractMethodSource($source, 'public function pushServer');
+
+        $this->assertStringNotContainsString('Debug::debug($jsonData', $method);
+    }
+
+    public function testParseServerDoesNotDumpServerPayload(): void
+    {
+        $source = file_get_contents(__DIR__ . '/../../App/Controller/Webservice.php');
+
+        $this->assertIsString($source);
+        $method = self::extractMethodSource($source, 'private function parseServer');
+
+        $this->assertStringNotContainsString('Debug::debug($data', $method);
+        $this->assertStringNotContainsString('Debug::debug($server', $method);
+    }
+
+    public function testSaveHistoryRedactsBasicAuthPasswordAndPayload(): void
+    {
+        $source = file_get_contents(__DIR__ . '/../../App/Controller/Webservice.php');
+
+        $this->assertIsString($source);
+        $method = self::extractMethodSource($source, 'private function saveHistory');
+
+        $this->assertStringContainsString('use App\\Library\\Security\\SecretRedactor;', $source);
+        $this->assertStringContainsString('SecretRedactor::redactedValue()', $method);
+        $this->assertStringContainsString('SecretRedactor::jsonPayload((string)$json)', $method);
+        $this->assertStringNotContainsString("['PHP_AUTH_PW']", $method);
+        $this->assertStringNotContainsString('Debug::debug($data', $method);
+    }
+
+    public function testWebserviceHistoryMigrationPurgesLegacyPasswordValues(): void
+    {
+        $migration = file_get_contents(__DIR__ . '/../../sql/incremental_v2/20260430_webservice_history_redact.sql');
+        $schema = file_get_contents(__DIR__ . '/../../sql/full/pmacontrol.sql');
+
+        $this->assertIsString($migration);
+        $this->assertStringContainsString("UPDATE `webservice_history_main`", $migration);
+        $this->assertStringContainsString("SET `password` = '[redacted]'", $migration);
+        $this->assertStringContainsString("WHERE `password` <> '[redacted]'", $migration);
+        $this->assertStringContainsString("SET `message` = '[redacted legacy payload]'", $migration);
+        $this->assertStringContainsString("WHERE `message` REGEXP", $migration);
+
+        $this->assertIsString($schema);
+        $this->assertStringContainsString(
+            "COMMENT 'redacted legacy field; Basic Auth password is never stored'",
+            $schema
+        );
     }
 
     public function testLegacyJsonCheckDelegatesToApiGuard(): void
@@ -129,15 +184,31 @@ final class WebserviceTest extends TestCase
 
     private static function extractCheckCredentialsSource(string $source): string
     {
-        $start = strpos($source, 'private function checkCredentials');
+        return self::extractMethodSource($source, 'private function checkCredentials');
+    }
 
+    private static function extractMethodSource(string $source, string $signature): string
+    {
+        $start = strpos($source, $signature);
         self::assertIsInt($start);
 
-        $end = strpos($source, "\n/**", $start);
+        $openBrace = strpos($source, '{', $start);
+        self::assertIsInt($openBrace);
 
-        self::assertIsInt($end);
+        $depth = 0;
+        $length = strlen($source);
+        for ($i = $openBrace; $i < $length; $i++) {
+            if ($source[$i] === '{') {
+                $depth++;
+            } elseif ($source[$i] === '}') {
+                $depth--;
+                if ($depth === 0) {
+                    return substr($source, $start, $i - $start + 1);
+                }
+            }
+        }
 
-        return substr($source, $start, $end - $start);
+        self::fail('Unable to extract method source for ' . $signature);
     }
 }
 
