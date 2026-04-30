@@ -185,7 +185,7 @@ trait File
         $path      = pathinfo($path_file)['dirname'];
         $file_name = pathinfo($path_file)['basename'];
 
-        shell_exec("cd ".$path." && nice gzip ".$file_name);
+        shell_exec(ShellCommand::gzip((string) $path_file));
 
         return $path."/".$file_name.".gz";
     }
@@ -214,10 +214,7 @@ trait File
     public function unCompressFile($path_file)
     {
 
-        $path      = pathinfo($path_file)['dirname'];
-        $file_name = pathinfo($path_file)['basename'];
-
-        shell_exec("cd ".$path." && nice gzip -d ".$file_name);
+        shell_exec(ShellCommand::gzip((string) $path_file, true));
 
         return substr($path_file, 0, -3);
     }
