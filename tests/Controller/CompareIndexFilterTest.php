@@ -62,15 +62,17 @@ final class CompareIndexFilterTest extends TestCase
         $controller = (string)file_get_contents(__DIR__ . '/../../App/Controller/Compare.php');
         $view = (string)file_get_contents(__DIR__ . '/../../App/view/Compare/index.view.php');
         $indexStart = strpos($controller, 'function index($params)');
-        $checkConfigStart = strpos($controller, 'private function checkConfig');
+        $menuStart = strpos($controller, 'public function menu(');
 
         $this->assertNotFalse($indexStart);
-        $this->assertNotFalse($checkConfigStart);
-        $indexBody = substr($controller, $indexStart, $checkConfigStart - $indexStart);
+        $this->assertNotFalse($menuStart);
+        $indexBody = substr($controller, $indexStart, $menuStart - $indexStart);
 
         $this->assertStringContainsString('CompareMainSelection::evaluate($get, $server)', $controller);
         $this->assertStringContainsString('self::evaluateIndexRequest($_GET, $_SERVER)', $indexBody);
         $this->assertStringContainsString('CompareMainSelection::applyToGet($selection)', $indexBody);
+        $this->assertStringContainsString('$this->compareEngine()->checkConfig(', $indexBody);
+        $this->assertStringContainsString('$this->compareEngine()->analyse(', $indexBody);
         $this->assertStringContainsString('$selection[CompareMainSelection::SERVER_ORIGINAL]', $indexBody);
         $this->assertStringNotContainsString('$_POST', $indexBody);
         $this->assertStringNotContainsString('REQUEST_METHOD\'] == "POST"', $indexBody);
