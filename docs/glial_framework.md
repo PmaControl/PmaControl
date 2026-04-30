@@ -22,6 +22,14 @@ The Router (`App/Webroot/Router.php`) parses URLs as:
 - `key:value` segments populate `$_GET` (e.g. `/ajax:true` sets `$_GET['ajax'] = 'true'`).
 - The legacy `/key>value` separator sets framework constants but is older style — prefer `key:value`.
 
+## Public controller actions
+
+Every public method declared on an `App/Controller/*` class is discovered as an ACL resource by Glial. In HTTP mode, a public method is therefore a potential route even when it is not linked from the menu.
+
+- Keep helpers and CLI-only routines `protected` or `private` whenever possible.
+- If a legacy public action must not be exposed over HTTP, classify it in `App\Library\Security\RouteExposurePolicy`.
+- Do not rely on the menu as a security boundary. The menu is navigation; ACL and route exposure policy are the security controls.
+
 ## ACL / routing cache — IMPORTANT
 
 After creating **or renaming** any controller, public action, or view, delete:
