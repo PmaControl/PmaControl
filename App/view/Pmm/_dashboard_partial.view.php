@@ -10,6 +10,9 @@ $summaryCards = $payload['summary_cards'] ?? [];
 $sections = $payload['sections'] ?? [];
 $range = $payload['range'] ?? [];
 $serverId = (int)($server['id'] ?? 0);
+$serverLabel = $serverId > 0
+    ? Display::srv($serverId, true)
+    : htmlspecialchars((string)($server['display_name'] ?? 'No server selected'), ENT_QUOTES, 'UTF-8');
 
 FactoryController::addNode('Pmm', 'menu', [$serverId, (string)($dashboard['slug'] ?? 'overview')]);
 ?>
@@ -80,7 +83,7 @@ FactoryController::addNode('Pmm', 'menu', [$serverId, (string)($dashboard['slug'
         <h2 class="pmm-title"><?php echo htmlspecialchars((string)($dashboard['title'] ?? 'PMM'), ENT_QUOTES, 'UTF-8'); ?></h2>
         <div class="pmm-subtitle"><?php echo htmlspecialchars((string)($dashboard['description'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
         <div class="pmm-meta">
-            <span class="pmm-chip">Server: <?php echo Display::srv($serverId, true); ?></span>
+            <span class="pmm-chip">Server: <?php echo $serverLabel; ?></span>
             <span class="pmm-chip">PMM dashboard: <?php echo htmlspecialchars((string)($dashboard['pmm_dashboard'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span>
             <span class="pmm-chip">Source: <?php echo htmlspecialchars((string)($dashboard['pmm_source'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span>
         </div>

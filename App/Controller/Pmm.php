@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Library\PmmDashboardCatalog;
+use App\Library\Security\ServerFilterWhere;
 use Glial\Security\Crypt\Crypt;
 use Glial\Sgbd\Sgbd;
 use Glial\Synapse\Controller;
@@ -199,9 +200,33 @@ class Pmm extends Controller
             ."  --service-name=".escapeshellarg((string) ($server['display_name'] ?? ''));
     }
 
+    private static function resolveDashboardServerId(array $param, ?callable $fallbackResolver = null): ?int
+    {
+        $routeId = self::normalizePositiveInteger($param[0] ?? null);
+        if ($routeId !== null) {
+            return $routeId;
+        }
+
+        $fallbackResolver = $fallbackResolver ?? [self::class, 'getDefaultDashboardServerId'];
+        $fallbackId = $fallbackResolver();
+
+        return self::normalizePositiveInteger($fallbackId);
+    }
+
+    private static function getDefaultDashboardServerSql(string $filterWhere = ''): string
+    {
+        return "SELECT a.id
+            FROM mysql_server a
+            WHERE a.is_deleted = 0
+              AND a.is_monitored = 1"
+            . $filterWhere . "
+            ORDER BY a.display_name, a.id
+            LIMIT 1";
+    }
+
     private function renderDashboard(string $dashboard, array $param): void
     {
-        $idMysqlServer = isset($param[0]) && ctype_digit((string) $param[0]) ? (int) $param[0] : 1;
+        $idMysqlServer = self::resolveDashboardServerId($param);
         $rangeOptions = [
             'range' => $_GET['range'] ?? '24h',
             'range_mode' => $_GET['range_mode'] ?? 'preset',
@@ -209,7 +234,9 @@ class Pmm extends Controller
             'end' => $_GET['end'] ?? null,
         ];
 
-        $payload = PmmDashboardCatalog::build($dashboard, $idMysqlServer, $rangeOptions);
+        $payload = $idMysqlServer === null
+            ? self::buildEmptyDashboardPayload($dashboard, $rangeOptions)
+            : PmmDashboardCatalog::build($dashboard, $idMysqlServer, $rangeOptions);
 
         $this->di['js']->addJavascript([
             'chart-4.5.1.umd.min.js?v=' . (@filemtime(APP_DIR . DS . 'Webroot' . DS . 'js' . DS . 'chart-4.5.1.umd.min.js') ?: time()),
@@ -222,5 +249,60 @@ class Pmm extends Controller
 
         $this->set('param', $param);
         $this->set('payload', $payload);
+    }
+
+    private static function normalizePositiveInteger($value): ?int
+    {
+        if (is_int($value)) {
+            return $value > 0 ? $value : null;
+        }
+
+        if (!is_string($value) || trim($value) === '' || ctype_digit(trim($value)) === false) {
+            return null;
+        }
+
+        $id = (int) trim($value);
+
+        return $id > 0 ? $id : null;
+    }
+
+    private static function getDefaultDashboardServerId(): ?int
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+        $get = $_GET;
+        $session = $_SESSION ?? [];
+        $filterWhere = ServerFilterWhere::build($get, $session, [], 'a');
+        $res = $db->sql_query(self::getDefaultDashboardServerSql($filterWhere));
+        $row = $db->sql_fetch_object($res);
+
+        return is_object($row) && isset($row->id) ? self::normalizePositiveInteger($row->id) : null;
+    }
+
+    private static function buildEmptyDashboardPayload(string $dashboard, array $rangeOptions): array
+    {
+        $dashboards = PmmDashboardCatalog::getDashboards();
+        if (!isset($dashboards[$dashboard])) {
+            throw new \InvalidArgumentException('Unknown PMM dashboard: ' . $dashboard);
+        }
+
+        return [
+            'dashboard' => $dashboards[$dashboard],
+            'server' => [
+                'id' => 0,
+                'display_name' => 'No server selected',
+            ],
+            'range' => PmmDashboardCatalog::normalizeRange($rangeOptions),
+            'summary_cards' => [],
+            'sections' => [
+                [
+                    'title' => 'No monitored MySQL server available',
+                    'description' => 'Add or enable a monitored MySQL server before opening PMM dashboards from the main menu.',
+                    'cards' => [],
+                    'charts' => [],
+                    'tables' => [],
+                    'notes' => [],
+                ],
+            ],
+        ];
     }
 }

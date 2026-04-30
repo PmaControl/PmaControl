@@ -51,6 +51,7 @@ Repository:
 ## Delivered Behavior
 
 - A PMM-style top menu per selected server.
+- A main `Dashboard > PMM Dashboards` entry, backed by `Pmm/index`, for direct access outside the server detail screen.
 - Shared range selector with presets `1h / 6h / 24h` and custom range up to 24h.
 - Chart.js rendering for historical charts using PmaControl time-series storage.
 - Current-value cards and structured tables for metrics that PMM shows as stat/table panels.
