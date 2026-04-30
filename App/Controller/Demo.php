@@ -30,6 +30,7 @@ use App\Library\Chiffrement;
  * @license GPL-3.0
  * @since 5.0
  * @version 1.0
+ * @deprecated Legacy lab entrypoint blocked over HTTP by RouteExposurePolicy (#517). Extract safe reusable lab logic in #665.
  */
 class Demo extends Controller {
 
