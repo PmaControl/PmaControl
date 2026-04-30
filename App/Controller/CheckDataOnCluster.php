@@ -116,30 +116,41 @@ class CheckDataOnCluster extends Controller {
                     $db_link = $this->getDbLinkFromId($id_mysql_server);
                     $db_link->sql_select_db($selection['database']);
 
-                    $res = $db_link->sql_query($selection['sql']);
+                    $transactionStarted = false;
+                    try {
+                        $db_link->sql_query("SET SESSION TRANSACTION READ ONLY");
+                        $db_link->sql_query("START TRANSACTION READ ONLY");
+                        $transactionStarted = true;
+                        $res = $db_link->sql_query($selection['sql']);
 
 
-                    while ($arr = $db_link->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                        while ($arr = $db_link->sql_fetch_array($res, MYSQLI_ASSOC)) {
 
-                        $nb = count($arr);
-                        if ($nb == 2) {
-                            if (!empty($arr['Variable_name']) && isset($arr['Value'])) {
-                                $show = true;
+                            $nb = count($arr);
+                            if ($nb == 2) {
+                                if (!empty($arr['Variable_name']) && isset($arr['Value'])) {
+                                    $show = true;
+                                } else {
+                                    $show = false;
+                                }
                             } else {
                                 $show = false;
                             }
-                        } else {
-                            $show = false;
-                        }
 
-                        if ($show) {
-                            $resultat[$id_mysql_server][$arr['Variable_name']] = $arr['Value'];
-                            $data['show'] = true;
-                        } else {
+                            if ($show) {
+                                $resultat[$id_mysql_server][$arr['Variable_name']] = $arr['Value'];
+                                $data['show'] = true;
+                            } else {
 
-                            //debug($nb);
-                            $resultat[$id_mysql_server][] = $arr;
+                                //debug($nb);
+                                $resultat[$id_mysql_server][] = $arr;
+                            }
                         }
+                    } finally {
+                        if ($transactionStarted) {
+                            $db_link->sql_query("ROLLBACK");
+                        }
+                        $db_link->sql_query("SET SESSION TRANSACTION READ WRITE");
                     }
                 }
 
