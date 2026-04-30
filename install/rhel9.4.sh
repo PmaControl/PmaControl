@@ -1,6 +1,11 @@
 #!/bin/bash
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=install/lib/harden_apache.sh
+. "${SCRIPT_DIR}/lib/harden_apache.sh"
+
 password=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
+PMACTRL_HARDEN_APACHE_DOCROOT="${PMACTRL_HARDEN_APACHE_DOCROOT:-1}"
 
 dnf -y update
 dnf -y upgrade
@@ -109,12 +114,13 @@ tee -a /etc/httpd/conf/httpd.conf <<EOL
     ServerName localhost
     DocumentRoot "/srv/www"
     <Directory "/srv/www/pmacontrol">
-        Options Indexes FollowSymLinks
+        Options -Indexes +FollowSymLinks
         AllowOverride All
         Require all granted
     </Directory>
 </VirtualHost>
 EOL
+pmactrl_harden_httpd_docroot
 
 echo "Apache modules and PHP-FPM configuration applied successfully."
 
@@ -269,4 +275,3 @@ PWD=$(pwd)
 cp -a glial pmacontrol
 sed "s#php App/Webroot/index.php#php ${PWD}/App/Webroot/index.php#g" -i pmacontrol
 mv pmacontrol /usr/local/bin/pmacontrol
-
