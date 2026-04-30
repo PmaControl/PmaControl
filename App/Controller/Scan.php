@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Library\Security\SignedJsonCache;
 use \Glial\Synapse\Controller;
 use JJG\Ping;
 use \Glial\Sgbd\Sgbd;
@@ -31,6 +32,8 @@ use \Glial\Sgbd\Sgbd;
  * @version 1.0
  */
 class Scan extends Controller {
+    private const SCAN_CACHE_SCOPE = 'scan.data';
+    private const SCAN_CACHE_VERSION = 1;
 
 /**
  * Stores `$data` for data.
@@ -373,22 +376,21 @@ class Scan extends Controller {
  * @version 1.0
  */
     public function getData($refresh = false) {
-        $path_to_acl_tmp = TMP . "data/scan.ser";
+        $path_to_acl_tmp = TMP . "data/scan.json";
 
         if (!$refresh) {
-            if (file_exists($path_to_acl_tmp)) {
-                if (is_file($path_to_acl_tmp)) {
-                    $s = file_get_contents($path_to_acl_tmp);
-                    $tmp = unserialize($s);
-                    $this->data = $tmp->data;
-                    return $this->data;
-                }
+            $payload = SignedJsonCache::read($path_to_acl_tmp, self::SCAN_CACHE_SCOPE, self::SCAN_CACHE_VERSION);
+            if (isset($payload['data']) && is_array($payload['data'])) {
+                $this->data = $payload['data'];
+                return $this->data;
             }
         }
 
         $data = $this->autoDiscovering();
 
-        file_put_contents($path_to_acl_tmp, serialize($this));
+        SignedJsonCache::write($path_to_acl_tmp, self::SCAN_CACHE_SCOPE, self::SCAN_CACHE_VERSION, [
+            'data' => $this->data,
+        ]);
 
         return $data;
     }
@@ -1066,4 +1068,3 @@ class Scan extends Controller {
     }
 
 }
-

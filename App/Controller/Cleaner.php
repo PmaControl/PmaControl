@@ -31,6 +31,7 @@ use App\Library\Security\GroupedFormRequest;
 use App\Library\Security\Identifier;
 use App\Library\Security\IndexedRowsRequest;
 use App\Library\Security\PositiveIntegerSelection;
+use App\Library\Security\SignedJsonCache;
 use App\Library\SelectorOptions;
 use App\Library\Display;
 use App\Controller\Test\CleanerTest;
@@ -92,6 +93,8 @@ class Cleaner extends Controller
     ];
     private const CLEANER_SETTINGS_CSRF_SCOPE = 'cleaner.settings';
     private const CLEANER_SETTINGS_MAX_FOREIGN_KEYS = 128;
+    private const CLEANER_ORDERBY_CACHE_SCOPE_PREFIX = 'cleaner.orderby2:';
+    private const CLEANER_ORDERBY_CACHE_VERSION = 1;
     private const CLEANER_SETTINGS_MAIN_RULES = [
         'libelle' => ['type' => 'string', 'required' => true, 'min' => 1, 'max' => 50],
         'id_mysql_server' => ['type' => 'int', 'required' => true, 'min' => 1],
@@ -2907,161 +2910,146 @@ var myChart = new Chart(ctx, {
         $main_table   = $param[1];
         $order        = $param[2] ?? 'ASC';
 
-        $this->setCacheFile();
-
         Debug::debug($foreign_keys, 'json');
 
-        if (!file_exists($this->path_to_orderby_tmp)) {
+        $tmp = $foreign_keys;
 
-            $tmp = $foreign_keys;
-
-            //On retire les FKs en double
-            foreach ($tmp as $key => $tab) {
-                $foreign_keys[$key] = array_unique($foreign_keys[$key]);
-            }
+        //On retire les FKs en double
+        foreach ($tmp as $key => $tab) {
+            $foreign_keys[$key] = array_unique($foreign_keys[$key]);
+        }
 
 
-            //remove all tables with no father from $this->main_table
-            //$foreign_keys = $this->removeTableNotImpacted($foreign_keys);
-            //Debug::debug($fks);
+        //remove all tables with no father from $this->main_table
+        //$foreign_keys = $this->removeTableNotImpacted($foreign_keys);
+        //Debug::debug($fks);
 
-            $level   = array();
-            $level[] = $this->table_to_purge;
+        $level   = array();
+        $level[] = $this->table_to_purge;
 
-            $all_childs = $this->addChild($foreign_keys, $main_table, array($main_table));
+        $all_childs = $this->addChild($foreign_keys, $main_table, array($main_table));
 
-            Debug::debug($all_childs);
+        Debug::debug($all_childs);
 
-            $foreign_keys = $this->filterFkWithChildren($all_childs, $foreign_keys);
+        $foreign_keys = $this->filterFkWithChildren($all_childs, $foreign_keys);
 
-            $array = $foreign_keys;
+        $array = $foreign_keys;
 
-            // test des tables qui boucle sur elle même
-            $tmp2 = $array;
-            foreach ($tmp2 as $table_name => $childs) {
+        // test des tables qui boucle sur elle même
+        $tmp2 = $array;
+        foreach ($tmp2 as $table_name => $childs) {
 
-                foreach ($childs as $key => $child) {
-                    if ($table_name === $child) {
+            foreach ($childs as $key => $child) {
+                if ($table_name === $child) {
 
-                        $this->fk_circulaire[] = $table_name;
-                        unset($array[$table_name][$key]);
-                        $cas_found             = true;
-                    }
+                    $this->fk_circulaire[] = $table_name;
+                    unset($array[$table_name][$key]);
+                    $cas_found             = true;
                 }
-            }
-
-            $i = 0;
-            while ($last = count($array) != 0) {
-                //echo "level " . $i . PHP_EOL;
-                $temp = $array;
-
-                foreach ($temp as $father_name => $tab_father) {
-                    foreach ($tab_father as $key_child => $table_child) {
-                        if (!in_array($table_child, array_keys($array))) {
-
-                            if (empty($level[$i]) || !in_array($table_child, $level[$i])) {
-                                $level[$i][] = $table_child;
-                            }
-                            //debug($level);
-                            unset($array[$father_name][$key_child]);
-                            //debug($array);
-                        }
-                    }
-                }
-
-                $temp = $array;
-
-                // retirer les tableaux vides, et remplissage avec clefs
-                Debug::debug($temp, 'temp');
-
-                foreach ($temp as $key => $tmp) {
-                    if (count($tmp) == 0) {
-                        unset($array[$key]);
-                        if (empty($level[$i + 1]) || !in_array($key, $level[$i + 1])) {
-                            $level[$i + 1][] = $key;
-                        }
-                    }
-                }
-
-                if ($last == count($array)) {
-                    $cas_found = false;
-
-                    //cas de deux chemins differents pour arriver à la même table enfant
-                    $temp = $array;
-                    foreach ($temp as $key1 => $tab2) {
-                        foreach ($tab2 as $key2 => $val) {
-                            foreach ($level as $tab3) {
-                                if (in_array($val, $tab3)) {
-                                    unset($array[$key1][$key2]);
-                                    $cas_found = true;
-                                }
-                            }
-
-                            //debug($val);
-                        }
-                    }
-
-                    if (!$cas_found) {
-                        echo "\n";
-
-                        Debug::debug($temp);
-                        Debug::debug($tab2);
-                        Debug::debug($level);
-                        Debug::debug($array);
-
-                        $tables = array();
-                        foreach ($array as $key => $tab) {
-                            $tables[] = $key;
-
-                            foreach ($tab as $elem) {
-                                $tables[] = $elem;
-                            }
-                        }
-
-                        $tables = array_unique($tables);
-
-                        sort($tables);
-
-                        Debug::debug($level, "LEVEL");
-                        Debug::debug($tables);
-                        //echo implode("','", $tables);
-                        //Debug::debug($this->fk_circulaire);
-                        throw new \Exception("\nPMACTRL-333 Circular definition (table <-> table)");
-                    }
-                }
-
-                sort($level[$i]);
-                $i++;
-            }
-
-//dans le cas où il a pas au moins table fille on ajoute la table principale
-            if (count($level[0]) == 0) {
-                $level[0][0] = $this->main_table;
-            }
-
-            if ($order === "ASC") {
-                krsort($level);
-            } else {
-                ksort($level);
-            }
-
-            $this->orderby = $level;
-
-            Debug::debug($level, "LEVEL");
-            exit;
-
-            file_put_contents($this->path_to_orderby_tmp, serialize($this));
-
-            Debug::checkPoint("générer l'ordre de remplissasage et d'effacement");
-        } else {
-
-//on load le fichier précédement enregistré
-            if (is_file($this->path_to_orderby_tmp)) {
-                $s             = implode('', file($this->path_to_orderby_tmp));
-                $tmp           = unserialize($s);
-                $this->orderby = $tmp->orderby;
             }
         }
+
+        $i = 0;
+        while ($last = count($array) != 0) {
+            //echo "level " . $i . PHP_EOL;
+            $temp = $array;
+
+            foreach ($temp as $father_name => $tab_father) {
+                foreach ($tab_father as $key_child => $table_child) {
+                    if (!in_array($table_child, array_keys($array))) {
+
+                        if (empty($level[$i]) || !in_array($table_child, $level[$i])) {
+                            $level[$i][] = $table_child;
+                        }
+                        //debug($level);
+                        unset($array[$father_name][$key_child]);
+                        //debug($array);
+                    }
+                }
+            }
+
+            $temp = $array;
+
+            // retirer les tableaux vides, et remplissage avec clefs
+            Debug::debug($temp, 'temp');
+
+            foreach ($temp as $key => $tmp) {
+                if (count($tmp) == 0) {
+                    unset($array[$key]);
+                    if (empty($level[$i + 1]) || !in_array($key, $level[$i + 1])) {
+                        $level[$i + 1][] = $key;
+                    }
+                }
+            }
+
+            if ($last == count($array)) {
+                $cas_found = false;
+
+                //cas de deux chemins differents pour arriver à la même table enfant
+                $temp = $array;
+                foreach ($temp as $key1 => $tab2) {
+                    foreach ($tab2 as $key2 => $val) {
+                        foreach ($level as $tab3) {
+                            if (in_array($val, $tab3)) {
+                                unset($array[$key1][$key2]);
+                                $cas_found = true;
+                            }
+                        }
+
+                        //debug($val);
+                    }
+                }
+
+                if (!$cas_found) {
+                    echo "\n";
+
+                    Debug::debug($temp);
+                    Debug::debug($tab2);
+                    Debug::debug($level);
+                    Debug::debug($array);
+
+                    $tables = array();
+                    foreach ($array as $key => $tab) {
+                        $tables[] = $key;
+
+                        foreach ($tab as $elem) {
+                            $tables[] = $elem;
+                        }
+                    }
+
+                    $tables = array_unique($tables);
+
+                    sort($tables);
+
+                    Debug::debug($level, "LEVEL");
+                    Debug::debug($tables);
+                    //echo implode("','", $tables);
+                    //Debug::debug($this->fk_circulaire);
+                    throw new \Exception("\nPMACTRL-333 Circular definition (table <-> table)");
+                }
+            }
+
+            sort($level[$i]);
+            $i++;
+        }
+
+//dans le cas où il a pas au moins table fille on ajoute la table principale
+        if (count($level[0]) == 0) {
+            $level[0][0] = $this->main_table;
+        }
+
+        if ($order === "ASC") {
+            krsort($level);
+        } else {
+            ksort($level);
+        }
+
+        $this->orderby = $level;
+
+        Debug::debug($level, "LEVEL");
+        exit;
+
+        Debug::checkPoint("générer l'ordre de remplissasage et d'effacement");
 
 
         if ($order === "ASC") {
@@ -4978,7 +4966,17 @@ objDiv.scrollTop = objDiv.scrollHeight;
  */
     private function setCacheFile()
     {
-        $this->path_to_orderby_tmp = TMP."cleaner/orderby_".$this->id_cleaner.".ser";
+        $this->path_to_orderby_tmp = TMP."cleaner/orderby_".$this->id_cleaner.".json";
+    }
+
+    private static function getOrderByCacheScope(int $idCleaner): string
+    {
+        return self::CLEANER_ORDERBY_CACHE_SCOPE_PREFIX.$idCleaner;
+    }
+
+    private static function isOrderByCachePayload(?array $payload): bool
+    {
+        return isset($payload['orderby']) && is_array($payload['orderby']);
     }
     /*
      *
@@ -5263,10 +5261,15 @@ objDiv.scrollTop = objDiv.scrollHeight;
         $order        = $param[2] ?? 'ASC';
 
         $this->setCacheFile();
+        $cachePayload = SignedJsonCache::read(
+            $this->path_to_orderby_tmp,
+            self::getOrderByCacheScope((int) $this->id_cleaner),
+            self::CLEANER_ORDERBY_CACHE_VERSION
+        );
 
         Debug::debug(count($foreign_keys), 'origin');
 
-        if (!file_exists($this->path_to_orderby_tmp)) {
+        if (!self::isOrderByCachePayload($cachePayload)) {
 
             $tmp = $foreign_keys;
 
@@ -5426,17 +5429,18 @@ objDiv.scrollTop = objDiv.scrollHeight;
             Debug::debug($level, "LEVEL");
             //exit;
 
-            file_put_contents($this->path_to_orderby_tmp, serialize($this));
+            SignedJsonCache::write(
+                $this->path_to_orderby_tmp,
+                self::getOrderByCacheScope((int) $this->id_cleaner),
+                self::CLEANER_ORDERBY_CACHE_VERSION,
+                [
+                    'orderby' => $this->orderby,
+                ]
+            );
 
             Debug::checkPoint("générer l'ordre de remplissasage et d'effacement");
         } else {
-
-//on load le fichier précédement enregistré
-            if (is_file($this->path_to_orderby_tmp)) {
-                $s             = implode('', file($this->path_to_orderby_tmp));
-                $tmp           = unserialize($s);
-                $this->orderby = $tmp->orderby;
-            }
+            $this->orderby = $cachePayload['orderby'];
         }
 
 
