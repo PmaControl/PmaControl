@@ -9,6 +9,7 @@ use App\Library\Extraction2;
 use App\Library\Graphviz;
 use App\Library\MysqlVersion;
 use App\Library\Security\Identifier;
+use App\Library\Security\PositiveIntegerSelection;
 use App\Library\Sql\QueryGraphDotBuilder;
 use App\Library\Sql\QueryGraphExtractor;
 use \Glial\Synapse\Controller;
@@ -37,6 +38,11 @@ class Query extends Controller {
     const TABLE_SCHEMA = 'dba';
     const LOG_FILE = TMP . "log/query.log";
     private const TEXT_BLOB_DEFAULT_MIN_VERSION = '10.2';
+    private const WORKER_STATE_PENDING = -1;
+    private const WORKER_STATE_RUNNING = 0;
+    private const WORKER_STATE_DONE = 1;
+    private const WORKER_STATE_KILLED = 2;
+    private const WORKER_STATE_REJECTED = 3;
 
             // ajouter tout mot-clé à exclure
 /**
@@ -207,6 +213,69 @@ SQL;
         return MysqlVersion::atLeast($version, self::TEXT_BLOB_DEFAULT_MIN_VERSION);
     }
 
+    public static function evaluateRunQueryRequest(array $param, bool $isCli): array
+    {
+        if ($isCli === false) {
+            return self::runQueryOutcome(403, 'Query runner is CLI-only.');
+        }
+
+        $idMysqlServer = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        $jobId = PositiveIntegerSelection::normalizeSingle($param[1] ?? null);
+        $runNumber = PositiveIntegerSelection::normalizeSingle($param[2] ?? null);
+
+        if ($idMysqlServer === null || $jobId === null || $runNumber === null) {
+            return self::runQueryOutcome(
+                400,
+                'Usage: php App/Webroot/index.php Query runQuery <id_mysql_server> <job_id> <run_number>'
+            );
+        }
+
+        return self::runQueryOutcome(200, '', [
+            'id_mysql_server' => $idMysqlServer,
+            'job_id' => $jobId,
+            'run_number' => $runNumber,
+        ]);
+    }
+
+    public static function isSetDefaultWorkerQueryAllowed(string $query): bool
+    {
+        $query = trim($query);
+        if ($query === '' || preg_match('/(?:--|#|\/\*)/', $query) === 1) {
+            return false;
+        }
+
+        $identifier = '`[^`\\x00]{1,64}`';
+        $numericDefault = '-?\d+(?:\.\d+)?';
+        $quotedDefault = "'[^'\\\\;\\x00]*'";
+        $pattern = '/^ALTER TABLE ' . $identifier . '\.' . $identifier
+            . ' ALTER COLUMN ' . $identifier
+            . ' SET DEFAULT (?:' . $numericDefault . '|' . $quotedDefault . ');$/';
+
+        return preg_match($pattern, $query) === 1;
+    }
+
+    public static function buildRunQueryCommand(int $idMysqlServer, int $jobId, int $runNumber): array
+    {
+        $controller = substr(__CLASS__, strrpos(__CLASS__, '\\') + 1);
+        $index = defined('GLIAL_INDEX') ? GLIAL_INDEX : 'App/Webroot/index.php';
+
+        return [
+            PHP_BINARY,
+            $index,
+            $controller,
+            'runQuery',
+            (string)$idMysqlServer,
+            (string)$jobId,
+            (string)$runNumber,
+            '--debug',
+        ];
+    }
+
+    private static function runQueryOutcome(int $status, string $body, ?array $payload = null): array
+    {
+        return ['status' => $status, 'body' => $body, 'payload' => $payload];
+    }
+
     /**
      * setDefault
      *
@@ -324,9 +393,11 @@ SQL;
     public function runSetDefault($param) {
 
         Debug::parseDebug($param);
-        $id_mysql_server = $param[0];
-
-
+        $id_mysql_server = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        if ($id_mysql_server === null) {
+            throw new \InvalidArgumentException('Invalid id_mysql_server.');
+        }
+        $param[0] = $id_mysql_server;
 
         do {
             $defaults = $this->setDefault($param);
@@ -336,7 +407,10 @@ SQL;
             pcntl_signal(SIGUSR1, array($this, 'sigHandler')); // active / desactive debug
             pcntl_signal(SIGUSR2, array($this, 'sigHandler')); // rechargement de la configuration ?
 
-            $run_number = $this->getMaxRun($param);
+            $run_number = (int)$this->getMaxRun($param);
+            if ($run_number <= 0) {
+                throw new \UnexpectedValueException('Invalid run_number.');
+            }
             Debug::debug($run_number, "run_number");
 
             foreach ($defaults as $default) {
@@ -348,43 +422,51 @@ SQL;
 
                 $db = Mysql::getDbLink($id_mysql_server);
 
-                $php = explode(" ", shell_exec("whereis php"))[1];
-
                 Debug::sql($default);
-                
-                $cmd = $php . " " . GLIAL_INDEX . " " . substr(__CLASS__, strrpos(__CLASS__, '\\') + 1) . " runQuery " . $id_mysql_server . " " . base64_encode($default) . " " . $run_number . " --debug >> " . self::LOG_FILE . " & echo $!";
-                $pid = intval(trim(shell_exec($cmd)));
+                $job_id = $this->queueSetDefaultJob($db, $id_mysql_server, $run_number, $default);
+                $worker = $this->startRunQueryWorker($id_mysql_server, $job_id, $run_number);
+                $process = $worker['process'];
 
-                do {
+                try {
+                    do {
 
-                    usleep(100000);
+                        usleep(100000);
 
-                    $sql = "SELECT thread_id, TIME_TO_SEC(timediff (now(),`date`)) as sec FROM `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME . "` WHERE state=0 and id_mysql_server=" . $id_mysql_server;
-                    $res = $db->sql_query($sql);
+                        $sql = "SELECT id, thread_id, state, TIME_TO_SEC(timediff (now(),`date`)) as sec FROM `"
+                            . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME . "` WHERE state IN ("
+                            . self::WORKER_STATE_PENDING . "," . self::WORKER_STATE_RUNNING . ") and id_mysql_server="
+                            . $id_mysql_server . " and run_number=" . $run_number . " and id=" . $job_id;
+                        $res = $db->sql_query($sql);
 
-                    $num_rows = intval($db->sql_num_rows($res));
-                    echo $num_rows." ";
-                    //Debug::debug($num_rows, 'num_rows');
+                        $num_rows = intval($db->sql_num_rows($res));
+                        echo $num_rows . " ";
+                        //Debug::debug($num_rows, 'num_rows');
 
-                    while ($ob = $db->sql_fetch_object($res)) {
-                        if ($ob->sec > 10) {
-                            $sql2 = "UPDATE `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME . "`  SET `state`=2 WHERE thread_id=" . $ob->thread_id . " and id_mysql_server=" . $id_mysql_server;
-                            $db->sql_query($sql2);
+                        while ($ob = $db->sql_fetch_object($res)) {
+                            if ((int)$ob->sec > 10) {
+                                $sql2 = "UPDATE `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME
+                                    . "`  SET `state`=" . self::WORKER_STATE_KILLED . " WHERE id=" . (int)$ob->id
+                                    . " and id_mysql_server=" . $id_mysql_server;
+                                $db->sql_query($sql2);
 
-                            
-                            //kill mysql process
-                            $sql3 = "KILL " . $ob->thread_id . ";";
-                            $db->sql_query($sql3);
+                                //kill mysql process
+                                if ((int)$ob->state === self::WORKER_STATE_RUNNING && (int)$ob->thread_id > 0) {
+                                    $sql3 = "KILL " . (int)$ob->thread_id . ";";
+                                    $db->sql_query($sql3);
+                                }
 
-                            //kill php process
-                            shell_exec("kill -9 " . $pid);
+                                //kill php process
+                                $this->terminateWorkerProcess($process);
 
-
-
-                            $num_rows = 0;
+                                $num_rows = 0;
+                            }
                         }
+                    } while ($num_rows !== 0);
+                } finally {
+                    if (is_resource($process)) {
+                        proc_close($process);
                     }
-                } while ($num_rows !== 0);
+                }
                 
                 echo "\n";
             }
@@ -393,7 +475,9 @@ SQL;
             $db = Mysql::getDbLink($id_mysql_server);
             
 
-            $sql4 = "SELECT count(1) as cpt FROM `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME . "` WHERE `state`=2 and run_number=" . $run_number . " and `id_mysql_server`=" . $id_mysql_server;
+            $sql4 = "SELECT count(1) as cpt FROM `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME
+                . "` WHERE `state`=" . self::WORKER_STATE_KILLED . " and run_number=" . $run_number
+                . " and `id_mysql_server`=" . $id_mysql_server;
             Debug::sql($sql4);
 
             $cpt = 0;
@@ -402,6 +486,70 @@ SQL;
                 $cpt = $ob4->cpt;
             }
         } while ($cpt > 0);
+    }
+
+    private function queueSetDefaultJob($db, int $idMysqlServer, int $runNumber, string $query): int
+    {
+        if (!self::isSetDefaultWorkerQueryAllowed($query)) {
+            throw new \UnexpectedValueException('Rejected set-default worker query.');
+        }
+
+        $sql = "INSERT INTO `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME
+            . "` (`id_mysql_server`,`run_number`,`date`,`query`,`thread_id`,`state`) VALUES ("
+            . $idMysqlServer . "," . $runNumber . ", '" . date("Y-m-d H:i:s") . "','"
+            . $db->sql_real_escape_string($query) . "',0," . self::WORKER_STATE_PENDING . ")";
+        $db->sql_query($sql);
+
+        return (int)$db->sql_insert_id();
+    }
+
+    private function startRunQueryWorker(int $idMysqlServer, int $jobId, int $runNumber): array
+    {
+        $logDirectory = dirname(self::LOG_FILE);
+        if (!is_dir($logDirectory)) {
+            mkdir($logDirectory, 0775, true);
+        }
+
+        $descriptorSpec = [
+            0 => ['file', '/dev/null', 'r'],
+            1 => ['file', self::LOG_FILE, 'a'],
+            2 => ['file', self::LOG_FILE, 'a'],
+        ];
+
+        $process = proc_open(
+            self::buildRunQueryCommand($idMysqlServer, $jobId, $runNumber),
+            $descriptorSpec,
+            $pipes,
+            null,
+            null,
+            ['bypass_shell' => true]
+        );
+
+        if (!is_resource($process)) {
+            throw new \RuntimeException('Unable to start Query runQuery worker.');
+        }
+
+        foreach ($pipes as $pipe) {
+            if (is_resource($pipe)) {
+                fclose($pipe);
+            }
+        }
+
+        $status = proc_get_status($process);
+        $pid = (int)($status['pid'] ?? 0);
+        if ($pid <= 0) {
+            proc_close($process);
+            throw new \RuntimeException('Unable to retrieve Query runQuery worker PID.');
+        }
+
+        return ['process' => $process, 'pid' => $pid];
+    }
+
+    private function terminateWorkerProcess($process): void
+    {
+        if (is_resource($process)) {
+            proc_terminate($process);
+        }
     }
 
 /**
@@ -428,35 +576,92 @@ SQL;
  */
     public function runQuery($param) {
         Debug::parseDebug($param);
+        $this->view = false;
+        $this->layout_name = false;
 
-        $id_mysql_server = $param[0];
-        $query = base64_decode($param[1]);
-        $run_number = intval($param[2]);
+        $request = self::evaluateRunQueryRequest($param, defined('IS_CLI') && IS_CLI === true);
+        if ($request['status'] !== 200) {
+            if (!defined('IS_CLI') || IS_CLI !== true) {
+                http_response_code($request['status']);
+            }
+            echo $request['body'] . "\n";
+            return;
+        }
+
+        $payload = $request['payload'];
+        $id_mysql_server = (int)$payload['id_mysql_server'];
+        $job_id = (int)$payload['job_id'];
+        $run_number = (int)$payload['run_number'];
 
         $db = Mysql::getDbLink($id_mysql_server);
 
         // to be sure no other process working
-        $sql3 = "SELECT count(1) as cpt FROM `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME . "` WHERE state=0 AND id_mysql_server=" . $id_mysql_server;
+        $sql3 = "SELECT count(1) as cpt FROM `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME
+            . "` WHERE state=" . self::WORKER_STATE_RUNNING . " AND id_mysql_server=" . $id_mysql_server
+            . " AND id <> " . $job_id;
         $res3 = $db->sql_query($sql3);
         while ($ob3 = $db->sql_fetch_object($res3)) {
             if ($ob3->cpt > 0) {
+                $sql = "UPDATE `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME
+                    . "` SET `state`=" . self::WORKER_STATE_KILLED . " WHERE id=" . $job_id
+                    . " AND id_mysql_server=" . $id_mysql_server . " AND run_number=" . $run_number;
+                $db->sql_query($sql);
+                $db->sql_close();
                 throw new \Exception("One query already working to prevent any problem we kill this one");
             }
         }
 
+        $query = null;
+        $sql = "SELECT `query` FROM `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME . "` WHERE id=" . $job_id
+            . " AND id_mysql_server=" . $id_mysql_server . " AND run_number=" . $run_number
+            . " AND state=" . self::WORKER_STATE_PENDING . " LIMIT 1";
+        $res = $db->sql_query($sql);
+        while ($ob = $db->sql_fetch_object($res)) {
+            $query = (string)$ob->query;
+        }
+
+        if ($query === null) {
+            $db->sql_close();
+            throw new \RuntimeException('No pending set-default query job found.');
+        }
+
+        if (!self::isSetDefaultWorkerQueryAllowed($query)) {
+            $sql = "UPDATE `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME
+                . "` SET `state`=" . self::WORKER_STATE_REJECTED . " WHERE id=" . $job_id
+                . " AND id_mysql_server=" . $id_mysql_server . " AND run_number=" . $run_number;
+            $db->sql_query($sql);
+            $db->sql_close();
+            throw new \UnexpectedValueException('Rejected set-default worker query.');
+        }
+
         $thread_id = $db->sql_thread_id();
-        $sql = "INSERT INTO `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME . "` (`id_mysql_server`,`run_number`,`date`,`query`,`thread_id`,`state`) "
-                . "VALUES (" . $id_mysql_server . "," . $run_number . ", '" . date("Y-m-d H:i:s") . "','" . $db->sql_real_escape_string($query) . "'," . $thread_id . ", 0)";
+        $sql = "UPDATE `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME . "` SET `date`='"
+            . date("Y-m-d H:i:s") . "',`thread_id`=" . $thread_id . ",`state`=" . self::WORKER_STATE_RUNNING
+            . " WHERE id=" . $job_id . " AND id_mysql_server=" . $id_mysql_server . " AND run_number="
+            . $run_number . " AND state=" . self::WORKER_STATE_PENDING;
         $db->sql_query($sql);
+        if ((int)$db->sql_affected_rows() !== 1) {
+            $db->sql_close();
+            throw new \RuntimeException('Unable to reserve set-default query job.');
+        }
 
         Debug::debug($thread_id, "THREAD_ID");
         Debug::sql($query);
 
-        $db->sql_query($query);
+        try {
+            $db->sql_query($query);
 
-        $sql2 = "UPDATE `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME . "`  SET `state`=1 WHERE thread_id=" . $thread_id;
-        $db->sql_query($sql2);
-        $db->sql_close();
+            $sql2 = "UPDATE `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME . "`  SET `state`="
+                . self::WORKER_STATE_DONE . " WHERE id=" . $job_id . " AND id_mysql_server=" . $id_mysql_server;
+            $db->sql_query($sql2);
+        } catch (\Throwable $exception) {
+            $sql2 = "UPDATE `" . self::TABLE_SCHEMA . "`.`" . self::TABLE_NAME . "`  SET `state`="
+                . self::WORKER_STATE_KILLED . " WHERE id=" . $job_id . " AND id_mysql_server=" . $id_mysql_server;
+            $db->sql_query($sql2);
+            throw $exception;
+        } finally {
+            $db->sql_close();
+        }
     }
 
 /**
