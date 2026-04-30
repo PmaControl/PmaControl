@@ -29,6 +29,8 @@ final class RouteExposurePolicy
      * @var array<string,string>
      */
     private const DENIED_WEB_ROUTES = [
+        // Tombstones for the removed Alter controller (#516): keep these routes blocked
+        // if destructive legacy maintenance actions are accidentally reintroduced.
         'alter/dropsp' => 'Legacy maintenance route drops stored procedures on remote MySQL servers.',
         'alter/slave' => 'Legacy maintenance route changes replication state on remote MySQL servers.',
         'alter/droproot' => 'Legacy maintenance route drops root accounts on remote MySQL servers.',
