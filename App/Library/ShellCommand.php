@@ -105,6 +105,67 @@ final class ShellCommand
         return (bool) preg_match('/\A[A-Za-z0-9._\/-]+\z/', $revision);
     }
 
+    public static function remoteMkdir(string $path): string
+    {
+        self::assertNonEmptyPath($path);
+
+        return 'mkdir -p -- ' . escapeshellarg($path);
+    }
+
+    public static function remoteMd5sum(string $path, bool $silenceStderr = true): string
+    {
+        self::assertNonEmptyPath($path);
+
+        return 'md5sum -- ' . escapeshellarg($path) . ($silenceStderr ? ' 2>/dev/null' : '');
+    }
+
+    public static function remoteAppendFile(string $sourcePath, string $targetPath): string
+    {
+        self::assertNonEmptyPath($sourcePath);
+        self::assertNonEmptyPath($targetPath);
+
+        return 'cat -- ' . escapeshellarg($sourcePath) . ' >> ' . escapeshellarg($targetPath);
+    }
+
+    public static function remoteMkdirAndAppendFile(string $directoryPath, string $sourcePath, string $targetPath): string
+    {
+        return self::remoteMkdir($directoryPath) . ' && ' . self::remoteAppendFile($sourcePath, $targetPath);
+    }
+
+    public static function remoteRemoveFile(string $path): string
+    {
+        self::assertNonEmptyPath($path);
+
+        return 'rm -f -- ' . escapeshellarg($path);
+    }
+
+    public static function sudoShell(string $command): string
+    {
+        if ($command === '') {
+            throw new \InvalidArgumentException('Remote command cannot be empty.');
+        }
+
+        return 'sudo -- sh -c ' . escapeshellarg($command);
+    }
+
+    public static function isSafeUnixUsername(string $username): bool
+    {
+        return (bool) preg_match('/\A[A-Za-z_][A-Za-z0-9_-]{0,31}\z/', $username);
+    }
+
+    public static function remoteTempPathForUser(string $username, string $fileName): ?string
+    {
+        if (!self::isSafeUnixUsername($username)) {
+            return null;
+        }
+
+        if (!preg_match('/\A[A-Za-z0-9][A-Za-z0-9._-]*\z/', $fileName) || str_contains($fileName, '/')) {
+            return null;
+        }
+
+        return ($username === 'root' ? '/root/' : '/home/' . $username . '/') . $fileName;
+    }
+
     public function arg(string $value): self
     {
         $this->guardNotFinalized();
@@ -244,6 +305,13 @@ final class ShellCommand
     {
         if ($separator !== ' ' && $separator !== '=') {
             throw new \InvalidArgumentException('Invalid shell option separator');
+        }
+    }
+
+    private static function assertNonEmptyPath(string $path): void
+    {
+        if ($path === '') {
+            throw new \InvalidArgumentException('Remote path cannot be empty.');
         }
     }
 

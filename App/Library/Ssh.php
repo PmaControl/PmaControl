@@ -348,8 +348,9 @@ class Ssh
         $ssh  = new SSH2($server, $port);
 
         // priorité a la clef privé si les 2 sont remplie
+        $key = null;
         if (!empty($private_key)) {
-            $rsa = PublicKeyLoader::load($private_key);
+            $key = PublicKeyLoader::load($private_key);
         }
 
         if (!$sftp->login($login, $key)) {
@@ -365,13 +366,13 @@ class Ssh
         $file_name = pathinfo($dst)['basename'];
         $dst_dir   = pathinfo($dst)['dirname'];
 
-        $ssh->exec("mkdir -p ".$dst_dir);
+        $sftp->mkdir($dst_dir, -1, true);
 
         $sftp->put($dst, $src, SFTP::SOURCE_LOCAL_FILE);
         $data['execution_time'] = round(microtime(true) - $start, 0);
         $data['size']           = $sftp->size($dst);
 
-        $md5 = $ssh->exec("md5sum ".$dst);
+        $md5 = $ssh->exec(ShellCommand::remoteMd5sum($dst));
 
         $data['md5']      = explode(" ", $md5)[0];
         $data['pathfile'] = $dst;

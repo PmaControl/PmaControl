@@ -80,6 +80,7 @@ trait Scp {
             $dst = $ob->path . "/" . $dst;
 
             
+            $key = null;
             if (!empty($ob->private_key)) {
                 $pv_key = Chiffrement::decrypt($ob->private_key);
             }
@@ -108,7 +109,7 @@ trait Scp {
 
             Debug::debug(pathinfo($dst), "Path_info");
 
-            $ssh->exec("mkdir -p " . $dst_dir);
+            $sftp->mkdir($dst_dir, -1, true);
 
             Debug::debug($dst_dir, "mkdir -p");
 
@@ -119,7 +120,7 @@ trait Scp {
 
             $data['size'] = $sftp->size($dst);
 
-            $md5 = $ssh->exec("md5sum " . $dst);
+            $md5 = $ssh->exec(ShellCommand::remoteMd5sum($dst));
 
             $data['md5'] = explode(" ", $md5)[0];
             $data['pathfile'] = $dst;
@@ -189,6 +190,7 @@ trait Scp {
                 exit;
             }
 
+            $key = null;
             if (!empty($ob->private_key)) {
                 $pv_key = Chiffrement::decrypt($ob->private_key, CRYPT_KEY);
             }
@@ -216,7 +218,7 @@ trait Scp {
 
             $data['size'] = $sftp->size($src);
 
-            $md5 = $ssh->exec("md5sum " . $src . " 2>1 >> /dev/null");
+            $md5 = $ssh->exec(ShellCommand::remoteMd5sum($src));
 
             $data['md5'] = explode(" ", $md5)[0];
 
@@ -228,4 +230,3 @@ trait Scp {
 
 
 }
-
