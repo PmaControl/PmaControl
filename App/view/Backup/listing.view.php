@@ -8,9 +8,7 @@
 
 function human_filesize($bytes, $decimals = 2)
 {
-    $sz = ' KMGTP';
-    $factor = floor((strlen($bytes) -1) / 3);
-    return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) . " ".@$sz[$factor] . "o";
+    return \App\Library\Format::bytes($bytes, $decimals);
 }
 
 echo '<div class="well">';

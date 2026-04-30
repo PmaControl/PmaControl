@@ -3,6 +3,7 @@
 namespace App\Library\Reports;
 
 use App\Library\ChartPayload;
+use App\Library\Format;
 use App\Library\MetricAggregate;
 use Glial\Sgbd\Sgbd;
 
@@ -785,15 +786,10 @@ final class BusinessReportCatalog
             return 'n/a';
         }
 
-        $value = (float)$bytes;
-        $units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB'];
-        $index = 0;
-        while (abs($value) >= 1024 && $index < count($units) - 1) {
-            $value /= 1024;
-            $index++;
-        }
+        $parts = Format::byteParts($bytes, 'iec');
+        $decimals = $parts !== null && $parts['factor'] === 0 ? 0 : 2;
 
-        return number_format($value, $index === 0 ? 0 : 2) . ' ' . $units[$index];
+        return Format::bytes($bytes, $decimals, 'iec');
     }
 
     private static function formatPercent($value): string

@@ -62,20 +62,7 @@ class Display
      */
     public static function humanDuration($seconds): string
     {
-        if ($seconds === null || $seconds === 'NULL' || $seconds === '') {
-            return 'NULL';
-        }
-        $s = (int)$seconds;
-        if ($s < 60) {
-            return $s.'s';
-        }
-        if ($s < 3600) {
-            return floor($s / 60).'m '.($s % 60).'s';
-        }
-        if ($s < 86400) {
-            return floor($s / 3600).'h '.floor(($s % 3600) / 60).'m '.($s % 60).'s';
-        }
-        return floor($s / 86400).'d '.floor(($s % 86400) / 3600).'h '.floor(($s % 3600) / 60).'m '.($s % 60).'s';
+        return Format::duration($seconds);
     }
 
 /**

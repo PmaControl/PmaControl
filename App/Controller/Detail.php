@@ -5,6 +5,7 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use App\Library\ChartPayload;
+use App\Library\Format;
 use App\Library\Security\CsrfGuard;
 use App\Library\Extraction;
 use App\Library\Display;
@@ -54,15 +55,7 @@ class Detail extends Controller
  */
     static function format($bytes, $decimals = 2)
     {
-        // && $bytes != 0
-        if (empty($bytes)) {
-            return "";
-        }
-        $sz = ' KMGTP';
-
-        $factor = (int) floor(log($bytes) / log(1024));
-
-        return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor))." ".@$sz[$factor]."o";
+        return Format::bytesOrEmpty($bytes, $decimals);
     }
 
 /**
@@ -173,7 +166,7 @@ class Detail extends Controller
         Debug::parseDebug($param);
 
         //$this->di['js']->addJavascript(array("moment.js", "Chart.bundle.js")); //, "hammer.min.js", "chartjs-plugin-zoom.js")
-        $this->di['js']->addJavascript(array("moment.js", "chart.min.js", "chartjs-plugin-crosshair.js"));
+        $this->di['js']->addJavascript(array("moment.js", "chart.min.js", "chartjs-plugin-crosshair.js", "formatters.js"));
         $slaves = Extraction::extract(array("status::com_select"), array(1), "1 hour", true, true);
         //$slaves2 = Extraction::extract(array("status::com_select"), array(1), "1 hour", true, true);
         //Debug::$debug = true;
@@ -197,7 +190,7 @@ class Detail extends Controller
                 ticks:
                 {
                     callback: function(value, index, values){
-                        return FileConvertSize(value)
+                        return PmaFormat.number(value)
                     },
                 }
             }]";
@@ -225,16 +218,6 @@ class Detail extends Controller
 // //..' -  Max : '.self::format($slave['max']).' - Avg : '.self::format($slave['avg']).' - Std : '.$slave['std'].'"
         $this->di['js']->code_javascript('
 "use strict";
-
-function FileConvertSize(aSize){
-
-    return Math.round((aSize + Number.EPSILON) * 100) / 100;
-    aSize = Math.abs(parseInt(aSize, 10));
-    var def = [[1, "octets"], [1024, "ko"], [1024*1024, "Mo"], [1024*1024*1024, "Go"], [1024*1024*1024*1024, "To"]];
-    for(var i=0; i<def.length; i++){
-            if(aSize<def[i][0]) return (aSize/def[i-1][0]).toFixed(2)+" "+def[i-1][1];
-    }
-}
 
 '.$tooltip.'
 
@@ -339,7 +322,7 @@ options:
                     if (label) {
                         label += " : ";
                     }
-                    label += FileConvertSize(tooltipItem.yLabel);
+                    label += PmaFormat.number(tooltipItem.yLabel);
                     /* label += agregat[tooltipItem.datasetIndex]; */
                     return label;
                 }

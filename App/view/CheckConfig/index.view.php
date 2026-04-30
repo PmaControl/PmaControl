@@ -38,20 +38,7 @@ function format($bytes, $decimals = 2)
         return $bytes;
     }
 
-    if (empty($bytes)) {
-        return "";
-    }
-    $sz = ' KMGTPEZY';
-
-    $factor = (int) floor(log($bytes) / log(1024));
-
-    if ($factor === 0) {
-        $unit = '';
-    } else {
-        $unit = " ".$sz[$factor].'o';
-    }
-
-    return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)).$unit;
+    return \App\Library\Format::bytesOrEmpty($bytes, $decimals);
 }
 
 function onOff($string)

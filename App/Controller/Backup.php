@@ -10,6 +10,7 @@ use \Glial\Cli\Crontab;
 use \App\Library\Debug;
 use App\Library\Security\BackupAddRequest;
 use App\Library\Security\CsrfGuard;
+use App\Library\Format;
 use App\Library\Mysql;
 use App\Library\MysqlVersion;
 use App\Library\SelectorOptions;
@@ -2428,9 +2429,7 @@ $(function () {
  */
     function human_filesize($bytes, $decimals = 2)
     {
-        $sz     = 'BKMGTP';
-        $factor = floor((strlen($bytes) - 1) / 3);
-        return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor))." ".@$sz[$factor]."o";
+        return Format::bytes($bytes, $decimals);
     }
 
 /**

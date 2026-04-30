@@ -6,9 +6,7 @@ use App\Library\Security\CsrfRender;
 
 function format($bytes, $decimals = 2)
 {
-    $sz     = 'KMGTP';
-    $factor = floor((strlen($bytes) - 1) / 3);
-    return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor))." ".@$sz[$factor]."o";
+    return \App\Library\Format::bytes($bytes, $decimals);
 }
 
 $storageAreaUpdateCsrfAttributes = CsrfRender::attributes($data, 'storage_area_update');

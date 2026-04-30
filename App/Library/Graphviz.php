@@ -2149,15 +2149,7 @@ class Graphviz
  */
     static function format($bytes, $decimals = 2)
     {
-        // && $bytes != 0
-        if (empty($bytes)) {
-            return "";
-        }
-        $sz = ' KMGTP';
-
-        $factor = (int) floor(log($bytes) / log(1024));
-
-        return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor))." ".@$sz[$factor]."o";
+        return Format::bytesOrEmpty($bytes, $decimals);
     }
 
 /**
