@@ -169,19 +169,46 @@ class System
  */
     static public function getIp($hostname)
     {
+        $hostname = trim((string) $hostname);
 
         if (filter_var($hostname, FILTER_VALIDATE_IP)) {
             //return trim($hostname);
             return false;
         }
 
-        $ip = shell_exec("dig +short ".$hostname);
+        $ip = self::resolveHostname($hostname);
         Debug::debug($ip, "getIp");
 
         if (empty($ip)) {
             $ip =  $hostname; 
         }
         return trim($ip);
+    }
+
+    private static function resolveHostname(string $hostname): string
+    {
+        if ($hostname === '') {
+            return '';
+        }
+
+        $records = @dns_get_record($hostname, DNS_A + DNS_AAAA);
+        if (is_array($records)) {
+            foreach ($records as $record) {
+                if (!empty($record['ip'])) {
+                    return (string) $record['ip'];
+                }
+                if (!empty($record['ipv6'])) {
+                    return (string) $record['ipv6'];
+                }
+            }
+        }
+
+        $ips = @gethostbynamel($hostname);
+        if (is_array($ips) && !empty($ips[0])) {
+            return (string) $ips[0];
+        }
+
+        return '';
     }
 
 /**

@@ -15,6 +15,7 @@ use App\Library\Extraction;
 use App\Library\Mysql;
 use App\Library\Available;
 use App\Library\Debug;
+use App\Library\ShellCommand;
 use Glial\Sgbd\Sgbd;
 use App\Controller\Common;
 use \phpseclib3\Crypt\RSA;
@@ -147,11 +148,18 @@ class Docker extends Controller
         {
           
 
-            $cmd = "skopeo inspect docker://".$ob->name." | jq '.RepoTags'";
-            Debug::debug($cmd, "cmd");
-            $json = trim(shell_exec($cmd));
+            $cmd = self::buildSkopeoInspectCommand((string) $ob->name);
+            if ($cmd === null) {
+                Debug::debug($ob->name, 'Invalid docker image reference');
+                continue;
+            }
 
-            $tags = json_decode($json);
+            Debug::debug($cmd, "cmd");
+            $json = trim((string) shell_exec($cmd));
+            $payload = json_decode($json);
+            $tags = is_object($payload) && isset($payload->RepoTags) && is_array($payload->RepoTags)
+                ? $payload->RepoTags
+                : [];
 
             Debug::debug(string: $ob, var: "Elems");
 
@@ -218,12 +226,28 @@ class Docker extends Controller
 
         while ($ob = $db->sql_fetch_object($res))
         {
-            $ret = shell_exec("docker image pull ".$ob->name.":".$ob->tag);
+            $command = self::buildImagePullCommand((string) $ob->name, (string) $ob->tag);
+            if ($command === null) {
+                Debug::debug($ob->name.':'.$ob->tag, 'Invalid docker image reference');
+                continue;
+            }
+
+            $ret = shell_exec($command);
             echo $ret."\n";
 
             
         }
 
+    }
+
+    public static function buildImagePullCommand(string $name, string $tag): ?string
+    {
+        return ShellCommand::dockerImagePull($name, $tag);
+    }
+
+    public static function buildSkopeoInspectCommand(string $name): ?string
+    {
+        return ShellCommand::skopeoDockerInspect($name);
     }
 
 /**

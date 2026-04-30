@@ -45,6 +45,66 @@ final class ShellCommand
         return $command;
     }
 
+    public static function gzip(string $pathFile, bool $decompress = false): string
+    {
+        if ($pathFile === '') {
+            throw new \InvalidArgumentException('Path file cannot be empty.');
+        }
+
+        return 'nice gzip' . ($decompress ? ' -d' : '') . ' -- ' . escapeshellarg($pathFile);
+    }
+
+    public static function dockerImagePull(string $name, string $tag): ?string
+    {
+        $image = self::dockerImageReference($name, $tag);
+        if ($image === null) {
+            return null;
+        }
+
+        return 'docker image pull ' . escapeshellarg($image);
+    }
+
+    public static function dockerImageReference(string $name, string $tag): ?string
+    {
+        $name = trim($name);
+        $tag = trim($tag);
+
+        if (!self::isSafeDockerImageName($name) || !self::isSafeDockerTag($tag)) {
+            return null;
+        }
+
+        return $name . ':' . $tag;
+    }
+
+    public static function skopeoDockerInspect(string $name): ?string
+    {
+        $name = trim($name);
+        if (!self::isSafeDockerImageName($name)) {
+            return null;
+        }
+
+        return 'skopeo inspect ' . escapeshellarg('docker://' . $name);
+    }
+
+    public static function gitLogRange(string $build): ?string
+    {
+        $build = trim($build);
+        if (!self::isSafeGitRevision($build)) {
+            return null;
+        }
+
+        return 'git log ' . escapeshellarg($build . '..HEAD') . ' --pretty=format:"%H"';
+    }
+
+    public static function isSafeGitRevision(string $revision): bool
+    {
+        if ($revision === '' || str_starts_with($revision, '-') || str_contains($revision, '..')) {
+            return false;
+        }
+
+        return (bool) preg_match('/\A[A-Za-z0-9._\/-]+\z/', $revision);
+    }
+
     public function arg(string $value): self
     {
         $this->guardNotFinalized();
@@ -185,6 +245,30 @@ final class ShellCommand
         if ($separator !== ' ' && $separator !== '=') {
             throw new \InvalidArgumentException('Invalid shell option separator');
         }
+    }
+
+    private static function isSafeDockerImageName(string $name): bool
+    {
+        if ($name === '' || str_starts_with($name, '-') || str_contains($name, '..')) {
+            return false;
+        }
+
+        if (!preg_match('/\A[a-z0-9][a-z0-9._\/:-]*\z/', $name)) {
+            return false;
+        }
+
+        foreach (explode('/', $name) as $part) {
+            if ($part === '' || str_starts_with($part, '-')) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static function isSafeDockerTag(string $tag): bool
+    {
+        return (bool) preg_match('/\A[A-Za-z0-9_][A-Za-z0-9._-]{0,127}\z/', $tag);
     }
 
     private static function isSafeBareCommand(string $binary): bool

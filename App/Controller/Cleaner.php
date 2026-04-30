@@ -26,6 +26,7 @@ use \App\Library\Debug;
 use App\Library\Http\HttpOutcome;
 use \App\Library\Mysql;
 use App\Library\ServerCapabilities;
+use App\Library\ShellCommand;
 use App\Library\Security\CsrfGuard;
 use App\Library\Security\GroupedFormRequest;
 use App\Library\Security\Identifier;
@@ -2033,7 +2034,7 @@ var myChart = new Chart(ctx, {
         $path      = pathinfo($path_file)['dirname'];
         $file_name = pathinfo($path_file)['basename'];
 
-        shell_exec("cd ".$path." && nice gzip ".$file_name);
+        shell_exec(ShellCommand::gzip((string) $path_file));
 
         return $path."/".$file_name.".gz";
     }
@@ -2061,10 +2062,7 @@ var myChart = new Chart(ctx, {
  */
     public function unCompressFile($path_file)
     {
-        $path      = pathinfo($path_file)['dirname'];
-        $file_name = pathinfo($path_file)['basename'];
-
-        shell_exec("cd ".$path." && nice gzip -d ".$file_name);
+        shell_exec(ShellCommand::gzip((string) $path_file, true));
 
         return substr($path_file, 0, -3);
     }

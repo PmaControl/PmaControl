@@ -87,7 +87,12 @@ class Git
     static public function getNewCommit($build){
         
         
-        $commits = shell_exec('git log '.$build.'..HEAD --pretty=format:"%H"');
+        $command = ShellCommand::gitLogRange((string) $build);
+        if ($command === null) {
+            return [$build];
+        }
+
+        $commits = shell_exec($command);
 
         if (!empty($commits)){
             $commits = trim($commits);
