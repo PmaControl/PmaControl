@@ -9,10 +9,10 @@ final class HttpResponseDispatchMigrationTest extends TestCase
     public function testDirectOutcomeDispatchesUseSharedHttpResponseHelper(): void
     {
         $controllers = [
-            'Mysqlsys.php' => 3,
+            'Mysqlsys.php' => 5,
             'Monitoring.php' => 1,
             'PhpLiveRegex.php' => 1,
-            'ProxySQL.php' => 1,
+            'ProxySQL.php' => 2,
             'Mysql.php' => 2,
             'MysqlRouter.php' => 1,
             'Kpi.php' => 1,
