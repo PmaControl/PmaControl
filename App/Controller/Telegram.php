@@ -26,6 +26,7 @@ use Glial\Sgbd\Sgbd;
 class Telegram extends Controller
 {
     private const TELEGRAM_ADD_CSRF_SCOPE = 'telegram.add';
+    private const TELEGRAM_DELETE_CSRF_SCOPE = 'telegram.delete';
     private const TELEGRAM_ADD_FIELDS = ['token', 'chat_id'];
     private const TELEGRAM_ADD_MAX_FIELD_LENGTH = 255;
 
@@ -62,6 +63,9 @@ class Telegram extends Controller
         while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['bots'][] = $row;
         }
+
+        $data['telegram_delete_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['telegram_delete_csrf_token'] = Csrf::issueToken($_SESSION, self::TELEGRAM_DELETE_CSRF_SCOPE);
 
         $this->set('data', $data);
     }
@@ -266,6 +270,8 @@ class Telegram extends Controller
 
         $data = [
             'bot' => $bot,
+            'telegram_delete_csrf_field' => Csrf::DEFAULT_FIELD,
+            'telegram_delete_csrf_token' => Csrf::issueToken($_SESSION, self::TELEGRAM_DELETE_CSRF_SCOPE),
         ];
 
         $this->set('data', $data);
@@ -294,9 +300,27 @@ class Telegram extends Controller
  */
     public function delete($param)
     {
-        $this->view = false;
+        $this->view        = false;
+        $this->layout_name = false;
 
-        $bot = $this->getBotFromParam($param);
+        $isCli = defined('IS_CLI') && IS_CLI === true;
+        $deleteRequest = self::evaluateDeleteRequest(
+            $_POST ?? [],
+            $_SERVER ?? [],
+            $_SESSION ?? [],
+            is_array($param) ? $param : [],
+            $isCli
+        );
+        if ($deleteRequest['status'] !== 200) {
+            self::sendTelegramDeleteError($deleteRequest['status'], $deleteRequest['body'], $deleteRequest['headers']);
+            return;
+        }
+
+        $bot = $this->getBotById($deleteRequest['id_telegram_bot']);
+        if ($bot === null) {
+            self::sendTelegramDeleteError(404, 'Telegram bot not found');
+            return;
+        }
 
         $db = Sgbd::sql(DB_DEFAULT);
         $sql = "DELETE FROM telegram_bot WHERE id = " . intval($bot['id']) . " LIMIT 1";
@@ -312,20 +336,84 @@ class Telegram extends Controller
             return;
         }
 
-        $target = LINK . "telegram/index";
+        header("location: " . self::deleteRedirectTarget());
+        exit;
+    }
 
-        $redirectParam = $_GET['redirect'] ?? '';
-        if (!empty($redirectParam)) {
-            $redirectParam = ltrim($redirectParam, '/');
-            if ($redirectParam !== '') {
-                $target = LINK . $redirectParam;
+    public static function evaluateDeleteRequest(
+        array $post,
+        array $server,
+        array $session,
+        array $param,
+        bool $isCli = false
+    ): array {
+        if (! $isCli) {
+            if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::TELEGRAM_DELETE_CSRF_SCOPE)) {
+                return self::buildTelegramDeleteOutcome($failure['status'], $failure['body'], $failure['headers']);
             }
-        } elseif (!empty($_SERVER['HTTP_REFERER'])) {
-            $target = $_SERVER['HTTP_REFERER'];
         }
 
-        header("location: " . $target);
-        exit;
+        $routeId = self::normalizeDeleteBotId($param[0] ?? null);
+        if ($routeId === null) {
+            return self::buildTelegramDeleteOutcome(400, 'Invalid telegram bot id');
+        }
+
+        $postHasId = array_key_exists('id_telegram_bot', $post) && $post['id_telegram_bot'] !== null && $post['id_telegram_bot'] !== '';
+        $postId = $postHasId ? self::normalizeDeleteBotId($post['id_telegram_bot']) : null;
+        if ($postHasId && ($postId === null || $postId !== $routeId)) {
+            return self::buildTelegramDeleteOutcome(400, 'Invalid telegram bot id');
+        }
+
+        return self::buildTelegramDeleteOutcome(200, '', [], $routeId);
+    }
+
+    public static function normalizeDeleteBotId(mixed $value): ?int
+    {
+        if (is_int($value)) {
+            $id = $value;
+        } elseif (is_string($value)) {
+            $trimmed = trim($value);
+            if ($trimmed === '' || ! ctype_digit($trimmed)) {
+                return null;
+            }
+            $id = (int) $trimmed;
+        } else {
+            return null;
+        }
+
+        return $id > 0 ? $id : null;
+    }
+
+    public static function deleteRedirectTarget(): string
+    {
+        return (defined('LINK') ? LINK : '/') . "telegram/index";
+    }
+
+    private static function buildTelegramDeleteOutcome(
+        int $statusCode,
+        string $message,
+        array $headers = [],
+        ?int $idTelegramBot = null
+    ): array {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'id_telegram_bot' => $idTelegramBot,
+        ];
+    }
+
+    private static function sendTelegramDeleteError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+
+        if ($message !== '') {
+            echo $message;
+        }
     }
 
 /**
@@ -351,20 +439,30 @@ class Telegram extends Controller
  */
     private function getBotFromParam($param): array
     {
-        $id = intval($param[0] ?? 0);
-        if ($id <= 0) {
+        $id = self::normalizeDeleteBotId($param[0] ?? null);
+        if ($id === null) {
             throw new \Exception("PMACTRL-TELEGRAM-001: Missing or invalid bot id.");
         }
 
+        $bot = $this->getBotById($id);
+        if ($bot === null) {
+            throw new \Exception("PMACTRL-TELEGRAM-002: Telegram bot not found.");
+        }
+
+        return $bot;
+    }
+
+    private function getBotById(int $id): ?array
+    {
         $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT id, token, chat_id, insert_at, updated_at
-            FROM telegram_bot WHERE id = " . $db->sql_real_escape_string($id) . " LIMIT 1";
+            FROM telegram_bot WHERE id = " . $id . " LIMIT 1";
 
         $res = $db->sql_query($sql);
         $bot = $db->sql_fetch_array($res, MYSQLI_ASSOC);
 
         if (empty($bot)) {
-            throw new \Exception("PMACTRL-TELEGRAM-002: Telegram bot not found.");
+            return null;
         }
 
         return $bot;
