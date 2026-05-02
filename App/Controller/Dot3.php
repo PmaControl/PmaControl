@@ -1384,13 +1384,32 @@ class Dot3 extends Controller
         }
 
         $db = Sgbd::sql(DB_DEFAULT, "RUN");
-        $db->sql_query(self::buildMarkSvgGeneratedSql($id_dot3_information));
+        foreach (self::buildMarkSvgGeneratedStatements($id_dot3_information) as $sql) {
+            $db->sql_query($sql);
+        }
     }
 
     private static function buildMarkSvgGeneratedSql(int $id_dot3_information): string
     {
         return "UPDATE dot3_information SET is_svg_generated = " . $id_dot3_information
             . " WHERE id = " . $id_dot3_information;
+    }
+
+    /**
+     * @return array<int,string>
+     *
+     * Why: saveGraph() leaves the shared "RUN" connection with AUTOCOMMIT=0, and the
+     * daemon launches each Dot3 cycle as a one-shot PHP process — without an explicit
+     * COMMIT here the UPDATE is rolled back on process exit and is_svg_generated never
+     * persists, so Architecture::buildLatestReadyDot3InformationSql() always falls back
+     * to the previous (stale) snapshot.
+     */
+    private static function buildMarkSvgGeneratedStatements(int $id_dot3_information): array
+    {
+        return [
+            self::buildMarkSvgGeneratedSql($id_dot3_information),
+            'COMMIT',
+        ];
     }
 
     public function renderImportedGraphs(array $dot3Information): array
