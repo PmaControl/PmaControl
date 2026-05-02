@@ -86,7 +86,11 @@ cd pmacontrol
 git pull origin develop
 git config core.fileMode false
 
-composer install -n
+composer_install_args=(--no-dev --no-interaction --prefer-dist --optimize-autoloader)
+if [[ "${PMACTRL_INSTALL_DEV_DEPS:-0}" == "1" ]]; then
+  composer_install_args=(--no-interaction)
+fi
+composer install "${composer_install_args[@]}"
 
 service apache2 restart
 

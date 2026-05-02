@@ -321,7 +321,11 @@ install_php_dependencies()
         git config core.fileMode false
     fi
 
-    sudo -u www-data composer install --no-interaction
+    composer_install_args=(--no-dev --no-interaction --prefer-dist --optimize-autoloader)
+    if [[ $DEV_MOD -eq 1 ]]; then
+        composer_install_args=(--no-interaction)
+    fi
+    sudo -u www-data composer install "${composer_install_args[@]}"
 }
 
 configure_mysql()
