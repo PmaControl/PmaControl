@@ -9,6 +9,7 @@ export COMPOSER_ALLOW_SUPERUSER=1
 
 TARGET_OS="${TARGET_OS:-unknown}"
 LOG_FILE="/root/pmacontrol-ci.log"
+PMACTRL_HARDEN_APACHE_DOCROOT="${PMACTRL_HARDEN_APACHE_DOCROOT:-1}"
 exec > >(tee -a "${LOG_FILE}") 2>&1
 
 if [[ ! -d /srv/www/pmacontrol ]]; then
@@ -18,6 +19,8 @@ fi
 
 # shellcheck source=install/lib/install_secrets.sh
 . /srv/www/pmacontrol/install/lib/install_secrets.sh
+# shellcheck source=install/lib/harden_apache.sh
+. /srv/www/pmacontrol/install/lib/harden_apache.sh
 trap cleanup_install_ssh_key EXIT
 trap 'cleanup_install_ssh_key; exit 129' HUP
 trap 'cleanup_install_ssh_key; exit 130' INT
@@ -73,6 +76,7 @@ if [[ "${OS_KEY}" == "ubuntu-26.04" ]]; then
             exit 1
             ;;
     esac
+    /srv/www/pmacontrol/ci/check-web-exposure.sh http://127.0.0.1 /pmacontrol/
 
     ./vendor/bin/phpunit --testsuite "PmaControl Test Suite"
     echo "CI install success on ${OS_KEY} for commit ${GIT_COMMIT:-unknown}"
@@ -150,6 +154,7 @@ sed -i 's#/var/www#/srv/www#g' /etc/apache2/apache2.conf
 sed -i 's#/var/www/html#/srv/www#g' /etc/apache2/sites-enabled/000-default.conf
 awk '/AllowOverride/ && ++i==3 {sub(/None/,"All")}1' /etc/apache2/apache2.conf > /tmp/apache2.conf.pmacontrol
 mv /tmp/apache2.conf.pmacontrol /etc/apache2/apache2.conf
+pmactrl_harden_apache_docroot
 systemctl restart "php${PHP_VERSION}-fpm"
 systemctl restart apache2
 
@@ -234,6 +239,7 @@ case "${HTTP_CODE}" in
         exit 1
         ;;
 esac
+/srv/www/pmacontrol/ci/check-web-exposure.sh http://127.0.0.1 /pmacontrol/
 
 ./vendor/bin/phpunit --testsuite "PmaControl Test Suite"
 

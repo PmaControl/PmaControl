@@ -9,11 +9,16 @@ final class InstallerApacheHardeningTest extends TestCase
 {
     private string $apacheConf;
     private string $helper;
+    private string $debian10;
+    private string $debian11;
     private string $debian12;
     private string $debian13;
+    private string $ubuntu2204;
     private string $ubuntu2604;
     private string $centos9;
     private string $rhel94;
+    private string $remoteInstall;
+    private string $webExposureCheck;
 
     protected function setUp(): void
     {
@@ -21,11 +26,16 @@ final class InstallerApacheHardeningTest extends TestCase
 
         $this->apacheConf = (string) file_get_contents($root . '/install/apache/pmacontrol-docroot.conf');
         $this->helper = (string) file_get_contents($root . '/install/lib/harden_apache.sh');
+        $this->debian10 = (string) file_get_contents($root . '/install/debian10.sh');
+        $this->debian11 = (string) file_get_contents($root . '/install/debian11.sh');
         $this->debian12 = (string) file_get_contents($root . '/install/debian12.sh');
         $this->debian13 = (string) file_get_contents($root . '/install/debian13.sh');
+        $this->ubuntu2204 = (string) file_get_contents($root . '/install/ubuntu22.04.sh');
         $this->ubuntu2604 = (string) file_get_contents($root . '/install/ubuntu26.04.sh');
         $this->centos9 = (string) file_get_contents($root . '/install/centos9.sh');
         $this->rhel94 = (string) file_get_contents($root . '/install/rhel9.4.sh');
+        $this->remoteInstall = (string) file_get_contents($root . '/ci/remote-install-and-test.sh');
+        $this->webExposureCheck = (string) file_get_contents($root . '/ci/check-web-exposure.sh');
     }
 
     public function testApacheConfDeniesSrvWwwByDefaultAndAllowsPmaControlOnly(): void
@@ -38,6 +48,14 @@ final class InstallerApacheHardeningTest extends TestCase
             '/<Directory \/srv\/www\/pmacontrol>\s+Require all granted\s+AllowOverride All\s+Options -Indexes \+FollowSymLinks\s+<\/Directory>/',
             $this->apacheConf
         );
+        self::assertMatchesRegularExpression(
+            '/<Directory \/srv\/www\/site>\s+Require all granted\s+AllowOverride All\s+Options -Indexes \+FollowSymLinks\s+DirectoryIndex App\/Webroot\/index\.php\s+<\/Directory>/',
+            $this->apacheConf
+        );
+        self::assertMatchesRegularExpression(
+            '/<Directory \/srv\/www\/site\/App\/Webroot>\s+Require all granted\s+AllowOverride All\s+Options -Indexes \+FollowSymLinks\s+DirectoryIndex index\.php\s+<\/Directory>/',
+            $this->apacheConf
+        );
     }
 
     public function testApacheConfDeniesInternalApplicationPathsAndDotfiles(): void
@@ -47,6 +65,8 @@ final class InstallerApacheHardeningTest extends TestCase
         self::assertStringContainsString('documentation', $this->apacheConf);
         self::assertStringContainsString('install', $this->apacheConf);
         self::assertStringContainsString('tests?', $this->apacheConf);
+        self::assertStringContainsString('/srv/www/site/', $this->apacheConf);
+        self::assertStringContainsString('vendor', $this->apacheConf);
         self::assertStringContainsString('<FilesMatch "^\\.">', $this->apacheConf);
         self::assertStringContainsString('Require all denied', $this->apacheConf);
     }
@@ -80,8 +100,11 @@ final class InstallerApacheHardeningTest extends TestCase
     public static function debianUbuntuInstallers(): array
     {
         return [
+            'debian10' => ['debian10'],
+            'debian11' => ['debian11'],
             'debian12' => ['debian12'],
             'debian13' => ['debian13'],
+            'ubuntu22.04' => ['ubuntu2204'],
             'ubuntu26.04' => ['ubuntu2604'],
         ];
     }
@@ -121,8 +144,28 @@ final class InstallerApacheHardeningTest extends TestCase
 
     public function testInstallScriptsDoNotEnableDirectoryIndexes(): void
     {
-        foreach ([$this->debian12, $this->debian13, $this->ubuntu2604, $this->centos9, $this->rhel94] as $script) {
+        foreach ([$this->debian10, $this->debian11, $this->debian12, $this->debian13, $this->ubuntu2204, $this->ubuntu2604, $this->centos9, $this->rhel94, $this->remoteInstall] as $script) {
             self::assertStringNotContainsString('Options Indexes', $script);
         }
+    }
+
+    public function testRemoteInstallEnablesApacheHardeningAndExposureSmokeCheck(): void
+    {
+        self::assertStringContainsString('install/lib/harden_apache.sh', $this->remoteInstall);
+        self::assertStringContainsString('PMACTRL_HARDEN_APACHE_DOCROOT="${PMACTRL_HARDEN_APACHE_DOCROOT:-1}"', $this->remoteInstall);
+        self::assertStringContainsString('pmactrl_harden_apache_docroot', $this->remoteInstall);
+        self::assertSame(2, substr_count($this->remoteInstall, 'ci/check-web-exposure.sh http://127.0.0.1 /pmacontrol/'));
+    }
+
+    public function testExposureSmokeCheckBlocksInternalPathsButDoesNotBlockSite(): void
+    {
+        self::assertStringContainsString('"/"', $this->webExposureCheck);
+        self::assertStringContainsString('"/?C=N;O=D"', $this->webExposureCheck);
+        self::assertStringContainsString('"/infra/"', $this->webExposureCheck);
+        self::assertStringContainsString('"/glial/"', $this->webExposureCheck);
+        self::assertStringContainsString('"${APP_PATH}.git/config"', $this->webExposureCheck);
+        self::assertStringContainsString('"${APP_PATH}configuration/"', $this->webExposureCheck);
+        self::assertStringNotContainsString('"/site/"', $this->webExposureCheck);
+        self::assertStringContainsString('expect_app_reachable "${APP_PATH}"', $this->webExposureCheck);
     }
 }
