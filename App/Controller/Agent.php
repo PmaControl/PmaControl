@@ -14,11 +14,14 @@ use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use \App\Library\Debug;
+use App\Library\Http\HttpResponse;
 use \App\Library\Kpi\DaemonRunLogger;
 use \App\Library\Mysql;
 use \App\Library\Microsecond;
 use \App\Library\System;
 use App\Library\ShellCommand;
+use App\Library\Security\CsrfGuard;
+use App\Library\Security\PositiveIntegerSelection;
 use \Glial\Sgbd\Sgbd;
 
 /**
@@ -36,6 +39,8 @@ use \Glial\Sgbd\Sgbd;
  * @version 1.0
  */
 class Agent extends Controller {
+
+    public const AGENT_CONTROL_CSRF_SCOPE = 'agent.control';
 
 /**
  * Stores `$debug` for debug.
@@ -107,18 +112,23 @@ class Agent extends Controller {
      */
 
     public function start($param) {
-        if (empty($param[0])) {
-            Throw new \Exception("No idea set for this Daemon", 80);
+        $this->view = false;
+        $this->layout_name = false;
+
+        $outcome = self::evaluateControlRequest($param, $_POST ?? [], $_SERVER ?? [], $_SESSION ?? [], IS_CLI);
+        if ($outcome['status'] !== 200) {
+            self::sendProcessControlError($outcome['status'], $outcome['body'], $outcome['headers']);
+            return;
         }
 
         Debug::parseDebug($param);
 
-        $id_daemon = $param[0];
-        $db = Sgbd::sql(DB_DEFAULT);
-        $this->view = false;
-        $this->layout_name = false;
+        $id_daemon = $outcome['id_daemon'];
+        $this->logger->info('Agent start requested by ' . $this->currentActorForLog() . ' for daemon id ' . $id_daemon);
 
-        $sql = "SELECT * FROM daemon_main where id ='" . $id_daemon . "'";
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT * FROM daemon_main where id =" . $id_daemon;
         $res = $db->sql_query($sql);
 
         if ($db->sql_num_rows($res) !== 1) {
@@ -188,14 +198,21 @@ class Agent extends Controller {
      */
 
     function stop($param) {
-        $id_daemon = $param[0];
-
-
-        $db = Sgbd::sql(DB_DEFAULT);
         $this->view = false;
         $this->layout_name = false;
 
-        $sql = "SELECT * FROM daemon_main where id ='" . $id_daemon . "'";
+        $outcome = self::evaluateControlRequest($param, $_POST ?? [], $_SERVER ?? [], $_SESSION ?? [], IS_CLI);
+        if ($outcome['status'] !== 200) {
+            self::sendProcessControlError($outcome['status'], $outcome['body'], $outcome['headers']);
+            return;
+        }
+
+        $id_daemon = $outcome['id_daemon'];
+        $this->logger->info('Agent stop requested by ' . $this->currentActorForLog() . ' for daemon id ' . $id_daemon);
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT * FROM daemon_main where id =" . $id_daemon;
         $res = $db->sql_query($sql);
 
         $this->logger->notice($sql);
@@ -210,27 +227,28 @@ class Agent extends Controller {
         }
 
         $ob = $db->sql_fetch_object($res);
+        $pid = (int) $ob->pid;
 
-        if (System::isRunningPid($ob->pid)) {
-            $msg = I18n::getTranslation(__("The daemon (id=" . $id_daemon . ") with pid : '" . $ob->pid . "' successfully stopped "));
+        if ($pid > 0 && System::isRunningPid($pid)) {
+            $msg = I18n::getTranslation(__("The daemon (id=" . $id_daemon . ") with pid : '" . $pid . "' successfully stopped "));
             $title = I18n::getTranslation(__("Success"));
             set_flash("success", $title, $msg);
 
-            $cmd = "kill " . $ob->pid;
+            $cmd = "kill " . $pid;
             shell_exec($cmd);
             //shell_exec("echo '[" . date("Y-m-d H:i:s") . "] DAEMON STOPPED !' >> " . $ob->log_file);
 
-            $sql = "UPDATE daemon_main SET pid ='0', is_enabled = 0 WHERE id = '" . $id_daemon . "'";
+            $sql = "UPDATE daemon_main SET pid ='0', is_enabled = 0 WHERE id = " . $id_daemon;
             $db->sql_query($sql);
 
-            $this->logger->info('Stopped daemon (id=' . $id_daemon . ') with the pid : ' . $ob->pid);
+            $this->logger->info('Stopped daemon (id=' . $id_daemon . ') with the pid : ' . $pid);
         } else {
 
             if (!empty($pid)) {
                 $this->logger->info('Impossible to find the daemon (id=' . $id_daemon . ') with the pid : ' . $pid);
             }
 
-            $sql = "UPDATE daemon_main SET pid ='0', is_enabled = 0 WHERE id = '" . $id_daemon . "'";
+            $sql = "UPDATE daemon_main SET pid ='0', is_enabled = 0 WHERE id = " . $id_daemon;
             $db->sql_query($sql);
 
             $msg = I18n::getTranslation(__("Impossible to find the daemon (id=" . $id_daemon . ") with the pid : ") . "'" . $ob->pid . "'");
@@ -241,14 +259,14 @@ class Agent extends Controller {
         usleep(5000);
 
 
-        if (!System::isRunningPid($ob->pid)) {
+        if ($pid < 1 || !System::isRunningPid($pid)) {
             
         } else {
 
             //on double UPDATE dans le cas le contrab passerait dans l'interval du sleep
             // (ce qui crée un process zombie dont on perdrait le PID vis a vis de pmacontrol)
             // impossible a killed depuis l'IHM
-            $sql = "UPDATE daemon_main SET pid =" . $ob->pid . " WHERE id = '" . $id_daemon . "'";
+            $sql = "UPDATE daemon_main SET pid =" . $pid . " WHERE id = " . $id_daemon;
             $db->sql_query($sql);
 
             $this->logger->warning('Impossible to stop daemon (id=' . $id_daemon . ') with pid : ' . $pid);
@@ -636,6 +654,60 @@ class Agent extends Controller {
         // Close file and return
         fclose($f);
         return trim($output);
+    }
+
+    public static function evaluateControlRequest(array $param, array $post, array $server, array $session, bool $isCli = false): array
+    {
+        $idDaemon = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        if ($idDaemon === null) {
+            return self::buildControlOutcome(400, 'Invalid daemon id', [], null);
+        }
+
+        if ($isCli) {
+            return self::buildControlOutcome(200, '', [], $idDaemon);
+        }
+
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::AGENT_CONTROL_CSRF_SCOPE)) {
+            return self::buildControlOutcome($failure['status'], $failure['body'], $failure['headers'], null);
+        }
+
+        return self::buildControlOutcome(200, '', [], $idDaemon);
+    }
+
+    private static function buildControlOutcome(int $statusCode, string $message, array $headers = [], ?int $idDaemon = null): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'id_daemon' => $idDaemon,
+        ];
+    }
+
+    private static function sendProcessControlError(int $statusCode, string $message, array $headers = []): void
+    {
+        HttpResponse::sendError($statusCode, $message, $headers);
+    }
+
+    private function currentActorForLog(): string
+    {
+        if (IS_CLI) {
+            return 'CLI';
+        }
+
+        if (isset($this->di['auth']) && is_object($this->di['auth']) && method_exists($this->di['auth'], 'getUser')) {
+            $user = $this->di['auth']->getUser();
+            if (is_object($user)) {
+                $name = trim((string) ($user->firstname ?? '') . ' ' . (string) ($user->name ?? ''));
+                $id = isset($user->id) ? (int) $user->id : 0;
+
+                if ($name !== '' || $id > 0) {
+                    return ($name !== '' ? $name . ' ' : '') . '(id:' . $id . ')';
+                }
+            }
+        }
+
+        return 'HTTP ' . (string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
     }
 
 /**

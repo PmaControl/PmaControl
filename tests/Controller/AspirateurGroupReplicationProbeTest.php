@@ -199,11 +199,11 @@ class GroupReplicationProbeFakeDb
             return 'table_exists';
         }
 
-        if (strpos($sql, "column_name = 'MEMBER_ROLE'") !== false) {
+        if (preg_match("/`?column_name`?\\s*=\\s*'MEMBER_ROLE'/", $sql)) {
             return 'member_role_exists';
         }
 
-        if (strpos($sql, "column_name = 'MEMBER_STATE'") !== false) {
+        if (preg_match("/`?column_name`?\\s*=\\s*'MEMBER_STATE'/", $sql)) {
             return 'member_state_exists';
         }
 
