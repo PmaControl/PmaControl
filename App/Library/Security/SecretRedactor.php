@@ -101,13 +101,16 @@ final class SecretRedactor
 
     public static function commandLinePasswords(string $message): string
     {
+        $value = '(?:"[^"]*"|\'[^\']*\'|[^\s]+)';
         $patterns = [
-            '/(--password)([= ])([^\s"\'<>|&;]+)/',
-            '/(-p)(=)([^\s"\'<>|&;]+)/',
-            '/(?<![A-Za-z0-9-])(-p)( )([^\s"\'<>|&;-][^\s"\'<>|&;]*)/',
-            '/(?<![A-Za-z0-9-])(-p)([^\s"\'<>|&;= -][^\s"\'<>|&;]*)/',
+            '/(?<![A-Za-z0-9-])(--password)(=)'.$value.'/i',
+            '/(?<![A-Za-z0-9-])(--password)(\s+)'.$value.'/i',
+            '/(?<![A-Za-z0-9-])(-p)(=)'.$value.'/',
+            '/(?<![A-Za-z0-9-])(-p)(\s+)'.$value.'/',
+            '/(?<![A-Za-z0-9-])(-p)(?!=|\s)'.$value.'/',
         ];
         $replacements = [
+            '$1$2******',
             '$1$2******',
             '$1$2******',
             '$1$2******',
