@@ -1,5 +1,6 @@
 <?php
 
+use App\Library\Security\CsrfRender;
 use \App\Library\Display;
 use \Glial\Synapse\FactoryController;
 
@@ -246,6 +247,11 @@ $isVip = !empty($data['is_vip']) && (string)$data['is_vip'] !== '0';
                                 $buttonClass = (string)($v['class'] ?? 'btn btn-xs btn-default');
                                 $disabled = !empty($v['disabled']) || $url === '' || $url === '#';
                                 $titleAttr = (string)($v['title'] ?? '');
+                                $method = strtolower((string)($v['method'] ?? 'get'));
+                                $csrfScope = (string)($v['csrf_scope'] ?? '');
+                                $postFields = is_array($v['post_fields'] ?? null) ? $v['post_fields'] : [];
+                                $confirm = (string)($v['confirm'] ?? '');
+                                $confirmAttr = htmlspecialchars($confirm, ENT_QUOTES, 'UTF-8');
                             ?>
                             <div class="cmd-actions">
                                 <span class="<?= htmlspecialchars($statusClass, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string)($v['status'] ?? 'n/a')) ?></span>
@@ -257,6 +263,23 @@ $isVip = !empty($data['is_vip']) && (string)$data['is_vip'] !== '0';
                                         title="<?= htmlspecialchars($titleAttr, ENT_QUOTES, 'UTF-8') ?>">
                                         <?= htmlspecialchars((string)($v['label'] ?? 'Action')) ?>
                                     </button>
+                                <?php elseif ($method === 'post'): ?>
+                                    <form
+                                        method="post"
+                                        action="<?= htmlspecialchars($url, ENT_QUOTES, 'UTF-8') ?>"
+                                        style="display:inline"
+                                        <?= $confirm !== '' ? 'data-confirm="'.$confirmAttr.'" onsubmit="return confirm(this.getAttribute(\'data-confirm\'));"' : '' ?>>
+                                        <?= $csrfScope !== '' ? CsrfRender::hiddenInput($data, $csrfScope) : '' ?>
+                                        <?php foreach ($postFields as $field => $value): ?>
+                                            <input type="hidden" name="<?= htmlspecialchars((string)$field, ENT_QUOTES, 'UTF-8') ?>" value="<?= htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8') ?>">
+                                        <?php endforeach; ?>
+                                        <button
+                                            type="submit"
+                                            class="<?= htmlspecialchars($buttonClass, ENT_QUOTES, 'UTF-8') ?>"
+                                            title="<?= htmlspecialchars($titleAttr, ENT_QUOTES, 'UTF-8') ?>">
+                                            <?= htmlspecialchars((string)($v['label'] ?? 'Action')) ?>
+                                        </button>
+                                    </form>
                                 <?php else: ?>
                                     <a
                                         href="<?= htmlspecialchars($url, ENT_QUOTES, 'UTF-8') ?>"

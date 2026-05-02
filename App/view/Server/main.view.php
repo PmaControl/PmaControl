@@ -83,6 +83,8 @@ $serverAcknowledgeCsrfField = CsrfRender::field($data, 'server_acknowledge');
 $serverAcknowledgeCsrfToken = CsrfRender::token($data, 'server_acknowledge');
 $serverRetractCsrfField = CsrfRender::field($data, 'server_retract');
 $serverRetractCsrfToken = CsrfRender::token($data, 'server_retract');
+$galeraSetPrimaryCsrfField = CsrfRender::field($data, 'galera_set_primary');
+$galeraSetPrimaryCsrfToken = CsrfRender::token($data, 'galera_set_primary');
 
 if (empty($_GET['ajax'])):
 ?>
@@ -509,7 +511,12 @@ if (empty($data['servers'])) {
                         <span class="sm-badge warn">R/O</span>
                     <?php endif; ?>
                     <?php if (!empty($extra['wsrep_on']) && $extra['wsrep_on'] === "ON" && ($extra['wsrep_cluster_status'] ?? 'Primary') !== "Primary"): ?>
-                        <a href="<?= LINK ?>GaleraCluster/setNodeAsPrimary/<?= (int)$server['id'] ?>" class="btn btn-danger btn-xs"><i class="fa fa-play"></i> PRIMARY</a>
+                        <form method="post" action="<?= LINK ?>GaleraCluster/setNodeAsPrimary/<?= (int)$server['id'] ?>" data-confirm="<?= htmlspecialchars(__('Confirm SET PRIMARY on this Galera node? Use only after quorum loss.'), ENT_QUOTES, 'UTF-8') ?>" onsubmit="return confirm(this.getAttribute('data-confirm'));">
+                            <input type="hidden" name="<?= $galeraSetPrimaryCsrfField ?>" value="<?= $galeraSetPrimaryCsrfToken ?>">
+                            <input type="hidden" name="id_mysql_server" value="<?= (int)$server['id'] ?>">
+                            <input type="hidden" name="confirm_set_primary" value="SET_PRIMARY">
+                            <button type="submit" class="btn btn-danger btn-xs"><i class="fa fa-play"></i> PRIMARY</button>
+                        </form>
                     <?php endif; ?>
                     <?php if (empty($extra['mysql_available']) && $isEffectiveMonitored && $server['is_acknowledged'] === "0"): ?>
                         <form method="post" action="<?= LINK ?>server/acknowledge/<?= (int)$server['id'] ?>">
