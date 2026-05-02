@@ -14,6 +14,7 @@ use \App\Library\Mysql;
 use \App\Library\Debug;
 use \App\Library\System;
 use App\Library\Extraction2;
+use Glial\Security\Csrf;
 
 // ALTER TABLE mysql_server ADD SYSTEM VERSIONING PARTITION BY SYSTEM_TIME;
 /*
@@ -2548,6 +2549,13 @@ class MysqlServer extends Controller
                         'status' => $eligibleForPrimary ? self::tr('Eligible') : self::tr('Not eligible'),
                         'status_class' => $eligibleForPrimary ? 'label label-success' : 'label label-default',
                         'url' => $eligibleForPrimary ? LINK.'GaleraCluster/setNodeAsPrimary/'.$clusterNodeId : '',
+                        'method' => 'post',
+                        'csrf_scope' => 'galera_set_primary',
+                        'post_fields' => [
+                            'id_mysql_server' => $clusterNodeId,
+                            'confirm_set_primary' => GaleraCluster::SET_PRIMARY_CONFIRM_VALUE,
+                        ],
+                        'confirm' => self::tr('Confirm SET PRIMARY on this Galera node? Use only after quorum loss.'),
                         'label' => self::tr('SET PRIMARY'),
                         'class' => $eligibleForPrimary ? 'btn btn-xs btn-danger' : 'btn btn-xs btn-default',
                         'disabled' => !$eligibleForPrimary,
@@ -2666,6 +2674,8 @@ class MysqlServer extends Controller
         $data['disks'] = $g('disks');
         $data['ips'] = $g('ips');
         $data['processlist'] = $g('processlist');
+        $data['galera_set_primary_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['galera_set_primary_csrf_token'] = Csrf::issueToken($_SESSION, GaleraCluster::SET_PRIMARY_CSRF_SCOPE);
 
         $this->set('data', $data);
         $this->set('param', $param);

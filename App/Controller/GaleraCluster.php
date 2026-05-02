@@ -4,7 +4,10 @@ namespace App\Controller;
 
 use App\Library\Extraction;
 use App\Library\Extraction2;
+use App\Library\Http\HttpResponse;
 use App\Library\Mysql;
+use App\Library\Security\RouteMutationRequest;
+use App\Library\Security\SafeRedirect;
 use \Glial\Synapse\Controller;
 use \App\Library\Debug;
 use \Glial\Sgbd\Sgbd;
@@ -27,6 +30,9 @@ use \Glial\Sgbd\Sgbd;
 class GaleraCluster extends Controller {
 
     use \App\Library\Galera;
+
+    public const SET_PRIMARY_CSRF_SCOPE = 'galera.set_primary';
+    public const SET_PRIMARY_CONFIRM_VALUE = 'SET_PRIMARY';
 
 /**
  * Render galera cluster state through `index`.
@@ -118,13 +124,24 @@ class GaleraCluster extends Controller {
  */
     public function setNodeAsPrimary ($param)   {
 
-        Debug::parseDebug($param);
+        $this->view = false;
+        $this->layout_name = false;
 
-        if (empty($param[0]) || !ctype_digit((string)$param[0])) {
-            throw new \Exception("Usage: /GaleraCluster/setNodeAsPrimary/{id_mysql_server}");
+        $outcome = self::evaluateSetNodeAsPrimaryRequest(
+            is_array($param) ? $param : [],
+            $_POST ?? [],
+            $_SERVER ?? [],
+            $_SESSION ?? [],
+            IS_CLI
+        );
+        if ($outcome['status'] !== 200) {
+            HttpResponse::sendOutcome($outcome);
+            return;
         }
 
-        $id_mysql_server = (int) $param[0];
+        Debug::parseDebug($param);
+
+        $id_mysql_server = $outcome['id_mysql_server'];
 
         $state = Extraction2::display([
             'mysql_server::mysql_available',
@@ -206,7 +223,7 @@ class GaleraCluster extends Controller {
             }
 
             if (IS_CLI === false) {
-                header('Location: ' . ($_SERVER['HTTP_REFERER'] ?? LINK.'MysqlServer/main/'.$id_mysql_server.'/pmacontrol'));
+                header('Location: ' . self::redirectTarget($id_mysql_server, $_SERVER ?? []));
                 exit;
             }
 
@@ -246,7 +263,7 @@ class GaleraCluster extends Controller {
             }
 
             if (IS_CLI === false) {
-                header('Location: ' . ($_SERVER['HTTP_REFERER'] ?? LINK.'MysqlServer/main/'.$id_mysql_server.'/pmacontrol'));
+                header('Location: ' . self::redirectTarget($id_mysql_server, $_SERVER ?? []));
                 exit;
             }
 
@@ -263,9 +280,66 @@ class GaleraCluster extends Controller {
         }
 
         if (IS_CLI === false) {
-            header('Location: ' . ($_SERVER['HTTP_REFERER'] ?? LINK.'MysqlServer/main/'.$id_mysql_server.'/pmacontrol'));
+            header('Location: ' . self::redirectTarget($id_mysql_server, $_SERVER ?? []));
             exit;
         }
     }
-}
 
+    public static function evaluateSetNodeAsPrimaryRequest(
+        array $param,
+        array $post,
+        array $server,
+        array $session,
+        bool $isCli = false
+    ): array {
+        if ($isCli) {
+            $id = RouteMutationRequest::normalizeRequestedId($post, $param, 'id_mysql_server');
+            if ($id === null) {
+                return self::buildSetPrimaryOutcome(400, 'Invalid MySQL server id');
+            }
+
+            return self::buildSetPrimaryOutcome(200, '', [], $id);
+        }
+
+        $request = RouteMutationRequest::evaluate(
+            $post,
+            $server,
+            $session,
+            $param,
+            self::SET_PRIMARY_CSRF_SCOPE,
+            'Invalid MySQL server id',
+            'id_mysql_server'
+        );
+        if ($request['status'] !== 200) {
+            return self::buildSetPrimaryOutcome($request['status'], $request['body'], $request['headers']);
+        }
+
+        if ((string)($post['confirm_set_primary'] ?? '') !== self::SET_PRIMARY_CONFIRM_VALUE) {
+            return self::buildSetPrimaryOutcome(400, 'Invalid Galera primary confirmation');
+        }
+
+        return self::buildSetPrimaryOutcome(200, '', [], $request['id']);
+    }
+
+    private static function buildSetPrimaryOutcome(
+        int $statusCode,
+        string $message,
+        array $headers = [],
+        ?int $idMysqlServer = null
+    ): array {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'id_mysql_server' => $idMysqlServer,
+        ];
+    }
+
+    private static function redirectTarget(int $idMysqlServer, array $server): string
+    {
+        return SafeRedirect::refererOrFallback(
+            $server,
+            LINK.'MysqlServer/main/'.$idMysqlServer.'/pmacontrol'
+        );
+    }
+}

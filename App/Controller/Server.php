@@ -510,6 +510,8 @@ class Server extends Controller
         $data['server_acknowledge_csrf_token'] = Csrf::issueToken($_SESSION, self::SERVER_ACKNOWLEDGE_CSRF_SCOPE);
         $data['server_retract_csrf_field'] = Csrf::DEFAULT_FIELD;
         $data['server_retract_csrf_token'] = Csrf::issueToken($_SESSION, self::SERVER_RETRACT_CSRF_SCOPE);
+        $data['galera_set_primary_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['galera_set_primary_csrf_token'] = Csrf::issueToken($_SESSION, GaleraCluster::SET_PRIMARY_CSRF_SCOPE);
 
         // GeoIP: lookup country for each server IP (IPv4 + IPv6) via range join
         // Skip loopback / private / reserved ranges — they are never in the GeoIP table
