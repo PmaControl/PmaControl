@@ -39,6 +39,7 @@ use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use App\Library\Security\CookieSecurity;
+use App\Library\Security\PersistentAuthSession;
 use App\Library\Security\RouteExposurePolicy;
 use Glial\Synapse\Glial;
 
@@ -195,12 +196,23 @@ if (IS_CLI) {
 
         $auth->setLog($log);
 
-        //not used yet
-        $auth->setFctToHashCookie(function ($password) {
-            return password_hash($password.$_SERVER['HTTP_USER_AGENT'].$_SERVER['REMOTE_ADDR'], PASSWORD_DEFAULT);
-        });
-
-        $is_auth = $auth->authenticate(false);
+        $persistentAuth = PersistentAuthSession::authenticate(
+            $auth,
+            Sgbd::sql(DB_DEFAULT),
+            $_COOKIE,
+            $_SERVER,
+            $cookieTrustedProxies ?? []
+        );
+        $legacyPersistentAuth = !$persistentAuth && PersistentAuthSession::hasLegacyCookies($_COOKIE);
+        $is_auth = $persistentAuth || $auth->authenticate(false);
+        if ($legacyPersistentAuth && $is_auth) {
+            PersistentAuthSession::issueForAuthenticatedUser(
+                $auth,
+                Sgbd::sql(DB_DEFAULT),
+                $_SERVER,
+                $cookieTrustedProxies ?? []
+            );
+        }
 
 
         FactoryController::addDi("auth", $auth);
