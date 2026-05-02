@@ -161,6 +161,56 @@ final class ForeignKeyMutationSecurityTest extends TestCase
         $this->assertNull(ForeignKey::normalizeServerDatabaseRoute(['7', "customer_db' OR '1'='1"]));
     }
 
+    public function testForeignKeyRouteQueriesEscapeDatabaseValues(): void
+    {
+        $db = $this->escapingDb();
+
+        $cache = ForeignKey::buildForeignKeyCacheSelectSql($db, 'foreign_key_virtual', 7, "app'db", true);
+        $prefix = ForeignKey::buildForeignKeyRemovePrefixSelectSql($db, 7, "app'db");
+        $table = ForeignKey::buildTableExistSql($db, "app'db", "orders' UNION SELECT password FROM user_main--");
+
+        foreach ([$cache, $prefix, $table] as $query) {
+            $this->assertStringContainsString("app''db", $query);
+            $this->assertStringNotContainsString("app'db", $query);
+        }
+
+        $this->assertStringContainsString('ORDER BY id_mysql_server, constraint_schema,constraint_table, constraint_column', $cache);
+        $this->assertStringContainsString("database_name='app''db'", $prefix);
+        $this->assertStringContainsString("TABLE_NAME`) = LOWER('orders'' UNION SELECT password FROM user_main--')", $table);
+    }
+
+    public function testForeignKeyRouteHandlersUseNormalizedAndEscapedQueries(): void
+    {
+        $controller = (string) file_get_contents(__DIR__ . '/../../App/Controller/ForeignKey.php');
+
+        $fillBody = $this->methodBody($controller, 'public function fill($param)', 'public function getPrefix($param)');
+        $prefixBody = $this->methodBody($controller, 'public function getPrefix($param)', 'public function getIdPosition($param)');
+        $combinationBody = $this->methodBody($controller, 'public function getConbinaison($param)', 'public function getDatabase');
+        $tableExistBody = $this->methodBody($controller, 'public function isTableExist($param)', 'public function cleanUp($param)');
+        $realBody = $this->methodBody($controller, 'public function getRealForeignKey($param)', 'public function importRealForeignKey($param)');
+        $virtualBody = $this->methodBody($controller, 'public function virtual($param)', 'public function real($param)');
+        $realViewBody = $this->methodBody($controller, 'public function real($param)', 'public function proposal($param)');
+        $proposalBody = $this->methodBody($controller, 'public function proposal($param)', 'public function blackList($param)');
+        $blacklistBody = $this->methodBody($controller, 'public function blackList($param)', 'public function custom($param)');
+
+        foreach ([$fillBody, $prefixBody, $combinationBody, $tableExistBody, $realBody, $virtualBody, $realViewBody, $proposalBody, $blacklistBody] as $body) {
+            $this->assertStringContainsString('$route = self::normalizeServerDatabaseRoute($param);', $body);
+            $this->assertStringNotContainsString('$id_mysql_server = $param[0];', $body);
+            $this->assertStringNotContainsString('$database_name   = $param[1];', $body);
+            $this->assertStringNotContainsString('$database        = $param[1];', $body);
+        }
+
+        $this->assertStringContainsString('self::buildForeignKeyCacheSelectSql($db, \'foreign_key_virtual\', $id_mysql_server, $database)', $fillBody);
+        $this->assertStringContainsString('self::buildForeignKeyRemovePrefixSelectSql($db, $id_mysql_server, $database_name)', $prefixBody);
+        $this->assertStringContainsString('self::buildTableExistSql($db, $database_name, $table_name)', $tableExistBody);
+        $this->assertStringContainsString('self::buildForeignKeyCacheSelectSql($db, \'foreign_key_real\', $id_mysql_server, $database)', $realBody);
+        $this->assertStringContainsString('self::buildForeignKeyCacheSelectSql($db, \'foreign_key_virtual\', $id_mysql_server, $database, true)', $virtualBody);
+        $this->assertStringContainsString('self::buildForeignKeyCacheSelectSql($db, \'foreign_key_real\', $id_mysql_server, $database, true)', $realViewBody);
+        $this->assertStringContainsString('self::buildForeignKeyCacheSelectSql($db, \'foreign_key_proposal\', $id_mysql_server, $database, true)', $proposalBody);
+        $this->assertStringContainsString('self::buildForeignKeyCacheSelectSql($db, \'foreign_key_blacklist\', $id_mysql_server, $database, true)', $blacklistBody);
+        $this->assertStringContainsString('$databaseSql = $db->sql_real_escape_string($database);', $controller);
+    }
+
     public function testExternalRefererFallsBackToInternalUrl(): void
     {
         $server = [
@@ -220,5 +270,26 @@ final class ForeignKeyMutationSecurityTest extends TestCase
         $payload[Csrf::DEFAULT_FIELD] = $token;
 
         return $payload;
+    }
+
+    private function escapingDb(): object
+    {
+        return new class {
+            public function sql_real_escape_string($value): string
+            {
+                return str_replace("'", "''", (string) $value);
+            }
+        };
+    }
+
+    private function methodBody(string $source, string $startNeedle, string $endNeedle): string
+    {
+        $start = strpos($source, $startNeedle);
+        $end = strpos($source, $endNeedle, $start === false ? 0 : $start);
+
+        $this->assertIsInt($start);
+        $this->assertIsInt($end);
+
+        return substr($source, $start, $end - $start);
     }
 }
