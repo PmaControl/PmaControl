@@ -8,6 +8,7 @@
 namespace App\Controller;
 
 use App\Library\EngineV4;
+use App\Library\Http\HttpResponse;
 use App\Library\Security\CsrfGuard;
 use \Glial\Synapse\Controller;
 use \App\Library\Debug;
@@ -33,6 +34,7 @@ use \Glial\Sgbd\Sgbd;
 class Daemon extends Controller
 {
     private const DAEMON_UPDATE_CSRF_SCOPE = 'daemon.update';
+    public const DAEMON_CONTROL_CSRF_SCOPE = 'daemon.control';
     private const DAEMON_UPDATE_FIELDS = ['refresh_time'];
 
 /**
@@ -117,6 +119,10 @@ class Daemon extends Controller
         }
         $data['daemon_update_csrf_field'] = Csrf::DEFAULT_FIELD;
         $data['daemon_update_csrf_token'] = Csrf::issueToken($_SESSION, self::DAEMON_UPDATE_CSRF_SCOPE);
+        $data['agent_control_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['agent_control_csrf_token'] = Csrf::issueToken($_SESSION, Agent::AGENT_CONTROL_CSRF_SCOPE);
+        $data['daemon_control_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['daemon_control_csrf_token'] = Csrf::issueToken($_SESSION, self::DAEMON_CONTROL_CSRF_SCOPE);
 
         $this->set('data', $data);
     }
@@ -144,7 +150,17 @@ class Daemon extends Controller
  */
     public function startAll($param)
     {
+        $this->view = false;
+        $this->layout_name = false;
+
+        $outcome = self::evaluateControlRequest($_POST ?? [], $_SERVER ?? [], $_SESSION ?? [], IS_CLI);
+        if ($outcome['status'] !== 200) {
+            self::sendDaemonControlError($outcome['status'], $outcome['body'], $outcome['headers']);
+            return;
+        }
+
         Debug::parseDebug($param);
+        $this->logControlAction('Daemon startAll');
 
         $db = Sgbd::sql(DB_DEFAULT);
         $db->sql_query("UPDATE daemon_main SET is_enabled = 1");
@@ -183,7 +199,17 @@ class Daemon extends Controller
  */
     public function stopAll($param)
     {
+        $this->view = false;
+        $this->layout_name = false;
+
+        $outcome = self::evaluateControlRequest($_POST ?? [], $_SERVER ?? [], $_SESSION ?? [], IS_CLI);
+        if ($outcome['status'] !== 200) {
+            self::sendDaemonControlError($outcome['status'], $outcome['body'], $outcome['headers']);
+            return;
+        }
+
         Debug::parseDebug($param);
+        $this->logControlAction('Daemon stopAll');
 
         $db = Sgbd::sql(DB_DEFAULT);
         $db->sql_query("UPDATE daemon_main SET is_enabled = 0");
@@ -343,12 +369,66 @@ class Daemon extends Controller
 
     private static function sendDaemonUpdateError(int $statusCode, string $message, array $headers = []): void
     {
-        http_response_code($statusCode);
-        foreach ($headers as $name => $value) {
-            header($name . ': ' . $value);
+        HttpResponse::sendError($statusCode, $message, $headers);
+    }
+
+    public static function evaluateControlRequest(array $post, array $server, array $session, bool $isCli = false): array
+    {
+        if ($isCli) {
+            return self::buildDaemonControlOutcome(200, '');
         }
-        header('Content-Type: text/plain; charset=UTF-8');
-        echo $message;
+
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::DAEMON_CONTROL_CSRF_SCOPE)) {
+            return self::buildDaemonControlOutcome($failure['status'], $failure['body'], $failure['headers']);
+        }
+
+        return self::buildDaemonControlOutcome(200, '');
+    }
+
+    private static function buildDaemonControlOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+        ];
+    }
+
+    private static function sendDaemonControlError(int $statusCode, string $message, array $headers = []): void
+    {
+        HttpResponse::sendError($statusCode, $message, $headers);
+    }
+
+    private function logControlAction(string $action): void
+    {
+        $message = $action . ' requested by ' . $this->currentActorForLog();
+        if (isset($this->di['log']) && is_object($this->di['log']) && method_exists($this->di['log'], 'info')) {
+            $this->di['log']->info($message);
+            return;
+        }
+
+        error_log('[PmaControl] ' . $message);
+    }
+
+    private function currentActorForLog(): string
+    {
+        if (IS_CLI) {
+            return 'CLI';
+        }
+
+        if (isset($this->di['auth']) && is_object($this->di['auth']) && method_exists($this->di['auth'], 'getUser')) {
+            $user = $this->di['auth']->getUser();
+            if (is_object($user)) {
+                $name = trim((string) ($user->firstname ?? '') . ' ' . (string) ($user->name ?? ''));
+                $id = isset($user->id) ? (int) $user->id : 0;
+
+                if ($name !== '' || $id > 0) {
+                    return ($name !== '' ? $name . ' ' : '') . '(id:' . $id . ')';
+                }
+            }
+        }
+
+        return 'HTTP ' . (string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
     }
 
 /**

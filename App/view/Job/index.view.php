@@ -2,7 +2,10 @@
 
 //use Glial\Html\Form\Form;
 
+use App\Library\Security\CsrfRender;
 use SensioLabs\AnsiConverter\AnsiToHtmlConverter;
+
+$jobRestartCsrfInput = CsrfRender::hiddenInput($data, 'job_restart');
 
 /*
  * Issue #580 — bound log/error cells to ~10 lines × 1000 px with a
@@ -128,8 +131,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     echo '<br />';
 
                     echo __("options : ")."<br />";
-                    echo '<a href="'.LINK.'job/restart/'.$job['id'].'/" type="button" class="btn btn-primary btn-xs"><i class="fa fa-refresh fa-spin"></i> '.__('Restart').'</a><br/>';
-                    echo '<a href="'.LINK.'job/restart/'.$job['id'].'/--debug" type="button" style="margin-top:4px;" class="btn btn-warning btn-xs"><i class="fa fa-cog fa-spin"></i> '.__('Debug').'</a><br/>';
+                    $jobId = (int) $job['id'];
+                    echo '<form method="post" action="'.LINK.'job/restart/'.$jobId.'/" style="display:inline">'.$jobRestartCsrfInput.'<button type="submit" class="btn btn-primary btn-xs"><i class="fa fa-refresh fa-spin"></i> '.__('Restart').'</button></form><br/>';
+                    echo '<form method="post" action="'.LINK.'job/restart/'.$jobId.'/--debug" style="display:inline">'.$jobRestartCsrfInput.'<button type="submit" style="margin-top:4px;" class="btn btn-warning btn-xs"><i class="fa fa-cog fa-spin"></i> '.__('Debug').'</button></form><br/>';
 
                     // Issue #583: load-only restart, only when the dump succeeded
                     // and the artefact is still on disk and not expired.
@@ -141,7 +145,6 @@ document.addEventListener('DOMContentLoaded', function () {
                             .'<i class="fa fa-fast-forward"></i> '
                             .__('Restart load only').'</a><br/>';
                     }
-                    //echo '<a href="'.LINK.'job/restart/'.$job['id'].'/" type="button" class="btn btn-danger btn-xs">'.__('Kill').'</a>';
                 }
 
                 ?>

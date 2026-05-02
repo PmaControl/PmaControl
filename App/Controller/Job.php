@@ -4,9 +4,14 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use App\Library\Database\RefreshArtifact;
+use App\Library\Http\HttpResponse;
 use App\Library\Mydumper;
+use App\Library\Security\CsrfGuard;
+use App\Library\Security\PositiveIntegerSelection;
+use App\Library\ShellCommand;
 use App\Library\System;
 use App\Library\Debug;
+use Glial\Security\Csrf;
 use SensioLabs\AnsiConverter\AnsiToHtmlConverter;
 use \Glial\Sgbd\Sgbd;
 
@@ -26,6 +31,12 @@ use \Glial\Sgbd\Sgbd;
  * @version 1.0
  */
 class Job extends Controller {
+
+    public const JOB_RESTART_CSRF_SCOPE = 'job.restart';
+    private const RELAUNCHABLE_COMMANDS = [
+        'Backup' => ['runBackup'],
+        'Database' => ['addRefresh'],
+    ];
 
 /**
  * Render job state through `index`.
@@ -93,6 +104,9 @@ class Job extends Controller {
 
             $data['jobs'][] = $ob;
         }
+
+        $data['job_restart_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['job_restart_csrf_token'] = Csrf::issueToken($_SESSION, self::JOB_RESTART_CSRF_SCOPE);
 
         $this->set('data', $data);
     }
@@ -254,32 +268,60 @@ class Job extends Controller {
     public function restart($param) {
 
         $this->view = false;
+        $this->layout_name = false;
 
-        $id_job = $param[0];
+        $outcome = self::evaluateRestartRequest($param, $_POST ?? [], $_SERVER ?? [], $_SESSION ?? [], IS_CLI);
+        if ($outcome['status'] !== 200) {
+            self::sendRestartError($outcome['status'], $outcome['body'], $outcome['headers']);
+            return;
+        }
+
+        $id_job = $outcome['id_job'];
+        $debug = $outcome['debug'] || Debug::$debug === true;
 
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM job WHERE id=" . $id_job;
         $res = $db->sql_query($sql);
 
-        $debug = "";
-        if (Debug::$debug === true) {
-            $debug = "--debug";
-        }
-
-        if (!empty($param[1]) && $param[1] === "--debug") {
-            $debug = "--debug";
-        }
-
         while ($ob = $db->sql_fetch_object($res)) {
 
             if (System::isRunningPid($ob->pid) !== true) {
+                if (!self::isRelaunchableCommand((string) $ob->class, (string) $ob->method)) {
+                    $msg = __("This job command is not allowed to restart");
+                    set_flash("error", __("Error"), $msg);
+                    error_log('[PmaControl] Job restart denied for job id ' . $id_job . ' command '
+                        . (string) $ob->class . '/' . (string) $ob->method . ' requested by ' . $this->currentActorForLog());
+                    continue;
+                }
 
+                $params = self::decodeRestartParameters((string) $ob->param);
+                if ($params === null) {
+                    $msg = __("This job payload cannot be restarted");
+                    set_flash("error", __("Error"), $msg);
+                    error_log('[PmaControl] Job restart denied for unparsable payload on job id ' . $id_job
+                        . ' requested by ' . $this->currentActorForLog());
+                    continue;
+                }
 
                 $php = explode(" ", shell_exec("whereis php"))[1];
 
-                $cmd = $php . " " . GLIAL_INDEX . " " . $ob->class . " " . $ob->method . " " . implode(" ", json_decode($ob->param, true)) . "  " . $debug . "";
+                $cmd = self::buildRestartCommand(
+                    $php,
+                    GLIAL_INDEX,
+                    (string) $ob->class,
+                    (string) $ob->method,
+                    $params,
+                    $debug
+                );
+                if ($cmd === null) {
+                    $msg = __("This job command is not allowed to restart");
+                    set_flash("error", __("Error"), $msg);
+                    continue;
+                }
                 Debug::debug($cmd);
+                error_log('[PmaControl] Job restart requested by ' . $this->currentActorForLog()
+                    . ' for job id ' . $id_job . ' command ' . (string) $ob->class . '/' . (string) $ob->method);
 
                 $pid = trim(shell_exec($cmd));
 
@@ -291,5 +333,131 @@ class Job extends Controller {
         header("location: " . LINK .$this->getClass(). '/index');
     }
 
-}
+    public static function evaluateRestartRequest(array $param, array $post, array $server, array $session, bool $isCli = false): array
+    {
+        $idJob = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        if ($idJob === null) {
+            return self::buildRestartOutcome(400, 'Invalid job id', [], null, false);
+        }
 
+        $debug = in_array('--debug', array_map('strval', array_slice($param, 1)), true);
+
+        if ($isCli) {
+            return self::buildRestartOutcome(200, '', [], $idJob, $debug);
+        }
+
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::JOB_RESTART_CSRF_SCOPE)) {
+            return self::buildRestartOutcome($failure['status'], $failure['body'], $failure['headers'], null, $debug);
+        }
+
+        return self::buildRestartOutcome(200, '', [], $idJob, $debug);
+    }
+
+    private static function buildRestartOutcome(
+        int $statusCode,
+        string $message,
+        array $headers = [],
+        ?int $idJob = null,
+        bool $debug = false
+    ): array {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'id_job' => $idJob,
+            'debug' => $debug,
+        ];
+    }
+
+    public static function isRelaunchableCommand(string $class, string $method): bool
+    {
+        $controller = self::normalizeControllerName($class);
+
+        return in_array($method, self::RELAUNCHABLE_COMMANDS[$controller] ?? [], true);
+    }
+
+    /**
+     * @param array<int,mixed> $params
+     */
+    public static function buildRestartCommand(
+        string $php,
+        string $index,
+        string $class,
+        string $method,
+        array $params,
+        bool $debug = false
+    ): ?string {
+        $controller = self::normalizeControllerName($class);
+        if (!self::isRelaunchableCommand($controller, $method)) {
+            return null;
+        }
+
+        $args = [$php, $index, $controller, $method];
+        foreach ($params as $param) {
+            if (!is_scalar($param) && $param !== null) {
+                return null;
+            }
+            $args[] = (string) $param;
+        }
+
+        if ($debug) {
+            $args[] = '--debug';
+        }
+
+        return ShellCommand::fromArguments($args)->toString();
+    }
+
+    private static function normalizeControllerName(string $class): string
+    {
+        $class = trim($class, '\\');
+        $parts = explode('\\', $class);
+
+        return (string) end($parts);
+    }
+
+    /**
+     * @return list<string|null>|null
+     */
+    private static function decodeRestartParameters(string $json): ?array
+    {
+        $params = json_decode($json, true);
+        if (!is_array($params) || array_values($params) !== $params) {
+            return null;
+        }
+
+        foreach ($params as $param) {
+            if (!is_scalar($param) && $param !== null) {
+                return null;
+            }
+        }
+
+        return $params;
+    }
+
+    private static function sendRestartError(int $statusCode, string $message, array $headers = []): void
+    {
+        HttpResponse::sendError($statusCode, $message, $headers);
+    }
+
+    private function currentActorForLog(): string
+    {
+        if (IS_CLI) {
+            return 'CLI';
+        }
+
+        if (isset($this->di['auth']) && is_object($this->di['auth']) && method_exists($this->di['auth'], 'getUser')) {
+            $user = $this->di['auth']->getUser();
+            if (is_object($user)) {
+                $name = trim((string) ($user->firstname ?? '') . ' ' . (string) ($user->name ?? ''));
+                $id = isset($user->id) ? (int) $user->id : 0;
+
+                if ($name !== '' || $id > 0) {
+                    return ($name !== '' ? $name . ' ' : '') . '(id:' . $id . ')';
+                }
+            }
+        }
+
+        return 'HTTP ' . (string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+    }
+
+}
