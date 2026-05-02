@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Library\Mydumper;
 use PHPUnit\Framework\TestCase;
+use SensioLabs\AnsiConverter\AnsiToHtmlConverter;
 
 /**
  * Issue #572 — Mydumper::parseLog() must redact CLI passwords before
@@ -76,6 +77,24 @@ final class MydumperParseLogTest extends TestCase
         $this->assertSame(2, substr_count($out, '-p ******'));
     }
 
+    public function testRedactionBeforeAnsiConversionPreventsHtmlEntitySuffixLeaks(): void
+    {
+        $converter = new AnsiToHtmlConverter();
+        $raw = 'cmd: mydumper -h srv -u root -p pa&ss --password="it\'s" -psemi;colon';
+
+        $redacted = Mydumper::redactPasswords($raw);
+        $out = Mydumper::parseLog($converter->convert($redacted));
+
+        $this->assertStringNotContainsString('pa&ss', $out);
+        $this->assertStringNotContainsString('pa&amp;ss', $out);
+        $this->assertStringNotContainsString('amp;ss', $out);
+        $this->assertStringNotContainsString('it&#039;s', $out);
+        $this->assertStringNotContainsString('semi;colon', $out);
+        $this->assertStringContainsString('-p ******', $out);
+        $this->assertStringContainsString('--password=******', $out);
+        $this->assertStringContainsString('-p******', $out);
+    }
+
     public function testParseLogPreservesNonPasswordContent(): void
     {
         $log = "Started dump\n** Locking tables\n** Finished\n";
@@ -112,6 +131,24 @@ final class MydumperParseLogTest extends TestCase
         $out = Mydumper::redactPasswords($log);
 
         $this->assertSame($log, $out);
+    }
+
+    public function testRedactPasswordsMasksSpecialCharacterAndQuotedValues(): void
+    {
+        $log = 'mydumper -p pa&ss --password "quoted secret" --password=semi;colon -p="-eq" -p-Secret';
+
+        $out = Mydumper::redactPasswords($log);
+
+        $this->assertStringNotContainsString('pa&ss', $out);
+        $this->assertStringNotContainsString('quoted secret', $out);
+        $this->assertStringNotContainsString('semi;colon', $out);
+        $this->assertStringNotContainsString('-eq', $out);
+        $this->assertStringNotContainsString('-Secret', $out);
+        $this->assertStringContainsString('-p ******', $out);
+        $this->assertStringContainsString('--password ******', $out);
+        $this->assertStringContainsString('--password=******', $out);
+        $this->assertStringContainsString('-p=******', $out);
+        $this->assertStringContainsString('-p******', $out);
     }
 
     public function testRedactPasswordsHandlesEmptyAndPlainStrings(): void

@@ -12,13 +12,18 @@ use PHPUnit\Framework\TestCase;
  */
 final class JobIndexLogDisplayTest extends TestCase
 {
+    private string $controller;
     private string $view;
 
     protected function setUp(): void
     {
+        $this->controller = (string) file_get_contents(
+            __DIR__ . '/../../App/Controller/Job.php'
+        );
         $this->view = (string) file_get_contents(
             __DIR__ . '/../../App/view/Job/index.view.php'
         );
+        $this->assertNotSame('', $this->controller, 'Job.php must be readable');
         $this->assertNotSame('', $this->view, 'Job/index.view.php must be readable');
     }
 
@@ -95,5 +100,35 @@ final class JobIndexLogDisplayTest extends TestCase
             $this->view,
             'auto-scroll JS must pin scrollTop to the bottom (last line) — operator wants the current status, not the start of the log (#580)'
         );
+    }
+
+    public function testJobIndexRedactsRawLogsBeforeAnsiConversion(): void
+    {
+        $logRead = strpos($this->controller, '$log = file_get_contents($ob[\'log\']);');
+        $logRedaction = strpos($this->controller, '$log = Mydumper::redactPasswords($log);');
+        $logConversion = strpos($this->controller, '$log = Mydumper::ParseLog($converter->convert($log));');
+        $errorRead = strpos($this->controller, '$error = file_get_contents($ob[\'error\']);');
+        $errorRedaction = strpos($this->controller, '$error = Mydumper::redactPasswords($error);');
+        $errorConversion = strpos($this->controller, '$error = Mydumper::ParseLog($converter->convert($error));');
+
+        $this->assertNotFalse($logRead);
+        $this->assertNotFalse($logRedaction);
+        $this->assertNotFalse($logConversion);
+        $this->assertNotFalse($errorRead);
+        $this->assertNotFalse($errorRedaction);
+        $this->assertNotFalse($errorConversion);
+        $this->assertGreaterThan($logRead, $logRedaction);
+        $this->assertLessThan($logConversion, $logRedaction);
+        $this->assertGreaterThan($errorRead, $errorRedaction);
+        $this->assertLessThan($errorConversion, $errorRedaction);
+    }
+
+    public function testParamColumnRedactsSensitiveJsonBeforeRendering(): void
+    {
+        $this->assertStringContainsString('use App\\Library\\Security\\SecretRedactor;', $this->view);
+        $this->assertStringContainsString('SecretRedactor::jsonPayload((string) ($job[\'param\'] ?? \'\'))', $this->view);
+        $this->assertStringContainsString('$displayParam', $this->view);
+        $this->assertStringContainsString('htmlspecialchars(', $this->view);
+        $this->assertStringNotContainsString("json_encode(json_decode(\$job['param'], true), JSON_PRETTY_PRINT)", $this->view);
     }
 }

@@ -42,8 +42,18 @@ final class JobIndexParamDisplayTest extends TestCase
 
     public function testParamJsonIsHtmlEscaped(): void
     {
+        $this->assertStringContainsString(
+            'SecretRedactor::jsonPayload((string) ($job[\'param\'] ?? \'\'))',
+            $this->view,
+            'param JSON must be redacted before rendering (#572)'
+        );
+        $this->assertStringContainsString(
+            '$displayParam',
+            $this->view,
+            'param JSON pretty-print must use the redacted display payload'
+        );
         $this->assertMatchesRegularExpression(
-            '/htmlspecialchars\(\s*\(string\)\s*\(?\s*json_encode\(json_decode\(\$job\[\'param\'\]/s',
+            '/htmlspecialchars\(\s*\(string\)\s*\$displayParam/s',
             $this->view,
             "param JSON pretty-print must go through htmlspecialchars before reaching the <pre> (#597)"
         );

@@ -3,6 +3,7 @@
 //use Glial\Html\Form\Form;
 
 use App\Library\Security\CsrfRender;
+use App\Library\Security\SecretRedactor;
 use SensioLabs\AnsiConverter\AnsiToHtmlConverter;
 
 $jobRestartCsrfInput = CsrfRender::hiddenInput($data, 'job_restart');
@@ -107,6 +108,11 @@ document.addEventListener('DOMContentLoaded', function () {
         $i = 0;
         foreach ($data['jobs'] as $job):
             $i++;
+            $redactedParam = SecretRedactor::jsonPayload((string) ($job['param'] ?? ''));
+            $decodedParam = json_decode($redactedParam, true);
+            $displayParam = json_last_error() === JSON_ERROR_NONE
+                ? (json_encode($decodedParam, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '')
+                : $redactedParam;
             ?>
 
             <tr>
@@ -114,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <td><?= $job['class'] ?></td>
                 <td><?= $job['method'] ?></td>
                 <td><pre class="job-param"><?= htmlspecialchars(
-                    (string) (json_encode(json_decode($job['param'], true), JSON_PRETTY_PRINT) ?: ''),
+                    (string) $displayParam,
                     ENT_QUOTES | ENT_SUBSTITUTE,
                     'UTF-8'
                 ) ?></pre></td>
