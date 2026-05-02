@@ -7,6 +7,7 @@ use \Glial\Html\Pagination\Pagination;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Debug;
 use App\Library\Http\HttpResponse;
+use App\Library\Security\PositiveIntegerSelection;
 
 /**
  * Class responsible for monitoring workflows.
@@ -455,6 +456,64 @@ class Monitoring extends Controller
         return $value;
     }
 
+    public static function evaluateExplainRequest(array $get, array $server): array
+    {
+        if (strtoupper((string)($server['REQUEST_METHOD'] ?? 'GET')) !== 'GET') {
+            return [
+                'allowed' => false,
+                'status' => 405,
+                'body' => 'Method Not Allowed',
+                'headers' => ['Allow' => 'GET'],
+            ];
+        }
+
+        $idMysqlServer = self::normalizeExplainServerId($get['mysql_server']['id'] ?? null);
+        $digest = self::normalizeExplainDigest($get['digest'] ?? null);
+
+        if ($idMysqlServer === null || $digest === null) {
+            return [
+                'allowed' => false,
+                'status' => 400,
+                'body' => 'Invalid monitoring explain request.',
+                'headers' => [],
+            ];
+        }
+
+        return [
+            'allowed' => true,
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'id_mysql_server' => $idMysqlServer,
+            'digest' => $digest,
+        ];
+    }
+
+    public static function normalizeExplainServerId($value): ?int
+    {
+        return PositiveIntegerSelection::normalizeSingle($value);
+    }
+
+    public static function normalizeExplainDigest($value): ?string
+    {
+        $digest = self::normalizeQueryText($value, 128, false);
+        if ($digest === null || preg_match('/^[A-Fa-f0-9]{16,128}$/', $digest) !== 1) {
+            return null;
+        }
+
+        return strtoupper($digest);
+    }
+
+    public static function buildExplainServerSql(int $idMysqlServer): string
+    {
+        return "SELECT * FROM mysql_server where id= ".$idMysqlServer;
+    }
+
+    public static function buildExplainDigestSql(string $digest): string
+    {
+        return "select * from performance_schema.events_statements_history_long where DIGEST='".$digest."'";
+    }
+
     /*
     public function search()
     {
@@ -481,18 +540,50 @@ class Monitoring extends Controller
         // update setup_instruments SET ENABLED='YES', TIMED='YES';
         // UPDATE setup_consumers SET ENABLED = 'YES';
 
+        $outcome = self::evaluateExplainRequest($_GET, $_SERVER);
+        if (!$outcome['allowed']) {
+            $this->sendExplainError($outcome);
+            return;
+        }
+
+        $idMysqlServer = (int)$outcome['id_mysql_server'];
+        $digest = (string)$outcome['digest'];
+
         $db  = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT * FROM mysql_server where id= ".$_GET['mysql_server']['id']."";
+        $sql = self::buildExplainServerSql($idMysqlServer);
         $res = $db->sql_query($sql);
+        $remote = null;
         while ($ob  = $db->sql_fetch_object($res)) {
             $remote = Sgbd::sql($ob->name);
         }
 
-        $sql = "select * from performance_schema.events_statements_history_long where DIGEST='".$_GET['digest']."'";
+        if ($remote === null) {
+            $this->sendExplainError([
+                'status' => 404,
+                'body' => 'Monitoring server not found.',
+                'headers' => [],
+            ]);
+            return;
+        }
+
+        $sql = self::buildExplainDigestSql($digest);
 
         $data['table'] = $remote->sql_fetch_yield($sql);
 
         $this->set('data', $data);
+    }
+
+    private function sendExplainError(array $outcome): void
+    {
+        $this->view = false;
+        $this->layout_name = false;
+        http_response_code((int)$outcome['status']);
+
+        foreach (($outcome['headers'] ?? []) as $name => $value) {
+            header($name.': '.$value);
+        }
+
+        echo (string)$outcome['body'];
     }
 
 
@@ -519,7 +610,12 @@ class Monitoring extends Controller
     {
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT * FROM mysql_server where id= ".$_GET['mysql_server']['id']."";
+        $idMysqlServer = self::normalizeExplainServerId($_GET['mysql_server']['id'] ?? null);
+        if ($idMysqlServer === null) {
+            throw new \InvalidArgumentException('Invalid monitoring server id');
+        }
+
+        $sql = self::buildExplainServerSql($idMysqlServer);
 
         $res = $db->sql_query($sql);
 
