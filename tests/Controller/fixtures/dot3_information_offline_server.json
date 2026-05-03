@@ -1,0 +1,21 @@
+{
+    "mapping": {
+        "10.0.0.7:3306": 7
+    },
+    "tunnel": [],
+    "servers": {
+        "7": {
+            "id_mysql_server": 7,
+            "ip": "10.0.0.7",
+            "port": "3306",
+            "ip_real": "10.0.0.7",
+            "port_real": "3306",
+            "display_name": "db-stale-7",
+            "is_proxy": "0",
+            "is_vip": "0",
+            "mysql_available": "0",
+            "mysql_error": "MySQL server has gone away",
+            "mysql_ping": "0"
+        }
+    }
+}

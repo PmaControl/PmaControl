@@ -2852,9 +2852,15 @@ class Dot3 extends Controller
             $server = $dot3_information['information']['servers'][$id_mysql_server];
             $is_vip_server = $this->isVipServer($server);
 
-            //consideringg if we don't have the version of server, this server is too old and we don't have fresh data to display.
-            if (empty($server['version']) && ! $is_vip_server)
-            {
+            // Issue #735: a monitored server that is unreachable for longer than the
+            // ts_value_general_text retention window keeps `mysql_available=0` and
+            // `mysql_error` fresh, but its `version` was purged from the partition.
+            // Skipping on missing `version` alone made these nodes silently disappear
+            // from /architecture/index. Skip only when we have nothing to display.
+            $hasMonitoringSignal = !empty($server['version'])
+                || isset($server['mysql_available'])
+                || !empty($server['mysql_error']);
+            if (!$hasMonitoringSignal && !$is_vip_server) {
                 continue;
             }
 
