@@ -185,6 +185,85 @@ final class Dot3JsonToDotComparisonTest extends TestCase
         $this->assertStringNotContainsString('->', $dot, 'Empty build_ms must produce a DOT without edges.');
     }
 
+    /**
+     * Regression coverage for issue #735.
+     *
+     * A monitored server that has been unreachable for longer than the
+     * ts_value_general_text retention window keeps `mysql_available=0` and
+     * `mysql_error` fresh, but its `version` was purged from the partition.
+     * The previous strict `version`-based skip in Dot3::buildServer made these
+     * servers vanish from /architecture/index. They must remain visible as a
+     * red NODE_ERROR with the error message preserved.
+     */
+    public function testJsonOfflineServerWithoutVersionStillRendersAsRedNode(): void
+    {
+        $offlinePayload = json_decode(
+            (string) file_get_contents(__DIR__ . '/fixtures/dot3_information_offline_server.json'),
+            true
+        );
+        $this->assertIsArray($offlinePayload);
+        $this->assertArrayNotHasKey('version', $offlinePayload['servers']['7'], 'Fixture must reproduce the post-purge state.');
+        $this->assertSame('0', $offlinePayload['servers']['7']['mysql_available']);
+        $this->assertNotEmpty($offlinePayload['servers']['7']['mysql_error']);
+
+        Dot3::$information[self::DOT3_INFORMATION_ID]['information'] = $offlinePayload;
+
+        $dot3 = $this->newDot3();
+        $group = [7];
+
+        $dot3->buildServer([self::DOT3_INFORMATION_ID, $group]);
+
+        $this->assertArrayHasKey(
+            7,
+            Dot3::$build_server,
+            'Offline server with mysql_available=0 + mysql_error must be promoted to a DOT node '
+            . 'even when its version was purged from ts_value_general_text (issue #735).'
+        );
+        $this->assertSame('0', Dot3::$build_server[7]['mysql_available']);
+        $this->assertSame(
+            'MySQL server has gone away',
+            Dot3::$build_server[7]['error'] ?? null,
+            'NODE_ERROR styling must carry the mysql_error message for the tooltip.'
+        );
+        $this->assertSame(
+            '#FFCCCC',
+            Dot3::$build_server[7]['background'] ?? null,
+            'Offline server must use the NODE_ERROR background, not NODE_OK.'
+        );
+
+        $dot = $dot3->writeDot();
+        $this->assertStringContainsString('digraph structs', $dot);
+        $this->assertStringContainsString('db-stale-7', $dot, 'Offline server label must appear in the DOT.');
+    }
+
+    /**
+     * Defense-in-depth for issue #735: a server with absolutely no monitoring
+     * signal (no version, no mysql_available, no mysql_error) is still skipped.
+     * This guards the normal "client not monitored" / "registered but never
+     * polled" cases against accidentally producing ghost nodes.
+     */
+    public function testJsonServerWithNoMonitoringSignalAtAllIsStillSkipped(): void
+    {
+        Dot3::$information[self::DOT3_INFORMATION_ID]['information'] = [
+            'mapping' => [],
+            'servers' => [
+                42 => [
+                    'id_mysql_server' => 42,
+                    'display_name' => 'never-polled',
+                    'ip' => '10.0.0.42',
+                    'port' => '3306',
+                    'is_proxy' => '0',
+                    'is_vip' => '0',
+                ],
+            ],
+        ];
+
+        $dot3 = $this->newDot3();
+        $dot3->buildServer([self::DOT3_INFORMATION_ID, [42]]);
+
+        $this->assertSame([], Dot3::$build_server);
+    }
+
     private function loadFixture(): array
     {
         $raw = (string) file_get_contents(self::FIXTURE_PATH);
