@@ -457,8 +457,11 @@ new Chart(ctx, {
         }]
     },
     options: {
-        responsive: true,
-        maintainAspectRatio: false,
+        // Sparkline lives in a 160x17 canvas inside a <td>; under Chart.js v4
+        // responsive=true + maintainAspectRatio=false leaves clientHeight=0 in
+        // table-cell flow and the line never paints. Fixed-size canvas via
+        // responsive=false keeps the v2-era behaviour. (issue #742)
+        responsive: false,
         plugins: {
             tooltip: { enabled: false },
             legend: { display: false }
