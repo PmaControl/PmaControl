@@ -1,0 +1,74 @@
+{
+    "mapping": {
+        "10.0.0.1:3306": 1,
+        "10.0.0.2:3306": 2,
+        "10.0.0.3:3306": 3
+    },
+    "tunnel": [],
+    "servers": {
+        "1": {
+            "id_mysql_server": 1,
+            "ip": "10.0.0.1",
+            "port": "3306",
+            "ip_real": "10.0.0.1",
+            "port_real": "3306",
+            "display_name": "db-master-1",
+            "is_proxy": "0",
+            "is_vip": "0",
+            "version": "10.6.23-MariaDB",
+            "version_comment": "MariaDB Server",
+            "mysql_available": "1",
+            "mysql_error": ""
+        },
+        "2": {
+            "id_mysql_server": 2,
+            "ip": "10.0.0.2",
+            "port": "3306",
+            "ip_real": "10.0.0.2",
+            "port_real": "3306",
+            "display_name": "db-replica-2",
+            "is_proxy": "0",
+            "is_vip": "0",
+            "version": "10.6.23-MariaDB",
+            "version_comment": "MariaDB Server",
+            "mysql_available": "1",
+            "mysql_error": "",
+            "@slave": {
+                "": {
+                    "connection_name": "",
+                    "master_host": "10.0.0.1",
+                    "master_port": "3306",
+                    "slave_io_running": "Yes",
+                    "slave_sql_running": "Yes",
+                    "seconds_behind_master": "0",
+                    "using_gtid": "Slave_Pos"
+                }
+            }
+        },
+        "3": {
+            "id_mysql_server": 3,
+            "ip": "10.0.0.3",
+            "port": "3306",
+            "ip_real": "10.0.0.3",
+            "port_real": "3306",
+            "display_name": "db-replica-3",
+            "is_proxy": "0",
+            "is_vip": "0",
+            "version": "10.6.23-MariaDB",
+            "version_comment": "MariaDB Server",
+            "mysql_available": "1",
+            "mysql_error": "",
+            "@slave": {
+                "": {
+                    "connection_name": "",
+                    "master_host": "10.0.0.1",
+                    "master_port": "3306",
+                    "slave_io_running": "Yes",
+                    "slave_sql_running": "Yes",
+                    "seconds_behind_master": "0",
+                    "using_gtid": "Slave_Pos"
+                }
+            }
+        }
+    }
+}
