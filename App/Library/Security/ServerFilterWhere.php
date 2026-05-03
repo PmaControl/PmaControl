@@ -10,6 +10,13 @@ final class ServerFilterWhere
 {
     private const DENY_ALL = ' AND 0=1';
 
+    /**
+     * Cap for the user-controlled $idMysqlServer branch — anti-abuse is irrelevant
+     * for internal callers (Util::filterServerList → Extraction2 → Dot3 daemon)
+     * which legitimately pass the full monitored-server list (issue #732).
+     */
+    private const INTERNAL_LIST_MAX_IDS = PHP_INT_MAX;
+
     public static function build(array &$get, array $session, $idMysqlServer = [], string $alias = 'a'): string
     {
         $alias = self::normalizeAlias($alias);
@@ -34,7 +41,7 @@ final class ServerFilterWhere
         }
 
         if (self::hasServerSelection($idMysqlServer)) {
-            $ids = PositiveIntegerSelection::normalizeList($idMysqlServer);
+            $ids = PositiveIntegerSelection::normalizeList($idMysqlServer, self::INTERNAL_LIST_MAX_IDS);
             if ($ids === null) {
                 return self::DENY_ALL;
             }
