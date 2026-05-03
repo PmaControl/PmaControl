@@ -288,9 +288,13 @@ class Extraction
             }
 
 
+            // Emit strict ISO 8601 (YYYY-MM-DDTHH:MM:SS) so `new Date(...)` parses
+            // identically across browsers. The legacy "YYYY-MM-DD HH:MM:SS" form is
+            // only conditionally accepted (implementation-defined per ECMA-262) and
+            // produced silent Invalid Date entries that Chart.js skipped — issue #742.
             $sql3 .= "
                 connection_name,
-                group_concat(concat('{x:new Date(\'',t.`date`, '\'),y:',t.`value`,'}') ORDER BY t.`date` ASC) as graph,
+                group_concat(concat('{x:new Date(\'',DATE_FORMAT(t.`date`, '%Y-%m-%dT%H:%i:%s'), '\'),y:',t.`value`,'}') ORDER BY t.`date` ASC) as graph,
                 round(min(t.`value`),2) as `min`,
                 round(max(t.`value`),2) as `max`,
                 round(avg(t.`value`),2) as `avg`,
