@@ -10,16 +10,17 @@ if (!defined('LINK')) {
 }
 
 /**
- * Regression coverage for issue #742.
+ * Regression coverage for issue #742 (final form, Option C).
  *
- * The Slave/index sparkline (160×17 canvas inside a <td>) stopped rendering
- * after the Chart.js 2 → 4 migration in commit b1cc6a4. Root cause: the v4
- * config used `responsive: true` + `maintainAspectRatio: false`, which made
- * Chart sample the table-cell `clientHeight` — frequently 0 — and silently
- * draw nothing. Switching to `responsive: false` keeps the canvas at its
- * intrinsic 160×17 dimensions and restores the v2 behaviour.
+ * The Slave/index sparkline went through three iterations after the Chart.js
+ * 2 → 4 migration:
+ *   - A (#743) — responsive=false to avoid the table-cell clientHeight=0 trap.
+ *   - B (#744) — strict ISO 8601 dates so `new Date(...)` parses identically.
+ *   - C (this) — drop the time scale altogether: Chart.js gets a flat array
+ *     of y values and the default category x-axis. No moment.js, no adapter,
+ *     no implementation-defined date parsing.
  *
- * These tests inspect the JS that Slave::generateGraph injects into the
+ * These tests inspect the JS injected by Slave::generateGraph through the
  * Glial JS DI container, without booting a real DOM or Chart.js.
  */
 final class SlaveSparklineRenderingTest extends TestCase
@@ -47,16 +48,38 @@ final class SlaveSparklineRenderingTest extends TestCase
         );
     }
 
-    public function testGenerateGraphLoadsChart4AndMomentAdapterInExpectedOrder(): void
+    public function testGenerateGraphLoadsChart4OnlyWithoutMomentOrAdapter(): void
     {
         $assets = $this->captureLoadedJsAssets();
 
         $this->assertSame(
-            ['moment.js', 'chart-4.5.1.umd.min.js', 'chartjs-adapter-moment.min.js'],
+            ['chart-4.5.1.umd.min.js'],
             $assets,
-            'moment.js must declare window.moment first, then Chart.js, then the adapter — '
-            . 'otherwise Chart._adapters._date is never bound to moment and the time scale '
-            . 'falls back to the broken default adapter.'
+            'Sparkline must not pull moment.js or the moment adapter — Option C drops the '
+            . 'time scale and feeds Chart.js a flat array of values, so the time-axis '
+            . 'plumbing is no longer relevant (issue #742).'
+        );
+    }
+
+    public function testGenerateGraphInjectsFlatYValuesArrayWithoutXyObjects(): void
+    {
+        $captured = $this->captureGeneratedSparklineJs();
+
+        $this->assertMatchesRegularExpression(
+            '/data:\s*\[\s*0\s*,\s*1\.5\s*,\s*null\s*,\s*2\s*\]/',
+            $captured,
+            'data must be a flat array of numeric values (or null for missing samples).'
+        );
+        $this->assertStringNotContainsString(
+            'new Date(',
+            $captured,
+            'No `new Date(...)` should remain in the sparkline payload — Option C parses '
+            . 'the y values out server-side and feeds Chart.js a flat array.'
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            '/scales\s*:\s*\{[^}]*type\s*:\s*"time"/s',
+            $captured,
+            'Sparkline must not configure scales.x.type = "time" anymore.'
         );
     }
 
@@ -73,6 +96,24 @@ final class SlaveSparklineRenderingTest extends TestCase
         );
     }
 
+    public function testExtractSparklineYValuesParsesPayloadFromExtraction(): void
+    {
+        $payload = "{x:new Date('2026-05-03T19:00:00'),y:0},"
+            . "{x:new Date('2026-05-03T19:01:00'),y:1.5},"
+            . "{x:new Date('2026-05-03T19:02:00'),y:NULL},"
+            . "{x:new Date('2026-05-03T19:03:00'),y:2}";
+
+        $values = $this->invokeExtractSparklineYValues($payload);
+
+        $this->assertSame(['0', '1.5', 'null', '2'], $values);
+    }
+
+    public function testExtractSparklineYValuesReturnsEmptyForEmptyOrInvalidPayload(): void
+    {
+        $this->assertSame([], $this->invokeExtractSparklineYValues(''));
+        $this->assertSame([], $this->invokeExtractSparklineYValues('not a graph string'));
+    }
+
     private function captureGeneratedSparklineJs(): string
     {
         $jsDi = $this->newJsDi();
@@ -82,7 +123,10 @@ final class SlaveSparklineRenderingTest extends TestCase
             [
                 'id_mysql_server' => 42,
                 'connection_name' => '',
-                'graph' => "{x:new Date('2026-05-03 19:00:00'),y:0},{x:new Date('2026-05-03 19:01:00'),y:1}",
+                'graph' => "{x:new Date('2026-05-03T19:00:00'),y:0},"
+                    . "{x:new Date('2026-05-03T19:01:00'),y:1.5},"
+                    . "{x:new Date('2026-05-03T19:02:00'),y:NULL},"
+                    . "{x:new Date('2026-05-03T19:03:00'),y:2}",
             ],
         ]);
 
@@ -98,11 +142,21 @@ final class SlaveSparklineRenderingTest extends TestCase
             [
                 'id_mysql_server' => 1,
                 'connection_name' => '',
-                'graph' => '{x:new Date(\'2026-05-03 19:00:00\'),y:0}',
+                'graph' => "{x:new Date('2026-05-03T19:00:00'),y:0}",
             ],
         ]);
 
         return $jsDi->javascript;
+    }
+
+    /**
+     * @return array<int,string>
+     */
+    private function invokeExtractSparklineYValues(string $payload): array
+    {
+        $method = (new ReflectionClass(Slave::class))->getMethod('extractSparklineYValues');
+
+        return $method->invoke(null, $payload);
     }
 
     private function newJsDi(): object
