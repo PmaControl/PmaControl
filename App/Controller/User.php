@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Library\Security\AuthToken;
 use App\Library\Security\CsrfGuard;
+use App\Library\Security\PersistentAuthSession;
 use App\Library\Security\SessionFixationGuard;
 use Glial\Security\Csrf;
 use \Glial\Synapse\Controller;
@@ -1526,6 +1527,11 @@ GROUP BY d.id";
 
             if ($authenticated) {
 
+                PersistentAuthSession::issueForAuthenticatedUser(
+                    $this->di['auth'],
+                    Sgbd::sql(DB_DEFAULT),
+                    $_SERVER
+                );
 
                 $id_user = $this->di['auth']->getIdUserTriingLogin();
 
@@ -1627,6 +1633,7 @@ GROUP BY d.id";
  * @version 1.0
  */
     function logout() {
+        PersistentAuthSession::revokeCurrent(Sgbd::sql(DB_DEFAULT), $_COOKIE, $_SERVER);
         $this->di['auth']->logout();
         SessionFixationGuard::regenerateActiveSession();
 
@@ -1700,6 +1707,9 @@ GROUP BY d.id";
 
         $ret = $this->di['auth']->authenticate();
         SessionFixationGuard::enforceRegenerationAfterSuccessfulAuthentication((bool) $ret);
+        if ($ret) {
+            PersistentAuthSession::deleteLegacyCookies($_SERVER);
+        }
         $id_user = $this->di['auth']->getIdUserTriingLogin();
 
         if (!empty($id_user)) {
