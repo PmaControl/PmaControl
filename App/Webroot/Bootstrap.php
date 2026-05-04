@@ -58,6 +58,17 @@ $config = new Config;
 $config->load(CONFIG);
 FactoryController::addDi("config", $config);
 
+// Issue #746: Apache mod_php and the daemon CLI may run different PHP builds
+// (e.g. mod_php on 8.2 with date.timezone=Europe/Paris vs /usr/bin/php → 8.5
+// with date.timezone unset, defaulting to UTC). When that drift happens,
+// Integrate writes ts_value_* timestamps in UTC while Extraction::extract
+// filters with NOW() in CEST, and "last hour" graph windows silently return
+// zero rows. Force the same effective timezone in every PHP process that
+// boots through this file, regardless of php.ini.
+\App\Library\Bootstrap\TimezoneAligner::apply(
+    defined('PMACONTROL_TIMEZONE') ? PMACONTROL_TIMEZONE : null
+);
+
 $log = new Logger('Glial');
 
 $file_log = LOG_FILE;
