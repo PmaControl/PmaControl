@@ -11,6 +11,7 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use App\Library\Tree as TreeInterval;
 use App\Library\PluginPackage;
+use App\Library\Security\PluginPackageIntegrity;
 use App\Library\Security\SafeRedirect;
 use \Glial\Sgbd\Sgbd;
 
@@ -29,6 +30,8 @@ use \Glial\Sgbd\Sgbd;
  * @version 1.0
  */
 class Plugin extends Controller {
+
+    const PLUGIN_SIGNATURE_PUBLIC_KEYS = array();
 
 /**
  * Render plugin state through `index`.
@@ -77,7 +80,7 @@ class Plugin extends Controller {
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $Query = "SELECT id, nom, description, auteur, image, fichier, date_installation, md5_zip, version, type_licence, est_actif, maxversion
+        $Query = "SELECT id, nom, description, auteur, image, fichier, date_installation, md5_zip, sha256_zip, signature_zip, version, type_licence, est_actif, maxversion
         FROM plugin_main ";
         $Query .= " INNER JOIN"
                 . " (SELECT nom AS tempnom, MAX(version) AS maxversion FROM plugin_main GROUP BY nom)"
@@ -141,12 +144,15 @@ class Plugin extends Controller {
                 $Query = "SELECT * FROM plugin_main WHERE nom = '" . addslashes($key) . "' AND version = '" . addslashes($key2) . "'";
                 $res = $db->sql_query($Query);
 
+                $sha256Zip = isset($line2['SHA256']) ? $line2['SHA256'] : (isset($line2['sha256']) ? $line2['sha256'] : '');
+                $signatureZip = isset($line2['Signature']) ? $line2['Signature'] : (isset($line2['signature']) ? $line2['signature'] : '');
+
                 if ($db->sql_num_rows($res) > 0) {
-                    $Query = "UPDATE plugin_main SET description = '" . addslashes($line2['Description']) . "', auteur = '" . addslashes($line2['Contributor']) . "', image = '" . addslashes($line2['Picture']) . "', fichier = '" . addslashes($line2["URL"]) . "', date_installation = '" . $date->format('Y-m-d') . "', md5_zip = '" . addslashes($line2['MD5']) . "', type_licence = '" . addslashes($line2['LicenceType']) . "' WHERE nom = '" . addslashes($key) . "' AND version = '" . addslashes($key2) . "'";
+                    $Query = "UPDATE plugin_main SET description = '" . addslashes($line2['Description']) . "', auteur = '" . addslashes($line2['Contributor']) . "', image = '" . addslashes($line2['Picture']) . "', fichier = '" . addslashes($line2["URL"]) . "', date_installation = '" . $date->format('Y-m-d') . "', md5_zip = '" . addslashes($line2['MD5']) . "', sha256_zip = CASE WHEN '" . addslashes($sha256Zip) . "' = '' AND sha256_zip <> '' THEN sha256_zip ELSE '" . addslashes($sha256Zip) . "' END, signature_zip = CASE WHEN '" . addslashes($signatureZip) . "' = '' AND COALESCE(signature_zip, '') <> '' THEN signature_zip ELSE '" . addslashes($signatureZip) . "' END, type_licence = '" . addslashes($line2['LicenceType']) . "' WHERE nom = '" . addslashes($key) . "' AND version = '" . addslashes($key2) . "'";
                     $db->sql_query($Query);
                 } else {
-                    $Query = "INSERT INTO plugin_main (nom, description, auteur, image, fichier, date_installation, md5_zip, version, type_licence )
-SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','" . addslashes($line2['Contributor']) . "','" . addslashes($line2['Picture']) . "','" . addslashes($line2["URL"]) . "','" . $date->format('Y-m-d') . "','" . addslashes($line2['MD5']) . "','" . addslashes($key2) . "','" . addslashes($line2['LicenceType']) . "'";
+                    $Query = "INSERT INTO plugin_main (nom, description, auteur, image, fichier, date_installation, md5_zip, sha256_zip, signature_zip, version, type_licence )
+SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','" . addslashes($line2['Contributor']) . "','" . addslashes($line2['Picture']) . "','" . addslashes($line2["URL"]) . "','" . $date->format('Y-m-d') . "','" . addslashes($line2['MD5']) . "','" . addslashes($sha256Zip) . "','" . addslashes($signatureZip) . "','" . addslashes($key2) . "','" . addslashes($line2['LicenceType']) . "'";
                     $db->sql_query($Query);
                 }
             endforeach;
@@ -186,7 +192,7 @@ SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $Query = "SELECT id, nom, description, auteur, image, fichier, date_installation, md5_zip, version, type_licence, est_actif
+        $Query = "SELECT id, nom, description, auteur, image, fichier, date_installation, md5_zip, sha256_zip, signature_zip, version, type_licence, est_actif
         FROM plugin_main WHERE id = " . $pluginId;
 
         $res = $db->sql_query($Query);
@@ -215,9 +221,11 @@ SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','
             fclose($handle);
             fclose($handle2);
 
-            if (!empty($plugin['md5_zip']) && md5_file($zipPath) !== $plugin['md5_zip']) {
-                Throw new \Exception("Plugin ZIP checksum mismatch");
-            }
+            PluginPackageIntegrity::ensureZipTrusted($zipPath, array(
+                'md5' => isset($plugin['md5_zip']) ? $plugin['md5_zip'] : '',
+                'sha256' => isset($plugin['sha256_zip']) ? $plugin['sha256_zip'] : '',
+                'signature' => isset($plugin['signature_zip']) ? $plugin['signature_zip'] : '',
+            ), self::trustedPluginSignaturePublicKeys());
 
             $zip = new \ZipArchive;
             $res = $zip->open($zipPath);
@@ -309,6 +317,36 @@ SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','
         $this->clearAclCache();
 
         $this->redirectTo(str_replace("{LINK}", LINK, $lastinstallmenu));
+    }
+
+/**
+ * Return trusted Ed25519 public keys for plugin package signatures.
+ *
+ * @return array<string,string>|array<int,string>
+ */
+    public static function trustedPluginSignaturePublicKeys()
+    {
+        $keys = self::PLUGIN_SIGNATURE_PUBLIC_KEYS;
+        $envKeys = getenv('PMACONTROL_PLUGIN_SIGNATURE_PUBLIC_KEYS');
+
+        if (is_string($envKeys) && trim($envKeys) !== '') {
+            $decoded = json_decode($envKeys, true);
+            if (is_array($decoded)) {
+                foreach ($decoded as $keyId => $publicKey) {
+                    if (is_string($publicKey) && trim($publicKey) !== '') {
+                        $keys[$keyId] = trim($publicKey);
+                    }
+                }
+            } else {
+                foreach (preg_split('/[\s,]+/', trim($envKeys)) as $publicKey) {
+                    if ($publicKey !== '') {
+                        $keys[] = $publicKey;
+                    }
+                }
+            }
+        }
+
+        return $keys;
     }
 
 /**

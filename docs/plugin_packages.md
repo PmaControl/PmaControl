@@ -41,6 +41,43 @@ Rules:
 
 Legacy plugins without `plugin.json` continue to use the historical directory scan plus `sql/install.sql`, `sql/uninstall.sql`, `install.php` menu registration and plugin file tracking.
 
+## Catalog Integrity
+
+The local plugin catalog (`plugins/plugin.json`) carries the trust metadata used
+before the ZIP is opened or extracted. New catalog entries should publish:
+
+```json
+{
+  "mysql-sys": {
+    "v1.3": {
+      "Picture": "{LINK}plugins/extracted/mysql-sys-1.3/logo.svg",
+      "MD5": "0123456789abcdef0123456789abcdef",
+      "SHA256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "Signature": "base64-ed25519-detached-signature",
+      "CreationDate": "02/05/2026",
+      "Contributor": "publisher",
+      "LicenceType": "GPL-3.0",
+      "Description": "Plugin description",
+      "URL": "https://example.invalid/plugins/mysql-sys/v1.3.zip"
+    }
+  }
+}
+```
+
+Rules:
+
+- `SHA256` is computed on the exact ZIP bytes published at `URL`.
+- `Signature` is a base64 Ed25519 detached signature over the same ZIP bytes.
+- `MD5` is accepted only for legacy transition entries. If both `MD5` and
+  `SHA256` are present, both checks must pass.
+- A catalog entry with `SHA256` but no valid signature is rejected before
+  extraction.
+- Trusted Ed25519 public keys are loaded from
+  `PMACONTROL_PLUGIN_SIGNATURE_PUBLIC_KEYS` as either a JSON object
+  (`{"key-id":"base64-public-key"}`) or a comma/whitespace separated list of
+  base64 raw public keys. Production deployments should pin the publisher key in
+  configuration before enabling signed packages.
+
 ## Reference Package
 
 `plugins/extracted/mysql-sys-1.2/` is the in-repository example package. It
