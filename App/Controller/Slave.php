@@ -406,6 +406,36 @@ class Slave extends Controller
     }
 
 /**
+ * Issue #742 diagnostic action: render the same per-replica sparkline data
+ * Slave/index uses, in a stripped-down HTML page with no CSS and no layout.
+ * If the canvas draws here but not on /slave/index, the bug is in the index
+ * layout (CSS, table sizing, …); if it doesn't draw here either, it's the
+ * canvas drawing path itself.
+ */
+    public function testSlave()
+    {
+        $this->layout_name = false;
+
+        $slaves = Extraction::extract($this->getReplicationLagVariables(), array(), "1 hour", false, true);
+        $slaves = $this->normalizeReplicationLagGraphRows($slaves ?: []);
+
+        $rows = [];
+        foreach ($slaves as $slave) {
+            $values = self::extractSparklineYValues((string) ($slave['graph'] ?? ''));
+            if (empty($values)) {
+                continue;
+            }
+            $rows[] = [
+                'id_mysql_server' => $slave['id_mysql_server'],
+                'connection_name' => $slave['connection_name'] ?? '',
+                'values'          => $values,
+            ];
+        }
+
+        $this->set('rows', $rows);
+    }
+
+/**
  * Handle slave state through `generateGraph`.
  *
  * This routine may read or mutate framework state, superglobals or persistence layers.
@@ -428,57 +458,50 @@ class Slave extends Controller
  */
     private function generateGraph($slaves)
     {
-        // Issue #742 Option C: drop the time scale entirely for the per-replica
-        // sparkline. Sixty `seconds_behind_master` points evenly spaced over an
-        // hour render fine on a default category x-axis, and we no longer need
-        // moment.js + chartjs-adapter-moment + the strict ISO date parsing
-        // dance just to draw a 160×17 line. Feed Chart.js a flat array of y
-        // values extracted from the SQL payload.
-        $this->di['js']->addJavascript(array("chart-4.5.1.umd.min.js"));
-
+        // Issue #742: per-replica sparkline drawn directly on the 160×17
+        // canvas with the raw 2D context. Chart.js v4 silently fails to lay
+        // out a chart in a 17px-tall canvas (axis/legend hidden, but the
+        // internal layout box still collapses), and the time-scale variant
+        // additionally needed chartjs-adapter-moment. Native canvas drawing
+        // sidesteps both problems and removes a few hundred kB of JS.
         if (empty($slaves)) {
             return;
         }
 
         foreach ($slaves as $slave) {
             $values = self::extractSparklineYValues((string) ($slave['graph'] ?? ''));
+            if (empty($values)) {
+                continue;
+            }
             $valuesJs = '[' . implode(',', $values) . ']';
-            $labelsJs = '[' . implode(',', array_map(static fn (int $i): int => $i + 1, array_keys($values))) . ']';
             $canvasId = 'myChart' . $slave['id_mysql_server'] . crc32($slave['connection_name']);
 
             $this->di['js']->code_javascript('
-(function() {
-var canvas = document.getElementById("'.$canvasId.'");
-if (!canvas) return;
-var existing = Chart.getChart(canvas);
-if (existing) existing.destroy();
-new Chart(canvas.getContext("2d"), {
-    type: "line",
-    data: {
-        labels: '.$labelsJs.',
-        datasets: [{
-            fill: true,
-            backgroundColor: "rgba(22,40,90,0.3)",
-            data: '.$valuesJs.',
-            borderColor: "rgba(0,0,0,1)",
-            borderWidth: 2,
-            pointRadius: 0,
-            tension: 0
-        }]
-    },
-    options: {
-        responsive: false,
-        plugins: {
-            tooltip: { enabled: false },
-            legend: { display: false }
-        },
-        scales: {
-            x: { display: false, grid: { display: false } },
-            y: { display: false, min: 0, grid: { display: false } }
-        }
-    }
-});
-})();
+try{(function(){
+var id="'.$canvasId.'";
+var c=document.getElementById(id);
+if(!c){console.warn("[spark] canvas missing",id);return;}
+if(!c.getContext){console.warn("[spark] no getContext",id);return;}
+var d='.$valuesJs.';
+var ctx=c.getContext("2d");
+var w=c.width,h=c.height;
+var rect=c.getBoundingClientRect();
+console.log("[spark]",id,"w=",w,"h=",h,"rect=",rect.width+"x"+rect.height,"n=",d.length);
+ctx.clearRect(0,0,w,h);
+var n=d.length,mx=0;
+for(var i=0;i<n;i++){var v=d[i];if(v!==null&&v>mx)mx=v;}
+if(mx<=0)mx=1;
+function px(i){return n>1?(i/(n-1))*(w-1):0;}
+function py(v){if(v===null)return null;return (h-1)-(v/mx)*(h-1);}
+ctx.beginPath();ctx.moveTo(0,h);
+var started=false;
+for(var i=0;i<n;i++){var y=py(d[i]);if(y===null)continue;var x=px(i);if(!started){ctx.lineTo(x,h);ctx.lineTo(x,y);started=true;}else{ctx.lineTo(x,y);}}
+ctx.lineTo(w,h);ctx.closePath();
+ctx.fillStyle="rgba(22,40,90,0.3)";ctx.fill();
+ctx.beginPath();started=false;
+for(var i=0;i<n;i++){var y=py(d[i]);if(y===null){started=false;continue;}var x=px(i);if(!started){ctx.moveTo(x,y);started=true;}else{ctx.lineTo(x,y);}}
+ctx.strokeStyle="rgba(0,0,0,1)";ctx.lineWidth=1;ctx.stroke();
+})();}catch(e){console.error("[spark] failed",e);}
 ');
         }
     }
