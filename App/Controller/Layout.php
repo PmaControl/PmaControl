@@ -132,55 +132,6 @@ class Layout extends Controller
     }
 
 /**
- * Handle layout state through `headerPmacontrol`.
- *
- * This routine may read or mutate framework state, superglobals or persistence layers.
- *
- * @param array<int,mixed> $param Route parameters forwarded by the router.
- * @phpstan-param array<int,mixed> $param
- * @psalm-param array<int,mixed> $param
- * @return void Returned value for headerPmacontrol.
- * @phpstan-return void
- * @psalm-return void
- * @see self::headerPmacontrol()
- * @example /fr/layout/headerPmacontrol
- * @category PmaControl
- * @package App
- * @subpackage Controller
- * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
- * @license GPL-3.0
- * @since 5.0
- * @version 1.0
- */
-    function headerPmacontrol($param)
-    {
-        $title = $param[0];
-        $this->set('GLIALE_TITLE', $title);
-    }
-
-/**
- * Handle layout state through `footerPmacontrol`.
- *
- * This routine may read or mutate framework state, superglobals or persistence layers.
- *
- * @return void Returned value for footerPmacontrol.
- * @phpstan-return void
- * @psalm-return void
- * @see self::footerPmacontrol()
- * @example /fr/layout/footerPmacontrol
- * @category PmaControl
- * @package App
- * @subpackage Controller
- * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
- * @license GPL-3.0
- * @since 5.0
- * @version 1.0
- */
-    function footerPmacontrol()
-    {
-    }
-
-/**
  * Handle layout state through `ariane`.
  *
  * This routine may read or mutate framework state, superglobals or persistence layers.

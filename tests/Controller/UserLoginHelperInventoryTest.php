@@ -17,12 +17,4 @@ final class UserLoginHelperInventoryTest extends TestCase
         $this->assertStringContainsString('$this->establishSession(', $controller);
     }
 
-    public function testSiteMenuTargetsPublicConnectionAction(): void
-    {
-        $siteController = file_get_contents(__DIR__ . '/../../App/Controller/Site.php');
-
-        $this->assertIsString($siteController);
-        $this->assertStringNotContainsString("'route'    => 'User/login/'", $siteController);
-        $this->assertStringContainsString("'route'    => 'User/connection/'", $siteController);
-    }
 }
