@@ -428,28 +428,38 @@ class Slave extends Controller
  */
     private function generateGraph($slaves)
     {
-        $this->di['js']->addJavascript(array("moment.js", "chart-4.5.1.umd.min.js", "chartjs-adapter-moment.min.js"));
+        // Issue #742 Option C: drop the time scale entirely for the per-replica
+        // sparkline. Sixty `seconds_behind_master` points evenly spaced over an
+        // hour render fine on a default category x-axis, and we no longer need
+        // moment.js + chartjs-adapter-moment + the strict ISO date parsing
+        // dance just to draw a 160×17 line. Feed Chart.js a flat array of y
+        // values extracted from the SQL payload.
+        $this->di['js']->addJavascript(array("chart-4.5.1.umd.min.js"));
 
-        if (!empty($slaves)) {
-            foreach ($slaves as $slave) {
+        if (empty($slaves)) {
+            return;
+        }
 
-                $this->di['js']->code_javascript('
+        foreach ($slaves as $slave) {
+            $values = self::extractSparklineYValues((string) ($slave['graph'] ?? ''));
+            $valuesJs = '[' . implode(',', $values) . ']';
+            $labelsJs = '[' . implode(',', array_map(static fn (int $i): int => $i + 1, array_keys($values))) . ']';
+            $canvasId = 'myChart' . $slave['id_mysql_server'] . crc32($slave['connection_name']);
+
+            $this->di['js']->code_javascript('
 (function() {
-Chart.defaults.plugins.legend.display = false;
-
-var canvas = document.getElementById("myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).'");
+var canvas = document.getElementById("'.$canvasId.'");
 if (!canvas) return;
 var existing = Chart.getChart(canvas);
 if (existing) existing.destroy();
-var ctx = canvas.getContext("2d");
-
-new Chart(ctx, {
+new Chart(canvas.getContext("2d"), {
     type: "line",
     data: {
+        labels: '.$labelsJs.',
         datasets: [{
             fill: true,
             backgroundColor: "rgba(22,40,90,0.3)",
-            data: ['.$slave['graph'].'],
+            data: '.$valuesJs.',
             borderColor: "rgba(0,0,0,1)",
             borderWidth: 2,
             pointRadius: 0,
@@ -457,33 +467,45 @@ new Chart(ctx, {
         }]
     },
     options: {
-        // Sparkline lives in a 160x17 canvas inside a <td>; under Chart.js v4
-        // responsive=true + maintainAspectRatio=false leaves clientHeight=0 in
-        // table-cell flow and the line never paints. Fixed-size canvas via
-        // responsive=false keeps the v2-era behaviour. (issue #742)
         responsive: false,
         plugins: {
             tooltip: { enabled: false },
             legend: { display: false }
         },
         scales: {
-            x: {
-                type: "time",
-                display: false,
-                grid: { display: false }
-            },
-            y: {
-                display: false,
-                min: 0,
-                grid: { display: false }
-            }
+            x: { display: false, grid: { display: false } },
+            y: { display: false, min: 0, grid: { display: false } }
         }
     }
 });
 })();
 ');
+        }
+    }
+
+    /**
+     * Pull the y values out of the "{x:new Date('…'),y:N},{x:…,y:M}" payload
+     * emitted by Extraction::extract($graph=true). Numbers are kept as numeric
+     * strings; NULL or missing values become "null" so Chart.js draws a gap
+     * at the right index.
+     *
+     * @return array<int,string>
+     */
+    private static function extractSparklineYValues(string $graphPayload): array
+    {
+        if ($graphPayload === '') {
+            return [];
+        }
+
+        $values = [];
+        if (preg_match_all('/y:([^},]+)/', $graphPayload, $matches)) {
+            foreach ($matches[1] as $raw) {
+                $raw = trim($raw);
+                $values[] = is_numeric($raw) ? (string) (float) $raw : 'null';
             }
         }
+
+        return $values;
     }
 
 /**
