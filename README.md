@@ -71,9 +71,12 @@ plugin-load=ha_rocksdb
 * `git clone https://github.com/PmaControl/PmaControl.git pmacontrol`
 
 
-### Install dependencies
+### Install production dependencies
 * `cd pmacontrol`
 * `git config core.fileMode false`
+* `composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader`
+
+### Install development/test dependencies
 * `composer install --no-interaction`
 
 ### Run automated tests (optional but recommended)

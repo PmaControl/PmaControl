@@ -1,6 +1,12 @@
 # Build, test, run
 
-## Install
+## Production Install
+
+```bash
+composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+```
+
+## Development/Test Install
 
 ```bash
 composer install --no-interaction
