@@ -176089,6 +176089,8 @@ CREATE TABLE `user_persistent_auth_session` (
   `id_user_main` int(11) NOT NULL,
   `selector` char(32) NOT NULL,
   `token_hash` char(64) NOT NULL,
+  `previous_token_hash` char(64) DEFAULT NULL,
+  `previous_token_expires` datetime DEFAULT NULL,
   `user_agent_hash` char(64) DEFAULT NULL,
   `ip_hash` char(64) DEFAULT NULL,
   `date_created` datetime NOT NULL,
