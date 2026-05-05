@@ -165,6 +165,8 @@ final class InstallerApacheHardeningTest extends TestCase
         self::assertStringContainsString('"/glial/"', $this->webExposureCheck);
         self::assertStringContainsString('"${APP_PATH}.git/config"', $this->webExposureCheck);
         self::assertStringContainsString('"${APP_PATH}configuration/"', $this->webExposureCheck);
+        self::assertStringContainsString('optional_deny_paths=(', $this->webExposureCheck);
+        self::assertStringContainsString('expect_code_in "${path}" "403" "404"', $this->webExposureCheck);
         self::assertStringNotContainsString('"/site/"', $this->webExposureCheck);
         self::assertStringContainsString('expect_app_reachable "${APP_PATH}"', $this->webExposureCheck);
     }
