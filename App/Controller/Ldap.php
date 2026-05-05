@@ -994,7 +994,8 @@ class Ldap extends Controller
 
                 case 'LDAP_ROOT_DN_SEARCH':
                     if (empty($val)) {
-                        $val = $var['root_dn_search'];
+                        $fallbackRootDnSearch = $var['root_dn_search'] ?? $var['ROOT_DN_SEARCH'] ?? '';
+                        $new_value = '"'.str_replace('"', '', (string) $fallbackRootDnSearch).'"';
                     }
                     break;
 
