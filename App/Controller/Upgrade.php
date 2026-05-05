@@ -9,10 +9,45 @@ use \App\Library\Mysql;
 use \App\Library\Git;
 
 
+/**
+ * Class responsible for upgrade workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Upgrade extends Controller
 {
     const PATH_PATCH = ROOT."/App/Patch/";
 
+/**
+ * Handle upgrade state through `now`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for now.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::now()
+ * @example /fr/upgrade/now
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function now($param)
     {
         Debug::parseDebug($param);
@@ -38,6 +73,27 @@ class Upgrade extends Controller
         }   
     }
 
+/**
+ * Handle upgrade state through `setNewVersion`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for setNewVersion.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::setNewVersion()
+ * @example /fr/upgrade/setNewVersion
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function setNewVersion($param)
     {
         Debug::parseDebug($param);
@@ -61,6 +117,27 @@ class Upgrade extends Controller
     }
 
 
+/**
+ * Handle upgrade state through `executePatch`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for executePatch.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::executePatch()
+ * @example /fr/upgrade/executePatch
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function executePatch($param)
     {
         Debug::parseDebug($param);
@@ -105,6 +182,27 @@ class Upgrade extends Controller
         }
     }
 
+/**
+ * Retrieve upgrade state through `getPatchFrom`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $build Input value for `build`.
+ * @phpstan-param mixed $build
+ * @psalm-param mixed $build
+ * @return mixed Returned value for getPatchFrom.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getPatchFrom()
+ * @example /fr/upgrade/getPatchFrom
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getPatchFrom($build)
     {
         Debug::debug($build,"last build");
@@ -125,6 +223,27 @@ class Upgrade extends Controller
     }
 
 
+/**
+ * Handle upgrade state through `needUpgrade`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for needUpgrade.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::needUpgrade()
+ * @example /fr/upgrade/needUpgrade
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function needUpgrade($param)
     {
         Debug::parseDebug($param);
@@ -147,6 +266,27 @@ class Upgrade extends Controller
         }
     }
 
+/**
+ * Update upgrade state through `updateConfig`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for updateConfig.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::updateConfig()
+ * @example /fr/upgrade/updateConfig
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function updateConfig($param)
     {
         $commit = Git::getCurrentCommit();

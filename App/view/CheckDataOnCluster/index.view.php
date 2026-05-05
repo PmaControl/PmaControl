@@ -1,4 +1,7 @@
 <?php
+
+use App\Library\Security\CsrfRender;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -6,6 +9,9 @@
  */
 
 use Glial\Html\Form\Form;
+
+$checkDataOnClusterCsrfField = CsrfRender::field($data, 'check_data_on_cluster');
+$checkDataOnClusterCsrfToken = CsrfRender::token($data, 'check_data_on_cluster');
 
 function setColor($type)
 {
@@ -31,7 +37,8 @@ function getrgba($label, $alpha)
 }
 echo '<div class="well">';
 
-echo '<form method="POST" action="">';
+echo '<form method="post" action="">';
+echo '<input type="hidden" name="'.$checkDataOnClusterCsrfField.'" value="'.$checkDataOnClusterCsrfToken.'">';
 echo Form::select("mysql_cluster", "id", $data['grappe'], "", array("data-live-search" => "true", "class" => "selectpicker form-control"));
 
 echo '<br />';
@@ -54,7 +61,7 @@ if (!empty($_GET['sql'])) {
     $sql = $_GET['sql'];
 }
 
-echo '<textarea name="sql" class="form-control">'.$sql.'</textarea>';
+echo '<textarea name="sql" class="form-control">'.htmlspecialchars((string) $sql, ENT_QUOTES, 'UTF-8').'</textarea>';
 echo '<br />';
 
 echo '<button type="submit" class="btn btn-primary">Check Result on this cluster</button>';

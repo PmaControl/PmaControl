@@ -10,7 +10,10 @@ use \phpseclib3\Net\SSH2;
 use \phpseclib3\Crypt\PublicKeyLoader;
 use \App\Library\Debug;
 use \App\Library\Post;
+use App\Library\Security\CsrfGuard;
+use App\Library\Security\InlineEditRequest;
 use \Glial\Sgbd\Sgbd;
+use Glial\Security\Csrf;
 
 /*
  *
@@ -20,13 +23,44 @@ use \Glial\Sgbd\Sgbd;
  */
 
 class StorageArea extends Controller {
+    private const STORAGE_AREA_ADD_CSRF_SCOPE = 'storage_area.add';
+    private const STORAGE_AREA_ADD_INTEGER_FIELDS = [
+        'id_ssh_key',
+        'id_geolocalisation_city',
+        'id_geolocalisation_country',
+    ];
+    private const STORAGE_AREA_UPDATE_CSRF_SCOPE = 'storage_area.update';
+    private const STORAGE_AREA_UPDATE_FIELDS = ['libelle'];
+    private const STORAGE_AREA_LIBELLE_MAX_LENGTH = 64;
+    private const STORAGE_AREA_IP_MAX_LENGTH = 15;
 
+/**
+ * Render storage area state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/storagearea/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index($param) {
 
         $db = Sgbd::sql(DB_DEFAULT);
 
 
-        $this->di['js']->addJavascript(array('bootstrap-editable.min.js', 'StorageArea/index.js'));
+        $this->di['js']->addJavascript(array('bootstrap-editable.min.js', 'Tree/index.js'));
 
 
         if (empty($param[0])) {
@@ -44,6 +78,27 @@ class StorageArea extends Controller {
         $this->set('data', $data);
     }
 
+/**
+ * Create storage area state through `add`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for add.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::add()
+ * @example /fr/storagearea/add
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function add($param) {
         //df -Ph . | tail -1 | awk '{print $2}' => to know space
 
@@ -53,19 +108,25 @@ class StorageArea extends Controller {
             $_GET['backup_storage_area']['path'] = str_replace("[DS]", "/", $_GET['backup_storage_area']['path']);
         }
 
-
         $db = Sgbd::sql(DB_DEFAULT);
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
+        if (CsrfGuard::isPost($_SERVER)) {
+            $outcome = self::evaluateAddRequest($_POST, $_SERVER, $_SESSION);
+            if ($outcome['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendStorageAreaAddError($outcome['status'], $outcome['body'], $outcome['headers']);
+                return;
+            }
 
             Crypt::$key = CRYPT_KEY;
 
-            $storage_area['backup_storage_area'] = $_POST['backup_storage_area'];
+            $storage_area = $outcome['storage_area'];
 
             //debug($storage_area);
 
             $db = Sgbd::sql(DB_DEFAULT);
 
-            $sql = "SELECT * FROM ssh_key WHERE id =" . $storage_area['backup_storage_area']['id_ssh_key'] . "";
+            $sql = self::buildStorageAreaAddSshKeySql($storage_area['backup_storage_area']['id_ssh_key']);
 
             $res = $db->sql_query($sql);
 
@@ -80,7 +141,7 @@ class StorageArea extends Controller {
             }
 
             //deploy public key by SCP
-            $ssh = new SSH2($storage_area['backup_storage_area']['ip']);
+            $ssh = new SSH2($storage_area['backup_storage_area']['ip'], $this->getSshPort($storage_area['backup_storage_area']));
 
             //tentative connexion au serveur ssh
             if (!$ssh->login($ssh_user, $key)) {
@@ -89,6 +150,19 @@ class StorageArea extends Controller {
 
                 $title = I18n::getTranslation(__("Failed to connect on ssh/scp"));
                 $msg = I18n::getTranslation(__("Please check your hostname and you credentials !"));
+
+                set_flash("error", $title, $msg);
+
+                header("location: " . LINK . "storageArea/add/" . $elems);
+                exit;
+            }
+
+            if (!$this->isRemoteStoragePathAvailable($ssh, $storage_area['backup_storage_area']['path'])) {
+
+                $elems = Post::getToPost();
+
+                $title = I18n::getTranslation(__("Invalid storage path"));
+                $msg = I18n::getTranslation(__("The storage path does not exist or is not readable on the remote server."));
 
                 set_flash("error", $title, $msg);
 
@@ -167,11 +241,133 @@ class StorageArea extends Controller {
             $data['ssh_key'][] = $tmp;
         }
 
+        $data['storage_area_add_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['storage_area_add_csrf_token'] = Csrf::issueToken($_SESSION, self::STORAGE_AREA_ADD_CSRF_SCOPE);
         $data['menu'] = __FUNCTION__;
 
         $this->set('data', $data);
     }
 
+    public static function evaluateAddRequest(array $post, array $server, array $session): array
+    {
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::STORAGE_AREA_ADD_CSRF_SCOPE)) {
+            return self::buildStorageAreaAddOutcome($failure['status'], $failure['body'], $failure['headers']);
+        }
+
+        $storageArea = self::normalizeAddPayload($post);
+        if ($storageArea === null) {
+            return self::buildStorageAreaAddOutcome(400, "Invalid storage area add payload");
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'storage_area' => $storageArea,
+        ];
+    }
+
+    public static function normalizeAddPayload(array $post): ?array
+    {
+        if (empty($post['backup_storage_area']) || ! is_array($post['backup_storage_area'])) {
+            return null;
+        }
+
+        $storageArea = $post['backup_storage_area'];
+        foreach ($storageArea as $field => $value) {
+            if (! is_string($field) || ! is_scalar($value)) {
+                return null;
+            }
+        }
+
+        foreach (self::STORAGE_AREA_ADD_INTEGER_FIELDS as $field) {
+            $value = isset($storageArea[$field]) && is_scalar($storageArea[$field])
+                ? (string) $storageArea[$field]
+                : '';
+
+            if ($value === '' || ! ctype_digit($value) || (int) $value < 1) {
+                return null;
+            }
+
+            $storageArea[$field] = (int) $value;
+        }
+
+        if (! isset($storageArea['libelle']) || strlen((string) $storageArea['libelle']) > self::STORAGE_AREA_LIBELLE_MAX_LENGTH) {
+            return null;
+        }
+
+        $ip = isset($storageArea['ip']) ? (string) $storageArea['ip'] : '';
+        if (
+            $ip === ''
+            || strlen($ip) > self::STORAGE_AREA_IP_MAX_LENGTH
+            || filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) === false
+        ) {
+            return null;
+        }
+        $storageArea['ip'] = $ip;
+
+        if (! isset($storageArea['path']) || (string) $storageArea['path'] === '') {
+            return null;
+        }
+
+        if (! array_key_exists('port', $storageArea) || (string) $storageArea['port'] === '') {
+            $storageArea['port'] = 22;
+        } else {
+            $port = (string) $storageArea['port'];
+            if (! ctype_digit($port) || (int) $port < 1 || (int) $port > 65535) {
+                return null;
+            }
+            $storageArea['port'] = (int) $port;
+        }
+
+        return ['backup_storage_area' => $storageArea];
+    }
+
+    public static function buildStorageAreaAddSshKeySql(int $idSshKey): string
+    {
+        return "SELECT * FROM ssh_key WHERE id =" . $idSshKey;
+    }
+
+    private static function buildStorageAreaAddOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'storage_area' => null,
+        ];
+    }
+
+    private static function sendStorageAreaAddError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+
+        if ($message !== '') {
+            echo $message;
+        }
+    }
+
+/**
+ * Retrieve storage area state through `listStorage`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for listStorage.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::listStorage()
+ * @example /fr/storagearea/listStorage
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function listStorage() {
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -184,6 +380,8 @@ class StorageArea extends Controller {
         $data['storage'] = $db->sql_fetch_yield($sql);
         
         $data['storage2'] = $db->sql_fetch_yield($sql);
+        $data['storage_area_update_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['storage_area_update_csrf_token'] = Csrf::issueToken($_SESSION, self::STORAGE_AREA_UPDATE_CSRF_SCOPE);
 
         $sql = "SELECT * FROM backup_storage_space b  
         JOIN (select max(id) as id from backup_storage_space a group by id_backup_storage_area) a ON a.id = b.id";
@@ -197,6 +395,27 @@ class StorageArea extends Controller {
         $this->set('data', $data);
     }
 
+/**
+ * Retrieve storage area state through `getStorageSpace`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getStorageSpace.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getStorageSpace()
+ * @example /fr/storagearea/getStorageSpace
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getStorageSpace($param) {
 
         Debug::parseDebug($param);
@@ -218,6 +437,8 @@ class StorageArea extends Controller {
 
         $storages = $db->sql_fetch_yield($sql);
 
+        $success = true;
+
         foreach ($storages as $storage) {
 
             $login = $storage['user'];
@@ -226,15 +447,22 @@ class StorageArea extends Controller {
             $rsa = PublicKeyLoader::load($key_ssh);
             $password = $rsa;
 
-            $ssh = new SSH2($storage['ip']);
+            $ssh = new SSH2($storage['ip'], $this->getSshPort($storage));
 
             //$publicHostKey = $ssh->getServerPublicHostKey();
 
             if (!$ssh->login($login, $password)) {
 
                 Debug::debug("SSH FAILED ! ");
+                $success = false;
             } else {
                 Debug::debug("SSH ok !");
+
+                if (!$this->isRemoteStoragePathAvailable($ssh, $storage['path'])) {
+                    Debug::debug("Storage path not found or not readable: ".$storage['path']);
+                    $success = false;
+                    continue;
+                }
 
                 /*
                  * df -k . => get file systeme for current directory
@@ -244,29 +472,37 @@ class StorageArea extends Controller {
                  * awk '{print $2 \" \" $3 \" \" $4 \" \" $5}' => split result by space
                  */
 
-                $cmd = 'cd ' . $storage['path'] . ' && df -k . | tail -n +2 | sed ":a;N;$!ba;s/\n/ /g" | sed "s/\ +/ /g"';
+                $cmd = $this->getStorageDfCommand($storage['path']);
                 $resultats = $ssh->exec($cmd);
-                $resultats = preg_replace('`([ ]{2,})`', ' ', $resultats);
-                $results = explode(' ', trim($resultats));
 
-
-                $cmd2 = "cd " . $storage['path'] . " && du -s . | awk '{print $1}'";
+                $cmd2 = $this->getStorageBackupSizeCommand($storage['path']);
                 $used_by_backup = $ssh->exec($cmd2);
+
+                $space = $this->parseStorageSpace($resultats, $used_by_backup);
+
+                if ($space === false) {
+                    Debug::debug($cmd, "Storage size command failed");
+                    Debug::debug($resultats);
+                    Debug::debug($cmd2, "Backup size command failed");
+                    Debug::debug($used_by_backup);
+                    $success = false;
+                    continue;
+                }
 
                 $data = [];
                 $data['backup_storage_space']['id_backup_storage_area'] = $storage['id'];
                 $data['backup_storage_space']['date'] = date('Y-m-d H:i:s');
-                $data['backup_storage_space']['size'] = $results['1'];
-                $data['backup_storage_space']['used'] = $results['2'];
-                $data['backup_storage_space']['available'] = $results['3'];
-                $data['backup_storage_space']['percent'] = substr(trim($results['4']), 0, -1);
-                $data['backup_storage_space']['backup'] = trim($used_by_backup);
+                $data['backup_storage_space']['size'] = $space['size'];
+                $data['backup_storage_space']['used'] = $space['used'];
+                $data['backup_storage_space']['available'] = $space['available'];
+                $data['backup_storage_space']['percent'] = $space['percent'];
+                $data['backup_storage_space']['backup'] = $space['backup'];
 
                 if (!$db->sql_save($data)) {
 
                     debug($cmd . "\n");
                     debug($resultats);
-                    debug($results);
+                    debug($space);
                     debug($data);
                     debug($db->sql_error());
                     echo "\n";
@@ -276,9 +512,87 @@ class StorageArea extends Controller {
             }
         }
 
-        return true;
+        return $success;
     }
 
+    private function getSshPort($storage)
+    {
+        $port = empty($storage['port']) ? 0 : (int)$storage['port'];
+
+        if ($port <= 0) {
+            return 22;
+        }
+
+        return $port;
+    }
+
+    private function isRemoteStoragePathAvailable($ssh, $path)
+    {
+        $result = trim((string)$ssh->exec($this->getStoragePathCheckCommand($path)));
+
+        return $ssh->getExitStatus() === 0 || $result === "PMACTRL_STORAGE_OK";
+    }
+
+    private function getStoragePathCheckCommand($path)
+    {
+        return "cd ".escapeshellarg($path)." && test -d . && test -r . && printf PMACTRL_STORAGE_OK";
+    }
+
+    private function getStorageDfCommand($path)
+    {
+        return "cd ".escapeshellarg($path)." && df -Pk . | awk 'NR==2 {print $2 \" \" $3 \" \" $4 \" \" $5}'";
+    }
+
+    private function getStorageBackupSizeCommand($path)
+    {
+        return "cd ".escapeshellarg($path)." && du -s . | awk '{print $1}'";
+    }
+
+    private function parseStorageSpace($df_output, $du_output)
+    {
+        $results = preg_split('/\s+/', trim((string)$df_output));
+        $backup = trim((string)$du_output);
+
+        if (count($results) < 4) {
+            return false;
+        }
+
+        $percent = rtrim($results[3], "%");
+
+        if (!is_numeric($results[0]) || !is_numeric($results[1]) || !is_numeric($results[2]) || !is_numeric($percent) || !is_numeric($backup)) {
+            return false;
+        }
+
+        return array(
+            'size' => (int)$results[0],
+            'used' => (int)$results[1],
+            'available' => (int)$results[2],
+            'percent' => (int)$percent,
+            'backup' => (int)$backup,
+        );
+    }
+
+/**
+ * Delete storage area state through `delete`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for delete.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::delete()
+ * @example /fr/storagearea/delete
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function delete($param) {
         
         $this->view = false;
@@ -292,6 +606,27 @@ class StorageArea extends Controller {
         exit;
     }
 
+/**
+ * Handle storage area state through `menu`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for menu.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::menu()
+ * @example /fr/storagearea/menu
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function menu($param) {
 
         if (empty($param[0])) {
@@ -303,20 +638,107 @@ class StorageArea extends Controller {
         $this->set("data", $data);
     }
 
+/**
+ * Update storage area state through `update`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for update.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::update()
+ * @example /fr/storagearea/update
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function update($param) {
 
         $this->view = false;
         $this->layout_name = false;
 
+        $outcome = self::evaluateUpdateRequest($_POST, $_SERVER, $_SESSION);
+        if ($outcome['status'] !== 200) {
+            self::sendStorageAreaUpdateError($outcome['status'], $outcome['body'], $outcome['headers']);
+            return;
+        }
+
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "UPDATE menu SET `" . $_POST['name'] . "` = '" . $_POST['value'] . "' WHERE id = " . $db->sql_real_escape_string($_POST['pk']) . "";
+        $sql = self::buildStorageAreaUpdateSql($outcome['update'], [$db, 'sql_real_escape_string']);
         $db->sql_query($sql);
 
         if ($db->sql_affected_rows() === 1) {
             echo "OK";
         } else {
-            header("HTTP/1.0 503 Internal Server Error");
+            self::sendStorageAreaUpdateError(503, "Storage area not updated");
+        }
+    }
+
+    public static function evaluateUpdateRequest(array $post, array $server, array $session): array
+    {
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::STORAGE_AREA_UPDATE_CSRF_SCOPE)) {
+            return self::buildStorageAreaUpdateOutcome($failure['status'], $failure['body'], $failure['headers']);
+        }
+
+        $update = self::normalizeUpdatePayload($post);
+        if ($update === null) {
+            return self::buildStorageAreaUpdateOutcome(400, "Invalid storage area update payload");
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'update' => $update,
+        ];
+    }
+
+    public static function normalizeUpdatePayload(array $post): ?array
+    {
+        return InlineEditRequest::normalize(
+            $post,
+            self::STORAGE_AREA_UPDATE_FIELDS,
+            self::STORAGE_AREA_LIBELLE_MAX_LENGTH
+        );
+    }
+
+    public static function buildStorageAreaUpdateSql(array $update, callable $escape): string
+    {
+        return sprintf(
+            "UPDATE backup_storage_area SET `%s` = '%s' WHERE id = %d",
+            $update['field'],
+            $escape($update['value']),
+            $update['id']
+        );
+    }
+
+    private static function buildStorageAreaUpdateOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'update' => null,
+        ];
+    }
+
+    private static function sendStorageAreaUpdateError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+
+        if ($message !== '') {
+            echo $message;
         }
     }
 }

@@ -6,144 +6,378 @@ use \Glial\Synapse\Controller;
 use \Glial\Security\Crypt\Crypt;
 use \Glial\I18n\I18n;
 use \Glial\Sgbd\Sgbd;
+use App\Library\Security\CsrfGuard;
+use App\Library\Security\PositiveIntegerSelection;
+use App\Library\Security\SafeRedirect;
+use App\Library\Http\HttpResponse;
 use App\Library\Mysql;
+use App\Library\MysqlVersion;
+use App\Library\ServerCapabilities;
 use App\Library\Debug;
+use App\Library\Format;
+use Glial\Security\Csrf;
 
 
+/**
+ * Class responsible for mysqlsys workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Mysqlsys extends Controller {
 
     use \App\Library\Filter;
 
+    private const MYSQLSYS_INSTALL_CSRF_SCOPE = 'mysqlsys.install';
+    private const MYSQLSYS_UPDATE_CONFIG_CSRF_SCOPE = 'mysqlsys.update_config';
+    private const MYSQLSYS_RESET_CSRF_SCOPE = 'mysqlsys.reset';
+    private const MYSQLSYS_DROP_CSRF_SCOPE = 'mysqlsys.drop';
+    private const MYSQLSYS_DROP_CONFIRM_VALUE = 'DROP_SYS';
+    private const MYSQLSYS_UPDATE_CONFIG_NAME_MAX_LENGTH = 128;
+    private const MYSQLSYS_UPDATE_CONFIG_VALUE_MAX_LENGTH = 4096;
+
+/**
+ * Render mysqlsys state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/mysqlsys/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index() {
 
         $this->title = '<span class="glyphicon glyphicon-th-list" aria-hidden="true"></span> ' . "MySQL-sys";
 
         $db = Sgbd::sql(DB_DEFAULT);
         $this->di['js']->addJavascript(array('bootstrap-editable.min.js', 'Tree/index.js'));
-        
-        $data = array();
 
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
-            if (!empty($_POST['mysql_server']['id'])) {
+        $outcome = self::evaluateIndexRequest($_SERVER);
+        if (!$outcome['allowed']) {
+            HttpResponse::sendOutcome($outcome, null);
+            return;
+        }
 
-                $sql = "SELECT * FROM mysql_server where id='" . $_POST['mysql_server']['id'] . "'";
-                $res = $db->sql_query($sql);
+        $data = [];
+        $selectedMysqlServerId = self::normalizeIndexMysqlServerId($_GET);
+        $data['selected_mysql_server_id'] = $selectedMysqlServerId;
+        $data['selected_mysql_server_found'] = false;
+        $data['selected_mysql_server_name'] = '';
+        $data['variables'] = '';
+        $data['mysqlsys_version_unsupported'] = false;
 
-                while ($ob = $db->sql_fetch_object($res)) {
-                    $id_mysql_server = $ob->id;
-                    $url = LINK . strtolower($this->getClass()) . '/index/mysql_server:id:' . $id_mysql_server;
-                    header('location: ' . $url);
-                }
-            }
-        } else {
+        // get server available
+        $available = Common::getAvailable();
+        $case = $available['case'];
 
-            $data = [];
+        $sql = "SELECT *,".$case." FROM mysql_server a WHERE 1=1 " . self::getFilter() . " order by a.name ASC";
 
-            // get server available
-            $available = Common::getAvailable();
-            $case = $available['case'];
+        $res = $db->sql_query($sql);
+        $data['servers'] = array();
+        while ($ob = $db->sql_fetch_object($res)) {
+            $tmp = [];
+            $tmp['id'] = $ob->id;
+            $tmp['libelle'] = $ob->name . " (" . $ob->ip . ")";
+            $data['servers'][] = $tmp;
 
-            $sql = "SELECT *,".$case." FROM mysql_server a WHERE 1=1 " . self::getFilter() . " order by a.name ASC";
-
-            $res = $db->sql_query($sql);
-            $data['servers'] = array();
-            while ($ob = $db->sql_fetch_object($res)) {
-                $tmp = [];
-                $tmp['id'] = $ob->id;
-                $tmp['libelle'] = $ob->name . " (" . $ob->ip . ")";
-                $data['servers'][] = $tmp;
-
-                if (!empty($_GET['mysql_server']['id']) && $ob->id == $_GET['mysql_server']['id']) {
-                    $link_name = $ob->name;
-                }
-            }
-
-            //Debug::debug($link_name);
-
-            if (!empty($link_name)) {
-
-                $remote = Sgbd::sql($link_name);
-                $sql = "select TABLE_NAME from information_schema.tables "
-                        . "WHERE table_schema = 'sys' and table_name not like 'x$%' ORDER BY table_name ASC;";
-                $res = $remote->sql_query($sql);
-                $data['view_available'] = [];
-                while ($ob = $remote->sql_fetch_object($res)) {
-                    //$data['view_available'][] = str_replace('x$','',$ob->table_name);
-                    $data['view_available'][] = $ob->TABLE_NAME;
-                }
-
-                //test if InnoDB activated
-                $sql = "select * from information_schema.engines where engine = 'InnoDB';";
-                $res = $remote->sql_query($sql);
-
-                $data['innodb'] = 0;
-                while ($ob = $remote->sql_fetch_object($res)) {
-                    if ($ob->SUPPORT == "YES" || $ob->SUPPORT == "DEFAULT") {
-                        $data['innodb'] = 1;
-                    }
-                }
-
-                //test if spider / rocksdb etc...
-                if (!empty($_GET['mysqlsys']) && in_array($_GET['mysqlsys'], $data['view_available'])) {
-
-                //patch
-                //$sql = "UPDATE sys.sys_config SET value = '100000' where variable ='statement_truncate_len';";
-                //$remote->sql_query($sql);
-                //fin patch
-                    if ($remote->checkVersion(array('MariaDB'=> '10.1.1'))) {
-                        $sql = "SET STATEMENT MAX_STATEMENT_TIME = 10 FOR SELECT * FROM `sys`.`" . $_GET['mysqlsys'] . "` LIMIT 200";
-                    }
-                    else {
-                        $sql = "SELECT * FROM `sys`.`" . $_GET['mysqlsys'] . "` LIMIT 200";
-                    }
-                    
-                    $data['table'] = $remote->sql_fetch_yield($sql);
-                    $data['name_table'] = $_GET['mysqlsys'];
-                }
-
-                $data['variables'] = $remote->getVersion();
+            if ($selectedMysqlServerId !== null && (int) $ob->id === $selectedMysqlServerId) {
+                $link_name = $ob->name;
+                $data['selected_mysql_server_found'] = true;
+                $data['selected_mysql_server_name'] = (string) $ob->name;
             }
         }
+
+        //Debug::debug($link_name);
+
+        if (!empty($link_name)) {
+            $id_mysql_server = $selectedMysqlServerId;
+
+            $remote = Sgbd::sql($link_name);
+            $sql = "select TABLE_NAME from information_schema.tables "
+                    . "WHERE table_schema = 'sys' and table_name not like 'x$%' ORDER BY table_name ASC;";
+            $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($remote, $sql, $id_mysql_server, __METHOD__);
+            $data['view_available'] = [];
+            while ($ob = $remote->sql_fetch_object($res)) {
+                //$data['view_available'][] = str_replace('x$','',$ob->table_name);
+                $data['view_available'][] = $ob->TABLE_NAME;
+            }
+
+            //test if InnoDB activated
+            $sql = "select * from information_schema.engines where engine = 'InnoDB';";
+            $res = $remote->sql_query($sql);
+
+            $data['innodb'] = 0;
+            while ($ob = $remote->sql_fetch_object($res)) {
+                if ($ob->SUPPORT == "YES" || $ob->SUPPORT == "DEFAULT") {
+                    $data['innodb'] = 1;
+                }
+            }
+
+            //test if spider / rocksdb etc...
+            if (!empty($_GET['mysqlsys']) && in_array($_GET['mysqlsys'], $data['view_available'])) {
+
+            //patch
+            //$sql = "UPDATE sys.sys_config SET value = '100000' where variable ='statement_truncate_len';";
+            //$remote->sql_query($sql);
+            //fin patch
+                if (ServerCapabilities::supports($remote, 'information_schema_max_statement_time')) {
+                    $sql = "SET STATEMENT MAX_STATEMENT_TIME = 10 FOR SELECT * FROM `sys`.`" . $_GET['mysqlsys'] . "` LIMIT 200";
+                }
+                else {
+                    $sql = "SELECT * FROM `sys`.`" . $_GET['mysqlsys'] . "` LIMIT 200";
+                }
+                
+                $data['table'] = $remote->sql_fetch_yield($sql);
+                if ($_GET['mysqlsys'] === 'schema_unused_indexes') {
+                    $data['table'] = $this->enrichSchemaUnusedIndexes(
+                        $remote,
+                        iterator_to_array($data['table'], false),
+                        $id_mysql_server
+                    );
+                }
+                $data['name_table'] = $_GET['mysqlsys'];
+            }
+
+            $data['variables'] = $remote->getVersion();
+            $data['mysqlsys_version_unsupported'] = self::isMysqlSysUnsupportedVersion($data['variables']);
+        }
+        $data['mysqlsys_update_config_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['mysqlsys_update_config_csrf_token'] = Csrf::issueToken($_SESSION, self::MYSQLSYS_UPDATE_CONFIG_CSRF_SCOPE);
+        $data['mysqlsys_reset_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['mysqlsys_reset_csrf_token'] = Csrf::issueToken($_SESSION, self::MYSQLSYS_RESET_CSRF_SCOPE);
+        $data['mysqlsys_drop_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['mysqlsys_drop_csrf_token'] = Csrf::issueToken($_SESSION, self::MYSQLSYS_DROP_CSRF_SCOPE);
         $this->set('data', $data);
     }
 
+    public static function evaluateIndexRequest(array $server): array
+    {
+        if (CsrfGuard::isPost($server)) {
+            return [
+                'allowed' => false,
+                'status' => 405,
+                'body' => 'Method Not Allowed',
+                'headers' => ['Allow' => 'GET'],
+            ];
+        }
 
+        return [
+            'allowed' => true,
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+        ];
+    }
+
+    public static function normalizeIndexMysqlServerId(array $get): ?int
+    {
+        if (
+            empty($get['mysql_server'])
+            || !is_array($get['mysql_server'])
+            || !array_key_exists('id', $get['mysql_server'])
+        ) {
+            return null;
+        }
+
+        return self::normalizePositiveInteger($get['mysql_server']['id']);
+    }
+
+    public static function isMysqlSysUnsupportedVersion(?string $version): bool
+    {
+        return MysqlVersion::compare($version, '5.6', '<=');
+    }
+
+    private function enrichSchemaUnusedIndexes($remote, array $rows, int $idMysqlServer): array
+    {
+        if (empty($rows)) {
+            return $rows;
+        }
+
+        $stats = $this->fetchSchemaUnusedIndexTableStats($remote, $rows, $idMysqlServer);
+
+        return self::appendSchemaUnusedIndexEstimates($rows, $stats);
+    }
+
+    private function fetchSchemaUnusedIndexTableStats($remote, array $rows, int $idMysqlServer): array
+    {
+        $conditions = [];
+        foreach ($rows as $row) {
+            if (empty($row['object_schema']) || empty($row['object_name'])) {
+                continue;
+            }
+
+            $schema = $remote->sql_real_escape_string($row['object_schema']);
+            $table = $remote->sql_real_escape_string($row['object_name']);
+            $conditions[] = "(t.TABLE_SCHEMA = '".$schema."' AND t.TABLE_NAME = '".$table."')";
+        }
+
+        $conditions = array_values(array_unique($conditions));
+        if (empty($conditions)) {
+            return [];
+        }
+
+        $sql = "SELECT t.TABLE_SCHEMA AS object_schema,
+                       t.TABLE_NAME AS object_name,
+                       t.TABLE_ROWS AS table_rows,
+                       t.INDEX_LENGTH AS table_index_bytes,
+                       COUNT(DISTINCT CASE WHEN s.INDEX_NAME <> 'PRIMARY' THEN s.INDEX_NAME END) AS secondary_index_count
+                FROM information_schema.TABLES t
+                LEFT JOIN information_schema.STATISTICS s
+                  ON s.TABLE_SCHEMA = t.TABLE_SCHEMA
+                 AND s.TABLE_NAME = t.TABLE_NAME
+                WHERE ".implode(' OR ', $conditions)."
+                GROUP BY t.TABLE_SCHEMA, t.TABLE_NAME, t.TABLE_ROWS, t.INDEX_LENGTH";
+
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($remote, $sql, $idMysqlServer, __METHOD__);
+        $stats = [];
+        while ($row = $remote->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $stats[self::schemaTableKey($row['object_schema'], $row['object_name'])] = [
+                'table_rows' => $row['table_rows'],
+                'table_index_bytes' => $row['table_index_bytes'],
+                'secondary_index_count' => $row['secondary_index_count'],
+            ];
+        }
+
+        return $stats;
+    }
+
+    private static function appendSchemaUnusedIndexEstimates(array $rows, array $stats): array
+    {
+        foreach ($rows as $key => $row) {
+            $schema = (string)($row['object_schema'] ?? '');
+            $table = (string)($row['object_name'] ?? '');
+            $stat = $stats[self::schemaTableKey($schema, $table)] ?? null;
+
+            if ($stat === null) {
+                $rows[$key]['table_rows'] = 'n/a';
+                $rows[$key]['table_index_size'] = 'n/a';
+                $rows[$key]['estimated_gain'] = 'n/a';
+                continue;
+            }
+
+            $tableRows = is_numeric($stat['table_rows']) ? (int)$stat['table_rows'] : 0;
+            $indexBytes = is_numeric($stat['table_index_bytes']) ? (int)$stat['table_index_bytes'] : 0;
+            $secondaryIndexCount = is_numeric($stat['secondary_index_count'])
+                ? max(0, (int)$stat['secondary_index_count'])
+                : 0;
+            $estimatedGain = $secondaryIndexCount > 0 ? (int)ceil($indexBytes / $secondaryIndexCount) : 0;
+
+            $rows[$key]['table_rows'] = number_format($tableRows, 0, '.', ' ');
+            $rows[$key]['table_index_size'] = self::formatBytes($indexBytes);
+            $rows[$key]['estimated_gain'] = $estimatedGain > 0 ? self::formatBytes($estimatedGain) : 'n/a';
+        }
+
+        return $rows;
+    }
+
+    private static function schemaTableKey(string $schema, string $table): string
+    {
+        return $schema.'.'.$table;
+    }
+
+    private static function formatBytes(int $bytes): string
+    {
+        return Format::bytesZero($bytes, 2, 'fr', array('thousands_separator' => ' '));
+    }
+
+
+/**
+ * Handle mysqlsys state through `install`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for install.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::install()
+ * @example /fr/mysqlsys/install
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function install() {
         $this->title = '<span class="glyphicon glyphicon-th-list" aria-hidden="true"></span> ' . "MySQL-sys";
         $this->ariane = '> <i style="font-size: 16px" class="fa fa-puzzle-piece"></i> Plugins > ' . $this->title . ' > <i style="font-size: 16px" class="fa fa-upload"></i> Install';
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT * FROM mysql_server where id='" . $_GET['mysql_server']['id'] . "'";
-        $res = $db->sql_query($sql);
+        $idMysqlServer = self::normalizeInstallMysqlServerId($_GET);
+        if ($idMysqlServer === null) {
+            http_response_code(400);
+            echo 'Invalid MySQL server id';
+            return;
+        }
+
+        if (CsrfGuard::isPost($_SERVER)) {
+            $outcome = self::evaluateInstallRequest($_POST, $_SERVER, $_SESSION, IS_CLI);
+            if (!$outcome['allowed']) {
+                HttpResponse::sendOutcome($outcome, null);
+                return;
+            }
+        }
+
+        $sql = "SELECT * FROM mysql_server where id=" . $idMysqlServer;
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql, $idMysqlServer, __METHOD__);
 
 //test si "vendor/esysteme/mysql-sys/gen/" est crée et writable
 
 
-        $data = [];
+        $data = [
+            'mysqlsys_install_csrf_field' => Csrf::DEFAULT_FIELD,
+            'mysqlsys_install_csrf_token' => Csrf::issueToken($_SESSION, self::MYSQLSYS_INSTALL_CSRF_SCOPE),
+        ];
         while ($ob = $db->sql_fetch_object($res)) {
-            $cmd = 'cd ' . ROOT . '/vendor/esysteme/mysql-sys ';
-
-            
-            $cmd .= '&& ./generate_sql_file.sh -v 100 -u "\'' . $ob->login . '\'@\'localhost\'" 2>&1';
+            $cmd = self::buildGenerateSqlFileCommand((string) $ob->login, ROOT);
             $ret = shell_exec($cmd);
 
-            $out = explode("\n", $ret)[1];
-            $data['file_name'] = trim(str_replace('Wrote file:', '', $out));
+            $data['file_name'] = self::extractGeneratedSqlFileName((string) $ret);
+            if ($data['file_name'] === '') {
+                http_response_code(500);
+                echo 'Unable to generate MySQL-sys install file';
+                return;
+            }
 
-            if ($_SERVER['REQUEST_METHOD'] == "POST") {
+            if (CsrfGuard::isPost($_SERVER)) {
 
                 Crypt::$key = CRYPT_KEY;
 
-                $cmd = "mysql -h " . $ob->ip . " -u " . $ob->login . " -P " . $ob->port . " -p'" . Crypt::decrypt($ob->passwd) . "' < " . $data['file_name'] . " 2>&1";
+                $cmd = self::buildMysqlSysInstallCommand(
+                    (string) $ob->ip,
+                    (string) $ob->login,
+                    (int) $ob->port,
+                    Crypt::decrypt($ob->passwd),
+                    $data['file_name']
+                );
                 $ret = shell_exec($cmd);
 
                 if (!empty($ret)) {
 
-                    header('location: ' . LINK . 'mysqlsys/install/mysql_server:id:' . $_GET['mysql_server']['id'] . '/error_msg:' . base64_encode($ret) . '/');
+                    header('location: ' . LINK . 'mysqlsys/install/mysql_server:id:' . $idMysqlServer . '/error_msg:' . base64_encode($ret) . '/');
                 } else {
-                    header('location: ' . LINK . 'mysqlsys/index/mysql_server:id:' . $_GET['mysql_server']['id']);
+                    header('location: ' . LINK . 'mysqlsys/index/mysql_server:id:' . $idMysqlServer);
                 }
+                return;
             } else {
                 $data['file'] = file_get_contents($data['file_name']);
             }
@@ -152,6 +386,117 @@ class Mysqlsys extends Controller {
         $this->set('data', $data);
     }
 
+    public static function evaluateInstallRequest(
+        array $post,
+        array $server,
+        array $session,
+        bool $isCli = false
+    ): array {
+        if (!$isCli) {
+            if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::MYSQLSYS_INSTALL_CSRF_SCOPE)) {
+                return [
+                    'allowed' => false,
+                    'status' => $failure['status'],
+                    'body' => $failure['body'],
+                    'headers' => $failure['headers'],
+                    'install' => false,
+                ];
+            }
+        }
+
+        if (!self::normalizeInstallPayload($post)) {
+            return [
+                'allowed' => false,
+                'status' => 400,
+                'body' => 'Invalid MySQL-sys install payload',
+                'headers' => [],
+                'install' => false,
+            ];
+        }
+
+        return [
+            'allowed' => true,
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'install' => true,
+        ];
+    }
+
+    public static function normalizeInstallMysqlServerId(array $get): ?int
+    {
+        if (
+            empty($get['mysql_server'])
+            || !is_array($get['mysql_server'])
+            || !array_key_exists('id', $get['mysql_server'])
+        ) {
+            return null;
+        }
+
+        return self::normalizePositiveInteger($get['mysql_server']['id']);
+    }
+
+    public static function buildGenerateSqlFileCommand(string $login, string $root): string
+    {
+        $mysqlUser = "'" . str_replace("'", "\\'", $login) . "'@'localhost'";
+
+        return 'cd ' . escapeshellarg(rtrim($root, '/') . '/vendor/esysteme/mysql-sys')
+            . ' && ./generate_sql_file.sh -v 100 -u ' . escapeshellarg($mysqlUser) . ' 2>&1';
+    }
+
+    public static function buildMysqlSysInstallCommand(
+        string $host,
+        string $login,
+        int $port,
+        string $password,
+        string $fileName
+    ): string {
+        return 'mysql -h ' . escapeshellarg($host)
+            . ' -u ' . escapeshellarg($login)
+            . ' -P ' . $port
+            . ' -p' . escapeshellarg($password)
+            . ' < ' . escapeshellarg($fileName) . ' 2>&1';
+    }
+
+    public static function extractGeneratedSqlFileName(string $output): string
+    {
+        foreach (explode("\n", $output) as $line) {
+            if (strpos($line, 'Wrote file:') === 0) {
+                return trim(str_replace('Wrote file:', '', $line));
+            }
+        }
+
+        return '';
+    }
+
+    public static function normalizeInstallPayload(array $post): bool
+    {
+        return array_key_exists('install', $post)
+            && is_scalar($post['install'])
+            && trim((string) $post['install']) === '1';
+    }
+
+/**
+ * Create mysqlsys state through `addFormat`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $tab Input value for `tab`.
+ * @phpstan-param mixed $tab
+ * @psalm-param mixed $tab
+ * @return void Returned value for addFormat.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::addFormat()
+ * @example /fr/mysqlsys/addFormat
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function addFormat($tab) {
         foreach ($tab as $key => $elem) {
             if ($key == "value") {
@@ -160,13 +505,39 @@ class Mysqlsys extends Controller {
         }
     }
 
+/**
+ * Handle mysqlsys state through `reset`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for reset.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::reset()
+ * @example /fr/mysqlsys/reset
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function reset($param) {
 
         $this->view = false;
         $this->layout_name = false;
 
+        $outcome = self::evaluateResetRequest($param, $_POST, $_SERVER, $_SESSION, IS_CLI);
+        if (!$outcome['allowed']) {
+            HttpResponse::sendOutcome($outcome, null);
+            return;
+        }
 
-        $id_mysql_server = $param[0];
+        $id_mysql_server = $outcome['id_mysql_server'];
 
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -179,7 +550,9 @@ class Mysqlsys extends Controller {
         $sql = "SELECT name, ".$case." FROM mysql_server a WHERE 1=1 " . self::getFilter() . " AND id=" . $id_mysql_server;
         $res = $db->sql_query($sql);
 
+        $found = false;
         while ($ob = $db->sql_fetch_object($res)) {
+            $found = true;
 
             $remote = Sgbd::sql($ob->name);
 
@@ -187,20 +560,51 @@ class Mysqlsys extends Controller {
             $remote->sql_multi_query($sql);
         }
 
+        if (!$found) {
+            HttpResponse::sendOutcome(self::mysqlsysMutationFailure(404, 'MySQL server not found'), null);
+            return;
+        }
+
         //$msg = I18n::getTranslation(__("The statistics has been reseted"));
         //$title = I18n::getTranslation(__("Success"));
         //set_flash("success", $title, $msg);
 
-        header("location: " . $_SERVER['HTTP_REFERER']);
+        header("location: " . SafeRedirect::refererOrFallback($_SERVER, self::mysqlsysIndexUrl($id_mysql_server)));
     }
 
+/**
+ * Handle mysqlsys state through `drop`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for drop.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::drop()
+ * @example /fr/mysqlsys/drop
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function drop($param) {
 
         $this->view = false;
         $this->layout_name = false;
 
+        $outcome = self::evaluateDropRequest($param, $_POST, $_SERVER, $_SESSION, IS_CLI);
+        if (!$outcome['allowed']) {
+            HttpResponse::sendOutcome($outcome, null);
+            return;
+        }
 
-        $id_mysql_server = $param[0];
+        $id_mysql_server = $outcome['id_mysql_server'];
 
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -209,7 +613,17 @@ class Mysqlsys extends Controller {
         $sql = "SELECT name FROM mysql_server a WHERE 1=1 " . self::getFilter() . " AND id=" . $id_mysql_server;
         $res = $db->sql_query($sql);
 
+        $found = false;
         while ($ob = $db->sql_fetch_object($res)) {
+            $found = true;
+
+            if (!self::isDropConfirmationServerNameValid($outcome['confirm_server_name'], (string) $ob->name)) {
+                HttpResponse::sendOutcome(
+                    self::mysqlsysMutationFailure(400, 'Invalid MySQL-sys drop confirmation'),
+                    null
+                );
+                return;
+            }
 
             $remote = Sgbd::sql($ob->name);
 
@@ -217,34 +631,331 @@ class Mysqlsys extends Controller {
             $remote->sql_multi_query($sql);
         }
 
+        if (!$found) {
+            HttpResponse::sendOutcome(self::mysqlsysMutationFailure(404, 'MySQL server not found'), null);
+            return;
+        }
+
         $msg = I18n::getTranslation(__("MySQL-sys has been uninstalled"));
         $title = I18n::getTranslation(__("Success"));
         set_flash("success", $title, $msg);
 
-        header("location: " . $_SERVER['HTTP_REFERER']);
+        header("location: " . SafeRedirect::refererOrFallback($_SERVER, self::mysqlsysIndexUrl($id_mysql_server)));
     }
 
+    public static function evaluateResetRequest(
+        array $param,
+        array $post,
+        array $server,
+        array $session,
+        bool $isCli = false
+    ): array {
+        return self::evaluateMysqlsysMutationRequest(
+            $param,
+            $post,
+            $server,
+            $session,
+            self::MYSQLSYS_RESET_CSRF_SCOPE,
+            false,
+            $isCli
+        );
+    }
+
+    public static function evaluateDropRequest(
+        array $param,
+        array $post,
+        array $server,
+        array $session,
+        bool $isCli = false
+    ): array {
+        return self::evaluateMysqlsysMutationRequest(
+            $param,
+            $post,
+            $server,
+            $session,
+            self::MYSQLSYS_DROP_CSRF_SCOPE,
+            true,
+            $isCli
+        );
+    }
+
+    public static function isDropConfirmationServerNameValid(?string $confirmation, string $serverName): bool
+    {
+        return $confirmation !== null && hash_equals($serverName, $confirmation);
+    }
+
+/**
+ * Update mysqlsys state through `updateConfig`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for updateConfig.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::updateConfig()
+ * @example /fr/mysqlsys/updateConfig
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function updateConfig($param) {
         $this->view = false;
         $this->layout_name = false;
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            
-            $db = Mysql::getDbLink($_POST['pk']);
-            
-            $sql = "UPDATE sys.sys_config SET `value` = '" . $_POST['value'] . "' 
-            WHERE `variable` = '" . $db->sql_real_escape_string($_POST['name']) . "'";
-            $db->sql_query($sql);
+        $outcome = self::evaluateUpdateConfigRequest($_POST, $_SERVER, $_SESSION, IS_CLI);
+        if (!$outcome['allowed']) {
+            HttpResponse::sendOutcome($outcome, null);
+            return;
+        }
 
-            if ($db->sql_affected_rows() === 1) {
-                echo "OK";
-            } else {
-                header("HTTP/1.0 503 Internal Server Error");
-            }
+        $config = $outcome['config'];
+        $db = Mysql::getDbLink($config['id_mysql_server']);
+
+        $sql = self::buildUpdateConfigSql($config, [$db, 'sql_real_escape_string']);
+        $db->sql_query($sql);
+
+        if ($db->sql_affected_rows() === 1) {
+            echo "OK";
+        } else {
+            header("HTTP/1.0 503 Internal Server Error");
         }
     }
 
+    public static function evaluateUpdateConfigRequest(
+        array $post,
+        array $server,
+        array $session,
+        bool $isCli = false
+    ): array {
+        if (!$isCli) {
+            if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::MYSQLSYS_UPDATE_CONFIG_CSRF_SCOPE)) {
+                return [
+                    'allowed' => false,
+                    'status' => $failure['status'],
+                    'body' => $failure['body'],
+                    'headers' => $failure['headers'],
+                    'config' => null,
+                ];
+            }
+        }
 
+        $config = self::normalizeUpdateConfigPayload($post);
+        if ($config === null) {
+            return [
+                'allowed' => false,
+                'status' => 400,
+                'body' => 'Invalid MySQL-sys config payload',
+                'headers' => [],
+                'config' => null,
+            ];
+        }
+
+        return [
+            'allowed' => true,
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'config' => $config,
+        ];
+    }
+
+    public static function normalizeUpdateConfigPayload(array $post): ?array
+    {
+        if (
+            !array_key_exists('pk', $post)
+            || !array_key_exists('name', $post)
+            || !array_key_exists('value', $post)
+            || !is_scalar($post['pk'])
+            || !is_scalar($post['name'])
+            || !is_scalar($post['value'])
+        ) {
+            return null;
+        }
+
+        $idMysqlServer = self::normalizePositiveInteger($post['pk']);
+        $name = self::normalizeSysConfigName($post['name']);
+        $value = (string) $post['value'];
+
+        if (
+            $idMysqlServer === null
+            || $name === null
+            || strlen($value) > self::MYSQLSYS_UPDATE_CONFIG_VALUE_MAX_LENGTH
+        ) {
+            return null;
+        }
+
+        return [
+            'id_mysql_server' => $idMysqlServer,
+            'name' => $name,
+            'value' => $value,
+        ];
+    }
+
+    public static function buildUpdateConfigSql(array $config, callable $escape): string
+    {
+        return "UPDATE sys.sys_config SET `value` = '".$escape($config['value'])."' "
+            ."WHERE `variable` = '".$escape($config['name'])."'";
+    }
+
+    private static function normalizePositiveInteger($value): ?int
+    {
+        return PositiveIntegerSelection::normalizeSingle($value);
+    }
+
+    private static function evaluateMysqlsysMutationRequest(
+        array $param,
+        array $post,
+        array $server,
+        array $session,
+        string $scope,
+        bool $requiresDropConfirmation,
+        bool $isCli
+    ): array {
+        if (!$isCli) {
+            if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, $scope)) {
+                return self::mysqlsysMutationFailure(
+                    $failure['status'],
+                    $failure['body'],
+                    $failure['headers']
+                );
+            }
+        }
+
+        $idMysqlServer = self::resolveMysqlsysMutationServerId($param, $post, !$isCli);
+        if ($idMysqlServer === null) {
+            return self::mysqlsysMutationFailure(400, 'Invalid MySQL server id');
+        }
+
+        $confirmServerName = null;
+        if ($requiresDropConfirmation) {
+            if (!self::hasDropConfirmationIntent($post)) {
+                return self::mysqlsysMutationFailure(400, 'Invalid MySQL-sys drop confirmation');
+            }
+
+            $confirmServerName = self::normalizeDropConfirmationServerName($post['confirm_server_name'] ?? null);
+            if ($confirmServerName === null) {
+                return self::mysqlsysMutationFailure(400, 'Invalid MySQL-sys drop confirmation');
+            }
+        }
+
+        return [
+            'allowed' => true,
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'id_mysql_server' => $idMysqlServer,
+            'param' => [$idMysqlServer],
+            'confirm_server_name' => $confirmServerName,
+        ];
+    }
+
+    private static function resolveMysqlsysMutationServerId(
+        array $param,
+        array $post,
+        bool $requirePostId
+    ): ?int {
+        $postId = PositiveIntegerSelection::normalizeSingle($post['id_mysql_server'] ?? null);
+        if ($requirePostId && $postId === null) {
+            return null;
+        }
+
+        $routeHasId = array_key_exists(0, $param) && $param[0] !== null && $param[0] !== '';
+        $routeId = $routeHasId ? PositiveIntegerSelection::normalizeSingle($param[0]) : null;
+        if ($routeHasId && $routeId === null) {
+            return null;
+        }
+
+        if ($postId !== null && $routeId !== null && $postId !== $routeId) {
+            return null;
+        }
+
+        return $postId ?? $routeId;
+    }
+
+    private static function hasDropConfirmationIntent(array $post): bool
+    {
+        return isset($post['confirm'])
+            && is_scalar($post['confirm'])
+            && trim((string) $post['confirm']) === self::MYSQLSYS_DROP_CONFIRM_VALUE;
+    }
+
+    private static function normalizeDropConfirmationServerName($value): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $serverName = trim((string) $value);
+        return $serverName === '' ? null : $serverName;
+    }
+
+    private static function mysqlsysMutationFailure(int $status, string $body, array $headers = []): array
+    {
+        return [
+            'allowed' => false,
+            'status' => $status,
+            'body' => $body,
+            'headers' => $headers,
+            'id_mysql_server' => null,
+            'param' => null,
+            'confirm_server_name' => null,
+        ];
+    }
+
+    private static function mysqlsysIndexUrl(int $idMysqlServer): string
+    {
+        $link = defined('LINK') ? LINK : '/';
+
+        return $link . 'mysqlsys/index/mysql_server:id:' . $idMysqlServer;
+    }
+
+    private static function normalizeSysConfigName($value): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $name = trim((string) $value);
+        if (
+            $name === ''
+            || strlen($name) > self::MYSQLSYS_UPDATE_CONFIG_NAME_MAX_LENGTH
+            || preg_match('/^[A-Za-z0-9_.-]+$/', $name) !== 1
+        ) {
+            return null;
+        }
+
+        return $name;
+    }
+
+
+/**
+ * Handle mysqlsys state through `export`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for export.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::export()
+ * @example /fr/mysqlsys/export
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function export($param)
     {
         //$this->view = true;

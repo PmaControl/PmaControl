@@ -7,6 +7,8 @@
 
 namespace App\Library;
 
+use App\Controller\Listener;
+use App\Controller\MaxScale;
 use \App\Library\Table;
 use \App\Library\Format;
 use \App\Library\Ofuscate;
@@ -14,13 +16,37 @@ use \App\Controller\Dot3;
 use \Glial\Sgbd\Sgbd;
 
 use \Glial\Extract\Grabber;
+/**
+ * Class responsible for graphviz workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Graphviz
 {
+    private const OFFLINE_RED = '#FF0000';
+    private const SYMBOL_DOWN_RED = '#FF0000';
+    private static string $lastGenerateDotError = '';
     // en dessous de MAX_ROWS_TO_REQUEST on va faire un select count(1) pour avoir le nombre de ligne exacte dans la table
     const MAX_ROWS_TO_REQUEST = 10000;
 
     //max char for type, to prevent really big table with enum
     const MAX_LENGTH = 25;
+/**
+ * Stores `$color` for color.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $color = array('aliceblue', 'antiquewhite', 'antiquewhite1', 'antiquewhite2', 'antiquewhite3', 'antiquewhite4', 'aquamarine', 'aquamarine1', 'aquamarine2', 'aquamarine3', 'aquamarine4', 'azure',
         'azure1', 'azure2', 'azure3', 'azure4', 'beige', 'bisque', 'bisque1', 'bisque2', 'bisque3', 'bisque4', 'black', 'blanchedalmond', 'blue', 'blue1', 'blue2', 'blue3', 'blue4', 'blueviolet', 'brown',
         'brown1',
@@ -71,12 +97,156 @@ class Graphviz
         'grey78', 'grey79', 'grey8', 'grey80', 'grey81', 'grey82', 'grey83', 'grey84', 'grey85', 'grey86', 'grey87', 'grey88', 'grey89', 'grey9', 'grey90', 'grey91', 'grey92', 'grey93', 'grey94', 'grey95',
         'grey96', 'grey97', 'grey98', 'grey99');
 
+/**
+ * Stores `$table_count` for table count.
+ *
+ * @var int
+ * @phpstan-var int
+ * @psalm-var int
+ */
         static $table_count = 1;
 
+/**
+ * Stores `$subgraph_number` for subgraph number.
+ *
+ * @var int
+ * @phpstan-var int
+ * @psalm-var int
+ */
         static $subgraph_number = 0;
 
-        static $edge = array();
+/**
+ * Stores `$edge` for edge.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
+    static $edge = array();
 
+    private static function openHtmlLikeLabel(string $targetPort, string $borderColor, string $innerBackground = '#eafafa'): string
+    {
+        return 'shape=plaintext,label =<<table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">' . PHP_EOL
+            . '    <tr>' . PHP_EOL
+            . '      <td port="' . $targetPort . '" bgcolor="' . $borderColor . '">' . PHP_EOL
+            . '        <table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0">' . PHP_EOL
+            . '          <tr>' . PHP_EOL
+            . '            <td>' . PHP_EOL
+            . '              <table BGCOLOR="' . $innerBackground . '" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">' . PHP_EOL;
+    }
+
+    private static function closeHtmlLikeLabel(bool $withBracket = true): string
+    {
+        $suffix = '</table>>';
+        if ($withBracket) {
+            $suffix .= ' ];';
+        }
+
+        return '              </table>' . PHP_EOL
+            . '            </td>' . PHP_EOL
+            . '          </tr>' . PHP_EOL
+            . '        </table>' . PHP_EOL
+            . '      </td>' . PHP_EOL
+            . '    </tr>' . PHP_EOL
+            . '  ' . $suffix;
+    }
+
+    private static function htmlRow(array $cells, int $indentLevel = 7): string
+    {
+        $indent = str_repeat('  ', $indentLevel);
+        $cellIndent = str_repeat('  ', $indentLevel + 1);
+        $row = $indent . '<tr>' . PHP_EOL;
+        foreach ($cells as $cell) {
+            $row .= $cellIndent . $cell . PHP_EOL;
+        }
+        $row .= $indent . '</tr>' . PHP_EOL;
+
+        return $row;
+    }
+
+    private static function isOfflineServer(array $server): bool
+    {
+        return isset($server['mysql_available'])
+            && (string)$server['mysql_available'] === '0'
+            && empty($server['is_sst_receiver']);
+    }
+
+    private static function isGreyBackground(string $background): bool
+    {
+        $normalized = strtolower(trim($background));
+
+        return in_array($normalized, [
+            'grey',
+            'gray',
+            'lightgrey',
+            'lightgray',
+            'darkgrey',
+            'darkgray',
+            '#eeeeee',
+            '#dddddd',
+            '#cccccc',
+            '#bbbbbb',
+            '#aaaaaa',
+        ], true);
+    }
+
+    private static function resolveOfflineRowColors(array $server, string $background, string $fontColor): array
+    {
+        if (!self::isOfflineServer($server) || self::isGreyBackground($background)) {
+            return [$background, $fontColor];
+        }
+
+        return [self::OFFLINE_RED, '#ffffff'];
+    }
+
+    private static function forceDownRowColors(string $icon, string $background, string $fontColor): array
+    {
+        if ($icon !== '⛔') {
+            return [$background, $fontColor];
+        }
+
+        return [self::SYMBOL_DOWN_RED, '#ffffff'];
+    }
+
+    public static function tableNodeId(string $schema, string $table): string
+    {
+        return 'table_'.substr(sha1($schema."\0".$table), 0, 16);
+    }
+
+    public static function tableNodeRef(string $schema, string $table, string $port = ''): string
+    {
+        $ref = '"'.self::tableNodeId($schema, $table).'"';
+        if ($port !== '') {
+            $ref .= ':'.$port;
+        }
+
+        return $ref;
+    }
+
+/**
+ * Handle graphviz state through `generateTable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $param Route parameters forwarded by the router.
+ * @phpstan-param array $param
+ * @psalm-param array $param
+ * @param mixed $underline Input value for `underline`.
+ * @phpstan-param mixed $underline
+ * @psalm-param mixed $underline
+ * @return mixed Returned value for generateTable.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateTable()
+ * @example /fr/graphviz/generateTable
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function generateTable(array $param, $underline =array())
     {
         $id_mysql_server = $param[0];
@@ -92,7 +262,7 @@ class Graphviz
         FROM `INFORMATION_SCHEMA`.`TABLES` 
         WHERE TABLE_SCHEMA ='".$table_schema."' AND TABLE_NAME = '".$table_name."' AND TABLE_TYPE IN ('BASE TABLE', 'SYSTEM VERSIONED')";
 
-        $res = $db->sql_query($sql);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql, $id_mysql_server, __METHOD__);
 
         while($ob = $db->sql_fetch_object($res)) {
             $row_format = $ob->row_format;
@@ -115,6 +285,7 @@ class Graphviz
 
         $sql3 = "SELECT * FROM index_stats WHERE id_mysql_server = ".$id_mysql_server." AND table_schema='".$table_schema."' AND table_name = '".$table_name."'";
 
+        /*
         $CARD = array();
         $res3 = $db2->sql_query($sql3);
         while($ob3 = $db2->sql_fetch_object($res3, MYSQLI_ASSOC)) {
@@ -132,7 +303,7 @@ class Graphviz
             $tmp['U'] = $ob3->is_unused;
 
             $CARD[] = $tmp;
-        }
+        }*/
 
         if (isset($table_rows))
         {
@@ -150,6 +321,7 @@ class Graphviz
         $return = '';
         // define color
         $return = "node[shape=none fontsize=8 ranksep=0 splines=true overlap=true];".PHP_EOL;
+        $nodeId = self::tableNodeId($table_schema, $table_name);
         
 
         $forground_color = '#000000';
@@ -158,28 +330,30 @@ class Graphviz
         }
 
         //
-        $return .= '  "'.$table_name.'"[ href="'.LINK.'table/mpd/'.$id_mysql_server.'/'.$table_schema.'/'.$table_name.'/"';
+        $return .= '  "'.$nodeId.'"[ href="'.LINK.'table/mpd/'.$id_mysql_server.'/'.$table_schema.'/'.$table_name.'/"';
         $return .= 'tooltip="'.$table_schema.'.'.$table_name.'" 
         label =<<table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4"><tr><td bgcolor="'.$color.'">
         <table BGCOLOR="#fafafa" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">';
-        $return .= '<tr><td PORT="title" colspan="3" bgcolor="'.$color.'"  align="center"><font color="'.$forground_color.'"><b>'.$table_name.'</b></font></td></tr>';
+        
+        $colspan = 2;
+        $return .= '<tr><td PORT="title" colspan="'.$colspan.'" bgcolor="'.$color.'"  align="center"><font color="'.$forground_color.'"><b>'.$table_name.'</b></font></td></tr>';
 
         if (empty($engine)) {
             //view
-            $return .= '<tr><td colspan="3" bgcolor="grey" align="left">VIEW</td></tr>'.PHP_EOL;
+            $return .= '<tr><td colspan="'.$colspan.'" bgcolor="grey" align="left">VIEW</td></tr>'.PHP_EOL;
         }
         else
         {
-            $return .= '<tr><td colspan="3" bgcolor="grey" align="left">'.$engine.' ('.$row_format.')</td></tr>'.PHP_EOL;
+            $return .= '<tr><td colspan="'.$colspan.'" bgcolor="grey" align="left">'.$engine.' ('.$row_format.')</td></tr>'.PHP_EOL;
         }
         
-        $return .= '<tr><td colspan="3" bgcolor="grey" align="left">Total of <b>'.$number_rows.' </b>row(s)</td></tr>';
+        $return .= '<tr><td colspan="'.$colspan.'" bgcolor="grey" align="left">Total of <b>'.$number_rows.' </b>row(s)</td></tr>';
 
         $return .=
         '<tr>'
         .'<td bgcolor="#bbbbbb" align="left" title="'.__('Field').'">'.__('Field').'</td>'
         .'<td bgcolor="#bbbbbb" align="left">'.__('Type').'</td>'
-        .'<td bgcolor="#bbbbbb" align="left">'.__('Key').'</td>'
+      //  .'<td bgcolor="#bbbbbb" align="left">'.__('Key').'</td>'
         .'</tr>'.PHP_EOL;
         
         $line = 1;
@@ -227,8 +401,9 @@ class Graphviz
             $return .=
                 '<tr>'
                 .'<td '.$bgcolor.' port="a'.$line.'" align="left" title="'.$def['Field'].'"><font color ="'.$forground_color.'">'.$us.''.$def['Field'].''.$ue.'</font></td>'
-                .'<td '.$bgcolor.' align="left"><font color ="'.$forground_color.'">'.$us.''.$def['Type'].''.$ue.'</font></td>'
-                .'<td '.$bgcolor.' port="d'.$line.'" align="left"><font color ="'.$forground_color.'">'.$us.''.$def['Key'].''.$ue.'&nbsp;</font></td>'
+                //.'<td '.$bgcolor.' align="left"><font color ="'.$forground_color.'">'.$us.''.$def['Type'].''.$ue.'</font></td>'
+                .'<td '.$bgcolor.' port="d'.$line.'" align="left"><font color ="'.$forground_color.'">'.$us.''.$def['Type'].''.$ue.'</font></td>'
+               // .'<td '.$bgcolor.' port="d'.$line.'" align="left"><font color ="'.$forground_color.'">'.$us.''.$def['Key'].''.$ue.'&nbsp;</font></td>'
                 .'</tr>'.PHP_EOL;
             $line++;
         }
@@ -238,38 +413,43 @@ class Graphviz
         $bgindex = 'bgcolor="#bbbbbb"';
         $forground_color = '#000000';
 
-        $return .= '<tr>'
-        .'<td '.$bgindex.' colspan="2" align="center"><font color ="'.$forground_color.'"><b>'.__('Index').'</b></font></td>'
-        .'<td '.$bgindex.' align="center"><font color ="'.$forground_color.'"><b>'.__('Size').'</b></font></td>'
-        .'</tr>'.PHP_EOL;
 
-        $bgindex = 'bgcolor="#dddddd"';
-
-        foreach($CARD as $elem)
+        if (! empty($CARD))
         {
-            $b1 = "";
-            $b2 = "";
-
-            $extra = '';
-            if (!empty($elem['R'])) {
-                $extra .= 'R';
-            }
-            if (!empty($elem['U'])){
-                $extra .= 'U';
-            }
-            if (! empty($extra))
-            {
-                $extra = '('.$extra.') ';
-                $b1 = "<b>";
-                $b2 = "</b>";
-            }
-
 
             $return .= '<tr>'
-            .'<td '.$bgindex.' colspan="2" align="left"><font color ="'.$forground_color.'">'.$extra.''.$elem['columns'].'</font></td>'
-            .'<td '.$bgindex.' align="right"><font color ="'.$forground_color.'">'.$b1.$elem['size'].$b2.'</font></td>'
+            .'<td '.$bgindex.' colspan="2" align="center"><font color ="'.$forground_color.'"><b>'.__('Index').'</b></font></td>'
+            .'<td '.$bgindex.' align="center"><font color ="'.$forground_color.'"><b>'.__('Size').'</b></font></td>'
             .'</tr>'.PHP_EOL;
 
+            $bgindex = 'bgcolor="#dddddd"';
+
+            foreach($CARD as $elem)
+            {
+                $b1 = "";
+                $b2 = "";
+
+                $extra = '';
+                if (!empty($elem['R'])) {
+                    $extra .= 'R';
+                }
+                if (!empty($elem['U'])){
+                    $extra .= 'U';
+                }
+                if (! empty($extra))
+                {
+                    $extra = '('.$extra.') ';
+                    $b1 = "<b>";
+                    $b2 = "</b>";
+                }
+
+
+                $return .= '<tr>'
+                .'<td '.$bgindex.' colspan="2" align="left"><font color ="'.$forground_color.'">'.$extra.''.$elem['columns'].'</font></td>'
+                .'<td '.$bgindex.' align="right"><font color ="'.$forground_color.'">'.$b1.$elem['size'].$b2.'</font></td>'
+                .'</tr>'.PHP_EOL;
+
+            }
         }
 
         $return .= '</table>';
@@ -279,6 +459,27 @@ class Graphviz
     }
 
 
+/**
+ * Retrieve graphviz state through `getColor`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $string Input value for `string`.
+ * @phpstan-param mixed $string
+ * @psalm-param mixed $string
+ * @return mixed Returned value for getColor.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getColor()
+ * @example /fr/graphviz/getColor
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public static function getColor($string)
     {
         $color = self::$color[hexdec(substr(md5($string), 0, 2))];
@@ -292,10 +493,31 @@ class Graphviz
         return "#".$color;
     }
 
+/**
+ * Handle graphviz state through `generateStart`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for generateStart.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateStart()
+ * @example /fr/graphviz/generateStart
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function generateStart($param=array())
     {
         //margin="0.104,0.0'.$rand.'";
-        $ret = 'digraph structs {rankdir=LR;  splines="compound";  fontname="arial" '.PHP_EOL; 
+        $ret = 'digraph structs {rankdir=LR; splines="compound"; fontname="arial" '.PHP_EOL; 
         //$ret = 'digraph structs {rankdir=LR; layout="sfdp"; splines="ortho"; fontname="arial" '.PHP_EOL; 
         $ret .= "labelloc=\"t\"; ".PHP_EOL;
         //$ret .= 'graph [pad="0.2", nodesep="0.1", ranksep="0.2"];'.PHP_EOL;
@@ -305,6 +527,27 @@ class Graphviz
         return $ret;
     }
     
+/**
+ * Handle graphviz state through `generateEnd`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for generateEnd.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateEnd()
+ * @example /fr/graphviz/generateEnd
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function generateEnd($param = array())
     {
         $ret = "".PHP_EOL;
@@ -312,6 +555,102 @@ class Graphviz
         //$ret .= 'fontname="arial" fontsize=8 edgeURL=""];'.PHP_EOL;
         $ret .= "}\n";
         return $ret;
+    }
+
+    public static function generateRepmanHaOverlay(array $servers): string
+    {
+        $targetIps = [
+            '192.168.100.101',
+            '192.168.100.102',
+            '192.168.100.103',
+            '192.168.100.104',
+        ];
+        $targetNodeIds = [
+            '101',
+            '102',
+            '103',
+            '104',
+            '218',
+            '219',
+            '220',
+            '221',
+        ];
+
+        $nodeIds = [];
+        foreach ($servers as $server) {
+            if (!is_array($server)) {
+                continue;
+            }
+
+            $nodeId = (string)($server['id_mysql_server'] ?? '');
+            if ($nodeId !== '' && in_array($nodeId, $targetNodeIds, true)) {
+                $nodeIds[$nodeId] = $nodeId;
+                continue;
+            }
+
+            $candidates = [
+                trim((string)($server['ip_real'] ?? '')),
+                trim((string)($server['ip'] ?? '')),
+                trim((string)($server['vip_dns_ip'] ?? '')),
+                trim((string)($server['report_host'] ?? '')),
+                trim((string)($server['hostname'] ?? '')),
+            ];
+
+            foreach ($candidates as $candidateIp) {
+                if ($candidateIp !== '' && in_array($candidateIp, $targetIps, true)) {
+                    if ($nodeId !== '') {
+                        $nodeIds[$nodeId] = $nodeId;
+                    }
+                    break;
+                }
+            }
+
+            if (!empty($nodeIds[$nodeId])) {
+                continue;
+            }
+
+            if (!empty($server['is_maxscale']) && (string)$server['is_maxscale'] === '1') {
+                $payload = json_encode([
+                    $server['maxscale_servers'] ?? null,
+                    $server['maxscale_services'] ?? null,
+                    $server['maxscale_monitors'] ?? null,
+                    $server['mysql_servers'] ?? null,
+                ]);
+
+                foreach ($targetIps as $targetIp) {
+                    if (is_string($payload) && strpos($payload, $targetIp) !== false && $nodeId !== '') {
+                        $nodeIds[$nodeId] = $nodeId;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (empty($nodeIds)) {
+            return '';
+        }
+
+        $return = 'subgraph cluster_repman_ha {' . PHP_EOL;
+        $return .= 'graph [' . PHP_EOL;
+        $return .= '  label="HA by Repman : 10.68.68.156",' . PHP_EOL;
+        $return .= '  labelloc="t",' . PHP_EOL;
+        $return .= '  labeljust="r",' . PHP_EOL;
+        $return .= '  color="#000000",' . PHP_EOL;
+        $return .= '  pencolor="#000000",' . PHP_EOL;
+        $return .= '  bgcolor="transparent",' . PHP_EOL;
+        $return .= '  style="rounded,dashed",' . PHP_EOL;
+        $return .= '  penwidth="1.4",' . PHP_EOL;
+        $return .= '  fontname="arial",' . PHP_EOL;
+        $return .= '  fontsize="8"' . PHP_EOL;
+        $return .= '];' . PHP_EOL;
+
+        foreach ($nodeIds as $nodeId) {
+            $return .= '"' . $nodeId . '";' . PHP_EOL;
+        }
+
+        $return .= '}' . PHP_EOL;
+
+        return $return;
     }
 
     /*
@@ -327,6 +666,7 @@ class Graphviz
 
     static public function generateDot($reference, $graph)
     {
+        self::$lastGenerateDotError = '';
         $type = "svg";
         $type2 = "png";
 
@@ -335,42 +675,173 @@ class Graphviz
         $file_name2 = TMP."dot/".$reference.".".$type2;
 
         file_put_contents($dot_file, $graph);
+        usleep(500);
 
-        $dot = 'cd '.TMP.'dot && dot -T'.$type.' '.$dot_file.' -o '.$file_name.'';
-        //debug($dot);
-        exec($dot);
+        //hidding warnings
+        //$dot = 'cd '.TMP.'dot && dot -T'.$type.' '.$dot_file.' -o '.$file_name.'';
+        $dot = 'cd '.TMP.'dot && dot -T'.$type.' '.$dot_file.' -o '.$file_name.' 2>&1';
+        
 
-        $dot2 = 'cd '.TMP.'dot && dot -T'.$type2.' '.$dot_file.' -o '.$file_name2.'';
-        exec($dot2);
+        $output_svg = array();
+        $result_svg = 0;
+        exec($dot, $output_svg, $result_svg);
+        $svgErrorOutput = trim(implode("\n", $output_svg));
 
-        //post treatment SVG
-        self::removeBackground($file_name);
-        self::replaceLinkImg($file_name);
+        if ($result_svg !== 0) {
+            $fallbacks = array('svg', 'svg:svg', 'svg:cairo');
+            foreach ($fallbacks as $fallback) {
+                if ($fallback === $type) {
+                    continue;
+                }
+
+                //fix error one day
+                //$dot_try = 'cd '.TMP.'dot && dot -T'.$type2.' '.$dot_file.' -o '.$file_name2.'';
+                $dot_try = 'cd '.TMP.'dot && dot -T'.$fallback.' '.$dot_file.' -o '.$file_name.' 2>&1';
+                $output_try = array();
+                $result_try = 0;
+                exec($dot_try, $output_try, $result_try);
+                if ($result_try === 0) {
+                    $type = $fallback;
+                    $svgErrorOutput = '';
+                    break;
+                }
+
+                $tryOutput = trim(implode("\n", $output_try));
+                if ($tryOutput !== '') {
+                    $svgErrorOutput = $tryOutput;
+                }
+            }
+        }
+
+        $dot2 = 'cd '.TMP.'dot && dot -T'.$type2.' '.$dot_file.' -o '.$file_name2.' 2>&1';
+        $output_png = array();
+        $result_png = 0;
+        exec($dot2, $output_png, $result_png);
+
+        if ($result_png !== 0) {
+            $fallbacks = array('png', 'png:png', 'png:cairo');
+            foreach ($fallbacks as $fallback) {
+                if ($fallback === $type2) {
+                    continue;
+                }
+
+                $dot_try = 'cd '.TMP.'dot && dot -T'.$fallback.' '.$dot_file.' -o '.$file_name2.' 2>&1';
+                $output_try = array();
+                $result_try = 0;
+                exec($dot_try, $output_try, $result_try);
+                if ($result_try === 0) {
+                    $type2 = $fallback;
+                    break;
+                }
+            }
+        }
+
+        //post treatment SVG (only when we have a readable SVG file)
+        if (file_exists($file_name) && substr($file_name, -4) === '.svg') {
+            $firstBytes = file_get_contents($file_name, false, null, 0, 8);
+            if ($firstBytes !== false && strncmp($firstBytes, "\x89PNG\r\n\x1a\n", 8) === 0) {
+                self::$lastGenerateDotError = 'Graphviz fallback produced PNG instead of SVG.';
+                return $file_name;
+            }
+
+            self::removeBackground($file_name);
+            self::replaceLinkImg($file_name);
+        }
+
+        if ($result_svg !== 0 && $svgErrorOutput !== '') {
+            self::$lastGenerateDotError = $svgErrorOutput;
+        }
 
         return $file_name;
     }
 
+    public static function getLastGenerateDotError(): string
+    {
+        return self::$lastGenerateDotError;
+    }
+
+/**
+ * Handle graphviz state through `generateEdge`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $edge Input value for `edge`.
+ * @phpstan-param mixed $edge
+ * @psalm-param mixed $edge
+ * @return mixed Returned value for generateEdge.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateEdge()
+ * @example /fr/graphviz/generateEdge
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function generateEdge($edge)
     {
         if (empty($edge['options'])){
             $edge['options'] = array();
         }
 
+        if (!empty($edge['tooltip']))
+        {
+            $edge['options']['tooltip'] = $edge['tooltip'];
+        }
+
+        if (empty($edge['color']))
+        {
+            $edge['color'] = "#0000ff";
+        }
+
         $return = "".$edge['arrow'];
-        $return .= '[tooltip="'.$edge['tooltip'].'" color="'.$edge['color'].'" penwidth="3" ';
-        $return .= 'fontname="arial" fontsize=8 edgeURL=""';
+        $return .= '[color="'.$edge['color'].'" penwidth="3" ';
+        $return .= 'fontname="arial" fontsize=8 ';
         foreach($edge['options'] as $key => $option) {
             $return .= $key.'="'.$option.'" ';
         }
 
         $return .= '];'.PHP_EOL;
 
+        // Trick to split double arrow in noth direction
+        $return .= 'node[shape=none fontsize=8 ranksep=10 splines=true overlap=true];'.PHP_EOL;
+
         return $return;
     }
 
+/**
+ * Retrieve graphviz state through `getBrightness`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $hex Input value for `hex`.
+ * @phpstan-param mixed $hex
+ * @psalm-param mixed $hex
+ * @return mixed Returned value for getBrightness.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::getBrightness()
+ * @example /fr/graphviz/getBrightness
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getBrightness($hex) {
         // returns brightness value from 0 to 255
         // strip off any leading #
+
+        if (!preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $hex)) {
+            throw new \Exception("Erreur : '$hex' n'est pas une couleur HEX valide.");
+        }
+
         $hex = str_replace('#', '', $hex);
        
         $c_r = hexdec(substr($hex, 0, 2));
@@ -380,14 +851,51 @@ class Graphviz
         return (($c_r * 299) + ($c_g * 587) + ($c_b * 114)) / 1000;
     }
 
+/**
+ * Delete graphviz state through `removeBackground`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $file_name Input value for `file_name`.
+ * @phpstan-param mixed $file_name
+ * @psalm-param mixed $file_name
+ * @return void Returned value for removeBackground.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::removeBackground()
+ * @example /fr/graphviz/removeBackground
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function removeBackground($file_name)
     {
-        // Remove background generated by Dot
-        // remove this polygon: <polygon fill="white" stroke="transparent" points="-4,4 -4,-2138 442,-2138 442,4 -4,4"></polygon>
+        if (!is_string($file_name) || $file_name === '' || !file_exists($file_name)) {
+            return;
+        }
+
         $svg = file_get_contents($file_name);
-        $elem = Grabber::getTagContent($svg, '<polygon fill="white" stroke="transparent"', $strip = false);
-        $svg = str_replace($elem, '', $svg);
-        file_put_contents($file_name, $svg);
+        if ($svg === false || $svg === '') {
+            return;
+        }
+
+        // Remove the white background polygon generated by dot without using the
+        // legacy HTML parser, which corrupts XML/SVG payloads.
+        $patterns = array(
+            '/<polygon\b[^>]*\bfill="white"[^>]*\bstroke="transparent"[^>]*><\/polygon>/i',
+            '/<polygon\b[^>]*\bstroke="transparent"[^>]*\bfill="white"[^>]*><\/polygon>/i',
+            '/<polygon\b[^>]*\bfill="white"[^>]*\bstroke="transparent"[^>]*\/>/i',
+            '/<polygon\b[^>]*\bstroke="transparent"[^>]*\bfill="white"[^>]*\/>/i',
+        );
+
+        $cleaned = preg_replace($patterns, '', $svg);
+        if (is_string($cleaned) && $cleaned !== $svg) {
+            file_put_contents($file_name, $cleaned);
+        }
     }
 
     /**
@@ -403,19 +911,237 @@ class Graphviz
 
     static public function replaceLinkImg($file_name)
     {
-        // Remove background generated by Dot
-        // remove this polygon: <polygon fill="white" stroke="transparent" points="-4,4 -4,-2138 442,-2138 442,4 -4,4"></polygon>
+        if (!is_string($file_name) || $file_name === '' || !file_exists($file_name)) {
+            return;
+        }
+
         $svg = file_get_contents($file_name);
-        
+        if ($svg === false || $svg === '') {
+            return;
+        }
+
+        $svg = self::postProcessSvgMarkup($svg);
+        file_put_contents($file_name, $svg);
+    }
+
+    public static function postProcessSvgMarkup($svg)
+    {
+        if (!is_string($svg) || $svg === '') {
+            return $svg;
+        }
+
         $image_server  = ROOT."/App/Webroot/image/dot/";
         $image_url = WWW_ROOT."image/icon/";
+        $symbols = array();
+        $symbolMap = array();
+
+        if (!preg_match_all('/<image\b([^>]*?)\s(?:xlink:href|href)="([^"]+)"([^>]*?)\/>/i', $svg, $matches, PREG_SET_ORDER)) {
+            return str_replace($image_server, $image_url, $svg);
+        }
+
+        foreach ($matches as $match) {
+            $href = $match[2];
+            $diskPath = self::resolveGraphvizImagePath($href);
+
+            if ($diskPath === null || !file_exists($diskPath)) {
+                continue;
+            }
+
+            $extension = strtolower((string) pathinfo($diskPath, PATHINFO_EXTENSION));
+            if ($extension === 'svg') {
+                if (empty($symbolMap[$diskPath])) {
+                    $iconSvg = file_get_contents($diskPath);
+                    if ($iconSvg === false || $iconSvg === '') {
+                        continue;
+                    }
+
+                    $symbolId = 'pmac-icon-'.md5($diskPath);
+                    $symbol = self::buildSvgSymbol($iconSvg, $symbolId);
+                    if ($symbol === '') {
+                        continue;
+                    }
+
+                    $symbols[] = $symbol;
+                    $symbolMap[$diskPath] = $symbolId;
+                }
+                continue;
+            }
+
+            $dataUri = self::buildImageDataUri($diskPath);
+            if ($dataUri === '') {
+                continue;
+            }
+
+            $quotedHref = preg_quote($href, '/');
+            $svg = preg_replace(
+                '/(<image\b[^>]*?\s(?:xlink:href|href)=")'.$quotedHref.'(")/i',
+                '$1'.$dataUri.'$2',
+                $svg
+            );
+        }
+
+        if (!empty($symbolMap)) {
+            $symbols = array_values(array_unique($symbols));
+            $svg = self::injectSvgSymbols($svg, implode('', $symbols));
+
+            $svg = preg_replace_callback(
+                '/<image\b([^>]*?)\s(?:xlink:href|href)="([^"]+)"([^>]*?)\/>/i',
+                function ($matches) use ($symbolMap) {
+                    $href = $matches[2];
+                    $diskPath = self::resolveGraphvizImagePath($href);
+                    if ($diskPath === null || empty($symbolMap[$diskPath])) {
+                        return $matches[0];
+                    }
+
+                    $attributes = trim($matches[1].' '.$matches[3]);
+                    $attributes = preg_replace('/\s(?:xlink:href|href)="[^"]*"/i', '', ' '.$attributes);
+                    $attributes = trim((string) $attributes);
+
+                    if ($attributes !== '') {
+                        $attributes = ' '.$attributes;
+                    }
+
+                    return '<use xlink:href="#'.$symbolMap[$diskPath].'"'.$attributes.'/>';
+                },
+                $svg
+            );
+        }
 
         $svg = str_replace($image_server, $image_url, $svg);
-        file_put_contents($file_name, $svg);
+        return $svg;
+    }
+
+    public static function buildSvgDownloadDataUri($svg)
+    {
+        $svg = self::postProcessSvgMarkup($svg);
+        if (!is_string($svg) || $svg === '') {
+            return '';
+        }
+
+        return 'data:image/svg+xml;charset=UTF-8,' . rawurlencode($svg);
+    }
+
+    private static function buildSvgSymbol($iconSvg, $symbolId)
+    {
+        if (!preg_match('/<svg\b([^>]*)>(.*)<\/svg>/is', $iconSvg, $matches)) {
+            return '';
+        }
+
+        $attributes = $matches[1];
+        $innerSvg = trim($matches[2]);
+        $viewBox = '';
+
+        if (preg_match('/\bviewBox="([^"]+)"/i', $attributes, $viewBoxMatches)) {
+            $viewBox = trim($viewBoxMatches[1]);
+        } elseif (preg_match('/\bwidth="([0-9.]+)(?:px)?"/i', $attributes, $widthMatches)
+            && preg_match('/\bheight="([0-9.]+)(?:px)?"/i', $attributes, $heightMatches)) {
+            $viewBox = '0 0 '.$widthMatches[1].' '.$heightMatches[1];
+        }
+
+        $viewBoxAttribute = $viewBox !== '' ? ' viewBox="'.$viewBox.'"' : '';
+
+        return '<symbol id="'.$symbolId.'"'.$viewBoxAttribute.'>'.$innerSvg.'</symbol>';
+    }
+
+    private static function resolveGraphvizImagePath($href)
+    {
+        if (!is_string($href) || $href === '') {
+            return null;
+        }
+
+        $candidates = array();
+        $basename = basename(parse_url($href, PHP_URL_PATH) ?: $href);
+
+        if ($href[0] === '/' && file_exists($href)) {
+            $candidates[] = $href;
+        }
+
+        if (str_starts_with($href, WWW_ROOT)) {
+            $relative = substr($href, strlen(WWW_ROOT));
+            $candidates[] = ROOT.'/App/Webroot/'.$relative;
+        }
+
+        if (str_starts_with($href, '/image/')) {
+            $candidates[] = ROOT.'/App/Webroot'.$href;
+        }
+
+        if ($basename !== '') {
+            $candidates[] = ROOT.'/App/Webroot/image/dot/'.$basename;
+            $candidates[] = ROOT.'/App/Webroot/image/icon/'.$basename;
+        }
+
+        foreach ($candidates as $candidate) {
+            if (is_string($candidate) && $candidate !== '' && file_exists($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    private static function buildImageDataUri($diskPath)
+    {
+        if (!is_string($diskPath) || $diskPath === '' || !file_exists($diskPath)) {
+            return '';
+        }
+
+        $content = file_get_contents($diskPath);
+        if ($content === false || $content === '') {
+            return '';
+        }
+
+        $extension = strtolower((string) pathinfo($diskPath, PATHINFO_EXTENSION));
+        $mime = match ($extension) {
+            'png' => 'image/png',
+            'jpg', 'jpeg' => 'image/jpeg',
+            'gif' => 'image/gif',
+            'webp' => 'image/webp',
+            default => '',
+        };
+
+        if ($mime === '') {
+            return '';
+        }
+
+        return 'data:'.$mime.';base64,'.base64_encode($content);
+    }
+
+    private static function injectSvgSymbols($svg, $symbolsMarkup)
+    {
+        if ($symbolsMarkup === '') {
+            return $svg;
+        }
+
+        if (strpos($svg, '<defs>') !== false) {
+            return preg_replace('/<defs>/i', '<defs>'.$symbolsMarkup, $svg, 1);
+        }
+
+        return preg_replace('/<svg\b([^>]*)>/i', '<svg$1><defs>'.$symbolsMarkup.'</defs>', $svg, 1);
     }
 
 
 
+/**
+ * Handle graphviz state through `generateHiddenEdge`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $hidden_edge Input value for `hidden_edge`.
+ * @phpstan-param mixed $hidden_edge
+ * @psalm-param mixed $hidden_edge
+ * @return mixed Returned value for generateHiddenEdge.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateHiddenEdge()
+ * @example /fr/graphviz/generateHiddenEdge
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function generateHiddenEdge($hidden_edge)
     {
         $ret = '';
@@ -424,6 +1150,27 @@ class Graphviz
         return $ret;
     }
 
+/**
+ * Handle graphviz state through `openSubgraph`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for openSubgraph.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::openSubgraph()
+ * @example /fr/graphviz/openSubgraph
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function openSubgraph($param)
     {
         self::$subgraph_number++;
@@ -438,6 +1185,27 @@ class Graphviz
         return $ret;
     }
 
+/**
+ * Handle graphviz state through `closeSubgraph`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for closeSubgraph.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::closeSubgraph()
+ * @example /fr/graphviz/closeSubgraph
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function closeSubgraph($param)
     {
         self::$subgraph_number++;
@@ -447,8 +1215,31 @@ class Graphviz
         return $ret;
     }
 
+/**
+ * Handle graphviz state through `generateServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $server Input value for `server`.
+ * @phpstan-param mixed $server
+ * @psalm-param mixed $server
+ * @return mixed Returned value for generateServer.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateServer()
+ * @example /fr/graphviz/generateServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function generateServer($server)
     { 
+
+
         /*
          * to be sure to insert image with add <?xml version="1.0" encoding="UTF-8" standalone="no"?> in top of SVG
          */
@@ -464,13 +1255,32 @@ class Graphviz
 
         //Debug::debug($server, "DEBUG TO REMOVE");
         
-        $format = Format::getMySQLNumVersion($server['version'], $server['version_comment']);
+        $format = Format::getMySQLNumVersion($server['version'] ?? '', $server['version_comment'] ?? '');
 
-        $fork = $format['fork'];
-        $number = $format['number'];
+        $fork = $format['fork'] ?? '';
+        $number = $format['number'] ?? '';
+        $isSingleStore = !empty($server['is_single_store']) && (string) $server['is_single_store'] === '1';
+
+        if ($isSingleStore) {
+            $fork = 'SingleStore';
+        }
+
+        $recognizedForks = ['MySQL', 'MariaDB', 'Percona', 'ProxySQL', 'MySQL Router', 'MaxScale', 'SingleStore'];
+        if ($fork === '' || !in_array($fork, $recognizedForks, true)) {
+            $fork = 'MySQL';
+        }
+
+        $isVipServer = !empty($server['is_vip']) && (string)$server['is_vip'] === "1";
+        $version_label = trim($fork.' : '.$number);
+        if ($version_label === ':') {
+            $version_label = $fork !== '' ? $fork : $number;
+        }
+        if (!empty($server['version_label_override'])) {
+            $version_label = $server['version_label_override'];
+        }
 
         //to move in dot3
-        if (!empty($server['wsrep_cluster_status']) && strtolower($server['wsrep_cluster_status']) === "non-primary")
+        if (!empty($server['wsrep_cluster_status']) && strtolower((string)$server['wsrep_cluster_status']) === "non-primary")
         {
             $server['color'] = "#FFFF00"; // import this from legend
         }
@@ -480,116 +1290,302 @@ class Graphviz
             $forground_color = '#FFFFFF';
         }
 
-        $image_logo = strtolower($fork).'.svg';
+        $isMysqlRouter = Dot3::isMysqlRouterNode($server)
+            || stripos((string)($server['version'] ?? ''), '-router') !== false
+            || stripos((string)($server['version_comment'] ?? ''), 'router') !== false;
 
-        if (!empty($server['is_proxysql']) && $server['is_proxysql'] == "1" ) {
-            $image_logo = 'proxysql.png';            
+        $image_logo = strtolower($fork).'.svg';
+        if ($image_logo === '.svg' || $image_logo === 'sql.svg') {
+            $image_logo = 'mysql.svg';
         }
 
-        if (!empty($server['wsrep_on']) && strtolower($server['wsrep_on']) == "on" ) {
+        if ($isVipServer) {
+            $image_logo = 'vip.svg';
+            $version_label = 'VIP';
+        }
+
+        if (!empty($server['is_proxysql']) && $server['is_proxysql'] == "1" ) {
+            $image_logo = 'proxysql.png';
+        }
+
+        if (!empty($server['is_maxscale']) && $server['is_maxscale'] == "1" ) {
+            $image_logo = 'maxscale.png';
+        }
+
+        if (!$isVipServer && $isMysqlRouter) {
+            $image_logo = 'router.svg';
+            $version_label = 'MySQL Router';
+        }
+
+
+        if (!empty($server['wsrep_on']) && strtolower((string)$server['wsrep_on']) == "on" ) {
             //$image_logo = 'galera.svg';
         }
         
-        
-        //
-        $return .= '  "'.$server['id_mysql_server'].'"[ href="'.LINK.'MysqlServer/processlist/'.$server['id_mysql_server'].'/"';
-        $return .= 'tooltip="'.$server['display_name'].'"
-        shape=plaintext,label =<<table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
-        <tr><td port="target" bgcolor="'.$server['color'].'">
-        
-        <table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><tr><td>
+        if (self::isOfflineServer($server)) {
+            $server['color'] = self::OFFLINE_RED;
+        }
 
-        <table BGCOLOR="#eafafa" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">'.PHP_EOL;
-        $return .= '<tr><td PORT="title" colspan="2" bgcolor="'.$server['color'].'">
-        <font color="'.$forground_color.'"> <b>'.$server['display_name'].'</b></font></td></tr>';
+        $isUnknownNode = !empty($server['is_unknown_proxysql']);
 
-        $return .= '<tr><td bgcolor="#eeeeee" CELLPADDING="0" width="28" rowspan="2" port="from"><IMG SRC="'.$image_server.$image_logo.'" /></td>
-        <td bgcolor="lightgrey" width="100" align="left">'.$fork.' : '.$number.'</td></tr>';
+        if ($isUnknownNode) {
+            $server['color'] = '#9e9e9e';
+            $forground_color = '#FFFFFF';
+            $addIp = htmlspecialchars($server['ip_real'] ?? $server['ip'] ?? '', ENT_QUOTES);
+            $addPort = htmlspecialchars($server['port_real'] ?? $server['port'] ?? '3306', ENT_QUOTES);
+            $return .= '  "'.$server['id_mysql_server'].'"[ href="'.LINK.'Server/add/ip:'.$addIp.'/port:'.$addPort.'/"';
+            $return .= 'tooltip="'.__('Not monitored').' — '.__('Click to add').'"'.PHP_EOL;
+        } else {
+            $return .= '  "'.$server['id_mysql_server'].'"[ href="'.LINK.'MysqlServer/processlist/'.$server['id_mysql_server'].'/"';
+            $return .= 'tooltip="'.$server['display_name'].'"'.PHP_EOL;
+        }
+        $return .= self::openHtmlLikeLabel(Dot3::TARGET, $server['color']);
+        $return .= self::htmlRow([
+            '<td PORT="title" colspan="2" bgcolor="'.$server['color'].'"><font color="'.$forground_color.'"><b>'.$server['display_name'].'</b></font></td>',
+        ]);
 
-        $nat = '';
-        if ($server['port_real'] != $server['port']){
-            $nat = ' <b>(NAT)</b>';
+        $return .= self::htmlRow([
+            '<td bgcolor="#eeeeee" CELLPADDING="0" width="28" rowspan="2" port="from"><IMG SCALE="TRUE" SRC="'.$image_server.$image_logo.'" /></td>',
+            '<td bgcolor="lightgrey" width="100" align="left">'.$version_label.'</td>',
+        ]);
+
+        if ($isVipServer)
+        {
+            $server['port_real'] = trim((string)($server['vip_dns_port'] ?? $server['port_real'] ?? $server['port'] ?? ''));
+            $server['ip_real'] = trim((string)($server['vip_dns_ip'] ?? $server['ip_real'] ?? $server['ip'] ?? ''));
+        }
+
+        $displayAddress = ' ' . Ofuscate::ip($server['ip_real'] ?? '') . ':' . ($server['port_real'] ?? '');
+
+        if ($server['display_name'] === "garb")
+        {
+            $server['ip_real'] = "N/A";
+            $displayAddress = ' N/A:' . ($server['port_real'] ?? '3306');
+        }
+        else {
+            $endpoint = trim((string)($server['ip_real'] ?? '')) . ':' . trim((string)($server['port_real'] ?? ''));
+
+            if (preg_match('/^(\d{1,3}\.){3}\d{1,3}:\d{1,5}$/', $endpoint)) {
+                $tunnelDestination = Dot3::getTunnel([$endpoint]);
+
+                if (!empty($tunnelDestination)) {
+                    $displayAddress = ' 🔀' . $tunnelDestination;
+                }
+            }
         }
 
         //country there
-        $return .= '<tr><td bgcolor="lightgrey" width="100" align="left"> '.Ofuscate::ip($server['ip_real']).':'.$server['port_real'].$nat.'</td></tr>'.PHP_EOL;
+        $return .= self::htmlRow([
+            '<td bgcolor="lightgrey" width="100" align="left">' . $displayAddress . '</td>',
+        ]);
+
+        if ($isUnknownNode) {
+            $return .= self::htmlRow([
+                '<td colspan="2" bgcolor="#bdbdbd" align="center"><font color="#424242"><b>' . __('Add to monitoring') . '</b></font></td>',
+            ]);
+            $return .= self::closeHtmlLikeLabel();
+            return $return;
+        }
 
         //$return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Since')." : ".$server['date'].'</td></tr>'.PHP_EOL;
 
-        if (empty($server['is_proxysql']) )
+
+
+        if (empty($server['is_proxysql']) && empty($server['is_maxscale']) && empty($server['is_proxy'])   )
         {
 
-            $time_zone = $server['time_zone'];
-            if ($server['time_zone'] === "SYSTEM") {
-                $time_zone = $server['time_zone']. " (".$server['system_time_zone'].")";
+            $time_zone = $server['time_zone'] ?? 'N/A';
+            if ($time_zone === "SYSTEM") {
+                $time_zone = $time_zone . " (".($server['system_time_zone'] ?? 'N/A').")";
             }
 
-            $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Time zone')." : ".$time_zone.'</td></tr>'.PHP_EOL;
-            $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Server ID')." : ".$server['server_id'].' - Auto Inc : '.$server['auto_increment_offset'].'/'.$server['auto_increment_increment'].'</td></tr>'.PHP_EOL;
-
-            $debug = '';
-            //Debug::$debug = true;
-
-            //force le refresh du DOT
-            if (Debug::$debug === true) {
-                $rand = rand(1,100);
-                $debug  = ' (Debug : '.$rand.')';
+            if (!isset($server['system_time_zone'])) {
+                $server['system_time_zone'] = 'N/A';
             }
 
-            
-            $ROW = '';
-            if (strtolower($server['binlog_format'])=== "row")
+            if ($server['display_name'] !== "garb")
             {
-                $ROW = "(".$server['binlog_row_image'].")";
-            }
 
-            $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Binlog')." : ".$server['binlog_format'].' '.$ROW.$debug.'</td></tr>'.PHP_EOL;
-            
-            
-            
-            $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Read only')." : ".$server['read_only'].' - LSU : '.$server['log_slave_updates'].'</td></tr>'.PHP_EOL;
-            
+                if ($isVipServer) {
+                    $vipActive = trim((string)($server['vip_active_label'] ?? 'N/A'));
+                    if ($vipActive === '') {
+                        $vipActive = 'N/A';
+                    }
 
-            //A déplacer dans DOT quoi que ?
-            if (!empty($server['wsrep_on']) && strtolower($server['wsrep_on']) == "on" ) {
-                if ($server['wsrep_local_state_comment'] != "Synced") {
+                    $vipPrevious = trim((string)($server['vip_previous_label'] ?? 'N/A'));
+                    if ($vipPrevious === '') {
+                        $vipPrevious = 'N/A';
+                    }
 
-                        if ($server['wsrep_local_state'] === "2") { // Donnor / desync
+                    $vipLastSwitch = trim((string)($server['vip_last_switch'] ?? 'N/A'));
+                    if ($vipLastSwitch === '') {
+                        $vipLastSwitch = 'N/A';
+                    }
 
-                            if ($server['wsrep_desync'] === "ON"){
-                                $server['wsrep_local_state_comment'] = "Desynced - Desync : ".$server['wsrep_desync'];
-                            }
-                            else{
-                                $server['wsrep_local_state_comment'] = "Donor - Desync : ".$server['wsrep_desync'];
-                            }
-                        }
-
-                    $comment = "<b>".trim($server['wsrep_local_state_comment'])."</b>";
+                    $return .= self::htmlRow([
+                        '<td colspan="2" bgcolor="lightgrey" align="left" port="'.Dot3::VIP_ACTIVE_PORT.'">IP active : '.$vipActive.'</td>',
+                    ]);
+                    $return .= self::htmlRow([
+                        '<td colspan="2" bgcolor="lightgrey" align="left" port="'.Dot3::VIP_PREVIOUS_PORT.'">IP previous : '.$vipPrevious.'</td>',
+                    ]);
+                    $return .= self::htmlRow([
+                        '<td colspan="2" bgcolor="lightgrey" align="left">Date last switch : '.$vipLastSwitch.'</td>',
+                    ]);
                 }
                 else
                 {
-                    $comment = $server['wsrep_local_state_comment'];
+
+                $is_single_store = $isSingleStore || strtolower((string)$fork) === 'singlestore';
+
+                $return .= self::htmlRow([
+                    '<td colspan="2" bgcolor="lightgrey" align="left">'.__('Time zone')." : ".$time_zone.' </td>',
+                ]);
+
+                if (!$is_single_store) {
+                    // 🇫🇷
+                    $server_id = $server['server_id'] ?? 'N/A';
+                    $auto_increment_offset = $server['auto_increment_offset'] ?? 'N/A';
+                    $auto_increment_increment = $server['auto_increment_increment'] ?? 'N/A';
+
+                    $return .= self::htmlRow([
+                        '<td colspan="2" bgcolor="lightgrey" align="left">'.__('Server ID')." : ".$server_id.' - Auto Inc : '.$auto_increment_offset.'/'.$auto_increment_increment.'</td>',
+                    ]);
+
+                    $debug = '';
+                    //Debug::$debug = true;
+
+                    //force le refresh du DOT
+                    if (Debug::$debug === true) {
+                        $rand = rand(1,100);
+                        $debug  = ' (Debug : '.$rand.')';
+                    }
+
+                    $ROW = '';
+                    $binlog_format = strtolower((string)($server['binlog_format'] ?? ''));
+                    if ($binlog_format === "row")
+                    {
+                        $ROW = "(".($server['binlog_row_image'] ?? 'N/A').")";
+                    }
+
+                    $binlog_display = $server['binlog_format'] ?? 'N/A';
+                    $return .= self::htmlRow([
+                        '<td colspan="2" bgcolor="lightgrey" align="left">'.__('Binlog')." : ".$binlog_display.' '.$ROW.$debug.'</td>',
+                    ]);
+
+                    if (empty($server['log_slave_updates']))
+                    {
+                        //Debug::debug($server, "SERVER");
+                        //die();
+                        //return "";
+                    }
+
+                    $read_only = strtolower((string)($server['read_only'] ?? ''));
+                    if ($read_only === "on" || $read_only === "1")
+                    {
+                        $server['read_only'] = '✅ ON';
+                    }
+                    elseif ($read_only === "off" || $read_only === "0")
+                    {
+                        $server['read_only'] = 'OFF';
+                    }
+                    else {
+                        $server['read_only'] = 'N/A';
+                    }
+
+                    if (($server['log_slave_updates'] ?? '') === "OFF")
+                    {
+                        $server['log_slave_updates'] = "⚫ OFF";
+                    }
+
+                    if (empty($server['log_slave_updates'])) {
+                        $server['log_slave_updates'] = 'N/A';
+                    }
+
+                    $return .= self::htmlRow([
+                        '<td colspan="2" bgcolor="lightgrey" align="left">'.__('Read only')." : ".$server['read_only'].' - LSU : '.$server['log_slave_updates'].'</td>',
+                    ]);
+                }
+                
+
+                //NODE GALERA
+                //A déplacer dans DOT quoi que ?
+                if (!empty($server['wsrep_on']) && strtolower($server['wsrep_on']) == "on" ) {
+
+                    if (!empty($server['galera_status_override'])) {
+                        $server['wsrep_local_state_comment'] = $server['galera_status_override'];
+                    }
+
+                    if ($server['wsrep_local_state_comment'] != "Synced") {
+
+                            if ($server['wsrep_local_state'] === "2") { // Donnor / desync
+
+                                if ($server['wsrep_desync'] === "ON"){
+                                    $server['wsrep_local_state_comment'] = "Desynced - Desync : ".$server['wsrep_desync'];
+                                }
+                                else{
+                                    $server['wsrep_local_state_comment'] = "Donor - Desync : ".$server['wsrep_desync'];
+                                }
+                            }
+
+                        $comment = "<b>".trim($server['wsrep_local_state_comment'])."</b>";
+                    }
+                    else
+                    {
+                        $comment = $server['wsrep_local_state_comment'];
+                    }
+
+                    if ($server['wsrep_cluster_status'] !== "Primary")
+                    {
+                        $server['wsrep_cluster_status'] = "<b>".trim($server['wsrep_cluster_status'])."</b>";
+                    }
+
+
+                    if (!empty($server['galera_status_override'])) {
+                        $status = $server['wsrep_cluster_status'].' (<b>'.$server['wsrep_local_state_comment'].'</b>)';
+                    } elseif ($server['mysql_available'] === "0") {
+                        $status = '<b>Offline</b>';
+                    } else {
+                        $status = $server['wsrep_cluster_status'].' ('.$comment.')';
+                    }
+
+                    $return .= self::htmlRow([
+                        '<td colspan="2" bgcolor="lightgrey" align="left">'.__('Status')." : ".$status.'</td>',
+                    ]);
                 }
 
-                if ($server['wsrep_cluster_status'] !== "Primary")
-                {
-                    $server['wsrep_cluster_status'] = "<b>".trim($server['wsrep_cluster_status'])."</b>";
+                // Group Replication status
+                if (!empty($server['gr_role'])) {
+                    $grRole = strtoupper((string)$server['gr_role']);
+                    $grState = strtoupper((string)($server['gr_state'] ?? 'UNKNOWN'));
+                    $grMode = (string)($server['gr_mode'] ?? '');
+
+                    $roleBg = ($grRole === 'PRIMARY') ? '#c8e6c9' : '#bbdefb';
+                    $roleLabel = ($grRole === 'PRIMARY') ? '<b>PRIMARY</b>' : 'SECONDARY';
+
+                    $stateBg = 'lightgrey';
+                    $stateLabel = $grState;
+                    if ($grState === 'ONLINE') {
+                        $stateLabel = 'ONLINE';
+                    } elseif ($grState === 'RECOVERING') {
+                        $stateBg = '#fff9c4';
+                        $stateLabel = '<b>RECOVERING</b>';
+                    } elseif ($grState === 'ERROR' || $grState === 'OFFLINE') {
+                        $stateBg = '#ffcdd2';
+                        $stateLabel = '<b>'.$grState.'</b>';
+                    }
+
+                    $return .= self::htmlRow([
+                        '<td colspan="2" bgcolor="'.$roleBg.'" align="left">'.__('GR Role').' : '.$roleLabel.'</td>',
+                    ]);
+                    $return .= self::htmlRow([
+                        '<td colspan="2" bgcolor="'.$stateBg.'" align="left">'.__('GR State').' : '.$stateLabel.'</td>',
+                    ]);
                 }
 
-
-                if ($server['mysql_available'] === "0") {
-                    $status = '<b>Offline</b>';
                 }
-                else {
-                    $status = $server['wsrep_cluster_status'].' ('.$comment.')';
-                }
-
-                $return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Status')." : ".$status.'</td></tr>'.PHP_EOL;
             }
             
             
-            $return .= '</table>'.PHP_EOL;
-            $return .= '</td></tr>'.PHP_EOL;
             
 
             /*
@@ -601,50 +1597,63 @@ class Graphviz
                 <td bgcolor="grey">R</td>
             </tr>'.PHP_EOL;
             
+
+            
             if (! empty($server['mysql_database']))
             {
+                $i = 1;
                 foreach($server['mysql_database'] as $database)
                 {
+                    if (in_array($database, array("NONE", 'sys')))
+                    {
+                        continue;
+                    }
+
+                    $i++;
                     $return .= '<tr>'.PHP_EOL;
                     $return .= '<td bgcolor="darkgrey" align="left">'.$database.'</td>'.PHP_EOL;
                     $return .= '<td bgcolor="darkgrey" align="center">'.'🛢'.'</td>'.PHP_EOL;
                     $return .= '<td bgcolor="darkgrey" align="center">'.'🛢'.'</td>'.PHP_EOL;
                     $return .= '</tr>'.PHP_EOL;
 
-                    if ($database == "eshop")
+                    if ($database == "sakila")
                     {
                         $return .= '<tr><td colspan="3" bgcolor="green" align="left">🕷 '.'simulation#P#pt1{0,1}'.'</td></tr>'.PHP_EOL;
                         $return .= '<tr><td colspan="3" bgcolor="red" align="left">🕷 '.'simulation#P#pt2{0,1}'.'</td></tr>'.PHP_EOL;
                         $return .= '<tr><td colspan="3" bgcolor="lightgrey" align="left">🕷 '.'simulation#P#pt3{0,1}'.'</td></tr>'.PHP_EOL;
                         $return .= '<tr><td colspan="3" bgcolor="lightgrey" align="left">🕷 '.'simulation#P#pt4{0,1}'.'</td></tr>'.PHP_EOL;
                     }
+
+                    if ($i > 5)
+                    {
+                        break;
+                    }
                 }
             }
             else
             {
                 
-            }
+            } 
 
             $return .= '</table>'.PHP_EOL;
             $return .= '</td></tr>'.PHP_EOL;
-            */
+            /***** */
 
 
-            $return .= '</table>'.PHP_EOL;
 
-            $return .= '</td></tr></table>> ];'.PHP_EOL;
-
-            //$return .= '<tr><td colspan="2" bgcolor="lightgrey" align="left">'.__('Auto_increment')." : ".$server['time_zone'].'</td></tr>'.PHP_EOL;
-        }elseif ($server['is_proxysql'] == "1")
+        }elseif (!empty($server['is_proxysql']) && $server['is_proxysql'] == "1")
         {
             
-            //Debug::debug($server);
+            //Debug::debug($server,"CORRESPONDANCE");
             //exit;
             $hostgroup = 0;
             $i = 0;
 
-            $correspondance_hg = Dot3::getHostGroup($server['mysql_galera_hostgroups']);
+            $correspondance_hg = Dot3::getProxySqlHostGroupMap($server);
+
+            //Debug::debug($correspondance_hg, "HG");
             
+            $max_writer = 0;
             if (isset($server['mysql_galera_hostgroups'][0]['max_writers'])){
                 $max_writer = $server['mysql_galera_hostgroups'][0]['max_writers'];
             }
@@ -654,23 +1663,18 @@ class Graphviz
                 $i++;
                 
 
-                if (empty($correspondance_hg[$link['hostgroup_id']]))
-                {
-                    //$this->logger->warning("Impossible to link this hostgroup : ".$link['hostgroup_id']);
-                    continue;
-                }
-
+                $hostgroupLabel = $correspondance_hg[$link['hostgroup_id']] ?? (string) $link['hostgroup_id'];
 
                 if ($hostgroup != $link['hostgroup_id'])
                 {
                     $max = "";
-                    if ($correspondance_hg[$link['hostgroup_id']] === "writer")
+                    if ($hostgroupLabel === "writer" && ! empty($max_writer))
                     {
                         $max = " (max : ". $max_writer.")";
                     }
 
                     $port = crc32($link['hostgroup_id'].'::');
-                    $return .= '<tr><td colspan="2" port="'.$port.'" bgcolor="#aaaaaa" align="left"><font color="#000000">'.__('Host group').' : <b>'.$correspondance_hg[$link['hostgroup_id']].'</b> '.$max.'</font></td></tr>'.PHP_EOL;
+                    $return .= '<tr><td colspan="2" port="'.$port.'" bgcolor="#aaaaaa" align="left"><font color="#000000">'.__('Host group').' : <b>'.$hostgroupLabel.'</b> '.$max.'</font></td></tr>'.PHP_EOL;
                 }
                 //⛯ PmaControl
                 $hostgroup = $link['hostgroup_id'];
@@ -680,7 +1684,7 @@ class Graphviz
 
                 $extra = '';
                 $bgcolor = Dot3::$config['PROXYSQL_'.$link['status']]['color'];
-                $forground_color =Dot3::$config['PROXYSQL_'.$link['status']]['font'];
+                $forground_color = Dot3::$config['PROXYSQL_'.$link['status']]['font'];
 
                 if (! empty($server['proxy_connect_error'])) {
                     foreach($server['proxy_connect_error'] as $hostname => $error)
@@ -707,20 +1711,348 @@ class Graphviz
 
                 $port = crc32($link['hostgroup_id'].':'.$link['hostname'].':'.$link['port']);
                 
+                [$bgcolor, $forground_color] = self::resolveOfflineRowColors($server, $bgcolor, $forground_color);
+
                 $return .= '<tr>';
                 $return .= '<td colspan="2" bgcolor="'.$bgcolor.'" align="left" port="'.$port.'">';
                 $return .= '<font color="'.$forground_color.'">'.$link['hostname'].':'.$link['port'].''.$extra.'</font>';
                 $return .= '</td>';
                 $return .= '</tr>'.PHP_EOL;
             }
-            $return .= '</table>';
             
+
+
+
+
+        } elseif ($isMysqlRouter)
+        {
+            $background = Dot3::$config['SERVER_CONFIG']['background'];
+            $color = Dot3::$config['SERVER_CONFIG']['color'];
+
+            $routesPayload = Dot3::decodeMysqlRouterJson($server, 'mysqlrouter_routes');
+            $metadataConfig = Dot3::decodeMysqlRouterJson($server, 'mysqlrouter_metadata_config');
+            $matchedRoute = Dot3::resolveMysqlRouterRouteForServer($server);
+
+            $routes = $routesPayload['items'] ?? [];
+            if (!empty($matchedRoute)) {
+                $routes = array($matchedRoute);
+            }
+
+            if (!empty($routes)) {
+                foreach ($routes as $route) {
+                    $routeName = $route['route'] ?? $route['name'] ?? $route['id'] ?? 'route';
+                    $destinations = $route['destinations_payload']['items'] ?? [];
+                    $routePrefix = $routeName === 'bootstrap_rw_split' ? '🛣 ' : '';
+
+                    [$routeBackground, $routeFontColor] = self::resolveOfflineRowColors($server, '#00B33C', '#ffffff');
+
+                    $return .= '<tr>';
+                    $return .= '<td colspan="2" bgcolor="'.$routeBackground.'" align="left">';
+                    $return .= '<font color="'.$routeFontColor.'">'.$routePrefix.'Mode : '.$routeName.'</font>';
+                    $return .= '</td>';
+                    $return .= '</tr>'.PHP_EOL;
+
+                    foreach ($destinations as $destination) {
+                        if (is_array($destination)) {
+                            $destinationAddress = $destination['address'] ?? $destination['hostname'] ?? 'n/a';
+                            $destinationPort = $destination['port'] ?? '';
+                        } else {
+                            $destinationAddress = (string) $destination;
+                            $destinationPort = '';
+                        }
+
+                        $destinationKey = $destinationAddress.':'.$destinationPort;
+                        $destinationDetails = $server['mysqlrouter_route_destinations'][$destinationKey] ?? array();
+                        $destinationGraphPort = $destinationDetails['graph_port'] ?? crc32((string)($server['id_mysql_server'] ?? '').':'.$destinationAddress.':'.$destinationPort);
+                        $destinationRole = strtoupper((string)($destinationDetails['role'] ?? ''));
+                        $destinationBgColor = '#EAF7EE';
+                        $destinationFontColor = '#0f172a';
+                        $destinationIcon = '📖';
+
+                        if ($destinationRole === 'PRIMARY') {
+                            $destinationBgColor = '#008000';
+                            $destinationFontColor = '#ffffff';
+                            $destinationIcon = '✍️';
+                        } elseif ($destinationRole === 'REPLICA') {
+                            $destinationBgColor = '#00B33C';
+                            $destinationFontColor = '#ffffff';
+                        }
+
+                        [$destinationBgColor, $destinationFontColor] = self::resolveOfflineRowColors($server, $destinationBgColor, $destinationFontColor);
+
+                        $return .= '<tr>';
+                        $return .= '<td colspan="2" bgcolor="'.$destinationBgColor.'" align="left" port="'.$destinationGraphPort.'">';
+                        $return .= '<font color="'.$destinationFontColor.'">'.$destinationIcon.' '.$destinationAddress.':'.$destinationPort.'</font>';
+                        $return .= '</td>';
+                        $return .= '</tr>'.PHP_EOL;
+                    }
+                }
+            } else {
+                [$warningBgColor, $warningFontColor] = self::resolveOfflineRowColors($server, '#FFBF00', '#000000');
+
+                $return .= '<tr>';
+                $return .= '<td colspan="2" bgcolor="'.$warningBgColor.'" align="left">';
+                $return .= '<font color="'.$warningFontColor.'">MySQL Router routes : no payload collected</font>';
+                $return .= '</td>';
+                $return .= '</tr>'.PHP_EOL;
+            }
+
+            /*
+            if (!empty($metadataConfig)) {
+                foreach ($metadataConfig as $metadataName => $metadata) {
+                    $nodes = $metadata['nodes'] ?? [];
+                    $return .= '<tr>';
+                    $return .= '<td colspan="2" bgcolor="'.$background.'" align="left">';
+                    $return .= '<font color="'.$color.'">📦 Metadata : '.$metadataName.' ('.count($nodes).' node(s))</font>';
+                    $return .= '</td>';
+                    $return .= '</tr>'.PHP_EOL;
+                }
+            }*/
+
             
-            $return .= '</td></tr>'.PHP_EOL;
-            $return .= '</table>'.PHP_EOL;
+        } elseif (!empty($server['is_maxscale']) && $server['is_maxscale'] == "1")
+        {
+
+            $background = Dot3::$config['SERVER_CONFIG']['background'];
+            $color = Dot3::$config['SERVER_CONFIG']['color'];
             
-            $return .= '</td></tr></table>> ];'.PHP_EOL;
+            $maxscale = MaxScale::rewriteJson($server);
+
+           
+
+            $ret_max = Dot3::resolveMaxScaleConnection($maxscale,  $server['ip_real'].":".$server['port_real']);
+
+            if (empty($ret_max[$server['ip_real'].":".$server['port_real']]))
+            {
+                $return .= '<tr>';
+                $return .= '<td colspan="2" bgcolor="'.'#FF0000'.'" align="left">';
+                $return .= '<font color="'.'#ffffff'.'"> Impossible to match Maxcale Admin</font>';
+                $return .= '</td>';
+                $return .= '</tr>'.PHP_EOL;
+
+                $return .= '<tr>';
+                $return .= '<td colspan="2" bgcolor="'.'#FF0000'.'" align="left">';
+                $return .= '<font color="'.'#ffffff'.'">[ Check it here ]</font>';
+                $return .= '</td>';
+                $return .= '</tr>'.PHP_EOL;
+
+
+                $services = ['listeners', 'services','monitors','servers'];
+
+                foreach($services as $service)
+                {
+                    if (empty($server['maxscale_'.$service])) {
+                        $icon = '✖️';
+                        $bgcolor ='#FF0000';
+                    }
+                    else{
+                        $icon = '✅';
+                        $bgcolor ='#008000';
+                    }
+
+                    $return .= '<tr>';
+                    $return .= '<td colspan="2" bgcolor="'.$bgcolor.'" align="left">';
+                    $return .= '<font color="'.'#ffffff'.'">MaxScale '.$service." : ".$icon;
+                    
+
+
+                    $return .= '</font>';
+                    $return .= '</td>';
+                    $return .= '</tr>'.PHP_EOL;
+                }
+
+
+
+
+
+                
+
+            }
+            else
+            {
+
+                
+                $max = $ret_max[$server['ip_real'].":".$server['port_real']];
+
+                //Debug::debug(maxScale::removeArraysDeeperThan($max,3), "MAX");
+
+                if ($max['service']['state'] === 'Started'){
+                    $icone = '✅';
+                }
+                else{
+                    $icone = '⛔';
+                }
+
+                if (empty($server['mysql_available'])){
+                    $icone = "⛔";
+                }
+
+                [$background, $color] = self::resolveOfflineRowColors($server, $background, $color);
+                [$background, $color] = self::forceDownRowColors($icone, $background, $color);
+
+                $return .= '<tr>';
+                $return .= '<td colspan="2" bgcolor="'.$background.'" align="left">';
+                $return .= '<font color="'.$color.'">'.$icone.' Router : '.$max['service']['router'].' ('
+                .$max['service']['statistics']['active_operations'] ."/".$max['service']['statistics']['connections'].')</font>';
+                $return .= '</td>';
+                $return .= '</tr>'.PHP_EOL;
+
+
+
+
+                foreach($max['monitor'] as $module_name => $module)
+                {
+                    if ($module['state'] === 'Running'){
+                        $icone = '✅';
+                    }
+                    else{
+                        $icone = '⛔';
+                    }
+
+                    if (empty($server['mysql_available'])){
+                        $icone = "⛔";
+                    }
+
+                    [$background, $color] = self::resolveOfflineRowColors($server, $background, $color);
+                    [$background, $color] = self::forceDownRowColors($icone, $background, $color);
+
+                    $return .= '<tr>';
+                    $return .= '<td colspan="2" bgcolor="'.$background.'" align="left">';
+                    $return .= '<font color="'.$color.'">'.$icone.' Module : '.$module['module'].'</font>';
+                    $return .= '</td>';
+                    $return .= '</tr>'.PHP_EOL;
+                }
+
+
+                // Read-write-listener ✅
+                // Read-write-split ✅
+                // Total connections : 434
+                // Monitor : galeramon ✅
+
+                // Master, Synced, Running   => Down
+                // 10.68.68.233:3306 (10)
+                // Slave, Synced, Running
+                // 10.68.68.231:3306 (10)
+                // 10.68.68.232:3306 (10)
+
+
+                foreach($max['servers'] as $server_ip_port => $elem)
+                {
+                    //valeur possible :
+                    /*
+                    Master — le serveur est le maître (primary) dans la réplication. 
+                    Slave — le serveur est un esclave (réplica). 
+                    Running — indication que le serveur est accessible / actif sous le monitor. (souvent combiné avec Master/Slave, ex. “Master, Running”) 
+                    Synced — dans les environnements Galera / cluster, pour indiquer qu’il est synchronisé. Par exemple “Slave, Synced, Running” comme valeur combinée dans un exemple de list servers. 
+                    Draining — l’état de « drainage » : le serveur est en train de se vider, c’est-à-dire qu’il n’accepte plus de nouvelles connexions mais les connexions existantes peuvent continuer. 
+                    Drained — l’état où le serveur a été complètement drainé (plus de connexions restantes). 
+                    Maintenance — le serveur est en maintenance, donc non éligible pour de nouvelles connexions. 
+                    Down — le serveur est hors ligne ou injoignable selon le monitor. Dans les scénarios de failover, le monitor peut marquer un serveur “Down”. 
+                    */
+
+                    $states = explode(",", $elem['state']);
+                    foreach($states as $key => $state)
+                    {
+                        $states[$key] = trim($state);
+                    }
+
+
+                    if (in_array("Running", $states))
+                    {
+
+                        $hasGaleraMon = false;
+
+                        foreach ($max['monitor'] as $item) {
+                            if (isset($item['module']) && $item['module'] === 'galeramon') {
+                                $hasGaleraMon = true;
+                                break; // on peut sortir dès qu'on trouve
+                            }
+                        }
+
+
+                        if ($hasGaleraMon)
+                        {
+                            if (in_array("Synced", $states))
+                            {
+
+                                $background = Dot3::$config['MAXSCALE_RUNNING']['background'];
+                                $color = Dot3::$config['MAXSCALE_RUNNING']['color'];
+
+                                if (in_array("Master", $states)){
+                                    $background = "#008000";
+                                }
+                                else{
+                                    $background = "#00B33C";
+                                }
+                                //$color="#333333";
+                            }
+                            else{
+                                $background = Dot3::$config['MAXSCALE_UNSYNC']['background'];
+                                $color = Dot3::$config['MAXSCALE_UNSYNC']['color'];
+                            }
+                        }
+                        else{
+
+                                if (in_array("Master", $states)){
+                                    $background = "#008000";
+                                }
+                                else{
+                                    $background = "#00B33C";
+                                }
+
+                            //$background = Dot3::$config['MAXSCALE_RUNNING']['background'];
+                            $color = Dot3::$config['MAXSCALE_RUNNING']['color'];
+                        }
+
+                    }
+
+                    if (in_array("Down", $states))
+                    {
+                        $background = Dot3::$config['MAXSCALE_DOWN']['background'];
+                        $color = Dot3::$config['MAXSCALE_DOWN']['color'];
+                    }
+
+                    $icone = "⛔";
+                    if (in_array("Master", $states))
+                    {
+                        $icone = "✍️";
+                    }
+
+                    if (in_array("Slave", $states))
+                    {
+                        $icone = "📖";
+                    }
+
+                    if (empty($server['mysql_available']))
+                    {
+                        $icone = "⛔";
+                        $elem['connections'] = 0;
+                        $background = Dot3::$config['MAXSCALE_DOWN']['background'];
+                        $color = Dot3::$config['MAXSCALE_DOWN']['color'];
+                    }
+
+
+                    $port = crc32($server['ip_real'].':'.$server['port_real'].':'.$server_ip_port);
+
+
+                    [$background, $color] = self::resolveOfflineRowColors($server, $background, $color);
+                    [$background, $color] = self::forceDownRowColors($icone, $background, $color);
+
+                    $return .= '<tr>';
+                    $return .= '<td colspan="2" bgcolor="'.$background.'" align="left" port="'.$port.'">';
+                    $return .= '<font color="'.$color.'">'.$icone.' '.$server_ip_port.' ('.$elem['statistics']['connections'].'/'.$elem['statistics']['max_connections'].')</font>';
+                    $return .= '</td>';
+                    $return .= '</tr>'.PHP_EOL;
+                }
+            }
+
+            
+
+            //rgb(125, 208, 18) => color arrow maxscale
         }
+
+
+        $return .= self::closeHtmlLikeLabel().PHP_EOL;
         
         
         // http://localhost/pmacontrol/image/icon/proxysql.png
@@ -739,85 +2071,40 @@ class Graphviz
         return $return;
     }
 
-/*
-    static function buildApp()
-    {
 
-        //TO DO
-        $db = Sgbd::sql('proxysql_1');
-
-        $sql ="select cli_host, srv_host,srv_port, hostgroup, user, count(1) as cpt, db as table_schema,sum(time_ms) as sum_time_ms  
-        from stats_mysql_processlist WHERE command != 'Sleep' and hostgroup!=-1 group
-        by cli_host,srv_host,srv_port,hostgroup, user, db ;";
-
-        $res = $db->sql_query($sql);
-
-        $data = array();
-        while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
-        {
-            $data[$arr['cli_host']][$arr['user']][$arr['table_schema']] = $arr;
-        }   
-
-
-        krsort($data);
-
-        Debug::debug($data);
-
-        $APP = '';
-        foreach($data as $ip => $users)
-        {
-            self::$edge= array();
-
-            $lines = '<table BGCOLOR="#eafafa" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">'.PHP_EOL;
-            $lines .=  '<tr><td width="150" bgcolor="grey" colspan="4"><font color="#ffffff"><b>'.'App ??'.'</b></font></td></tr>';
-            $lines .=  '<tr><td width="150" bgcolor="lightgrey" colspan="4">'.$ip.'</td></tr>';
-
-            $lines .= '<tr>';
-            $lines .= '<td bgcolor="grey">'.__("User").'</td>';
-            $lines .= '<td bgcolor="grey">'.__("Schema").'</td>';
-            $lines .= '<td bgcolor="grey">'.__("Con").'</td>';
-            $lines .= '<td bgcolor="grey">'.__("Ms").'</td>';
-            $lines .= '</tr>'.PHP_EOL;
-
-            foreach($users as $name_user => $dbs)
-            {
-                $nb_dbs = count($dbs);
-                $lines .=  '<tr><td bgcolor="darkgrey" align="left" rowspan="'.$nb_dbs.'">'.$name_user.'</td>';
-                $i = 0;
-
-                ksort($dbs);
-                foreach($dbs as $db_name => $elem)
-                {
-                    $i++;
-                    if ($i != 1) {
-                        $lines .= '<tr>';
-                    }
-                    $port_ori = crc32(json_encode($elem));
-                    $port_dest = crc32($elem['hostgroup'].':'.$elem['srv_host'].':'.$elem['srv_port']);
-
-
-                    $lines .= '<td bgcolor="darkgrey" align="left">'.$db_name.'</td>';
-                    $lines .= '<td bgcolor="darkgrey" align="right">'.$elem['cpt'].'</td>';
-                    $lines .= '<td bgcolor="darkgrey" align="right" port="'.$port_ori.'">'.$elem['sum_time_ms'].'</td>';
-                    $lines .= '</tr>'.PHP_EOL;
-
-                    
-                    self::$edge[] = crc32($ip).':'.$port_ori.' -> 65:'.$port_dest;
-                }
-            }
-            $lines .= '</table>'.PHP_EOL;
-            $APP .= self::buildBox($lines, crc32($ip), "", "All", "grey").PHP_EOL;
-
-
-            foreach(self::$edge as $edge)
-            {
-                $APP .= $edge.'[tooltip="OK" color="darkgrey" fontname="arial" fontsize=8 edgeURL="" arrowhead="none" penwidth="3" style="solid" arrowsize="1.5" ];'.PHP_EOL;
-            }
-        }
-
-        return $APP;
-    }*/
-
+/**
+ * Handle graphviz state through `buildBox`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $body Input value for `body`.
+ * @phpstan-param mixed $body
+ * @psalm-param mixed $body
+ * @param int $id_box Input value for `id_box`.
+ * @phpstan-param int $id_box
+ * @psalm-param int $id_box
+ * @param mixed $link Input value for `link`.
+ * @phpstan-param mixed $link
+ * @psalm-param mixed $link
+ * @param mixed $display_name Input value for `display_name`.
+ * @phpstan-param mixed $display_name
+ * @psalm-param mixed $display_name
+ * @param mixed $box_color Input value for `box_color`.
+ * @phpstan-param mixed $box_color
+ * @psalm-param mixed $box_color
+ * @return mixed Returned value for buildBox.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::buildBox()
+ * @example /fr/graphviz/buildBox
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function buildBox($body, $id_box, $link, $display_name, $box_color)
     {
 
@@ -825,7 +2112,7 @@ class Graphviz
         $return .= '  "'.$id_box.'"[ href="'.$link.'"';
         $return .= 'tooltip="'.$display_name.'"
         shape=plaintext,label =<<table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
-        <tr><td port="target" bgcolor="'.$box_color.'">
+        <tr><td port="'.Dot3::TARGET.'" bgcolor="'.$box_color.'">
         <table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><tr><td>';
 
         $return .= $body;
@@ -836,24 +2123,64 @@ class Graphviz
     }
 
 
+/**
+ * Handle graphviz state through `format`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $bytes Input value for `bytes`.
+ * @phpstan-param mixed $bytes
+ * @psalm-param mixed $bytes
+ * @param mixed $decimals Input value for `decimals`.
+ * @phpstan-param mixed $decimals
+ * @psalm-param mixed $decimals
+ * @return mixed Returned value for format.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::format()
+ * @example /fr/graphviz/format
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function format($bytes, $decimals = 2)
     {
-        // && $bytes != 0
-        if (empty($bytes)) {
-            return "";
-        }
-        $sz = ' KMGTP';
-
-        $factor = (int) floor(log($bytes) / log(1024));
-
-        return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor))." ".@$sz[$factor]."o";
+        return Format::bytesOrEmpty($bytes, $decimals);
     }
 
+/**
+ * Handle `startCluster`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $type Input value for `type`.
+ * @phpstan-param mixed $type
+ * @psalm-param mixed $type
+ * @param mixed $elems Input value for `elems`.
+ * @phpstan-param mixed $elems
+ * @psalm-param mixed $elems
+ * @return mixed Returned value for startCluster.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @example startCluster(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function startCluster($type, $elems )
     {
         $crc32 = crc32(json_encode($elems));
 
-        if (! in_array($type, array('galera','segment', 'group', 'xdb', 'ndb')))
+        if (! in_array($type, array('galera','segment', 'group', 'xdb', 'ndb', 'innodb')))
         {
             throw new \Exception('Impossible to find this cluster');
         }
@@ -873,12 +2200,147 @@ class Graphviz
     }
 
 
+/**
+ * Handle `endCluster`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for endCluster.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example endCluster(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function endCluster()
     {
         $return = "}".PHP_EOL;
         return $return;
     }
 
+    private static function getColorByTheme($theme, $fallback)
+    {
+        if (!empty(Dot3::$config[$theme]['color'])) {
+            return Dot3::$config[$theme]['color'];
+        }
+
+        return $fallback;
+    }
+
+    static function generateInnoDBCluster($all_innodb_cluster)
+    {
+        $return = '';
+
+        foreach ($all_innodb_cluster as $cluster) {
+            $return .= self::startCluster('innodb', $cluster);
+
+            $stateColor = self::getColorByTheme((string)($cluster['config'] ?? 'INNODB_CLUSTER_OK'), '#2f855a');
+            $background = self::diluerCouleur($stateColor, 88);
+            $groupName = trim((string)($cluster['group_name'] ?? ''));
+            $image_server  = ROOT."/App/Webroot/image/dot/";
+
+            $return .= 'label =<<table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
+            <tr><td port="'.Dot3::TARGET.'" bgcolor="'.'#000000'.'">
+            
+            <table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><tr><td>
+    
+            <table BGCOLOR="#eafafa" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">'.PHP_EOL;
+            $return .= '<tr><td PORT="title" colspan="2" bgcolor="'.'#000000'.'">
+            <font color="'.'#FFFFFF'.'"><b>'.htmlspecialchars((string)$cluster['name'], ENT_QUOTES, 'UTF-8').'</b></font></td></tr>';
+            $return .= '<tr><td bgcolor="#eeeeee" CELLPADDING="0" width="28" rowspan="2" port="from"><IMG SRC="'.$image_server.'gr.svg" /></td>
+            <td bgcolor="lightgrey" width="100" align="left">Nodes available : <b>'.(int)$cluster['node_online'].'/'.(int)$cluster['members'].'</b></td></tr>';
+            $return .= '<tr><td bgcolor="lightgrey" width="100" align="left">Mode : <b>'.htmlspecialchars((string)$cluster['mode'], ENT_QUOTES, 'UTF-8').'</b></td></tr>'.PHP_EOL;
+
+
+            $return .= '</table>';
+            $return .= '</td></tr></table>';
+            $return .= '</td></tr></table>>';
+            $return .= 'tooltip = "InnoDB Cluster : '.addslashes((string)$cluster['name']).'";'.PHP_EOL;
+            $return .= "rank = same;".PHP_EOL;
+            $return .= 'penwidth = 4;'.PHP_EOL;
+            $return .= 'color = "'.$stateColor.'";'.PHP_EOL;
+            $return .= 'style = filled;'.PHP_EOL;
+            $return .= 'fillcolor = "'.$background.'"'.PHP_EOL;
+            $return .= 'href = "'.LINK.'InnoDBCluster/index/'.urlencode((string)$groupName).'";'.PHP_EOL;
+
+            $roleBuckets = array(
+                'PRIMARY' => array(),
+                'SECONDARY' => array(),
+            );
+
+            foreach ($cluster['node'] as $idMysqlServer => $node) {
+                $role = strtoupper((string)($node['member_role'] ?? 'SECONDARY'));
+                if (!isset($roleBuckets[$role])) {
+                    $roleBuckets[$role] = array();
+                }
+                $roleBuckets[$role][] = $idMysqlServer;
+            }
+
+            $subgroups = array(
+                'PRIMARY' => array(
+                    'label' => 'Primary',
+                    'color' => '#1b5e20',
+                    'fillcolor' => '#e8f5e9',
+                ),
+                'SECONDARY' => array(
+                    'label' => 'Replica',
+                    'color' => '#1565c0',
+                    'fillcolor' => '#e3f2fd',
+                ),
+            );
+
+            foreach ($subgroups as $role => $style) {
+                if (empty($roleBuckets[$role])) {
+                    continue;
+                }
+
+                $return .= 'subgraph cluster_innodb_'.crc32((string)$cluster['id_cluster'].'_'.$role).' {'.PHP_EOL;
+                $return .= 'label = "'.$style['label'].'";'.PHP_EOL;
+                $return .= 'penwidth = 2;'.PHP_EOL;
+                $return .= 'color = "'.$style['color'].'";'.PHP_EOL;
+                $return .= 'style = "rounded,filled";'.PHP_EOL;
+                $return .= 'fillcolor = "'.$style['fillcolor'].'";'.PHP_EOL;
+                $return .= 'fontsize = 8;'.PHP_EOL;
+                $return .= 'fontname = "Arial";'.PHP_EOL;
+
+                foreach ($roleBuckets[$role] as $idMysqlServer) {
+                    $return .= $idMysqlServer.';'.PHP_EOL;
+                }
+
+                $return .= '}'.PHP_EOL;
+            }
+
+            $return .= self::endCluster();
+        }
+
+        return $return;
+    }
+
+/**
+ * Handle `generateGalera`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $all_galera Input value for `all_galera`.
+ * @phpstan-param mixed $all_galera
+ * @psalm-param mixed $all_galera
+ * @return mixed Returned value for generateGalera.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example generateGalera(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function generateGalera($all_galera)
     {
         //Debug::debug($all_galera, "ALL GALERA");
@@ -895,7 +2357,7 @@ class Graphviz
             $image_server  = ROOT."/App/Webroot/image/dot/";
 
             $return .= 'label =<<table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
-            <tr><td port="target" bgcolor="'.'#000000'.'">
+            <tr><td port="'.Dot3::TARGET.'" bgcolor="'.'#000000'.'">
             
             <table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><tr><td>
     
@@ -903,7 +2365,7 @@ class Graphviz
             $return .= '<tr><td PORT="title" colspan="2" bgcolor="'.'#000000'.'">
             <font color="'.'#FFFFFF'.'"><b>'.$galera['name'].'</b></font></td></tr>';
 
-            $return .= '<tr><td bgcolor="#eeeeee" CELLPADDING="0" width="28" rowspan="2" port="from"><IMG SRC="'.$image_server."galera.svg".'" /></td>
+            $return .= '<tr><td bgcolor="#eeeeee" CELLPADDING="0" width="28" rowspan="2" port="from"><IMG SCALE="TRUE" SRC="'.$image_server."galera.svg".'" /></td>
             <td bgcolor="lightgrey" width="100" align="left">'.'Nodes available'.' : <b>'.$galera['node_available'].'/'.$galera['members'].'</b> - '.$galera['wsrep_provider_version'].'</td></tr>';
             $return .= '<tr><td bgcolor="lightgrey" width="100" align="left">'.'Galera Version : '.$galera['galera_version'].' - Worker : '.$galera['wsrep_slave_threads'].'</td></tr>'.PHP_EOL;
 
@@ -986,6 +2448,29 @@ class Graphviz
         return $return;
     }
 
+/**
+ * Handle `diluerCouleur`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $hex Input value for `hex`.
+ * @phpstan-param mixed $hex
+ * @psalm-param mixed $hex
+ * @param mixed $percent Input value for `percent`.
+ * @phpstan-param mixed $percent
+ * @psalm-param mixed $percent
+ * @return mixed Returned value for diluerCouleur.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example diluerCouleur(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function diluerCouleur($hex, $percent) {
         // Assurez-vous que le format hexadécimal est valide
         if (strlen($hex) != 7 || $hex[0] != '#') {

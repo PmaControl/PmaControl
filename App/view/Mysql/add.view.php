@@ -1,8 +1,16 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 use Glial\Html\Form\Form;
+
+$isProxyChecked = !empty($_GET['mysql_server']['is_proxy']) && (string) $_GET['mysql_server']['is_proxy'] !== '0';
+$isVipChecked   = !empty($_GET['mysql_server']['is_vip']) && (string) $_GET['mysql_server']['is_vip'] !== '0';
+$mysqlAddCsrfField = CsrfRender::field($data, 'mysql_add');
+$mysqlAddCsrfToken = CsrfRender::token($data, 'mysql_add');
 ?>
 <form action="" method="post">
+    <input type="hidden" name="<?= $mysqlAddCsrfField ?>" value="<?= $mysqlAddCsrfToken ?>">
     <div class="panel panel-primary">
         <div class="panel-heading">
             <h3 class="panel-title"><?= __('Parameters') ?></h3>
@@ -66,6 +74,28 @@ use Glial\Html\Form\Form;
                     Form::select("mysql_server", "id_environement", $data['environment']
                         , "", array("class" => "form-control"))
                     ?></div>
+                <div class="col-md-2">
+                    <?= __("Proxy") ?>
+                    <div class="form-group" style="margin-top:5px; margin-bottom:0;">
+                        <div class="checkbox checbox-switch switch-success" style="margin:0;">
+                            <label>
+                                <input id="mysql_add_is_proxy" class="form-control js-proxy-vip-proxy" type="checkbox" name="mysql_server[is_proxy]" value="1" <?= $isProxyChecked ? 'checked="checked"' : '' ?> />
+                                <span></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <?= __("VIP") ?>
+                    <div class="form-group" style="margin-top:5px; margin-bottom:0;">
+                        <div class="checkbox checbox-switch switch-success" style="margin:0;">
+                            <label>
+                                <input id="mysql_add_is_vip" class="form-control js-proxy-vip-vip" type="checkbox" name="mysql_server[is_vip]" value="1" <?= $isVipChecked ? 'checked="checked"' : '' ?> />
+                                <span></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
                 <!--
                 <div class="col-md-4"><?= __("Tags") ?><?=
                 Form::select("mysql_server", "tags", array(array("id" => "1", "libelle" => "Login / Password"), array("id" => "2", "libelle" => "SSH keys"))
@@ -83,7 +113,6 @@ use Glial\Html\Form\Form;
         </div>
     </div>
 </form>
-
 
 <!--
 <div class="row">

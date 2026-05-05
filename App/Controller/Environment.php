@@ -10,11 +10,52 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use App\Library\Post;
+use App\Library\Security\CsrfGuard;
+use App\Library\Security\GroupedFormRequest;
+use App\Library\Security\InlineEditRequest;
 use \Glial\Sgbd\Sgbd;
+use Glial\Security\Csrf;
 
 
+/**
+ * Class responsible for environment workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Environment extends Controller {
+    private const ENVIRONMENT_ADD_CSRF_SCOPE = 'environment.add';
+    private const ENVIRONMENT_ADD_CLASS_VALUES = ['danger', 'warning', 'default', 'info', 'success', 'primary'];
+    private const ENVIRONMENT_UPDATE_CSRF_SCOPE = 'environment.update';
+    private const ENVIRONMENT_UPDATE_FIELDS = ['libelle', 'key', 'class', 'letter'];
+    private const ENVIRONMENT_UPDATE_VALUE_MAX_BYTES = 255;
 
+/**
+ * Render environment state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/environment/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index() {
         $this->title = '<i class="fa fa-th-large" aria-hidden="true"></i> ' . __("Environment");
 
@@ -33,36 +74,128 @@ class Environment extends Controller {
             $data['env'][] = $row;
         }
 
+        $data['environment_update_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['environment_update_csrf_token'] = Csrf::issueToken($_SESSION, self::ENVIRONMENT_UPDATE_CSRF_SCOPE);
 
         $this->set('data', $data);
     }
 
+/**
+ * Update environment state through `update`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @return void Returned value for update.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::update()
+ * @example /fr/environment/update
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function update() {
 
         $this->view = false;
         $this->layout_name = false;
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            $db = Sgbd::sql(DB_DEFAULT);
+        $outcome = self::evaluateUpdateRequest($_POST, $_SERVER, $_SESSION);
+        if ($outcome['status'] !== 200) {
+            self::sendEnvironmentUpdateError($outcome['status'], $outcome['body'], $outcome['headers']);
+            return;
+        }
 
-            $sql = "UPDATE environment SET `" . $_POST['name'] . "` = '" . $_POST['value'] . "' WHERE id = " . $db->sql_real_escape_string($_POST['pk']) . "";
-            $db->sql_query($sql);
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = self::buildEnvironmentUpdateSql($outcome['update'], [$db, 'sql_real_escape_string']);
+        $db->sql_query($sql);
 
-            if ($db->sql_affected_rows() === 1) {
-                echo "OK";
-            } else {
-                header("HTTP/1.0 503 Internal Server Error");
-            }
+        if ($db->sql_affected_rows() === 1) {
+            echo "OK";
+        } else {
+            self::sendEnvironmentUpdateError(503, "Environment not updated");
+        }
+    }
+
+    public static function evaluateUpdateRequest(array $post, array $server, array $session): array
+    {
+        return InlineEditRequest::evaluate(
+            $post,
+            $server,
+            $session,
+            self::ENVIRONMENT_UPDATE_CSRF_SCOPE,
+            self::ENVIRONMENT_UPDATE_FIELDS,
+            "Invalid environment update payload",
+            self::ENVIRONMENT_UPDATE_VALUE_MAX_BYTES
+        );
+    }
+
+    public static function normalizeUpdatePayload(array $post): ?array
+    {
+        return InlineEditRequest::normalize($post, self::ENVIRONMENT_UPDATE_FIELDS, self::ENVIRONMENT_UPDATE_VALUE_MAX_BYTES);
+    }
+
+    public static function buildEnvironmentUpdateSql(array $update, callable $escape): string
+    {
+        return sprintf(
+            "UPDATE environment SET `%s` = '%s' WHERE id = %d",
+            $update['field'],
+            $escape($update['value']),
+            $update['id']
+        );
+    }
+
+    private static function sendEnvironmentUpdateError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+
+        if ($message !== '') {
+            echo $message;
         }
     }
 
 
+/**
+ * Create environment state through `add`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for add.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::add()
+ * @example /fr/environment/add
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function add($param) {
         $this->di['js']->addJavascript(array("bootstrap-select.min.js"));
-        $db = Sgbd::sql(DB_DEFAULT);
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            $variable['environment'] = $_POST['environment'];
+        if (CsrfGuard::isPost($_SERVER)) {
+            $outcome = self::evaluateAddRequest($_POST, $_SERVER, $_SESSION);
+            if ($outcome['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendEnvironmentAddError($outcome['status'], $outcome['body'], $outcome['headers']);
+                return;
+            }
+
+            $db = Sgbd::sql(DB_DEFAULT);
+            $variable['environment'] = $outcome['environment'];
 
             //if ((empty($variable['environment']['libelle']))||(empty($variable['environment']['libelle']))||(empty($variable['environment']['libelle']))||(empty($variable['environment']['libelle'])))
 
@@ -82,10 +215,8 @@ class Environment extends Controller {
             }
         }
 
-        $colors = array("danger", "warning", "default", "info", "success", "primary");
-
         $data['colors'] = array();
-        foreach ($colors as $color) {
+        foreach (self::ENVIRONMENT_ADD_CLASS_VALUES as $color) {
             $temp = [];
             $temp['id'] = $color;
             $temp['libelle'] = $color;
@@ -95,10 +226,92 @@ class Environment extends Controller {
             $data['colors'][] = $temp;
         }
 
+        $data['environment_add_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['environment_add_csrf_token'] = Csrf::issueToken($_SESSION, self::ENVIRONMENT_ADD_CSRF_SCOPE);
+
         $this->set('data', $data);
     }
 
+    public static function evaluateAddRequest(array $post, array $server, array $session): array
+    {
+        $request = GroupedFormRequest::evaluate(
+            $post,
+            $server,
+            $session,
+            self::ENVIRONMENT_ADD_CSRF_SCOPE,
+            'environment',
+            self::environmentAddRules(),
+            'Invalid environment add payload'
+        );
 
+        if ($request['status'] !== 200) {
+            return self::buildEnvironmentAddOutcome($request['status'], $request['body'], $request['headers']);
+        }
+
+        return self::buildEnvironmentAddOutcome(200, '', [], $request['payload']);
+    }
+
+    public static function normalizeAddPayload(array $post): ?array
+    {
+        return GroupedFormRequest::normalize($post, 'environment', self::environmentAddRules());
+    }
+
+    private static function environmentAddRules(): array
+    {
+        return [
+            'libelle' => ['type' => 'string', 'required' => true, 'max' => 20],
+            'key' => ['type' => 'string', 'required' => true, 'max' => 13],
+            'class' => ['type' => 'enum', 'required' => true, 'max' => 50, 'values' => self::ENVIRONMENT_ADD_CLASS_VALUES],
+            'letter' => ['type' => 'string', 'required' => true, 'max' => 1],
+        ];
+    }
+
+    private static function buildEnvironmentAddOutcome(
+        int $statusCode,
+        string $message,
+        array $headers = [],
+        ?array $environment = null
+    ): array {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'environment' => $environment,
+        ];
+    }
+
+    private static function sendEnvironmentAddError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
+    }
+
+
+/**
+ * Delete environment state through `delete`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for delete.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::delete()
+ * @example /fr/environment/delete
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function delete($param) {
         
         $this->view = false;

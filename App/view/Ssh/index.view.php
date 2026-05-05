@@ -5,6 +5,12 @@
  * and open the template in the editor.
  */
 
+if (!function_exists('formatElapsed')) {
+    function formatElapsed($seconds)
+    {
+        return \App\Library\Format::elapsedCompact($seconds);
+    }
+}
 
 //debug($data['servers']);
 echo '<div class="row" style="padding:10px; margin: 5px;">';
@@ -56,7 +62,16 @@ foreach ($data['keys'] as $key) {
     .'Added on : '.$key['added_on']
     .'</div>';
     echo '<div class="col-md-2">';
-    echo '<a href="'.LINK.'ssh/associate/'.$key['id'].'" title="associate key with servers" type="button" class="btn btn-primary">'.__('Associate').'</a>';
+    if (!empty($data['running'][$key['id']])) {
+        $started_at = (int) $data['running'][$key['id']];
+        $elapsed    = max(0, time() - $started_at);
+        echo '<span class="btn btn-default disabled associate-running" data-key-id="'.(int) $key['id'].'" data-started-at="'.$started_at.'" title="association en cours">'
+            .'<i class="fa fa-spinner fa-spin"></i> '.__('Association en cours…').' '
+            .'<span class="associate-elapsed">'.htmlspecialchars(formatElapsed($elapsed)).'</span>'
+            .'</span>';
+    } else {
+        echo '<a href="'.LINK.'ssh/associate/'.$key['id'].'" title="associate key with servers" type="button" class="btn btn-primary associate-button" data-key-id="'.(int) $key['id'].'">'.__('Associate').'</a>';
+    }
     echo '&nbsp;&nbsp;&nbsp;';
     echo '<a href="'.LINK.'ssh/edit/'.$key['id'].'" type="button" class="btn btn-warning">'.__('Edit').'</a>';
     echo '&nbsp;&nbsp;&nbsp;';

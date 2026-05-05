@@ -9,7 +9,7 @@ if (empty($_GET['ajax'])) {
     echo '<div id="worker-list">';
 }
 
-echo '<table class="table table-condensed table-bordered table-striped" style="margin-bottom:0px; max-height:500px; height:300px; overflow: auto;" >';
+echo '<table class="table table-condensed table-bordered table-striped" style="margin-bottom:0px; max-height:300px; height:300px; overflow:auto; width:100%; box-sizing:border-box;" >';
 
 echo '<tr>';
 echo '<th>'.__("Top").'</th>';

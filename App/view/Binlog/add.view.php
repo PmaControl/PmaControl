@@ -1,11 +1,17 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 use Glial\Html\Form\Form;
+
+$binlogAddCsrfField = CsrfRender::field($data, 'binlog_add');
+$binlogAddCsrfToken = CsrfRender::token($data, 'binlog_add');
 ?>
 
 
 
 <form action="" method="post">
+    <input type="hidden" name="<?= $binlogAddCsrfField ?>" value="<?= $binlogAddCsrfToken ?>">
 
 
     <div class="well">

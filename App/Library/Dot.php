@@ -10,9 +10,41 @@ namespace App\Library;
 use \Glial\Sgbd\Sgbd;
 
 
+/**
+ * Trait responsible for dot workflows.
+ *
+ * This trait belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 trait Dot
 {
 
+/**
+ * Handle dot state through `generateAllGraph`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for generateAllGraph.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::generateAllGraph()
+ * @example /fr/dot/generateAllGraph
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function generateAllGraph()
     {
         foreach ($this->groups['groups'] as $group) {
@@ -26,6 +58,27 @@ trait Dot
 
 
 
+/**
+ * Handle dot state through `generateGraph`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $group Input value for `group`.
+ * @phpstan-param mixed $group
+ * @psalm-param mixed $group
+ * @return mixed Returned value for generateGraph.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateGraph()
+ * @example /fr/dot/generateGraph
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function generateGraph($group)
     {
 
@@ -60,6 +113,30 @@ trait Dot
         return $graph;
     }
 
+/**
+ * Handle dot state through `nodeHead`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $display_name Input value for `display_name`.
+ * @phpstan-param mixed $display_name
+ * @psalm-param mixed $display_name
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @return mixed Returned value for nodeHead.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::nodeHead()
+ * @example /fr/dot/nodeHead
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function nodeHead($display_name, $id_mysql_server)
     {
         $backup = '&#x2610;';
@@ -73,6 +150,27 @@ trait Dot
         return $line;
     }
 
+/**
+ * Handle dot state through `nodeLine`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $line Input value for `line`.
+ * @phpstan-param mixed $line
+ * @psalm-param mixed $line
+ * @return mixed Returned value for nodeLine.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::nodeLine()
+ * @example /fr/dot/nodeLine
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function nodeLine($line)
     {
         $line = '<tr><td bgcolor="lightgrey" align="left">'.$line.'</td></tr>';
@@ -80,6 +178,27 @@ trait Dot
     }
 
 
+/**
+ * Handle dot state through `generateNode`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @return mixed Returned value for generateNode.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateNode()
+ * @example /fr/dot/generateNode
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function generateNode($id_mysql_server)
     {
         if (in_array($id_mysql_server, $this->graph_arbitrator)) {
@@ -91,6 +210,27 @@ trait Dot
         return $data;
     }
 
+/**
+ * Handle dot state through `generateRankForMM`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $group Input value for `group`.
+ * @phpstan-param mixed $group
+ * @psalm-param mixed $group
+ * @return mixed Returned value for generateRankForMM.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateRankForMM()
+ * @example /fr/dot/generateRankForMM
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function generateRankForMM($group)
     {
         $graph = '';

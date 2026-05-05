@@ -1,4 +1,9 @@
 <?php
+use App\Library\Security\CsrfRender;
+
+$foreignKeyMutationInput = CsrfRender::hiddenInput($data, 'foreign_key_mutation');
+$escape = static fn($value): string => htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8', false);
+
 
 if (!empty($data['NO_FK']))
 {
@@ -39,6 +44,11 @@ if ($handle) {
 echo '</div>';
 
 //\Glial\Synapse\FactoryController::addNode("VirtualForeignKey", "autoFeed", array());
-echo '<a href="'.LINK.'ForeignKey/autoDetect/'.$data['id_mysql_server'].'" role="button" class="btn btn-primary">'.__('Auto generate virtual foreign keys').'</a>';
+echo '<form method="post" action="'.LINK.'ForeignKey/autoDetect/" style="display:inline">';
+echo $foreignKeyMutationInput;
+echo '<input type="hidden" name="id_mysql_server" value="'.$escape($data['id_mysql_server']).'">';
+echo '<input type="hidden" name="database" value="'.$escape($data['database']).'">';
+echo '<button type="submit" class="btn btn-primary">'.__('Auto generate virtual foreign keys').'</button>';
+echo '</form>';
 echo '<br /><br />';
 // \Glial\Synapse\FactoryController::addNode("ForeignKey", "fill", array($data['id_mysql_server'],$data['database']));

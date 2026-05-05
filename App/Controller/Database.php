@@ -19,15 +19,140 @@ use \Glial\Sgbd\Sgbd;
 use \App\Library\Extraction;
 use \App\Library\Param;
 use \App\Library\Available;
+use App\Library\MysqlServer;
+use App\Library\SelectorOptions;
+use App\Library\Database\Renamer;
+use App\Library\Database\RefreshArtifact;
+use App\Library\Database\RefreshShellCommand;
+use App\Library\Filesystem\SafeDirectory;
+use App\Library\Security\CsrfGuard;
+use App\Library\Security\GroupedFormRequest;
+use App\Library\Security\Identifier;
+use App\Library\Security\InlineEditRequest;
+use App\Library\Security\PositiveIntegerSelection;
 use \Glial\I18n\I18n;
 use \Glial\Cli\Table;
+use \Glial\Synapse\FactoryController;
+use Glial\Security\Csrf;
 
 //TODO : metre un  sysème de tab pour éviter d'être perdu
 
+/**
+ * Class responsible for database workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Database extends Controller
 {
+    private const DATABASE_SIZE_UPDATE_CSRF_SCOPE = 'database.size.update';
+    private const DATABASE_SIZE_UPDATE_FIELDS = ['label', 'min', 'max', 'color', 'background'];
+    private const DATABASE_SIZE_TEXT_FIELD_LIMITS = [
+        'label' => 3,
+        'color' => 20,
+        'background' => 20,
+    ];
+    private const DATABASE_RENAME_CSRF_SCOPE = 'database.rename';
+    private const DATABASE_RENAME_RULES = [
+        'id_mysql_server' => ['type' => 'int', 'required' => true, 'min' => 1],
+        'database' => ['type' => 'string', 'required' => true, 'min' => 1, 'max' => 64],
+        'new_name' => ['type' => 'string', 'required' => true, 'min' => 1, 'max' => 64],
+        'adjust_privileges' => ['type' => 'string', 'required' => false, 'max' => 16, 'default' => ''],
+    ];
+    private const DATABASE_REFRESH_CSRF_SCOPE = 'database.refresh';
+    private const DATABASE_REFRESH_RULES = [
+        'refresh' => ['type' => 'enum', 'required' => true, 'values' => ['1']],
+        'id_mysql_server__from' => ['type' => 'int', 'required' => true, 'min' => 1],
+        'id_mysql_server__target' => ['type' => 'int', 'required' => true, 'min' => 1],
+        'list' => [
+            'type' => 'list',
+            'required' => true,
+            'min_items' => 1,
+            'max_items' => 64,
+            'item_type' => 'string',
+            'item_min' => 1,
+            'item_max' => 64,
+            'item_pattern' => Identifier::DATABASE_NAME_PATTERN,
+        ],
+        'path' => ['type' => 'string', 'required' => true, 'min' => 1, 'max' => 255],
+    ];
+    private const DATABASE_ANALYZE_CSRF_SCOPE = 'database.analyze';
+    private const DATABASE_ANALYZE_RULES = [
+        'analyze' => ['type' => 'enum', 'required' => true, 'values' => ['1']],
+        'id_mysql_server' => ['type' => 'int', 'required' => true, 'min' => 1],
+        'database' => [
+            'type' => 'list',
+            'required' => true,
+            'min_items' => 1,
+            'max_items' => 256,
+            'item_type' => 'string',
+            'item_min' => 1,
+            'item_max' => 64,
+            'item_pattern' => Identifier::DATABASE_NAME_PATTERN,
+        ],
+    ];
+    private const DATABASE_CREATE_CSRF_SCOPE = 'database.create';
+    private const DATABASE_CREATE_RULES = [
+        'create' => ['type' => 'enum', 'required' => true, 'values' => ['1']],
+        'id_mysql_server' => [
+            'type' => 'list',
+            'required' => true,
+            'min_items' => 1,
+            'max_items' => 256,
+            'item_type' => 'int',
+            'item_min' => 1,
+        ],
+        'name' => ['type' => 'string', 'required' => true, 'min' => 1, 'max' => 4096],
+        'user' => ['type' => 'string', 'default' => '', 'max' => 64],
+        'gg' => ['type' => 'enum', 'default' => '@', 'values' => ['@']],
+        'hostname' => ['type' => 'string', 'default' => '%', 'min' => 1, 'max' => 255, 'pattern' => Identifier::HOST_PATTERN],
+        'id_mysql_privilege' => [
+            'type' => 'list',
+            'required' => false,
+            'min_items' => 1,
+            'max_items' => 128,
+            'item_type' => 'string',
+            'item_min' => 1,
+            'item_max' => 25,
+            'item_pattern' => Identifier::PRIVILEGE_PATTERN,
+        ],
+    ];
+
+/**
+ * Stores `$log_file` for log file.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $log_file = TMP."log/";
 
+/**
+ * Render database state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/database/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index()
     {
 
@@ -51,85 +176,92 @@ class Database extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Create database state through `create`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for create.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::create()
+ * @example /fr/database/create
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function create()
     {
         $db = Sgbd::sql(DB_DEFAULT);
+        $data['database_create_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['database_create_csrf_token'] = Csrf::issueToken($_SESSION, self::DATABASE_CREATE_CSRF_SCOPE);
 
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
-            if (!empty($_POST['database'][__FUNCTION__])) {
+            $createRequest = self::evaluateCreateRequest($_POST, $_SERVER, $_SESSION);
+            if ($createRequest['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendDatabaseCreateError($createRequest['status'], $createRequest['body'], $createRequest['headers']);
+                return;
+            }
 
-                $compte       = array();
-                $tmp_password = array();
+            $create = $createRequest['payload'];
+            $compte       = array();
+            $tmp_password = array();
 
-                $sql = "SELECT a.*,b.key FROM mysql_server a
+            $sql = "SELECT a.*,b.key FROM mysql_server a
                     INNER JOIN environment b ON a.`id_environment` = b.id
 
-                 WHERE a.id in(".implode(",", $_POST['database']['id_mysql_server']).");";
-                $res = $db->sql_query($sql);
+                 WHERE a.id in(".implode(",", $create['id_mysql_server']).");";
+            $res = $db->sql_query($sql);
 
-                while ($ob = $db->sql_fetch_object($res)) {
+            while ($ob = $db->sql_fetch_object($res)) {
 
-                    $db_remote = Sgbd::sql($ob->name);
-                    $databases = explode(",", $_POST['database']['name']);
+                $db_remote = Sgbd::sql($ob->name);
 
-                    foreach ($databases as $database) {
-                        $database = trim($database);
+                foreach ($create['databases'] as $database) {
 
-                        if (!empty($database)) {
-
-
-
-                            $sql = "CREATE DATABASE IF NOT EXISTS `".$database."` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;";
-                            $db_remote->sql_query($sql);
+                    $sql = "CREATE DATABASE IF NOT EXISTS `".$database."` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;";
+                    $db_remote->sql_query($sql);
 
 //$sql = "set sql_log_bin =0;";
 //$db_remote->sql_query($sql);
 
+                    if (empty($create['id_mysql_privilege'])) {
 
-
-
-                            if (empty($_POST['database']['id_mysql_privilege'])) {
-
-                                if (in_array($ob->key, array("prod", "preprod"))) {
-                                    $droits = "SELECT, INSERT, UPDATE, DELETE";
-                                } else {
-                                    $droits = "ALL";
-                                }
-                            } else {
-                                $droits = implode(', ', $_POST['database']['id_mysql_privilege']);
-                            }
-
-                            if (empty($_POST['database']['user'])) {
-                                $user = $database;
-                            } else {
-                                $user = $_POST['database']['user'];
-                            }
-
-                            if (empty($_POST['database']['hostname'])) {
-                                $hostname = "%";
-                            } else {
-                                $hostname = $_POST['database']['hostname'];
-                            }
-
-                            if (empty($tmp_password[$user][$database])) {
-                                $password = $this->generatePassword(20);
-                            } else {
-                                $password = $tmp_password[$user][$database];
-                            }
-
-                            $sql = "GRANT ".$droits." ON ".$database.".* TO '".$user."'@'".$hostname."' IDENTIFIED BY '".$password."'";
-                            $db_remote->sql_query($sql);
-
-                            $data['compte'][] = "Server : ".$ob->ip.":".$ob->port." - ".$database.".maria.db.".$ob->key.".wideip - login : ".$user." / password : ".$password." Database : ".$database;
+                        if (in_array($ob->key, array("prod", "preprod"))) {
+                            $droits = "SELECT, INSERT, UPDATE, DELETE";
+                        } else {
+                            $droits = "ALL";
                         }
+                    } else {
+                        $droits = implode(', ', $create['id_mysql_privilege']);
                     }
+
+                    $user = $create['user'] === '' ? $database : $create['user'];
+                    $hostname = $create['hostname'];
+
+                    if (empty($tmp_password[$user][$database])) {
+                        $password = $this->generatePassword(20);
+                    } else {
+                        $password = $tmp_password[$user][$database];
+                    }
+
+                    $sql = "GRANT ".$droits." ON `".$database."`.* TO '".$user."'@'".$hostname."' IDENTIFIED BY '".$password."'";
+                    $db_remote->sql_query($sql);
+
+                    $data['compte'][] = "Server : ".$ob->ip.":".$ob->port." - ".$database.".maria.db.".$ob->key.".wideip - login : ".$user." / password : ".$password." Database : ".$database;
                 }
             }
         }
 
 //a déporté dans une librairy ?
         $sql = "SELECT * FROM mysql_privilege ORDER BY `type`, `privilege`";
-        $res = $db->sql_query($sql);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql, null, __METHOD__);
 
         $data['mysql_privilege'] = array();
         while ($ob                      = $db->sql_fetch_object($res)) {
@@ -145,6 +277,87 @@ class Database extends Controller
         $this->set('data', $data);
     }
 
+    public static function evaluateCreateRequest(array $post, array $server, array $session): array
+    {
+        $request = GroupedFormRequest::evaluate(
+            $post,
+            $server,
+            $session,
+            self::DATABASE_CREATE_CSRF_SCOPE,
+            'database',
+            self::DATABASE_CREATE_RULES,
+            'Invalid database create payload'
+        );
+
+        if ($request['status'] !== 200) {
+            return self::buildDatabaseCreateOutcome($request['status'], $request['body'], $request['headers']);
+        }
+
+        $payload = $request['payload'];
+        $databases = Identifier::normalizeDatabaseNameList($payload['name']);
+        if ($databases === null || !Identifier::isAccountName($payload['user']) || !Identifier::isHostName($payload['hostname'])) {
+            return self::buildDatabaseCreateOutcome(400, 'Invalid database create payload');
+        }
+
+        foreach ($payload['id_mysql_privilege'] ?? [] as $privilege) {
+            if (!Identifier::isPrivilegeName($privilege)) {
+                return self::buildDatabaseCreateOutcome(400, 'Invalid database create payload');
+            }
+        }
+
+        $payload['databases'] = $databases;
+        $payload['id_mysql_privilege'] = $payload['id_mysql_privilege'] ?? [];
+        unset($payload['name'], $payload['create'], $payload['gg']);
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'payload' => $payload,
+        ];
+    }
+
+    private static function buildDatabaseCreateOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'payload' => null,
+        ];
+    }
+
+    private static function sendDatabaseCreateError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
+    }
+
+/**
+ * Handle database state through `generatePassword`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $length Input value for `length`.
+ * @phpstan-param mixed $length
+ * @psalm-param mixed $length
+ * @return mixed Returned value for generatePassword.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generatePassword()
+ * @example /fr/database/generatePassword
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function generatePassword($length = 32)
     {
         $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -158,50 +371,155 @@ class Database extends Controller
         return $result;
     }
 
+/**
+ * Handle database state through `refresh`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for refresh.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::refresh()
+ * @example /fr/database/refresh
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function refresh($param)
     {
 
 //Debug::$debug = true;
         Debug::parseDebug($param);
+        $data['database_refresh_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['database_refresh_csrf_token'] = Csrf::issueToken($_SESSION, self::DATABASE_REFRESH_CSRF_SCOPE);
 
+        // Issue #567: pre-select every database returned by the AJAX call
+        // EXCEPT the four MySQL system schemas. The user can still uncheck
+        // anything; this just makes the common case "refresh all user data"
+        // a one-click flow instead of N clicks.
+        $systemSchemasJson = json_encode(MysqlServer::SYSTEM_SCHEMAS);
         $this->di['js']->code_javascript('$("#database-id_mysql_server__from").change(function () {
     data = $(this).val();
     $("#database-list").load(GLIAL_LINK+"common/getDatabaseByServer/" + data + "/ajax>true/",
        function(){
-	$("#database-list").selectpicker("refresh");
+        var SYSTEM_SCHEMAS = '.$systemSchemasJson.';
+        var preselected = $("#database-list option").map(function () {
+            return this.value;
+        }).get().filter(function (db) {
+            return db !== "" && SYSTEM_SCHEMAS.indexOf(db.toLowerCase()) === -1;
+        });
+        $("#database-list").selectpicker("refresh");
+        $("#database-list").selectpicker("val", preselected);
     });
 });
 ');
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
-
-            if (!empty($_POST['database'][__FUNCTION__])) {
-                if (!empty($_POST['database']['id_mysql_server__from']) && !empty($_POST['database']['id_mysql_server__target']) && !empty($_POST['database']['list'])
-                    && !empty($_POST['database']['path'])) {
-
-                    $id_mysql_server__source      = $_POST['database']['id_mysql_server__from'];
-                    $id_mysql_server__destination = $_POST['database']['id_mysql_server__target'];
-                    $databases                    = implode(',', $_POST['database']['list']);
-                    $path                         = $_POST['database']['path'];
-
-                    $debug = "";
-                    if (Debug::$debug === true) {
-                        $debug = "--debug";
-                    }
-
-
-                    $elems = array($id_mysql_server__source, $id_mysql_server__destination, $databases, $path, $debug);
-                    $this->addRefresh($elems);
-
-                    header("location: ".LINK."job/index");
-                }
+            $refreshRequest = self::evaluateRefreshRequest($_POST, $_SERVER, $_SESSION);
+            if ($refreshRequest['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendDatabaseRefreshError($refreshRequest['status'], $refreshRequest['body'], $refreshRequest['headers']);
+                return;
             }
+
+            $refresh = $refreshRequest['payload'];
+            $debug = "";
+            if (Debug::$debug === true) {
+                $debug = "--debug";
+            }
+
+            $elems = array(
+                $refresh['id_mysql_server__from'],
+                $refresh['id_mysql_server__target'],
+                implode(',', $refresh['list']),
+                $refresh['path'],
+                $debug,
+            );
+
+            // Issue #570: addRefresh() lazily autoloads vendor classes (e.g.
+            // Ramsey\Uuid\UuidFactory). In dev mode (display_errors=1 forced
+            // by Bootstrap.php) any deprecation/warning emitted during the
+            // autoload would be flushed to the response, causing the
+            // header() below to fail with "headers already sent" and stranding
+            // the user on /database/refresh instead of /job/index.
+            // Buffer the addRefresh() output so any warning is contained.
+            ob_start();
+            $this->addRefresh($elems);
+            ob_end_clean();
+
+            $this->view = false;
+            $this->layout_name = false;
+            header("location: ".LINK."job/index");
+            return;
         }
 
 
         $data['listdb1'] = array();
         $this->set('data', $data);
     }
+
+    public static function evaluateRefreshRequest(array $post, array $server, array $session): array
+    {
+        $request = GroupedFormRequest::evaluate(
+            $post,
+            $server,
+            $session,
+            self::DATABASE_REFRESH_CSRF_SCOPE,
+            'database',
+            self::DATABASE_REFRESH_RULES,
+            'Invalid database refresh payload'
+        );
+
+        if ($request['status'] !== 200) {
+            return self::buildDatabaseRefreshOutcome($request['status'], $request['body'], $request['headers']);
+        }
+
+        $payload = $request['payload'];
+        foreach ($payload['list'] as $database) {
+            if (!Identifier::isDatabaseName($database)) {
+                return self::buildDatabaseRefreshOutcome(400, 'Invalid database refresh payload');
+            }
+        }
+
+        if (!Identifier::isSafeAbsolutePath($payload['path'])) {
+            return self::buildDatabaseRefreshOutcome(400, 'Invalid database refresh payload');
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'payload' => $payload,
+        ];
+    }
+
+    private static function buildDatabaseRefreshOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'payload' => null,
+        ];
+    }
+
+    private static function sendDatabaseRefreshError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        echo $message;
+    }
+
     /*
      * example : ./glial database databaseRefresh  82 83 drupal_home '/mysql/backup'
      *
@@ -213,13 +531,25 @@ class Database extends Controller
 
         Debug::parseDebug($param);
 
-        $id_mysql_server__source = $param[0];
-        $id_mysql_server__target = $param[1];
-        $databases               = explode(",", $param[2]);
-        $path                    = $param[3];
-        $uuid                    = $param[4];
+        $id_mysql_server__source = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        $id_mysql_server__target = PositiveIntegerSelection::normalizeSingle($param[1] ?? null);
+        $rawDatabases            = $param[2] ?? null;
+        $databases               = is_scalar($rawDatabases)
+            ? Identifier::normalizeDatabaseNameList((string) $rawDatabases)
+            : null;
+        $path                    = $param[3] ?? null;
+        $uuid                    = is_scalar($param[4] ?? null) ? trim((string) $param[4]) : '';
+        $directory               = SafeDirectory::buildTemporaryChildPath($path, 'pmacontrol-refresh-');
 
-        $directory = $path."/".uniqid();
+        if (
+            $id_mysql_server__source === null
+            || $id_mysql_server__target === null
+            || $databases === null
+            || $directory === null
+            || !Uuid::isValid($uuid)
+        ) {
+            throw new \InvalidArgumentException('Invalid database refresh CLI payload');
+        }
 
         if (count($databases) > 1) {
 
@@ -228,24 +558,47 @@ class Database extends Controller
             $database = end($databases);
         }
 
-        $this->databaseDump(array($id_mysql_server__source, $database, $directory));
+        // Issue #583: track dump and load as separate phases so a failed
+        // load can be resumed without re-running mydumper. The dump tree
+        // is now removed only on a successful load — otherwise we keep
+        // it on disk and surface it in /job/index for a `Restart load only`.
+        $phaseDb = Sgbd::sql(DB_DEFAULT);
+        $loadOk = false;
+        try {
+            RefreshArtifact::markDumpRunning($phaseDb, $uuid, $directory);
+            try {
+                $this->databaseDump(array($id_mysql_server__source, $database, $directory));
+            } catch (\Throwable $e) {
+                RefreshArtifact::markDumpError($phaseDb, $uuid);
+                throw $e;
+            }
 
-//shell_exec("cd ".$directory." && rename 's///g' ".);
+            RefreshArtifact::markDumpSuccess(
+                $phaseDb,
+                $uuid,
+                RefreshArtifact::measureSizeKb($directory)
+            );
 
-        $metadata = file_get_contents($directory."/metadata");
+            $metadata = file_get_contents($directory."/metadata");
+            echo $metadata."\n";
 
-        echo $metadata."\n";
+            RefreshArtifact::markLoadRunning($phaseDb, $uuid);
+            try {
+                $this->databaseLoad(array($id_mysql_server__target, implode(",", $databases), $directory));
+            } catch (\Throwable $e) {
+                RefreshArtifact::markLoadError($phaseDb, $uuid);
+                throw $e;
+            }
+            RefreshArtifact::markLoadSuccess($phaseDb, $uuid);
+            $loadOk = true;
 
-//Mysql::set_db($db);
-//$ob = Mysql::getServerInfo($id_mysql_server__source);
-//echo "CHANGE MASTER TO MASTER_HOST='".$ob->ip."', MASTER_PORT=".$ob->port.", MASTER_USER='', MASTER_PORT='',
-//    MASTER_LOG_FILE='".gg."', MASTER_LOG_POS=;\n";
+            FactoryController::addNode("Job", "callback", array($uuid), FactoryController::RESULT);
+        } finally {
+            if ($loadOk) {
+                SafeDirectory::removeTree($directory);
+            }
+        }
 
-        $this->databaseLoad(array($id_mysql_server__target, implode(",", $databases), $directory));
-
-        \Glial\Synapse\FactoryController::addNode("Job", "callback", array($uuid), Glial\Synapse\FactoryController::RESULT);
-
-        shell_exec("rm -rvf ".$directory);
     }
     /*
      * example
@@ -259,14 +612,22 @@ class Database extends Controller
 
         Debug::parseDebug($param);
 
-        $id_mysql_server = $param[0];
-        $database        = $param[1];
-        $path            = $param[2];
+        $id_mysql_server = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        $database        = is_scalar($param[1] ?? null) ? trim((string) $param[1]) : '';
+        $path            = is_scalar($param[2] ?? null) ? trim((string) $param[2]) : '';
+
+        if (
+            $id_mysql_server === null
+            || !Identifier::isSafeAbsolutePath($path)
+            || ($database !== 'ALL' && !Identifier::isDatabaseName($database))
+        ) {
+            throw new \InvalidArgumentException('Invalid database dump CLI payload');
+        }
 
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM mysql_server WHERE id = ".$id_mysql_server.";";
-        $res = $db->sql_query($sql);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql, $id_mysql_server, __METHOD__);
         while ($ar  = $db->sql_fetch_object($res)) {
             $ob = $ar;
         }
@@ -275,12 +636,14 @@ class Database extends Controller
 
         if (!empty($ob)) {
             $password = Chiffrement::decrypt($ob->passwd);
-            $to_dump  = "";
-
-            if ($database != "ALL") {
-                $to_dump = " -B '".$database."' ";
-            }
-            $cmd = "mydumper -h ".$ob->ip." -u ".$ob->login." -p ".$password." -P ".$ob->port." ".$to_dump." -G -E -R -o ".$path." 2>&1 ";
+            $cmd = RefreshShellCommand::buildDumpCommand(
+                (string) $ob->ip,
+                (string) $ob->login,
+                (string) $password,
+                (int) $ob->port,
+                $database,
+                $path
+            );
             Debug::debug($cmd);
 
             $msg = shell_exec($cmd);
@@ -302,9 +665,17 @@ class Database extends Controller
     {
         Debug::parseDebug($param);
 
-        $id_mysql_server = $param[0];
-        $databases       = $param[1];
-        $path            = $param[2];
+        $id_mysql_server = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        $databases       = is_scalar($param[1] ?? null) ? trim((string) $param[1]) : '';
+        $path            = is_scalar($param[2] ?? null) ? trim((string) $param[2]) : '';
+
+        if (
+            $id_mysql_server === null
+            || !Identifier::isSafeAbsolutePath($path)
+            || ($databases !== 'ALL' && Identifier::normalizeDatabaseNameList($databases) === null)
+        ) {
+            throw new \InvalidArgumentException('Invalid database load CLI payload');
+        }
 
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -325,11 +696,11 @@ class Database extends Controller
 
             if ($databases != "ALL") {
 
-                $db_to_import = explode(",", $databases);
+                $db_to_import = Identifier::normalizeDatabaseNameList($databases);
                 $specify_db   = true;
             } else {
 
-                shell_exec("rm ".$path."/mysql.*.sql");
+                RefreshShellCommand::removeMysqlMetadataFiles($path);
 
                 $specify_db   = false;
                 $db_to_import = array('NA');
@@ -344,10 +715,22 @@ class Database extends Controller
                         continue;
                     }
 
-                    $to_dump = '-B '.$db_to_load;
+                    // Issue #579: must be -s/--source-db (filter dump by source DB),
+                    // NOT -B/--database (which renames everything in the dump dir
+                    // into a single target and cross-loads other DBs).
+                    $to_dump = $db_to_load;
+                } else {
+                    $to_dump = 'ALL';
                 }
 
-                $cmd = "myloader -h ".$ob->ip." -u ".$ob->login." -p ".$password." -P ".$ob->port." -o $to_dump -d ".$path." 2>&1";
+                $cmd = RefreshShellCommand::buildLoadCommand(
+                    (string) $ob->ip,
+                    (string) $ob->login,
+                    (string) $password,
+                    (int) $ob->port,
+                    $to_dump,
+                    $path
+                );
                 Debug::debug($cmd, "cmd");
                 $msg = shell_exec($cmd);
 
@@ -360,10 +743,155 @@ class Database extends Controller
         throw new \Exception("PMACTRL-387 : Impossible to find the MySQL server with the id : ".$id_mysql_server);
     }
 
+    /*
+     * Issue #583 — UI entry point: restart only the load phase of an
+     * existing /database/refresh job, reusing the dump artefact still
+     * on disk. Never re-runs mydumper.
+     */
+    public function restartLoadOnly($param)
+    {
+        $this->view = false;
+        $this->layout_name = false;
+
+        $id_job = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        if ($id_job === null) {
+            http_response_code(400);
+            echo "Invalid job id";
+            return;
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT * FROM job WHERE id = ".(int) $id_job;
+        $res = $db->sql_query($sql);
+        $row = null;
+        while ($ar = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $row = $ar;
+        }
+
+        if ($row === null || !RefreshArtifact::isResumable($row)) {
+            http_response_code(409);
+            echo "Job is not resumable";
+            return;
+        }
+
+        $artifactPath = (string) $row['artifact_path'];
+        if (!is_dir($artifactPath)) {
+            http_response_code(409);
+            echo "Dump artefact missing on disk";
+            return;
+        }
+
+        $payload = json_decode((string) $row['param'], true);
+        if (!is_array($payload) || count($payload) < 4) {
+            http_response_code(409);
+            echo "Job payload is not parsable";
+            return;
+        }
+
+        $id_mysql_server__target = PositiveIntegerSelection::normalizeSingle($payload[1] ?? null);
+        $databases = is_scalar($payload[2] ?? null)
+            ? Identifier::normalizeDatabaseNameList((string) $payload[2])
+            : null;
+        if ($id_mysql_server__target === null || $databases === null) {
+            http_response_code(409);
+            echo "Job payload validation failed";
+            return;
+        }
+
+        $uuid = (string) $row['uuid'];
+        $debug = Debug::$debug === true ? '--debug' : '';
+
+        $php = explode(" ", shell_exec("whereis php"))[1];
+        $cmd = $php." ".GLIAL_INDEX." ".$this->getClass()." databaseRefreshLoadOnly "
+            .escapeshellarg((string) $id_mysql_server__target)." "
+            .escapeshellarg(implode(',', $databases))." "
+            .escapeshellarg($artifactPath)." "
+            .escapeshellarg($uuid)
+            .($debug !== '' ? ' '.$debug : '');
+        Debug::debug($cmd);
+        shell_exec($cmd.' > /dev/null 2>&1 &');
+
+        header("location: ".LINK."job/index");
+    }
+
+    /*
+     * Issue #583 — worker counterpart of restartLoadOnly. Runs
+     * databaseLoad against the existing artefact and updates the phase
+     * columns. Never re-dumps.
+     *
+     * example: ./glial database databaseRefreshLoadOnly 220 'account,einvoicing' /srv/backup/abc <uuid>
+     */
+    public function databaseRefreshLoadOnly($param)
+    {
+        Debug::parseDebug($param);
+
+        $id_mysql_server__target = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        $rawDatabases            = $param[1] ?? null;
+        $databases               = is_scalar($rawDatabases)
+            ? Identifier::normalizeDatabaseNameList((string) $rawDatabases)
+            : null;
+        $artifactPath            = is_scalar($param[2] ?? null) ? trim((string) $param[2]) : '';
+        $uuid                    = is_scalar($param[3] ?? null) ? trim((string) $param[3]) : '';
+
+        if (
+            $id_mysql_server__target === null
+            || $databases === null
+            || !Identifier::isSafeAbsolutePath($artifactPath)
+            || !is_dir($artifactPath)
+            || !Uuid::isValid($uuid)
+        ) {
+            throw new \InvalidArgumentException('Invalid databaseRefreshLoadOnly CLI payload');
+        }
+
+        $phaseDb = Sgbd::sql(DB_DEFAULT);
+        $loadOk = false;
+        try {
+            RefreshArtifact::markLoadRunning($phaseDb, $uuid);
+            try {
+                $this->databaseLoad(array($id_mysql_server__target, implode(",", $databases), $artifactPath));
+            } catch (\Throwable $e) {
+                RefreshArtifact::markLoadError($phaseDb, $uuid);
+                throw $e;
+            }
+            RefreshArtifact::markLoadSuccess($phaseDb, $uuid);
+            $loadOk = true;
+
+            FactoryController::addNode("Job", "callback", array($uuid), FactoryController::RESULT);
+        } finally {
+            if ($loadOk) {
+                SafeDirectory::removeTree($artifactPath);
+            }
+        }
+    }
+
+/**
+ * Handle database state through `rename`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for rename.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::rename()
+ * @example /fr/database/rename
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function rename($param)
     {
 
         $this->title = '<i class="fa fa-wpforms" aria-hidden="true"></i> '.__("Rename database");
+        $data['database_rename_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['database_rename_csrf_token'] = Csrf::issueToken($_SESSION, self::DATABASE_RENAME_CSRF_SCOPE);
+        $this->set("data", $data);
 
         $this->di['js']->code_javascript('$("#rename-id_mysql_server").change(function () {
     data = $(this).val();
@@ -374,15 +902,77 @@ class Database extends Controller
 });');
 
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
-            if (!empty($_POST['rename']['new_name']) && !empty($_POST['rename']['database']) && !empty($_POST['rename']['id_mysql_server'])) {
-
-                $_POST['rename']['adjust_privileges'] ?? '';
-
-                $nb_renamed = $this->move(array($_POST['rename']['id_mysql_server'], $_POST['rename']['database'], $_POST['rename']['new_name'], $_POST['rename']['adjust_privileges']));
-
-                header('location: '.LINK.$this->getClass().'/'.__FUNCTION__.'/renamed:tables:'.$nb_renamed);
+            $renameRequest = self::evaluateRenameRequest($_POST, $_SERVER, $_SESSION);
+            if ($renameRequest['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendDatabaseRenameError($renameRequest['status'], $renameRequest['body'], $renameRequest['headers']);
+                return;
             }
+
+            $rename = $renameRequest['payload'];
+            $nb_renamed = $this->move(array($rename['id_mysql_server'], $rename['database'], $rename['new_name'], $rename['adjust_privileges']));
+
+            header('location: '.LINK.$this->getClass().'/'.__FUNCTION__.'/renamed:tables:'.$nb_renamed);
         }
+    }
+
+    public static function evaluateRenameRequest(array $post, array $server, array $session): array
+    {
+        $request = GroupedFormRequest::evaluate(
+            $post,
+            $server,
+            $session,
+            self::DATABASE_RENAME_CSRF_SCOPE,
+            'rename',
+            self::DATABASE_RENAME_RULES,
+            'Invalid database rename payload'
+        );
+
+        if ($request['status'] !== 200) {
+            return self::buildDatabaseRenameOutcome($request['status'], $request['body'], $request['headers']);
+        }
+
+        $payload = $request['payload'];
+        if (
+            ! self::isSafeDatabaseRenameName($payload['database'])
+            || ! self::isSafeDatabaseRenameName($payload['new_name'])
+        ) {
+            return self::buildDatabaseRenameOutcome(400, 'Invalid database rename payload');
+        }
+
+        $payload['adjust_privileges'] = $payload['adjust_privileges'] === '' ? '' : '1';
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'payload' => $payload,
+        ];
+    }
+
+    private static function isSafeDatabaseRenameName(string $name): bool
+    {
+        return Identifier::isDatabaseName($name);
+    }
+
+    private static function buildDatabaseRenameOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'payload' => null,
+        ];
+    }
+
+    private static function sendDatabaseRenameError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        echo $message;
     }
 
     /**
@@ -415,350 +1005,49 @@ class Database extends Controller
         $OLD_DB          = $param[1];
         $NEW_DB          = $param[2];
         $AP              = $param[3] ?? "";
+        if ($AP === "--force") {
+            $AP = "";
+        }
 
         $db = Sgbd::sql(DB_DEFAULT);
+        $serverRef = $db->sql_real_escape_string((string) $id_mysql_server);
 
-        $sql = "SELECT * FROM `mysql_server` where `id`='".$id_mysql_server."'"
+        $sql = "SELECT * FROM `mysql_server` where `id`='".$serverRef."'"
             ." UNION ALL "
-            ."SELECT * FROM `mysql_server` where `display_name`='".$id_mysql_server."'";
+            ."SELECT * FROM `mysql_server` where `display_name`='".$serverRef."'";
 
         Debug::sql($sql);
 
         $res = $db->sql_query($sql);
 
+        $nb_renamed = 0;
         while ($ob = $db->sql_fetch_object($res)) {
-
             $db2 = Sgbd::sql($ob->name);
 
-            $sql101       = "SELECT count(1) as cpt FROM `information_schema`.`SCHEMATA` WHERE `SCHEMA_NAME`= '".$NEW_DB."';";
-            $res101       = $db2->sql_query($sql101);
-            $TARGET_EXIST = false;
-
-            while ($ob101 = $db2->sql_fetch_object($res101)) {
-
-                if ($ob101->cpt > 0) {
-                    if ($FORCE_TARGET === false) {
-
-                        throw new \Exception("The target database exist already : '".$NEW_DB."'", 2518);
-                    }
-                    $TARGET_EXIST = true;
-                }
-            }
-
-
-            $sql3 = "SELECT `DEFAULT_CHARACTER_SET_NAME` FROM `information_schema`.`SCHEMATA` WHERE `SCHEMA_NAME`= '".$OLD_DB."';";
-            $res3 = $db2->sql_query($sql3);
-
-            if ($db2->sql_num_rows($res3) != 1) {
-                Debug::sql($sql3);
-                throw new \Exception("Impossible to find the database '".$OLD_DB."' to rename", 2518);
-            }
-
-            while ($ob3 = $db2->sql_fetch_object($res3)) {
-                if ($TARGET_EXIST === false) {
-                    $db2->sql_query("CREATE DATABASE  `".$NEW_DB."` DEFAULT CHARACTER SET ".$ob3->DEFAULT_CHARACTER_SET_NAME);
-                }
-            }
-
-// backup trigger view
-
-            $db2->sql_select_db($OLD_DB);
-
-            $OLD = $this->getObject(array($id_mysql_server, $OLD_DB));
-
-            $sql6 = "SHOW TRIGGERS FROM `".$OLD_DB."`";
-            $res6 = $db2->sql_query($sql6);
-
-            $triggers = array();
-            while ($ob6      = $db2->sql_fetch_array($res6, MYSQLI_ASSOC)) {
-
-                $sql21 = "SHOW CREATE TRIGGER `".$OLD_DB."`.`".$ob6['Trigger']."`";
-                Debug::sql($sql21);
-                $res21 = $db2->sql_query($sql21);
-
-                while ($ob21 = $db2->sql_fetch_array($res21, MYSQLI_ASSOC)) {
-
-                    $triggers[$ob6['Trigger']] = str_replace('@'.$OLD_DB.'.', '@'.$NEW_DB.'.', $ob21['SQL Original Statement']);
-                    $triggers[$ob6['Trigger']] = str_replace('`'.$OLD_DB.'`.', '`'.$NEW_DB.'`.', $triggers[$ob6['Trigger']]).";";
-                }
-
-                $sql8 = "DROP TRIGGER `".$ob6['Trigger']."`;";
-                Debug::debug($sql8);
-
-                $db2->sql_query($sql8);
-            }
-
-// VIEW
-//get Orderby
-// dependance des vues entre elles
-
-            $sql20 = "SELECT  views.TABLE_NAME As `View`, tab.TABLE_NAME AS `Input`
-FROM information_schema.`TABLES` AS tab
-INNER JOIN information_schema.VIEWS AS views
-ON views.VIEW_DEFINITION LIKE CONCAT('% `',tab.TABLE_NAME,'`%') AND tab.TABLE_SCHEMA='".$OLD_DB."' AND views.TABLE_SCHEMA='".$OLD_DB."' AND tab.TABLE_TYPE = 'VIEW'
-UNION
-SELECT views.TABLE_NAME As `View`, tab.TABLE_NAME AS `Input`
-FROM information_schema.`TABLES` AS tab
-INNER JOIN information_schema.VIEWS AS views
-ON views.VIEW_DEFINITION LIKE CONCAT('%`',tab.TABLE_SCHEMA,'`.`',tab.TABLE_NAME,'`%') AND tab.TABLE_SCHEMA='".$OLD_DB."' AND views.TABLE_SCHEMA='".$OLD_DB."' AND tab.TABLE_TYPE = 'VIEW';";
-
-//            Debug::sql($sql20));
-
-            $res20 = $db2->sql_query($sql20);
-
-            $childs    = array();
-            $fathers   = array();
-            $relations = array();
-            while ($ob20      = $db2->sql_fetch_array($res20, MYSQLI_ASSOC)) {
-                $fathers[]                  = $ob20['View'];
-                $childs[]                   = $ob20['Input'];
-                $relations[$ob20['View']][] = $ob20['Input'];
-            }
-
-            Debug::debug($relations, "Relations");
-
-            $level = array();
-            $i     = 0;
-            while ($last  = count($relations) != 0) {
-
-                $temp = $relations;
-
-                foreach ($temp as $father_name => $tab_father) {
-                    foreach ($tab_father as $key_child => $table_child) {
-                        if (!in_array($table_child, array_keys($relations))) {
-
-                            if (empty($level[$i]) || !in_array($table_child, $level[$i])) {
-                                $level[$i][] = $table_child;
-                            }
-                            unset($relations[$father_name][$key_child]);
-                        }
-                    }
-                }
-                $temp = $relations;
-
-// retirer les tableaux vides, et remplissage avec clefs
-                foreach ($temp as $key => $tmp) {
-                    if (count($tmp) == 0) {
-                        unset($relations[$key]);
-                        if (empty($level[$i + 1]) || !in_array($key, $level[$i + 1])) {
-                            $level[$i + 1][] = $key;
-                        }
-                    }
-                }
-
-                if ($last == count($relations)) {
-                    $cas_found = false;
-
-//cas de deux chemins differents pour arriver à la même table enfant
-                    $temp = $relations;
-                    foreach ($temp as $key1 => $tab2) {
-                        foreach ($tab2 as $key2 => $val) {
-                            foreach ($level as $tab3) {
-                                if (in_array($val, $tab3)) {
-                                    unset($relations[$key1][$key2]);
-                                    $cas_found = true;
-                                }
-                            }
-                        }
-                    }
-
-                    if (!$cas_found) {
-                        echo "\n";
-                        debug($tab2);
-                        debug($level);
-                        debug($relations);
-                        throw new \Exception("PMACTRL-334 Circular definition (elem <-> elem)");
-                    }
-                }
-
-                sort($level[$i]);
-                $i++;
-            }
-
-            Debug::debug($level, "LEVEL");
-
-            $orderby = "";
-            foreach ($level as $name) {
-                $orderby .= implode("','", $name);
-            }
-
-            $sql9 = "select `table_name` FROM `information_schema`.`tables` where `table_schema`='".$OLD_DB."' AND `TABLE_TYPE`='VIEW' ORDER BY FIELD(`table_name`, '".$orderby."') DESC, `table_name`;";
-            Debug::sql($sql9);
-
-            $res9  = $db2->sql_query($sql9);
-            $views = array();
-            $sql11 = array();
-            while ($ob9   = $db2->sql_fetch_array($res9, MYSQLI_ASSOC)) {
-
-                $sql10 = "SHOW CREATE VIEW `".$OLD_DB."`.`".$ob9['table_name']."`";
-                Debug::sql($sql10);
-                $res10 = $db2->sql_query($sql10);
-
-                while ($ob10 = $db2->sql_fetch_array($res10, MYSQLI_ASSOC)) {
-                    $views[$ob9['table_name']] = str_replace('`'.$OLD_DB.'`', '`'.$NEW_DB.'`', $ob10['Create View']);
-                }
-
-                $sql11[] = "DROP VIEW `".$OLD_DB."`.`".$ob9['table_name']."`;";
-                //Debug::debug($sql11);
-                //$db2->sql_query($sql11);
-            }
-
-            // c'est dégeux il faudrait d'abord crée tous les objets dans la nouvelle base, faire le diff et après faire le ménage
-            foreach ($sql11 as $sql111) {
-                Debug::debug($sql111);
-                $db2->sql_query($sql111);
-            }
-
-// backup functions
-
-            $functions = array();
-
-            $sql13 = "SHOW FUNCTION STATUS where Db='".$OLD_DB."'";
-            Debug::debug($sql13);
-            $res13 = $db2->sql_query($sql13);
-
-            while ($ob13 = $db2->sql_fetch_object($res13)) {
-
-                $sql14 = "SHOW CREATE function `".$OLD_DB."`.`".$ob13->Name."`";
-                Debug::debug($sql14);
-                $res14 = $db2->sql_query($sql14);
-                while ($ob14  = $db2->sql_fetch_array($res14, MYSQLI_ASSOC)) {
-
-                    $functions[] = $ob14['Create Function'].";";
-                }
-
-
-                $sql15 = "DROP function `".$OLD_DB."`.`".$ob13->Name."`;";
-                Debug::debug($sql15);
-                $db2->sql_query($sql15);
-            }
-
-
-//procedures
-
-            $sql17 = "SHOW PROCEDURE STATUS WHERE db = '".$OLD_DB."';";
-            Debug::debug($sql17);
-            $res17 = $db2->sql_query($sql17);
-
-            $procedures = array();
-            while ($ob17       = $db2->sql_fetch_object($res17)) {
-
-                $sql18 = "SHOW CREATE procedure `".$OLD_DB."`.`".$ob17->Name."`";
-                $res18 = $db2->sql_query($sql18);
-                while ($ob18  = $db2->sql_fetch_array($res18, MYSQLI_ASSOC)) {
-
-                    $procedures[] = $ob18['Create Procedure'].";";
-                }
-
-                $sql18 = "DROP procedure `".$OLD_DB."`.`".$ob17->Name."`;";
-                Debug::debug($sql18);
-                $db2->sql_query($sql18);
-            }
-
-
-
-// DÉPLACEMENT DES TABLES
-
-            $sql2 = "SELECT `table_name` FROM `information_schema`.`tables` WHERE `table_schema`='".$OLD_DB."' AND `TABLE_TYPE`='BASE TABLE';";
-            Debug::debug($sql2);
-            $res2 = $db2->sql_query($sql2);
-
-            $nb_renamed = 0;
-            while ($ob2        = $db2->sql_fetch_object($res2)) {
-                $sql3 = " RENAME TABLE `".$OLD_DB."`.`".$ob2->table_name."` TO `".$NEW_DB."`.`".$ob2->table_name."`;";
-
-                Debug::debug($sql3);
-                $nb_renamed += 1;
-                $db2->sql_query($sql3);
-            }
-
-
-            $db2->sql_select_db($NEW_DB);
-
-            foreach ($functions as $function) {
-                $sql16 = $function;
-
-                $db2->sql_multi_query($sql16);
-            }
-
-            foreach ($level as $niveau) {
-                foreach ($niveau as $view_name) {
-                    $sql12 = $views[$view_name];
-
-                    $db2->sql_query($sql12);
-                    unset($views[$view_name]);
-                }
-            }
-
-            foreach ($views as $view) {
-                $sql12 = $view;
-                Debug::sql($sql12);
-                $db2->sql_query($sql12);
-            }
-
-            foreach ($procedures as $procedure) {
-                $sql19 = $procedure;
-                Debug::sql($sql19);
-                $db2->sql_multi_query($sql19);
-            }
-
-
-            foreach ($triggers as $trigger) {
-                $sql7 = $trigger;
-                Debug::sql($sql7);
-                $db2->sql_multi_query($sql7);
-            }
-
-
-            if (!empty($AP)) {
-                $grants = $this->getChangeGrant($db2, $OLD_DB, $NEW_DB);
-                foreach ($grants as $grant) {
-                    if (!empty($AP)) {
-                        $db2->sql_query($grant);
-
-                        echo $grant."\n";
-                    }
-                }
-            }
-
-            $NEW = $this->getObject(array($id_mysql_server, $NEW_DB));
-
-            $exit  = false;
-            $table = new Table(0);
-            $table->addHeader(array("Object", $OLD_DB, $NEW_DB));
-
-            foreach ($NEW['result'] as $key => $nb) {
-                $table->addLine(array($key, $OLD['result'][$key], $nb));
-
-                if ($OLD['result'][$key] != $nb) {
-                    $exit = true;
-                }
-            }
-
-            // if no more object in source we allow to drop table in case of --force
-
-
-            echo $table->Display();
-
-            if ($exit === true) {
-                Throw new \Exception('We forgot to migrate objects ! (we did not drop old DB)', 5174);
-            }
-
-// DROP DATABASE IF NO OBJECT
-            $sql4 = "select count(1) as cpt from information_schema.tables where table_schema='".$OLD_DB."';";
-            $res4 = $db2->sql_query($sql4);
-
-            while ($ob4 = $db2->sql_fetch_object($res4)) {
-
-                if ($ob4->cpt === "0") {
-                    $db2->sql_query("DROP DATABASE `".$OLD_DB."`;");
-                }
-            }
+            $nb_renamed = Renamer::rename($db2, $OLD_DB, $NEW_DB, !empty($AP), $FORCE_TARGET, $id_mysql_server);
         }
 
         return $nb_renamed;
     }
 
+/**
+ * Create database state through `create_trigger`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for create_trigger.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::create_trigger()
+ * @example /fr/database/create_trigger
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function create_trigger()
     {
 
@@ -782,6 +1071,27 @@ END;";
 
     }
 
+/**
+ * Handle database state through `testu`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for testu.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::testu()
+ * @example /fr/database/testu
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function testu($param)
     {
         Debug::parseDebug($param);
@@ -802,52 +1112,98 @@ END;";
         Debug::debug($users);
     }
 
+/**
+ * Retrieve database state through `getChangeGrant`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $db_link Input value for `db_link`.
+ * @phpstan-param mixed $db_link
+ * @psalm-param mixed $db_link
+ * @param mixed $OLD_DB Input value for `OLD_DB`.
+ * @phpstan-param mixed $OLD_DB
+ * @psalm-param mixed $OLD_DB
+ * @param mixed $NEW_DB Input value for `NEW_DB`.
+ * @phpstan-param mixed $NEW_DB
+ * @psalm-param mixed $NEW_DB
+ * @return mixed Returned value for getChangeGrant.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getChangeGrant()
+ * @example /fr/database/getChangeGrant
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getChangeGrant($db_link, $OLD_DB, $NEW_DB)
     {
-        // to upgrade to do with `mariadb.sys`@`localhost`
-        $grants = array();
-        $revoke = array();
-
-        $users = Mysql::exportAllUser($db_link);
-        foreach ($users as $user) {
-
-            //Debug::debug($user);
-            $pos = strpos($user, "`".$OLD_DB."`.");
-
-            if ($pos !== false) {
-
-                //add test if found (compare after and before)
-                $revoke[] = str_replace(array(" TO ", "GRANT"), array(" FROM ", "REVOKE"), $user).";";
-
-                $grants[] = str_replace("`".$OLD_DB."`", "`".$NEW_DB."`", $user).";";
-            }
-        }
-
-        $data = array_merge($revoke, $grants);
-
-        Debug::debug($data, "GRANTS");
-
-        return $data;
+        return Renamer::getChangeGrant($db_link, (string) $OLD_DB, (string) $NEW_DB);
     }
 
+/**
+ * Create database state through `addRefresh`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for addRefresh.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::addRefresh()
+ * @example /fr/database/addRefresh
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function addRefresh($param)
     {
         Debug::parseDebug($param);
 
-        $id_mysql_server__source = $param[0];
-        $id_mysql_server__target = $param[1];
-        $databases               = explode(",", $param[2]);
-        $path                    = $param[3];
+        $id_mysql_server__source = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        $id_mysql_server__target = PositiveIntegerSelection::normalizeSingle($param[1] ?? null);
+        $rawDatabases            = $param[2] ?? null;
+        $databases               = is_scalar($rawDatabases)
+            ? Identifier::normalizeDatabaseNameList((string) $rawDatabases)
+            : null;
+        $path                    = SafeDirectory::normalizeBaseDirectory($param[3] ?? null);
+
+        if (
+            $id_mysql_server__source === null
+            || $id_mysql_server__target === null
+            || $databases === null
+            || $path === null
+        ) {
+            throw new \InvalidArgumentException('Invalid database refresh job payload');
+        }
 
         $uuid = Uuid::uuid4()->toString();
 
         $log       = TMP."log/".$this->getClass()."-".__FUNCTION__."-".uniqid().'.log';
         $log_error = TMP."log/".$this->getClass()."-".__FUNCTION__."-".uniqid().'.error.log';
 
-        $php = explode(" ", shell_exec("whereis php"))[1];
-
-        $cmd = $php." ".GLIAL_INDEX." ".$this->getClass()." databaseRefresh ".$id_mysql_server__source." ".$id_mysql_server__target." '"
-            .implode(",", $databases)."' '".$path."' ".$uuid." --debug > ".$log." 2> ".$log_error." & echo $!";
+        $cmd = RefreshShellCommand::buildWorkerCommand(
+            PHP_BINARY,
+            GLIAL_INDEX,
+            $this->getClass(),
+            $id_mysql_server__source,
+            $id_mysql_server__target,
+            $databases,
+            $path,
+            $uuid,
+            $log,
+            $log_error,
+            Debug::$debug === true
+        );
 
         Debug::debug($cmd);
 
@@ -855,8 +1211,8 @@ END;";
 
         Debug::debug($pid, "PID");
 
-        \Glial\Synapse\FactoryController::addNode("fff", "add", array($uuid, $param, $pid, $log, $log_error), Glial\Synapse\FactoryController::RESULT);
-        \Glial\Synapse\FactoryController::addNode("Job", "add", array($uuid, $param, $pid, $log, $log_error), Glial\Synapse\FactoryController::RESULT);
+        //FactoryController::addNode("fff", "add", array($uuid, $param, $pid, $log, $log_error), FactoryController::RESULT);
+        FactoryController::addNode("Job", "add", array($uuid, $param, $pid, $log, $log_error), FactoryController::RESULT);
 
 //unlink($cmd_file);
 
@@ -871,9 +1227,33 @@ END;";
         }
     }
 
+/**
+ * Handle database state through `analyze`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for analyze.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::analyze()
+ * @example /fr/database/analyze
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function analyze($param)
     {
 
+
+        $data['database_analyze_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['database_analyze_csrf_token'] = Csrf::issueToken($_SESSION, self::DATABASE_ANALYZE_CSRF_SCOPE);
 
         $this->di['js']->code_javascript('$("#analyze-id_mysql_server").change(function () {
     data = $(this).val();
@@ -881,14 +1261,74 @@ END;";
        function(){
 	$("#analyze-database").selectpicker("refresh");
     });
-});');
+	});');
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
+            $analyzeRequest = self::evaluateAnalyzeRequest($_POST, $_SERVER, $_SESSION);
+            if ($analyzeRequest['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendDatabaseAnalyzeError($analyzeRequest['status'], $analyzeRequest['body'], $analyzeRequest['headers']);
+                return;
+            }
 
-            if (!empty($_POST['database'][__FUNCTION__])) {
-                $this->updateStats(array($_POST['analyze']['id_mysql_server'], implode(',', $_POST['analyze']['database'])));
+            $analyze = $analyzeRequest['payload'];
+            $this->updateStats(array($analyze['id_mysql_server'], implode(',', $analyze['database'])));
+        }
+
+        $data['listdb1'] = array();
+        $this->set('data', $data);
+    }
+
+    public static function evaluateAnalyzeRequest(array $post, array $server, array $session): array
+    {
+        $request = GroupedFormRequest::evaluate(
+            $post,
+            $server,
+            $session,
+            self::DATABASE_ANALYZE_CSRF_SCOPE,
+            'analyze',
+            self::DATABASE_ANALYZE_RULES,
+            'Invalid database analyze payload'
+        );
+
+        if ($request['status'] !== 200) {
+            return self::buildDatabaseAnalyzeOutcome($request['status'], $request['body'], $request['headers']);
+        }
+
+        $payload = $request['payload'];
+        foreach ($payload['database'] as $database) {
+            if (!Identifier::isDatabaseName($database)) {
+                return self::buildDatabaseAnalyzeOutcome(400, 'Invalid database analyze payload');
             }
         }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'payload' => $payload,
+        ];
+    }
+
+    private static function buildDatabaseAnalyzeOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'payload' => null,
+        ];
+    }
+
+    private static function sendDatabaseAnalyzeError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
     /*
      *
@@ -975,42 +1415,43 @@ END;";
         }
     }
 
+/**
+ * Handle database state through `compare`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for compare.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::compare()
+ * @example /fr/database/compare
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function compare($param)
     {
         Debug::parseDebug($param);
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $redirect = false;
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
-
-            $id_server1 = empty($_POST['compare_main']['id_mysql_server__original']) ? "" : $_POST['compare_main']['id_mysql_server__original'];
-            $id_server2 = empty($_POST['compare_main']['id_mysql_server__compare']) ? "" : $_POST['compare_main']['id_mysql_server__compare'];
-            $db1        = empty($_POST['compare_main']['database__original']) ? "" : $_POST['compare_main']['database__original'];
-            $db2        = empty($_POST['compare_main']['database__compare']) ? "" : $_POST['compare_main']['database__compare'];
-
-            $out = $this->checkConfig($id_server1, $db1, $id_server2, $db2);
-
-            if ($out !== true) {
-                $extra = "";
-
-                foreach ($out as $msg) {
-                    $extra .= "<br />".__($msg);
-                }
-
-                $msg   = I18n::getTranslation(__("Please correct your paramaters !").$extra);
-                $title = I18n::getTranslation(__("Error"));
-                set_flash("error", $title, $msg);
-
-                $redirect = true;
-            }
-
-            header('location: '.LINK.'database/compare/compare_main:id_mysql_server__original:'.$id_server1
-                .'/compare_main:'.'id_mysql_server__compare:'.$id_server2
-                .'/compare_main:'.'database__original:'.$db1
-                .'/compare_main:'.'database__compare:'.$db2
-            );
+        $dataRequest = self::evaluateDataRequest($_GET, $_SERVER);
+        if ($dataRequest['status'] !== 200) {
+            $this->view = false;
+            $this->layout_name = false;
+            self::sendDatabaseDataError($dataRequest['status'], $dataRequest['body'], $dataRequest['headers']);
+            return;
         }
+
+        $selection = $dataRequest['selection'];
+        self::applyDataSelectionToGet($selection);
 //134217728
 //375394272
 
@@ -1030,14 +1471,14 @@ END;";
         }
 
         $data['listdb1'] = array();
-        if (!empty($_GET['compare_main']['id_mysql_server__original'])) {
-            $select1         = $this->getDatabaseByServer(array($_GET['compare_main']['id_mysql_server__original']));
+        if ($selection['id_mysql_server__original'] !== null) {
+            $select1         = $this->getDatabaseByServer(array($selection['id_mysql_server__original']));
             $data['listdb1'] = $select1['databases'];
         }
 
         $data['listdb2'] = array();
-        if (!empty($_GET['compare_main']['id_mysql_server__compare'])) {
-            $select1         = $this->getDatabaseByServer(array($_GET['compare_main']['id_mysql_server__compare']));
+        if ($selection['id_mysql_server__compare'] !== null) {
+            $select1         = $this->getDatabaseByServer(array($selection['id_mysql_server__compare']));
             $data['listdb2'] = $select1['databases'];
         }
 
@@ -1045,12 +1486,12 @@ END;";
         $data['display'] = false;
 
         if (count($data['listdb2']) != 0 && count($data['listdb1']) != 0) {
-            if (!empty($_GET['compare_main']['database__original']) && !empty($_GET['compare_main']['database__compare'])) {
+            if ($selection['database__original'] !== null && $selection['database__compare'] !== null) {
 
-                $id_mysql_server_a = $_GET['compare_main']['id_mysql_server__original'];
-                $database_a        = $_GET['compare_main']['database__original'];
-                $id_mysql_server_b = $_GET['compare_main']['id_mysql_server__compare'];
-                $database_b        = $_GET['compare_main']['database__compare'];
+                $id_mysql_server_a = $selection['id_mysql_server__original'];
+                $database_a        = $selection['database__original'];
+                $id_mysql_server_b = $selection['id_mysql_server__compare'];
+                $database_b        = $selection['database__compare'];
 
                 $data['resultat'] = $this->analyse(array($id_mysql_server_a, $database_a, $id_mysql_server_b, $database_b));
 
@@ -1065,6 +1506,27 @@ END;";
         $this->set('data', $data);
     }
 
+/**
+ * Handle database state through `analyse`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for analyse.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::analyse()
+ * @example /fr/database/analyse
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function analyse($param)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -1092,10 +1554,10 @@ END;";
         $result_b = array();
 
         foreach ($objects as $object) {
-            $data_a[$object]   = Mysql::getListObject($db_a, $database_a, $object);
+            $data_a[$object]   = Mysql::getListObject($db_a, $database_a, $object, $id_mysql_server_a);
             $result_a[$object] = Mysql::getStructure($db_a, $database_a, $data_a[$object], $object);
 
-            $data_b[$object]   = Mysql::getListObject($db_b, $database_b, $object);
+            $data_b[$object]   = Mysql::getListObject($db_b, $database_b, $object, $id_mysql_server_b);
             $result_b[$object] = Mysql::getStructure($db_b, $database_b, $data_b[$object], $object);
 
             $data_a[$object] = array_flip($data_a[$object]);
@@ -1148,18 +1610,69 @@ END;";
         return $data;
     }
 
+/**
+ * Prepare database state through `before`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for before.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::before()
+ * @example /fr/database/before
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function before($param)
     {
         Debug::parseDebug($param);
     }
 
+/**
+ * Handle database state through `checkConfig`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_server1 Input value for `id_server1`.
+ * @phpstan-param int $id_server1
+ * @psalm-param int $id_server1
+ * @param mixed $db1 Input value for `db1`.
+ * @phpstan-param mixed $db1
+ * @psalm-param mixed $db1
+ * @param int $id_server2 Input value for `id_server2`.
+ * @phpstan-param int $id_server2
+ * @psalm-param int $id_server2
+ * @param mixed $db2 Input value for `db2`.
+ * @phpstan-param mixed $db2
+ * @psalm-param mixed $db2
+ * @return mixed Returned value for checkConfig.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::checkConfig()
+ * @example /fr/database/checkConfig
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function checkConfig($id_server1, $db1, $id_server2, $db2)
     {
         $db    = Sgbd::sql(DB_DEFAULT);
         $error = array();
 
         $sql = "SELECT id,name FROM mysql_server WHERE id = '".$db->sql_real_escape_string($id_server1)."';";
-        $res = $db->sql_query($sql);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql, $id_mysql_server, __METHOD__);
         if ($db->sql_num_rows($res) == 1) {
             while ($ob = $db->sql_fetch_object($res)) {
                 $db_name_ori = $ob->name;
@@ -1227,21 +1740,33 @@ END;";
 
         $db_to_get_db = Mysql::getDbLink($id_mysql_server);
 
-        $sql  = "SHOW DATABASES";
-        $res2 = $db_to_get_db->sql_query($sql);
-
-        $data['databases'] = [];
-        while ($ob                = $db_to_get_db->sql_fetch_object($res2)) {
-            $tmp                 = [];
-            $tmp['id']           = $ob->Database;
-            $tmp['libelle']      = $ob->Database;
-            $data['databases'][] = $tmp;
-        }
+        $data['databases'] = SelectorOptions::databaseNamesFromConnection($db_to_get_db);
 
         $this->set("data", $data);
         return $data;
     }
 
+/**
+ * Handle database state through `show`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for show.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::show()
+ * @example /fr/database/show
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function show($param)
     {
 
@@ -1250,7 +1775,7 @@ END;";
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT b.*,a.display_name FROM mysql_server a
-        INNER JOIN mysql_database b ON a.id = b.id_mysql_server WHERE is_proxy = 0;";
+        INNER JOIN mysql_database b ON a.id = b.id_mysql_server WHERE is_proxy = 0 and schema_name !='';";
 
         $res = $db->sql_query($sql);
 
@@ -1263,8 +1788,31 @@ END;";
         $this->set("data", $data);
     }
 
+/**
+ * Handle database state through `size`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for size.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::size()
+ * @example /fr/database/size
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function size($param)
     {
+        $this->di['js']->addJavascript(array('bootstrap-editable.min.js', 'Tree/index.js'));
+
         $db  = Sgbd::sql(DB_DEFAULT);
         $res = $db->sql_query("SELECT * FROM database_size order by `min`;");
 
@@ -1273,45 +1821,216 @@ END;";
             $data['color'][] = $ob;
         }
 
+        $data['database_size_update_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['database_size_update_csrf_token'] = Csrf::issueToken($_SESSION, self::DATABASE_SIZE_UPDATE_CSRF_SCOPE);
+
         $this->set("data", $data);
     }
 
+    public function sizeUpdate(): void
+    {
+        $this->view = false;
+        $this->layout_name = false;
+
+        $outcome = self::evaluateSizeUpdateRequest($_POST, $_SERVER, $_SESSION);
+        if ($outcome['status'] !== 200) {
+            self::sendDatabaseSizeUpdateError($outcome['status'], $outcome['body'], $outcome['headers']);
+            return;
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = self::buildDatabaseSizeUpdateSql($outcome['update'], [$db, 'sql_real_escape_string']);
+        $db->sql_query($sql);
+
+        if ($db->sql_affected_rows() === 1) {
+            echo "OK";
+        } else {
+            self::sendDatabaseSizeUpdateError(503, "Database size not updated");
+        }
+    }
+
+    public static function evaluateSizeUpdateRequest(array $post, array $server, array $session): array
+    {
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::DATABASE_SIZE_UPDATE_CSRF_SCOPE)) {
+            return self::buildDatabaseSizeUpdateOutcome($failure['status'], $failure['body'], $failure['headers']);
+        }
+
+        $update = self::normalizeSizeUpdatePayload($post);
+        if ($update === null) {
+            return self::buildDatabaseSizeUpdateOutcome(400, "Invalid database size update payload");
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'update' => $update,
+        ];
+    }
+
+    public static function normalizeSizeUpdatePayload(array $post): ?array
+    {
+        $update = InlineEditRequest::normalize($post, self::DATABASE_SIZE_UPDATE_FIELDS, PHP_INT_MAX);
+        if ($update === null) {
+            return null;
+        }
+
+        $field = $update['field'];
+
+        if ($field === 'min' || $field === 'max') {
+            $value = self::normalizeDatabaseSizeBytes($update['value']);
+            if ($value === null) {
+                return null;
+            }
+        } else {
+            $value = self::normalizeDatabaseSizeTextField($field, $update['value']);
+            if ($value === null) {
+                return null;
+            }
+        }
+
+        return [
+            'field' => $field,
+            'value' => $value,
+            'id' => $update['id'],
+        ];
+    }
+
+    public static function buildDatabaseSizeUpdateSql(array $update, callable $escape): string
+    {
+        $value = $update['value'];
+        if (in_array($update['field'], ['min', 'max'], true)) {
+            $sqlValue = (string) $value;
+        } else {
+            $sqlValue = "'" . $escape((string) $value) . "'";
+        }
+
+        return sprintf(
+            "UPDATE database_size SET `%s` = %s WHERE id = %d",
+            $update['field'],
+            $sqlValue,
+            $update['id']
+        );
+    }
+
+    public static function normalizeDatabaseSizeBytes(string $value): ?int
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return null;
+        }
+
+        $integer = self::normalizeUnsignedInteger($value);
+        if ($integer !== null) {
+            return $integer;
+        }
+
+        if (! preg_match('/^([0-9]+(?:\.[0-9]+)?)\s*([KMGTPE])$/i', $value, $matches)) {
+            return null;
+        }
+
+        $units = ['K' => 1, 'M' => 2, 'G' => 3, 'T' => 4, 'P' => 5, 'E' => 6];
+        $number = (float) $matches[1];
+        $unit = strtoupper($matches[2]);
+        $bytes = $number * (1024 ** $units[$unit]);
+
+        if (! is_finite($bytes) || $bytes < 0 || $bytes > PHP_INT_MAX) {
+            return null;
+        }
+
+        return (int) round($bytes);
+    }
+
+    private static function normalizeUnsignedInteger(string $value): ?int
+    {
+        $value = trim($value);
+        if ($value === '' || ! ctype_digit($value)) {
+            return null;
+        }
+
+        $normalized = ltrim($value, '0');
+        if ($normalized === '') {
+            return 0;
+        }
+
+        $max = (string) PHP_INT_MAX;
+        if (strlen($normalized) > strlen($max) || (strlen($normalized) === strlen($max) && strcmp($normalized, $max) > 0)) {
+            return null;
+        }
+
+        return (int) $normalized;
+    }
+
+    private static function normalizeDatabaseSizeTextField(string $field, $value): ?string
+    {
+        if (! is_scalar($value) || ! isset(self::DATABASE_SIZE_TEXT_FIELD_LIMITS[$field])) {
+            return null;
+        }
+
+        $text = trim((string) $value);
+        if ($text === '' || strlen($text) > self::DATABASE_SIZE_TEXT_FIELD_LIMITS[$field]) {
+            return null;
+        }
+
+        return $text;
+    }
+
+    private static function buildDatabaseSizeUpdateOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'update' => null,
+        ];
+    }
+
+    private static function sendDatabaseSizeUpdateError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
+    }
+
+/**
+ * Handle database state through `data`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for data.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::data()
+ * @example /fr/database/data
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function data($param)
     {
         Debug::parseDebug($param);
 
         $db = Sgbd::sql(DB_DEFAULT);
-
-        $redirect = false;
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
-
-            $id_server1 = empty($_POST['compare_main']['id_mysql_server__original']) ? "" : $_POST['compare_main']['id_mysql_server__original'];
-            $id_server2 = empty($_POST['compare_main']['id_mysql_server__compare']) ? "" : $_POST['compare_main']['id_mysql_server__compare'];
-            $db1        = empty($_POST['compare_main']['database__original']) ? "" : $_POST['compare_main']['database__original'];
-            $db2        = empty($_POST['compare_main']['database__compare']) ? "" : $_POST['compare_main']['database__compare'];
-
-            $out = $this->checkConfig($id_server1, $db1, $id_server2, $db2);
-
-            if ($out !== true) {
-                $extra = "";
-
-                foreach ($out as $msg) {
-                    $extra .= "<br />".__($msg);
-                }
-
-                $msg   = I18n::getTranslation(__("Please correct your paramaters !").$extra);
-                $title = I18n::getTranslation(__("Error"));
-                set_flash("error", $title, $msg);
-
-                $redirect = true;
-            }
-
-            header('location: '.LINK.'database/compare/compare_main:id_mysql_server__original:'.$id_server1
-                .'/compare_main:'.'id_mysql_server__compare:'.$id_server2
-                .'/compare_main:'.'database__original:'.$db1
-                .'/compare_main:'.'database__compare:'.$db2
-            );
+        $dataRequest = self::evaluateDataRequest($_GET, $_SERVER);
+        if ($dataRequest['status'] !== 200) {
+            $this->view = false;
+            $this->layout_name = false;
+            self::sendDatabaseDataError($dataRequest['status'], $dataRequest['body'], $dataRequest['headers']);
+            return;
         }
+
+        $selection = $dataRequest['selection'];
+        self::applyDataSelectionToGet($selection);
 //134217728
 //375394272
 
@@ -1331,14 +2050,14 @@ END;";
         }
 
         $data['listdb1'] = array();
-        if (!empty($_GET['compare_main']['id_mysql_server__original'])) {
-            $select1         = $this->getDatabaseByServer(array($_GET['compare_main']['id_mysql_server__original']));
+        if ($selection['id_mysql_server__original'] !== null) {
+            $select1         = $this->getDatabaseByServer(array($selection['id_mysql_server__original']));
             $data['listdb1'] = $select1['databases'];
         }
 
         $data['listdb2'] = array();
-        if (!empty($_GET['compare_main']['id_mysql_server__compare'])) {
-            $select1         = $this->getDatabaseByServer(array($_GET['compare_main']['id_mysql_server__compare']));
+        if ($selection['id_mysql_server__compare'] !== null) {
+            $select1         = $this->getDatabaseByServer(array($selection['id_mysql_server__compare']));
             $data['listdb2'] = $select1['databases'];
         }
 
@@ -1346,12 +2065,12 @@ END;";
         $data['display'] = false;
 
         if (count($data['listdb2']) != 0 && count($data['listdb1']) != 0) {
-            if (!empty($_GET['compare_main']['database__original']) && !empty($_GET['compare_main']['database__compare'])) {
+            if ($selection['database__original'] !== null && $selection['database__compare'] !== null) {
 
-                $id_mysql_server_a = $_GET['compare_main']['id_mysql_server__original'];
-                $database_a        = $_GET['compare_main']['database__original'];
-                $id_mysql_server_b = $_GET['compare_main']['id_mysql_server__compare'];
-                $database_b        = $_GET['compare_main']['database__compare'];
+                $id_mysql_server_a = $selection['id_mysql_server__original'];
+                $database_a        = $selection['database__original'];
+                $id_mysql_server_b = $selection['id_mysql_server__compare'];
+                $database_b        = $selection['database__compare'];
 
                 $data['resultat'] = $this->analyse(array($id_mysql_server_a, $database_a, $id_mysql_server_b, $database_b));
 
@@ -1366,6 +2085,130 @@ END;";
         $this->set('data', $data);
     }
 
+    public static function evaluateDataRequest(array $get, array $server): array
+    {
+        $method = strtoupper((string) ($server['REQUEST_METHOD'] ?? 'GET'));
+        if ($method !== 'GET' && $method !== 'HEAD') {
+            return self::buildDatabaseDataOutcome(405, 'Method Not Allowed', ['Allow' => 'GET, HEAD']);
+        }
+
+        $selection = self::normalizeDataSelection($get);
+        if ($selection === null) {
+            return self::buildDatabaseDataOutcome(400, 'Invalid database data selection');
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'selection' => $selection,
+        ];
+    }
+
+    public static function normalizeDataSelection(array $get): ?array
+    {
+        $selection = [
+            'id_mysql_server__original' => null,
+            'id_mysql_server__compare' => null,
+            'database__original' => null,
+            'database__compare' => null,
+        ];
+
+        if (!isset($get['compare_main'])) {
+            return $selection;
+        }
+        if (!is_array($get['compare_main'])) {
+            return null;
+        }
+
+        foreach ($get['compare_main'] as $field => $value) {
+            if (!is_string($field) || !array_key_exists($field, $selection) || !is_scalar($value)) {
+                return null;
+            }
+
+            $text = trim((string) $value);
+            if ($text === '') {
+                continue;
+            }
+
+            if ($field === 'id_mysql_server__original' || $field === 'id_mysql_server__compare') {
+                if (!ctype_digit($text) || (int) $text < 1) {
+                    return null;
+                }
+
+                $selection[$field] = (int) $text;
+                continue;
+            }
+
+            if (!Identifier::isDatabaseName($text)) {
+                return null;
+            }
+
+            $selection[$field] = $text;
+        }
+
+        return $selection;
+    }
+
+    private static function applyDataSelectionToGet(array $selection): void
+    {
+        $compareMain = [];
+        foreach ($selection as $field => $value) {
+            if ($value !== null) {
+                $compareMain[$field] = (string) $value;
+            }
+        }
+
+        if ($compareMain === []) {
+            unset($_GET['compare_main']);
+            return;
+        }
+
+        // Form::select reads $_GET directly to restore selected values in this legacy view.
+        $_GET['compare_main'] = $compareMain;
+    }
+
+    private static function buildDatabaseDataOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'selection' => null,
+        ];
+    }
+
+    private static function sendDatabaseDataError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
+    }
+
+/**
+ * Handle database state through `dataCompate`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for dataCompate.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::dataCompate()
+ * @example /fr/database/dataCompate
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function dataCompate($param)
     {
         Debug::parseDebug($param);
@@ -1564,6 +2407,27 @@ LEFT JOIN `".$database__ori."`.`".$table__ori."` a ON 1=1";
         );
     }
 
+/**
+ * Retrieve database state through `getTableInfo`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getTableInfo.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getTableInfo()
+ * @example /fr/database/getTableInfo
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getTableInfo($param)
     {
 
@@ -1617,6 +2481,27 @@ LEFT JOIN `".$database__ori."`.`".$table__ori."` a ON 1=1";
         return $ret;
     }
 
+/**
+ * Retrieve database state through `getPrimaryKey`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getPrimaryKey.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getPrimaryKey()
+ * @example /fr/database/getPrimaryKey
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getPrimaryKey($param)
     {
         Debug::parseDebug($param);
@@ -1663,6 +2548,28 @@ LEFT JOIN `".$database__ori."`.`".$table__ori."` a ON 1=1";
         $this->set('data', $data);
     }
 
+/**
+ * Retrieve database state through `getObject`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getObject.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::getObject()
+ * @example /fr/database/getObject
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getObject($param)
     {
 
@@ -1679,48 +2586,50 @@ LEFT JOIN `".$database__ori."`.`".$table__ori."` a ON 1=1";
         $database        = $param[1];
 
         $db = Sgbd::sql(DB_DEFAULT, "dhgsrht");
+        $serverRef = $db->sql_real_escape_string((string) $id_mysql_server);
 
-        $sql = "SELECT * FROM `mysql_server` where `id`='".$id_mysql_server."'"
+        $sql = "SELECT * FROM `mysql_server` where `id`='".$serverRef."'"
             ." UNION ALL "
-            ."SELECT * FROM `mysql_server` where `display_name`='".$id_mysql_server."'";
+            ."SELECT * FROM `mysql_server` where `display_name`='".$serverRef."'";
 
         $res = $db->sql_query($sql);
 
+        $db2 = null;
         while ($ob = $db->sql_fetch_object($res)) {
-
             $db2 = Sgbd::sql($ob->name);
         }
 
-        $sql2 = "SELECT `DEFAULT_CHARACTER_SET_NAME` FROM `information_schema`.`SCHEMATA` WHERE `SCHEMA_NAME`= '".$database."';";
-        $res2 = $db2->sql_query($sql2);
-
-        if ($db2->sql_num_rows($res2) != 1) {
-            Debug::sql($sql2);
-            throw new \Exception("Impossible to find the database '".$database."' to rename", 4576);
+        if ($db2 === null) {
+            throw new \Exception("Impossible to find the mysql server '".$id_mysql_server."'", 4576);
         }
 
-        $query['TRIGGER']   = "select trigger_name from information_schema.triggers where trigger_schema ='{DB}'";
-        $query['FUNCTION']  = "show function status WHERE Db ='{DB}';";
-        $query['PROCEDURE'] = "show procedure status WHERE Db ='{DB}'";
-        $query['TABLE']     = "select TABLE_NAME from information_schema.tables where TABLE_SCHEMA = '{DB}' AND TABLE_TYPE='BASE TABLE' order by TABLE_NAME;";
-        $query['VIEW']      = "select TABLE_NAME from information_schema.tables where TABLE_SCHEMA = '{DB}' AND TABLE_TYPE='VIEW' order by TABLE_NAME;";
-        $query['EVENT']     = "SHOW EVENTS FROM `{DB}`";
-
-        $data['result'] = array();
-
-        foreach ($query as $key => $to_execute) {
-            $sql3 = str_replace('{DB}', $database, $to_execute);
-            $res3 = $db2->sql_query($sql3);
-
-            $data['result'][$key] = $db2->sql_num_rows($res3);
-        }
-
-
+        $data = Renamer::getObjectCounts($db2, (string) $database, $id_mysql_server);
         Debug::debug($data);
 
         return $data;
     }
 
+/**
+ * Handle database state through `dot`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for dot.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::dot()
+ * @example /fr/database/dot
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function dot($param)
     {
         Debug::parseDebug($param);

@@ -14,19 +14,73 @@ use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use \App\Library\Debug;
+use App\Library\Http\HttpResponse;
+use \App\Library\Kpi\DaemonRunLogger;
 use \App\Library\Mysql;
 use \App\Library\Microsecond;
 use \App\Library\System;
+use App\Library\ShellCommand;
+use App\Library\Security\CsrfGuard;
+use App\Library\Security\PositiveIntegerSelection;
 use \Glial\Sgbd\Sgbd;
 
+/**
+ * Class responsible for agent workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Agent extends Controller {
 
-    use \App\Library\Decoupage;
+    public const AGENT_CONTROL_CSRF_SCOPE = 'agent.control';
 
+/**
+ * Stores `$debug` for debug.
+ *
+ * @var bool
+ * @phpstan-var bool
+ * @psalm-var bool
+ */
     var $debug = false;
+/**
+ * Stores `$url` for url.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     var $url = "Daemon/index/";
+/**
+ * Stores `$logger` for logger.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $logger;
+/**
+ * Stores `$log_file` for log file.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $log_file = LOG_FILE;
+/**
+ * Stores `$loop` for loop.
+ *
+ * @var int
+ * @phpstan-var int
+ * @psalm-var int
+ */
     var $loop = 0;
     
     /*
@@ -58,18 +112,23 @@ class Agent extends Controller {
      */
 
     public function start($param) {
-        if (empty($param[0])) {
-            Throw new \Exception("No idea set for this Daemon", 80);
+        $this->view = false;
+        $this->layout_name = false;
+
+        $outcome = self::evaluateControlRequest($param, $_POST ?? [], $_SERVER ?? [], $_SESSION ?? [], IS_CLI);
+        if ($outcome['status'] !== 200) {
+            self::sendProcessControlError($outcome['status'], $outcome['body'], $outcome['headers']);
+            return;
         }
 
         Debug::parseDebug($param);
 
-        $id_daemon = $param[0];
-        $db = Sgbd::sql(DB_DEFAULT);
-        $this->view = false;
-        $this->layout_name = false;
+        $id_daemon = $outcome['id_daemon'];
+        $this->logger->info('Agent start requested by ' . $this->currentActorForLog() . ' for daemon id ' . $id_daemon);
 
-        $sql = "SELECT * FROM daemon_main where id ='" . $id_daemon . "'";
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT * FROM daemon_main where id =" . $id_daemon;
         $res = $db->sql_query($sql);
 
         if ($db->sql_num_rows($res) !== 1) {
@@ -88,15 +147,20 @@ class Agent extends Controller {
         $ob = $db->sql_fetch_object($res);
 
         if ($ob->pid === "0") {
+            DaemonRunLogger::markCrashedRuns((int)$id_daemon);
+
             $php = explode(" ", shell_exec("whereis php"))[1];
-            //todo add error flux in the log
 
             $debug = "";
             if (Debug::$debug === true) {
                 $debug = "--debug";
             }
 
-            $cmd = $php . " " . GLIAL_INDEX . " Agent launch " . $id_daemon . " " . $debug . " >> " . $this->log_file . " & echo $!";
+            $cmdArgs = [$php, GLIAL_INDEX, "Agent", "launch", (string)$id_daemon];
+            if ($debug !== "") {
+                $cmdArgs[] = $debug;
+            }
+            $cmd = self::buildBackgroundCommand($cmdArgs, $this->log_file);
             Debug::debug($cmd);
             $this->logger->debug("$cmd");
             $pid = trim(shell_exec($cmd));
@@ -104,7 +168,7 @@ class Agent extends Controller {
             $this->logger->debug("CMD : " . $cmd);
             $this->logger->info('Started daemon with pid : ' . $pid);
 
-            $sql = "UPDATE daemon_main SET pid ='" . $pid . "' WHERE id = " . $id_daemon . ";";
+            $sql = "UPDATE daemon_main SET pid ='" . $pid . "', is_enabled = 1 WHERE id = " . $id_daemon . ";";
             $db->sql_query($sql);
             $msg = I18n::getTranslation(__("The daemon ")."(id=" . $id_daemon . ") ".__("successfully started with pid:") . " " . $pid);
             $title = I18n::getTranslation(__("Success"));
@@ -134,14 +198,21 @@ class Agent extends Controller {
      */
 
     function stop($param) {
-        $id_daemon = $param[0];
-
-
-        $db = Sgbd::sql(DB_DEFAULT);
         $this->view = false;
         $this->layout_name = false;
 
-        $sql = "SELECT * FROM daemon_main where id ='" . $id_daemon . "'";
+        $outcome = self::evaluateControlRequest($param, $_POST ?? [], $_SERVER ?? [], $_SESSION ?? [], IS_CLI);
+        if ($outcome['status'] !== 200) {
+            self::sendProcessControlError($outcome['status'], $outcome['body'], $outcome['headers']);
+            return;
+        }
+
+        $id_daemon = $outcome['id_daemon'];
+        $this->logger->info('Agent stop requested by ' . $this->currentActorForLog() . ' for daemon id ' . $id_daemon);
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT * FROM daemon_main where id =" . $id_daemon;
         $res = $db->sql_query($sql);
 
         $this->logger->notice($sql);
@@ -156,27 +227,28 @@ class Agent extends Controller {
         }
 
         $ob = $db->sql_fetch_object($res);
+        $pid = (int) $ob->pid;
 
-        if (System::isRunningPid($ob->pid)) {
-            $msg = I18n::getTranslation(__("The daemon (id=" . $id_daemon . ") with pid : '" . $ob->pid . "' successfully stopped "));
+        if ($pid > 0 && System::isRunningPid($pid)) {
+            $msg = I18n::getTranslation(__("The daemon (id=" . $id_daemon . ") with pid : '" . $pid . "' successfully stopped "));
             $title = I18n::getTranslation(__("Success"));
             set_flash("success", $title, $msg);
 
-            $cmd = "kill " . $ob->pid;
+            $cmd = "kill " . $pid;
             shell_exec($cmd);
             //shell_exec("echo '[" . date("Y-m-d H:i:s") . "] DAEMON STOPPED !' >> " . $ob->log_file);
 
-            $sql = "UPDATE daemon_main SET pid ='0' WHERE id = '" . $id_daemon . "'";
+            $sql = "UPDATE daemon_main SET pid ='0', is_enabled = 0 WHERE id = " . $id_daemon;
             $db->sql_query($sql);
 
-            $this->logger->info('Stopped daemon (id=' . $id_daemon . ') with the pid : ' . $ob->pid);
+            $this->logger->info('Stopped daemon (id=' . $id_daemon . ') with the pid : ' . $pid);
         } else {
 
             if (!empty($pid)) {
                 $this->logger->info('Impossible to find the daemon (id=' . $id_daemon . ') with the pid : ' . $pid);
             }
 
-            $sql = "UPDATE daemon_main SET pid ='0' WHERE id = '" . $id_daemon . "'";
+            $sql = "UPDATE daemon_main SET pid ='0', is_enabled = 0 WHERE id = " . $id_daemon;
             $db->sql_query($sql);
 
             $msg = I18n::getTranslation(__("Impossible to find the daemon (id=" . $id_daemon . ") with the pid : ") . "'" . $ob->pid . "'");
@@ -187,14 +259,14 @@ class Agent extends Controller {
         usleep(5000);
 
 
-        if (!System::isRunningPid($ob->pid)) {
+        if ($pid < 1 || !System::isRunningPid($pid)) {
             
         } else {
 
             //on double UPDATE dans le cas le contrab passerait dans l'interval du sleep
             // (ce qui crée un process zombie dont on perdrait le PID vis a vis de pmacontrol)
             // impossible a killed depuis l'IHM
-            $sql = "UPDATE daemon_main SET pid =" . $ob->pid . " WHERE id = '" . $id_daemon . "'";
+            $sql = "UPDATE daemon_main SET pid =" . $pid . " WHERE id = " . $id_daemon;
             $db->sql_query($sql);
 
             $this->logger->warning('Impossible to stop daemon (id=' . $id_daemon . ') with pid : ' . $pid);
@@ -243,31 +315,57 @@ class Agent extends Controller {
         $nextRuntime = microtime(true) + $interval;
 
         $id_loop = 0;
+        $lastChildPid = 0;
         while (true) {
             $id_loop++;
 
-
-
             $time_start = microtime(true);
-
-
 
             $db = Sgbd::sql(DB_DEFAULT);
             $sql = "SELECT * FROM daemon_main where id=" . $id;
             $res = $db->sql_query($sql);
+            $refresh_time = 1;
 
             while ($ob = $db->sql_fetch_object($res)) {
+                $refresh_time = max(1, (int) $ob->refresh_time);
+                $max_delay = max(0, (int) $ob->max_delay);
+                $cycle = DaemonRunLogger::startCycle([
+                    'id_daemon_main' => (int) $ob->id,
+                    'pid' => getmypid(),
+                    'refresh_time' => $refresh_time,
+                    'max_delay' => $max_delay,
+                    'cycle_started_at' => $time_start,
+                ]);
+
+                $skipped = false;
+                if ($lastChildPid > 0 && System::isRunningPid($lastChildPid)) {
+                    $skipped = true;
+                    $this->logger->warning("[Daemon : $id] skipped loop ".$id_loop." because child pid ".$lastChildPid." is still running");
+                    DaemonRunLogger::finishCycle($cycle, [
+                        'skipped' => true,
+                        'ended_at' => microtime(true),
+                    ]);
+
+                    continue;
+                }
 
                 $php = explode(" ", shell_exec("whereis php"))[1];
-                $cmd = $php . " " . GLIAL_INDEX . " " . $ob->class . " " . $ob->method . " " . $ob->params . " loop:" . $id_loop . " " . $debug . " 2>&1 >> " . $this->log_file . " & echo $!";
+                $cmdArgs = [$php, GLIAL_INDEX, $ob->class, $ob->method, (string)$ob->params, "loop:" . $id_loop];
+                if ($debug !== "") {
+                    $cmdArgs[] = $debug;
+                }
+                $cmd = self::buildBackgroundCommand($cmdArgs, $this->log_file);
 
                 //FactoryController::addNode($ob->class, $ob->method, explode(',',$ob->params));
                 //$pid=43563456375635673;
 
                 $pid = shell_exec($cmd);
+                $lastChildPid = (int) trim((string) $pid);
                 $this->logger->debug("[".Microsecond::date()."] {pid:".trim($pid)."} " . $ob->class . "/". $ob->method . ":" . $ob->id . " " . $ob->params . "\t[loop:" . $id_loop."]" );
-
-                $refresh_time = (int) $ob->refresh_time;
+                DaemonRunLogger::finishCycle($cycle, [
+                    'skipped' => $skipped,
+                    'ended_at' => microtime(true),
+                ]);
             }
 
             // in case of mysql gone away, like this daemon restart when mysql is back
@@ -363,6 +461,8 @@ class Agent extends Controller {
             $data['mysql_server']['port'] = empty($info_server['port']) ? 3306 : $info_server['port'];
             $data['mysql_server']['date_refresh'] = date('Y-m-d H:i:s');
             $data['mysql_server']['database'] = $info_server['database'];
+            $data['mysql_server']['ssh_nat'] = $info_server['ssh_nat'] ?? '';
+            $data['mysql_server']['is_ssl'] = $info_server['ssl'] ?? $info_server['is_ssl'] ?? 0;
 
             //$data['mysql_server']['is_monitored'] = 1;
 
@@ -378,10 +478,6 @@ class Agent extends Controller {
                 debug($data);
                 debug($db->sql_error());
                 //throw new Exception(''. $db->sql_error());
-            } else {
-
-                //$this->OnAddServer(array($id_mysql_server));
-                //echo $data['mysql_server']['name'] . PHP_EOL;
             }
         }
 
@@ -397,6 +493,27 @@ class Agent extends Controller {
 
 
 
+/**
+ * Handle agent state through `logs`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for logs.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::logs()
+ * @example /fr/agent/logs
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function logs($param) {
         $db = Sgbd::sql(DB_DEFAULT);
 
@@ -539,20 +656,97 @@ class Agent extends Controller {
         return trim($output);
     }
 
+    public static function evaluateControlRequest(array $param, array $post, array $server, array $session, bool $isCli = false): array
+    {
+        $idDaemon = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        if ($idDaemon === null) {
+            return self::buildControlOutcome(400, 'Invalid daemon id', [], null);
+        }
+
+        if ($isCli) {
+            return self::buildControlOutcome(200, '', [], $idDaemon);
+        }
+
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::AGENT_CONTROL_CSRF_SCOPE)) {
+            return self::buildControlOutcome($failure['status'], $failure['body'], $failure['headers'], null);
+        }
+
+        return self::buildControlOutcome(200, '', [], $idDaemon);
+    }
+
+    private static function buildControlOutcome(int $statusCode, string $message, array $headers = [], ?int $idDaemon = null): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'id_daemon' => $idDaemon,
+        ];
+    }
+
+    private static function sendProcessControlError(int $statusCode, string $message, array $headers = []): void
+    {
+        HttpResponse::sendError($statusCode, $message, $headers);
+    }
+
+    private function currentActorForLog(): string
+    {
+        if (IS_CLI) {
+            return 'CLI';
+        }
+
+        if (isset($this->di['auth']) && is_object($this->di['auth']) && method_exists($this->di['auth'], 'getUser')) {
+            $user = $this->di['auth']->getUser();
+            if (is_object($user)) {
+                $name = trim((string) ($user->firstname ?? '') . ' ' . (string) ($user->name ?? ''));
+                $id = isset($user->id) ? (int) $user->id : 0;
+
+                if ($name !== '' || $id > 0) {
+                    return ($name !== '' ? $name . ' ' : '') . '(id:' . $id . ')';
+                }
+            }
+        }
+
+        return 'HTTP ' . (string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+    }
+
+/**
+ * Handle agent state through `check_daemon`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for check_daemon.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::check_daemon()
+ * @example /fr/agent/check_daemon
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function check_daemon() {
 
         $this->view = false;
         $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT id, name, pid FROM daemon_main WHERE pid != 0";
+        $sql = "SELECT id, name, pid FROM daemon_main WHERE is_enabled = 1";
 
         $res = $db->sql_query($sql);
 
         while ($ob = $db->sql_fetch_object($res)) {
-            if (!System::isRunningPid($ob->pid)) {
+            if ($ob->pid == "0" || !System::isRunningPid($ob->pid)) {
 
                 $php = explode(" ", shell_exec("whereis php"))[1];
 
-                $cmd = $php . " " . GLIAL_INDEX . " Agent launch " . $ob->id . " >> " . TMP . "worker.log" . " & echo $!";
+                DaemonRunLogger::markCrashedRuns((int)$ob->id);
+
+                $cmd = self::buildBackgroundCommand(
+                    [$php, GLIAL_INDEX, "Agent", "launch", (string)$ob->id],
+                    TMP . "worker.log"
+                );
                 $pid = shell_exec($cmd);
 
                 $sql = "UPDATE daemon_main SET pid=" . $pid . " WHERE id=" . $ob->id;
@@ -566,6 +760,18 @@ class Agent extends Controller {
             }
         }
 
+    }
+
+    /**
+     * @param array<int,mixed> $args
+     */
+    private static function buildBackgroundCommand(array $args, string $logFile): string
+    {
+        return ShellCommand::fromArguments($args)
+            ->redirect(1, '>>', $logFile)
+            ->mergeStderrIntoStdout()
+            ->inBackgroundCapturingPid()
+            ->toString();
     }
 
     /*

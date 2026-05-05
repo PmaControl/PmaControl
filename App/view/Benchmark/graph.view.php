@@ -10,7 +10,7 @@ use Glial\Html\Form\Form;
 if (!empty($data['select_bench'])) {
     echo '<div class="well">';
 
-    echo '<form style="display:inline" action="" method="post">';
+    echo '<form style="display:inline" action="" method="get">';
     echo Form::select("benchmark_main", "id", $data['select_bench'], "",
         array("class" => "selectpicker", "data-live-search" => "true", "multiple" => "multiple", "data-actions-box" => "true", "style" => "width:500px"));
 

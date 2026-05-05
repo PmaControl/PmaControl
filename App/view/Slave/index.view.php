@@ -9,6 +9,54 @@ use App\Library\Available;
 use App\Library\Mysql;
 use App\Library\Display;
 
+function slave_h($value)
+{
+    return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
+}
+
+function slave_random_hop_emoji()
+{
+    static $emojis = ['🎲', '🛰️', '🚇', '🪃', '🔀', '🌉', '🛸', '🎯'];
+
+    return $emojis[array_rand($emojis)];
+}
+
+function slave_render_real_endpoint(array $slave, array $data)
+{
+    $localEndpoint = trim((string)$slave['master_host']).':'.(int)$slave['master_port'];
+    $tunnel = $data['tunnel_details'][$localEndpoint] ?? null;
+
+    if (empty($tunnel['remote'])) {
+        return slave_h($localEndpoint);
+    }
+
+    $path = [];
+    $hops = $tunnel['hops'] ?? [];
+    $count = count($hops);
+
+    for ($idx = 0; $idx < $count; $idx++) {
+        $path[] = slave_h($hops[$idx]);
+
+        if ($idx < $count - 1) {
+            $path[] = slave_random_hop_emoji();
+        }
+    }
+
+    return '<span data-html="true" data-toggle="tooltip" data-placement="top" title="'.implode(' ', $path).'">'.slave_h($tunnel['remote']).'</span>';
+}
+
+function slave_get_real_endpoint_from_local(string $host, int $port, array $data): string
+{
+    $localEndpoint = trim($host).':'.$port;
+    $tunnel = $data['tunnel_details'][$localEndpoint] ?? null;
+
+    if (!empty($tunnel['remote'])) {
+        return (string)$tunnel['remote'];
+    }
+
+    return $localEndpoint;
+}
+
 function display_db($dbs)
 {
     if (empty($dbs)) {
@@ -37,23 +85,23 @@ echo '<div class="well">';
 
 echo '</div>';
 
-echo '<table class="table table-condensed table-bordered table-striped" >';
+echo '<table class="table table-condensed table-bordered table-striped" >'."\n";
 
-echo '<tr>';
-echo '<th>'.__("Top").'</th>';
+echo '<tr>'."\n";
+echo '<th>'.__("Top").'</th>'."\n";
 //echo '<th>' . __("ID Serveur") . '</th>';
-echo '<th>'.__("Master").'</th>';
-echo '<th>'.__("Slave").'</th>';
-echo '<th>'.__("Connection name").'</th>';
-echo '<th colspan="2">'.__("Second behind master").'</th>';
-echo '<th>'."Io running".'</th>';
-echo '<th>'."Sql running".'</th>';
-echo '<th>'."io error".'</th>';
-echo '<th>'."Sql error".'</th>';
-echo '<th>'."Replicate do db".'</th>';
-echo '<th>'."Replicate ignore db".'</th>';
-echo '<th>'.__("Date").'</th>';
-echo '</tr>';
+echo '<th>'.__("Master").'</th>'."\n";
+echo '<th>'.__("Slave").'</th>'."\n";
+echo '<th>'.__("Connection name").'</th>'."\n";
+echo '<th colspan="2">'.__("Second behind master").'</th>'."\n";
+echo '<th>'."Io running".'</th>'."\n";
+echo '<th>'."Sql running".'</th>'."\n";
+echo '<th>'."io error".'</th>'."\n";
+echo '<th>'."Sql error".'</th>'."\n";
+echo '<th>'."Replicate do db".'</th>'."\n";
+echo '<th>'."Replicate ignore db".'</th>'."\n";
+echo '<th>'.__("Date").'</th>'."\n";
+echo '</tr>'."\n";
 
 //debug($data);
 
@@ -70,15 +118,25 @@ foreach ($data['slave'] as $slaves) {
 
         $i++;
 
-        echo '<tr>';
-        echo '<td>'.$i.'</td>';
+        echo '<tr>'."\n";
+        echo '<td>'.$i.'</td>'."\n";
         //echo '<td>' .  . '</td>';
 
-        $class = "";
-        if (!empty($data['server']['master'][$slave['master_host'].':'.$slave['master_port']])) {
-            $id_mysql_server_master = $data['server']['master'][$slave['master_host'].':'.$slave['master_port']]['id'];
+        $uniq            = $slave['master_host'].':'.$slave['master_port'];
+        $id_mysql_server = Mysql::getIdFromDns($uniq);
+        $realEndpoint = slave_render_real_endpoint($slave, $data);
 
-            if (! Available::getMySQL($id_mysql_server_master)) {
+        $id_master = null;
+        if (!empty($data['server']['master'][$uniq]['id'])) {
+            $id_master = $data['server']['master'][$uniq]['id'];
+        } elseif ($id_mysql_server) {
+            $id_master = $id_mysql_server;
+        }
+
+        $class = "";
+        if ($id_master !== null) {
+            $masterAvailable = $data['info_server'][$id_master][''][Available::MYSQL_AVAILABLE] ?? null;
+            if ($masterAvailable === "0" || ! Available::getMySQL($id_master)) {
                 $class = "pma pma-danger";
             }
         }
@@ -87,19 +145,15 @@ foreach ($data['slave'] as $slaves) {
 
         //if (Mysql::getMaster($id_mysql_server))
 
-        $uniq            = $slave['master_host'].':'.$slave['master_port'];
-        $id_mysql_server = Mysql::getIdFromDns($uniq);
-
         if ($id_mysql_server) {
-
-            echo Display::srv($id_mysql_server);
+            echo Display::srv($id_mysql_server, true, LINK.'MysqlServer/main/'.$id_mysql_server.'/');
         } else {
 
             //updateAlias
-            echo $slave['master_host'].':'.$slave['master_port'].' <a href="'.LINK.'Mysql/add/mysql_server:ip:'.$slave['master_host'].'/mysql_server:port:'.$slave['master_port'].'" type="button" class="btn btn-default btn-xs">Add this server to monitoring</a>';
+            echo $realEndpoint.' <a href="'.LINK.'Mysql/add/mysql_server:ip:'.$slave['master_host'].'/mysql_server:port:'.$slave['master_port'].'" type="button" class="btn btn-default btn-xs">Add this server to monitoring</a>';
         }
 
-        echo '</td>';
+        echo '</td>'."\n";
 
         $class = "";
         if (! Available::getMySQL($slave['id_mysql_server'])) {
@@ -111,15 +165,8 @@ foreach ($data['slave'] as $slaves) {
 
         echo '<td class="'.$class.'">';
 
-        $s_env = $data['server']['slave'][$slave['id_mysql_server']]['environment'];
-
-        echo '<span data-toggle="tooltip" data-placement="right" title="'.$s_env.'" class="label label-'.$data['server']['slave'][$slave['id_mysql_server']]['class'].'">'
-        .substr($s_env, 0, 1).'</span> ';
-        //echo $data['server']['slave'][]['display_name'];
-        //        echo $slave['id_mysql_server'];
-        echo '<a href="">'.$data['info_server'][$slave['id_mysql_server']]['']['hostname'].'</a>';
-        echo ' ('.$data['server']['slave'][$slave['id_mysql_server']]['ip'].')';
-        echo '</td>';
+        echo Display::srv($slave['id_mysql_server'], true, LINK.'MysqlServer/main/'.$slave['id_mysql_server'].'/');
+        echo '</td>'."\n";
 
         echo '<td>';
 
@@ -132,42 +179,40 @@ foreach ($data['slave'] as $slaves) {
         echo '<a href="'.LINK.'slave/show/'.$slave['id_mysql_server'].'/'.$connect_name.'/">'.$disp.'</a>';
 
         //echo " ".$data['server']['idgraph'][$slave['id_mysql_server']][$connect_name];
-        echo '</td>';
+        echo '</td>'."\n";
         //echo '<td>'.$slave['seconds_behind_master'].'</td>';
 
-        if ($slave['seconds_behind_master'] !== "0") {
+        if ($slave['seconds_behind_master'] !== "0" && $slave['seconds_behind_master'] !== "") {
             $class = "pma pma-warning";
         } else {
             $class = "";
         }
 
+        $nullDash = '<span style="color:#999" title="NULL">—</span>';
+
         echo '<td class="'.$class.'">';
         if ($slave['seconds_behind_master'] === "") {
-            $slave['seconds_behind_master'] = "N/A";
+            echo $nullDash;
+        } else {
+            echo $slave['seconds_behind_master'];
         }
 
-        echo $slave['seconds_behind_master']."";
+        $maxVal = $data['graph'][$slave['id_mysql_server']][$connect_name]['max'] ?? null;
+        $avgVal = $data['graph'][$slave['id_mysql_server']][$connect_name]['avg'] ?? null;
+        $stdVal = $data['graph'][$slave['id_mysql_server']][$connect_name]['std'] ?? null;
 
-        if (!isset($data['graph'][$slave['id_mysql_server']][$connect_name]['max'])) {
-            $data['graph'][$slave['id_mysql_server']][$connect_name]['max'] = "n/a";
+        if ($maxVal !== null || $avgVal !== null || $stdVal !== null) {
+            echo ' (max : '.($maxVal ?? $nullDash)
+                .' / avg : '.($avgVal ?? $nullDash)
+                .' / std : '.($stdVal ?? $nullDash).')';
         }
+        echo '</td>'."\n";
 
-        if (!isset($data['graph'][$slave['id_mysql_server']][$connect_name]['avg'])) {
-            $data['graph'][$slave['id_mysql_server']][$connect_name]['avg'] = "n/a";
-        }
-
-        if (!isset($data['graph'][$slave['id_mysql_server']][$connect_name]['std'])) {
-            $data['graph'][$slave['id_mysql_server']][$connect_name]['std'] = "n/a";
-        }
-        echo ' (max : '.$data['graph'][$slave['id_mysql_server']][$connect_name]['max']
-	.' / avg : '.$data['graph'][$slave['id_mysql_server']][$connect_name]['avg']
-	.' / std : '.$data['graph'][$slave['id_mysql_server']][$connect_name]['std'].')';
-        echo '</td>';
-
-        echo '<td class="'.$class.'">';
-        echo ' <div style="width:160px; height:17px" class="display:inline">'
-        .'<canvas width="160" height="17" style="width:160px;height:17px" id="myChart'.$slave['id_mysql_server'].crc32($connect_name).'"></canvas></div>';
-        echo '</td>';
+        echo '<td class="'.$class.'">'."\n";
+        echo ' <div style="width:160px; height:17px" class="display:inline">'."\n"
+        .'<canvas width="160" height="17" style="width:160px;height:17px" id="myChart'.$slave['id_mysql_server'].crc32($connect_name).'"></canvas>'."\n"
+        .'</div>'."\n";
+        echo '</td>'."\n";
 
         $class = "";
         if ($slave['slave_io_running'] === "No") {
@@ -178,7 +223,7 @@ foreach ($data['slave'] as $slaves) {
 
         echo '<td class="'.$class.'">';
         echo $slave['slave_io_running'];
-        echo '</td>';
+        echo '</td>'."\n";
 
         $class = "";
         if ($slave['slave_sql_running'] === "No") {
@@ -187,7 +232,7 @@ foreach ($data['slave'] as $slaves) {
 
         echo '<td class="'.$class.'">';
         echo $slave['slave_sql_running'];
-        echo '</td>';
+        echo '</td>'."\n";
 
         //echo '<td>'.$slave['last_io_error'].'</td>';
 
@@ -200,7 +245,7 @@ foreach ($data['slave'] as $slaves) {
         if (!empty($slave['last_io_error'])) {
             echo '<a href="#" data-toggle="tooltip" data-placement="right" title="'.$slave['last_io_error'].'">'.$slave['last_io_errno'].'</a>';
         }
-        echo '</td>';
+        echo '</td>'."\n";
 
         $class = "";
         if ($slave['last_sql_errno'] !== "0") {
@@ -211,20 +256,19 @@ foreach ($data['slave'] as $slaves) {
         if (!empty($slave['last_sql_error'])) {
             echo '<a href="#" data-toggle="tooltip" data-placement="right" title="'.$slave['last_sql_error'].'">'.$slave['last_sql_errno'].'</a>';
         }
-        echo '</td>';
+        echo '</td>'."\n";
 
         echo '<td>';
         display_db($slave['replicate_do_db']);
-        echo '</td>';
+        echo '</td>'."\n";
 
         echo '<td>';
         display_db($slave['replicate_ignore_db']);
-        echo '</td>';
+        echo '</td>'."\n";
 
-        echo '<td>'.$slave['date'].'</td>';
-        echo '</tr>';
+        echo '<td>'.$slave['date'].'</td>'."\n";
+        echo '</tr>'."\n";
     }
 }
 
-echo '</table>';
-
+echo '</table>'."\n";

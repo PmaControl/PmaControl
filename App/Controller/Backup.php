@@ -8,30 +8,143 @@ use \Glial\Cli\Color;
 use \Glial\Security\Crypt\Crypt;
 use \Glial\Cli\Crontab;
 use \App\Library\Debug;
+use App\Library\Security\BackupAddRequest;
+use App\Library\Security\CsrfGuard;
+use App\Library\Format;
 use App\Library\Mysql;
+use App\Library\MysqlVersion;
+use App\Library\SelectorOptions;
 use App\Library\System;
 use App\Library\Extraction;
+use Glial\Security\Csrf;
 use Ramsey\Uuid\Uuid;
 use \Glial\Sgbd\Sgbd;
 
+/**
+ * Class responsible for backup workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Backup extends Controller
 {
 
     use \App\Library\Scp;
     const BACKUP_DIR = "/data/backup";
+    private const BACKUP_ADD_CSRF_SCOPE = 'backup.add';
+    private const MYSQL_DUMP_SLAVE_MIN_VERSION = '5.5.3';
 
+/**
+ * Stores `$backup_dir` for backup dir.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $backup_dir = self::BACKUP_DIR;
+/**
+ * Stores `$time_backup_start` for time backup start.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $time_backup_start;
+/**
+ * Stores `$time_backup_end` for time backup end.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $time_backup_end;
+/**
+ * Stores `$time_gzip` for time gzip.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $time_gzip;
+/**
+ * Stores `$time_transfert` for time transfert.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $time_transfert;
+/**
+ * Stores `$md5_file` for md5 file.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $md5_file;
+/**
+ * Stores `$md5_gz` for md5 gz.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $md5_gz;
+/**
+ * Stores `$md5_transfered` for md5 transfered.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $md5_transfered;
+/**
+ * Stores `$master_data` for master data.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $master_data;
+/**
+ * Stores `$slave_data` for slave data.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $slave_data;
+/**
+ * Stores `$size_file` for size file.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $size_file;
+/**
+ * Stores `$size_gz` for size gz.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $size_gz;
+/**
+ * Stores `$size_transfered` for size transfered.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $size_transfered;
 
     use \Glial\Neuron\PmaCli\PmaCliBackup;
@@ -51,6 +164,27 @@ class Backup extends Controller
      */
 
 //use \Glial\Neuron\Controller\PmaCliBackup;
+/**
+ * Prepare backup state through `before`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for before.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::before()
+ * @example /fr/backup/before
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function before($param)
     {
         if (!IS_CLI) {
@@ -58,6 +192,24 @@ class Backup extends Controller
         }
     }
 
+/**
+ * Handle backup state through `sendKeyPub`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for sendKeyPub.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::sendKeyPub()
+ * @example /fr/backup/sendKeyPub
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function sendKeyPub()
     {
         foreach ($this->db as $db) {
@@ -68,6 +220,28 @@ class Backup extends Controller
         }
     }
 
+/**
+ * Handle backup state through `checkDirectory`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $dir Input value for `dir`.
+ * @phpstan-param mixed $dir
+ * @psalm-param mixed $dir
+ * @return mixed Returned value for checkDirectory.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::checkDirectory()
+ * @example /fr/backup/checkDirectory
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function checkDirectory($dir)
     {
 
@@ -82,6 +256,28 @@ class Backup extends Controller
         return true;
     }
 
+/**
+ * Handle backup state through `cmd`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $cmd Input value for `cmd`.
+ * @phpstan-param mixed $cmd
+ * @psalm-param mixed $cmd
+ * @return void Returned value for cmd.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::cmd()
+ * @example /fr/backup/cmd
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function cmd($cmd)
     {
 
@@ -94,6 +290,24 @@ class Backup extends Controller
         }
     }
 
+/**
+ * Handle backup state through `compress_dump`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @return void Returned value for compress_dump.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::compress_dump()
+ * @example /fr/backup/compress_dump
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function compress_dump()
     {
 
@@ -119,6 +333,24 @@ class Backup extends Controller
         $db->sql_query($sql);
     }
 
+/**
+ * Handle backup state through `backupUser`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @return void Returned value for backupUser.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::backupUser()
+ * @example /fr/backup/backupUser
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function backupUser()
     {
 
@@ -187,6 +419,24 @@ class Backup extends Controller
         }
     }
 
+/**
+ * Retrieve backup state through `listing`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for listing.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::listing()
+ * @example /fr/backup/listing
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function listing()
     {
         $this->title  = __("Backup's list");
@@ -204,6 +454,27 @@ class Backup extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Retrieve backup state through `getDump`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getDump.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getDump()
+ * @example /fr/backup/getDump
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getDump($param)
     {
 
@@ -253,11 +524,37 @@ class Backup extends Controller
 //fail
     }
 
+/**
+ * Handle backup state through `settings`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for settings.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::settings()
+ * @example /fr/backup/settings
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function settings()
     {
 
         $this->title  = __("Schedules");
         $this->ariane = ' > <a href="#"><span class="glyphicon glyphicon-floppy-disk" style="font-size:12px"></span> '.__("Backup management").'</a> > <span class="glyphicon glyphicon-cog" style="font-size:12px"></span> '.$this->title;
+
+        $outcome = self::evaluateSettingsRequest($_SERVER);
+        if ($outcome['status'] !== 200) {
+            $this->view = false;
+            $this->layout_name = false;
+            self::sendSettingsError($outcome['status'], $outcome['body'], $outcome['headers']);
+            return;
+        }
 
         $this->di['js']->code_javascript('$("#mysql-server-").change(function () {
     data = $(this).val();
@@ -268,62 +565,6 @@ class Backup extends Controller
 });');
 
         $db = Sgbd::sql(DB_DEFAULT);
-
-        /*
-          if ($_SERVER['REQUEST_METHOD'] === "POST") {
-
-          foreach ($_POST['backup_database']as $key => $elem) {
-
-          try {
-          $db->sql_query('SET AUTOCOMMIT=0;');
-          $db->sql_query('START TRANSACTION;');
-
-          $crontab            = [];
-          $crontab['crontab'] = $_POST['crontab'][$key];
-
-          $id_crontab = $db->sql_save($crontab);
-          if (!$id_crontab) {
-          debug($crontab);
-          debug($db->sql_error());
-          throw new \Exception("PMACTRL-052 : impossible to save crontab");
-          }
-
-          $backup_database                                  = [];
-          $backup_database['backup_database']               = $elem;
-          $backup_database['backup_database']['id_crontab'] = $id_crontab;
-          $backup_database['backup_database']['is_active']  = 1;
-
-          if (!$id_backup_database = $db->sql_save($backup_database)) {
-          debug($backup_database);
-          debug($db->sql_error());
-          throw new \Exception("PMACTRL-053 : impossible to shedule this backup");
-          }
-
-          $cmd = "php ".GLIAL_INDEX." crontab monitor backup saveDb ".$id_backup_database;
-
-          Crontab::insert($crontab['crontab']['minutes'], $crontab['crontab']['hours'], $crontab['crontab']['day_of_month'], $crontab['crontab']['month'], $crontab['crontab']['day_of_week'],
-          $cmd, "Backup database with PmaControl", $id_crontab);
-
-          $crontab                       = [];
-          $crontab['crontab']['id']      = $id_crontab;
-          $crontab['crontab']['command'] = $cmd;
-
-          if (!$db->sql_save($crontab)) {
-          debug($crontab);
-          debug($db->sql_error());
-          throw new \Exception("PMACTRL-054 : impossible to set command into crontab");
-          }
-
-
-          $db->sql_query('COMMIT;');
-          } catch (\Exception $ex) {
-
-          Crontab::delete($id_crontab);
-          $db->sql_query('ROLLBACK;');
-          }
-          }
-          }
-         */
 
         $sql = "SELECT a.display_name,  b.id_mysql_server, d.*,b.id, c.ip,c.libelle as bakcup_server, f.minute,f.hour,b.database,
             f.day_of_month, f.month, f.day_of_week, g.libelle as backup_type, b.is_active
@@ -386,6 +627,38 @@ class Backup extends Controller
 
         $this->set('data', $data);
     }
+
+    public static function evaluateSettingsRequest(array $server): array
+    {
+        $method = strtoupper((string) ($server['REQUEST_METHOD'] ?? 'GET'));
+        if ($method !== 'GET' && $method !== 'HEAD') {
+            return self::buildSettingsOutcome(405, 'Method Not Allowed', ['Allow' => 'GET, HEAD']);
+        }
+
+        return self::buildSettingsOutcome(200, '');
+    }
+
+    private static function buildSettingsOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+        ];
+    }
+
+    private static function sendSettingsError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+
+        if ($message !== '') {
+            echo $message;
+        }
+    }
     /* used for ajax */
 
 
@@ -403,18 +676,12 @@ class Backup extends Controller
         $this->layout_name = false;
         $db                = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT id,name FROM mysql_database WHERE id_mysql_server = '".$db->sql_real_escape_string($param[0])."';";
-
-        $res = $db->sql_query($sql);
-
-        $data['databases'] = [];
-        while ($ob                = $db->sql_fetch_object($res)) {
-            $tmp            = [];
-            $tmp['id']      = $ob->id;
-            $tmp['libelle'] = $ob->name;
-
-            $data['databases'][] = $tmp;
-        }
+        $data['databases'] = SelectorOptions::recordedDatabasesByServerId(
+            $db,
+            $param[0] ?? null,
+            'id',
+            'name'
+        );
 
 
         $this->set("data", $data);
@@ -466,6 +733,28 @@ class Backup extends Controller
         }
     }
 
+/**
+ * Update backup state through `saveDb`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for saveDb.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::saveDb()
+ * @example /fr/backup/saveDb
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function saveDb($param)
     {
         Debug::parseDebug($param);
@@ -585,6 +874,27 @@ class Backup extends Controller
         }
     }
 
+/**
+ * Delete backup state through `deleteShedule`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for deleteShedule.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::deleteShedule()
+ * @example /fr/backup/deleteShedule
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function deleteShedule($param)
     {
         $this->layout_name = false;
@@ -607,6 +917,28 @@ class Backup extends Controller
         header('location: '.LINK.'backup/settings');
     }
 
+/**
+ * Toggle backup state through `toggleShedule`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for toggleShedule.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::toggleShedule()
+ * @example /fr/backup/toggleShedule
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function toggleShedule($param)
     {
         $this->layout_name = false;
@@ -654,6 +986,28 @@ class Backup extends Controller
         throw new \Exception('PMACTRL-026 : impossible to find line in backup_main');
     }
 
+/**
+ * Handle backup state through `mysqldump`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $backup Input value for `backup`.
+ * @phpstan-param mixed $backup
+ * @psalm-param mixed $backup
+ * @return mixed Returned value for mysqldump.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::mysqldump()
+ * @example /fr/backup/mysqldump
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function mysqldump($backup)
     {
 //$this->backup_dir = $this->backup_dir;
@@ -666,6 +1020,7 @@ class Backup extends Controller
         $MS->setInstance($db_to_backup);
 
         $server_config = $db_to_backup->getParams();
+        $version = $db_to_backup->getVersion();
 
         debug($backup['id_connection']);
         debug($server_config);
@@ -710,7 +1065,7 @@ class Backup extends Controller
         }
 
         if ($slave) {
-            if (version_compare($version, "5.5.3", ">")) {
+            if (self::supportsDumpSlaveOption($version)) {
                 $extra .= " --dump-slave=2";
             }
         }
@@ -791,7 +1146,7 @@ class Backup extends Controller
             }
         } while ($continue);
 
-        if (!strpos("dump-slave", $extra) && $slave) {
+        if (!self::hasDumpSlaveOption($extra) && $slave) {
             $start_slave = "START SLAVE;"; //because option --dump-slave restart replication after made the dump
             if ($db_to_backup->isMultiMaster()) {
                 $start_slave = "START ALL SLAVES;";
@@ -847,11 +1202,55 @@ class Backup extends Controller
         return false;
     }
 
+    public static function supportsDumpSlaveOption(?string $version): bool
+    {
+        return MysqlVersion::compare($version, self::MYSQL_DUMP_SLAVE_MIN_VERSION, '>');
+    }
+
+    public static function hasDumpSlaveOption(string $extra): bool
+    {
+        return str_contains($extra, '--dump-slave=2');
+    }
+
+/**
+ * Delete `deleteBackup`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for deleteBackup.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example deleteBackup(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function deleteBackup()
     {
         
     }
 
+/**
+ * Handle `test`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for test.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example test(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function test()
     {
 // "/[\w-\d_-]+@[\w\d_-]+:[\~]?(?:\/[\w\d_-]+)*(?:\$|\#)[\s]?/";
@@ -865,6 +1264,23 @@ class Backup extends Controller
         $this->view = false;
     }
 
+/**
+ * Handle `dump`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for dump.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example dump(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function dump()
     {
         $this->title  = __("Backup's list");
@@ -886,6 +1302,36 @@ class Backup extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Handle `sendBackup`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $source Input value for `source`.
+ * @phpstan-param mixed $source
+ * @psalm-param mixed $source
+ * @param mixed $destination Input value for `destination`.
+ * @phpstan-param mixed $destination
+ * @psalm-param mixed $destination
+ * @param mixed $paramSource Input value for `paramSource`.
+ * @phpstan-param mixed $paramSource
+ * @psalm-param mixed $paramSource
+ * @param mixed $paramDestination Input value for `paramDestination`.
+ * @phpstan-param mixed $paramDestination
+ * @psalm-param mixed $paramDestination
+ * @return void Returned value for sendBackup.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @example sendBackup(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function sendBackup($source, $destination, $paramSource = array(), $paramDestination = array())
     {
         $this->view = false;
@@ -945,6 +1391,23 @@ class Backup extends Controller
         unset($nas);
     }
 
+/**
+ * Create `addUserPmaControl`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @return void Returned value for addUserPmaControl.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example addUserPmaControl(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function addUserPmaControl()
     {
 
@@ -1053,6 +1516,26 @@ class Backup extends Controller
         }
     }
 
+/**
+ * Handle `promptSilent`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $prompt Input value for `prompt`.
+ * @phpstan-param mixed $prompt
+ * @psalm-param mixed $prompt
+ * @return mixed Returned value for promptSilent.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example promptSilent(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function promptSilent($prompt = "Enter Password:")
     {
         if (preg_match('/^win/i', PHP_OS)) {
@@ -1080,6 +1563,23 @@ class Backup extends Controller
         }
     }
 
+/**
+ * Retrieve `getLoginPassword`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for getLoginPassword.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example getLoginPassword(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function getLoginPassword()
     {
 
@@ -1096,6 +1596,23 @@ class Backup extends Controller
         return $ret;
     }
 
+/**
+ * Handle `setPasswdPmaControl`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @return mixed Returned value for setPasswdPmaControl.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example setPasswdPmaControl(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function setPasswdPmaControl()
     {
 
@@ -1127,6 +1644,26 @@ if (! defined('PMACONTROL_PASSWD'))
         return $passwdpma;
     }
 
+/**
+ * Handle `graph`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for graph.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example graph(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function graph($param)
     {
         $sql = "SELECT *
@@ -1293,6 +1830,23 @@ $(function () {
 });");
     }
 
+/**
+ * Handle `gant`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for gant.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example gant(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function gant()
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -1300,25 +1854,47 @@ $(function () {
         $this->di['js']->addJavascript(array("jquery-latest.min.js", "jquery.colorbox-min.js", "timetable-script.min.js"));
     }
 
+/**
+ * Create `add`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for add.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @example add(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function add()
     {
 
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
+        if (CsrfGuard::isPost($_SERVER)) {
+            $outcome = self::evaluateAddRequest($_POST, $_SERVER, $_SESSION);
+            if ($outcome['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendAddError($outcome['status'], $outcome['body'], $outcome['headers']);
+                return;
+            }
+
+            $id_crontab = null;
+
             try {
                 $db->sql_query('SET AUTOCOMMIT=0;');
                 $db->sql_query('START TRANSACTION;');
 
-                $crontab            = [];
-                $crontab['crontab'] = $_POST['crontab'];
-
-                $cmd = "";
-
-                $crontab['crontab']['command'] = $cmd;
-                $crontab['crontab']['comment'] = "";
-
+                $backupPayload = $outcome['backup'];
+                $crontab = BackupAddRequest::buildCrontabRecord($backupPayload);
                 $id_crontab = $db->sql_save($crontab);
                 if (!$id_crontab) {
                     debug($crontab);
@@ -1329,20 +1905,7 @@ $(function () {
 
 
 
-                $backup_database                              = [];
-                $backup_database['backup_main']               = $_POST['backup_main'];
-                $backup_database['backup_main']['id_crontab'] = $id_crontab;
-                $backup_database['backup_main']['is_active']  = 1;
-
-                if (empty($backup_database['backup_main']['database'])) {
-                    $backup_database['backup_main']['database'] = 0;
-                } else {
-                    $backup_database['backup_main']['database'] = implode(',', $backup_database['backup_main']['database']);
-                }
-
-
-                $backup_database['backup_main']['database']      = $backup_database['backup_main']['database'];
-                $backup_database['backup_main']['date_inserted'] = date('Y-m-d H:i:s');
+                $backup_database = BackupAddRequest::buildBackupMainRecord($backupPayload, (int) $id_crontab, date('Y-m-d H:i:s'));
 
                 if (!$id_backup_database = $db->sql_save($backup_database)) {
                     debug($backup_database);
@@ -1353,8 +1916,7 @@ $(function () {
                     $php = explode(" ", shell_exec("whereis php"))[1];
                     $cmd = $php." ".GLIAL_INDEX." crontab monitor backup launchBackup ".$id_backup_database;
 
-                    $backup_database['backup_main']['id']      = $id_backup_database;
-                    $backup_database['backup_main']['command'] = $cmd;
+                    $backup_database = BackupAddRequest::attachCommand($backup_database, (int) $id_backup_database, $cmd);
 
                     $db->sql_save($backup_database);
                 }
@@ -1365,13 +1927,15 @@ $(function () {
 
 
 
-                Crontab::insert($crontab['crontab']['minute'], $crontab['crontab']['hour'], $crontab['crontab']['day_of_month'], $crontab['crontab']['month'], $crontab['crontab']['day_of_week'], $cmd,
+                Crontab::insert($backupPayload['crontab']['minute'], $backupPayload['crontab']['hour'], $backupPayload['crontab']['day_of_month'], $backupPayload['crontab']['month'], $backupPayload['crontab']['day_of_week'], $cmd,
                     "Backup database with PmaControl", $id_crontab);
 
                 $db->sql_query('COMMIT;');
             } catch (\Exception $ex) {
 
-                Crontab::delete($id_crontab);
+                if (!empty($id_crontab)) {
+                    Crontab::delete((int) $id_crontab);
+                }
                 $db->sql_query('ROLLBACK;');
             }
         }
@@ -1403,14 +1967,90 @@ $(function () {
         }
 
 
+        $data['backup_add_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['backup_add_csrf_token'] = Csrf::issueToken($_SESSION, self::BACKUP_ADD_CSRF_SCOPE);
+
         $this->set('data', $data);
     }
 
+    public static function evaluateAddRequest(array $post, array $server, array $session): array
+    {
+        return BackupAddRequest::evaluate($post, $server, $session, self::BACKUP_ADD_CSRF_SCOPE);
+    }
+
+    public static function normalizeAddPayload(array $post): ?array
+    {
+        return BackupAddRequest::normalize($post);
+    }
+
+    public static function buildAddCrontabRecord(array $payload): array
+    {
+        return BackupAddRequest::buildCrontabRecord($payload);
+    }
+
+    public static function buildAddBackupMainRecord(array $payload, int $idCrontab, string $dateInserted): array
+    {
+        return BackupAddRequest::buildBackupMainRecord($payload, $idCrontab, $dateInserted);
+    }
+
+    private static function sendAddError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
+    }
+
+/**
+ * Handle `editShedule`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for editShedule.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example editShedule(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function editShedule()
     {
         
     }
 
+/**
+ * Handle `mydumper`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $backup Input value for `backup`.
+ * @phpstan-param mixed $backup
+ * @psalm-param mixed $backup
+ * @param mixed $temp_dir Input value for `temp_dir`.
+ * @phpstan-param mixed $temp_dir
+ * @psalm-param mixed $temp_dir
+ * @param mixed $uuid Input value for `uuid`.
+ * @phpstan-param mixed $uuid
+ * @psalm-param mixed $uuid
+ * @return mixed Returned value for mydumper.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example mydumper(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function mydumper($backup, $temp_dir, $uuid)
     {
 
@@ -1494,6 +2134,26 @@ $(function () {
         return array("gzip" => $file_gz, "directory" => $temp_dir, "hostname" => $hostname);
     }
 
+/**
+ * Handle `testHost`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for testHost.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example testHost(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function testHost($param)
     {
 
@@ -1506,6 +2166,27 @@ $(function () {
         Debug:debug($ret);
     }
 
+/**
+ * Handle `myloader`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for myloader.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @example myloader(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function myloader($param)
     {
 
@@ -1672,6 +2353,32 @@ $(function () {
          */
     }
 
+/**
+ * Handle `discReco`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $db_link Input value for `db_link`.
+ * @phpstan-param mixed $db_link
+ * @psalm-param mixed $db_link
+ * @param mixed $remote Input value for `remote`.
+ * @phpstan-param mixed $remote
+ * @psalm-param mixed $remote
+ * @param mixed $db Input value for `db`.
+ * @phpstan-param mixed $db
+ * @psalm-param mixed $db
+ * @return mixed Returned value for discReco.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example discReco(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function discReco($db_link, $remote, $db)
     {
 
@@ -1697,13 +2404,54 @@ $(function () {
         return $db_link;
     }
 
+/**
+ * Handle `human_filesize`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $bytes Input value for `bytes`.
+ * @phpstan-param mixed $bytes
+ * @psalm-param mixed $bytes
+ * @param mixed $decimals Input value for `decimals`.
+ * @phpstan-param mixed $decimals
+ * @psalm-param mixed $decimals
+ * @return mixed Returned value for human_filesize.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example human_filesize(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function human_filesize($bytes, $decimals = 2)
     {
-        $sz     = 'BKMGTP';
-        $factor = floor((strlen($bytes) - 1) / 3);
-        return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor))." ".@$sz[$factor]."o";
+        return Format::bytes($bytes, $decimals);
     }
 
+/**
+ * Handle `splitFile`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for splitFile.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example splitFile(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function splitFile($param)
     {
         $file = $param[0];
@@ -1711,6 +2459,26 @@ $(function () {
         $this->split_file("/data/backup/sdp_prod/sdp.checkouts.sql");
     }
 
+/**
+ * Handle `split_file`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $dump_file Input value for `dump_file`.
+ * @phpstan-param mixed $dump_file
+ * @psalm-param mixed $dump_file
+ * @return void Returned value for split_file.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example split_file(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function split_file($dump_file)
     {
         /* Number of 'insert' statements per file */
@@ -1763,6 +2531,26 @@ $(function () {
         }
     }
 
+/**
+ * Handle `warningTest`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for warningTest.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example warningTest(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function warningTest($param)
     {
 
@@ -1786,6 +2574,26 @@ $(function () {
         Debug::sql($sql);
     }
 
+/**
+ * Handle `launchBackup`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for launchBackup.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example launchBackup(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function launchBackup($param)
     {
         $id_backup_main = $param[0];
@@ -1827,6 +2635,26 @@ $(function () {
         //todo if no SSH KEY available found
     }
 
+/**
+ * Handle `checkConfig`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for checkConfig.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example checkConfig(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function checkConfig($param)
     {
         Debug::parseDebug($param);
@@ -1839,6 +2667,26 @@ $(function () {
         return true;
     }
 
+/**
+ * Handle `runBackup`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for runBackup.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example runBackup(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function runBackup($param)
     {
 
@@ -1875,6 +2723,26 @@ $(function () {
         return $pid;
     }
 
+/**
+ * Handle `doBackup`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for doBackup.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example doBackup(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function doBackup($param)
     {
 
@@ -1966,6 +2834,26 @@ $(function () {
         //\Glial\Synapse\FactoryController::addNode("Job", "add", array($uuid, $param, $pid, $log), Glial\Synapse\FactoryController::RESULT);
     }
 
+/**
+ * Retrieve `getLogFile`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $uuid Input value for `uuid`.
+ * @phpstan-param mixed $uuid
+ * @psalm-param mixed $uuid
+ * @return mixed Returned value for getLogFile.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example getLogFile(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getLogFile($uuid)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -1978,6 +2866,26 @@ $(function () {
         }
     }
 
+/**
+ * Handle `backupServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for backupServer.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example backupServer(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function backupServer($param)
     {
 
@@ -2007,6 +2915,26 @@ $(function () {
         }
     }
 
+/**
+ * Handle `backupAll`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for backupAll.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example backupAll(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function backupAll($param)
     {
         $db = Sgbd::sql(DB_DEFAULT);

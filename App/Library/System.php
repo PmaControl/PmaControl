@@ -7,6 +7,20 @@
 
 namespace App\Library;
 
+/**
+ * Class responsible for system workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class System
 {
     /*
@@ -35,26 +49,70 @@ class System
 
         $pid = intval($pid);
 
-        $res = shell_exec("ps -p $pid | tail -n +2");
-        if (!empty($res)) {
-            //process with a pid = $pid is running
+        $commandLine = self::readProcessCommandLine($pid);
+        if (trim($commandLine) === '') {
+            return false;
+        }
 
+        $parts = preg_split('/\s+/', self::normalizeCommandLine($commandLine));
+        $binary = basename((string) ($parts[0] ?? ''));
 
-            $elems = explode(" ", $res);
+        return substr($binary, 0, 3) === "php";
+    }
 
-            $cmd = end($elems);
+    static public function resolveDaemonStatus(array $daemon, ?string $commandLine = null): string
+    {
+        $pid = (int) ($daemon['pid'] ?? 0);
+        if ($pid <= 0) {
+            return 'stopped';
+        }
 
-            //test si un process à été récupérer par autre chose que php
-            if (substr($cmd, 0, 3) === "php") {
-                //echo $cmd;
-                return true;
-            } else {
-                return false;
+        $commandLine = $commandLine ?? self::readProcessCommandLine($pid);
+        if (trim($commandLine) === '') {
+            return 'error';
+        }
+
+        return self::isExpectedDaemonCommand($daemon, $commandLine) ? 'running' : 'error';
+    }
+
+    static public function isExpectedDaemonCommand(array $daemon, string $commandLine): bool
+    {
+        $id = (int) ($daemon['id'] ?? 0);
+        if ($id <= 0) {
+            return false;
+        }
+
+        $commandLine = self::normalizeCommandLine($commandLine);
+        $parts = preg_split('/\s+/', $commandLine);
+        $binary = basename((string) ($parts[0] ?? ''));
+
+        if (substr($binary, 0, 3) !== "php") {
+            return false;
+        }
+
+        if (strpos($commandLine, 'App/Webroot/index.php') === false) {
+            return false;
+        }
+
+        return preg_match('/(?:^|\s)Agent\s+launch\s+'.preg_quote((string) $id, '/').'(?:\s|$)/i', $commandLine) === 1;
+    }
+
+    static public function readProcessCommandLine(int $pid): string
+    {
+        $cmdlinePath = '/proc/'.$pid.'/cmdline';
+        if (is_readable($cmdlinePath)) {
+            $commandLine = str_replace("\0", ' ', (string) @file_get_contents($cmdlinePath));
+            if (trim($commandLine) !== '') {
+                return $commandLine;
             }
         }
 
+        return (string) @shell_exec('ps -p '.$pid.' -o args=');
+    }
 
-        return false;
+    static private function normalizeCommandLine(string $commandLine): string
+    {
+        return trim((string) preg_replace('/\s+/', ' ', str_replace("\0", ' ', $commandLine)));
     }
     /*
      *
@@ -88,15 +146,37 @@ class System
         }
     }
 
+/**
+ * Retrieve system state through `getIp`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $hostname Input value for `hostname`.
+ * @phpstan-param mixed $hostname
+ * @psalm-param mixed $hostname
+ * @return mixed Returned value for getIp.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getIp()
+ * @example /fr/system/getIp
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getIp($hostname)
     {
+        $hostname = trim((string) $hostname);
 
         if (filter_var($hostname, FILTER_VALIDATE_IP)) {
             //return trim($hostname);
             return false;
         }
 
-        $ip = shell_exec("dig +short ".$hostname);
+        $ip = self::resolveHostname($hostname);
         Debug::debug($ip, "getIp");
 
         if (empty($ip)) {
@@ -105,6 +185,59 @@ class System
         return trim($ip);
     }
 
+    private static function resolveHostname(string $hostname): string
+    {
+        if ($hostname === '') {
+            return '';
+        }
+
+        $records = @dns_get_record($hostname, DNS_A + DNS_AAAA);
+        if (is_array($records)) {
+            foreach ($records as $record) {
+                if (!empty($record['ip'])) {
+                    return (string) $record['ip'];
+                }
+                if (!empty($record['ipv6'])) {
+                    return (string) $record['ipv6'];
+                }
+            }
+        }
+
+        $ips = @gethostbynamel($hostname);
+        if (is_array($ips) && !empty($ips[0])) {
+            return (string) $ips[0];
+        }
+
+        return '';
+    }
+
+/**
+ * Handle system state through `scanPort`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $ip Input value for `ip`.
+ * @phpstan-param mixed $ip
+ * @psalm-param mixed $ip
+ * @param mixed $port Input value for `port`.
+ * @phpstan-param mixed $port
+ * @psalm-param mixed $port
+ * @param mixed $timeOut Input value for `timeOut`.
+ * @phpstan-param mixed $timeOut
+ * @psalm-param mixed $timeOut
+ * @return mixed Returned value for scanPort.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::scanPort()
+ * @example /fr/system/scanPort
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function scanPort($ip, $port, $timeOut = 1)
     {
         $connection = @fsockopen($ip, $port, $errno, $errstr, $timeOut);

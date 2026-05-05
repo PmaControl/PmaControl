@@ -1,0 +1,64 @@
+# Dot3
+
+- Type: class
+- Namespace: `App\Controller`
+- Source: `App/Controller/Dot3.php`
+
+- `before($param)`: Prepare dot3 state through `before`.
+- `generateInformation($param)`: Handle dot3 state through `generateInformation`.
+- `generateGroupMasterSlave($information)`: Handle dot3 state through `generateGroupMasterSlave`.
+- `generateGroupProxySQL($information)`: Handle dot3 state through `generateGroupProxySQL`.
+- `generateGroupVip($information)`: Handle dot3 state through `generateGroupVip`.
+- `generateGroupGalera($information)`: Handle dot3 state through `generateGroupGalera`.
+- `getIdMysqlServerFromGalera($cluster_address)`: Retrieve dot3 state through `getIdMysqlServerFromGalera`.
+- `generateGroupMaxScale($information)`: Handle dot3 state through `generateGroupMaxScale`.
+- `test2($param)`: Handle dot3 state through `test2`.
+- `run($param)`: Handle dot3 state through `run`.
+- `saveGraph($id_dot3_information, $file_name, $dot, $group)`: Update dot3 state through `saveGraph`.
+- `writeDot()`: Handle dot3 state through `writeDot`.
+- `logMissingProxySqlMysqlServers($server, $context)`: Handle dot3 state through `logMissingProxySqlMysqlServers`.
+- `array_merge_group($array)`: Handle dot3 state through `array_merge_group`.
+- `array_values_recursive($ary)`: Handle dot3 state through `array_values_recursive`.
+- `getGroup($param)`: Retrieve dot3 state through `getGroup`.
+- `buildLink($param)`: Handle dot3 state through `buildLink`.
+- `buildLinkVIP($param)`: Handle dot3 state through `buildLinkVIP`.
+- `buildGaleraSstHintLink($param)`: Handle dot3 state through `buildGaleraSstHintLink`.
+- `getGaleraSegmentFromNode($node)`: Retrieve dot3 state through `getGaleraSegmentFromNode`.
+- `scoreSstDonorCandidate($donorNode, $joinerSegment)`: Handle dot3 state through `scoreSstDonorCandidate`.
+- `buildSstEdgeLabel($donorNode, $joinerNode)`: Handle dot3 state through `buildSstEdgeLabel`.
+- `estimateSstProgressPercent($donorNode, $joinerNode, $elapsedSec)`: Handle dot3 state through `estimateSstProgressPercent`.
+- `estimateSstElapsedSeconds($donorNode, $joinerNode)`: Handle dot3 state through `estimateSstElapsedSeconds`.
+- `formatSstElapsedLabel($elapsedSec)`: Handle dot3 state through `formatSstElapsedLabel`.
+- `getPositiveIntMetric($node, $key)`: Retrieve dot3 state through `getPositiveIntMetric`.
+- `guessGaleraAutoIncrement($servers, $group, $joinerId, $clusterName)`: Handle dot3 state through `guessGaleraAutoIncrement`.
+- `buildServer($param)`: Handle dot3 state through `buildServer`.
+- `mergeVipDnsDataInInformation($all, $vipServerIds, $date_request)`: Handle dot3 state through `mergeVipDnsDataInInformation`.
+- `isVipServer($server)`: Handle dot3 state through `isVipServer`.
+- `enrichVipServerForGraph($server, $allServers)`: Handle dot3 state through `enrichVipServerForGraph`.
+- `getVipRenderDestinations($server, $allServers)`: Retrieve dot3 state through `getVipRenderDestinations`.
+- `resolveVipDestinationId($idDestination, $allServers, $maxDepth)`: Handle dot3 state through `resolveVipDestinationId`.
+- `buildVipDestinationLabel($allServers, $idDestination)`: Handle dot3 state through `buildVipDestinationLabel`.
+- `getServerPort($server)`: Retrieve dot3 state through `getServerPort`.
+- `getOrCreateUnknownProxySqlServer($host, $referenceId)`: Retrieve dot3 state through `getOrCreateUnknownProxySqlServer`.
+- `isUnknownProxySqlNode($id_mysql_server)`: Handle dot3 state through `isUnknownProxySqlNode`.
+- `linkProxySQLAdmin($param)`: Handle dot3 state through `linkProxySQLAdmin`.
+- `linkHostGroup($param)`: Handle dot3 state through `linkHostGroup`.
+- `linkMaxScale($param)`: Handle dot3 state through `linkMaxScale`.
+- `loadConfigColor()`: Handle dot3 state through `loadConfigColor`.
+- `findIdMysqlServer($host, $id_dot3_information, $silent)`: Handle dot3 state through `findIdMysqlServer`.
+- `getInformation($id_dot3_information)`: Retrieve dot3 state through `getInformation`.
+- `replaceKey($array, $oldKey, $newKey)`: Handle dot3 state through `replaceKey`.
+- `legend()`: Handle dot3 state through `legend`.
+- `download($param)`: Handle dot3 state through `download`.
+- `escapeTooltip($string)`: Handle dot3 state through `escapeTooltip`.
+- `purgeAll($param)`: Handle dot3 state through `purgeAll`.
+- `show($param)`: Handle dot3 state through `show`.
+- `buildGaleraCluster($param)`: Handle dot3 state through `buildGaleraCluster`.
+- `extractProviderOption($wsrep_provider_options, $variable)`: Handle dot3 state through `extractProviderOption`.
+- `setThemeToServer($theme, $id_mysql_server)`: Handle dot3 state through `setThemeToServer`.
+- `reOrderVariable($variables, $filter)`: Handle dot3 state through `reOrderVariable`.
+- `getHostGroup($hostgroups)`: Retrieve dot3 state through `getHostGroup`.
+- `buildLinkBetweenProxySQL($param)`: Handle dot3 state through `buildLinkBetweenProxySQL`.
+- `resolveMaxScaleConnection($maxscale, $maxscale_ip_port)`: Handle dot3 state through `resolveMaxScaleConnection`.
+- `splitAddressPort($value)`: Handle dot3 state through `splitAddressPort`.
+- `getTunnel($param)`: Retrieve dot3 state through `getTunnel`.

@@ -1,6 +1,17 @@
 #!/bin/bash
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=install/lib/harden_apache.sh
+. "${SCRIPT_DIR}/lib/harden_apache.sh"
+# shellcheck source=install/lib/install_secrets.sh
+. "${SCRIPT_DIR}/lib/install_secrets.sh" || exit 1
+trap cleanup_install_ssh_key EXIT
+trap 'cleanup_install_ssh_key; exit 129' HUP
+trap 'cleanup_install_ssh_key; exit 130' INT
+trap 'cleanup_install_ssh_key; exit 143' TERM
+
 password=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
+PMACTRL_HARDEN_APACHE_DOCROOT="${PMACTRL_HARDEN_APACHE_DOCROOT:-1}"
 
 apt-get update
 apt-get -y upgrade
@@ -15,6 +26,7 @@ apt install -y git
 apt install -y tig
 apt install -y curl
 apt-get install -y net-tools
+apt-get install -y jq openssh-client
 
 cd /tmp
 git clone https://github.com/PmaControl/Toolkit.git
@@ -53,6 +65,7 @@ sed -i 's/\/var\/www/\/srv\/www/g' /etc/apache2/apache2.conf
 sed -i 's/\/var\/www\/html/\/srv\/www/g' /etc/apache2/sites-enabled/000-default.conf
 
 awk '/AllowOverride/ && ++i==3 {sub(/None/,"All")}1' /etc/apache2/apache2.conf > /tmp/xfgh && mv /tmp/xfgh /etc/apache2/apache2.conf
+pmactrl_harden_apache_docroot
 
 mkdir -p /srv/www/
 cd /srv/www/
@@ -77,7 +90,11 @@ cd pmacontrol
 git pull origin develop
 git config core.fileMode false
 
-composer install -n
+composer_install_args=(--no-dev --no-interaction --prefer-dist --optimize-autoloader)
+if [[ "${PMACTRL_INSTALL_DEV_DEPS:-0}" == "1" ]]; then
+  composer_install_args=(--no-interaction)
+fi
+composer install "${composer_install_args[@]}"
 
 service apache2 restart
 
@@ -88,6 +105,10 @@ pwd_admin=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
 
 
 mysql -e "GRANT ALL ON *.* TO pmacontrol@'127.0.0.1' IDENTIFIED BY '${pwd_pmacontrol}' WITH GRANT OPTION;"
+
+generate_install_ssh_key
+ssh_private_key_json=$(json_escape_file "${SSH_PRIVATE_KEY_FILE}")
+ssh_public_key_json=$(json_escape_file "${SSH_PUBLIC_KEY_FILE}")
 
 
 cat > /tmp/config.json << EOF
@@ -141,8 +162,8 @@ cat > /tmp/config.json << EOF
 ,
   "ssh": [{
     "user": "pmacontrol",
-    "private key": "-----BEGIN RSA PRIVATE KEY-----\nMIIJKQIBAAKCAgEAsLxsW/pqk8VkCh/eUuhXusDLyG72sWz7uJk6Y1V/3lQRXbCX\n8orlGSlpcBwtMnVOAMUdul4/NQ9swDJqfSYMx5+s4hgswiDwqliwNmu8KGP7gseq\ntpB1apOsIGKby8KVkqwpmxyFs4W+dKwcxmPlw+1b5w5aro6keIbcomKAFNqq1nzR\nARBfL+AUEEZKjkK1o3vfzEhYL8nO+zpMzv2TMcbTumw+jjHC+DzKtUILBo/LjjkC\nwyWKva6QArS125itvIMT5pUW6X72RgWByKIUzCJrR+HzWO9zl8FQQeRlZjtCp+9C\n7HwMPiKH4upN2FfwWXSEa+NyYFUuNyjOCdbrRpgX0FfChE4XFklSNhMXdKMu\n-----END RSA PRIVATE KEY-----\n",
-    "public key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCwvGxb+mqTxWQKH95S6Fe6wMvIbvaxbPu4mTpjVX/eVBFdsJfyiuUZKWlwHC0ydU4AxR26Xj81D2zAMmp9JgzHn6ziGCzCIPCqWLA2a7woY/uCx6q2kHVqk6wgYpvLwpWSrCmbHIWzhb50rBzGY+XD7VvnDlqujqR4htyiYoAU2qrWfNEs5NseGEcQaiRMHe57lw2UTXGbj3Ked+h+n/XngRLV4D01DzaQZ8k45dREe32rUmJZJ3hvE3FI57ICEnVtnrQ8+lQrAoYP0jnYT7eXcIvjHDgyMXKc7fEAyp3b2QG+4J/HxL6K+elFJErLQ2yQlDR9afadnTsBJxFBA2/6yx42Lrp0pMprxKOvhSiMKNiDrP73Jt7d8Z5Z89YN+414Vo2M9713O54IB5H2r88qtdY4fuLzK4d4V39vz6ii5H2aEXIJVsbafLCn/qzbjp7IpoqvuB/3Smp2XW2RnWcZB1NY6diTQkS3MKpblDJILv5UtKN9RCyhRmRHFIM5RyTN21Euuei5bX6WhvEsL7jGo6JDmnXi3tzdAeTUbhPgOd2lX4LECBg9wbhzsezN47S6IGf+72sD/6BCJewKCZ8iheM34pEewDJdUSrg06LDLOr1TrRfaoV1qSsWNDtJVrfae/NTo4oKggxNkkDFkfeHm1pBej37dbMqzDVsKcNoCw=="
+    "private key": ${ssh_private_key_json},
+    "public key": ${ssh_public_key_json}
   }]
 }
 

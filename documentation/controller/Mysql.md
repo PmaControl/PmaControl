@@ -1,0 +1,41 @@
+# Mysql
+
+- Type: class
+- Namespace: `App\Library`
+- Source: `App/Library/Mysql.php`
+
+- `exportAllUser($db_link)`: Handle mysql state through `exportAllUser`.
+- `exportUserByUser($db_link)`: Handle mysql state through `exportUserByUser`.
+- `onAddMysqlServer($id_mysql_server)`: Handle mysql state through `onAddMysqlServer`.
+- `generateMySQLConfig()`: Handle mysql state through `generateMySQLConfig`.
+- `addMaxDate($param)`: Create mysql state through `addMaxDate`.
+- `getMaster($id_mysql_server, $connection_name)`: Retrieve mysql state through `getMaster`.
+- `getDbLink($id_mysql_server, $name)`: Retrieve mysql state through `getDbLink`.
+- `addMysqlServer($data)`: Create mysql state through `addMysqlServer`.
+- `getId($value, $table_name, $field, $list)`: Retrieve mysql state through `getId`.
+- `isPmaControl($ip, $port)`: Handle mysql state through `isPmaControl`.
+- `getHostname($name, $data)`: Retrieve mysql state through `getHostname`.
+- `selectOrInsert($value, $table_name, $field, $list)`: Handle mysql state through `selectOrInsert`.
+- `getServerInfo($id_mysql_server)`: Retrieve mysql state through `getServerInfo`.
+- `execMulti($queries, $db_link)`: Handle mysql state through `execMulti`.
+- `getListObject($db_link, $database, $type_object)`: Retrieve mysql state through `getListObject`.
+- `getCurrentDb($db)`: Retrieve mysql state through `getCurrentDb`.
+- `getStructure($db_link, $database, $data, $object)`: Retrieve mysql state through `getStructure`.
+- `getRoutineShowCreateQueries($param)`: Retrieve mysql state through `getRoutineShowCreateQueries`.
+- `getIdFromDns($dns_port)`: Retrieve mysql state through `getIdFromDns`.
+- `testMySQL($param)`: Handle mysql state through `testMySQL`.
+- `getRealForeignKey($param)`: Retrieve mysql state through `getRealForeignKey`.
+- `getEmptyDatabase($param)`: Retrieve mysql state through `getEmptyDatabase`.
+- `getInfoServer($param)`: Retrieve mysql state through `getInfoServer`.
+- `createSelectAccount($param)`: Create mysql state through `createSelectAccount`.
+- `getIdMySqlServer($param)`: Retrieve mysql state through `getIdMySqlServer`.
+- `getRoles($param)`: Retrieve mysql state through `getRoles`.
+- `getCreateRoles($param)`: Retrieve mysql state through `getCreateRoles`.
+- `getSlave($param)`: Retrieve mysql state through `getSlave`.
+- `generateProxySQLConfig()`: Handle mysql state through `generateProxySQLConfig`.
+- `execute($id_mysql_server, $file_name)`: Handle mysql state through `execute`.
+- `test($hostname, $port, $user, $password)`: Handle mysql state through `test`.
+- `test2($hostname, $port, $user, $password)`: Handle mysql state through `test2`.
+- `getIdMySQLFromGalera($wsrep_incoming_addresses)`: Retrieve mysql state through `getIdMySQLFromGalera`.
+- `getIdMysqlServerFromIpPort($ip, $port)`: Retrieve mysql state through `getIdMysqlServerFromIpPort`.
+- `getNameMysqlServerFromIpPort($ip, $port)`: Retrieve mysql state through `getNameMysqlServerFromIpPort`.

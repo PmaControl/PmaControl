@@ -1,8 +1,14 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 use Glial\Html\Form\Form;
+
+$ldapIndexCsrfField = CsrfRender::field($data, 'ldap_index');
+$ldapIndexCsrfToken = CsrfRender::token($data, 'ldap_index');
 ?>
 <form action="" method="post">
+    <input type="hidden" name="<?= $ldapIndexCsrfField ?>" value="<?= $ldapIndexCsrfToken ?>">
 
 
     <div class="panel panel-primary">
@@ -126,6 +132,7 @@ if ($data['check_credential'] === true):
 
 
     <form action="" method="post">
+        <input type="hidden" name="<?= $ldapIndexCsrfField ?>" value="<?= $ldapIndexCsrfToken ?>">
         <div class="panel panel-primary">
             <div class="panel-heading">
 

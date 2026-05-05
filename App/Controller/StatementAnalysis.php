@@ -2,10 +2,24 @@
 
 namespace App\Controller;
 
+use App\Library\Security\CsrfGuard;
 use \Glial\Synapse\Controller;
-
 use \Glial\Sgbd\Sgbd;
 
+/**
+ * Class responsible for statement analysis workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class StatementAnalysis extends Controller
 {
     /*
@@ -62,18 +76,78 @@ class StatementAnalysis extends Controller
     
     public function index($param)
     {
-        
+        $indexRequest = self::evaluateIndexRequest($_GET, $_SERVER);
+        if ($indexRequest['status'] === 405) {
+            $this->view = false;
+            $this->layout_name = false;
+            self::sendIndexError($indexRequest['status'], $indexRequest['body'], $indexRequest['headers']);
+            return;
+        }
+
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT distinct id_mysql_query FROM ts_mysql_query WHERE id_mysql_server=1 AND `date` > date_sub(now(), INTERVAL 1 DAY) AND date < now()";
+        $sql = self::buildRecentQueriesSql($indexRequest['id_mysql_server']);
 
-        $res = $db->sql_query($sql);
+        $db->sql_query($sql);
 
-
-
-
+        $this->set('data', ['id_mysql_server' => $indexRequest['id_mysql_server']]);
     }
 
+    public static function evaluateIndexRequest(array $get, array $server): array
+    {
+        if (CsrfGuard::isPost($server)) {
+            return self::buildIndexOutcome(405, 'Method Not Allowed', ['Allow' => 'GET']);
+        }
 
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'id_mysql_server' => self::normalizeServerSelection($get),
+        ];
+    }
 
+    public static function normalizeServerSelection(array $get): int
+    {
+        $value = $get['mysql_server']['id'] ?? null;
+        if (! is_scalar($value)) {
+            return 1;
+        }
+
+        $idMysqlServer = (string) $value;
+        if (! ctype_digit($idMysqlServer) || (int) $idMysqlServer < 1) {
+            return 1;
+        }
+
+        return (int) $idMysqlServer;
+    }
+
+    public static function buildRecentQueriesSql(int $idMysqlServer): string
+    {
+        return "SELECT distinct id_mysql_query FROM ts_mysql_query WHERE id_mysql_server="
+            . $idMysqlServer
+            . " AND `date` > date_sub(now(), INTERVAL 1 DAY) AND date < now()";
+    }
+
+    private static function buildIndexOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'id_mysql_server' => null,
+        ];
+    }
+
+    private static function sendIndexError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+
+        if ($message !== '') {
+            echo $message;
+        }
+    }
 }

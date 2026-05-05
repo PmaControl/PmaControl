@@ -1,0 +1,639 @@
+{
+    "jsonrpc": "2.0",
+    "id": 12,
+    "result": {
+        "content": [
+            {
+                "type": "text",
+                "text": "{\n    \"sql\": \"SELECT table_name, constraint_name, column_name, referenced_table_name, referenced_column_name FROM information_schema.key_column_usage WHERE table_schema='pmacontrol' AND referenced_table_name IS NOT NULL ORDER BY table_name, constraint_name, ordinal_position\\nLIMIT 5000\",\n    \"rowCount\": 84,\n    \"columns\": [\n        {\n            \"name\": \"table_name\",\n            \"table\": \"key_column_usage\",\n            \"native_type\": \"VAR_STRING\",\n            \"pdo_type\": 2\n        },\n        {\n            \"name\": \"constraint_name\",\n            \"table\": \"key_column_usage\",\n            \"native_type\": \"VAR_STRING\",\n            \"pdo_type\": 2\n        },\n        {\n            \"name\": \"column_name\",\n            \"table\": \"key_column_usage\",\n            \"native_type\": \"VAR_STRING\",\n            \"pdo_type\": 2\n        },\n        {\n            \"name\": \"referenced_table_name\",\n            \"table\": \"key_column_usage\",\n            \"native_type\": \"VAR_STRING\",\n            \"pdo_type\": 2\n        },\n        {\n            \"name\": \"referenced_column_name\",\n            \"table\": \"key_column_usage\",\n            \"native_type\": \"VAR_STRING\",\n            \"pdo_type\": 2\n        }\n    ],\n    \"rows\": [\n        {\n            \"table_name\": \"archive\",\n            \"constraint_name\": \"archive_ibfk_1\",\n            \"column_name\": \"id_backup_storage_area\",\n            \"referenced_table_name\": \"backup_storage_area\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"archive\",\n            \"constraint_name\": \"archive_ibfk_2\",\n            \"column_name\": \"id_cleaner_main\",\n            \"referenced_table_name\": \"cleaner_main\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"archive_load_detail\",\n            \"constraint_name\": \"archive_load_detail_ibfk_1\",\n            \"column_name\": \"id_archive\",\n            \"referenced_table_name\": \"archive\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"archive_load_detail\",\n            \"constraint_name\": \"archive_load_detail_ibfk_2\",\n            \"column_name\": \"id_archive_load\",\n            \"referenced_table_name\": \"archive_load\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"backup_database\",\n            \"constraint_name\": \"backup_database_ibfk_1\",\n            \"column_name\": \"id_backup_dump\",\n            \"referenced_table_name\": \"backup_dump\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"backup_dump\",\n            \"constraint_name\": \"backup_dump_ibfk_2\",\n            \"column_name\": \"id_job\",\n            \"referenced_table_name\": \"job\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"backup_dump\",\n            \"constraint_name\": \"backup_dump_ibfk_3\",\n            \"column_name\": \"id_backup_main\",\n            \"referenced_table_name\": \"backup_main\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"backup_main\",\n            \"constraint_name\": \"backup_main_ibfk_1\",\n            \"column_name\": \"id_backup_storage_area\",\n            \"referenced_table_name\": \"backup_storage_area\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"backup_main\",\n            \"constraint_name\": \"backup_main_ibfk_2\",\n            \"column_name\": \"id_backup_type\",\n            \"referenced_table_name\": \"backup_type\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"backup_main\",\n            \"constraint_name\": \"backup_main_ibfk_3\",\n            \"column_name\": \"id_crontab\",\n            \"referenced_table_name\": \"crontab\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"backup_storage_area\",\n            \"constraint_name\": \"backup_storage_area_ibfk_1\",\n            \"column_name\": \"id_ssh_key\",\n            \"referenced_table_name\": \"ssh_key\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"backup_storage_space\",\n            \"constraint_name\": \"backup_storage_space_ibfk_1\",\n            \"column_name\": \"id_backup_storage_area\",\n            \"referenced_table_name\": \"backup_storage_area\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"benchmark_run\",\n            \"constraint_name\": \"benchmark_run_ibfk_1\",\n            \"column_name\": \"id_benchmark_main\",\n            \"referenced_table_name\": \"benchmark_main\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"binlog_history\",\n            \"constraint_name\": \"binlog_history_ibfk_1\",\n            \"column_name\": \"id_binlog_max\",\n            \"referenced_table_name\": \"binlog_max\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"cleaner_foreign_key\",\n            \"constraint_name\": \"cleaner_foreign_key_ibfk_1\",\n            \"column_name\": \"id_cleaner_main\",\n            \"referenced_table_name\": \"cleaner_main\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"crontab_history\",\n            \"constraint_name\": \"crontab_history_ibfk_1\",\n            \"column_name\": \"id_crontab\",\n            \"referenced_table_name\": \"crontab\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"docker_image__docker_server\",\n            \"constraint_name\": \"fk_img\",\n            \"column_name\": \"id_docker_image\",\n            \"referenced_table_name\": \"docker_image\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"docker_image__docker_server\",\n            \"constraint_name\": \"fk_srv\",\n            \"column_name\": \"id_docker_server\",\n            \"referenced_table_name\": \"docker_server\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"docker_mysql_instance\",\n            \"constraint_name\": \"docker_mysql_instance_ibfk_1\",\n            \"column_name\": \"id_docker_image\",\n            \"referenced_table_name\": \"docker_image\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"docker_server\",\n            \"constraint_name\": \"docker_server_ibfk_1\",\n            \"column_name\": \"id_ssh_key\",\n            \"referenced_table_name\": \"ssh_key\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"dot3_cluster\",\n            \"constraint_name\": \"dot3_cluster_ibfk_1\",\n            \"column_name\": \"id_dot3_information\",\n            \"referenced_table_name\": \"dot3_information\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"dot3_cluster\",\n            \"constraint_name\": \"dot3_cluster_ibfk_2\",\n            \"column_name\": \"id_dot3_graph\",\n            \"referenced_table_name\": \"dot3_graph\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"dot3_cluster__mysql_server\",\n            \"constraint_name\": \"dot3_cluster__mysql_server_ibfk_1\",\n            \"column_name\": \"id_dot3_cluster\",\n            \"referenced_table_name\": \"dot3_cluster\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"dot3_information_extra\",\n            \"constraint_name\": \"dot3_information_extra_ibfk_1\",\n            \"column_name\": \"id_dot3_information\",\n            \"referenced_table_name\": \"dot3_information\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"geolocalisation_city\",\n            \"constraint_name\": \"geolocalisation_city_ibfk_1\",\n            \"column_name\": \"id_geolocalisation_country\",\n            \"referenced_table_name\": \"geolocalisation_country\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"geolocalisation_country\",\n            \"constraint_name\": \"geolocalisation_country_ibfk_1\",\n            \"column_name\": \"id_geolocalisation_continent\",\n            \"referenced_table_name\": \"geolocalisation_continent\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"haproxy_main_input\",\n            \"constraint_name\": \"haproxy_main_input_ibfk_1\",\n            \"column_name\": \"id_haproxy_main\",\n            \"referenced_table_name\": \"haproxy_main\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"haproxy_main_output\",\n            \"constraint_name\": \"haproxy_main_output_ibfk_1\",\n            \"column_name\": \"id_haproxy_input\",\n            \"referenced_table_name\": \"haproxy_main_input\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"ha_proxy_stats\",\n            \"constraint_name\": \"ha_proxy_stats_ibfk_1\",\n            \"column_name\": \"id_haproxy_main\",\n            \"referenced_table_name\": \"haproxy_main\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"ha_proxy_stats\",\n            \"constraint_name\": \"ha_proxy_stats_ibfk_2\",\n            \"column_name\": \"id_haprox_input\",\n            \"referenced_table_name\": \"haproxy_main_input\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"index_stats\",\n            \"constraint_name\": \"index_stats_ibfk_1\",\n            \"column_name\": \"id_mysql_database\",\n            \"referenced_table_name\": \"mysql_database\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"kb_assessment\",\n            \"constraint_name\": \"fk_assess_engine\",\n            \"column_name\": \"id_engine\",\n            \"referenced_table_name\": \"kb_engine\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"kb_assessment\",\n            \"constraint_name\": \"fk_assess_target\",\n            \"column_name\": \"target_engine_version_id\",\n            \"referenced_table_name\": \"kb_engine_version\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"kb_assessment_finding\",\n            \"constraint_name\": \"fk_find_assess\",\n            \"column_name\": \"id_assessment\",\n            \"referenced_table_name\": \"kb_assessment\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"kb_assessment_finding\",\n            \"constraint_name\": \"fk_find_rule\",\n            \"column_name\": \"id_rule\",\n            \"referenced_table_name\": \"kb_rule\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"kb_document\",\n            \"constraint_name\": \"fk_doc_engine\",\n            \"column_name\": \"id_engine\",\n            \"referenced_table_name\": \"kb_engine\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"kb_document\",\n            \"constraint_name\": \"fk_doc_source\",\n            \"column_name\": \"id_source\",\n            \"referenced_table_name\": \"kb_source\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"kb_document\",\n            \"constraint_name\": \"fk_doc_ver\",\n            \"column_name\": \"id_engine_version\",\n            \"referenced_table_name\": \"kb_engine_version\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"kb_document_chunk\",\n            \"constraint_name\": \"fk_chunk_doc\",\n            \"column_name\": \"id_document\",\n            \"referenced_table_name\": \"kb_document\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"kb_engine_feature_support\",\n            \"constraint_name\": \"fk_efs_engine\",\n            \"column_name\": \"id_engine\",\n            \"referenced_table_name\": \"kb_engine\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"kb_engine_feature_support\",\n            \"constraint_name\": \"fk_efs_feature\",\n            \"column_name\": \"id_feature\",\n            \"referenced_table_name\": \"kb_feature\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"kb_engine_feature_support\",\n            \"constraint_name\": \"fk_efs_vfrom\",\n            \"column_name\": \"version_from_id\",\n            \"referenced_table_name\": \"kb_engine_version\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"kb_engine_feature_support\",\n            \"constraint_name\": \"fk_efs_vto\",\n            \"column_name\": \"version_to_id\",\n            \"referenced_table_name\": \"kb_engine_version\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"kb_engine_version\",\n            \"constraint_name\": \"fk_ev_engine\",\n            \"column_name\": \"id_engine\",\n            \"referenced_table_name\": \"kb_engine\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"kb_item\",\n            \"constraint_name\": \"fk_item_chunk\",\n            \"column_name\": \"id_chunk\",\n            \"referenced_table_name\": \"kb_document_chunk\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"kb_item\",\n            \"constraint_name\": \"fk_item_doc\",\n            \"column_name\": \"id_document\",\n            \"referenced_table_name\": \"kb_document\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"kb_item\",\n            \"constraint_name\": \"fk_item_engine\",\n            \"column_name\": \"id_engine\",\n            \"referenced_table_name\": \"kb_engine\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"kb_item\",\n            \"constraint_name\": \"fk_item_ver\",\n            \"column_name\": \"id_engine_version\",\n            \"referenced_table_name\": \"kb_engine_version\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"kb_item_feature_map\",\n            \"constraint_name\": \"fk_ifm_feat\",\n            \"column_name\": \"id_feature\",\n            \"referenced_table_name\": \"kb_feature\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"kb_item_feature_map\",\n            \"constraint_name\": \"fk_ifm_item\",\n            \"column_name\": \"id_item\",\n            \"referenced_table_name\": \"kb_item\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"kb_item_tag\",\n            \"constraint_name\": \"fk_it_item\",\n            \"column_name\": \"id_item\",\n            \"referenced_table_name\": \"kb_item\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"kb_item_tag\",\n            \"constraint_name\": \"fk_it_tag\",\n            \"column_name\": \"id_tag\",\n            \"referenced_table_name\": \"kb_tag\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"kb_rule\",\n            \"constraint_name\": \"fk_rule_engine\",\n            \"column_name\": \"id_engine\",\n            \"referenced_table_name\": \"kb_engine\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"kb_rule\",\n            \"constraint_name\": \"fk_rule_vfrom\",\n            \"column_name\": \"version_from_id\",\n            \"referenced_table_name\": \"kb_engine_version\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"kb_rule\",\n            \"constraint_name\": \"fk_rule_vto\",\n            \"column_name\": \"version_to_id\",\n            \"referenced_table_name\": \"kb_engine_version\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"kb_rule_item\",\n            \"constraint_name\": \"fk_ri_item\",\n            \"column_name\": \"id_item\",\n            \"referenced_table_name\": \"kb_item\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"kb_rule_item\",\n            \"constraint_name\": \"fk_ri_rule\",\n            \"column_name\": \"id_rule\",\n            \"referenced_table_name\": \"kb_rule\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"kb_rule_probe\",\n            \"constraint_name\": \"fk_probe_rule\",\n            \"column_name\": \"id_rule\",\n            \"referenced_table_name\": \"kb_rule\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"kb_rule_remediation\",\n            \"constraint_name\": \"fk_rem_rule\",\n            \"column_name\": \"id_rule\",\n            \"referenced_table_name\": \"kb_rule\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"ldap_group\",\n            \"constraint_name\": \"ldap_group_ibfk_1\",\n            \"column_name\": \"id_group\",\n            \"referenced_table_name\": \"group\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"link__haproxy_main_output__mysql_server\",\n            \"constraint_name\": \"link__haproxy_main_output__mysql_server_ibfk_1\",\n            \"column_name\": \"id_haproxy_output\",\n            \"referenced_table_name\": \"haproxy_main_output\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"link__mysql_server__ssh_key\",\n            \"constraint_name\": \"link__mysql_server__ssh_key_ibfk_2\",\n            \"column_name\": \"id_ssh_key\",\n            \"referenced_table_name\": \"ssh_key\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"link__mysql_server__tag\",\n            \"constraint_name\": \"link__mysql_server__tag_ibfk_2\",\n            \"column_name\": \"id_tag\",\n            \"referenced_table_name\": \"tag\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"listener_main\",\n            \"constraint_name\": \"listener_main_ibfk_1\",\n            \"column_name\": \"id_ts_file\",\n            \"referenced_table_name\": \"ts_file\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"maxscale_server__mysql_server\",\n            \"constraint_name\": \"maxscale_server__mysql_server_ibfk_1\",\n            \"column_name\": \"id_maxscale_server\",\n            \"referenced_table_name\": \"maxscale_server\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"mysql_database__mysql_digest\",\n            \"constraint_name\": \"fk_digest_schema_digest\",\n            \"column_name\": \"id_mysql_digest\",\n            \"referenced_table_name\": \"mysql_digest\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"mysql_table\",\n            \"constraint_name\": \"mysql_table_ibfk_1\",\n            \"column_name\": \"id_mysql_database\",\n            \"referenced_table_name\": \"mysql_database\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"plugin_file\",\n            \"constraint_name\": \"plugin_file_ibfk_1\",\n            \"column_name\": \"id_plugin_main\",\n            \"referenced_table_name\": \"plugin_main\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"plugin_menu\",\n            \"constraint_name\": \"plugin_menu_ibfk_1\",\n            \"column_name\": \"id_plugin_main\",\n            \"referenced_table_name\": \"plugin_main\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"pmacli_drain_item\",\n            \"constraint_name\": \"pmacli_drain_item_ibfk_1\",\n            \"column_name\": \"id_pmacli_drain_process\",\n            \"referenced_table_name\": \"pmacli_drain_process\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"recover_page\",\n            \"constraint_name\": \"recover_page_ibfk_1\",\n            \"column_name\": \"id_recover_table\",\n            \"referenced_table_name\": \"recover_table\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"statistics\",\n            \"constraint_name\": \"fk_id_user_main\",\n            \"column_name\": \"id_user_main\",\n            \"referenced_table_name\": \"user_main\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"ts_max_date\",\n            \"constraint_name\": \"ts_max_date_ibfk_3\",\n            \"column_name\": \"id_ts_file\",\n            \"referenced_table_name\": \"ts_file\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"ts_type_override\",\n            \"constraint_name\": \"ts_type_override_ibfk_1\",\n            \"column_name\": \"name\",\n            \"referenced_table_name\": \"ts_variable\",\n            \"referenced_column_name\": \"name\"\n        },\n        {\n            \"table_name\": \"ts_type_override\",\n            \"constraint_name\": \"ts_type_override_ibfk_1\",\n            \"column_name\": \"from\",\n            \"referenced_table_name\": \"ts_variable\",\n            \"referenced_column_name\": \"from\"\n        },\n        {\n            \"table_name\": \"ts_variable\",\n            \"constraint_name\": \"ts_variable_ibfk_1\",\n            \"column_name\": \"id_ts_file\",\n            \"referenced_table_name\": \"ts_file\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"user_main\",\n            \"constraint_name\": \"user_main_ibfk_1\",\n            \"column_name\": \"id_group\",\n            \"referenced_table_name\": \"group\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"user_main\",\n            \"constraint_name\": \"user_main_ibfk_2\",\n            \"column_name\": \"id_geolocalisation_country\",\n            \"referenced_table_name\": \"geolocalisation_country\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"user_main\",\n            \"constraint_name\": \"user_main_ibfk_3\",\n            \"column_name\": \"id_geolocalisation_city\",\n            \"referenced_table_name\": \"geolocalisation_city\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"user_main_login\",\n            \"constraint_name\": \"user_main_login_ibfk_1\",\n            \"column_name\": \"id_user_main\",\n            \"referenced_table_name\": \"user_main\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"webservice_history_main\",\n            \"constraint_name\": \"webservice_history_main_ibfk_1\",\n            \"column_name\": \"id_user_main\",\n            \"referenced_table_name\": \"user_main\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"worker_execution\",\n            \"constraint_name\": \"worker_execution_ibfk_2\",\n            \"column_name\": \"id_worker_run\",\n            \"referenced_table_name\": \"worker_run\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"worker_queue\",\n            \"constraint_name\": \"worker_queue_ibfk_1\",\n            \"column_name\": \"id_daemon_main\",\n            \"referenced_table_name\": \"daemon_main\",\n            \"referenced_column_name\": \"id\"\n        },\n        {\n            \"table_name\": \"worker_run\",\n            \"constraint_name\": \"worker_run_ibfk_1\",\n            \"column_name\": \"id_worker_queue\",\n            \"referenced_table_name\": \"worker_queue\",\n            \"referenced_column_name\": \"id\"\n        }\n    ]\n}"
+            }
+        ],
+        "structuredContent": {
+            "sql": "SELECT table_name, constraint_name, column_name, referenced_table_name, referenced_column_name FROM information_schema.key_column_usage WHERE table_schema='pmacontrol' AND referenced_table_name IS NOT NULL ORDER BY table_name, constraint_name, ordinal_position\nLIMIT 5000",
+            "rowCount": 84,
+            "columns": [
+                {
+                    "name": "table_name",
+                    "table": "key_column_usage",
+                    "native_type": "VAR_STRING",
+                    "pdo_type": 2
+                },
+                {
+                    "name": "constraint_name",
+                    "table": "key_column_usage",
+                    "native_type": "VAR_STRING",
+                    "pdo_type": 2
+                },
+                {
+                    "name": "column_name",
+                    "table": "key_column_usage",
+                    "native_type": "VAR_STRING",
+                    "pdo_type": 2
+                },
+                {
+                    "name": "referenced_table_name",
+                    "table": "key_column_usage",
+                    "native_type": "VAR_STRING",
+                    "pdo_type": 2
+                },
+                {
+                    "name": "referenced_column_name",
+                    "table": "key_column_usage",
+                    "native_type": "VAR_STRING",
+                    "pdo_type": 2
+                }
+            ],
+            "rows": [
+                {
+                    "table_name": "archive",
+                    "constraint_name": "archive_ibfk_1",
+                    "column_name": "id_backup_storage_area",
+                    "referenced_table_name": "backup_storage_area",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "archive",
+                    "constraint_name": "archive_ibfk_2",
+                    "column_name": "id_cleaner_main",
+                    "referenced_table_name": "cleaner_main",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "archive_load_detail",
+                    "constraint_name": "archive_load_detail_ibfk_1",
+                    "column_name": "id_archive",
+                    "referenced_table_name": "archive",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "archive_load_detail",
+                    "constraint_name": "archive_load_detail_ibfk_2",
+                    "column_name": "id_archive_load",
+                    "referenced_table_name": "archive_load",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "backup_database",
+                    "constraint_name": "backup_database_ibfk_1",
+                    "column_name": "id_backup_dump",
+                    "referenced_table_name": "backup_dump",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "backup_dump",
+                    "constraint_name": "backup_dump_ibfk_2",
+                    "column_name": "id_job",
+                    "referenced_table_name": "job",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "backup_dump",
+                    "constraint_name": "backup_dump_ibfk_3",
+                    "column_name": "id_backup_main",
+                    "referenced_table_name": "backup_main",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "backup_main",
+                    "constraint_name": "backup_main_ibfk_1",
+                    "column_name": "id_backup_storage_area",
+                    "referenced_table_name": "backup_storage_area",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "backup_main",
+                    "constraint_name": "backup_main_ibfk_2",
+                    "column_name": "id_backup_type",
+                    "referenced_table_name": "backup_type",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "backup_main",
+                    "constraint_name": "backup_main_ibfk_3",
+                    "column_name": "id_crontab",
+                    "referenced_table_name": "crontab",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "backup_storage_area",
+                    "constraint_name": "backup_storage_area_ibfk_1",
+                    "column_name": "id_ssh_key",
+                    "referenced_table_name": "ssh_key",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "backup_storage_space",
+                    "constraint_name": "backup_storage_space_ibfk_1",
+                    "column_name": "id_backup_storage_area",
+                    "referenced_table_name": "backup_storage_area",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "benchmark_run",
+                    "constraint_name": "benchmark_run_ibfk_1",
+                    "column_name": "id_benchmark_main",
+                    "referenced_table_name": "benchmark_main",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "binlog_history",
+                    "constraint_name": "binlog_history_ibfk_1",
+                    "column_name": "id_binlog_max",
+                    "referenced_table_name": "binlog_max",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "cleaner_foreign_key",
+                    "constraint_name": "cleaner_foreign_key_ibfk_1",
+                    "column_name": "id_cleaner_main",
+                    "referenced_table_name": "cleaner_main",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "crontab_history",
+                    "constraint_name": "crontab_history_ibfk_1",
+                    "column_name": "id_crontab",
+                    "referenced_table_name": "crontab",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "docker_image__docker_server",
+                    "constraint_name": "fk_img",
+                    "column_name": "id_docker_image",
+                    "referenced_table_name": "docker_image",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "docker_image__docker_server",
+                    "constraint_name": "fk_srv",
+                    "column_name": "id_docker_server",
+                    "referenced_table_name": "docker_server",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "docker_mysql_instance",
+                    "constraint_name": "docker_mysql_instance_ibfk_1",
+                    "column_name": "id_docker_image",
+                    "referenced_table_name": "docker_image",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "docker_server",
+                    "constraint_name": "docker_server_ibfk_1",
+                    "column_name": "id_ssh_key",
+                    "referenced_table_name": "ssh_key",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "dot3_cluster",
+                    "constraint_name": "dot3_cluster_ibfk_1",
+                    "column_name": "id_dot3_information",
+                    "referenced_table_name": "dot3_information",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "dot3_cluster",
+                    "constraint_name": "dot3_cluster_ibfk_2",
+                    "column_name": "id_dot3_graph",
+                    "referenced_table_name": "dot3_graph",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "dot3_cluster__mysql_server",
+                    "constraint_name": "dot3_cluster__mysql_server_ibfk_1",
+                    "column_name": "id_dot3_cluster",
+                    "referenced_table_name": "dot3_cluster",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "dot3_information_extra",
+                    "constraint_name": "dot3_information_extra_ibfk_1",
+                    "column_name": "id_dot3_information",
+                    "referenced_table_name": "dot3_information",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "geolocalisation_city",
+                    "constraint_name": "geolocalisation_city_ibfk_1",
+                    "column_name": "id_geolocalisation_country",
+                    "referenced_table_name": "geolocalisation_country",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "geolocalisation_country",
+                    "constraint_name": "geolocalisation_country_ibfk_1",
+                    "column_name": "id_geolocalisation_continent",
+                    "referenced_table_name": "geolocalisation_continent",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "haproxy_main_input",
+                    "constraint_name": "haproxy_main_input_ibfk_1",
+                    "column_name": "id_haproxy_main",
+                    "referenced_table_name": "haproxy_main",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "haproxy_main_output",
+                    "constraint_name": "haproxy_main_output_ibfk_1",
+                    "column_name": "id_haproxy_input",
+                    "referenced_table_name": "haproxy_main_input",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "ha_proxy_stats",
+                    "constraint_name": "ha_proxy_stats_ibfk_1",
+                    "column_name": "id_haproxy_main",
+                    "referenced_table_name": "haproxy_main",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "ha_proxy_stats",
+                    "constraint_name": "ha_proxy_stats_ibfk_2",
+                    "column_name": "id_haprox_input",
+                    "referenced_table_name": "haproxy_main_input",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "index_stats",
+                    "constraint_name": "index_stats_ibfk_1",
+                    "column_name": "id_mysql_database",
+                    "referenced_table_name": "mysql_database",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "kb_assessment",
+                    "constraint_name": "fk_assess_engine",
+                    "column_name": "id_engine",
+                    "referenced_table_name": "kb_engine",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "kb_assessment",
+                    "constraint_name": "fk_assess_target",
+                    "column_name": "target_engine_version_id",
+                    "referenced_table_name": "kb_engine_version",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "kb_assessment_finding",
+                    "constraint_name": "fk_find_assess",
+                    "column_name": "id_assessment",
+                    "referenced_table_name": "kb_assessment",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "kb_assessment_finding",
+                    "constraint_name": "fk_find_rule",
+                    "column_name": "id_rule",
+                    "referenced_table_name": "kb_rule",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "kb_document",
+                    "constraint_name": "fk_doc_engine",
+                    "column_name": "id_engine",
+                    "referenced_table_name": "kb_engine",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "kb_document",
+                    "constraint_name": "fk_doc_source",
+                    "column_name": "id_source",
+                    "referenced_table_name": "kb_source",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "kb_document",
+                    "constraint_name": "fk_doc_ver",
+                    "column_name": "id_engine_version",
+                    "referenced_table_name": "kb_engine_version",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "kb_document_chunk",
+                    "constraint_name": "fk_chunk_doc",
+                    "column_name": "id_document",
+                    "referenced_table_name": "kb_document",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "kb_engine_feature_support",
+                    "constraint_name": "fk_efs_engine",
+                    "column_name": "id_engine",
+                    "referenced_table_name": "kb_engine",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "kb_engine_feature_support",
+                    "constraint_name": "fk_efs_feature",
+                    "column_name": "id_feature",
+                    "referenced_table_name": "kb_feature",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "kb_engine_feature_support",
+                    "constraint_name": "fk_efs_vfrom",
+                    "column_name": "version_from_id",
+                    "referenced_table_name": "kb_engine_version",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "kb_engine_feature_support",
+                    "constraint_name": "fk_efs_vto",
+                    "column_name": "version_to_id",
+                    "referenced_table_name": "kb_engine_version",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "kb_engine_version",
+                    "constraint_name": "fk_ev_engine",
+                    "column_name": "id_engine",
+                    "referenced_table_name": "kb_engine",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "kb_item",
+                    "constraint_name": "fk_item_chunk",
+                    "column_name": "id_chunk",
+                    "referenced_table_name": "kb_document_chunk",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "kb_item",
+                    "constraint_name": "fk_item_doc",
+                    "column_name": "id_document",
+                    "referenced_table_name": "kb_document",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "kb_item",
+                    "constraint_name": "fk_item_engine",
+                    "column_name": "id_engine",
+                    "referenced_table_name": "kb_engine",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "kb_item",
+                    "constraint_name": "fk_item_ver",
+                    "column_name": "id_engine_version",
+                    "referenced_table_name": "kb_engine_version",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "kb_item_feature_map",
+                    "constraint_name": "fk_ifm_feat",
+                    "column_name": "id_feature",
+                    "referenced_table_name": "kb_feature",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "kb_item_feature_map",
+                    "constraint_name": "fk_ifm_item",
+                    "column_name": "id_item",
+                    "referenced_table_name": "kb_item",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "kb_item_tag",
+                    "constraint_name": "fk_it_item",
+                    "column_name": "id_item",
+                    "referenced_table_name": "kb_item",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "kb_item_tag",
+                    "constraint_name": "fk_it_tag",
+                    "column_name": "id_tag",
+                    "referenced_table_name": "kb_tag",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "kb_rule",
+                    "constraint_name": "fk_rule_engine",
+                    "column_name": "id_engine",
+                    "referenced_table_name": "kb_engine",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "kb_rule",
+                    "constraint_name": "fk_rule_vfrom",
+                    "column_name": "version_from_id",
+                    "referenced_table_name": "kb_engine_version",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "kb_rule",
+                    "constraint_name": "fk_rule_vto",
+                    "column_name": "version_to_id",
+                    "referenced_table_name": "kb_engine_version",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "kb_rule_item",
+                    "constraint_name": "fk_ri_item",
+                    "column_name": "id_item",
+                    "referenced_table_name": "kb_item",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "kb_rule_item",
+                    "constraint_name": "fk_ri_rule",
+                    "column_name": "id_rule",
+                    "referenced_table_name": "kb_rule",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "kb_rule_probe",
+                    "constraint_name": "fk_probe_rule",
+                    "column_name": "id_rule",
+                    "referenced_table_name": "kb_rule",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "kb_rule_remediation",
+                    "constraint_name": "fk_rem_rule",
+                    "column_name": "id_rule",
+                    "referenced_table_name": "kb_rule",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "ldap_group",
+                    "constraint_name": "ldap_group_ibfk_1",
+                    "column_name": "id_group",
+                    "referenced_table_name": "group",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "link__haproxy_main_output__mysql_server",
+                    "constraint_name": "link__haproxy_main_output__mysql_server_ibfk_1",
+                    "column_name": "id_haproxy_output",
+                    "referenced_table_name": "haproxy_main_output",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "link__mysql_server__ssh_key",
+                    "constraint_name": "link__mysql_server__ssh_key_ibfk_2",
+                    "column_name": "id_ssh_key",
+                    "referenced_table_name": "ssh_key",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "link__mysql_server__tag",
+                    "constraint_name": "link__mysql_server__tag_ibfk_2",
+                    "column_name": "id_tag",
+                    "referenced_table_name": "tag",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "listener_main",
+                    "constraint_name": "listener_main_ibfk_1",
+                    "column_name": "id_ts_file",
+                    "referenced_table_name": "ts_file",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "maxscale_server__mysql_server",
+                    "constraint_name": "maxscale_server__mysql_server_ibfk_1",
+                    "column_name": "id_maxscale_server",
+                    "referenced_table_name": "maxscale_server",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "mysql_database__mysql_digest",
+                    "constraint_name": "fk_digest_schema_digest",
+                    "column_name": "id_mysql_digest",
+                    "referenced_table_name": "mysql_digest",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "mysql_table",
+                    "constraint_name": "mysql_table_ibfk_1",
+                    "column_name": "id_mysql_database",
+                    "referenced_table_name": "mysql_database",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "plugin_file",
+                    "constraint_name": "plugin_file_ibfk_1",
+                    "column_name": "id_plugin_main",
+                    "referenced_table_name": "plugin_main",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "plugin_menu",
+                    "constraint_name": "plugin_menu_ibfk_1",
+                    "column_name": "id_plugin_main",
+                    "referenced_table_name": "plugin_main",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "pmacli_drain_item",
+                    "constraint_name": "pmacli_drain_item_ibfk_1",
+                    "column_name": "id_pmacli_drain_process",
+                    "referenced_table_name": "pmacli_drain_process",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "recover_page",
+                    "constraint_name": "recover_page_ibfk_1",
+                    "column_name": "id_recover_table",
+                    "referenced_table_name": "recover_table",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "statistics",
+                    "constraint_name": "fk_id_user_main",
+                    "column_name": "id_user_main",
+                    "referenced_table_name": "user_main",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "ts_max_date",
+                    "constraint_name": "ts_max_date_ibfk_3",
+                    "column_name": "id_ts_file",
+                    "referenced_table_name": "ts_file",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "ts_type_override",
+                    "constraint_name": "ts_type_override_ibfk_1",
+                    "column_name": "name",
+                    "referenced_table_name": "ts_variable",
+                    "referenced_column_name": "name"
+                },
+                {
+                    "table_name": "ts_type_override",
+                    "constraint_name": "ts_type_override_ibfk_1",
+                    "column_name": "from",
+                    "referenced_table_name": "ts_variable",
+                    "referenced_column_name": "from"
+                },
+                {
+                    "table_name": "ts_variable",
+                    "constraint_name": "ts_variable_ibfk_1",
+                    "column_name": "id_ts_file",
+                    "referenced_table_name": "ts_file",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "user_main",
+                    "constraint_name": "user_main_ibfk_1",
+                    "column_name": "id_group",
+                    "referenced_table_name": "group",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "user_main",
+                    "constraint_name": "user_main_ibfk_2",
+                    "column_name": "id_geolocalisation_country",
+                    "referenced_table_name": "geolocalisation_country",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "user_main",
+                    "constraint_name": "user_main_ibfk_3",
+                    "column_name": "id_geolocalisation_city",
+                    "referenced_table_name": "geolocalisation_city",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "user_main_login",
+                    "constraint_name": "user_main_login_ibfk_1",
+                    "column_name": "id_user_main",
+                    "referenced_table_name": "user_main",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "webservice_history_main",
+                    "constraint_name": "webservice_history_main_ibfk_1",
+                    "column_name": "id_user_main",
+                    "referenced_table_name": "user_main",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "worker_execution",
+                    "constraint_name": "worker_execution_ibfk_2",
+                    "column_name": "id_worker_run",
+                    "referenced_table_name": "worker_run",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "worker_queue",
+                    "constraint_name": "worker_queue_ibfk_1",
+                    "column_name": "id_daemon_main",
+                    "referenced_table_name": "daemon_main",
+                    "referenced_column_name": "id"
+                },
+                {
+                    "table_name": "worker_run",
+                    "constraint_name": "worker_run_ibfk_1",
+                    "column_name": "id_worker_queue",
+                    "referenced_table_name": "worker_queue",
+                    "referenced_column_name": "id"
+                }
+            ]
+        },
+        "isError": false
+    }
+}

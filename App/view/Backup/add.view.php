@@ -1,9 +1,15 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 use Glial\Html\Form\Form;
+
+$backupAddCsrfField = CsrfRender::field($data, 'backup_add');
+$backupAddCsrfToken = CsrfRender::token($data, 'backup_add');
 ?>
 
 <form action="" method="post">
+    <input type="hidden" name="<?= $backupAddCsrfField ?>" value="<?= $backupAddCsrfToken ?>">
 
 
 
@@ -143,6 +149,5 @@ use Glial\Html\Form\Form;
 
 
 </form>
-
 
 

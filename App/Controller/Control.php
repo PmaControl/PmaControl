@@ -11,6 +11,9 @@ use \App\Library\Extraction2;
 use \App\Library\Mysql;
 use \App\Library\EngineV4;
 use \Glial\Sgbd\Sgbd;
+use \App\Controller\Worker;
+use \App\Controller\Dot3;
+use \App\Controller\Listener;
 
 /*
  * ./glial Aspirateur testAllMysql 6 --debug
@@ -19,30 +22,122 @@ use \Glial\Sgbd\Sgbd;
 
 class Control extends Controller
 {
-    public $tables                = array("ts_value_general", "ts_value_slave");
+/**
+ * Stores `$tables` for tables.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
+    public $tables                = array("ts_value_general", "ts_value_slave", "ts_value_calculated");
+/**
+ * Stores `$ext` for ext.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     public $ext                   = array("int", "double", "text", "json");
+/**
+ * Stores `$field_value` for field value.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     public $field_value           = array("int" => "bigint(20) unsigned NULL",
         "double" => "double NOT NULL", "text" => "text NOT NULL", "json" => "json CHECK (JSON_VALID(value))");
-    public $primary_key_old           = array("ts_value_general" => "PRIMARY KEY (`id`, `date`)", "ts_value_slave" => "PRIMARY KEY (`id`,`date`)");
 
+/**
+ * Stores `$primary_key` for primary key.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     public $primary_key           = array("ts_value_general" => "PRIMARY KEY (`date`,`id_ts_variable`, `id_mysql_server`)",
-     "ts_value_slave" => "PRIMARY KEY (`date`,`id_ts_variable`, `id_mysql_server`)");
+     "ts_value_slave" => "PRIMARY KEY (`date`,`id_ts_variable`, `id_mysql_server`, `connection_name`)",
+     "ts_value_calculated" => "PRIMARY KEY (`date`,`id_ts_variable`, `id_mysql_server`)",
+    "ts_value_digest" => "PRIMARY KEY (`date`,`id_ts_variable`,`id_mysql_server`,`digest` )");
 
-    public $index                 = array("ts_value_general" => " INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
+/**
+ * Stores `$index` for index.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
+    public $index                 = [
+        "ts_value_general" => " INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
         "ts_value_slave" => "INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
-        "ts_date_by_server" => "UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`id_ts_file`,`date`)"
-    );
-
+        "ts_value_calculated" => " INDEX (`id_mysql_server`, `id_ts_variable`, `date`)",
+        "ts_date_by_server" => "UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`id_ts_file`,`date`)",
+    ];
     //=> TODO a voir pour delete
+/**
+ * Stores `$engine` for engine.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     private $engine               = "rocksdb";
+/**
+ * Stores `$engine_preference` for engine preference.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     private $engine_preference    = array("ROCKSDB");
-    public $extra_field           = array("ts_value_slave" => "`connection_name` varchar(64) NOT NULL,", "ts_value_general" => "");
+/**
+ * Stores `$extra_field` for extra field.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
+    public $extra_field           = array("ts_value_slave" => "`connection_name` varchar(64) NOT NULL,");
     //when mysql reach 80% of disk we start to drop partition
     const PERCENT_MAX_DISK_USED = 80;
     //0 = keep all partitions,
-    public $partition_to_keep     = 90;
+/**
+ * Stores `$partition_to_keep` for partition to keep.
+ *
+ * @var int
+ * @phpstan-var int
+ * @psalm-var int
+ */
+    public $partition_to_keep     = 60;
+
+    /**
+     * @var array<int,string>
+     */
+    private array $mysqlLogTables = [
+        'ssh_log_mysql_line',
+        'ssh_log_mysql_agg_minute',
+        'ssh_log_mysql_agg_hour',
+        'ssh_log_mysql_agg_day',
+    ];
+
+    /**
+     * @var array<int,string>
+     */
+    private array $aggregateMetricTables = [
+        'aggregate_metric_10s',
+        'aggregate_metric_1m',
+        'aggregate_metric_10m',
+        'aggregate_metric_1h',
+    ];
 
 
+/**
+ * Stores `$logger` for logger.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     private $logger;
 
     /*
@@ -60,8 +155,11 @@ class Control extends Controller
         $val = Extraction2::display(array("information_schema::disks", "variables::datadir"), array($id_mysql_server));
 
         $data = $val[$id_mysql_server];
-        $datadir = $data['datadir'];
 
+        if (!empty($data['datadir'])) {
+            $datadir = $data['datadir'];
+        }
+        
         // Recherche du disque dont le 'Path' correspond le plus précisément à datadir
         $closestDisk = null;
         $maxPrefixLength = 0;
@@ -87,7 +185,7 @@ class Control extends Controller
         }
 
         $percent = round($closestDisk['Used']/ $closestDisk['Total'] * 100);
-        Debug::debug($percent);
+        Debug::debug($percent, "PERCENT");
 
         //$size = trim(shell_exec('cd '.$datadir.' && df -k . | tail -n +2 | sed ":a;N;$!ba;s/\n/ /g" | sed "s/\ +/ /g" | awk \'{print $5}\''));
         //Debug::debug($size, 'Size on /srv/mysql/data');
@@ -97,6 +195,27 @@ class Control extends Controller
         return $percent;
     }
 
+/**
+ * Prepare control state through `before`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for before.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::before()
+ * @example /fr/control/before
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function before($param = "")
     {
         $logger       = new Logger("Control");
@@ -109,6 +228,25 @@ class Control extends Controller
         $this->selectEngine();
     }
 
+/**
+ * Handle control state through `selectEngine`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for selectEngine.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::selectEngine()
+ * @example /fr/control/selectEngine
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function selectEngine()
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -131,6 +269,27 @@ class Control extends Controller
         throw new \Exception("PMACTRL-991 : there is no engine in this list installed : '".implode(",", $this->engine_preference)."'", 80);
     }
 
+/**
+ * Create control state through `addPartition`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for addPartition.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::addPartition()
+ * @example /fr/control/addPartition
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function addPartition($param)
     {
         $partition_number = $param[0];
@@ -139,7 +298,31 @@ class Control extends Controller
         $combi = $this->makeCombinaison();
 
         foreach ($combi as $table) {
-            $sql = "ALTER TABLE `".$table."` ADD PARTITION (PARTITION `p".$partition_number."` VALUES LESS THAN (".$partition_number.") ENGINE = ".$this->engine.");";
+            // Check if this specific table already has the partition
+            $checkSql = "SELECT 1 FROM information_schema.partitions
+                         WHERE table_schema = DATABASE() AND table_name = '".$table."'
+                         AND partition_name = 'p".$partition_number."' LIMIT 1";
+            $checkRes = $db->sql_query($checkSql);
+            if ($db->sql_num_rows($checkRes) > 0) {
+                continue;
+            }
+
+            // Check if the table has a MAXVALUE partition that needs reorganizing
+            $maxSql = "SELECT partition_name FROM information_schema.partitions
+                       WHERE table_schema = DATABASE() AND table_name = '".$table."'
+                       AND partition_description = 'MAXVALUE' LIMIT 1";
+            $maxRes = $db->sql_query($maxSql);
+            $maxRow = $db->sql_fetch_array($maxRes, MYSQLI_ASSOC);
+
+            if ($maxRow) {
+                // Reorganize the MAXVALUE partition to insert the new one before it
+                $sql = "ALTER TABLE `".$table."` REORGANIZE PARTITION `".$maxRow['partition_name']."` INTO (
+                    PARTITION `p".$partition_number."` VALUES LESS THAN (".$partition_number.") ENGINE = ".$this->engine.",
+                    PARTITION `".$maxRow['partition_name']."` VALUES LESS THAN MAXVALUE ENGINE = ".$this->engine."
+                );";
+            } else {
+                $sql = "ALTER TABLE `".$table."` ADD PARTITION (PARTITION `p".$partition_number."` VALUES LESS THAN (".$partition_number.") ENGINE = ".$this->engine.");";
+            }
 
             Debug::sql($sql);
             $db->sql_query($sql);
@@ -147,6 +330,24 @@ class Control extends Controller
         }
     }
 
+/**
+ * Handle control state through `makeCombinaison`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for makeCombinaison.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::makeCombinaison()
+ * @example /fr/control/makeCombinaison
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function makeCombinaison()
     {
         $combinaisons = array();
@@ -161,6 +362,27 @@ class Control extends Controller
         return $combinaisons;
     }
 
+/**
+ * Handle control state through `dropPartition`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for dropPartition.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::dropPartition()
+ * @example /fr/control/dropPartition
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function dropPartition($param)
     {
         $partition_number = $param[0];
@@ -207,6 +429,27 @@ class Control extends Controller
         return $older_partition;
     }
 
+/**
+ * Retrieve control state through `getToDays`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getToDays.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getToDays()
+ * @example /fr/control/getToDays
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getToDays($param)
     {
         $date = $param[0];
@@ -233,14 +476,20 @@ class Control extends Controller
     {
         Debug::parseDebug($param);
 
+        $this->createMysqlLogTables();
+        $this->ensureMysqlLogWorkers();
+        $this->createAggregateMetricTables();
+        $this->ensureAggregateMetricWorkers();
+
         $partitions = $this->getMinMaxPartition();
+        $partitionDropped = false;
 
         Debug::debug($partitions, "Partition  min & max");
 
         //we drop oldest parttion if free space is low
 
-        
         $current_percent = $this->checkSize(array());
+        //$current_percent = 60;
 
         if ($current_percent > self::PERCENT_MAX_DISK_USED) {
             $this->logger->notice('Usage of disk : '.$current_percent.' %');
@@ -255,45 +504,310 @@ class Control extends Controller
                 $this->refreshVariable($param);
 
                 //pour laisser le temps de reintégrer les variables pour les serveurs dont les dernières infos se retrouveraient dans cette partitions
+                Debug::debug("Pause de 10 secondes .......... pour laisser le temps de reintégrer les variables pour les serveurs dont les dernières infos se retrouveraient dans cette partitions");
                 Sleep(10);
                 
                 $this->dropPartition(array($partitions['min']));
+                $partitionDropped = true;
+                $partitions = $this->getMinMaxPartition();
             }
         }
 
         Debug::debug(count($partitions['other']), "nombre de partitions");
 
         //On drop les partitions supérieur a X jours
-        if (count($partitions['other']) > $this->partition_to_keep && $this->partition_to_keep != 0) {
+        if (!$partitionDropped && count($partitions['other']) > $this->partition_to_keep && $this->partition_to_keep != 0) {
             //System::deleteFiles("server");
             $this->logger->warning("Max partition to keep reeched : ".$this->partition_to_keep);
                 
+            Debug::debug("Pause de 10 secondes .......... pour laisser le temps de reintégrer les variables pour les serveurs dont les dernières infos se retrouveraient dans cette partitions");
             //pour laisser le temps de reintégrer les variables pour les serveurs dont les dernières infos se retrouveraient dans cette partitions
             Sleep(10);
 
             $this->dropPartition(array($partitions['min']));
+            $partitions = $this->getMinMaxPartition();
         }
 
         $part = $this->getDates();
 
         Debug::debug($part);
 
-        // check partition of today and tomorow and create it if it's not exist
+        // Ensure partitions exist on ALL tables for today, tomorrow and day after
+        // addPartition checks per-table, so safe to call even if some tables already have it
         foreach ($part as $date) {
             $partition_to_check = $this->getToDays(array($date));
-
             Debug::debug($partition_to_check);
-
-            if (!in_array($partition_to_check, $partitions['other'])) {
-                $this->addPartition(array($partition_to_check));
-            }
+            $this->addPartition(array($partition_to_check));
         }
+
+        $this->syncMysqlLogPartitions();
+        $this->syncAggregateMetricPartitions();
 
         $this->refreshVariable(array());
 
+        // remove old md5 file
         $this->delMd5File($param);
+
+        //remove old pid
+        $params = array('mysql', 'proxysql', 'ssh');
+
+        foreach($params as $param) {
+            Worker::deleteExpiredPid(array());
+        }
+        
+        Listener::init($params);
+
     }
 
+    /**
+     * Create dedicated MySQL log / OOM tables.
+     */
+    public function createMysqlLogTables()
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+        $dates = $this->getDates();
+
+        $sqlCursor = "CREATE TABLE IF NOT EXISTS `ssh_log_mysql_cursor` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `id_mysql_server` int(11) NOT NULL,
+  `log_type` varchar(32) NOT NULL,
+  `source_kind` varchar(16) NOT NULL,
+  `source_name` varchar(1024) NOT NULL,
+  `inode` bigint(20) unsigned DEFAULT NULL,
+  `last_offset` bigint(20) unsigned DEFAULT NULL,
+  `last_event_time` datetime DEFAULT NULL,
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_cursor` (`id_mysql_server`,`log_type`,`source_kind`,`source_name`(191))
+) ENGINE=".$this->engine." DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci";
+        $db->sql_query($sqlCursor);
+
+        $sqlLine = "CREATE TABLE IF NOT EXISTS `ssh_log_mysql_line` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `id_mysql_server` int(11) NOT NULL,
+  `log_type` varchar(32) NOT NULL,
+  `source_kind` varchar(16) NOT NULL,
+  `log_path` varchar(1024) NOT NULL,
+  `event_time` datetime NOT NULL,
+  `inode` bigint(20) unsigned DEFAULT NULL,
+  `offset_start` bigint(20) unsigned DEFAULT NULL,
+  `offset_end` bigint(20) unsigned DEFAULT NULL,
+  `user_name` varchar(255) DEFAULT NULL,
+  `host_name` varchar(255) DEFAULT NULL,
+  `process_name` varchar(255) DEFAULT NULL,
+  `level` varchar(32) DEFAULT NULL,
+  `error_code` varchar(32) DEFAULT NULL,
+  `message` mediumtext NOT NULL,
+  `raw_line` mediumtext NOT NULL,
+  `meta_json` json DEFAULT NULL CHECK (JSON_VALID(`meta_json`)),
+  `dedup_key` char(40) NOT NULL,
+  `date_inserted` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`,`event_time`),
+  UNIQUE KEY `uniq_dedup_key` (`dedup_key`,`event_time`),
+  KEY `idx_server_type_date` (`id_mysql_server`,`log_type`,`event_time`),
+  KEY `idx_date_type` (`event_time`,`log_type`)
+) ENGINE=".$this->engine." DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+PARTITION BY RANGE (to_days(`event_time`))
+(".$this->buildDailyPartitionSql($dates).")";
+        $db->sql_query($sqlLine);
+
+        foreach (['minute', 'hour', 'day'] as $granularity) {
+            $table = 'ssh_log_mysql_agg_' . $granularity;
+            $sqlAgg = "CREATE TABLE IF NOT EXISTS `".$table."` (
+  `id_mysql_server` int(11) NOT NULL,
+  `log_type` varchar(32) NOT NULL,
+  `bucket_start` datetime NOT NULL,
+  `count_total` int(10) unsigned NOT NULL DEFAULT 0,
+  PRIMARY KEY (`bucket_start`,`id_mysql_server`,`log_type`),
+  KEY `idx_server_type_bucket` (`id_mysql_server`,`log_type`,`bucket_start`)
+) ENGINE=".$this->engine." DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
+PARTITION BY RANGE (to_days(`bucket_start`))
+(".$this->buildDailyPartitionSql($dates).")";
+            $db->sql_query($sqlAgg);
+        }
+    }
+
+    public function ensureMysqlLogWorkers()
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sqls = [
+            "INSERT IGNORE INTO `daemon_main` (`id`,`name`,`date`,`pid`,`refresh_time`,`max_delay`,`class`,`method`,`params`,`debug`)
+             VALUES (37,'Aspirateur MySQL logs','2026-03-20 00:00:00',0,15,10,'Worker','addToQueue','6',0)",
+            "INSERT IGNORE INTO `daemon_main` (`id`,`name`,`date`,`pid`,`refresh_time`,`max_delay`,`class`,`method`,`params`,`debug`)
+             VALUES (38,'Integrate MySQL logs','2026-03-20 00:00:00',0,15,10,'IntegrateLog','integrateAll','logs',0)",
+            "INSERT IGNORE INTO `worker_queue` (`id`,`id_daemon_main`,`table`,`name`,`nb_worker`,`timeout`,`queue_number`,`worker_class`,`worker_method`,`max_execution_time`,`query`)
+             VALUES (6,37,'logs','worker_mysql_log',1,30,158850,'Aspirateur','tryMysqlLogCollection',30,'select a.id as name, a.id from mysql_server a inner join client b on a.id_client=b.id where a.is_monitored=1 and b.is_monitored=1')",
+        ];
+
+        foreach ($sqls as $sql) {
+            $db->sql_query($sql);
+        }
+
+        $db->sql_query("UPDATE `daemon_main` SET `params` = 'logs' WHERE `id` = 38");
+        $db->sql_query("UPDATE `worker_queue` SET `table` = 'logs' WHERE `id` = 6");
+        $db->sql_query("UPDATE `worker_queue` SET `query` = 'select a.id as name, a.id from mysql_server a inner join client b on a.id_client=b.id where a.is_monitored=1 and b.is_monitored=1' WHERE `id` = 6");
+    }
+
+    public function createAggregateMetricTables()
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+        $dates = $this->getDates();
+
+        $sqlPolicy = "CREATE TABLE IF NOT EXISTS `aggregate_metric_policy` (
+  `id_ts_variable` int(11) NOT NULL,
+  `variable_name` varchar(100) NOT NULL,
+  `value_type` varchar(16) NOT NULL,
+  `variable_from` varchar(64) NOT NULL,
+  `radical` char(10) NOT NULL,
+  `display_policy` varchar(16) NOT NULL,
+  `stats_policy` varchar(32) NOT NULL,
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id_ts_variable`),
+  KEY `idx_from_radical` (`variable_from`,`radical`)
+) ENGINE=".$this->engine." DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci";
+        $db->sql_query($sqlPolicy);
+
+        foreach ($this->aggregateMetricTables as $table) {
+            $sql = "CREATE TABLE IF NOT EXISTS `".$table."` (
+  `bucket_start` datetime NOT NULL,
+  `id_mysql_server` int(11) NOT NULL,
+  `id_ts_variable` int(11) NOT NULL,
+  `source_scope` varchar(16) NOT NULL,
+  `series_key` varchar(96) NOT NULL DEFAULT '',
+  `sample_count` int(10) unsigned NOT NULL DEFAULT 0,
+  `value_last` double DEFAULT NULL,
+  `value_avg` double DEFAULT NULL,
+  `value_stddev` double DEFAULT NULL,
+  `value_min` double DEFAULT NULL,
+  `value_max` double DEFAULT NULL,
+  `value_sum` double DEFAULT NULL,
+  `value_sum_squares` double DEFAULT NULL,
+  `first_ts` datetime DEFAULT NULL,
+  `last_ts` datetime DEFAULT NULL,
+  `date_updated` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`bucket_start`,`id_mysql_server`,`id_ts_variable`,`source_scope`,`series_key`),
+  KEY `idx_server_bucket` (`id_mysql_server`,`bucket_start`),
+  KEY `idx_server_metric_bucket` (`id_mysql_server`,`id_ts_variable`,`bucket_start`),
+  KEY `idx_scope_series_bucket` (`source_scope`,`series_key`,`bucket_start`)
+) ENGINE=".$this->engine." DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
+PARTITION BY RANGE (to_days(`bucket_start`))
+(".$this->buildDailyPartitionSql($dates).")";
+            $db->sql_query($sql);
+            $db->sql_query("ALTER TABLE `".$table."` ADD INDEX IF NOT EXISTS `idx_server_bucket` (`id_mysql_server`,`bucket_start`)");
+        }
+    }
+
+    public function ensureAggregateMetricWorkers()
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sqls = [
+            "INSERT IGNORE INTO `daemon_main` (`id`,`name`,`date`,`pid`,`refresh_time`,`max_delay`,`class`,`method`,`params`,`debug`)
+             VALUES (39,'Aggregate metric rollups','2026-03-21 00:00:00',0,30,20,'Worker','addToQueue','7',0)",
+            "INSERT IGNORE INTO `worker_queue` (`id`,`id_daemon_main`,`table`,`name`,`nb_worker`,`timeout`,`queue_number`,`worker_class`,`worker_method`,`max_execution_time`,`query`)
+             VALUES (7,39,'aggregate_metric','worker_aggregate_metric',1,60,158851,'AggregateMetric','aggregateRecentByServer',120,'select a.id as name, a.id from mysql_server a inner join client b on a.id_client=b.id where a.is_monitored=1 and b.is_monitored=1 and a.id = 1')",
+        ];
+
+        foreach ($sqls as $sql) {
+            $db->sql_query($sql);
+        }
+
+        $db->sql_query("UPDATE `worker_queue` SET `table` = 'aggregate_metric', `nb_worker` = 1 WHERE `id` = 7");
+        $db->sql_query("UPDATE `worker_queue` SET `query` = 'select a.id as name, a.id from mysql_server a inner join client b on a.id_client=b.id where a.is_monitored=1 and b.is_monitored=1 and a.id = 1' WHERE `id` = 7");
+    }
+
+    public function syncMysqlLogPartitions(): void
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+        $dates = $this->getDates();
+
+        foreach ($this->mysqlLogTables as $table) {
+            $existsRes = $db->sql_query("SHOW TABLES LIKE '".$db->sql_real_escape_string($table)."'");
+            if ($db->sql_num_rows($existsRes) === 0) {
+                continue;
+            }
+
+            $existing = [];
+            $res = $db->sql_query("SELECT PARTITION_NAME FROM information_schema.partitions WHERE table_schema = DATABASE() AND table_name = '".$db->sql_real_escape_string($table)."' AND PARTITION_NAME IS NOT NULL");
+            while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                $existing[] = substr((string)$row['PARTITION_NAME'], 1);
+            }
+
+            foreach ($dates as $date) {
+                $partitionNumber = $this->getToDays([$date]);
+                if (in_array((string)$partitionNumber, $existing, true)) {
+                    continue;
+                }
+
+                $column = $table === 'ssh_log_mysql_line' ? 'event_time' : 'bucket_start';
+                $sql = "ALTER TABLE `".$table."` ADD PARTITION (PARTITION `p".$partitionNumber."` VALUES LESS THAN (".$partitionNumber.") ENGINE = ".$this->engine.")";
+                $db->sql_query($sql);
+            }
+        }
+    }
+
+    public function syncAggregateMetricPartitions(): void
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+        $dates = $this->getDates();
+
+        foreach ($this->aggregateMetricTables as $table) {
+            $existsRes = $db->sql_query("SHOW TABLES LIKE '".$db->sql_real_escape_string($table)."'");
+            if ($db->sql_num_rows($existsRes) === 0) {
+                continue;
+            }
+
+            $existing = [];
+            $res = $db->sql_query("SELECT PARTITION_NAME FROM information_schema.partitions WHERE table_schema = DATABASE() AND table_name = '".$db->sql_real_escape_string($table)."' AND PARTITION_NAME IS NOT NULL");
+            while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                $existing[] = substr((string) $row['PARTITION_NAME'], 1);
+            }
+
+            foreach ($dates as $date) {
+                $partitionNumber = $this->getToDays([$date]);
+                if (in_array((string) $partitionNumber, $existing, true)) {
+                    continue;
+                }
+
+                $sql = "ALTER TABLE `".$table."` ADD PARTITION (PARTITION `p".$partitionNumber."` VALUES LESS THAN (".$partitionNumber.") ENGINE = ".$this->engine.")";
+                $db->sql_query($sql);
+            }
+        }
+    }
+
+    private function buildDailyPartitionSql(array $dates): string
+    {
+        $parts = [];
+        foreach ($dates as $date) {
+            $partitionNb = $this->getToDays([$date]);
+            $parts[] = "PARTITION `p".$partitionNb."` VALUES LESS THAN (".$partitionNb.") ENGINE = ".$this->engine;
+        }
+
+        return implode(',', $parts);
+    }
+
+/**
+ * Handle control state through `dropTsTable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for dropTsTable.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::dropTsTable()
+ * @example /fr/control/dropTsTable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function dropTsTable($param = array())
     {
         Debug::parseDebug($param);
@@ -313,9 +827,29 @@ class Control extends Controller
         $this->truncateTsVariable();
         $this->truncateTsMaxDate();
         $this->truncateTsFile();
+
+        Listener::purgeAll($param);
         //System::deleteFiles("server");
     }
 
+/**
+ * Create control state through `createTsTable`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @return void Returned value for createTsTable.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::createTsTable()
+ * @example /fr/control/createTsTable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function createTsTable()
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -326,11 +860,16 @@ class Control extends Controller
             foreach ($this->ext as $ext) {
                 $table_name = $table."_".$ext;
 
+                $extra_field = '';
+                if (!empty($this->extra_field[$table])){
+                    $extra_field = $this->extra_field[$table];
+                }
+
                 $sql = "CREATE TABLE `".$table_name."` (
   `date` datetime NOT NULL,
   `id_ts_variable` int(11) NOT NULL,
   `id_mysql_server` int(11) NOT NULL,
-  ".$this->extra_field[$table]."
+  ".$extra_field."
   `value` ".$this->field_value[$ext].",
   ".$this->primary_key[$table]."
 ) ENGINE=".$this->engine." DEFAULT CHARSET=latin1
@@ -343,6 +882,12 @@ PARTITION BY RANGE (to_days(`date`))
                     $partition[]  = "PARTITION `p".$partition_nb."` VALUES LESS THAN (".$partition_nb.") ENGINE = ".$this->engine."";
                 }
                 $sql .= implode(",", $partition).")";
+
+                $checkSql = "SHOW TABLES LIKE '".$db->sql_real_escape_string($table_name)."'";
+                $checkRes = $db->sql_query($checkSql);
+                if ($db->sql_num_rows($checkRes) > 0) {
+                    continue;
+                }
 
                 $db->sql_query($sql);
                 echo Debug::sql($sql);
@@ -377,9 +922,34 @@ PARTITION BY RANGE (to_days(`date`))
 
         echo Debug::sql($sql);
 
-        $db->sql_query($sql);
+        $checkSql = "SHOW TABLES LIKE 'ts_date_by_server'";
+        $checkRes = $db->sql_query($checkSql);
+        if ($db->sql_num_rows($checkRes) === 0) {
+            $db->sql_query($sql);
+        }
     }
 
+/**
+ * Handle control state through `rebuildAll`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for rebuildAll.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::rebuildAll()
+ * @example /fr/control/rebuildAll
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function rebuildAll($param = "")
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -388,27 +958,62 @@ PARTITION BY RANGE (to_days(`date`))
 
         $php = explode(" ", shell_exec("whereis php"))[1];
         $cmd = $php." ".GLIAL_INDEX." Daemon stopAll";
+
+
+        if (Debug::$debug == true)
+        {
+            $cmd = $cmd." --debug";
+        }
+
         Debug::debug($cmd);
-        shell_exec($cmd);
+        $gg = shell_exec($cmd);
+        echo $gg."\n";
 
         usleep(500);
 
         $this->dropTsTable();
 
         $this->createTsTable();
+        $this->createMysqlLogTables();
+        $this->ensureMysqlLogWorkers();
+        $this->createAggregateMetricTables();
+        $this->ensureAggregateMetricWorkers();
 
         //drop lock sur
         Mysql::onAddMysqlServer();
         $this->dropAllFile();
 
-        //$cmd = $php." ".GLIAL_INDEX." Daemon startAll";
-        //Debug::debug($cmd);
-        //shell_exec($cmd);
+        Dot3::purgeAll($param);
+        Worker::purgeAll($param);
+        self::purgeAll($param);
 
-        //sleep(1);
-        //$this->dropLock();
+        // su -s /bin/bash -c 'php /path/to/script.php' www-data
+        $cmd = 'su -s /bin/bash -c "'.$php.' '.GLIAL_INDEX.' Daemon startAll" www-data';
+        Debug::debug($cmd);
+        shell_exec($cmd);
     }
 
+/**
+ * Handle control state through `statistique`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for statistique.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::statistique()
+ * @example /fr/control/statistique
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function statistique($param = "")
     {
         Debug::parseDebug($param);
@@ -423,20 +1028,61 @@ PARTITION BY RANGE (to_days(`date`))
         Debug::sql($sql);
     }
 
+/**
+ * Retrieve control state through `getDates`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for getDates.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getDates()
+ * @example /fr/control/getDates
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getDates()
     {
         $today = date("Y-m-d");
 
-        $date   = new \DateTime($today);
+        $part = [];
+        $date = new \DateTime($today);
+        $part[] = $date->format('Y-m-d');         // today
         $date->modify('+1 day');
-        $part[] = $date->format('Y-m-d');
+        $part[] = $date->format('Y-m-d');         // tomorrow
         $date->modify('+1 day');
-        $part[] = $date->format('Y-m-d');
+        $part[] = $date->format('Y-m-d');         // day after tomorrow
 
         return $part;
     }
 
 
+/**
+ * Handle control state through `dropFile`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $diretory Input value for `diretory`.
+ * @phpstan-param mixed $diretory
+ * @psalm-param mixed $diretory
+ * @return void Returned value for dropFile.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::dropFile()
+ * @example /fr/control/dropFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function dropFile($diretory)
     {
         Debug::parseDebug($param);
@@ -453,6 +1099,27 @@ PARTITION BY RANGE (to_days(`date`))
         }
     }
 
+/**
+ * Handle control state through `dropAllFile`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for dropAllFile.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::dropAllFile()
+ * @example /fr/control/dropAllFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function dropAllFile($param = "")
     {
         Debug::parseDebug($param);
@@ -487,6 +1154,8 @@ WHERE b.id in (select id_ts_file from z) AND c.date is null;";
 
         while ($ob = $db->sql_fetch_object($res)) {
             $file = EngineV4::getFileMd5($ob->file_name, $ob->id_mysql_server);
+
+            //Debug::debug($file, "FILE");
             
             if (file_exists($file)) {
 
@@ -498,8 +1167,32 @@ WHERE b.id in (select id_ts_file from z) AND c.date is null;";
                 Debug::debug("Drop du fichier de variable pour le serveur : ".$ob->id_mysql_server);
             }
         }
+
+        $deletedProxySqlMd5 = EngineV4::cleanProxySqlStructuralMd5();
+        Debug::debug($deletedProxySqlMd5, "ProxySQL structural MD5 files deleted");
     }
 
+/**
+ * Handle control state through `purgefrm`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for purgefrm.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::purgefrm()
+ * @example /fr/control/purgefrm
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function purgefrm($param)
     {
         Debug::parseDebug($param);
@@ -549,16 +1242,56 @@ WHERE b.id in (select id_ts_file from z) AND c.date is null;";
         shell_exec($cmd2);
     }
 
-
+/**
+ * Handle control state through `truncateTsVariable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for truncateTsVariable.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::truncateTsVariable()
+ * @example /fr/control/truncateTsVariable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function truncateTsVariable()
     {
         $db  = Sgbd::sql(DB_DEFAULT);
-        $sql = "TRUNCATE TABLE `ts_variable`";
 
+        $sql = "SET FOREIGN_KEY_CHECKS=0;";
+        $db->sql_query($sql);
+
+        $sql = "TRUNCATE TABLE `ts_variable`";
+        $db->sql_query($sql);
+
+        $sql = "SET FOREIGN_KEY_CHECKS=1;";
         $db->sql_query($sql);
     }
 
-
+/**
+ * Handle control state through `truncateTsMaxDate`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for truncateTsMaxDate.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::truncateTsMaxDate()
+ * @example /fr/control/truncateTsMaxDate
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function truncateTsMaxDate()
     {
         $db  = Sgbd::sql(DB_DEFAULT);
@@ -567,6 +1300,24 @@ WHERE b.id in (select id_ts_file from z) AND c.date is null;";
         $db->sql_query($sql);
     }
 
+/**
+ * Handle control state through `truncateTsFile`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for truncateTsFile.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::truncateTsFile()
+ * @example /fr/control/truncateTsFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function truncateTsFile()
     {
         $db  = Sgbd::sql(DB_DEFAULT);
@@ -575,18 +1326,127 @@ WHERE b.id in (select id_ts_file from z) AND c.date is null;";
         $db->sql_query($sql);
     }
 
+
+    /* 
+        A reecrire avec vaec la lib EngineV4
+    */
     public function delMd5File($param)
     {
         Debug::parseDebug($param);
 
         $directory = TMP."md5/";
-
         //   delete md5 more than 1 day
         $cmd = 'find "'.$directory.'" -type f -mtime +0 ! -name ".gitignore" -delete';
         //$cmd = 'find "'.$directory.'" -type f -mmin +60 -exec rm -f {} \;';
 
         Debug::debug($cmd);
-
         shell_exec($cmd);
     }
+
+    /* Reclaim space for rocksDB to execute each week ? */
+
+    public function rocksdbCompact($param)
+    {
+        // table by table 
+
+        $tables = $this->generateAllTables($param);
+
+        $db  = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SET SESSION rocksdb_bulk_load = ON;";
+        $db->sql_query($sql);
+
+        foreach($tables as $table)
+        {
+            // time
+
+
+            $sql  = "ALTER TABLE `$table` engine=rocksDB;";
+            Debug::sql($sql);
+            $db->sql_query($sql);
+            // time after compaction + name table
+        }
+        
+    }
+
+/**
+ * Handle control state through `generateAllTables`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for generateAllTables.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateAllTables()
+ * @example /fr/control/generateAllTables
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public function generateAllTables($param)
+    {
+        Debug::parseDebug($param);
+
+        $tables = [];
+
+        foreach ($this->tables as $table) {
+            foreach ($this->ext as $ext) {
+                $table_name = $table."_".$ext;
+                $tables[] = $table_name;
+                Debug::debug($table_name);
+            }
+        }
+
+        return $tables;
+    }
+
+
+/**
+ * Handle control state through `purgeAll`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for purgeAll.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::purgeAll()
+ * @example /fr/control/purgeAll
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public static function purgeAll($param)
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql ="SET FOREIGN_KEY_CHECKS=0;";
+        Debug::sql($sql);
+        $db->sql_query($sql);
+
+        $sql ="TRUNCATE TABLE integrate_all_run_time";
+        Debug::sql($sql);
+        $db->sql_query($sql);
+
+
+        $sql ="SET FOREIGN_KEY_CHECKS=1;";
+        Debug::sql($sql);
+        $db->sql_query($sql);
+    
+    }
+
+
 }

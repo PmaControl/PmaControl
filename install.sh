@@ -87,6 +87,7 @@ fi
 
 workFolder=$(readlink -f "$(dirname $0)")
 path=$(echo $workFolder | awk -F"/" ' { print $(NF) } ')
+pmacontrol_path=$(pwd)
 
 cp -a config_sample/*.config.php configuration/
 cp -a config_sample/*.ini.php configuration/
@@ -132,6 +133,17 @@ case "$dist" in
       *)       user="www-data" ;;
 esac
 
+# install dos2unix for routine exports
+if command -v apt-get >/dev/null 2>&1; then
+    apt-get update -y && apt-get install -y dos2unix
+elif command -v yum >/dev/null 2>&1; then
+    yum install -y dos2unix
+elif command -v dnf >/dev/null 2>&1; then
+    dnf install -y dos2unix
+elif command -v apk >/dev/null 2>&1; then
+    apk add --no-cache dos2unix
+fi
+
 # Define correct right on tmp and data
 chown -R $user: tmp/
 chown -R $user: data/
@@ -141,13 +153,27 @@ find tmp/ -type f -exec chmod 0644 {} \;
 find data/ -type d -exec chmod 0755 {} \;
 find data/ -type f -exec chmod 0644 {} \;
 
+# dedicate a tmpfs for highly contended temporary files
+tmp_tmp_dir="$pmacontrol_path/tmp/tmp_dir"
+mkdir -p "$tmp_tmp_dir"
+chown "$user:$user" "$tmp_tmp_dir"
+chmod 0775 "$tmp_tmp_dir"
+
+tmpfs_entry="tmpfs $tmp_tmp_dir tmpfs rw,nosuid,nodev,relatime,size=256M,uid=$(id -u "$user"),gid=$(id -g "$user"),mode=0775 0 0"
+
+if ! grep -qsF "$tmp_tmp_dir" /etc/fstab; then
+    echo "$tmpfs_entry" >> /etc/fstab
+fi
+
+if ! mountpoint -q "$tmp_tmp_dir"; then
+    mount "$tmp_tmp_dir"
+fi
+
 # install crontab for user apache
 
 #write out current crontab
 echo '# crontab for pmacontrol' > mycron
 #echo new cron into cron file
-
-pmacontrol_path=$(pwd)
 
 echo $pmacontrol_path 
 
@@ -169,7 +195,11 @@ if test -f ./vendor/glial/glial/Glial/Bootstrap.php; then
 else
     echo "File /vendor/glial/glial/Glial/Bootstrap.php doesn't exist!"
     composer -V foo >/dev/null 2>&1 || { echo >&2 "PmaControl require composer but it's not installed.  Aborting."; echo "To install composer : ";echo ""; echo "        curl -sS https://getcomposer.org/installer | php";  echo "        \$ mv composer.phar /usr/local/bin/composer"; echo ""; exit 1;}
-    composer install
+    composer_install_args=(--no-dev --no-interaction --prefer-dist --optimize-autoloader)
+    if [ "${PMACTRL_INSTALL_DEV_DEPS:-0}" = "1" ]; then
+        composer_install_args=(--no-interaction)
+    fi
+    composer install "${composer_install_args[@]}"
     echo "Composer Installed !"
 fi
 

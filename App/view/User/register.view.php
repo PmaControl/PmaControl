@@ -1,16 +1,17 @@
 <?php
 
+use App\Library\Security\CsrfRender;
 use Glial\Html\Form\Form;
 
 //debug($_SESSION);
 
+$userRegisterCsrfField = CsrfRender::field($data, 'user_register');
+$userRegisterCsrfToken = CsrfRender::token($data, 'user_register');
 
 echo '<div style="width:1000px; margin-left:auto; margin-right:auto; padding:0" class="well">';
 
-
-
-
 echo "<form action=\"\" method=\"post\" class=\"form-horizontal\" width=\"100%\">";
+echo '<input type="hidden" name="'.$userRegisterCsrfField.'" value="'.$userRegisterCsrfToken.'">';
 
 
 echo "<table style=\"margin-bottom: 0px;\" class=\"form table\" width=\"100%\">";

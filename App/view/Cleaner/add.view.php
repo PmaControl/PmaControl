@@ -1,10 +1,16 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 use Glial\Html\Form\Form;
+
+$cleanerAddCsrfField = CsrfRender::field($data, 'cleaner_add');
+$cleanerAddCsrfToken = CsrfRender::token($data, 'cleaner_add');
 ?>
 
 
 <form action="" method="post">
+    <input type="hidden" name="<?= $cleanerAddCsrfField ?>" value="<?= $cleanerAddCsrfToken ?>">
     <div class="well">
         <div class="row">
             <div class="col-md-12">

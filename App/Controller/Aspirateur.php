@@ -2,8 +2,12 @@
 
 namespace App\Controller;
 
+use Exception;
 use App\Controller\ProxySQL;
+use App\Controller\MaxScale;
+use App\Controller\MysqlRouter;
 use App\Library\Available;
+use App\Library\MysqlServer;
 use \Glial\Synapse\Controller;
 use Fuz\Component\SharedMemory\Storage\StorageFile;
 use Fuz\Component\SharedMemory\SharedMemory;
@@ -14,12 +18,17 @@ use \App\Library\Debug;
 use \App\Library\Ssh;
 use App\Library\System;
 use App\Library\Mysql;
+use App\Library\MysqlVersion;
 use App\Library\Proxy;
+use App\Library\ServerCapabilities;
+use App\Library\Sql\WhereBuilder;
 use App\Library\EngineV4;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Extraction;
 use \App\Library\Extraction2;
 use \App\Library\Microsecond;
+use App\Library\Kpi\AspirateurAttemptLogger;
+use App\Library\MysqlLogCollector;
 /*
 
 https://www.phpclasses.org/package/12231-PHP-Display-bar-charts-in-CLI-console-from-datasets.html
@@ -191,21 +200,144 @@ SET
     tv.`type` = tovr.`type`,
     tv.`is_derived` = tovr.`is_derived`,
     tv.`is_dynamic` = tovr.`is_dynamic`;
+
+
+
+PHPMYADMIN :
+
+SELECT `CHARACTER_SET_NAME` AS `Charset`, `DEFAULT_COLLATE_NAME` AS `Default collation`, `DESCRIPTION` AS `Description`, `MAXLEN` AS `Maxlen` FROM `information_schema`.`CHARACTER_SETS`;
++----------+---------------------+-----------------------------+--------+
+| Charset  | Default collation   | Description                 | Maxlen |
++----------+---------------------+-----------------------------+--------+
+| big5     | big5_chinese_ci     | Big5 Traditional Chinese    |      2 |
+| dec8     | dec8_swedish_ci     | DEC West European           |      1 |
+| cp850    | cp850_general_ci    | DOS West European           |      1 |
+| hp8      | hp8_english_ci      | HP West European            |      1 |
+| koi8r    | koi8r_general_ci    | KOI8-R Relcom Russian       |      1 |
+| latin1   | latin1_swedish_ci   | cp1252 West European        |      1 |
+| latin2   | latin2_general_ci   | ISO 8859-2 Central European |      1 |
+| swe7     | swe7_swedish_ci     | 7bit Swedish                |      1 |
+| ascii    | ascii_general_ci    | US ASCII                    |      1 |
+| ujis     | ujis_japanese_ci    | EUC-JP Japanese             |      3 |
+| sjis     | sjis_japanese_ci    | Shift-JIS Japanese          |      2 |
+| hebrew   | hebrew_general_ci   | ISO 8859-8 Hebrew           |      1 |
+| tis620   | tis620_thai_ci      | TIS620 Thai                 |      1 |
+| euckr    | euckr_korean_ci     | EUC-KR Korean               |      2 |
+| koi8u    | koi8u_general_ci    | KOI8-U Ukrainian            |      1 |
+| gb2312   | gb2312_chinese_ci   | GB2312 Simplified Chinese   |      2 |
+| greek    | greek_general_ci    | ISO 8859-7 Greek            |      1 |
+| cp1250   | cp1250_general_ci   | Windows Central European    |      1 |
+| gbk      | gbk_chinese_ci      | GBK Simplified Chinese      |      2 |
+| latin5   | latin5_turkish_ci   | ISO 8859-9 Turkish          |      1 |
+| armscii8 | armscii8_general_ci | ARMSCII-8 Armenian          |      1 |
+| utf8mb3  | utf8mb3_general_ci  | UTF-8 Unicode               |      3 |
+| ucs2     | ucs2_general_ci     | UCS-2 Unicode               |      2 |
+| cp866    | cp866_general_ci    | DOS Russian                 |      1 |
+| keybcs2  | keybcs2_general_ci  | DOS Kamenicky Czech-Slovak  |      1 |
+| macce    | macce_general_ci    | Mac Central European        |      1 |
+| macroman | macroman_general_ci | Mac West European           |      1 |
+| cp852    | cp852_general_ci    | DOS Central European        |      1 |
+| latin7   | latin7_general_ci   | ISO 8859-13 Baltic          |      1 |
+| utf8mb4  | utf8mb4_general_ci  | UTF-8 Unicode               |      4 |
+| cp1251   | cp1251_general_ci   | Windows Cyrillic            |      1 |
+| utf16    | utf16_general_ci    | UTF-16 Unicode              |      4 |
+| utf16le  | utf16le_general_ci  | UTF-16LE Unicode            |      4 |
+| cp1256   | cp1256_general_ci   | Windows Arabic              |      1 |
+| cp1257   | cp1257_general_ci   | Windows Baltic              |      1 |
+| utf32    | utf32_general_ci    | UTF-32 Unicode              |      4 |
+| binary   | binary              | Binary pseudo charset       |      1 |
+| geostd8  | geostd8_general_ci  | GEOSTD8 Georgian            |      1 |
+| cp932    | cp932_japanese_ci   | SJIS for Windows Japanese   |      2 |
+| eucjpms  | eucjpms_japanese_ci | UJIS for Windows Japanese   |      3 |
++----------+---------------------+-----------------------------+--------+
+40 rows in set (0,000 sec)
+
+SELECT `COLLATION_NAME` AS `Collation`, `CHARACTER_SET_NAME` AS `Charset`, `ID` AS `Id`, `IS_DEFAULT` AS `Default`, `IS_COMPILED` AS `Compiled`, `SORTLEN` AS `Sortlen` FROM `information_schema`.`COLLATIONS`;
+
+
+MariaDB [performance_schema]> SHOW SESSION VARIABLES LIKE 'character_set_server';
++----------------------+---------+
+| Variable_name        | Value   |
++----------------------+---------+
+| character_set_server | utf8mb4 |
++----------------------+---------+
+1 row in set (0,001 sec)
+
+SET NAMES 'utf8mb4' COLLATE 'utf8mb4_general_ci'
+SET lc_messages = 'fr_FR'
+
+(SELECT DISTINCT `User`, `Host` FROM `mysql`.`user` ) UNION (SELECT DISTINCT `User`, `Host` FROM `mysql`.`db` ) UNION (SELECT DISTINCT `User`, `Host` FROM `mysql`.`tables_priv` ) UNION (SELECT DISTINCT `User`, `Host` FROM `mysql`.`columns_priv` ) UNION (SELECT DISTINCT `User`, `Host` 
+FROM `mysql`.`procs_priv` ) ORDER BY `User` ASC, `Host` ASC
+
+
+SELECT * FROM `mysql`.`user` WHERE `User` = ? AND `Host` = ?
+SELECT * FROM `mysql`.`global_priv` WHERE `User` = ? AND `Host` = ?
+
+ALTER USER 'mariadb.sys'@'localhost' ACCOUNT LOCK
+
+SHOW BINLOG EVENTS LIMIT 0, 25
+
+SELECT * FROM information_schema.PLUGINS ORDER BY PLUGIN_TYPE, PLUGIN_NAME
+
+SELECT *, `TABLE_SCHEMA`       AS `Db`, `TABLE_NAME`         AS `Name`, `TABLE_TYPE`         AS `TABLE_TYPE`, `ENGINE`             AS `Engine`, `ENGINE`             AS `Type`, `VERSION`            AS `Version`, `ROW_FORMAT`         AS `Row_format`, `TABLE_ROWS`         AS `Rows`, `AVG_ROW_LENGTH`     AS `Avg_row_length`, `DATA_LENGTH`        AS `Data_length`, `MAX_DATA_LENGTH`    AS `Max_data_length`, `INDEX_LENGTH`       AS `Index_length`, `DATA_FREE`          AS `Data_free`, `AUTO_INCREMENT`     AS `Auto_increment`, `CREATE_TIME`        AS `Create_time`, `UPDATE_TIME`        AS `Update_time`, `CHECK_TIME`         AS `Check_time`, `TABLE_COLLATION`    AS `Collation`, `CHECKSUM`           AS `Checksum`, `CREATE_OPTIONS`     AS `Create_options`, `TABLE_COMMENT`      AS `Comment` FROM `information_schema`.`TABLES` t WHERE `TABLE_SCHEMA`  IN ('sakila2')  ORDER BY Name ASC;
+
+
 */
 
 class Aspirateur extends Controller
 {
+    private const MYSQL_LOG_MAX_EVENTS_PER_PIVOT = 250;
+    private const MYSQL_LOG_MAX_BYTES_PER_PIVOT = 1048576;
     //use \App\Library\Filter;
 
+/**
+ * Stores `$timestamp_config_file` for timestamp config file.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     static $timestamp_config_file = "";
 
     //log with monolog
+/**
+ * Stores `$logger` for logger.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $logger;
     //store if table exist or not to prevent ask each time
+/**
+ * Stores `$cache` for cache.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $cache = array();
+    static $database_list_cache = array();
 
 
+/**
+ * Stores `$primary_key` for primary key.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $primary_key = array();
+
+
+/**
+ * Stores `$time_ns` for time ns.
+ *
+ * @var int
+ * @phpstan-var int
+ * @psalm-var int
+ */
+    static $time_ns = 0;
 
     /*
      * (PmaControl 0.8)<br/>
@@ -232,6 +364,23 @@ class Aspirateur extends Controller
         self::$primary_key['main']['runtime_global_variables']['val'] = "variable_value";
     }
 
+    private function getSchemaQuery(string $version = '', string $versionComment = ''): string
+    {
+        $isMariaDB = MysqlVersion::isMariaDb($version, $versionComment);
+
+        // SCHEMA_COMMENT exists only in MariaDB >= 10.5
+        $hasSchemaComment = $isMariaDB && MysqlVersion::atLeast($version, '10.5.0');
+
+        return "SELECT
+            SCHEMA_NAME AS schema_name,
+            DEFAULT_CHARACTER_SET_NAME AS default_character_set_name,
+            DEFAULT_COLLATION_NAME AS default_collation_name,
+            CATALOG_NAME AS catalog_name,
+            SQL_PATH AS sql_path"
+            . ($hasSchemaComment ? ",\n            SCHEMA_COMMENT AS schema_comment" : "")
+            . "\n        FROM information_schema.schemata;";
+    }
+
     /**
      * (PmaControl 0.8)<br/>
      * @example ./glial aspirateur tryMysqlConnection name id_mysql_server
@@ -247,32 +396,68 @@ class Aspirateur extends Controller
         Debug::parseDebug($param);
         $this->view = false;
 
-        $name_server = $param[0];
-        $id_mysql_server   = $param[1];
-        $refresh = $param[2];
+        $name_server = $param[0] ?? null;
+        $id_mysql_server   = $param[1] ?? null;
+        $refresh = $param[2] ?? null;
+
+        if (!$name_server || !$id_mysql_server) {
+            throw new Exception(
+                "Paramètre manquant : name_server et id_mysql_server sont obligatoires",
+                1001
+            );
+        }
+
+        if (!is_numeric($id_mysql_server) || (int)$id_mysql_server <= 0) {
+            throw new \InvalidArgumentException(
+                "Invalid parameter 'id_mysql_server': expected positive integer"
+            );
+        }
+
+        if (!is_int((int)$refresh)) {
+            throw new Exception(
+                "Paramètre refresh doit être un entier",
+                1002
+            );
+        }
 
         Debug::checkPoint('Init');
-        // To know if we use a proxy like PROXYSQL
+
+
+        // to make it in cache one time for all
+        // To know if we use a proxy like PROXYSQL / MAXSCALE
+        $IS_PROXY = 0;
+        $IS_VIP = 0;
+        $IS_MYSQL_ROUTER_ENDPOINT = false;
+        $vipConnectionHost = '';
+        $vipConnectionPort = 3306;
+        $detectedServerBanner = '';
+
         $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT is_proxy FROM mysql_server WHERE id=".$id_mysql_server;
+        $sql = "SELECT is_proxy, is_vip, ip, port FROM mysql_server WHERE id=".$id_mysql_server;
         $res = $db->sql_query($sql);
 
         while($ob = $db->sql_fetch_object($res)) {
-            $IS_PROXY = $ob->is_proxy;
+            $IS_PROXY = (int)$ob->is_proxy;
+            $IS_VIP = (int)$ob->is_vip;
+            $vipConnectionHost = trim((string)($ob->ip ?? ''));
+            $vipConnectionPort = (int)($ob->port ?? 3306);
         }
+        $IS_MYSQL_ROUTER_ENDPOINT = $this->isKnownMysqlRouterEndpoint((int)$id_mysql_server);
         $db->sql_close();
-        //end of case of HA proxy
+        //end of case of HA proxy & Maxscale
 
         Debug::checkPoint('After getting proxy');
         $pid = getmypid();
 
         $time_start   = microtime(true);
 
+        $error_class = null;
         try{
             $error_msg='';
             $mysql_tested = Sgbd::sql($name_server);
         }
-        catch(\Exception $e){
+        catch(Exception $e){
+            $error_class = get_class($e);
             $error_msg = $e->getMessage();
             Debug::debug($error_msg, "Error_MSG");
             $this->logger->emergency($error_msg." id_mysql_server:$id_mysql_server");
@@ -281,32 +466,58 @@ class Aspirateur extends Controller
             $ping = microtime(true) - $time_start;
             $available = empty($error_msg) ? 1 : 0;
 
-
-            $this->setService($id_mysql_server, $ping, $error_msg, $available, 'mysql');
+            Debug::debug([$id_mysql_server, $ping, $error_msg, $available], "REPONSE MYSQL");
+            $this->setService($id_mysql_server, $ping, $error_msg, $available, 'mysql', $this->aspirateurAttemptContext($param, array(
+                'kind' => 'mysql',
+                'phase' => 'connect',
+                'connection_name' => $name_server,
+                'error_class' => $error_class,
+                'started_at' => $time_start,
+                'ended_at' => microtime(true),
+            )));
             if ($available === 0) {
                 //$mysql_tested->sql_close();
                 return false;
             }
 
+            $detectedServerBanner = $this->readMysqlServerBanner($mysql_tested);
+            if (!$IS_MYSQL_ROUTER_ENDPOINT && $this->isMysqlRouterSignature($detectedServerBanner)) {
+                $IS_MYSQL_ROUTER_ENDPOINT = true;
+            }
+
             // only if REAL server => should make test if Galera if select 1 => not ready to use too
-            if (empty($IS_PROXY)) {
+            if (empty($IS_PROXY) && empty($IS_VIP)) {
+
 
             }
-            else{
+            else if ($this->shouldRunProxyTransactionProbe((int)$IS_PROXY, (int)$IS_VIP, $IS_MYSQL_ROUTER_ENDPOINT)){
                 // need try one case if hostgroup 2 ok but hostgroup 1 ko
+                $error_ori = '';
+                $isMaxScaleReadWriteSplit = $this->isKnownMaxScaleReadWriteSplitEndpoint(
+                    (int)$id_mysql_server,
+                    (string)$vipConnectionHost,
+                    (int)$vipConnectionPort
+                );
+                $skipBrokenMaxScaleSession = false;
+                $probe_time_start = microtime(true);
+                $probe_error_class = null;
                 try{
+                    // hack to force read to switch back online after shunned in case of no query on proxy (reader)
+                    $mysql_tested->sql_query("SELECT 1;");
 
-
-
-
-
+                    // You have an error in your SQL syntax; after BEGIN only [WORK] is expected. Unexpected input near ; > 
+                    // remove ; for mysqlrouter
                     $error_filter='';
-                    $sql ="BEGIN;";
+                    $sql ="BEGIN";
                     $mysql_tested->sql_query($sql);
-                    $sql ="COMMIT;";
+                    $sql ="SELECT 1";
+                    $mysql_tested->sql_query($sql);
+
+                    $sql ="COMMIT";
                     $mysql_tested->sql_query($sql);
                 }
-                catch(\Exception $e){
+                catch(Exception $e){
+                    $probe_error_class = get_class($e);
                     $error_ori = $e->getMessage();
                     preg_match('/ERROR:(.*)}/', $error_ori, $output_array);
                     if (!empty($output_array[1])) {
@@ -319,13 +530,34 @@ class Aspirateur extends Controller
                 }
                 finally
                 {
-                    $available = empty($error_ori) ? 1 : 0;
-                    $this->setService($id_mysql_server, $ping, $error_filter, $available, 'mysql');
+                    $available = empty($error_ori) ? 1 : 2; // 2 => cas read only
+                    if (!empty($error_ori)
+                        && $isMaxScaleReadWriteSplit
+                        && $this->isTransientProxySessionLoss($error_ori)) {
+                        $available = 1;
+                        $skipBrokenMaxScaleSession = true;
+                    }
+                    $this->setService($id_mysql_server, $ping, $error_filter, $available, 'mysql', $this->aspirateurAttemptContext($param, array(
+                        'kind' => 'mysql',
+                        'phase' => 'query',
+                        'connection_name' => $name_server,
+                        'error_class' => $probe_error_class,
+                        'transient' => $skipBrokenMaxScaleSession,
+                        'set_readonly_reason' => $available === 2 ? $this->readOnlyReasonFromConnection($mysql_tested) : null,
+                        'started_at' => $probe_time_start,
+                        'ended_at' => microtime(true),
+                    )));
 
-                    if ($available === 0) {
+                    if ($available === 0 && $available === 2) {
                         $mysql_tested->sql_close();
                         return false;
                     }
+                }
+
+                if ($skipBrokenMaxScaleSession) {
+                    $this->exportMaxScaleProxyVariables((int)$id_mysql_server);
+                    $mysql_tested->sql_close();
+                    return true;
                 }
             }
 
@@ -337,32 +569,73 @@ class Aspirateur extends Controller
             }
         }
 
+        // Cas VIP : on ne collecte pas les métriques MySQL classiques.
+        // On réalise uniquement les tests de connexion ci-dessus puis on
+        // persiste la route VIP directement dans vip_server.
+        if (!empty($IS_VIP)) {
+            $resolvedIp = $this->resolveVipIp((string)$vipConnectionHost);
+
+            $vipCandidates = [];
+            foreach ([$resolvedIp, $vipConnectionHost] as $candidate) {
+                $candidate = trim((string)$candidate);
+                if ($candidate !== '') {
+                    $vipCandidates[] = $candidate;
+                }
+            }
+
+            $vipCandidates = array_values(array_unique($vipCandidates));
+
+            $newActual = $this->resolveVipDestinationId(
+                (int)$id_mysql_server,
+                $vipCandidates,
+                (int)$vipConnectionPort
+            );
+
+            $resolvedIpForStorage = '';
+            if (filter_var($resolvedIp, FILTER_VALIDATE_IP)) {
+                $resolvedIpForStorage = $resolvedIp;
+            }
+
+            $saved = $this->upsertVipServerRoute(
+                (int)$id_mysql_server,
+                (string)$vipConnectionHost,
+                (string)$resolvedIpForStorage,
+                (int)$newActual
+            );
+
+            $mysql_tested->sql_close();
+            return $saved;
+        }
+
         // traitement SHOW GLOBAL VARIABLES
         $var['variables'] = $mysql_tested->getVariables();
         Debug::checkPoint('After global variables');
 
-        if (!empty($var['variables']['is_proxysql']) && $var['variables']['is_proxysql'] === 1) {
+
+        // CAS PROXYSQL detected new
+        if (!empty($var['variables']['is_proxysql']) && $var['variables']['is_proxysql'] == "1") {
 
             $data = array();
             $db  = Sgbd::sql(DB_DEFAULT);
             $sql ="SELECT id FROM mysql_server WHERE id=".$id_mysql_server." AND `is_proxy`!=1";
             $res = $db->sql_query($sql);
             while ($ob = $db->sql_fetch_object($res)){
-                $sql = "UPDATE `mysql_server` SET `is_proxy`=1 WHERE `id`=".$id_mysql_server.";";
+                $sql = "UPDATE `mysql_server` SET `is_proxy`=1 WHERE `id`=".$id_mysql_server." AND `is_proxy`!=1;";
                 Debug::sql($sql);
                 $db->sql_query($sql);
                 $this->logger->notice("We discover a new ProxySQL : id_mysql_server:".$ob->id_mysql_server);
             }
 
             // TO DO => fix with new name of array
-            $version = Extraction2::display(array("proxysql_main_var::admin-version"), array($id_mysql_server));
+            $version = Extraction2::display(array("proxysql_runtime::global_variables"), array($id_mysql_server));
             
             $var_temp = array();
-            $var_temp['variables']['is_proxysql']     = $var['variables']['is_proxysql'];
+            $var_temp['variables']['is_proxy']     = "1";
+            $var_temp['variables']['is_proxysql']     =  $var['variables']['is_proxysql'];
 
-            if (! empty($version[$id_mysql_server]['admin-version']))
+            if (! empty($version[$id_mysql_server]['global_variables']['admin-version']))
             {
-                $version_proxysql = $version[$id_mysql_server]['admin-version'];
+                $version_proxysql = $version[$id_mysql_server]['global_variables']['admin-version'];
             }
             else{
                 $version_proxysql = "N/A";
@@ -370,18 +643,43 @@ class Aspirateur extends Controller
 
             $var_temp['variables']['version']         = $version_proxysql;
             $var_temp['variables']['version_comment'] = "ProxySQL";
+
+
+            Debug::debug($var_temp,"VERSION_PROXYSQL");
             
             $this->exportData($id_mysql_server,"mysql_global_variable", $var_temp);
+            $mysql_tested->sql_close();
             return true;
         } 
 
-        if ($IS_PROXY)
+        $detectedVersion = (string) ($var['variables']['version'] ?? '');
+        $detectedVersionComment = (string) ($var['variables']['version_comment'] ?? '');
+        $isMysqlRouter = $this->isMysqlRouterSignature($detectedServerBanner, $detectedVersion, $detectedVersionComment);
+
+        if (empty($var['variables']['is_proxysql']) && $IS_PROXY == "1" && $isMysqlRouter)
         {
+            $var_temp = array();
+            $var_temp['variables']['is_proxy'] = "1";
+            $var_temp['variables']['version'] = $detectedServerBanner !== '' ? $detectedServerBanner : $detectedVersion;
+            $var_temp['variables']['version_comment'] = "MySQL Router";
+
+            $this->exportData($id_mysql_server, "mysql_global_variable", $var_temp);
+            $mysql_tested->sql_close();
+            return true;
+        }
+
+        // cas maxscale
+        if (empty($var['variables']['is_proxysql']) && $IS_PROXY == "1")
+        {
+            $this->exportMaxScaleProxyVariables((int)$id_mysql_server);
+            $mysql_tested->sql_close();
             return true;
         }
 
         //we delete variable who change each time and put in on status
         $remove_var = array('gtid_binlog_pos', 'gtid_binlog_state', 'gtid_current_pos','gtid_slave_pos', 'timestamp', 'gtid_executed');
+        
+        
         $data = array();
         foreach($remove_var as $var_to_remove){
             if (!empty($var['variables'][$var_to_remove])) {
@@ -392,15 +690,15 @@ class Aspirateur extends Controller
             }
         }
 
-        if ((time()+$id_mysql_server)%3 === 0)
-        {
+        //if ((time()+$id_mysql_server)%3 === 0)
+        //{
             $this->exportData($id_mysql_server,"mysql_global_variable", $var);
-        }
+        //}
 
-        if ((time()+$id_mysql_server)%3 === 0)
-        {
+        //if ((time()+$id_mysql_server)%3 === 0)
+        //{
             $this->exportData($id_mysql_server,"mysql_variable_gtid", $data, false );
-        }
+        //}
 
         //get SHOW GLOBAL STATUS
         Debug::debug("apres Variables");
@@ -408,14 +706,25 @@ class Aspirateur extends Controller
         $data = array();
         $data['status'] = $mysql_tested->getStatus();
         
-        
+
         $slave  = $mysql_tested->isSlave();
         if (($slave) != 0) {
             $data['slave'] = $slave;
         }
+        Debug::debug($data['slave'], "SLAVE");
+
+        $groupReplicationStatus = $this->getGroupReplicationStatusFromConnection(
+            $mysql_tested,
+            $detectedVersion,
+            $detectedVersionComment
+        );
+        if (!empty($groupReplicationStatus)) {
+            $data['status'] = array_merge($data['status'], $groupReplicationStatus);
+        }
 
         $this->exportData($id_mysql_server, "mysql_global", $data, false);
         
+
         /*
         if ((time()+$id_mysql_server)%(10*$refresh) < $refresh)
         {
@@ -425,18 +734,24 @@ class Aspirateur extends Controller
         }*/
 
         //SHOW SLAVE HOSTS; => add in glial
+        $isSingleStore = !empty($var['variables']['is_single_store']) && (int)$var['variables']['is_single_store'] === 1;
         $data = array();
-        $data['mysql_processlist']['processlist'] = json_encode($this->getProcesslist($mysql_tested));
+        $data['mysql_processlist']['processlist'] = json_encode($this->getProcesslist($mysql_tested, $isSingleStore));
         $this->exportData($id_mysql_server, "mysql_processlist", $data);
 
 
-
+        // toutes les 10 secs si refresh =1 (toutes les 10* $refresh)
         if ((time()+$id_mysql_server)%(10*$refresh) < $refresh)
         {
-            if ($var['variables']['log_bin'] === "ON") {
+            if (($var['variables']['log_bin'] ?? '') === "ON") {
                 $data = array();
                 $data['mysql_binlog'] = $this->binaryLog(array($id_mysql_server));
-                $data['master_status'] = $mysql_tested->isMaster();
+                $data['master_status'] = $this->getMasterStatusFromConnection(
+                    $mysql_tested,
+                    $detectedVersion,
+                    $detectedVersionComment,
+                    $isSingleStore
+                );
                 //Debug::debug($data);
                 $this->exportData($id_mysql_server, "mysql_binlog", $data);
             }
@@ -447,14 +762,19 @@ class Aspirateur extends Controller
     
         if ((time()+$id_mysql_server)%(10*$refresh) < $refresh)
         {
-            $data = array();
-            $data['innodb_metrics'] = $this->getInnodbMetrics($name_server);
-            $this->exportData($id_mysql_server, "mysql_innodb_metrics", $data, false);
+            // INNODB_METRICS exists since MySQL 5.6 / MariaDB 10.0
+            if ($this->shouldCollectInnodbMetrics($detectedVersion, $isSingleStore)) {
+                $data = array();
+                $data['innodb_metrics'] = $this->getInnodbMetrics($name_server);
+                $this->exportData($id_mysql_server, "mysql_innodb_metrics", $data, false);
+            }
         }
 
 
         // if performance_schema == ON
-        if ($var['variables']['performance_schema'] == "ON") {
+        if (!empty($var['variables']['performance_schema']) && $var['variables']['performance_schema'] == "ON") {
+
+            /*
             if ((time()+$id_mysql_server)%(20*$refresh) < $refresh)
             {
                 $data = array();
@@ -462,31 +782,62 @@ class Aspirateur extends Controller
 
                 Debug::debug($data);
                 $this->exportData($id_mysql_server, "mysql_statistics", $data);
-            }
+            }*/
 
-            if ($id_mysql_server == "1")
-            {
+                /*
+            $data = array();
+            $data['performance_schema']['memory_summary_global_by_event_name'] = json_encode($this->getPsMemory($name_server));
+            Debug::debug($data);
+            $this->exportData($id_mysql_server, "ps_memory_summary_global_by_event_name", $data, true);
+            */
+
+            $this->runEachMinuteAtBalancedSecond($id_mysql_server, 60,'digest', function($id) {
+
+                // Ici, on utilise $mysql_tested EXISTANT => aucune reconnection MySQL
+                $data = [];
+                $data = $this->getDigest([$id]);
+                
+                // FROM::Metric
+                $performance_schema['performance_schema']['events_statements_summary_by_digest'] = json_encode($data);
+                $this->exportData($id, "performance_schema", $performance_schema, false);
+
+                $this->logger->emergency("[DIGEST][$id] executed at second (crc32 offset)");
+            });
+
+            
+            $this->runEachMinuteAtBalancedSecond($id_mysql_server,10, 'avg_latency', function($id) {
+
                 $data = array();
-                $data['performance_schema']['memory_summary_global_by_event_name'] = json_encode($this->getPsMemory($name_server));
-                Debug::debug($data);
-                $this->exportData($id_mysql_server, "ps_memory_summary_global_by_event_name", $data, true);
+                $start = hrtime(as_number: true);
+                $data['summary_by_digest'] = Digest::getSum([$id]);
+                $duration_us = round((hrtime(true) - $start) / 1000);
+                $data['summary_by_digest']['sum_duration'] = $duration_us;
 
+                $this->exportData($id, "ps_sum_summary_by_digest", $data);
 
-            }
+            });
 
+            
+            //duplicate 2025-11-08 15:41:57-2397-96-2181 PK ts_value_digest_int
+            
+
+            /*
+            if ((time()+$id_mysql_server)%(30*$refresh) < $refresh)
+            {
+               $data = array();
+               $data['digest'] = $this->getDigest([$id_mysql_server]);
+               $this->exportData($id_mysql_server, "performance_schema__digest", $data, false);
+            }*/
+/****/
+            /*
             $data = array();
             $data['velocity'] = $this->getVelocity($name_server);
             $this->exportData($id_mysql_server, "mysql_velocity", $data, false);
+            */
 
-            /* get DIGEST */
-            $digest = $this->getDigest(array($id_mysql_server));
-            if (count($digest['data']) > 0)
-            {
-                $data = array();
-                $data['performance_schema']['events_statements_summary_by_digest'] = json_encode($digest);
-                $this->exportData($id_mysql_server, "ps_events_statements_summary_by_digest", $data, false);
-            }
-            
+
+
+          
         }
 
         /*************************************** list Database  */
@@ -519,9 +870,20 @@ class Aspirateur extends Controller
             }
         }
 
+        /******************************************** engines */
+
+        if ((time()+$id_mysql_server)%(3600*$refresh) < $refresh) {
+
+            $data = array();
+            $elems = $this->getElemFromTable(array($id_mysql_server, "information_schema", "engines"));
+            if ($elems != false )
+            {
+                $data['information_schema']['engines'] = json_encode($elems);
+                $this->exportData($id_mysql_server, "information_schema__engines", $data);
+            }
+        }
 
         /****************************************************************** */
-
 
         $data = array();
         $elems = $this->getElemFromTable(array($id_mysql_server, "information_schema", "metadata_lock_info"));
@@ -545,6 +907,8 @@ class Aspirateur extends Controller
         /****************************************************************** */
 
 
+
+
         $mysql_tested->sql_close();
 
         Debug::debugShowTime();
@@ -552,17 +916,587 @@ class Aspirateur extends Controller
         return true;
     }
 
-    public function allocate_shared_storage($name)
+/**
+ * Handle aspirateur state through `upsertVipServerRoute`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param string $dns Input value for `dns`.
+ * @phpstan-param string $dns
+ * @psalm-param string $dns
+ * @param string $ip Input value for `ip`.
+ * @phpstan-param string $ip
+ * @psalm-param string $ip
+ * @param int $newActual Input value for `newActual`.
+ * @phpstan-param int $newActual
+ * @psalm-param int $newActual
+ * @return bool Returned value for upsertVipServerRoute.
+ * @phpstan-return bool
+ * @psalm-return bool
+ * @see self::upsertVipServerRoute()
+ * @example /fr/aspirateur/upsertVipServerRoute
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function upsertVipServerRoute(int $id_mysql_server, string $dns, string $ip, int $newActual): bool
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $dns = trim($dns);
+        $ip = trim($ip);
+
+        $dnsSql = "'".$db->sql_real_escape_string($dns)."'";
+        $ipSql = "NULL";
+        if ($ip !== '') {
+            $ipSql = "'".$db->sql_real_escape_string($ip)."'";
+        }
+
+        try {
+            $actualSql = "NULL";
+            $actualDateSql = "NULL";
+            $actualUpdateSql = "";
+
+            if ($newActual > 0) {
+                $actualSql = (string)(int)$newActual;
+                $actualDateSql = "NOW()";
+
+                // vip_server is system-versioned: avoid locking reads,
+                // which MariaDB rejects on versioned tables.
+                $actualUpdateSql = ",
+                id_mysql_server__previous = CASE
+                    WHEN id_mysql_server__actual IS NOT NULL
+                        AND id_mysql_server__actual > 0
+                        AND id_mysql_server__actual <> ".$actualSql."
+                    THEN id_mysql_server__actual
+                    ELSE id_mysql_server__previous
+                END,
+                date__previous = CASE
+                    WHEN id_mysql_server__actual IS NOT NULL
+                        AND id_mysql_server__actual > 0
+                        AND id_mysql_server__actual <> ".$actualSql."
+                    THEN NOW()
+                    ELSE date__previous
+                END,
+                date__actual = CASE
+                    WHEN id_mysql_server__actual IS NULL
+                        OR id_mysql_server__actual <= 0
+                        OR id_mysql_server__actual <> ".$actualSql."
+                    THEN NOW()
+                    ELSE date__actual
+                END,
+                id_mysql_server__actual = CASE
+                    WHEN id_mysql_server__actual IS NULL
+                        OR id_mysql_server__actual <= 0
+                        OR id_mysql_server__actual <> ".$actualSql."
+                    THEN ".$actualSql."
+                    ELSE id_mysql_server__actual
+                END";
+            }
+
+            $sql = "INSERT INTO vip_server
+            (`id_mysql_server`, `dns`, `ip`, `id_mysql_server__actual`, `date__actual`)
+            VALUES
+            (".(int)$id_mysql_server.", ".$dnsSql.", ".$ipSql.", ".$actualSql.", ".$actualDateSql.")
+            ON DUPLICATE KEY UPDATE
+                dns = VALUES(dns),
+                ip = VALUES(ip)".$actualUpdateSql.";";
+
+            $db->sql_query($sql);
+
+            return true;
+        } catch (\Throwable $e) {
+            $this->logger->error(
+                '[VIP] Failed to upsert vip_server route for id_mysql_server:'
+                .$id_mysql_server.' message:'.$e->getMessage()
+            );
+
+            return false;
+        } finally {
+            $db->sql_close();
+        }
+    }
+
+/**
+ * Handle aspirateur state through `resolveVipIp`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $connectionHost Input value for `connectionHost`.
+ * @phpstan-param string $connectionHost
+ * @psalm-param string $connectionHost
+ * @return string Returned value for resolveVipIp.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::resolveVipIp()
+ * @example /fr/aspirateur/resolveVipIp
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function resolveVipIp(string $connectionHost): string
+    {
+        $connectionHost = trim($connectionHost);
+        if ($connectionHost === '') {
+            return '';
+        }
+
+        if (filter_var($connectionHost, FILTER_VALIDATE_IP)) {
+            return $connectionHost;
+        }
+
+        $ips = @gethostbynamel($connectionHost);
+        if (!empty($ips) && is_array($ips)) {
+            foreach ($ips as $ip) {
+                if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                    return $ip;
+                }
+            }
+        }
+
+        $ip = @gethostbyname($connectionHost);
+        if (!empty($ip) && $ip !== $connectionHost && filter_var($ip, FILTER_VALIDATE_IP)) {
+            return $ip;
+        }
+
+        return $connectionHost;
+    }
+
+/**
+ * Handle aspirateur state through `resolveVipDestinationId`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param array $vipCandidates Input value for `vipCandidates`.
+ * @phpstan-param array $vipCandidates
+ * @psalm-param array $vipCandidates
+ * @param int $port Input value for `port`.
+ * @phpstan-param int $port
+ * @psalm-param int $port
+ * @return int Returned value for resolveVipDestinationId.
+ * @phpstan-return int
+ * @psalm-return int
+ * @see self::resolveVipDestinationId()
+ * @example /fr/aspirateur/resolveVipDestinationId
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function resolveVipDestinationId(int $id_mysql_server, array $vipCandidates, int $port): int
+    {
+        $normalizedTarget = [];
+        foreach ($vipCandidates as $candidate) {
+            $norm = $this->normalizeVipCandidate((string)$candidate);
+            if ($norm !== '') {
+                $normalizedTarget[$norm] = true;
+            }
+        }
+
+        if (empty($normalizedTarget)) {
+            return 0;
+        }
+
+        // 1) Match principal via ips (ssh_stats)
+        $destinationId = $this->resolveVipDestinationIdFromSshMetric(
+            $id_mysql_server,
+            $normalizedTarget,
+            'ips',
+            'ips'
+        );
+        if ($destinationId > 0) {
+            return $destinationId;
+        }
+
+        // 2) Compatibilité explicite avec le préfixe from (si présent)
+        $destinationId = $this->resolveVipDestinationIdFromSshMetric(
+            $id_mysql_server,
+            $normalizedTarget,
+            'ssh_hardware::ips',
+            'ips'
+        );
+        if ($destinationId > 0) {
+            return $destinationId;
+        }
+
+        return $this->resolveVipDestinationIdFromAliasDns(
+            $id_mysql_server,
+            array_keys($normalizedTarget),
+            $port
+        );
+    }
+
+/**
+ * Handle aspirateur state through `resolveVipDestinationIdFromSshMetric`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param array $normalizedTarget Input value for `normalizedTarget`.
+ * @phpstan-param array $normalizedTarget
+ * @psalm-param array $normalizedTarget
+ * @param string $metricSelector Input value for `metricSelector`.
+ * @phpstan-param string $metricSelector
+ * @psalm-param string $metricSelector
+ * @param string $fieldName Input value for `fieldName`.
+ * @phpstan-param string $fieldName
+ * @psalm-param string $fieldName
+ * @return int Returned value for resolveVipDestinationIdFromSshMetric.
+ * @phpstan-return int
+ * @psalm-return int
+ * @see self::resolveVipDestinationIdFromSshMetric()
+ * @example /fr/aspirateur/resolveVipDestinationIdFromSshMetric
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function resolveVipDestinationIdFromSshMetric(
+        int $id_mysql_server,
+        array $normalizedTarget,
+        string $metricSelector,
+        string $fieldName
+    ): int {
+        if (empty($normalizedTarget)) {
+            return 0;
+        }
+
+        try {
+            $rows = Extraction2::display([$metricSelector]);
+        } catch (\Throwable $e) {
+            $this->logger->warning(
+                '[VIP] Unable to resolve destination via '.$metricSelector.' for id_mysql_server:'
+                .$id_mysql_server.' message:'.$e->getMessage()
+            );
+            return 0;
+        }
+
+        if (empty($rows) || !is_array($rows)) {
+            return 0;
+        }
+
+        foreach ($rows as $serverId => $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $rawValue = null;
+            if (array_key_exists($fieldName, $row)) {
+                $rawValue = $row[$fieldName];
+            } elseif (array_key_exists($metricSelector, $row)) {
+                // garde-fou si Extraction2 change la clé renvoyée
+                $rawValue = $row[$metricSelector];
+            }
+
+            if ($rawValue === null) {
+                continue;
+            }
+
+            $targetServerId = 0;
+            if (isset($row['id_mysql_server']) && is_numeric($row['id_mysql_server'])) {
+                $targetServerId = (int)$row['id_mysql_server'];
+            }
+
+            if ($targetServerId <= 0) {
+                $targetServerId = (int)$serverId;
+            }
+
+            if ($targetServerId <= 0 || $targetServerId === (int)$id_mysql_server) {
+                continue;
+            }
+
+            $sshCandidates = $this->extractVipCandidatesFromRawValue($rawValue);
+            foreach ($sshCandidates as $candidate) {
+                if (isset($normalizedTarget[$candidate])) {
+                    return $targetServerId;
+                }
+            }
+        }
+
+        return 0;
+    }
+
+/**
+ * Handle aspirateur state through `resolveVipDestinationIdFromAliasDns`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param array $normalizedCandidates Input value for `normalizedCandidates`.
+ * @phpstan-param array $normalizedCandidates
+ * @psalm-param array $normalizedCandidates
+ * @param int $port Input value for `port`.
+ * @phpstan-param int $port
+ * @psalm-param int $port
+ * @return int Returned value for resolveVipDestinationIdFromAliasDns.
+ * @phpstan-return int
+ * @psalm-return int
+ * @see self::resolveVipDestinationIdFromAliasDns()
+ * @example /fr/aspirateur/resolveVipDestinationIdFromAliasDns
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function resolveVipDestinationIdFromAliasDns(int $id_mysql_server, array $normalizedCandidates, int $port): int
+    {
+        if (empty($normalizedCandidates)) {
+            return 0;
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $in = [];
+        foreach ($normalizedCandidates as $candidate) {
+            $in[] = "'".$db->sql_real_escape_string($candidate)."'";
+        }
+
+        if (empty($in)) {
+            return 0;
+        }
+
+        $sql = "SELECT a.id_mysql_server
+        FROM alias_dns PARTITION (pn) a
+        WHERE a.port = ".(int)$port."
+        AND a.id_mysql_server != ".(int)$id_mysql_server."
+        AND a.dns IN (".implode(',', $in).")
+        ORDER BY a.id_mysql_server ASC
+        LIMIT 1;";
+
+        $res = $db->sql_query($sql);
+        while ($ob = $db->sql_fetch_object($res)) {
+            return (int)$ob->id_mysql_server;
+        }
+
+        return 0;
+    }
+
+/**
+ * Handle aspirateur state through `extractVipCandidatesFromRawValue`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $raw Input value for `raw`.
+ * @phpstan-param mixed $raw
+ * @psalm-param mixed $raw
+ * @return array Returned value for extractVipCandidatesFromRawValue.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::extractVipCandidatesFromRawValue()
+ * @example /fr/aspirateur/extractVipCandidatesFromRawValue
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function extractVipCandidatesFromRawValue($raw): array
+    {
+        $flat = [];
+
+        if (is_string($raw)) {
+            $trimmed = trim($raw);
+            if ($trimmed !== '' && ($trimmed[0] === '[' || $trimmed[0] === '{')) {
+                $decoded = json_decode($trimmed, true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $raw = $decoded;
+                }
+            }
+        }
+
+        $this->flattenVipRawValue($raw, $flat);
+
+        $candidates = [];
+        foreach ($flat as $value) {
+            foreach (preg_split('/[\s,;|]+/', $value) as $token) {
+                $normalized = $this->normalizeVipCandidate($token);
+                if ($normalized !== '') {
+                    $candidates[$normalized] = true;
+                }
+            }
+        }
+
+        return array_keys($candidates);
+    }
+
+/**
+ * Handle aspirateur state through `flattenVipRawValue`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $value Input value for `value`.
+ * @phpstan-param mixed $value
+ * @psalm-param mixed $value
+ * @param array & $flat Input value for `flat`.
+ * @phpstan-param array & $flat
+ * @psalm-param array & $flat
+ * @return void Returned value for flattenVipRawValue.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::flattenVipRawValue()
+ * @example /fr/aspirateur/flattenVipRawValue
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function flattenVipRawValue($value, array &$flat): void
+    {
+        if (is_array($value)) {
+            foreach ($value as $item) {
+                $this->flattenVipRawValue($item, $flat);
+            }
+            return;
+        }
+
+        if (is_scalar($value)) {
+            $str = trim((string)$value);
+            if ($str !== '') {
+                $flat[] = $str;
+            }
+        }
+    }
+
+/**
+ * Handle aspirateur state through `normalizeVipCandidate`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $value Input value for `value`.
+ * @phpstan-param string $value
+ * @psalm-param string $value
+ * @return string Returned value for normalizeVipCandidate.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::normalizeVipCandidate()
+ * @example /fr/aspirateur/normalizeVipCandidate
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function normalizeVipCandidate(string $value): string
+    {
+        $value = trim($value);
+        $value = trim($value, "\"'");
+
+        if ($value === '') {
+            return '';
+        }
+
+        // [ipv6]:port
+        if (preg_match('/^\[(.*)\]:(\d+)$/', $value, $m)) {
+            $value = trim($m[1]);
+        }
+        // ipv4:port / dns:port
+        else if (preg_match('/^([^:]+):(\d+)$/', $value, $m)) {
+            $value = trim($m[1]);
+        }
+
+        return strtolower($value);
+    }
+
+/**
+ * Handle aspirateur state through `allocate_shared_storage`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $name Input value for `name`.
+ * @phpstan-param mixed $name
+ * @psalm-param mixed $name
+ * @param mixed $separator Input value for `separator`.
+ * @phpstan-param mixed $separator
+ * @psalm-param mixed $separator
+ * @return mixed Returned value for allocate_shared_storage.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::allocate_shared_storage()
+ * @example /fr/aspirateur/allocate_shared_storage
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public function allocate_shared_storage($name, $separator = EngineV4::SEPERATOR)
     {
         //storage shared
         Debug::debug($name, 'create file');
 
-        $shared_file = EngineV4::PATH_PIVOT_FILE.time().EngineV4::SEPERATOR.$name;
-        $storage             = new StorageFile($shared_file); // to export in config ?
+        $shared_file   = EngineV4::PATH_PIVOT_FILE.time().$separator.$name;
+        $storage       = new StorageFile($shared_file); // to export in config ?
         $SHARED_MEMORY = new SharedMemory($storage);
         return $SHARED_MEMORY;
     }
 
+    private function allocate_shared_storage_unique($name, $separator = EngineV4::SEPERATOR)
+    {
+        Debug::debug($name, 'create file');
+
+        $shared_file = EngineV4::PATH_PIVOT_FILE . sprintf('%.6f', microtime(true)) . '-' . substr(uniqid('', true), -8) . $separator . $name;
+        $shared_file = str_replace('.', '', $shared_file);
+        $storage = new StorageFile($shared_file);
+        return new SharedMemory($storage);
+    }
+
+/**
+ * Handle aspirateur state through `trySshConnection`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for trySshConnection.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::trySshConnection()
+ * @example /fr/aspirateur/trySshConnection
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function trySshConnection($param)
     {
         $this->view      = false;
@@ -589,12 +1523,14 @@ class Aspirateur extends Controller
             $id_mysql_server = $ob->id;
 
             $ssh = false;
+            $error_class = null;
+            $time_start = microtime(true);
             try{
                 $error_msg='';
-                $time_start = microtime(true);
                 $ssh        = Ssh::ssh($id_mysql_server);
             }
-            catch(\Exception $e){
+            catch(Exception $e){
+                $error_class = get_class($e);
                 $error_msg = $e->getMessage();
                 $this->logger->warning($error_msg." id_ssh_server:$id_mysql_server");
             }
@@ -602,7 +1538,13 @@ class Aspirateur extends Controller
                 $ping = microtime(true) - $time_start;
                 $available = empty($error_msg) ? 1 : 0;
                 
-                $this->setService($id_mysql_server, $ping, $error_msg, $available, "ssh");
+                $this->setService($id_mysql_server, $ping, $error_msg, $available, "ssh", $this->aspirateurAttemptContext($param, array(
+                    'kind' => 'ssh',
+                    'phase' => 'connect',
+                    'error_class' => $error_class,
+                    'started_at' => $time_start,
+                    'ended_at' => microtime(true),
+                )));
                 $this->logger->info("id_ssh_server:".$id_mysql_server." - is_available : ".$available." - ping : ".round($ping,6));
     
                 // VERY important else we got error and we kill the worker and have to restart with a new one
@@ -615,14 +1557,11 @@ class Aspirateur extends Controller
 
             if (!empty($ssh) && $ssh !== false ) {
                 $ssh_available = 1;
+
+                $mysqlDatadirContext = $this->getMysqlDatadirContext((int)$id_mysql_server);
    
-
-
-
-                $stats['ssh_stats']    = $this->getStats($ssh);
+                $stats['ssh_stats']    = $this->getStats($ssh, $mysqlDatadirContext);
                 $hardware['ssh_hardware'] = $this->getHardware($ssh);
-
-
 
                 //liberation de la connexion ssh https://github.com/phpseclib/phpseclib/issues/1194
                 $ssh->disconnect();
@@ -633,13 +1572,6 @@ class Aspirateur extends Controller
 
                 $this->exportData($id_mysql_server, "ssh_hardware", $hardware);
                 $this->exportData($id_mysql_server, "ssh_stats", $stats, false);
-
-
-
-
-
-
-
 
             } else {
                 Debug::debug("Can't connect to ssh");
@@ -655,6 +1587,494 @@ class Aspirateur extends Controller
         $db->sql_close();
     }
 
+    /**
+     * Dedicated SSH collector for MySQL-side log files and OOM journal events.
+     * For the first rollout, the worker query may be limited to server id 1.
+     *
+     * @param array<int,mixed> $param
+     */
+    public function tryMysqlLogCollection($param)
+    {
+        $this->view = false;
+
+        $id_mysql_server = (int)($param[1] ?? 0);
+        if ($id_mysql_server <= 0) {
+            return false;
+        }
+
+        Debug::parseDebug($param);
+
+        $time_start = microtime(true);
+        $ssh = null;
+        try {
+            $ssh = Ssh::ssh($id_mysql_server);
+        } catch (Exception $e) {
+            $this->logger->warning('[MYSQL-LOG] SSH unavailable for server ' . $id_mysql_server . ' : ' . $e->getMessage());
+            AspirateurAttemptLogger::log($this->aspirateurAttemptContext($param, array(
+                'id_mysql_server' => $id_mysql_server,
+                'kind' => 'mysql_log',
+                'phase' => 'connect',
+                'result' => 0,
+                'ping_seconds' => microtime(true) - $time_start,
+                'error_class' => get_class($e),
+                'error_message' => $e->getMessage(),
+                'started_at' => $time_start,
+                'ended_at' => microtime(true),
+            )));
+            return false;
+        }
+
+        if (empty($ssh)) {
+            AspirateurAttemptLogger::log($this->aspirateurAttemptContext($param, array(
+                'id_mysql_server' => $id_mysql_server,
+                'kind' => 'mysql_log',
+                'phase' => 'connect',
+                'result' => 0,
+                'ping_seconds' => microtime(true) - $time_start,
+                'error_class' => null,
+                'error_message' => 'SSH connection returned empty handle',
+                'started_at' => $time_start,
+                'ended_at' => microtime(true),
+            )));
+            return false;
+        }
+
+        try {
+            $variables = $this->getMysqlLogVariables($id_mysql_server);
+            $sources = MysqlLogCollector::filterSourcesByLogTypes(
+                MysqlLogCollector::resolveLogSources($variables),
+                [
+                    MysqlLogCollector::LOG_TYPE_ERROR,
+                    MysqlLogCollector::LOG_TYPE_SQL_ERROR,
+                ]
+            );
+
+            $events = [];
+            $cursorUpdates = [];
+
+            foreach ($sources as $source) {
+                MysqlLogCollector::ensureLocalStorageDirectories($id_mysql_server, (string)($source['log_type'] ?? ''));
+
+                if (($source['source_kind'] ?? '') === 'file') {
+                    $result = $this->readRemoteFileLogSource($ssh, $id_mysql_server, $source);
+                    if (!empty($result['cursor'])) {
+                        $cursorUpdates[] = $result['cursor'];
+                    }
+                    continue;
+                }
+
+                if (($source['source_kind'] ?? '') === 'journal') {
+                    $result = $this->readRemoteJournalLogSource($ssh, $id_mysql_server, $source);
+                    $events = array_merge($events, $result['events']);
+                    if (!empty($result['cursor'])) {
+                        $cursorUpdates[] = $result['cursor'];
+                    }
+                }
+            }
+
+            if (!empty($cursorUpdates)) {
+                $this->upsertMysqlLogCursors($cursorUpdates);
+            }
+
+            if (!empty($events)) {
+                $this->persistMysqlLogPayloadChunks($id_mysql_server, $events, []);
+            }
+        } catch (\Throwable $e) {
+            AspirateurAttemptLogger::log($this->aspirateurAttemptContext($param, array(
+                'id_mysql_server' => $id_mysql_server,
+                'kind' => 'mysql_log',
+                'phase' => 'export',
+                'result' => 0,
+                'ping_seconds' => microtime(true) - $time_start,
+                'error_class' => get_class($e),
+                'error_message' => $e->getMessage(),
+                'started_at' => $time_start,
+                'ended_at' => microtime(true),
+            )));
+            throw $e;
+        } finally {
+            if (is_object($ssh) && method_exists($ssh, 'disconnect')) {
+                $ssh->disconnect();
+            }
+        }
+
+        AspirateurAttemptLogger::log($this->aspirateurAttemptContext($param, array(
+            'id_mysql_server' => $id_mysql_server,
+            'kind' => 'mysql_log',
+            'phase' => 'export',
+            'result' => 1,
+            'ping_seconds' => microtime(true) - $time_start,
+            'started_at' => $time_start,
+            'ended_at' => microtime(true),
+        )));
+
+        return true;
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    private function getMysqlLogVariables(int $idMysqlServer): array
+    {
+        $data = Extraction2::display([
+            'log_error',
+            'slow_query_log_file',
+            'general_log_file',
+            'general_log',
+            'sql_error_log_filename',
+            'information_schema::plugins',
+        ], [$idMysqlServer]);
+
+        $row = $data[$idMysqlServer] ?? [];
+
+        return [
+            'log_error' => $row['log_error'] ?? '',
+            'slow_query_log_file' => $row['slow_query_log_file'] ?? '',
+            'general_log_file' => $row['general_log_file'] ?? '',
+            'general_log' => $row['general_log'] ?? 'OFF',
+            'sql_error_log_filename' => $row['sql_error_log_filename'] ?? '',
+            'plugins_json' => $row['plugins'] ?? '',
+        ];
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $events
+     * @param array<int,array<string,mixed>> $cursorUpdates
+     */
+    private function persistMysqlLogPayloadChunks(int $idMysqlServer, array $events, array $cursorUpdates): void
+    {
+        if (empty($events)) {
+            $ts = time();
+            $payload[$ts][$idMysqlServer] = [
+                'events' => [],
+                'cursor_updates' => $cursorUpdates,
+            ];
+
+            $memory = $this->allocate_shared_storage_unique('logs');
+            $memory->{$idMysqlServer} = $payload;
+            return;
+        }
+
+        $chunks = [];
+        $currentChunk = [];
+        $currentBytes = 0;
+
+        foreach ($events as $event) {
+            $estimatedBytes = strlen((string)($event['raw_line'] ?? $event['message'] ?? '')) + strlen((string)($event['meta_json'] ?? '')) + 256;
+
+            if (!empty($currentChunk)
+                && (count($currentChunk) >= self::MYSQL_LOG_MAX_EVENTS_PER_PIVOT
+                    || ($currentBytes + $estimatedBytes) > self::MYSQL_LOG_MAX_BYTES_PER_PIVOT)
+            ) {
+                $chunks[] = $currentChunk;
+                $currentChunk = [];
+                $currentBytes = 0;
+            }
+
+            $currentChunk[] = $event;
+            $currentBytes += $estimatedBytes;
+        }
+
+        if (!empty($currentChunk)) {
+            $chunks[] = $currentChunk;
+        }
+
+        $totalChunks = count($chunks);
+
+        foreach ($chunks as $index => $chunk) {
+            $ts = time();
+            $payload[$ts][$idMysqlServer] = [
+                'events' => $chunk,
+                'cursor_updates' => $index === ($totalChunks - 1) ? $cursorUpdates : [],
+            ];
+
+            $memory = $this->allocate_shared_storage_unique('logs');
+            $memory->{$idMysqlServer} = $payload;
+        }
+    }
+
+    /**
+     * @param array<string,mixed> $source
+     * @return array{events: array<int,array<string,mixed>>, cursor: array<string,mixed>|null}
+     */
+    private function readRemoteFileLogSource($ssh, int $idMysqlServer, array $source): array
+    {
+        $path = (string)($source['source_name'] ?? '');
+        if ($path === '') {
+            return ['events' => [], 'cursor' => null];
+        }
+
+        $cursor = $this->getMysqlLogCursor($idMysqlServer, (string)$source['log_type'], 'file', $path);
+        $quotedPath = escapeshellarg($path);
+        $stat = trim((string)$ssh->exec("if [ -f {$quotedPath} ]; then stat -c '%i %s' -- {$quotedPath}; fi"));
+
+        if ($stat === '') {
+            return ['events' => [], 'cursor' => [
+                'id_mysql_server' => $idMysqlServer,
+                'log_type' => (string)$source['log_type'],
+                'source_kind' => 'file',
+                'source_name' => $path,
+                'inode' => null,
+                'last_offset' => 0,
+                'last_event_time' => null,
+            ]];
+        }
+
+        [$inode, $size] = array_pad(preg_split('/\s+/', $stat, 2) ?: [], 2, '0');
+        $inode = (int)$inode;
+        $size = (int)$size;
+
+        $offset = (int)($cursor['last_offset'] ?? 0);
+        $isFirstCollection = empty($cursor);
+
+        if ((int)($cursor['inode'] ?? 0) !== $inode || $size < $offset) {
+            $offset = 0;
+        }
+
+        if ($isFirstCollection) {
+            $storagePath = MysqlLogCollector::buildInitialFullSnapshotPath($idMysqlServer, (string)$source['log_type'], $path);
+            if (!$this->downloadRemoteFileSnapshot($idMysqlServer, $path, $storagePath)) {
+                $this->logger->warning('[MYSQL-LOG] initial full download failed for server ' . $idMysqlServer . ' path ' . $path);
+                return ['events' => [], 'cursor' => null];
+            }
+
+            $content = (string)file_get_contents($storagePath);
+            $parts = MysqlLogCollector::prepareLocalFileParts(
+                $idMysqlServer,
+                (string)$source['log_type'],
+                $path,
+                $inode,
+                0,
+                $content
+            );
+            MysqlLogCollector::persistLocalFileParts($parts);
+
+            return ['events' => [], 'cursor' => [
+                'id_mysql_server' => $idMysqlServer,
+                'log_type' => (string)$source['log_type'],
+                'source_kind' => 'file',
+                'source_name' => $path,
+                'inode' => $inode,
+                'last_offset' => $size,
+                'last_event_time' => null,
+            ]];
+        }
+
+        if ($size <= $offset) {
+            return ['events' => [], 'cursor' => [
+                'id_mysql_server' => $idMysqlServer,
+                'log_type' => (string)$source['log_type'],
+                'source_kind' => 'file',
+                'source_name' => $path,
+                'inode' => $inode,
+                'last_offset' => $size,
+                'last_event_time' => $cursor['last_event_time'] ?? null,
+            ]];
+        }
+
+        $content = (string)$ssh->exec("dd if={$quotedPath} iflag=skip_bytes skip={$offset} status=none 2>/dev/null");
+        if ($content === '') {
+            return ['events' => [], 'cursor' => [
+                'id_mysql_server' => $idMysqlServer,
+                'log_type' => (string)$source['log_type'],
+                'source_kind' => 'file',
+                'source_name' => $path,
+                'inode' => $inode,
+                'last_offset' => $offset,
+                'last_event_time' => $cursor['last_event_time'] ?? null,
+            ]];
+        }
+
+        $parts = MysqlLogCollector::prepareLocalFileParts(
+            $idMysqlServer,
+            (string)$source['log_type'],
+            $path,
+            $inode,
+            $offset,
+            $content
+        );
+        MysqlLogCollector::persistLocalFileParts($parts);
+
+        $lastEventTime = null;
+        if (!empty($parts)) {
+            $lastPart = end($parts);
+            $partContent = (string)($lastPart['content'] ?? '');
+            $partEvents = MysqlLogCollector::buildFileEvents(
+                $idMysqlServer,
+                (string)$source['log_type'],
+                $path,
+                $inode,
+                (int)($lastPart['offset_start'] ?? $offset),
+                $partContent
+            );
+            if (!empty($partEvents)) {
+                $lastEventTime = end($partEvents)['event_time'] ?? null;
+            }
+        }
+
+        return ['events' => [], 'cursor' => [
+            'id_mysql_server' => $idMysqlServer,
+            'log_type' => (string)$source['log_type'],
+            'source_kind' => 'file',
+            'source_name' => $path,
+            'inode' => $inode,
+            'last_offset' => $size,
+            'last_event_time' => $lastEventTime,
+        ]];
+    }
+
+    /**
+     * @param array<string,mixed> $source
+     * @return array{events: array<int,array<string,mixed>>, cursor: array<string,mixed>|null}
+     */
+    private function readRemoteJournalLogSource($ssh, int $idMysqlServer, array $source): array
+    {
+        $cursor = $this->getMysqlLogCursor($idMysqlServer, (string)$source['log_type'], 'journal', (string)$source['source_name']);
+        $since = $cursor['last_event_time'] ?? date('Y-m-d H:i:s', time() - 3600);
+
+        // overlap a bit to tolerate delayed arrival; dedup happens in IntegrateLog.
+        $sinceTs = strtotime((string)$since);
+        if ($sinceTs !== false) {
+            $since = date('Y-m-d H:i:s', max(0, $sinceTs - 5));
+        }
+
+        $quotedSince = escapeshellarg((string)$since);
+        $journal = (string)$ssh->exec("journalctl -k -o short-iso --since {$quotedSince} --no-pager 2>/dev/null");
+        $events = MysqlLogCollector::buildOomEvents($idMysqlServer, $journal);
+
+        $lastEventTime = $cursor['last_event_time'] ?? null;
+        if (!empty($events)) {
+            $lastEventTime = end($events)['event_time'] ?? date('Y-m-d H:i:s');
+        } else {
+            $lastEventTime = date('Y-m-d H:i:s');
+        }
+
+        return ['events' => $events, 'cursor' => [
+            'id_mysql_server' => $idMysqlServer,
+            'log_type' => (string)$source['log_type'],
+            'source_kind' => 'journal',
+            'source_name' => (string)$source['source_name'],
+            'inode' => null,
+            'last_offset' => null,
+            'last_event_time' => $lastEventTime,
+        ]];
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    private function getMysqlLogCursor(int $idMysqlServer, string $logType, string $sourceKind, string $sourceName): array
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT `inode`, `last_offset`, `last_event_time`
+                FROM `ssh_log_mysql_cursor`
+                WHERE `id_mysql_server` = " . $idMysqlServer . "
+                  AND `log_type` = '" . $db->sql_real_escape_string($logType) . "'
+                  AND `source_kind` = '" . $db->sql_real_escape_string($sourceKind) . "'
+                  AND `source_name` = '" . $db->sql_real_escape_string($sourceName) . "'
+                LIMIT 1";
+
+        $res = $db->sql_query($sql);
+        $row = $db->sql_fetch_array($res, MYSQLI_ASSOC) ?: [];
+        $db->sql_close();
+
+        return $row;
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $cursorUpdates
+     */
+    private function upsertMysqlLogCursors(array $cursorUpdates): void
+    {
+        if (empty($cursorUpdates)) {
+            return;
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $values = [];
+
+        foreach ($cursorUpdates as $cursor) {
+            $values[] = sprintf(
+                '(%d,"%s","%s","%s",%s,%s,%s,NOW())',
+                (int)$cursor['id_mysql_server'],
+                $db->sql_real_escape_string((string)$cursor['log_type']),
+                $db->sql_real_escape_string((string)$cursor['source_kind']),
+                $db->sql_real_escape_string((string)$cursor['source_name']),
+                $this->sqlNullableInt($cursor['inode'] ?? null),
+                $this->sqlNullableInt($cursor['last_offset'] ?? null),
+                $this->sqlNullableString($db, $cursor['last_event_time'] ?? null)
+            );
+        }
+
+        if (!empty($values)) {
+            $sql = 'INSERT INTO ssh_log_mysql_cursor (`id_mysql_server`,`log_type`,`source_kind`,`source_name`,`inode`,`last_offset`,`last_event_time`,`updated_at`) VALUES '
+                . implode(",\n", $values)
+                . ' ON DUPLICATE KEY UPDATE `inode`=VALUES(`inode`), `last_offset`=VALUES(`last_offset`), `last_event_time`=VALUES(`last_event_time`), `updated_at`=NOW()';
+            $db->sql_query($sql);
+        }
+
+        $db->sql_close();
+    }
+
+    private function sqlNullableInt($value): string
+    {
+        if ($value === null || $value === '') {
+            return 'NULL';
+        }
+
+        return (string)(int)$value;
+    }
+
+    private function sqlNullableString($db, $value): string
+    {
+        if ($value === null || $value === '') {
+            return 'NULL';
+        }
+
+        return '"' . $db->sql_real_escape_string((string)$value) . '"';
+    }
+
+    private function downloadRemoteFileSnapshot(int $idMysqlServer, string $remotePath, string $localPath): bool
+    {
+        $parentDir = dirname($localPath);
+        if (!is_dir($parentDir)) {
+            mkdir($parentDir, 0775, true);
+        }
+
+        $sftp = Ssh::sftp($idMysqlServer);
+        if (!$sftp) {
+            return false;
+        }
+
+        $result = $sftp->get($remotePath, $localPath);
+        if (is_object($sftp) && method_exists($sftp, 'disconnect')) {
+            $sftp->disconnect();
+        }
+
+        return $result !== false && file_exists($localPath);
+    }
+
+/**
+ * Retrieve aspirateur state through `getHardware`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $ssh Input value for `ssh`.
+ * @phpstan-param mixed $ssh
+ * @psalm-param mixed $ssh
+ * @return mixed Returned value for getHardware.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getHardware()
+ * @example /fr/aspirateur/getHardware
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getHardware($ssh)
     {
 
@@ -735,6 +2155,9 @@ class Aspirateur extends Controller
             }
         }
 
+        $ips = trim($ssh->exec("hostname -I"));
+
+        $hardware['ips'] = json_encode(explode(" ", $ips));
         $hardware['distributor']  = trim($distributor);
         $hardware['os']           = trim($os);
         $hardware['codename']     = trim($codename);
@@ -752,7 +2175,31 @@ class Aspirateur extends Controller
         return $hardware;
     }
 
-    public function getStats($ssh)
+/**
+ * Retrieve aspirateur state through `getStats`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $ssh Input value for `ssh`.
+ * @phpstan-param mixed $ssh
+ * @psalm-param mixed $ssh
+ * @param array $mysqlContext Input value for `mysqlContext`.
+ * @phpstan-param array $mysqlContext
+ * @psalm-param array $mysqlContext
+ * @return mixed Returned value for getStats.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getStats()
+ * @example /fr/aspirateur/getStats
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public function getStats($ssh, array $mysqlContext = array())
     {
         $stats = array();
 
@@ -791,49 +2238,55 @@ class Aspirateur extends Controller
         $membrut = trim($ssh->exec("free -b"));
         $stats   = $this->getSwap($membrut);
 
-//on exclu les montage nfs
-        $dd = trim($ssh->exec("df -l"));
-
-        $lines = explode("\n", $dd);
-        $items = array('Filesystem', 'Size', 'Used', 'Avail', 'Use%', 'Mounted on');
-        unset($lines[0]);
-
-        $tmp = array();
-        foreach ($lines as $line) {
-
-            $elems          = preg_split('/\s+/', $line);
-            $tmp[$elems[5]] = $elems;
+        $procStatCounters = $this->getProcStatSystemCounters($ssh);
+        foreach ($procStatCounters as $key => $value) {
+            $stats[$key] = $value;
         }
 
-        $stats['disks'] = json_encode($tmp);
+        $networkStats = $this->getNetworkStats($ssh);
+        foreach ($networkStats as $key => $value) {
+            $stats[$key] = $value;
+        }
 
-        $ips = trim($ssh->exec("ip addr | grep 'state UP' -A2 | awk '{print $2}' | cut -f1 -d'/' | grep -Eo '([0-9]*\.){3}[0-9]*'"));
+        $diskIoStats = $this->getDiskIoStats($ssh);
+        foreach ($diskIoStats as $key => $value) {
+            $stats[$key] = $value;
+        }
 
-        $stats['ips'] = json_encode(explode("\n", $ips));
+        $processStateStats = $this->getProcessStateStats($ssh);
+        foreach ($processStateStats as $key => $value) {
+            $stats[$key] = $value;
+        }
 
+// on exclut les montages réseau et on produit une structure nommée compatible avec information_schema.disks
+        $diskSnapshot = (string)$ssh->exec("df -lPTB1 2>/dev/null");
+        $stats['disks'] = json_encode($this->parseDfDisks($diskSnapshot));
 
-
-        // top -bn1 | grep "Cpu(s)"
-        $cpus         = trim($ssh->exec("grep 'cpu' /proc/stat"));
-        //$cpus = trim(shell_exec("grep 'cpu' /proc/stat"));
-
-        $cpu_lines = explode("\n", $cpus);
-
-        $i = 0;
-        foreach ($cpu_lines as $line) {
-
-            $elems = preg_split('/\s+/', $line);
-
-            //debug($elems);
-            //system + user + idle
-            if ($i === 0) {
-                $stats['cpu_usage'] = (($elems[1] + $elems[3]) * 100) / ($elems[1] + $elems[3] + $elems[4]);
-            } else {
-                $cpu[$elems[0]] = ($elems[1] + $elems[3]) * 100 / ($elems[1] + $elems[3] + $elems[4]);
+        $cpu_usage = $this->getInstantCpuUsage($ssh);
+        if (!empty($cpu_usage)) {
+            $stats['cpu_usage'] = $cpu_usage['cpu'] ?? 0;
+            unset($cpu_usage['cpu']);
+            $stats['cpu_detail'] = json_encode($cpu_usage);
+        } else {
+            // fallback snapshot (legacy behavior if delta-based approach fails)
+            $cpus = trim($ssh->exec("grep 'cpu' /proc/stat"));
+            $cpu_lines = explode("\n", $cpus);
+            $i = 0;
+            foreach ($cpu_lines as $line) {
+                $elems = preg_split('/\s+/', $line);
+                if ($i === 0) {
+                    $total = array_sum(array_map('intval', array_slice($elems, 1)));
+                    $idle = ((int)($elems[4] ?? 0)) + ((int)($elems[5] ?? 0));
+                    $stats['cpu_usage'] = $total > 0 ? (100 - (($idle / $total) * 100)) : 0;
+                } else {
+                    $total = array_sum(array_map('intval', array_slice($elems, 1)));
+                    $idle = ((int)($elems[4] ?? 0)) + ((int)($elems[5] ?? 0));
+                    $cpu[$elems[0]] = $total > 0 ? (100 - (($idle / $total) * 100)) : 0;
+                }
+                $i++;
             }
-            $i++;
+            $stats['cpu_detail'] = json_encode($cpu ?? []);
         }
-        $stats['cpu_detail'] = json_encode($cpu);
 
 
 
@@ -877,9 +2330,7 @@ class Aspirateur extends Controller
 
         $stats['memory_detail_kb'] = json_encode($processes);
 
-
         /* io wait */
-
         /*
           $cpu_user = trim($ssh->exec("iostat -c | tail -2 | head -n 1"));
           $cpu_user = trim(shell_exec("iostat -c | tail -2 | head -n 1"));
@@ -916,10 +2367,799 @@ class Aspirateur extends Controller
 //ifconfig
 
 
+        $datadirStats = $this->getMysqlDatadirStats($ssh, $mysqlContext);
+        foreach ($datadirStats as $key => $value) {
+            $stats[$key] = $value;
+        }
+
+
         return $stats;
     }
 
+/**
+ * Retrieve aspirateur state through `getInstantCpuUsage`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $ssh Input value for `ssh`.
+ * @phpstan-param mixed $ssh
+ * @psalm-param mixed $ssh
+ * @param float $intervalSeconds Input value for `intervalSeconds`.
+ * @phpstan-param float $intervalSeconds
+ * @psalm-param float $intervalSeconds
+ * @return array Returned value for getInstantCpuUsage.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::getInstantCpuUsage()
+ * @example /fr/aspirateur/getInstantCpuUsage
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function getInstantCpuUsage($ssh, float $intervalSeconds = 0.5): array
+    {
+        $intervalSeconds = max(0.1, $intervalSeconds);
 
+        $startSnapshot = $ssh->exec('cat /proc/stat');
+        if (empty($startSnapshot)) {
+            return [];
+        }
+
+        usleep((int)round($intervalSeconds * 1000000));
+
+        $endSnapshot = $ssh->exec('cat /proc/stat');
+        if (empty($endSnapshot)) {
+            return [];
+        }
+
+        $start = $this->parseProcStatSnapshot($startSnapshot);
+        $end = $this->parseProcStatSnapshot($endSnapshot);
+        if (empty($start) || empty($end)) {
+            return [];
+        }
+
+        return $this->computeCpuUsageDelta($start, $end);
+    }
+
+/**
+ * Handle aspirateur state through `parseProcStatSnapshot`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $raw Input value for `raw`.
+ * @phpstan-param string $raw
+ * @psalm-param string $raw
+ * @return array Returned value for parseProcStatSnapshot.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::parseProcStatSnapshot()
+ * @example /fr/aspirateur/parseProcStatSnapshot
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function parseProcStatSnapshot(string $raw): array
+    {
+        $lines = preg_split('/\r?\n/', trim($raw));
+        $stats = [];
+
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if ($line === '' || strpos($line, 'cpu') !== 0) {
+                continue;
+            }
+
+            $parts = preg_split('/\s+/', $line);
+            $cpu = array_shift($parts);
+            if ($cpu === '') {
+                continue;
+            }
+
+            $values = array_map('intval', $parts);
+            if (count($values) < 4) {
+                continue;
+            }
+
+            $idle = ($values[3] ?? 0) + ($values[4] ?? 0);
+            $total = array_sum($values);
+            $stats[$cpu] = [
+                'total' => $total,
+                'idle' => $idle,
+            ];
+        }
+
+        return $stats;
+    }
+
+/**
+ * Handle aspirateur state through `computeCpuUsageDelta`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $start Input value for `start`.
+ * @phpstan-param array $start
+ * @psalm-param array $start
+ * @param array $end Input value for `end`.
+ * @phpstan-param array $end
+ * @psalm-param array $end
+ * @return array Returned value for computeCpuUsageDelta.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::computeCpuUsageDelta()
+ * @example /fr/aspirateur/computeCpuUsageDelta
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function computeCpuUsageDelta(array $start, array $end): array
+    {
+        $usage = [];
+
+        foreach ($end as $cpu => $endStat) {
+            if (!isset($start[$cpu])) {
+                continue;
+            }
+
+            $totalDelta = ($endStat['total'] ?? 0) - ($start[$cpu]['total'] ?? 0);
+            $idleDelta = ($endStat['idle'] ?? 0) - ($start[$cpu]['idle'] ?? 0);
+
+            if ($totalDelta <= 0) {
+                $usage[$cpu] = 0;
+                continue;
+            }
+
+            $busy = (1 - ($idleDelta / $totalDelta)) * 100;
+            $usage[$cpu] = max(0, min(100, $busy));
+        }
+
+        return $usage;
+    }
+
+    private function getProcStatSystemCounters($ssh): array
+    {
+        $raw = (string)$ssh->exec('cat /proc/stat');
+        if ($raw === '') {
+            return [];
+        }
+
+        return $this->parseProcSystemCounters($raw);
+    }
+
+    private function parseProcSystemCounters(string $raw): array
+    {
+        $detail = [];
+
+        foreach (preg_split('/\r?\n/', trim($raw)) as $line) {
+            $line = trim($line);
+            if ($line === '' || strpos($line, 'cpu') === 0) {
+                continue;
+            }
+
+            $parts = preg_split('/\s+/', $line);
+            if (count($parts) < 2) {
+                continue;
+            }
+
+            $key = array_shift($parts);
+            $detail[$key] = count($parts) === 1 ? (int)$parts[0] : array_map('intval', $parts);
+        }
+
+        return [
+            'proc_stat_detail' => json_encode($detail),
+            'system_interrupts_total' => (int)($detail['intr'] ?? 0),
+            'system_context_switches_total' => (int)($detail['ctxt'] ?? 0),
+            'system_process_forks_total' => (int)($detail['processes'] ?? 0),
+            'system_processes_running' => (int)($detail['procs_running'] ?? 0),
+            'system_processes_blocked' => (int)($detail['procs_blocked'] ?? 0),
+            'system_softirq_total' => (int)($detail['softirq'][0] ?? 0),
+        ];
+    }
+
+    private function getNetworkStats($ssh): array
+    {
+        $rawDev = (string)$ssh->exec('cat /proc/net/dev');
+        $rawSnmp = (string)$ssh->exec('cat /proc/net/snmp');
+        $rawNetstat = (string)$ssh->exec('cat /proc/net/netstat');
+        $rawSockstat = (string)$ssh->exec('cat /proc/net/sockstat 2>/dev/null');
+        $rawSockstat6 = (string)$ssh->exec('cat /proc/net/sockstat6 2>/dev/null');
+
+        $interfaces = $this->parseProcNetDev($rawDev);
+        $protocols = [
+            'snmp' => $this->parseProcSnmpLike($rawSnmp),
+            'netstat' => $this->parseProcSnmpLike($rawNetstat),
+            'sockstat' => $this->parseSockstat($rawSockstat),
+            'sockstat6' => $this->parseSockstat($rawSockstat6),
+        ];
+
+        $summary = [
+            'rx_bytes' => 0,
+            'tx_bytes' => 0,
+            'rx_packets' => 0,
+            'tx_packets' => 0,
+            'rx_errors' => 0,
+            'tx_errors' => 0,
+            'rx_drop' => 0,
+            'tx_drop' => 0,
+        ];
+
+        foreach ($interfaces as $interface => $metrics) {
+            if ($interface === 'lo') {
+                continue;
+            }
+
+            $summary['rx_bytes'] += (int)($metrics['rx_bytes'] ?? 0);
+            $summary['tx_bytes'] += (int)($metrics['tx_bytes'] ?? 0);
+            $summary['rx_packets'] += (int)($metrics['rx_packets'] ?? 0);
+            $summary['tx_packets'] += (int)($metrics['tx_packets'] ?? 0);
+            $summary['rx_errors'] += (int)($metrics['rx_errors'] ?? 0);
+            $summary['tx_errors'] += (int)($metrics['tx_errors'] ?? 0);
+            $summary['rx_drop'] += (int)($metrics['rx_drop'] ?? 0);
+            $summary['tx_drop'] += (int)($metrics['tx_drop'] ?? 0);
+        }
+
+        return [
+            'network_detail' => json_encode($interfaces),
+            'network_protocol_detail' => json_encode($protocols),
+            'network_rx_bytes_total' => $summary['rx_bytes'],
+            'network_tx_bytes_total' => $summary['tx_bytes'],
+            'network_rx_packets_total' => $summary['rx_packets'],
+            'network_tx_packets_total' => $summary['tx_packets'],
+            'network_rx_errors_total' => $summary['rx_errors'],
+            'network_tx_errors_total' => $summary['tx_errors'],
+            'network_rx_drop_total' => $summary['rx_drop'],
+            'network_tx_drop_total' => $summary['tx_drop'],
+            'network_tcp_retrans_segs_total' => (int)($protocols['snmp']['Tcp']['RetransSegs'] ?? 0),
+            'network_tcp_in_errs_total' => (int)($protocols['snmp']['Tcp']['InErrs'] ?? 0),
+            'network_tcp_out_rsts_total' => (int)($protocols['snmp']['Tcp']['OutRsts'] ?? 0),
+            'network_udp_in_errors_total' => (int)($protocols['snmp']['Udp']['InErrors'] ?? 0),
+        ];
+    }
+
+    private function parseProcNetDev(string $raw): array
+    {
+        $interfaces = [];
+        $lines = preg_split('/\r?\n/', trim($raw));
+
+        foreach ($lines as $index => $line) {
+            if ($index < 2) {
+                continue;
+            }
+
+            $line = trim($line);
+            if ($line === '' || strpos($line, ':') === false) {
+                continue;
+            }
+
+            [$interface, $values] = array_map('trim', explode(':', $line, 2));
+            $parts = preg_split('/\s+/', $values);
+            if (count($parts) < 16) {
+                continue;
+            }
+
+            $interfaces[$interface] = [
+                'rx_bytes' => (int)$parts[0],
+                'rx_packets' => (int)$parts[1],
+                'rx_errors' => (int)$parts[2],
+                'rx_drop' => (int)$parts[3],
+                'rx_fifo' => (int)$parts[4],
+                'rx_frame' => (int)$parts[5],
+                'rx_compressed' => (int)$parts[6],
+                'rx_multicast' => (int)$parts[7],
+                'tx_bytes' => (int)$parts[8],
+                'tx_packets' => (int)$parts[9],
+                'tx_errors' => (int)$parts[10],
+                'tx_drop' => (int)$parts[11],
+                'tx_fifo' => (int)$parts[12],
+                'tx_colls' => (int)$parts[13],
+                'tx_carrier' => (int)$parts[14],
+                'tx_compressed' => (int)$parts[15],
+            ];
+        }
+
+        return $interfaces;
+    }
+
+    private function parseProcSnmpLike(string $raw): array
+    {
+        $result = [];
+        $lines = preg_split('/\r?\n/', trim($raw));
+
+        for ($i = 0; $i + 1 < count($lines); $i += 2) {
+            $header = trim($lines[$i]);
+            $values = trim($lines[$i + 1]);
+            if ($header === '' || $values === '' || strpos($header, ':') === false || strpos($values, ':') === false) {
+                continue;
+            }
+
+            [$prefixHeader, $headerFields] = array_map('trim', explode(':', $header, 2));
+            [$prefixValues, $valueFields] = array_map('trim', explode(':', $values, 2));
+            if ($prefixHeader !== $prefixValues) {
+                continue;
+            }
+
+            $keys = preg_split('/\s+/', $headerFields);
+            $vals = preg_split('/\s+/', $valueFields);
+            $row = [];
+            foreach ($keys as $index => $key) {
+                $row[$key] = is_numeric($vals[$index] ?? null) ? (int)$vals[$index] : ($vals[$index] ?? null);
+            }
+            $result[$prefixHeader] = $row;
+        }
+
+        return $result;
+    }
+
+    private function parseSockstat(string $raw): array
+    {
+        $result = [];
+
+        foreach (preg_split('/\r?\n/', trim($raw)) as $line) {
+            $line = trim($line);
+            if ($line === '' || strpos($line, ':') === false) {
+                continue;
+            }
+
+            [$family, $rest] = array_map('trim', explode(':', $line, 2));
+            $parts = preg_split('/\s+/', $rest);
+            $row = [];
+            for ($i = 0; $i + 1 < count($parts); $i += 2) {
+                $value = $parts[$i + 1];
+                $row[$parts[$i]] = is_numeric($value) ? (int)$value : $value;
+            }
+            $result[$family] = $row;
+        }
+
+        return $result;
+    }
+
+    private function getDiskIoStats($ssh): array
+    {
+        $raw = (string)$ssh->exec('cat /proc/diskstats');
+        if ($raw === '') {
+            return [];
+        }
+
+        $devices = $this->parseProcDiskstats($raw);
+        $summary = [
+            'reads_completed' => 0,
+            'writes_completed' => 0,
+            'read_bytes' => 0,
+            'write_bytes' => 0,
+            'io_time_ms' => 0,
+            'weighted_io_time_ms' => 0,
+        ];
+
+        foreach ($devices as $device) {
+            $summary['reads_completed'] += (int)($device['reads_completed'] ?? 0);
+            $summary['writes_completed'] += (int)($device['writes_completed'] ?? 0);
+            $summary['read_bytes'] += (int)($device['read_bytes'] ?? 0);
+            $summary['write_bytes'] += (int)($device['write_bytes'] ?? 0);
+            $summary['io_time_ms'] += (int)($device['io_time_ms'] ?? 0);
+            $summary['weighted_io_time_ms'] += (int)($device['weighted_io_time_ms'] ?? 0);
+        }
+
+        return [
+            'disk_io_detail' => json_encode($devices),
+            'disk_reads_completed_total' => $summary['reads_completed'],
+            'disk_writes_completed_total' => $summary['writes_completed'],
+            'disk_read_bytes_total' => $summary['read_bytes'],
+            'disk_write_bytes_total' => $summary['write_bytes'],
+            'disk_io_time_ms_total' => $summary['io_time_ms'],
+            'disk_weighted_io_time_ms_total' => $summary['weighted_io_time_ms'],
+        ];
+    }
+
+    private function parseProcDiskstats(string $raw): array
+    {
+        $devices = [];
+
+        foreach (preg_split('/\r?\n/', trim($raw)) as $line) {
+            $line = trim($line);
+            if ($line === '') {
+                continue;
+            }
+
+            $parts = preg_split('/\s+/', $line);
+            if (count($parts) < 14) {
+                continue;
+            }
+
+            $device = $parts[2];
+            if (!$this->isTrackedDiskDevice($device)) {
+                continue;
+            }
+
+            $readSectors = (int)($parts[5] ?? 0);
+            $writtenSectors = (int)($parts[9] ?? 0);
+
+            $devices[$device] = [
+                'reads_completed' => (int)($parts[3] ?? 0),
+                'reads_merged' => (int)($parts[4] ?? 0),
+                'read_sectors' => $readSectors,
+                'read_bytes' => $readSectors * 512,
+                'read_time_ms' => (int)($parts[6] ?? 0),
+                'writes_completed' => (int)($parts[7] ?? 0),
+                'writes_merged' => (int)($parts[8] ?? 0),
+                'write_sectors' => $writtenSectors,
+                'write_bytes' => $writtenSectors * 512,
+                'write_time_ms' => (int)($parts[10] ?? 0),
+                'io_in_progress' => (int)($parts[11] ?? 0),
+                'io_time_ms' => (int)($parts[12] ?? 0),
+                'weighted_io_time_ms' => (int)($parts[13] ?? 0),
+                'discard_completed' => (int)($parts[14] ?? 0),
+                'discard_merged' => (int)($parts[15] ?? 0),
+                'discard_sectors' => (int)($parts[16] ?? 0),
+                'discard_time_ms' => (int)($parts[17] ?? 0),
+                'flush_completed' => (int)($parts[18] ?? 0),
+                'flush_time_ms' => (int)($parts[19] ?? 0),
+            ];
+        }
+
+        return $devices;
+    }
+
+    private function isTrackedDiskDevice(string $device): bool
+    {
+        return (bool)preg_match('/^(sd[a-z]+|vd[a-z]+|xvd[a-z]+|hd[a-z]+|nvme\d+n\d+|md\d+|dm-\d+)$/', $device);
+    }
+
+    private function getProcessStateStats($ssh): array
+    {
+        $raw = (string)$ssh->exec("ps -eo state= 2>/dev/null");
+        if ($raw === '') {
+            return [];
+        }
+
+        return $this->parseProcessStates($raw);
+    }
+
+    private function parseProcessStates(string $raw): array
+    {
+        $counts = [
+            'R' => 0,
+            'S' => 0,
+            'D' => 0,
+            'T' => 0,
+            'Z' => 0,
+            'I' => 0,
+        ];
+        $total = 0;
+
+        foreach (preg_split('/\r?\n/', trim($raw)) as $line) {
+            $state = strtoupper(substr(trim($line), 0, 1));
+            if ($state === '') {
+                continue;
+            }
+            if (!isset($counts[$state])) {
+                $counts[$state] = 0;
+            }
+            $counts[$state]++;
+            $total++;
+        }
+
+        return [
+            'process_state_detail' => json_encode($counts),
+            'process_total' => $total,
+            'process_running' => (int)($counts['R'] ?? 0),
+            'process_sleeping' => (int)($counts['S'] ?? 0),
+            'process_disk_sleep' => (int)($counts['D'] ?? 0),
+            'process_stopped' => (int)($counts['T'] ?? 0),
+            'process_zombie' => (int)($counts['Z'] ?? 0),
+            'process_idle' => (int)($counts['I'] ?? 0),
+        ];
+    }
+
+    private function parseDfDisks(string $raw): array
+    {
+        $rows = [];
+        $lines = preg_split('/\r?\n/', trim($raw));
+
+        foreach ($lines as $index => $line) {
+            if ($index === 0) {
+                continue;
+            }
+
+            $line = trim($line);
+            if ($line === '') {
+                continue;
+            }
+
+            $parts = preg_split('/\s+/', $line, 7);
+            if (count($parts) < 7) {
+                continue;
+            }
+
+            $rows[] = [
+                'Filesystem' => (string)$parts[0],
+                'Type' => (string)$parts[1],
+                'Total' => (string)$parts[2],
+                'Size' => (string)$parts[2],
+                'Used' => (string)$parts[3],
+                'Avail' => (string)$parts[4],
+                'Available' => (string)$parts[4],
+                'Use%' => (string)$parts[5],
+                'Mounted' => (string)$parts[6],
+                'Mounted on' => (string)$parts[6],
+            ];
+        }
+
+        return $rows;
+    }
+
+/**
+ * Retrieve aspirateur state through `getMysqlDatadirContext`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @return array Returned value for getMysqlDatadirContext.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::getMysqlDatadirContext()
+ * @example /fr/aspirateur/getMysqlDatadirContext
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function getMysqlDatadirContext(int $id_mysql_server): array
+    {
+        $context = [
+            'datadir' => '',
+            'log_bin_basename' => '',
+            'relay_log_basename' => '',
+        ];
+
+        try {
+            $vars = Extraction2::display([
+                'variables::datadir',
+                'variables::log_bin_basename',
+                'variables::relay_log_basename',
+            ], [$id_mysql_server]);
+
+            if (!empty($vars[$id_mysql_server]) && is_array($vars[$id_mysql_server])) {
+                $row = $vars[$id_mysql_server];
+                $context['datadir'] = trim((string)($row['datadir'] ?? ''));
+                $context['log_bin_basename'] = trim((string)($row['log_bin_basename'] ?? ''));
+                $context['relay_log_basename'] = trim((string)($row['relay_log_basename'] ?? ''));
+            }
+        } catch (\Throwable $e) {
+            $this->logger->warning(
+                '[SST] Unable to load MySQL datadir context for id_mysql_server:'.$id_mysql_server
+                .' message:'.$e->getMessage()
+            );
+        }
+
+        return $context;
+    }
+
+/**
+ * Retrieve aspirateur state through `getMysqlDatadirStats`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $ssh Input value for `ssh`.
+ * @phpstan-param mixed $ssh
+ * @psalm-param mixed $ssh
+ * @param array $mysqlContext Input value for `mysqlContext`.
+ * @phpstan-param array $mysqlContext
+ * @psalm-param array $mysqlContext
+ * @return array Returned value for getMysqlDatadirStats.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::getMysqlDatadirStats()
+ * @example /fr/aspirateur/getMysqlDatadirStats
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function getMysqlDatadirStats($ssh, array $mysqlContext): array
+    {
+        $ret = [
+            'mysql_datadir_path' => '',
+            'mysql_datadir_total_size' => 0,
+            'mysql_datadir_clean_size' => 0,
+            'mysql_sst_elapsed_sec' => 0,
+            'mysql_sst_in_progress' => 0,
+        ];
+
+        $datadir = trim((string)($mysqlContext['datadir'] ?? ''));
+        if ($datadir !== '' && $datadir[0] === '/') {
+            $datadir = rtrim($datadir, '/');
+            if ($datadir === '') {
+                $datadir = '/';
+            }
+
+            $ret['mysql_datadir_path'] = $datadir;
+
+            $cmdTotal = "du -sb ".escapeshellarg($datadir)." 2>/dev/null | cut -f1";
+            $totalOut = trim((string)$ssh->exec($cmdTotal));
+
+            if (is_numeric($totalOut)) {
+                $ret['mysql_datadir_total_size'] = (int)$totalOut;
+            } else {
+                // Fallback (environnement sans option -b) => du -sk puis conversion en octets
+                $cmdTotalFallback = "du -sk ".escapeshellarg($datadir)." 2>/dev/null | cut -f1";
+                $totalOutKb = trim((string)$ssh->exec($cmdTotalFallback));
+
+                if (is_numeric($totalOutKb)) {
+                    $ret['mysql_datadir_total_size'] = (int)$totalOutKb * 1024;
+                }
+            }
+
+            $ret['mysql_datadir_clean_size'] = $this->getMysqlDatadirCleanSize(
+                $ssh,
+                $datadir,
+                (string)($mysqlContext['log_bin_basename'] ?? ''),
+                (string)($mysqlContext['relay_log_basename'] ?? '')
+            );
+        }
+
+        $elapsed = $this->getSstElapsedSeconds($ssh);
+        $ret['mysql_sst_elapsed_sec'] = $elapsed;
+        $ret['mysql_sst_in_progress'] = ($elapsed > 0) ? 1 : 0;
+
+        return $ret;
+    }
+
+/**
+ * Retrieve aspirateur state through `getMysqlDatadirCleanSize`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $ssh Input value for `ssh`.
+ * @phpstan-param mixed $ssh
+ * @psalm-param mixed $ssh
+ * @param string $datadir Input value for `datadir`.
+ * @phpstan-param string $datadir
+ * @psalm-param string $datadir
+ * @param string $logBinBasename Input value for `logBinBasename`.
+ * @phpstan-param string $logBinBasename
+ * @psalm-param string $logBinBasename
+ * @param string $relayLogBasename Input value for `relayLogBasename`.
+ * @phpstan-param string $relayLogBasename
+ * @psalm-param string $relayLogBasename
+ * @return int Returned value for getMysqlDatadirCleanSize.
+ * @phpstan-return int
+ * @psalm-return int
+ * @see self::getMysqlDatadirCleanSize()
+ * @example /fr/aspirateur/getMysqlDatadirCleanSize
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function getMysqlDatadirCleanSize($ssh, string $datadir, string $logBinBasename, string $relayLogBasename): int
+    {
+        $excludeNamePatterns = [
+            'ib_logfile*',
+            'ibtmp*',
+            'aria_log*',
+        ];
+
+        $binBase = basename(trim($logBinBasename));
+        if ($binBase !== '' && $binBase !== '.' && $binBase !== '/') {
+            $excludeNamePatterns[] = $binBase.'*';
+        }
+
+        $relayBase = basename(trim($relayLogBasename));
+        if ($relayBase !== '' && $relayBase !== '.' && $relayBase !== '/') {
+            $excludeNamePatterns[] = $relayBase.'*';
+        }
+
+        // fallback patterns courants quand les basenames ne sont pas disponibles
+        $excludeNamePatterns[] = 'mysql-bin*';
+        $excludeNamePatterns[] = 'mariadb-bin*';
+        $excludeNamePatterns[] = 'relay-bin*';
+
+        $excludeNamePatterns = array_values(array_unique(array_filter($excludeNamePatterns)));
+
+        $filters = '';
+        foreach ($excludeNamePatterns as $pattern) {
+            $filters .= ' ! -name '.escapeshellarg($pattern);
+        }
+
+        $excludePathPatterns = [
+            './#innodb_redo/*',
+            './#innodb_temp/*',
+        ];
+        foreach ($excludePathPatterns as $pathPattern) {
+            $filters .= ' ! -path '.escapeshellarg($pathPattern);
+        }
+
+        $cmd = 'cd '.escapeshellarg($datadir).' 2>/dev/null && '
+            .'find . -type f'.$filters.' -printf \'%s\\n\' 2>/dev/null '
+            .'| awk \'{s+=$1} END{printf "%0.f", s+0}\'';
+
+        $out = trim((string)$ssh->exec($cmd));
+        if (!is_numeric($out)) {
+            return 0;
+        }
+
+        return (int)$out;
+    }
+
+/**
+ * Retrieve aspirateur state through `getSstElapsedSeconds`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $ssh Input value for `ssh`.
+ * @phpstan-param mixed $ssh
+ * @psalm-param mixed $ssh
+ * @return int Returned value for getSstElapsedSeconds.
+ * @phpstan-return int
+ * @psalm-return int
+ * @see self::getSstElapsedSeconds()
+ * @example /fr/aspirateur/getSstElapsedSeconds
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function getSstElapsedSeconds($ssh): int
+    {
+        $cmd = 'ps -eo etimes,args --no-headers 2>/dev/null '
+            .'| awk \'/wsrep_sst|mariadb-backup|xtrabackup|mbstream|sst_donor|sst_joiner/ && $0 !~ /awk/ '
+            .'{ if ($1+0 > max) max=$1+0 } END { print max+0 }\'';
+
+        $out = trim((string)$ssh->exec($cmd));
+        if (!is_numeric($out)) {
+            return 0;
+        }
+
+        return (int)$out;
+    }
+
+
+/**
+ * Handle aspirateur state through `binaryLog`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for binaryLog.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::binaryLog()
+ * @example /fr/aspirateur/binaryLog
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function binaryLog($param)
     {
         Debug::parseDebug($param);
@@ -928,6 +3168,9 @@ class Aspirateur extends Controller
         $mysql_tested = Mysql::getDbLink($id_mysql_server);
 
         if ($mysql_tested->testAccess()) {
+
+            // If BACKUP STAGE BLOCK_COMMIT detectednot lunch 
+            // TO DO => case of mariadb backup need to stop that process
 
             $sql = "SHOW BINARY LOGS;";
             $res = $mysql_tested->sql_query($sql);
@@ -959,6 +3202,24 @@ class Aspirateur extends Controller
         return false;
     }
 
+/**
+ * Retrieve aspirateur state through `getArbitrator`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for getArbitrator.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getArbitrator()
+ * @example /fr/aspirateur/getArbitrator
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getArbitrator()
     {
 // cat error.log | grep -oE 'tcp://[0-9]+.[0-9]+.[0-9]+.[0-9]+:4567' | sort -d | uniq -c | grep -v '0.0.0.0'
@@ -967,6 +3228,27 @@ class Aspirateur extends Controller
 
 
 
+/**
+ * Retrieve aspirateur state through `getDatabase`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $mysql_tested Input value for `mysql_tested`.
+ * @phpstan-param mixed $mysql_tested
+ * @psalm-param mixed $mysql_tested
+ * @return mixed Returned value for getDatabase.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getDatabase()
+ * @example /fr/aspirateur/getDatabase
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getDatabase($mysql_tested)
     {
 //$grants = $this->getGrants();
@@ -982,7 +3264,7 @@ class Aspirateur extends Controller
         }
 
         // TEMPORARY => from MariaDB 10.3
-        if ($mysql_tested->checkVersion(array("MariaDB", "10.3"), array("Percona", "5.7"), array("MySQL", "5.7")))
+        if (ServerCapabilities::supports($mysql_tested, 'information_schema_tables_temporary_column'))
         {
             $sql = "select TABLE_CATALOG , TABLE_SCHEMA , TABLE_NAME, TABLE_TYPE , ENGINE,  ROW_FORMAT,
          TABLE_COLLATION, CREATE_OPTIONS, TABLE_COMMENT, TEMPORARY
@@ -997,7 +3279,7 @@ class Aspirateur extends Controller
         
         Debug::sql($sql);
 
-        $res = $mysql_tested->sql_query($sql);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($mysql_tested, $sql, null, __METHOD__);
         if ($res) {
             if ($mysql_tested->sql_num_rows($res) > 0) {
                 $dbs = array();
@@ -1012,6 +3294,27 @@ class Aspirateur extends Controller
         return false;
     }
 
+/**
+ * Retrieve aspirateur state through `getSwap`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $membrut Input value for `membrut`.
+ * @phpstan-param mixed $membrut
+ * @psalm-param mixed $membrut
+ * @return mixed Returned value for getSwap.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getSwap()
+ * @example /fr/aspirateur/getSwap
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getSwap($membrut)
     {
         Debug::debug($membrut);
@@ -1108,6 +3411,27 @@ class Aspirateur extends Controller
 //$sql2 = "SELECT * FROM wsrep_cluster_members;";
     }
 
+/**
+ * Retrieve aspirateur state through `getLockingQueries`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getLockingQueries.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getLockingQueries()
+ * @example /fr/aspirateur/getLockingQueries
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getLockingQueries($param = array())
     {
 
@@ -1147,6 +3471,27 @@ GROUP BY C.ID, C.INFO;";
         }
     }
 
+/**
+ * Retrieve aspirateur state through `getProxySQL`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getProxySQL.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getProxySQL()
+ * @example /fr/aspirateur/getProxySQL
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getProxySQL($param = array())
     {
         Debug::parseDebug($param);
@@ -1156,6 +3501,27 @@ GROUP BY C.ID, C.INFO;";
 
 
 
+/**
+ * Handle aspirateur state through `testProxy`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for testProxy.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::testProxy()
+ * @example /fr/aspirateur/testProxy
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function testProxy($param)
     {
         Debug::parseDebug($param);
@@ -1170,6 +3536,159 @@ GROUP BY C.ID, C.INFO;";
         }
     }
 
+    private function isKnownMaxScaleReadWriteSplitEndpoint(int $id_mysql_server, string $host, int $port): bool
+    {
+        try {
+            $data = Extraction2::display(
+                array("is_maxscale", "version_comment", "maxscale::maxscale_listeners", "maxscale::maxscale_services"),
+                array($id_mysql_server)
+            );
+        } catch (\Throwable $e) {
+            return false;
+        }
+
+        return $this->isMaxScaleReadWriteSplitEndpointData($data[$id_mysql_server] ?? array(), $host, $port);
+    }
+
+    private function isMaxScaleReadWriteSplitEndpointData(array $data, string $host, int $port): bool
+    {
+        $isMaxScale = ((string)($data['is_maxscale'] ?? '') === '1')
+            || (strcasecmp((string)($data['version_comment'] ?? ''), 'MaxScale') === 0);
+
+        if (!$isMaxScale) {
+            return false;
+        }
+
+        $readWriteSplitServices = array();
+        foreach (($data['maxscale_services']['data'] ?? array()) as $service) {
+            if (!is_array($service)) {
+                continue;
+            }
+
+            $serviceId = (string)($service['id'] ?? '');
+            $router = strtolower((string)($service['attributes']['router'] ?? ''));
+            if ($serviceId !== '' && $router === 'readwritesplit') {
+                $readWriteSplitServices[$serviceId] = true;
+            }
+        }
+
+        if (empty($readWriteSplitServices)) {
+            return false;
+        }
+
+        $listeners = $data['maxscale_listeners']['data'] ?? array();
+        if (empty($listeners)) {
+            return true;
+        }
+
+        foreach ($listeners as $listener) {
+            if (!is_array($listener) || !$this->maxScaleListenerMatchesEndpoint($listener, $host, $port)) {
+                continue;
+            }
+
+            foreach (($listener['relationships']['services']['data'] ?? array()) as $serviceRef) {
+                $serviceId = (string)($serviceRef['id'] ?? '');
+                if ($serviceId !== '' && isset($readWriteSplitServices[$serviceId])) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private function maxScaleListenerMatchesEndpoint(array $listener, string $host, int $port): bool
+    {
+        $listenerPort = (int)($listener['attributes']['parameters']['port'] ?? 0);
+        if ($listenerPort !== $port) {
+            return false;
+        }
+
+        $listenerHost = trim((string)($listener['attributes']['parameters']['address'] ?? ''));
+        if ($listenerHost === '' || $listenerHost === '0.0.0.0' || $listenerHost === '::') {
+            return true;
+        }
+
+        return MaxScale::normalizeEndpointHost($listenerHost) === MaxScale::normalizeEndpointHost($host);
+    }
+
+    private function isTransientProxySessionLoss(string $error): bool
+    {
+        $patterns = array(
+            'gone away',
+            'lost connection',
+            '(2006)',
+            '(2013)',
+            'failed to route query',
+            'closing connection',
+        );
+        $error = strtolower($error);
+
+        foreach ($patterns as $pattern) {
+            if (strpos($error, $pattern) !== false) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function exportMaxScaleProxyVariables(int $id_mysql_server): void
+    {
+        $var_temp = array();
+        $var_temp['variables']['is_proxy'] = "1";
+        $var_temp['variables']['is_maxscale'] = "1";
+        $var_temp['variables']['version'] = MaxScale::getVersion(array($id_mysql_server));
+        $var_temp['variables']['version_comment'] = "MaxScale";
+
+        $this->exportData($id_mysql_server, "mysql_global_variable", $var_temp);
+    }
+
+    private function isKnownMysqlRouterEndpoint(int $id_mysql_server): bool
+    {
+        try {
+            $db = Sgbd::sql(DB_DEFAULT);
+            $sql = "SELECT 1 FROM mysqlrouter_server__mysql_server WHERE id_mysql_server=" . $id_mysql_server . " LIMIT 1";
+            $res = Mysql::sqlQuerySilentCompat($db, $sql);
+            if ($res === false) {
+                $db->sql_close();
+                return false;
+            }
+
+            $isKnown = $db->sql_num_rows($res) > 0;
+            $db->sql_close();
+
+            return $isKnown;
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    private function shouldRunProxyTransactionProbe(int $isProxy, int $isVip, bool $isMysqlRouterEndpoint): bool
+    {
+        return !empty($isProxy) && empty($isVip) && !$isMysqlRouterEndpoint;
+    }
+
+    private function readMysqlServerBanner($mysql): string
+    {
+        if (empty($mysql->link)) {
+            return '';
+        }
+
+        try {
+            return (string) mysqli_get_server_info($mysql->link);
+        } catch (\Throwable $e) {
+            return '';
+        }
+    }
+
+    private function isMysqlRouterSignature(string $serverBanner, string $version = '', string $versionComment = ''): bool
+    {
+        return ($serverBanner !== '' && stripos($serverBanner, '-router') !== false)
+            || ($version !== '' && stripos($version, '-router') !== false)
+            || ($versionComment !== '' && stripos($versionComment, 'router') !== false);
+    }
+
 
     /*
      * available = 0 : server down
@@ -1177,10 +3696,15 @@ GROUP BY C.ID, C.INFO;";
      * available = 2 : waiting answer
      * 
      */
-    public function setService($id_mysql_server, $ping, $error_msg, $available, $type)
+    public function setService($id_mysql_server, $ping, $error_msg, $available, $type, array $attemptContext = array())
     {
-        if (! in_array($type, array('mysql', 'ssh'))) {
+        if (! in_array($type, array('mysql', 'ssh', 'proxysql', 'maxscale', 'maxscale_service', 'mysqlrouter'))) {
             die('error');
+        }
+
+        $previousAvailable = null;
+        if (!$this->shouldSkipAspirateurAttempt($attemptContext)) {
+            $previousAvailable = $this->readPreviousServiceAvailability((int)$id_mysql_server, $type);
         }
 
         $service                              = array();
@@ -1188,9 +3712,112 @@ GROUP BY C.ID, C.INFO;";
         $service[$type.'_server'][$type.'_ping']      = round($ping, 6);
         $service[$type.'_server'][$type.'_error']     = $error_msg;
         $this->exportData($id_mysql_server,$type.'_server',$service,false);
+
+        if (!$this->shouldSkipAspirateurAttempt($attemptContext)) {
+            $attemptContext = array_merge(array(
+                'id_mysql_server' => (int)$id_mysql_server,
+                'kind' => $type,
+                'phase' => 'connect',
+                'result' => (int)$available,
+                'ping_seconds' => (float)$ping,
+                'error_message' => $error_msg,
+                'previous_result' => $previousAvailable,
+            ), $attemptContext);
+
+            AspirateurAttemptLogger::log($attemptContext);
+        }
+    }
+
+    private function getWorkerExecutionIdFromParam($param): int
+    {
+        if (!is_array($param) || !isset($param[3]) || !is_numeric($param[3])) {
+            return 0;
+        }
+
+        return (int)$param[3];
+    }
+
+    private function aspirateurAttemptContext($param, array $context = array()): array
+    {
+        return array_merge(array(
+            'id_worker_execution' => $this->getWorkerExecutionIdFromParam($param),
+        ), $context);
+    }
+
+    private function shouldSkipAspirateurAttempt(array $context): bool
+    {
+        if (empty($context['id_worker_execution']) || (int)$context['id_worker_execution'] <= 0) {
+            return true;
+        }
+
+        return isset($context['connection_name'])
+            && defined('DB_DEFAULT')
+            && (string)$context['connection_name'] === (string)DB_DEFAULT;
+    }
+
+    private function readPreviousServiceAvailability(int $idMysqlServer, string $type): ?int
+    {
+        if ($idMysqlServer <= 0) {
+            return null;
+        }
+
+        try {
+            $metric = $type.'_available';
+            $rows = Extraction2::display(array($metric), array($idMysqlServer));
+            $value = $rows[$idMysqlServer][$metric] ?? null;
+
+            return is_numeric($value) ? (int)$value : null;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    private function readOnlyReasonFromConnection($mysql): ?string
+    {
+        $values = array();
+        foreach (array('read_only', 'super_read_only') as $variableName) {
+            $res = Mysql::sqlQuerySilentCompat($mysql, "SHOW VARIABLES LIKE '".$variableName."'");
+            if ($res === false) {
+                continue;
+            }
+
+            $row = $mysql->sql_fetch_array($res, MYSQLI_ASSOC);
+            if (is_array($row)) {
+                $values[$variableName] = $row['Value'] ?? $row['VALUE'] ?? null;
+            }
+        }
+
+        if (empty($values)) {
+            return null;
+        }
+
+        $json = json_encode($values, JSON_UNESCAPED_SLASHES);
+
+        return is_string($json) ? $json : null;
     }
 
 
+/**
+ * Handle aspirateur state through `debug`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for debug.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::debug()
+ * @example /fr/aspirateur/debug
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function debug($param)
     {
         Debug::parseDebug($param);
@@ -1203,19 +3830,94 @@ GROUP BY C.ID, C.INFO;";
     }
 
 
+/**
+ * Retrieve aspirateur state through `getSchema`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @return mixed Returned value for getSchema.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getSchema()
+ * @example /fr/aspirateur/getSchema
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getSchema($id_mysql_server)
     {
         $mysql_tested = Mysql::getDbLink($id_mysql_server);
         $schemas = array();
-        if ($mysql_tested->testAccess()) {
 
-            //$this->logger->debug("We import schema list from id_mysql_server : ".$id_mysql_server);
-            $sql = "SELECT * FROM information_schema.schemata";
+        $srvVersion = '';
+        $srvComment = '';
 
-            $res = $mysql_tested->sql_query($sql);
+        // Get version from connection handshake first (no SQL, always available).
+        // Fall back to SELECT @@version if needed.
+        if (isset($mysql_tested->link) && $mysql_tested->link instanceof \mysqli) {
+            $srvVersion = $mysql_tested->link->server_info ?? '';
+        }
+        if ($srvVersion === '') {
+            $resV = Mysql::sqlQuerySilentCompat($mysql_tested, "SELECT @@version AS v");
+            if ($resV && $rowV = $mysql_tested->sql_fetch_array($resV, MYSQLI_ASSOC)) {
+                $srvVersion = $rowV['v'] ?? '';
+            }
+        }
 
+        // @@version_comment exists since MySQL 5.0.1
+        if (MysqlVersion::atLeast($srvVersion, '5.0.1')) {
+            $resC = Mysql::sqlQuerySilentCompat($mysql_tested, "SELECT @@version_comment AS c");
+            if ($resC && $rowC = $mysql_tested->sql_fetch_array($resC, MYSQLI_ASSOC)) {
+                $srvComment = $rowC['c'] ?? '';
+            }
+        }
+
+        // information_schema exists since MySQL 5.0; skip schemata query on older servers.
+        $res = false;
+        if (MysqlVersion::numeric($srvVersion) === '' || MysqlVersion::atLeast($srvVersion, '5.0.0')) {
+            $res = Mysql::sqlQuerySilentCompat($mysql_tested, $this->getSchemaQuery($srvVersion, $srvComment));
+        }
+
+        if ($res) {
             while ($arr = $mysql_tested->sql_fetch_array($res, MYSQLI_ASSOC)) {
-                $schemas[] = array_change_key_case($arr);
+                $schemas[] = [
+                    'schema_name'                => $arr['schema_name'] ?? '',
+                    'default_character_set_name' => $arr['default_character_set_name'] ?? '',
+                    'default_collation_name'     => $arr['default_collation_name'] ?? '',
+                    'catalog_name'               => $arr['catalog_name'] ?? '',
+                    'sql_path'                   => $arr['sql_path'] ?? '',
+                    'schema_comment'             => $arr['schema_comment'] ?? '',
+                ];
+            }
+        }
+
+        if (empty($schemas)) {
+            $res = Mysql::sqlQuerySilentCompat($mysql_tested, "SHOW DATABASES");
+
+            if ($res) {
+                while ($arr = $mysql_tested->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                    $schemaName = reset($arr) ?: '';
+
+                    if ($schemaName === '') {
+                        continue;
+                    }
+
+                    $schemas[] = [
+                        'schema_name'                => $schemaName,
+                        'default_character_set_name' => '',
+                        'default_collation_name'     => '',
+                        'catalog_name'               => 'def',
+                        'sql_path'                   => null,
+                        'schema_comment'             => '',
+                    ];
+                }
             }
         }
         
@@ -1230,6 +3932,27 @@ GROUP BY C.ID, C.INFO;";
 
 
     // Dans le cas des worker pour eviter de les relancer on recharge la configuation des serveurs MySQL, lorsque un nouveau server est ajouté.
+/**
+ * Handle aspirateur state through `keepConfigFile`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for keepConfigFile.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::keepConfigFile()
+ * @example /fr/aspirateur/keepConfigFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function keepConfigFile($param)
     {
         Debug::parseDebug($param);
@@ -1252,6 +3975,27 @@ GROUP BY C.ID, C.INFO;";
 
 
 
+/**
+ * Handle aspirateur state through `testproxysql`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for testproxysql.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::testproxysql()
+ * @example /fr/aspirateur/testproxysql
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function testproxysql($param)
     {
         $db = Sgbd::sql('server_6612a9fcb1641');
@@ -1268,7 +4012,7 @@ GROUP BY C.ID, C.INFO;";
     */
 
     
-    public function exportData($id_mysql_server, $ts_file, array $data, $check_data = true)
+    public function exportData($id_mysql_server, $ts_file, array $data, $check_data = true, $separator=EngineV4::SEPERATOR)
     {
         Debug::debug("exportData $id_mysql_server, $ts_file, ".count($data)."");
 
@@ -1277,7 +4021,7 @@ GROUP BY C.ID, C.INFO;";
 
         if (! is_array($data)) {
             trigger_error("PMATRL-347 : data must be an array", E_USER_ERROR);
-            throw new \Exception("data must be an array !");
+            throw new Exception("data must be an array !");
         }
         
         $import = true;
@@ -1293,14 +4037,45 @@ GROUP BY C.ID, C.INFO;";
             //$ts_in_µs = Microsecond::timestamp();
             $ts  = time();
 
+
             $tmp[$ts][$id_mysql_server] = $data;
 
-            $memory = $this->allocate_shared_storage($ts_file);
+            Debug::debug($tmp, "DATA IMPORTED");
+
+            $memory = $this->allocate_shared_storage($ts_file, $separator);
             $memory->{$id_mysql_server}     = $tmp;
         }
     }
 
 
+/**
+ * Handle aspirateur state through `isDataModified`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param mixed $ts_file Input value for `ts_file`.
+ * @phpstan-param mixed $ts_file
+ * @psalm-param mixed $ts_file
+ * @param array<int|string,mixed> $data Input value for `data`.
+ * @phpstan-param array<int|string,mixed> $data
+ * @psalm-param array<int|string,mixed> $data
+ * @return mixed Returned value for isDataModified.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::isDataModified()
+ * @example /fr/aspirateur/isDataModified
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function isDataModified($id_mysql_server, $ts_file, $data)
     {
         self::isValidStruc($data);
@@ -1325,7 +4100,7 @@ GROUP BY C.ID, C.INFO;";
             }
         } else {
             if (!is_writable(dirname($file_md5))) {
-                Throw new \Exception('PMACTRL-858 : Cannot write file in directory : '.dirname($file_md5).'');
+                Throw new Exception('PMACTRL-858 : Cannot write file in directory : '.dirname($file_md5).'');
             } 
             file_put_contents($file_md5, $md5);
             $export = true;
@@ -1334,6 +4109,27 @@ GROUP BY C.ID, C.INFO;";
         return $export;
     }
 
+/**
+ * Handle aspirateur state through `test2`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for test2.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::test2()
+ * @example /fr/aspirateur/test2
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function test2($param)
     {
         Debug::parseDebug($param);
@@ -1401,12 +4197,20 @@ GROUP BY C.ID, C.INFO;";
     */
     function after($param)
     {
+
+
         // need test if root
         //$this->updateChown(); => t1 pourquoi j'ai pas mis ca la avant :D
         if (posix_geteuid() === 0) {
 
+            shell_exec("chown www-data:www-data -R ".EngineV4::PATH_PIVOT_FILE);
+            shell_exec("chown www-data:www-data -R ".EngineV4::PATH_MD5);
+            shell_exec("chown www-data:www-data -R ".EngineV4::PATH_PID);
+            shell_exec("chown www-data:www-data -R ".EngineV4::PATH_LOCK);
+
             Debug::debug("Time to wait all PIVOT_FILE to be created to change chown because we are root");
-            sleep(1);
+            usleep(50000);
+            
             //case debian
             shell_exec("chown www-data:www-data -R ".EngineV4::PATH_PIVOT_FILE);
             shell_exec("chown www-data:www-data -R ".EngineV4::PATH_MD5);
@@ -1418,6 +4222,28 @@ GROUP BY C.ID, C.INFO;";
 
     }
 
+/**
+ * Handle aspirateur state through `isValidStruc`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $array Input value for `array`.
+ * @phpstan-param mixed $array
+ * @psalm-param mixed $array
+ * @return mixed Returned value for isValidStruc.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::isValidStruc()
+ * @example /fr/aspirateur/isValidStruc
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function isValidStruc($array) {
         // Vérifier si le tableau est un tableau à deux niveaux
         foreach ($array as $key => $value) {
@@ -1429,20 +4255,49 @@ GROUP BY C.ID, C.INFO;";
                             return true;
                         }
 
+                        if (isset($subValue['seconds_behind_master'])){
+                            return true;
+                        }
+
+                        if (isset($subValue['Digest'])){
+                            return true;
+                        }
+
                         //Debug::debug($subValue, "NOT A STRING");
                         trigger_error("PMATRL-478 : Wrong level of DATA (One rank of Array too much) check : $key", E_USER_ERROR);
-                        throw new \Exception("Wrong level of DATA (One rank of Array too much) check : $key");
+                        throw new Exception("Wrong level of DATA (One rank of Array too much) check : $key");
                     }
                 }
             } else {
                 trigger_error("PMATRL-83 : Wrong level of DATA (One rank of Array missing) check : $key", E_USER_ERROR);
-                throw new \Exception("Wrong level of DATA (One rank of Array missing) check : $key");
+                throw new Exception("Wrong level of DATA (One rank of Array missing) check : $key");
             }
         }
         return true; // Tout est vérifié, retourner true
     }
 
 
+/**
+ * Retrieve aspirateur state through `getMysqlLatencyByQuery`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $name_server Input value for `name_server`.
+ * @phpstan-param mixed $name_server
+ * @psalm-param mixed $name_server
+ * @return mixed Returned value for getMysqlLatencyByQuery.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getMysqlLatencyByQuery()
+ * @example /fr/aspirateur/getMysqlLatencyByQuery
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getMysqlLatencyByQuery($name_server)
     {
         
@@ -1516,13 +4371,281 @@ GROUP BY C.ID, C.INFO;";
         return $data;
     }
 
+    private function getMasterStatusFromConnection(
+        $db,
+        string $version,
+        string $versionComment = '',
+        bool $isSingleStore = false
+    ): array {
+        $sql = $this->getMasterStatusCommand($version, $versionComment, $isSingleStore);
+        if ($sql === null) {
+            return array();
+        }
+
+        $res = Mysql::sqlQuerySilentCompat($db, $sql);
+        if ($res === false || (int)$db->sql_num_rows($res) === 0) {
+            return array();
+        }
+
+        $row = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+
+        return is_array($row) ? $row : array();
+    }
+
+    private function getMasterStatusCommand(
+        string $version,
+        string $versionComment = '',
+        bool $isSingleStore = false
+    ): ?string {
+        if (
+            $isSingleStore
+            || MysqlVersion::isSingleStore($version, $versionComment)
+        ) {
+            return null;
+        }
+
+        if (MysqlVersion::numeric($version) === '') {
+            return null;
+        }
+
+        $isMariaDB = MysqlVersion::isMariaDb($version, $versionComment);
+        if (!$isMariaDB && MysqlVersion::atLeast($version, '8.4.0')) {
+            return "SHOW BINARY LOG STATUS";
+        }
+
+        return "SHOW MASTER STATUS";
+    }
+
+    private function getGroupReplicationStatusFromConnection(
+        $db,
+        string $version,
+        string $versionComment = ''
+    ): array {
+        $capabilities = $this->getGroupReplicationCapabilities($db, $version, $versionComment);
+        if (empty($capabilities['supported'])) {
+            return array();
+        }
+
+        $serverUuid = (string)($capabilities['server_uuid'] ?? '');
+        if ($serverUuid === '') {
+            return array();
+        }
+
+        $hasMemberRole = !empty($capabilities['has_member_role']);
+
+        $memberRoleSql = $hasMemberRole ? "MEMBER_ROLE" : "'' AS MEMBER_ROLE";
+        $serverUuidSql = "'".$db->sql_real_escape_string($serverUuid)."'";
+        $sql = "SELECT ".$memberRoleSql.", MEMBER_STATE
+        FROM performance_schema.replication_group_members
+        WHERE MEMBER_ID = ".$serverUuidSql;
+
+        $res = Mysql::sqlQuerySilentCompat($db, $sql);
+        if ($res === false) {
+            return array();
+        }
+
+        $row = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+        if (!is_array($row)) {
+            return array();
+        }
+
+        return array(
+            'gr_member_role' => $row['MEMBER_ROLE'] ?? '',
+            'gr_member_state' => $row['MEMBER_STATE'] ?? '',
+        );
+    }
+
+    private function getGroupReplicationCapabilities($db, string $version, string $versionComment = ''): array
+    {
+        $unsupported = array(
+            'supported' => false,
+            'server_uuid' => '',
+            'has_member_role' => false,
+        );
+
+        if (!$this->shouldProbeGroupReplication($version, $versionComment)) {
+            return $unsupported;
+        }
+
+        $cacheKey = $this->getGroupReplicationCapabilityCacheKey($db, $version, $versionComment);
+        if (isset(self::$cache['group_replication_capabilities'][$cacheKey])) {
+            return self::$cache['group_replication_capabilities'][$cacheKey];
+        }
+
+        $tableExists = $this->remoteInformationSchemaRowExists(
+            $db,
+            'tables',
+            array(
+                'table_schema' => 'performance_schema',
+                'table_name' => 'replication_group_members',
+            )
+        );
+        if ($tableExists !== true) {
+            if ($tableExists === false) {
+                self::$cache['group_replication_capabilities'][$cacheKey] = $unsupported;
+            }
+
+            return $unsupported;
+        }
+
+        $memberStateExists = $this->remoteInformationSchemaRowExists(
+            $db,
+            'columns',
+            array(
+                'table_schema' => 'performance_schema',
+                'table_name' => 'replication_group_members',
+                'column_name' => 'MEMBER_STATE',
+            )
+        );
+        if ($memberStateExists !== true) {
+            if ($memberStateExists === false) {
+                self::$cache['group_replication_capabilities'][$cacheKey] = $unsupported;
+            }
+
+            return $unsupported;
+        }
+
+        $serverUuid = $this->getRemoteServerUuid($db);
+        if ($serverUuid === null) {
+            return $unsupported;
+        }
+
+        if ($serverUuid === '') {
+            self::$cache['group_replication_capabilities'][$cacheKey] = $unsupported;
+
+            return $unsupported;
+        }
+
+        $hasMemberRole = $this->remoteInformationSchemaRowExists(
+            $db,
+            'columns',
+            array(
+                'table_schema' => 'performance_schema',
+                'table_name' => 'replication_group_members',
+                'column_name' => 'MEMBER_ROLE',
+            )
+        );
+        if ($hasMemberRole === null) {
+            return $unsupported;
+        }
+
+        $capabilities = array(
+            'supported' => true,
+            'server_uuid' => $serverUuid,
+            'has_member_role' => $hasMemberRole,
+        );
+
+        self::$cache['group_replication_capabilities'][$cacheKey] = $capabilities;
+
+        return $capabilities;
+    }
+
+    private function getGroupReplicationCapabilityCacheKey($db, string $version, string $versionComment): string
+    {
+        $connectionKey = is_object($db) ? spl_object_hash($db) : gettype($db);
+
+        return $connectionKey.':'.$version.':'.$versionComment;
+    }
+
+    private function shouldProbeGroupReplication(string $version, string $versionComment = ''): bool
+    {
+        if (MysqlVersion::isMariaDb($version, $versionComment)) {
+            return false;
+        }
+
+        if (MysqlVersion::isSingleStore($version, $versionComment)) {
+            return false;
+        }
+
+        return MysqlVersion::atLeast($version, '5.7.17');
+    }
+
+    private function remoteInformationSchemaRowExists($db, string $table, array $filters): ?bool
+    {
+        $allowedTables = array('tables', 'columns');
+        if (!in_array($table, $allowedTables, true)) {
+            return false;
+        }
+
+        $where = WhereBuilder::where($db, $filters);
+        if ($where === '') {
+            return false;
+        }
+
+        $sql = "SELECT 1 FROM information_schema.".$table." ".$where." LIMIT 1";
+        $res = Mysql::sqlQuerySilentCompat($db, $sql);
+        if ($res === false) {
+            return null;
+        }
+
+        $row = $db->sql_fetch_array($res, MYSQLI_NUM);
+
+        return !empty($row);
+    }
+
+    private function getRemoteServerUuid($db): ?string
+    {
+        $res = Mysql::sqlQuerySilentCompat($db, "SHOW VARIABLES LIKE 'server_uuid'");
+        if ($res === false) {
+            return null;
+        }
+
+        $row = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+        if (!is_array($row)) {
+            return '';
+        }
+
+        return trim((string)($row['Value'] ?? $row['VALUE'] ?? ''));
+    }
+
+/**
+ * Retrieve aspirateur state through `getInnodbMetrics`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $name_server Input value for `name_server`.
+ * @phpstan-param mixed $name_server
+ * @psalm-param mixed $name_server
+ * @return mixed Returned value for getInnodbMetrics.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getInnodbMetrics()
+ * @example /fr/aspirateur/getInnodbMetrics
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getInnodbMetrics($name_server)
     {
         $db = Sgbd::sql($name_server);
+
+        return $this->collectInnodbMetricsFromConnection($db);
+    }
+
+    private function shouldCollectInnodbMetrics(?string $detectedVersion, bool $isSingleStore): bool
+    {
+        return MysqlVersion::supportsInnodbMetrics($detectedVersion, $isSingleStore);
+    }
+
+    private function collectInnodbMetricsFromConnection($db): array
+    {
+        $data = array();
+
+        if (!$this->informationSchemaTableExists($db, 'INNODB_METRICS')) {
+            return $data;
+        }
+
         $sql = "SELECT * FROM `INFORMATION_SCHEMA`.`INNODB_METRICS`;";
 
-        $res = $db->sql_query($sql);
-        $data = array();
+        $res = Mysql::sqlQuerySilentCompat($db, $sql);
+        if ($res === false) {
+            return $data;
+        }
+
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             if (empty($arr['ENABLED'])) {
                 continue;
@@ -1537,6 +4660,121 @@ GROUP BY C.ID, C.INFO;";
 
     }
 
+    private function informationSchemaTableExists($db, string $table): bool
+    {
+        $tableSql = $db->sql_real_escape_string($table);
+        $sql = "SHOW TABLES FROM `INFORMATION_SCHEMA` LIKE '".$tableSql."';";
+        $res = Mysql::sqlQuerySilentCompat($db, $sql);
+
+        if ($res === false) {
+            return false;
+        }
+
+        return $db->sql_num_rows($res) > 0;
+    }
+
+
+    /**
+     * Look up the writer hostgroup to use when auto-inserting the pmacontrol user.
+     *
+     * Reads `writer_hostgroup` from the ProxySQL relationship tables in order of preference
+     * (Galera → Group Replication → async replication → Aurora), then falls back to the
+     * smallest hostgroup_id with an ONLINE server. Returns null if nothing matches — the
+     * caller should use the per-row hostgroup_id as a last resort to preserve legacy
+     * behavior.
+     */
+    private function discoverWriterHostgroup($db)
+    {
+        $candidates = array(
+            "SELECT writer_hostgroup FROM mysql_galera_hostgroups WHERE active=1 ORDER BY writer_hostgroup ASC LIMIT 1",
+            "SELECT writer_hostgroup FROM mysql_group_replication_hostgroups WHERE active=1 ORDER BY writer_hostgroup ASC LIMIT 1",
+            "SELECT writer_hostgroup FROM mysql_replication_hostgroups ORDER BY writer_hostgroup ASC LIMIT 1",
+            "SELECT writer_hostgroup FROM mysql_aws_aurora_hostgroups WHERE active=1 ORDER BY writer_hostgroup ASC LIMIT 1",
+        );
+
+        foreach ($candidates as $sql) {
+            $res = $db->sql_query_silent($sql);
+            if ($res === false) {
+                continue; // table may not exist on this ProxySQL build
+            }
+            while ($ob = $db->sql_fetch_object($res)) {
+                if (isset($ob->writer_hostgroup) && $ob->writer_hostgroup !== null) {
+                    return (int)$ob->writer_hostgroup;
+                }
+            }
+        }
+
+        $res = $db->sql_query_silent(
+            "SELECT hostgroup_id FROM runtime_mysql_servers WHERE status='ONLINE' "
+            . "ORDER BY hostgroup_id ASC LIMIT 1"
+        );
+        if ($res !== false) {
+            while ($ob = $db->sql_fetch_object($res)) {
+                if (isset($ob->hostgroup_id) && $ob->hostgroup_id !== null) {
+                    return (int)$ob->hostgroup_id;
+                }
+            }
+        }
+
+        return null;
+    }
+
+/**
+ * Handle aspirateur state through `tryProxySqlConnection`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for tryProxySqlConnection.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::tryProxySqlConnection()
+ * @example /fr/aspirateur/tryProxySqlConnection
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function discoverProxySqlWriterHostgroup($db): ?int
+    {
+        $candidates = array(
+            "SELECT writer_hostgroup FROM mysql_galera_hostgroups WHERE active=1 ORDER BY writer_hostgroup ASC LIMIT 1",
+            "SELECT writer_hostgroup FROM mysql_group_replication_hostgroups WHERE active=1 ORDER BY writer_hostgroup ASC LIMIT 1",
+            "SELECT writer_hostgroup FROM mysql_replication_hostgroups ORDER BY writer_hostgroup ASC LIMIT 1",
+            "SELECT writer_hostgroup FROM mysql_aws_aurora_hostgroups WHERE active=1 ORDER BY writer_hostgroup ASC LIMIT 1",
+        );
+
+        foreach ($candidates as $sql) {
+            $res = Mysql::sqlQuerySilentCompat($db, $sql);
+            if ($res === false) {
+                continue;
+            }
+
+            while ($ob = $db->sql_fetch_object($res)) {
+                if (isset($ob->writer_hostgroup) && $ob->writer_hostgroup !== null) {
+                    return (int)$ob->writer_hostgroup;
+                }
+            }
+        }
+
+        $sql = "SELECT hostgroup_id FROM runtime_mysql_servers WHERE status='ONLINE' ORDER BY hostgroup_id ASC LIMIT 1";
+        $res = Mysql::sqlQuerySilentCompat($db, $sql);
+        if ($res !== false) {
+            while ($ob = $db->sql_fetch_object($res)) {
+                if (isset($ob->hostgroup_id) && $ob->hostgroup_id !== null) {
+                    return (int)$ob->hostgroup_id;
+                }
+            }
+        }
+
+        return null;
+    }
 
     public function tryProxySqlConnection($param)
     {
@@ -1544,18 +4782,56 @@ GROUP BY C.ID, C.INFO;";
         $this->view = false;
 
         
-        $this->logger->notice("##################".json_encode($param));
+        //$this->logger->notice("##################".json_encode($param));
         
         $name_server = $param[0];
-        $id_proxysql_server   = $param[1];
+        $id_proxysql_server   = $param[1]; // or split ?
         $refresh = $param[2] ?? "";
+        //$id_mysql_server = ;
 
         if (empty($id_proxysql_server)) {
-            throw new \Exception(__function__.' should have id_proxysql_server in parameter');
+            throw new Exception(__function__.' should have id_proxysql_server in parameter');
         }
 
-        $db = Sgbd::sql($name_server);
+        Debug::debug($param, "NAME_SERVER");
 
+        $error_class = null;
+        $time_start = microtime(true);
+        try{
+            $error_msg='';
+            $db = Sgbd::sql("proxysql_".$id_proxysql_server);  // need try catch there
+            $db->sql_select_db("main");
+        }
+        catch(Exception $e){
+            $error_class = get_class($e);
+            $error_msg = $e->getMessage();
+            $this->logger->warning($error_msg." id_proxysql_server:$id_proxysql_server");
+        }
+        finally{
+            $ping = microtime(true) - $time_start;
+            $available = empty($error_msg) ? 1 : 0;
+
+            $id_mysql_server = ProxySQL::getIdMysqlServer(array($id_proxysql_server));
+
+            if (!empty($id_mysql_server))
+            {
+                $this->setService($id_mysql_server, $ping, $error_msg, $available, "proxysql", $this->aspirateurAttemptContext($param, array(
+                    'id_proxysql_server' => (int)$id_proxysql_server,
+                    'kind' => 'proxysql',
+                    'phase' => 'connect',
+                    'error_class' => $error_class,
+                    'started_at' => $time_start,
+                    'ended_at' => microtime(true),
+                )));
+            }
+            
+            // VERY important else we got error and we kill the worker and have to restart with a new one
+            if ($available === 0) {
+                return false;
+            }
+        }
+
+        //Debug::debug($db, "DB");
 
         if (empty($id_mysql_server))
         {
@@ -1605,12 +4881,15 @@ GROUP BY C.ID, C.INFO;";
                     $ret = Mysql::testMySQL(array($ip_proxysql_server,$port,$user, $password  ));
 
                 }
-                catch(\Exception $e) {
+                catch(Exception $e) {
 
 
                     Debug::debug($e->getMessage(), "dfgdgf");
-                    
-                    $sql = "SELECT DISTINCT hostgroup_id,hostname,port FROM runtime_mysql_servers;";
+
+                    $writer_hostgroup = $this->discoverProxySqlWriterHostgroup($db);
+                    $user_inserted = false;
+
+                    $sql = "SELECT DISTINCT hostgroup_id,hostname,port FROM runtime_mysql_servers WHERE status='ONLINE' ORDER BY hostgroup_id ASC, hostname ASC, port ASC;";
                     $res = $db->sql_query($sql);
                     Debug::sql($sql);
 
@@ -1621,67 +4900,68 @@ GROUP BY C.ID, C.INFO;";
                         $mysql_server_hostname = $arr['hostname'];
                         $mysql_server_port = $arr['port'];
                         $hostgroup_id = $arr['hostgroup_id'];
+                        $default_hostgroup = $writer_hostgroup ?? (int)$hostgroup_id;
 
                         $name_server = Mysql::getNameMysqlServerFromIpPort($mysql_server_hostname,$mysql_server_port);
 
                         $mysql_to_link = Sgbd::sql($name_server);
 
-                        $sql3 = "SELECT password as password FROM mysql.user WHERE user='$user'";
+                        $user_mysql_sql = $mysql_to_link->sql_real_escape_string((string)$user);
+                        $sql3 = "SELECT password as password FROM mysql.user WHERE user='".$user_mysql_sql."'";
                         $res3 = $mysql_to_link->sql_query($sql3);
+                        $password_hash = null;
                         while ($ob = $mysql_to_link->sql_fetch_object($res3)){
-                            Debug::debug($ob, "password");
+                            Debug::debug($user, "mysql.user");
                             // il faut recupérer le bon
                             $password_hash = $ob->password;
                         }
-                    
-                        $sql2 = "SELECT count(1) as cpt FROM runtime_mysql_users WHERE username= '$user'";
+
+                        $user_sql = $db->sql_real_escape_string((string)$user);
+                        $sql2 = "SELECT count(1) as cpt FROM runtime_mysql_users WHERE username= '".$user_sql."'";
                         Debug::sql($sql2);
                         $res2 = $db->sql_query($sql2);
 
                         while($ob2 = $db->sql_fetch_object($res2))
                         {
-                            //il faut stocker memory somewhere 
-                            // made update
-                            // restore it
-
                             //uniquement si l'user n'est pas presént pour eviter des effet de bord
-                            if ($ob2->cpt == "0") {
+                            if ($ob2->cpt == "0" && $user_inserted === false && $password_hash !== null) {
 
                                 $sql5 = "LOAD MYSQL USERS FROM DISK;";
                                 Debug::sql($sql5);
                                 $db->sql_query($sql5);
 
-                                $sql4 = "INSERT INTO mysql_users(username,password,default_hostgroup,default_schema) 
-                                VALUES ('".$user."','".$password_hash."',".$hostgroup_id.",'mysql');";
-                                Debug::sql($sql4);
+                                $password_hash_sql = $db->sql_real_escape_string((string)$password_hash);
+                                $sql4 = "INSERT INTO mysql_users(username,password,default_hostgroup,default_schema)
+                                VALUES ('".$user_sql."','".$password_hash_sql."',".$default_hostgroup.",'');";
+                                Debug::sql(str_replace("'".$password_hash_sql."'", "'[redacted]'", $sql4));
                                 $db->sql_query($sql4);
+                                $user_inserted = true;
 
                                 $sql6 = "LOAD MYSQL USERS TO RUNTIME;";
                                 Debug::sql($sql6);
                                 $db->sql_query($sql6);
-
-
-                                //try connection
-                                $ret = Mysql::testMySQL(array($mysql_server_hostname,$port,$user, $password  ));
-
-                                if ($ret === true)
-                                {
-                                    $data = array();
-
-                                    $data['fqdn'] = $mysql_server_hostname;
-                                    $data['login'] = $user;
-                                    $data['password']= $password;
-                                    $data['port'] = $port;
-                                    
-                                    
-                                    Mysql::addMysqlServer($data );
-                                    
-                                    $sql7 = "SAVE MYSQL USERS TO DISK;";
-                                    $db->sql_query($sql7);
-
-                                    ProxySQL::associate(array($id_proxysql_server ));
-                                }
                             }
+                        }
+
+                        //try connection
+                        $ret = Mysql::testMySQL(array($mysql_server_hostname,$port,$user, $password  ));
+
+                        if ($ret === true)
+                        {
+                            $data = array();
+
+                            $data['fqdn'] = $mysql_server_hostname;
+                            $data['login'] = $user;
+                            $data['password']= $password;
+                            $data['port'] = $port;
+
+
+                            Mysql::addMysqlServer($data );
+
+                            $sql7 = "SAVE MYSQL USERS TO DISK;";
+                            $db->sql_query($sql7);
+
+                            ProxySQL::associate(array($id_proxysql_server ));
                         }
                     }
                 }
@@ -1690,7 +4970,7 @@ GROUP BY C.ID, C.INFO;";
             }
         }
 
-
+        // Proxy have a 6033 routed to a server
         if (!empty($id_mysql_server))
         {
 
@@ -1700,6 +4980,7 @@ GROUP BY C.ID, C.INFO;";
             while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC))
             {
                 $table_name = $arr['tables'];
+
 
                 
                 Debug::debug($table_name, "TABLE NAME");
@@ -1748,7 +5029,7 @@ GROUP BY C.ID, C.INFO;";
         $mysql_tested = Sgbd::sql($name_connection);
 
         $sql = "select * from runtime_mysql_servers;";
-        $res = $mysql_tested->sql_query($sql);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($mysql_tested, $sql, $id_mysql_server, __METHOD__);
 
         $runtime_mysql_servers = array();
         while ($arr = $mysql_tested->sql_fetch_array($res, MYSQLI_ASSOC))
@@ -1765,6 +5046,7 @@ GROUP BY C.ID, C.INFO;";
     {
         Debug::parseDebug($param);
 
+        Debug::debug($param);
         $id_mysql_server = $param[0];
         $database = $param[1];
         $table = $param[2];
@@ -1789,10 +5071,37 @@ GROUP BY C.ID, C.INFO;";
             return $this->getTableElems($id_mysql_server, $database, $table);
         }
         
-        return false;
+        return [];
     }
 
 
+/**
+ * Retrieve aspirateur state through `getTableElems`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param array<int|string,mixed> $database Input value for `database`.
+ * @phpstan-param array<int|string,mixed> $database
+ * @psalm-param array<int|string,mixed> $database
+ * @param mixed $table Input value for `table`.
+ * @phpstan-param mixed $table
+ * @psalm-param mixed $table
+ * @return mixed Returned value for getTableElems.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getTableElems()
+ * @example /fr/aspirateur/getTableElems
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getTableElems($id_mysql_server, $database, $table)
     {
         if ($id_mysql_server == (int)$id_mysql_server){
@@ -1832,6 +5141,33 @@ GROUP BY C.ID, C.INFO;";
     }
 
 
+/**
+ * Retrieve aspirateur state through `getTableExist`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param array<int|string,mixed> $database Input value for `database`.
+ * @phpstan-param array<int|string,mixed> $database
+ * @psalm-param array<int|string,mixed> $database
+ * @param mixed $table Input value for `table`.
+ * @phpstan-param mixed $table
+ * @psalm-param mixed $table
+ * @return mixed Returned value for getTableExist.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getTableExist()
+ * @example /fr/aspirateur/getTableExist
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getTableExist($id_mysql_server, $database, $table)
     {
         //better with cache =)
@@ -1841,11 +5177,27 @@ GROUP BY C.ID, C.INFO;";
 
         $mysql_tested = ($id_mysql_server == (int) $id_mysql_server) ? Mysql::getDbLink($id_mysql_server) : Sgbd::sql($id_mysql_server);
 
+        // information_schema doesn't exist before MySQL 5.0
+        $serverInfo = '';
+        if (isset($mysql_tested->link) && $mysql_tested->link instanceof \mysqli) {
+            $serverInfo = $mysql_tested->link->server_info ?? '';
+        }
+
+        if (MysqlVersion::lessThan($serverInfo, '5.0.0')) {
+            $db_esc = $mysql_tested->sql_real_escape_string($database);
+            $tbl_esc = $mysql_tested->sql_real_escape_string($table);
+            $res = Mysql::sqlQuerySilentCompat($mysql_tested,
+                "SHOW TABLES FROM `" . $db_esc . "` LIKE '" . $tbl_esc . "'");
+            $found = ($res && $mysql_tested->sql_num_rows($res) > 0);
+            self::$cache[$id_mysql_server][$database][$table] = $found;
+            return $found;
+        }
+
         $sql = "SELECT count(1) AS cpt
-        FROM information_schema.tables 
+        FROM information_schema.tables
         WHERE TABLE_SCHEMA = '".$database."' AND TABLE_NAME = '".$table."';";
 
-        $res = $mysql_tested->sql_query($sql);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($mysql_tested, $sql, $id_mysql_server, __METHOD__);
         $data = array();
 
         while($ob = $mysql_tested->sql_fetch_object($res)) {
@@ -1859,6 +5211,27 @@ GROUP BY C.ID, C.INFO;";
         return false;
     }
 
+/**
+ * Retrieve aspirateur state through `getTableFromProxySQL`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_proxysql Input value for `id_proxysql`.
+ * @phpstan-param int $id_proxysql
+ * @psalm-param int $id_proxysql
+ * @return mixed Returned value for getTableFromProxySQL.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getTableFromProxySQL()
+ * @example /fr/aspirateur/getTableFromProxySQL
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getTableFromProxySQL($id_proxysql)
     {
         $mysql_tested = Sgbd::sql($id_proxysql);
@@ -1886,6 +5259,27 @@ GROUP BY C.ID, C.INFO;";
     }
     
 
+/**
+ * Retrieve aspirateur state through `getPsMemory`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @return mixed Returned value for getPsMemory.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getPsMemory()
+ * @example /fr/aspirateur/getPsMemory
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getPsMemory($id_mysql_server)
     {
         if ($id_mysql_server == (int)$id_mysql_server){
@@ -1910,6 +5304,27 @@ GROUP BY C.ID, C.INFO;";
     }
 
 
+/**
+ * Retrieve aspirateur state through `getDigest`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getDigest.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getDigest()
+ * @example /fr/aspirateur/getDigest
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getDigest($param)
     {
         Debug::parseDebug($param);
@@ -1924,66 +5339,79 @@ GROUP BY C.ID, C.INFO;";
             $mysql_tested = Sgbd::sql($id_mysql_server);
         }
 
-        /* TROP COUTEUX, se baser sur l'interval est plus judicieux entre 2 run est plus judicieux, 
-        on va peut etre louper des requettes mais trop couteux pour le serveur d'ouvrir un thread mysql pour chaque serveur
-
-        $db = Sgbd::sql(DB_DEFAULT,"MAIN");
-
-        $sql ="SELECT `date` from ts_max_date a 
-        INNER JOIN ts_file b ON a.id_ts_file = b.id 
-        where b.file_name ='ps_events_statements_summary_by_digest' 
-        and id_mysql_server=".$id_mysql_server.";";
-
-        $res = $db->sql_query($sql);
-        while ($ob = $db->sql_fetch_object($res)) {
-            $date_last = $ob->date;
-        }
-
-        $db->sql_close();
-        */
-       
-        //$sql ="SELECT * FROM performance_schema.events_statements_summary_by_digest WHERE LAST_SEEN > '".$date_last."';";
-        $sql ="SELECT * FROM performance_schema.events_statements_summary_by_digest WHERE LAST_SEEN > NOW() - INTERVAL 11 SECOND;";
-         
+        $sql ="SELECT * FROM performance_schema.events_statements_summary_by_digest WHERE LAST_SEEN > NOW() - INTERVAL 2 DAY;";
         Debug::sql($sql);
-
+        
         $res = $mysql_tested->sql_query($sql);
         $i = 0;
 
         $data = [];
-        //$data['fields'] = [];
         while ($arr = $mysql_tested->sql_fetch_array($res, MYSQLI_ASSOC)) {  
             $i++;
-            /*
-            if ($i === 1) {
-                $data['fields'] = self::array_values_to_lowercase(array_keys($arr));
-            }*/
-            //$data['data'][$arr['DIGEST']] = array_values($arr);
+            $arr = array_change_key_case($arr);
 
-            // on a peut etre un probleme ici, si meme digest pour une base differente
-            $data['data'][$arr['DIGEST']] = $arr;
+            // Skip invalid lines (no digest)
+            if (empty($arr['digest'])) {
+                continue;
+            }
+
+            $data[] = $arr;
         }
 
-        Debug::debug(count($data['data']));
+        Debug::debug($data, "QUERIES");
 
         return $data;
 
     }
 
 
-    public function getProcesslist($db_link)
+/**
+ * Retrieve aspirateur state through `getProcesslist`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $db_link Input value for `db_link`.
+ * @phpstan-param mixed $db_link
+ * @psalm-param mixed $db_link
+ * @param bool $isSingleStore Input value for `isSingleStore`.
+ * @phpstan-param bool $isSingleStore
+ * @psalm-param bool $isSingleStore
+ * @return mixed Returned value for getProcesslist.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getProcesslist()
+ * @example /fr/aspirateur/getProcesslist
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public function getProcesslist($db_link, bool $isSingleStore = false)
     {
         $time = 0;
 
-        if ($db_link->checkVersion(array('MySQL' => '5.1', 'Percona Server' => '5.1', 'MariaDB' => '5.1'))) {
+        if (ServerCapabilities::supports($db_link, 'processlist_supported')) {
             $time = intval($time);
 
-            
-
-            if ($db_link->checkVersion(array('MySQL' => '8.0')))
+            if ($isSingleStore)
             {
-                $this->logger->alert("PROVIDER : ".$db_link->getVersion() ." - VERSION : ".$db_link->getServerType() );
-
+                // SingleStore: pas de information_schema.innodb_trx
+                $sql  = "SELECT p.*,
+                '0'  AS trx_rows_locked,
+                ''   AS trx_state,
+                ''   AS trx_operation_state,
+                '0'  AS trx_rows_modified,
+                ''   AS trx_concurrency_tickets,
+                ''   AS trx_time
+                FROM information_schema.processlist p
+                WHERE p.command NOT IN ('Sleep', 'Binlog Dump')
+                AND p.user NOT IN ('system user', 'event_scheduler') AND TIME > ".$time;
+            }
+            else if (ServerCapabilities::supports($db_link, 'mysql8_processlist_trx_columns'))
+            {
                 $sql  = "SELECT p.*,
                 IFNULL(t.trx_rows_locked, '0')        AS trx_rows_locked,
                 IFNULL(t.trx_state, '')               AS trx_state,
@@ -2014,6 +5442,7 @@ GROUP BY C.ID, C.INFO;";
             }
 
             $res  = $db_link->sql_query($sql);
+
             $ret  = array();
             while ($data = $db_link->sql_fetch_array($res, MYSQLI_ASSOC)) {
                 $ret[] = $data;
@@ -2024,13 +5453,187 @@ GROUP BY C.ID, C.INFO;";
     }
 
 
+/**
+ * Handle aspirateur state through `array_values_to_lowercase`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $array Input value for `array`.
+ * @phpstan-param array $array
+ * @psalm-param array $array
+ * @return array Returned value for array_values_to_lowercase.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::array_values_to_lowercase()
+ * @example /fr/aspirateur/array_values_to_lowercase
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function array_values_to_lowercase(array $array): array {
         return array_map(function($value) {
             return is_string($value) ? strtolower($value) : $value;
         }, $array);
     }
 
+    private function quoteIdentifier($identifier)
+    {
+        return '`'.str_replace('`', '``', (string) $identifier).'`';
+    }
 
+    private function getDatabaseList($db, $includeSystemSchemas = false)
+    {
+        $cacheKey = spl_object_hash($db) . ':' . (int) $includeSystemSchemas;
+        if (isset(self::$database_list_cache[$cacheKey])) {
+            return self::$database_list_cache[$cacheKey];
+        }
+
+        $ret = array();
+
+        $res = $db->sql_query("SHOW DATABASES;");
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_NUM)) {
+            $database = (string) ($arr[0] ?? '');
+
+            if ($database === '') {
+                continue;
+            }
+
+            if (!$includeSystemSchemas && MysqlServer::isSystemSchema($database)) {
+                continue;
+            }
+
+            $ret[] = $database;
+        }
+
+        self::$database_list_cache[$cacheKey] = $ret;
+
+        return $ret;
+    }
+
+    private function getTablesByShowTables($db)
+    {
+        $ret = array();
+        $createTables = array();
+
+        foreach ($this->getDatabaseList($db, true) as $database) {
+            $sql = "SHOW FULL TABLES FROM ".$this->quoteIdentifier($database).";";
+            $res = $db->sql_query($sql);
+
+            while ($arr = $db->sql_fetch_array($res, MYSQLI_NUM)) {
+                $tableName = (string) ($arr[0] ?? '');
+                $tableType = strtoupper((string) ($arr[1] ?? ''));
+
+                if ($tableName === '') {
+                    continue;
+                }
+
+                $ret[] = array(
+                    'TABLE_CATALOG' => 'def',
+                    'TABLE_SCHEMA' => $database,
+                    'TABLE_NAME' => $tableName,
+                    'TABLE_TYPE' => $tableType,
+                    'ENGINE' => '',
+                    'VERSION' => '',
+                    'ROW_FORMAT' => '',
+                    'TABLE_ROWS' => '',
+                    'AVG_ROW_LENGTH' => '',
+                    'DATA_LENGTH' => '',
+                    'MAX_DATA_LENGTH' => '',
+                    'INDEX_LENGTH' => '',
+                    'DATA_FREE' => '',
+                    'AUTO_INCREMENT' => '',
+                    'CREATE_TIME' => '',
+                    'UPDATE_TIME' => '',
+                    'CHECK_TIME' => '',
+                    'TABLE_COLLATION' => '',
+                    'CHECKSUM' => '',
+                    'CREATE_OPTIONS' => '',
+                    'TABLE_COMMENT' => '',
+                );
+
+                if ($tableType === 'VIEW') {
+                    $sqlCreate = "SHOW CREATE VIEW ".$this->quoteIdentifier($database).".".$this->quoteIdentifier($tableName).";";
+                } else {
+                    $sqlCreate = "SHOW CREATE TABLE ".$this->quoteIdentifier($database).".".$this->quoteIdentifier($tableName).";";
+                }
+
+                $resCreate = $db->sql_query($sqlCreate);
+                while ($arrCreate = $db->sql_fetch_array($resCreate, MYSQLI_ASSOC)) {
+                    $createTables[$database][$tableName] = $arrCreate['Create Table'] ?? $arrCreate['Create View'] ?? '';
+                }
+            }
+        }
+
+        return array($ret, $createTables);
+    }
+
+    private function shouldUseShowTablesFallback($db)
+    {
+        return count($this->getDatabaseList($db)) > 50;
+    }
+
+    private function getInformationSchemaTablesQuery($db)
+    {
+        if (ServerCapabilities::supports($db, 'information_schema_max_statement_time')) {
+            return "SET STATEMENT MAX_STATEMENT_TIME = 10 FOR SELECT * FROM information_schema.tables;";
+        }
+
+        if (ServerCapabilities::supports($db, 'select_max_execution_time_hint')) {
+            return "SELECT /*+ MAX_EXECUTION_TIME(10000) */ * FROM information_schema.tables;";
+        }
+
+        return "SELECT * FROM information_schema.tables;";
+    }
+
+    private function getTablesFromInformationSchema($db)
+    {
+        $ret = array();
+        $sql = $this->getInformationSchemaTablesQuery($db);
+
+        try {
+            $res = $db->sql_query($sql);
+        } catch (\Throwable $e) {
+            Debug::debug($e->getMessage(), 'getTablesFromInformationSchema');
+            return false;
+        }
+
+        if ($res === false) {
+            return false;
+        }
+
+        while ($data = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $ret[] = $data;
+        }
+
+        return $ret;
+    }
+
+
+/**
+ * Retrieve aspirateur state through `getTables`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getTables.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getTables()
+ * @example /fr/aspirateur/getTables
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getTables($param)
     {
         $id_mysql_server = $param[0];
@@ -2041,21 +5644,7 @@ GROUP BY C.ID, C.INFO;";
         }
 
         $db = Mysql::getDbLink($id_mysql_server);
-
-        // if MARIADB ask limit 10 sec max
-        if ($db->checkVersion(array('MariaDB'=> '10.1.1'))) {
-            $sql = "SET STATEMENT MAX_STATEMENT_TIME = 10 FOR SELECT * FROM information_schema.tables;";
-        }
-        else{
-            $sql = "SELECT * FROM information_schema.tables;";
-        }
-        
-        $res = $db->sql_query($sql);
-
-        $ret  = array();
-        while ($data = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            $ret[] = $data;
-        }
+        $ret = $this->getTablesFromInformationSchema($db);
 
         Debug::debug($ret);
 
@@ -2063,13 +5652,33 @@ GROUP BY C.ID, C.INFO;";
     }
 
 
+/**
+ * Retrieve aspirateur state through `getCreateTables`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getCreateTables.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getCreateTables()
+ * @example /fr/aspirateur/getCreateTables
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getCreateTables($param)
     {
         Debug::parseDebug($param);
         $id_mysql_server = $param[0];
 
-        if (Available::getMySQL($id_mysql_server) == false)
-        {
+        if (Available::getMySQL($id_mysql_server) == false) {
             return;
         }
 
@@ -2087,6 +5696,27 @@ GROUP BY C.ID, C.INFO;";
     }
 
 
+/**
+ * Handle aspirateur state through `eachHour`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for eachHour.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::eachHour()
+ * @example /fr/aspirateur/eachHour
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function eachHour($param)
     {
         Debug::parseDebug($param);
@@ -2107,8 +5737,23 @@ GROUP BY C.ID, C.INFO;";
 
             $data = array();
             $data['information_schema']['disks'] = json_encode($this->getDisks(array($id_mysql_server)));
-            $data['information_schema']['tables'] = json_encode($this->getTables(array($id_mysql_server)));
-            $data['information_schema']['create_tables'] = $this->getCreateTables(array($id_mysql_server));
+
+            if ($this->shouldUseShowTablesFallback($db)) {
+                list($tables, $createTables) = $this->getTablesByShowTables($db);
+                $data['information_schema']['tables'] = json_encode($tables);
+                $data['information_schema']['create_tables'] = json_encode($createTables);
+            } else {
+                $tables = $this->getTablesFromInformationSchema($db);
+
+                if ($tables === false) {
+                    list($tables, $createTables) = $this->getTablesByShowTables($db);
+                    $data['information_schema']['tables'] = json_encode($tables);
+                    $data['information_schema']['create_tables'] = json_encode($createTables);
+                } else {
+                    $data['information_schema']['tables'] = json_encode($tables);
+                    $data['information_schema']['create_tables'] = $this->getCreateTables(array($id_mysql_server));
+                }
+            }
             
             $db->sql_close();
 
@@ -2121,6 +5766,27 @@ GROUP BY C.ID, C.INFO;";
     }
 
 
+/**
+ * Retrieve aspirateur state through `getDisks`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getDisks.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getDisks()
+ * @example /fr/aspirateur/getDisks
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getDisks($param)
     {
         Debug::parseDebug($param);
@@ -2129,12 +5795,28 @@ GROUP BY C.ID, C.INFO;";
 
         $ret  = array();
 
-        if (Available::getMySQL($id_mysql_server) == false)
-        {
+        if (Available::getMySQL($id_mysql_server) == false) {
             return $ret;
         }
 
         $db = Mysql::getDbLink($id_mysql_server);
+
+        $isSingleStore = false;
+        try {
+            $vars = Extraction2::display(['variables::is_single_store'], [$id_mysql_server]);
+            if (!empty($vars[$id_mysql_server]['is_single_store'])) {
+                $isSingleStore = (int)$vars[$id_mysql_server]['is_single_store'] === 1;
+            }
+        } catch (\Throwable $e) {
+            $this->logger->warning(
+                '[DISKS] Unable to detect SingleStore for id_mysql_server:'
+                .$id_mysql_server.' message:'.$e->getMessage()
+            );
+        }
+
+        if ($isSingleStore) {
+            return $ret;
+        }
 
         $sql2 = "select count(1) as cpt from information_schema.plugins WHERE PLUGIN_NAME='DISKS' AND PLUGIN_STATUS='ACTIVE';";
         $res2 = $db->sql_query($sql2);
@@ -2143,7 +5825,7 @@ GROUP BY C.ID, C.INFO;";
         if ($ob->cpt == "1")
         {
             // if MARIADB ask limit 10 sec max
-            if ($db->checkVersion(array('MariaDB'=> '10.1.1'))) {
+            if (ServerCapabilities::supports($db, 'information_schema_max_statement_time')) {
                 $sql = "SET STATEMENT MAX_STATEMENT_TIME = 10 FOR SELECT * from information_schema.disks;";
             }
             else{
@@ -2163,7 +5845,27 @@ GROUP BY C.ID, C.INFO;";
         return $ret;
     }
 
-
+/**
+ * Retrieve aspirateur state through `getVelocity`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $name_server Input value for `name_server`.
+ * @phpstan-param mixed $name_server
+ * @psalm-param mixed $name_server
+ * @return mixed Returned value for getVelocity.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getVelocity()
+ * @example /fr/aspirateur/getVelocity
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getVelocity($name_server)
     {
 
@@ -2184,7 +5886,6 @@ GROUP BY C.ID, C.INFO;";
             $data['PS_NB_QUERY'] = $arr['PS_NB_QUERY'];
         }
 
-
         $sql = "SELECT CASE WHEN SUBSTRING(DIGEST_TEXT, 1, 1) = '(' THEN SUBSTRING_INDEX(SUBSTRING(DIGEST_TEXT, 3), ' ', 1) 
         ELSE SUBSTRING_INDEX(DIGEST_TEXT, ' ', 1) END AS statement_type,
         COUNT(*) AS count_statements, 
@@ -2202,6 +5903,473 @@ GROUP BY C.ID, C.INFO;";
         $data['pma_statement_type_summary'] = json_encode($tmp);
 
         return $data;
+    }
+
+/**
+ * Handle aspirateur state through `detectDouble`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for detectDouble.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::detectDouble()
+ * @example /fr/aspirateur/detectDouble
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public function detectDouble($param)
+    {
+        Debug::parseDebug($param);
+
+        $servers = Extraction2::display(array("variables::hostname","variables::port","variables::server_uid" , "variables::is_proxysql" ));
+
+/**
+ * Handle aspirateur state through `find_duplicate_server_uids`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $servers Input value for `servers`.
+ * @phpstan-param array $servers
+ * @psalm-param array $servers
+ * @return array Returned value for find_duplicate_server_uids.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::find_duplicate_server_uids()
+ * @example /fr/aspirateur/find_duplicate_server_uids
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+        function find_duplicate_server_uids(array $servers): array {
+            $map = [];
+            foreach ($servers as $entry) {
+                if (!empty($entry['server_uid'])) {
+                    $map[$entry['server_uid']][] = $entry['id_mysql_server'];
+                }
+            }
+
+            // Ne garder que ceux avec plus d'une occurence
+            $dups = [];
+            foreach ($map as $uid => $ids) {
+                if (count($ids) > 1) {
+                    $dups[$uid] = $ids;
+                }
+            }
+            return $dups;
+        }
+
+
+        $duplicates = find_duplicate_server_uids($servers);
+
+        // Affichage "joli" au format que tu as demandé : [UID] => (id1, id2, ...)
+        foreach ($duplicates as $uid => $ids) {
+            echo "[$uid] => (" . implode(', ', $ids) . ")\n";
+        }
+
+        //Debug::debug($hostnames);
+
+    }
+
+
+/**
+ * Handle aspirateur state through `tryMaxScaleConnection`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for tryMaxScaleConnection.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::tryMaxScaleConnection()
+ * @example /fr/aspirateur/tryMaxScaleConnection
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public function tryMaxScaleConnection($param)
+    {
+        Debug::parseDebug($param);
+        $this->view = false;
+
+        //$this->logger->notice("##################".json_encode($param));
+        
+        $list_id_mysql_server = $param[0];
+        $id_mysql_servers = explode(',',$list_id_mysql_server);
+
+        $id_maxscale_server   = $param[1]; // or split ?
+        $refresh = $param[2] ?? "";
+        //$id_mysql_server = ;
+
+        if (empty($id_maxscale_server)) {
+            throw new Exception(__function__.' should have id_proxysql_server in parameter');
+        }
+
+        Debug::debug($param, "NAME_SERVER");
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT `hostname`, `is_ssl`,`port`, `login`,`password` from maxscale_server WHERE `id` = ".$id_maxscale_server .";";
+        $res = $db->sql_query($sql);
+
+        if ($db->sql_num_rows($res) == 0) {
+            throw new Exception("[PMACONTROL-2001] No MaxScale server found with id '{$id_maxscale_server}'. Check configuration or connection settings.");
+        }
+
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_NUM)) {
+            $maxscale = $arr;
+        }
+
+        $error_class = null;
+        $time_start = microtime(true);
+        try{
+            $error_msg= '';
+
+            set_error_handler(function ($errno, $errstr, $errfile, $errline) {
+                throw new \ErrorException($errstr, 0, $errno, $errfile, $errline);
+            });
+
+            $connection = fsockopen($maxscale[0], $maxscale[2], $errno, $errstr, 3);
+            if ($connection) {
+                fclose($connection);
+            }
+        }
+        catch(\Throwable $e){
+            $error_class = get_class($e);
+            $error_msg = $e->getMessage();
+            $this->logger->warning("[PMACONTROL-2005] cannot reach IP:Port : $error_msg - id_maxscale_server:$id_maxscale_server");
+        }
+        finally{
+
+            restore_error_handler();
+
+            $ping = microtime(true) - $time_start;
+            $available = empty($error_msg) ? 1 : 0;
+
+            $matchReport = MaxScale::getMysqlServerMatches(array($id_maxscale_server));
+            $resolvedMysqlServerIds = $matchReport['matched_ids'] ?? array();
+
+            if (!empty($this->logger)) {
+                foreach (($matchReport['listeners'] ?? array()) as $listenerReport) {
+                    $endpoint = $listenerReport['endpoint'] ?? 'n/a';
+                    $matchedIds = implode(',', $listenerReport['matched_ids'] ?? array());
+                    $reason = $listenerReport['reason'] ?? 'n/a';
+
+                    if ($matchedIds === '') {
+                        $this->logger->warning("[MAXSCALE-MATCH] listener=".$endpoint." matched_ids=none reason=".$reason." id_maxscale_server=".$id_maxscale_server);
+                        continue;
+                    }
+
+                    $this->logger->info("[MAXSCALE-MATCH] listener=".$endpoint." matched_ids=".$matchedIds." reason=".$reason." id_maxscale_server=".$id_maxscale_server);
+                }
+            }
+
+            $id_mysql_servers = array_values(array_unique(array_filter(array_map('intval', array_merge($id_mysql_servers, $resolvedMysqlServerIds)))));
+
+            foreach($id_mysql_servers as $id_mysql_server) {
+                $this->setService($id_mysql_server, $ping, $error_msg, $available, "maxscale", $this->aspirateurAttemptContext($param, array(
+                    'id_maxscale_server' => (int)$id_maxscale_server,
+                    'kind' => 'maxscale',
+                    'phase' => 'connect',
+                    'error_class' => $error_class,
+                    'started_at' => $time_start,
+                    'ended_at' => microtime(true),
+                )));
+            }
+            // VERY important else we got error and we kill the worker and have to restart with a new one
+
+            if (empty($available))
+            {
+                return false;
+            }
+        }
+        // Maxscale have a 4003 routed to a server
+
+        $services = array("listeners", "maxscale", "monitors", "sessions", "servers", "services", "users","filters");
+
+        foreach($services as $service)
+        {
+            $maxscale[5] = $service; 
+
+            Debug::debug($service, "SERVICE");
+
+            $service_time_start = microtime(true);
+            $service_error_class = null;
+            try{
+                $error_msg = '';
+                $array = MaxScale::curl($maxscale) or die($service);
+
+                Debug::debug(MaxScale::removeArraysDeeperThan( $array, 3));
+
+                $data = array();
+                $data['maxscale']['maxscale_'.$service] = json_encode($array);
+
+                foreach($id_mysql_servers as $id_mysql_server) {
+                    $this->exportData($id_mysql_server, "maxscale_".$service, $data);
+                }
+                
+            }
+            catch (\Throwable $e) {
+
+                //echo "⚠️ Erreur inattendue capturée mais ignorée : " . $e->getMessage() . "\n";
+                $service_error_class = get_class($e);
+                $this->logger->warning($e->getMessage()." id_maxscale_server:$id_maxscale_server");
+                Debug::debug($e->getMessage(), "ERROR_MSG");
+                $error_msg = $e->getMessage();
+            }
+            finally
+            {
+                $ping = microtime(true) - $service_time_start;
+                $available = empty($error_msg) ? 1 : 0;
+
+                foreach($id_mysql_servers as $id_mysql_server) {
+                    $this->setService($id_mysql_server, $ping, $error_msg, $available, "maxscale_service", $this->aspirateurAttemptContext($param, array(
+                        'id_maxscale_server' => (int)$id_maxscale_server,
+                        'kind' => 'maxscale_service',
+                        'phase' => 'query',
+                        'error_class' => $service_error_class,
+                        'started_at' => $service_time_start,
+                        'ended_at' => microtime(true),
+                    )));
+                }
+            }
+        }
+        
+        $db->sql_close();
+    }
+
+    public function tryMysqlRouterConnection($param)
+    {
+        Debug::parseDebug($param);
+        $this->view = false;
+
+        $list_id_mysql_server = $param[0];
+        $id_mysql_servers = explode(',', $list_id_mysql_server);
+        $id_mysqlrouter_server = $param[1];
+
+        if (empty($id_mysqlrouter_server)) {
+            throw new Exception(__function__ . ' should have id_mysqlrouter_server in parameter');
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT `hostname`, `is_ssl`, `port`, `login`, `password` FROM mysqlrouter_server WHERE `id` = " . (int) $id_mysqlrouter_server;
+        $res = $db->sql_query($sql);
+
+        if ($db->sql_num_rows($res) == 0) {
+            throw new Exception("[PMACONTROL-2001] No MySQL Router server found with id '{$id_mysqlrouter_server}'. Check configuration or connection settings.");
+        }
+
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_NUM)) {
+            $mysqlrouter = $arr;
+        }
+
+        $error_class = null;
+        $time_start = microtime(true);
+        try {
+            $error_msg = '';
+
+            set_error_handler(function ($errno, $errstr, $errfile, $errline) {
+                throw new \ErrorException($errstr, 0, $errno, $errfile, $errline);
+            });
+
+            $connection = fsockopen($mysqlrouter[0], $mysqlrouter[2], $errno, $errstr, 3);
+            if ($connection) {
+                fclose($connection);
+            }
+        } catch (\Throwable $e) {
+            $error_class = get_class($e);
+            $error_msg = $e->getMessage();
+            $this->logger->warning("[PMACONTROL-2005] cannot reach IP:Port : $error_msg - id_mysqlrouter_server:$id_mysqlrouter_server");
+        } finally {
+            restore_error_handler();
+
+            $ping = microtime(true) - $time_start;
+            $available = empty($error_msg) ? 1 : 0;
+
+            $matchReport = MysqlRouter::getMysqlServerMatches([(int) $id_mysqlrouter_server]);
+            $resolvedMysqlServerIds = $matchReport['matched_ids'] ?? [];
+
+            if (!empty($this->logger)) {
+                foreach (($matchReport['listeners'] ?? []) as $listenerReport) {
+                    $endpoint = $listenerReport['endpoint'] ?? 'n/a';
+                    $matchedIds = implode(',', $listenerReport['matched_ids'] ?? []);
+                    $reason = $listenerReport['reason'] ?? 'n/a';
+
+                    if ($matchedIds === '') {
+                        $this->logger->warning("[MYSQLROUTER-MATCH] listener=" . $endpoint . " matched_ids=none reason=" . $reason . " id_mysqlrouter_server=" . $id_mysqlrouter_server);
+                        continue;
+                    }
+
+                    $this->logger->info("[MYSQLROUTER-MATCH] listener=" . $endpoint . " matched_ids=" . $matchedIds . " reason=" . $reason . " id_mysqlrouter_server=" . $id_mysqlrouter_server);
+                }
+            }
+
+            $id_mysql_servers = array_values(array_unique(array_filter(array_map('intval', array_merge($id_mysql_servers, $resolvedMysqlServerIds)))));
+
+            foreach ($id_mysql_servers as $id_mysql_server) {
+                $this->setService($id_mysql_server, $ping, $error_msg, $available, 'mysqlrouter', $this->aspirateurAttemptContext($param, array(
+                    'id_mysqlrouter_server' => (int)$id_mysqlrouter_server,
+                    'kind' => 'mysqlrouter',
+                    'phase' => 'connect',
+                    'error_class' => $error_class,
+                    'started_at' => $time_start,
+                    'ended_at' => microtime(true),
+                )));
+            }
+
+            if (empty($available)) {
+                return false;
+            }
+        }
+
+        try {
+            $config = [
+                'hostname' => $mysqlrouter[0],
+                'is_ssl' => $mysqlrouter[1],
+                'port' => $mysqlrouter[2],
+                'login' => $mysqlrouter[3],
+                'password' => $mysqlrouter[4],
+            ];
+
+            $routeDefinitions = MysqlRouter::fetchRouteDefinitions($config);
+            $routesPayload = ['mysqlrouter' => ['mysqlrouter_routes' => json_encode(['items' => $routeDefinitions])]];
+
+            foreach ($id_mysql_servers as $id_mysql_server) {
+                $this->exportData($id_mysql_server, 'mysqlrouter_routes', $routesPayload);
+            }
+
+            $metadataNames = MysqlRouter::fetchMetadataNames($config);
+            foreach ($metadataNames as $metadataName) {
+                $metadataConfig = MysqlRouter::curl([$config['hostname'], $config['is_ssl'], $config['port'], $config['login'], $config['password'], 'metadata/' . $metadataName . '/config']);
+                $metadataStatus = MysqlRouter::curl([$config['hostname'], $config['is_ssl'], $config['port'], $config['login'], $config['password'], 'metadata/' . $metadataName . '/status']);
+
+                $metadataConfigPayload = ['mysqlrouter' => ['mysqlrouter_metadata_config' => json_encode([$metadataName => $metadataConfig])]];
+                $metadataStatusPayload = ['mysqlrouter' => ['mysqlrouter_metadata_status' => json_encode([$metadataName => $metadataStatus])]];
+
+                foreach ($id_mysql_servers as $id_mysql_server) {
+                    $this->exportData($id_mysql_server, 'mysqlrouter_metadata_config', $metadataConfigPayload);
+                    $this->exportData($id_mysql_server, 'mysqlrouter_metadata_status', $metadataStatusPayload);
+                }
+            }
+        } catch (\Throwable $e) {
+            $this->logger->warning($e->getMessage() . " id_mysqlrouter_server:$id_mysqlrouter_server");
+        }
+
+        $db->sql_close();
+    }
+
+    
+/**
+ * Handle `runEachMinuteAtBalancedSecond`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param int $interval Input value for `interval`.
+ * @phpstan-param int $interval
+ * @psalm-param int $interval
+ * @param string $file_key Input value for `file_key`.
+ * @phpstan-param string $file_key
+ * @psalm-param string $file_key
+ * @param callable $callback Input value for `callback`.
+ * @phpstan-param callable $callback
+ * @psalm-param callable $callback
+ * @return bool Returned value for runEachMinuteAtBalancedSecond.
+ * @phpstan-return bool
+ * @psalm-return bool
+ * @example runEachMinuteAtBalancedSecond(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function getLastRunCacheFile(int $id_mysql_server, string $file_key): string
+    {
+        $safe_file_key = preg_replace('/[^A-Za-z0-9_.-]/', '_', $file_key);
+        if ($safe_file_key === null || $safe_file_key === '') {
+            $safe_file_key = 'default';
+        }
+
+        return TMP . 'cache' . DIRECTORY_SEPARATOR . 'last_run' . DIRECTORY_SEPARATOR . 'pmacontrol_last_run_' . $safe_file_key . '_' . $id_mysql_server;
+    }
+
+    private function openLastRunCacheFile(string $cache_file)
+    {
+        $cache_dir = dirname($cache_file);
+        if (!is_dir($cache_dir) && !@mkdir($cache_dir, 0775, true) && !is_dir($cache_dir)) {
+            return false;
+        }
+
+        return @fopen($cache_file, 'c+');
+    }
+
+    private function runEachMinuteAtBalancedSecond(int $id_mysql_server, int $interval, string $file_key, callable $callback): bool
+    {
+        $offset = crc32((string)$id_mysql_server) % $interval;
+        $now = time();
+        $sec = $now % $interval;
+        $bucket = intdiv($now, $interval);
+
+        // On autorise l'execution une fois par bucket, a partir de la seconde cible.
+        // Si le worker passe apres l'offset (ex: :57 pour un offset a :51), on execute.
+        if ($sec < $offset) {
+            return false;
+        }
+
+        $cache_file = $this->getLastRunCacheFile($id_mysql_server, $file_key);
+        $fp = $this->openLastRunCacheFile($cache_file);
+        if ($fp === false || !flock($fp, LOCK_EX)) {
+            if ($fp !== false) {
+                fclose($fp);
+                $fp = false;
+            }
+            $last_bucket_run = null;
+        } else {
+            $contents = stream_get_contents($fp);
+            $last_bucket_run = is_string($contents) ? trim($contents) : null;
+        }
+
+        if ((string)$last_bucket_run === (string)$bucket) {
+            if ($fp !== false) {
+                flock($fp, LOCK_UN);
+                fclose($fp);
+            }
+            return false;
+        }
+
+        if ($fp !== false) {
+            ftruncate($fp, 0);
+            rewind($fp);
+            fwrite($fp, (string)$bucket);
+            flock($fp, LOCK_UN);
+            fclose($fp);
+        }
+
+        $callback($id_mysql_server);
+        return true;
     }
 }
 
@@ -2222,6 +6390,4 @@ GROUP BY
   `CURRENT_SCHEMA`, 
   `DIGEST`, 
   `SQL_TEXT`
-
-
 */

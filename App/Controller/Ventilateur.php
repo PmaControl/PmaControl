@@ -14,8 +14,40 @@ use \Glial\Sgbd\Sgbd;
 
 
 
+/**
+ * Class responsible for ventilateur workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Ventilateur extends Controller {
 
+/**
+ * Handle ventilateur state through `queue`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @return void Returned value for queue.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::queue()
+ * @example /fr/ventilateur/queue
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function queue() {
         define("MAX_WORKERS", 100);
 
@@ -79,10 +111,46 @@ class Ventilateur extends Controller {
         }
     }
 
+/**
+ * Handle ventilateur state through `worker`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for worker.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::worker()
+ * @example /fr/ventilateur/worker
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function worker() {
         
     }
 
+/**
+ * Handle ventilateur state through `pull`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @return void Returned value for pull.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::pull()
+ * @example /fr/ventilateur/pull
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function pull() {
 
 
@@ -114,6 +182,24 @@ class Ventilateur extends Controller {
         sleep(1);              //  Give 0MQ time to deliver
     }
 
+/**
+ * Create ventilateur state through `add`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @return void Returned value for add.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::add()
+ * @example /fr/ventilateur/add
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function add() {
 
         $context = new ZMQContext();
@@ -141,3 +227,4 @@ class Ventilateur extends Controller {
     }
 
 }
+

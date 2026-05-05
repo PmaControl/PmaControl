@@ -1,0 +1,46 @@
+name: proxmox-install-matrix
+
+on:
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: proxmox-install-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  install-test:
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        os:
+          - debian12
+          - debian13
+          - ubuntu2404
+          - ubuntu2604
+    runs-on: proxmox-ci
+    timeout-minutes: 120
+    steps:
+      - name: Checkout repository
+        shell: bash
+        env:
+          CI_GIT_USER: ${{ secrets.CI_GIT_USER }}
+          CI_GIT_PASSWORD: ${{ secrets.CI_GIT_PASSWORD }}
+        run: |
+          set -euo pipefail
+          repo_url="https://${CI_GIT_USER}:${CI_GIT_PASSWORD}@git.istosia.com/${GITHUB_REPOSITORY}.git"
+          rm -rf "${GITHUB_WORKSPACE}"
+          mkdir -p "${GITHUB_WORKSPACE}"
+          cd "${GITHUB_WORKSPACE}"
+          git init
+          git remote add origin "${repo_url}"
+          git -c http.sslVerify=false fetch --depth=1 origin "${GITHUB_SHA}"
+          git checkout --detach FETCH_HEAD
+
+      - name: Run install matrix target
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "${GITHUB_WORKSPACE}"
+          bash ci/proxmox-install-matrix.sh "${{ matrix.os }}"

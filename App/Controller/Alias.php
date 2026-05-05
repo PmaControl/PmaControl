@@ -11,17 +11,81 @@ use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
 use App\Library\Debug;
 use App\Library\Extraction;
+use App\Library\Extraction2;
 use App\Library\System;
 use App\Library\Mysql;
 use App\Library\Color;
+use App\Library\Security\CsrfGuard;
+use Glial\Security\Csrf;
 
+/**
+ * Class responsible for alias workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Alias extends Controller
 {
+    private const ALIAS_INDEX_CSRF_SCOPE = 'alias.index';
+    private const ALIAS_DNS_MAX_BYTES = 200;
+
+/**
+ * Stores `$hostname` for hostname.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $hostname = array();
 
+    private static array $alias_dns_cache = [];
+
+/**
+ * Render alias state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/alias/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index()
     {
         $db = Sgbd::sql(DB_DEFAULT);
+        $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $indexRequest = self::evaluateIndexPostRequest($_POST, $_SERVER, $_SESSION);
+            if ($indexRequest['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                $this->respondIndexError($indexRequest['status'], $indexRequest['body'], $indexRequest['headers']);
+
+                return;
+            }
+
+            self::upsertAliasDnsFromRow($indexRequest['alias']);
+
+            header("location: ".LINK."alias/index");
+            return;
+        }
 
         $sql = "SELECT *,ROW_START,ROW_END FROM alias_dns a
         ORDER BY dns, port";
@@ -34,7 +98,116 @@ class Alias extends Controller
             $data['alia_dns'][] = $ob;
         }
 
+        $data['pending_aliases'] = $this->getPendingAliasesFromSlaveIndex();
+        $data['alias_index_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['alias_index_csrf_token'] = Csrf::issueToken($_SESSION, self::ALIAS_INDEX_CSRF_SCOPE);
+
         $this->set('data', $data);
+    }
+
+    public static function evaluateIndexPostRequest(array $post, array $server, array $session): array
+    {
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::ALIAS_INDEX_CSRF_SCOPE)) {
+            return self::buildIndexPostOutcome($failure['status'], $failure['body'], $failure['headers']);
+        }
+
+        $alias = self::normalizeIndexPayload($post);
+        if ($alias === null) {
+            return self::buildIndexPostOutcome(400, 'Invalid alias payload');
+        }
+
+        return self::buildIndexPostOutcome(200, '', [], $alias);
+    }
+
+    public static function normalizeIndexPayload(array $post): ?array
+    {
+        if (!isset($post['alias_dns']) || !is_array($post['alias_dns'])) {
+            return null;
+        }
+
+        $dns = self::normalizeAliasDns($post['alias_dns']['dns'] ?? null);
+        $port = self::normalizePositiveInteger($post['alias_dns']['port'] ?? null, 65535);
+        $idMysqlServer = self::normalizePositiveInteger($post['alias_dns']['id_mysql_server'] ?? null);
+
+        if ($dns === null || $port === null || $idMysqlServer === null) {
+            return null;
+        }
+
+        return [
+            'dns' => $dns,
+            'port' => $port,
+            'id_mysql_server' => $idMysqlServer,
+        ];
+    }
+
+    private static function normalizeAliasDns($value): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $dns = trim((string) $value);
+        if (
+            $dns === ''
+            || strlen($dns) > self::ALIAS_DNS_MAX_BYTES
+            || !preg_match('/^[A-Za-z0-9._:-]+$/', $dns)
+        ) {
+            return null;
+        }
+
+        return $dns;
+    }
+
+    private static function normalizePositiveInteger($value, ?int $max = null): ?int
+    {
+        if (is_int($value)) {
+            $intValue = $value;
+        } elseif (is_string($value)) {
+            $trimmed = trim($value);
+            if ($trimmed === '' || !ctype_digit($trimmed)) {
+                return null;
+            }
+            $intValue = (int) $trimmed;
+        } else {
+            return null;
+        }
+
+        if ($intValue <= 0 || ($max !== null && $intValue > $max)) {
+            return null;
+        }
+
+        return $intValue;
+    }
+
+    private static function upsertAliasDnsFromRow(array $alias): void
+    {
+        self::upsertAliasDns([
+            $alias['dns'],
+            $alias['port'],
+            $alias['id_mysql_server'],
+        ]);
+    }
+
+    private static function buildIndexPostOutcome(int $status, string $body, array $headers = [], ?array $alias = null): array
+    {
+        return [
+            'status' => $status,
+            'body' => $body,
+            'headers' => $headers,
+            'alias' => $alias,
+        ];
+    }
+
+    private function respondIndexError(int $status, string $body, array $headers = []): void
+    {
+        if (!headers_sent()) {
+            http_response_code($status);
+            foreach ($headers as $name => $value) {
+                header($name.': '.$value);
+            }
+        }
+
+        echo $body;
     }
 
     /**
@@ -43,7 +216,6 @@ class Alias extends Controller
      * @author Aurélien LEQUOY <aurelien.lequoy@esysteme.com>
      * @license GNU/GPL
      * @license http://opensource.org/licenses/GPL-3.0 GNU Public License
-     * @param void
      * @return void
      * @description try to find different way to match master_host and master_port that we cannot find in table mysql_server
      * @access public
@@ -99,12 +271,71 @@ class Alias extends Controller
 
         $this->addHostname($param);
         $this->addAliasFromHostname($param);
+        $this->addAliasFromWsrepNodeAddress($param);
+        $this->addAliasFromSshIps($param);
 
         if (!IS_CLI) {
             header("location: ".LINK."alias/index");
         }
     }
 
+/**
+ * Delete alias state through `delete`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for delete.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::delete()
+ * @example /fr/alias/delete
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public function delete($param)
+    {
+        $this->view = false;
+
+        $id_alias_dns = (int)($param[0] ?? 0);
+
+        if ($id_alias_dns > 0) {
+            $db = Sgbd::sql(DB_DEFAULT);
+            $sql = "DELETE FROM alias_dns WHERE id = ".$id_alias_dns." LIMIT 1;";
+            $db->sql_query($sql);
+        }
+
+        header("location: ".LINK."alias/index");
+    }
+
+/**
+ * Retrieve alias state through `getExtraction`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getExtraction.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getExtraction()
+ * @example /fr/alias/getExtraction
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getExtraction($param)
     {
         $var_host = $param[0];
@@ -126,9 +357,11 @@ class Alias extends Controller
                     continue;
                 }
 
-                $list_host[$master[$host].':'.$master[$port]]          = $master;
-                $list_host[$master[$host].':'.$master[$port]]['_HOST'] = $master[$host];
-                $list_host[$master[$host].':'.$master[$port]]['_PORT'] = $master[$port];
+                if (isset($master[$host]) && !empty($master[$host]) && isset($master[$port]) && !empty($master[$port])) {
+                    $list_host[$master[$host].':'.$master[$port]]          = $master;
+                    $list_host[$master[$host].':'.$master[$port]]['_HOST'] = $master[$host];
+                    $list_host[$master[$host].':'.$master[$port]]['_PORT'] = $master[$port];
+                }
             }
         }
 
@@ -171,7 +404,7 @@ class Alias extends Controller
             }
         }
 
-        return false;
+        return [];
     }
 
     /**
@@ -212,10 +445,31 @@ class Alias extends Controller
             return $tmp;
         }
 
-        return false;
+        return [];
     }
 
 
+/**
+ * Create alias state through `addHostname`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for addHostname.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::addHostname()
+ * @example /fr/alias/addHostname
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function addHostname($param)
     {
         $this->view = false;
@@ -223,22 +477,59 @@ class Alias extends Controller
         Debug::debug($param);
         
         $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "INSERT INTO alias_dns (id_mysql_server, dns, port)
-        SELECT ms.id, ms.hostname, ms.port
-        FROM mysql_server ms
-        LEFT JOIN alias_dns ad 
-            ON ms.hostname = ad.dns AND ms.port = ad.port
-        WHERE ad.dns IS NULL;";
+        $existingAlias = [];
+        $res = $db->sql_query("SELECT dns, port FROM alias_dns PARTITION (pn)");
 
-        $db->sql_query($sql);
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $existingAlias[strtolower((string) $row['dns']).':'.$row['port']] = true;
+        }
+
+        $toInsert = [];
+        $res = $db->sql_query("SELECT id, hostname, port FROM mysql_server WHERE hostname IS NOT NULL AND hostname != ''");
+
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $hostname = strtolower((string) $row['hostname']);
+            $key = $hostname.':'.$row['port'];
+
+            if (!empty($existingAlias[$key])) {
+                continue;
+            }
+
+            $toInsert[] = '('.(int) $row['id'].', "'.$db->sql_real_escape_string($hostname).'", '.(int) $row['port'].')';
+            $existingAlias[$key] = true;
+        }
+
+        if (!empty($toInsert)) {
+            $sql = "INSERT INTO alias_dns (id_mysql_server, dns, port) VALUES ".implode(',', $toInsert).";";
+            $db->sql_query($sql);
+        }
 
     }
 
+/**
+ * Create alias state through `addAliasFromHostname`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for addAliasFromHostname.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::addAliasFromHostname()
+ * @example /fr/alias/addAliasFromHostname
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function addAliasFromHostname($param)
     {
         $this->view = false;
-
-        $db = Sgbd::sql(DB_DEFAULT);
 
         Debug::parseDebug($param);
         $hostnames = $this->getExtraction(array("variables::hostname","variables::port", "variables::is_proxysql" ));
@@ -249,30 +540,513 @@ class Alias extends Controller
                 continue;
             }
 
-            $sql = "SELECT id,id_mysql_server from alias_dns WHERE dns='".$hostname['_HOST']."' and port =".$hostname['_PORT'].";";
-            
-            $res = $db->sql_query($sql);
+            self::upsertAliasDns([$hostname['_HOST'], $hostname['_PORT'], $hostname['id_mysql_server']]);
+        }
+    }
+/**
+ * Handle alias state through `upsertAliasDns`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $param Route parameters forwarded by the router.
+ * @phpstan-param array $param
+ * @psalm-param array $param
+ * @return void Returned value for upsertAliasDns.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::upsertAliasDns()
+ * @example /fr/alias/upsertAliasDns
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public static function upsertAliasDns(array $param): void
+    {
+        // $param = [dns, port, id_mysql_server, is_from_ssh]
+        $dns = $param[0] ?? null;
+        $port = $param[1] ?? null;
+        $id_mysql_server = $param[2] ?? null;
+        $is_from_ssh = isset($param[3]) ? (int)$param[3] : 0;
 
-            if ( $db->sql_num_rows($res) > 0) {
-            
-                while( $ob = $db->sql_fetch_object($res) )  {
+        if (!in_array($is_from_ssh, [0, 1], true)) {
+            $is_from_ssh = 0;
+        }
 
-                    Debug::debug($ob);
+        if (!$dns || !$port || !$id_mysql_server) {
+            return; // paramètre manquant
+        }
 
-                    if ($ob->id_mysql_server != $hostname['id_mysql_server'])
-                    {
-                        $sql2 = "UPDATE alias_dns SET id_mysql_server=".$hostname['id_mysql_server']." dns='".$hostname['_HOST']."' and port =".$hostname['_PORT']." WHERE id=".$ob->id.";";
-                        Debug::sql($sql2);
-                        $db->sql_query($sql2);
-                    }
-                }
-            }
-            else {
-                $sql3 = "INSERT INTO alias_dns (id_mysql_server,dns,port) VALUES (".$hostname['id_mysql_server'].",'".$hostname['_HOST']."' ,".$hostname['_PORT'].");";
-                Debug::sql($sql3);
-                $db->sql_query($sql3);
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        // clé pour le cache
+        $key = "$dns:$port";
+
+        // si déjà en cache et identique, on n'update pas
+        if (isset(self::$alias_dns_cache[$key])) {
+            $cached = self::$alias_dns_cache[$key];
+            $cached_server = (int)($cached['id_mysql_server'] ?? 0);
+            $cached_is_from_ssh = (int)($cached['is_from_ssh'] ?? 0);
+
+            if (
+                $cached_server === (int)$id_mysql_server
+                && $cached_is_from_ssh === $is_from_ssh
+            ) {
+                return;
             }
         }
-        Debug::debug($hostname);
+
+        // éviter les doublons avec INSERT ... ON DUPLICATE KEY UPDATE (assurant que dns et port sont uniques)
+        $sqlUpsert = sprintf(
+            "INSERT INTO alias_dns (dns, port, id_mysql_server, is_from_ssh) VALUES ('%s', %d, %d, %d) 
+            ON DUPLICATE KEY UPDATE id_mysql_server = VALUES(id_mysql_server), is_from_ssh = VALUES(is_from_ssh)",
+            $db->sql_real_escape_string($dns),
+            $port,
+            $id_mysql_server,
+            $is_from_ssh
+        );
+        $db->sql_query($sqlUpsert);
+        self::$alias_dns_cache[$key] = [
+            'id_mysql_server' => (int)$id_mysql_server,
+            'is_from_ssh' => $is_from_ssh,
+        ];
+    }
+
+/**
+ * Create alias state through `addAliasFromSshIps`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for addAliasFromSshIps.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::addAliasFromSshIps()
+ * @example /fr/alias/addAliasFromSshIps
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public function addAliasFromSshIps($param)
+    {
+        $this->view = false;
+
+        Debug::parseDebug($param);
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        // id_mysql_server => port
+        $port_by_server = [];
+        $sql = "SELECT id, port FROM mysql_server WHERE is_deleted = 0";
+        $res = $db->sql_query($sql);
+        while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $port_by_server[(int)$ob['id']] = (int)$ob['port'];
+        }
+
+        $ssh_ips = Extraction2::display(array("ssh_hardware::ips"));
+
+        // clé = dns:port
+        $current_aliases_from_ssh = [];
+
+        foreach ($ssh_ips as $id_mysql_server => $row) {
+            $id_mysql_server = (int)$id_mysql_server;
+
+            if (empty($port_by_server[$id_mysql_server])) {
+                continue;
+            }
+
+            $port = (int)$port_by_server[$id_mysql_server];
+            $ips = self::extractIpList($row['ips'] ?? []);
+
+            foreach ($ips as $ip) {
+                $key = strtolower($ip).":".$port;
+                $current_aliases_from_ssh[$key] = [
+                    'dns' => $ip,
+                    'port' => $port,
+                    'id_mysql_server' => $id_mysql_server,
+                ];
+            }
+        }
+
+        foreach ($current_aliases_from_ssh as $alias) {
+            self::upsertAliasDns([
+                $alias['dns'],
+                $alias['port'],
+                $alias['id_mysql_server'],
+                1,
+            ]);
+        }
+
+        // purge les entrées ssh obsolètes (plus présentes dans ssh_hardware::ips)
+        $sql = "SELECT id, dns, port FROM alias_dns PARTITION (pn) WHERE is_from_ssh = 1";
+        $res = $db->sql_query($sql);
+
+        $to_delete = [];
+        while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $key = strtolower($ob['dns']).":".(int)$ob['port'];
+
+            if (!isset($current_aliases_from_ssh[$key])) {
+                $to_delete[] = (int)$ob['id'];
+            }
+        }
+
+        if (!empty($to_delete)) {
+            $sql = "DELETE FROM alias_dns WHERE id IN (".implode(',', $to_delete).")";
+            $db->sql_query($sql);
+        }
+    }
+
+/**
+ * Handle alias state through `extractIpList`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $raw Input value for `raw`.
+ * @phpstan-param mixed $raw
+ * @psalm-param mixed $raw
+ * @return array Returned value for extractIpList.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::extractIpList()
+ * @example /fr/alias/extractIpList
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private static function extractIpList($raw): array
+    {
+        $list = [];
+
+        $flatten = function ($value) use (&$flatten, &$list): void {
+            if (is_array($value)) {
+                foreach ($value as $item) {
+                    $flatten($item);
+                }
+                return;
+            }
+
+            $value = trim((string)$value);
+            if ($value === '') {
+                return;
+            }
+
+            foreach (preg_split('/[\s,;|]+/', $value) as $candidate) {
+                $candidate = trim($candidate);
+
+                if ($candidate === '') {
+                    continue;
+                }
+
+                if (str_contains($candidate, '/')) {
+                    $candidate = explode('/', $candidate)[0];
+                }
+
+                if (filter_var($candidate, FILTER_VALIDATE_IP)) {
+                    $list[$candidate] = $candidate;
+                }
+            }
+        };
+
+        if (is_string($raw)) {
+            $decoded = json_decode($raw, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $raw = $decoded;
+            }
+        }
+
+        $flatten($raw);
+
+        return array_values($list);
+    }
+
+/**
+ * Create alias state through `addAliasFromWsrepNodeAddress`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for addAliasFromWsrepNodeAddress.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::addAliasFromWsrepNodeAddress()
+ * @example /fr/alias/addAliasFromWsrepNodeAddress
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public function addAliasFromWsrepNodeAddress($param)
+    {
+        $this->view = false;
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        Debug::parseDebug($param);
+        $wsrep_addresses = $this->getExtraction(array("variables::wsrep_node_address","variables::port", "variables::is_proxysql"));
+
+        foreach($wsrep_addresses as $wsrep)
+        {
+            if (!empty($wsrep['is_proxysql']) && $wsrep['is_proxysql'] === "1") {
+                continue;
+            }
+
+            // vérifier si c'est différent du hostname dans mysql_server (cas NAT)
+            $sql = "SELECT hostname FROM mysql_server WHERE id = ".$wsrep['id_mysql_server'];
+            $res = $db->sql_query($sql);
+            if ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                $hostname_db = $row['hostname'];
+                if ($wsrep['_HOST'] !== $hostname_db) {
+                    // ajouter l'alias si wsrep_node_address != hostname (scénario NAT)
+                    self::upsertAliasDns([$wsrep['_HOST'], $wsrep['_PORT'], $wsrep['id_mysql_server']]);
+                }
+            }
+        }
+    }
+
+/**
+ * Handle alias state through `clearAliasDnsCache`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for clearAliasDnsCache.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::clearAliasDnsCache()
+ * @example /fr/alias/clearAliasDnsCache
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public static function clearAliasDnsCache(): void
+    {
+        self::$alias_dns_cache = [];
+    }
+
+    private function getPendingAliasesFromSlaveIndex(): array
+    {
+        $slaves = Extraction::display(array("slave::master_host", "slave::master_port"));
+        $infoServer = Extraction::display(array("variables::hostname", "variables::is_proxysql"));
+        $candidates = $this->getAliasServerCandidates();
+
+        $pending = [];
+
+        foreach ($slaves as $slaveGroup) {
+            foreach ($slaveGroup as $slave) {
+                $id_mysql_server = (int)($slave['id_mysql_server'] ?? 0);
+
+                if (!empty($infoServer[$id_mysql_server]['']['is_proxysql']) && $infoServer[$id_mysql_server]['']['is_proxysql'] === "1") {
+                    continue;
+                }
+
+                $dns = trim((string)($slave['master_host'] ?? ''));
+                $port = (int)($slave['master_port'] ?? 0);
+
+                if ($dns === '' || $port <= 0) {
+                    continue;
+                }
+
+                if (Mysql::getIdFromDns($dns.':'.$port)) {
+                    continue;
+                }
+
+                $key = strtolower($dns).':'.$port;
+
+                if (!isset($pending[$key])) {
+                    $pending[$key] = [
+                        'dns' => $dns,
+                        'port' => $port,
+                        'sources' => [],
+                        'source_count' => 0,
+                    ];
+                }
+
+                $sourceHostname = trim((string)($infoServer[$id_mysql_server]['']['hostname'] ?? 'server #'.$id_mysql_server));
+
+                if ($sourceHostname !== '' && !in_array($sourceHostname, $pending[$key]['sources'], true)) {
+                    $pending[$key]['sources'][] = $sourceHostname;
+                }
+
+                $pending[$key]['source_count']++;
+            }
+        }
+
+        foreach ($pending as &$alias) {
+            $alias['candidates'] = $this->rankAliasServerCandidates($alias['dns'], (int)$alias['port'], $candidates);
+            $alias['suggested_id_mysql_server'] = 0;
+
+            if (!empty($alias['candidates']) && (int)$alias['candidates'][0]['match_score'] > 0) {
+                $alias['suggested_id_mysql_server'] = (int)$alias['candidates'][0]['id'];
+            }
+        }
+        unset($alias);
+
+        usort($pending, static function (array $left, array $right): int {
+            return strcmp($left['dns'].':'.$left['port'], $right['dns'].':'.$right['port']);
+        });
+
+        return array_values($pending);
+    }
+
+    private function getAliasServerCandidates(): array
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+        $tunnelMapping = Tunnel::getTunnelsMapping();
+
+        $sql = "SELECT id, name, display_name, hostname, ip, port
+                FROM mysql_server
+                WHERE is_deleted = 0
+                ORDER BY display_name, ip, port";
+
+        $res = $db->sql_query($sql);
+        $servers = [];
+
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $localEndpoint = trim((string)$row['ip']).':'.(int)$row['port'];
+            $realEndpoint = trim((string)($tunnelMapping[$localEndpoint] ?? ''));
+            $remoteHost = '';
+            $remotePort = null;
+
+            if ($realEndpoint !== '' && str_contains($realEndpoint, ':')) {
+                $parts = explode(':', $realEndpoint);
+                $remotePort = (int)array_pop($parts);
+                $remoteHost = implode(':', $parts);
+            }
+
+            $row['remote_host'] = $remoteHost;
+            $row['remote_port'] = $remotePort;
+            $row['display_label'] = $row['display_name'].' ('.$row['ip'].':'.$row['port'];
+
+            if ($realEndpoint !== '') {
+                $row['display_label'] .= ' => '.$realEndpoint;
+            }
+
+            $row['display_label'] .= ')';
+
+            $servers[] = $row;
+        }
+
+        return $servers;
+    }
+
+    private function rankAliasServerCandidates(string $dns, int $port, array $candidates): array
+    {
+        $ranked = [];
+
+        foreach ($candidates as $candidate) {
+            $candidate['match_score'] = $this->computeAliasMatchScore($dns, $port, $candidate);
+            $candidate['match_color'] = $this->getAliasMatchColor((int)$candidate['match_score']);
+            $ranked[] = $candidate;
+        }
+
+        usort($ranked, static function (array $left, array $right): int {
+            if ((int)$left['match_score'] === (int)$right['match_score']) {
+                return strcmp((string)$left['display_label'], (string)$right['display_label']);
+            }
+
+            return (int)$right['match_score'] <=> (int)$left['match_score'];
+        });
+
+        return $ranked;
+    }
+
+    private function computeAliasMatchScore(string $dns, int $port, array $candidate): int
+    {
+        $dns = strtolower(trim($dns));
+        $displayName = strtolower(trim((string)($candidate['display_name'] ?? '')));
+        $serverName = strtolower(trim((string)($candidate['name'] ?? '')));
+        $hostname = strtolower(trim((string)($candidate['hostname'] ?? '')));
+        $ip = strtolower(trim((string)($candidate['ip'] ?? '')));
+        $candidatePort = (int)($candidate['port'] ?? 0);
+        $remoteHost = strtolower(trim((string)($candidate['remote_host'] ?? '')));
+        $remotePort = (int)($candidate['remote_port'] ?? 0);
+
+        $score = 0;
+
+        if ($dns === $ip && $port === $candidatePort) {
+            $score = max($score, 100);
+        }
+
+        if ($remoteHost !== '' && $dns === $remoteHost && $port === $remotePort) {
+            $score = max($score, 98);
+        }
+
+        if ($hostname !== '' && $dns === $hostname && $port === $candidatePort) {
+            $score = max($score, 96);
+        }
+
+        if ($displayName !== '' && $dns === $displayName) {
+            $score = max($score, $port === $candidatePort ? 94 : 74);
+        }
+
+        if ($serverName !== '' && $dns === $serverName) {
+            $score = max($score, $port === $candidatePort ? 90 : 70);
+        }
+
+        $score = max($score, $this->computePartialAliasMatchScore($dns, $port, $displayName, $candidatePort, 82, 62));
+        $score = max($score, $this->computePartialAliasMatchScore($dns, $port, $serverName, $candidatePort, 78, 58));
+        $score = max($score, $this->computePartialAliasMatchScore($dns, $port, $hostname, $candidatePort, 76, 56));
+        $score = max($score, $this->computePartialAliasMatchScore($dns, $port, $ip, $candidatePort, 72, 52));
+
+        if ($remoteHost !== '') {
+            $score = max($score, $this->computePartialAliasMatchScore($dns, $port, $remoteHost, $remotePort, 80, 60));
+        }
+
+        return $score;
+    }
+
+    private function computePartialAliasMatchScore(string $dns, int $port, string $candidateValue, int $candidatePort, int $samePortScore, int $differentPortScore): int
+    {
+        if ($candidateValue === '' || $dns === '') {
+            return 0;
+        }
+
+        if (!str_contains($dns, $candidateValue) && !str_contains($candidateValue, $dns)) {
+            return 0;
+        }
+
+        return $port === $candidatePort ? $samePortScore : $differentPortScore;
+    }
+
+    private function getAliasMatchColor(int $score): string
+    {
+        if ($score >= 95) {
+            return '#b7efc5';
+        }
+
+        if ($score >= 80) {
+            return '#d8f3dc';
+        }
+
+        if ($score >= 65) {
+            return '#ecf9ee';
+        }
+
+        if ($score >= 50) {
+            return '#f6fcf7';
+        }
+
+        return '#ffffff';
     }
 }

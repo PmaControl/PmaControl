@@ -1,12 +1,15 @@
 <?php
+
+use App\Library\Security\CsrfRender;
+
 \Glial\Synapse\FactoryController::addNode("StorageArea", "menu");
 
 function format($bytes, $decimals = 2)
 {
-    $sz     = 'KMGTP';
-    $factor = floor((strlen($bytes) - 1) / 3);
-    return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor))." ".@$sz[$factor]."o";
+    return \App\Library\Format::bytes($bytes, $decimals);
 }
+
+$storageAreaUpdateCsrfAttributes = CsrfRender::attributes($data, 'storage_area_update');
 ?>
 <div class="panel panel-primary">
     <div class="panel-heading">
@@ -37,7 +40,7 @@ foreach ($data['storage'] as $storage) {
     echo '<tr>';
     echo '<td>'.$storage['id_backup_storage_area'].'</td>';
     ?>
-            <td class="line-edit" data-name="libelle" data-pk="<?= $storage['id'] ?>" data-type="text" data-url="<?= LINK ?>storagearea/update" data-title="Enter name"><?= $storage['name'] ?></td>
+            <td class="line-edit" data-name="libelle" data-pk="<?= (int) $storage['id_backup_storage_area'] ?>" data-type="text" data-url="<?= LINK ?>storagearea/update" data-title="Enter name"<?= $storageAreaUpdateCsrfAttributes ?>><?= $storage['name'] ?></td>
             <?php
             echo '<td>'.$storage['ip'].':'.$storage['port'].'</td>';
             echo '<td><img class="country" src="'.IMG.'country/type1/'.strtolower($storage['iso']).'.gif" widtd="18" height="12"> '.$storage['city'].'</td>';
@@ -120,7 +123,7 @@ foreach ($data['storage2'] as $storage) {
     echo '<tr>';
     echo '<td>'.$storage['id_backup_storage_area'].'</td>';
     ?>
-            <td class="line-edit" data-name="libelle" data-pk="<?= $storage['id'] ?>" data-type="text" data-url="<?= LINK ?>storagearea/update" data-title="Enter name"><?= $storage['name'] ?></td>
+            <td class="line-edit" data-name="libelle" data-pk="<?= (int) $storage['id_backup_storage_area'] ?>" data-type="text" data-url="<?= LINK ?>storagearea/update" data-title="Enter name"<?= $storageAreaUpdateCsrfAttributes ?>><?= $storage['name'] ?></td>
             <?php
             echo '<td>'.$storage['ip'].':'.$storage['port'].'</td>';
             echo '<td><img class="country" src="'.IMG.'country/type1/'.strtolower($storage['iso']).'.gif" widtd="18" height="12"> '.$storage['city'].'</td>';

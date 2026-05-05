@@ -1,0 +1,107 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Library\Security\Identifier;
+use PHPUnit\Framework\TestCase;
+
+final class IdentifierTest extends TestCase
+{
+    public function testDatabaseNameAllowlist(): void
+    {
+        $this->assertTrue(Identifier::isDatabaseName('customer_db'));
+        $this->assertTrue(Identifier::isDatabaseName('customer-db-01'));
+
+        $this->assertFalse(Identifier::isDatabaseName(''));
+        $this->assertFalse(Identifier::isDatabaseName(str_repeat('a', 65)));
+        $this->assertFalse(Identifier::isDatabaseName('customer db'));
+        $this->assertFalse(Identifier::isDatabaseName("customer'db"));
+        $this->assertFalse(Identifier::isDatabaseName('customer`db'));
+        $this->assertFalse(Identifier::isDatabaseName('customer$db'));
+    }
+
+    public function testNormalizeDatabaseNameList(): void
+    {
+        $this->assertSame(['app_db', 'log-db'], Identifier::normalizeDatabaseNameList(' app_db, log-db '));
+
+        $this->assertNull(Identifier::normalizeDatabaseNameList(''));
+        $this->assertNull(Identifier::normalizeDatabaseNameList('app_db,app_db'));
+        $this->assertNull(Identifier::normalizeDatabaseNameList("app'db"));
+        $this->assertNull(Identifier::normalizeDatabaseNameList(str_repeat('a', 65)));
+    }
+
+    public function testSqlIdentifierQuoting(): void
+    {
+        $this->assertTrue(Identifier::isSqlIdentifier('orders_2024'));
+        $this->assertTrue(Identifier::isSqlIdentifier('orders-2024'));
+        $this->assertSame('`orders_2024`', Identifier::quoteSqlIdentifier('orders_2024'));
+        $this->assertSame('`orders-2024`', Identifier::quoteSqlIdentifier('orders-2024'));
+
+        $this->assertFalse(Identifier::isSqlIdentifier('orders`2024'));
+        $this->assertFalse(Identifier::isSqlIdentifier('orders 2024'));
+    }
+
+    public function testSqlIdentifierQuotingRejectsUnsafePayload(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        Identifier::quoteSqlIdentifier('orders`2024');
+    }
+
+    public function testStrictSqlIdentifierAllowlist(): void
+    {
+        $this->assertTrue(Identifier::isStrictSqlIdentifier('orders_2024'));
+        $this->assertTrue(Identifier::isStrictSqlIdentifier('_scratch'));
+        $this->assertTrue(Identifier::isStrictSqlIdentifier('a'.str_repeat('b', 63)));
+
+        $this->assertFalse(Identifier::isStrictSqlIdentifier(''));
+        $this->assertFalse(Identifier::isStrictSqlIdentifier('1orders'));
+        $this->assertFalse(Identifier::isStrictSqlIdentifier('orders-2024'));
+        $this->assertFalse(Identifier::isStrictSqlIdentifier('orders 2024'));
+        $this->assertFalse(Identifier::isStrictSqlIdentifier('orders`2024'));
+        $this->assertFalse(Identifier::isStrictSqlIdentifier("orders\n"));
+        $this->assertFalse(Identifier::isStrictSqlIdentifier("orders\0"));
+        $this->assertFalse(Identifier::isStrictSqlIdentifier('a'.str_repeat('b', 64)));
+    }
+
+    public function testStrictSqlIdentifierQuoting(): void
+    {
+        $this->assertSame('`orders_2024`', Identifier::quoteStrictSqlIdentifier('orders_2024'));
+        $this->assertSame('`fallback`', Identifier::quoteStrictSqlIdentifierOrFallback('orders-2024', 'fallback'));
+    }
+
+    public function testStrictSqlIdentifierQuotingRejectsUnsafePayload(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        Identifier::quoteStrictSqlIdentifier('orders`2024');
+    }
+
+    public function testSqlAccountHostAndPrivilegeAllowlists(): void
+    {
+        $this->assertTrue(Identifier::isAccountName('app_user'));
+        $this->assertTrue(Identifier::isAccountName(''));
+        $this->assertFalse(Identifier::isAccountName("app'user"));
+
+        $this->assertTrue(Identifier::isHostName('%'));
+        $this->assertTrue(Identifier::isHostName('10.0.0.%'));
+        $this->assertTrue(Identifier::isHostName('db-client.example.net'));
+        $this->assertFalse(Identifier::isHostName("host'owned"));
+
+        $this->assertTrue(Identifier::isPrivilegeName('SELECT'));
+        $this->assertTrue(Identifier::isPrivilegeName('CREATE TEMPORARY TABLES'));
+        $this->assertFalse(Identifier::isPrivilegeName('SELECT, DROP'));
+    }
+
+    public function testSafeAbsolutePathAllowlist(): void
+    {
+        $this->assertTrue(Identifier::isSafeAbsolutePath('/mysql/backup'));
+        $this->assertTrue(Identifier::isSafeAbsolutePath('/srv/backups/mysql_01'));
+
+        $this->assertFalse(Identifier::isSafeAbsolutePath('relative/path'));
+        $this->assertFalse(Identifier::isSafeAbsolutePath('/mysql/../backup'));
+        $this->assertFalse(Identifier::isSafeAbsolutePath('/mysql/backup;rm'));
+        $this->assertFalse(Identifier::isSafeAbsolutePath('/mysql/backup with space'));
+        $this->assertFalse(Identifier::isSafeAbsolutePath("/mysql/backup\0owned"));
+    }
+}

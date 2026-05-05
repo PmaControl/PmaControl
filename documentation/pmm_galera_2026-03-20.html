@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>pmm_galera_2026-03-20</title>
+  <style>
+    html {
+      line-height: 1.5;
+      font-family: Georgia, serif;
+      font-size: 20px;
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 1em;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+      font-size: 85%;
+      margin: 0;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1 id="pmm-galera-screen-rebuild">PMM Galera Screen Rebuild</h1>
+<h2 id="route">Route</h2>
+<ul>
+<li><code>Pmm/galera/{id_mysql_server}</code></li>
+</ul>
+<h2 id="pmm-reference">PMM reference</h2>
+<ul>
+<li>Dashboard inspected: <code>PXC Galera Cluster Summary</code></li>
+<li>Demo URL:
+<code>https://pmmdemo.percona.com/pmm-ui/graph/d/pxc-cluster-summary/pxc-galera-cluster-summary</code></li>
+</ul>
+<h2 id="files">Files</h2>
+<ul>
+<li>Controller: <code>App/Controller/Pmm.php::galera()</code></li>
+<li>Builder:
+<code>App/Library/PmmDashboardCatalog.php::buildGalera()</code></li>
+<li>View: <code>App/view/Pmm/galera.view.php</code></li>
+</ul>
+<h2 id="implemented-sections">Implemented sections</h2>
+<h3 id="cluster-summary">Cluster summary</h3>
+<ul>
+<li>Type: line charts + stat cards</li>
+<li>PMM source family:
+<ul>
+<li><code>mysql_global_status_wsrep_cluster_size</code></li>
+<li><code>mysql_global_status_wsrep_local_state</code></li>
+</ul></li>
+<li>PmaControl equivalents:
+<ul>
+<li><code>status::wsrep_cluster_size</code></li>
+<li><code>status::wsrep_local_state</code></li>
+<li><code>status::wsrep_cluster_status</code></li>
+<li><code>status::wsrep_local_state_comment</code></li>
+<li><code>status::wsrep_ready</code></li>
+<li><code>status::wsrep_connected</code></li>
+</ul></li>
+</ul>
+<h3 id="flow-control-queues-and-replication-payload">Flow control,
+queues and replication payload</h3>
+<ul>
+<li>Type: line charts + current counter table</li>
+<li>PMM source family:
+<ul>
+<li><code>mysql_global_status_wsrep_*</code></li>
+</ul></li>
+<li>PmaControl equivalents:
+<ul>
+<li><code>status::wsrep_flow_control_paused</code></li>
+<li><code>status::wsrep_local_recv_queue</code></li>
+<li><code>status::wsrep_local_send_queue</code></li>
+<li><code>status::wsrep_flow_control_recv</code></li>
+<li><code>status::wsrep_flow_control_sent</code></li>
+<li><code>status::wsrep_received_bytes</code></li>
+<li><code>status::wsrep_replicated_bytes</code></li>
+<li><code>status::wsrep_repl_data_bytes</code></li>
+</ul></li>
+</ul>
+<h3 id="sst-and-datadir">SST and datadir</h3>
+<ul>
+<li>Type: line charts + snapshot table</li>
+<li>PMM equivalent:
+<ul>
+<li>panel <code>56</code> <code>IST Progress</code></li>
+<li>PMM metrics:
+<ul>
+<li><code>mysql_global_status_wsrep_ist_receive_seqno_start</code></li>
+<li><code>mysql_global_status_wsrep_ist_receive_seqno_current</code></li>
+<li><code>mysql_global_status_wsrep_ist_receive_seqno_end</code></li>
+</ul></li>
+</ul></li>
+<li>PmaControl-only sources:
+<ul>
+<li><code>ssh_stats::mysql_sst_in_progress</code></li>
+<li><code>ssh_stats::mysql_sst_elapsed_sec</code></li>
+<li><code>ssh_stats::mysql_datadir_total_size</code></li>
+<li><code>ssh_stats::mysql_datadir_clean_size</code></li>
+</ul></li>
+<li>PmaControl equivalents for PMM IST panel:
+<ul>
+<li><code>status::wsrep_ist_receive_seqno_start</code></li>
+<li><code>status::wsrep_ist_receive_seqno_current</code></li>
+<li><code>status::wsrep_ist_receive_seqno_end</code></li>
+</ul></li>
+</ul>
+<h3 id="ist-progress">IST Progress</h3>
+<ul>
+<li>Type: line chart</li>
+<li>PMM reference:
+<ul>
+<li>dashboard <code>PXC Galera Cluster Summary</code></li>
+<li>panel <code>56</code></li>
+<li>title <code>IST Progress</code></li>
+</ul></li>
+<li>PMM Prometheus expressions:
+<ul>
+<li><code>avg by (service_name) (mysql_global_status_wsrep_ist_receive_seqno_start) * on (service_name) group_left avg by (service_name) (mysql_galera_variables_info{wsrep_cluster_name="$cluster"})</code></li>
+<li><code>avg by (service_name) (mysql_global_status_wsrep_ist_receive_seqno_current) * on (service_name) group_left avg by (service_name) (mysql_galera_variables_info{wsrep_cluster_name="$cluster"})</code></li>
+<li><code>avg by (service_name) (mysql_global_status_wsrep_ist_receive_seqno_end) * on (service_name) group_left avg by (service_name) (mysql_galera_variables_info{wsrep_cluster_name="$cluster"})</code></li>
+</ul></li>
+<li>PmaControl implementation:
+<ul>
+<li>chart <code>galera_ist_progress</code></li>
+<li><code>status::wsrep_ist_receive_seqno_start</code> =&gt;
+<code>IST first</code></li>
+<li><code>status::wsrep_ist_receive_seqno_current</code> =&gt;
+<code>IST current</code></li>
+<li><code>status::wsrep_ist_receive_seqno_end</code> =&gt;
+<code>IST last</code></li>
+</ul></li>
+<li>Notes:
+<ul>
+<li>PMM filters series by cluster through
+<code>mysql_galera_variables_info</code>.</li>
+<li>In PmaControl, the screen is already scoped to one
+<code>id_mysql_server</code>, so no Prometheus-side join is needed.</li>
+<li>If these wsrep status values are absent on a given node or Galera
+version, the chart remains empty.</li>
+</ul></li>
+</ul>
+<h3 id="cluster-members">Cluster members</h3>
+<ul>
+<li>Type: table</li>
+<li>Discovery:
+<ul>
+<li><code>wsrep_incoming_addresses</code></li>
+<li>fallback <code>wsrep_cluster_address</code></li>
+<li>parsed with <code>Dot3::getIdMysqlServerFromGalera()</code></li>
+<li>mapped back to <code>mysql_server</code></li>
+</ul></li>
+</ul>
+<h2 id="gaps">Gaps</h2>
+<ul>
+<li>PMM also exposes extra PXC and EVS internals that are not all stored
+in PmaControl.</li>
+<li>PmaControl extends the PMM rebuild with SST and datadir telemetry
+already used by Dot3.</li>
+<li>PMM panel <code>56</code> is now covered, but the screen still does
+not reproduce PMM’s cluster-wide multi-service grouping because
+PmaControl currently renders one server scope at a time.</li>
+</ul>
+</body>
+</html>

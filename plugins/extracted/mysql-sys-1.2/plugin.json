@@ -1,0 +1,33 @@
+{
+  "name": "mysql-sys",
+  "version": "1.2",
+  "title": "MySQL sys",
+  "description": "Example plugin package for installing the MySQL sys schema screens in PmaControl.",
+  "picture": "logo.svg",
+  "files": [
+    {
+      "source": "controller/Mysqlsys.controller.php",
+      "destination": "App/Controller/Mysqlsys.php"
+    },
+    {
+      "source": "view/Mysqlsys/index.view.php",
+      "destination": "App/view/Mysqlsys/index.view.php"
+    },
+    {
+      "source": "view/Mysqlsys/install.view.php",
+      "destination": "App/view/Mysqlsys/install.view.php"
+    },
+    {
+      "source": "logo.svg",
+      "destination": "App/Webroot/image/plugin/mysql-sys.svg"
+    }
+  ],
+  "sql": {
+    "install": [
+      "sql/install.sql"
+    ],
+    "uninstall": [
+      "sql/uninstall.sql"
+    ]
+  }
+}

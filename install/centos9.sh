@@ -1,6 +1,17 @@
 #!/bin/bash
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=install/lib/harden_apache.sh
+. "${SCRIPT_DIR}/lib/harden_apache.sh"
+# shellcheck source=install/lib/install_secrets.sh
+. "${SCRIPT_DIR}/lib/install_secrets.sh"
+trap cleanup_install_ssh_key EXIT
+trap 'cleanup_install_ssh_key; exit 129' HUP
+trap 'cleanup_install_ssh_key; exit 130' INT
+trap 'cleanup_install_ssh_key; exit 143' TERM
+
 password=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
+PMACTRL_HARDEN_APACHE_DOCROOT="${PMACTRL_HARDEN_APACHE_DOCROOT:-1}"
 
 dnf -y update
 dnf -y upgrade
@@ -12,6 +23,7 @@ dnf -y install gnupg
 dnf -y install  git 
 dnf -y install net-tools
 dnf -y install bind-utils
+dnf -y install jq openssh-clients
 
 #dnf -y install epel-release
 #dnf -y install sysbench
@@ -106,12 +118,13 @@ tee -a /etc/httpd/conf/httpd.conf <<EOL
     ServerName localhost
     DocumentRoot "/srv/www"
     <Directory "/srv/www/pmacontrol">
-        Options Indexes FollowSymLinks
+        Options -Indexes +FollowSymLinks
         AllowOverride All
         Require all granted
     </Directory>
 </VirtualHost>
 EOL
+pmactrl_harden_httpd_docroot
 
 echo "Apache modules and PHP-FPM configuration applied successfully."
 
@@ -177,6 +190,10 @@ pwd_admin=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
 
 mysql -e "GRANT ALL ON *.* TO pmacontrol@'127.0.0.1' IDENTIFIED BY '${pwd_pmacontrol}' WITH GRANT OPTION;"
 
+generate_install_ssh_key
+ssh_private_key_json=$(json_escape_file "${SSH_PRIVATE_KEY_FILE}")
+ssh_public_key_json=$(json_escape_file "${SSH_PUBLIC_KEY_FILE}")
+
 cat > /tmp/config.json << EOF
 {
   "mysql": {
@@ -228,8 +245,8 @@ cat > /tmp/config.json << EOF
 ,
   "ssh": [{
     "user": "pmacontrol",
-    "private key": "-----BEGIN RSA PRIVATE KEY-----\nMIIJKQIBAAKCAgEAsLxsW/pqk8VkCh/eUuhXusDLyG72sWz7uJk6Y1V/3lQRXbCX\n8orlGSlpcBwtMnVOAMUdul4/NQ9swDJqfSYMx5+s4hgswiDwqliwNmu8KGP7gseq\ntpB1apOsIGKby8KVkqwpmxyFs4W+dKwcxmPlw+1b5w5aro6keIbcomKAFNqq1nzR\nARBfL+AUEEZKjkK1o3vfzEhYL8nO+zpMzv2TMcbTumw+jjHC+DzKtUILBo/LjjkC\nwyWKva6QArS125itvIMT5pUW6X72RgWByKIUzCJrR+HzWO9zl8FQQeRlZjtCp+9C\n7HwMPiKH4upN2FfwWXSEa+NyYFUuNyjOCdbrRpgX0FfChE4XFklSNhMXdKMu\n-----END RSA PRIVATE KEY-----\n",
-    "public key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCwvGxb+mqTxWQKH95S6Fe6wMvIbvaxbPu4mTpjVX/eVBFdsJfyiuUZKWlwHC0ydU4AxR26Xj81D2zAMmp9JgzHn6ziGCzCIPCqWLA2a7woY/uCx6q2kHVqk6wgYpvLwpWSrCmbHIWzhb50rBzGY+XD7VvnDlqujqR4htyiYoAU2qrWfNEs5NseGEcQaiRMHe57lw2UTXGbj3Ked+h+n/XngRLV4D01DzaQZ8k45dREe32rUmJZJ3hvE3FI57ICEnVtnrQ8+lQrAoYP0jnYT7eXcIvjHDgyMXKc7fEAyp3b2QG+4J/HxL6K+elFJErLQ2yQlDR9afadnTsBJxFBA2/6yx42Lrp0pMprxKOvhSiMKNiDrP73Jt7d8Z5Z89YN+414Vo2M9713O54IB5H2r88qtdY4fuLzK4d4V39vz6ii5H2aEXIJVsbafLCn/qzbjp7IpoqvuB/3Smp2XW2RnWcZB1NY6diTQkS3MKpblDJILv5UtKN9RCyhRmRHFIM5RyTN21Euuei5bX6WhvEsL7jGo6JDmnXi3tzdAeTUbhPgOd2lX4LECBg9wbhzsezN47S6IGf+72sD/6BCJewKCZ8iheM34pEewDJdUSrg06LDLOr1TrRfaoV1qSsWNDtJVrfae/NTo4oKggxNkkDFkfeHm1pBej37dbMqzDVsKcNoCw=="
+    "private key": ${ssh_private_key_json},
+    "public key": ${ssh_public_key_json}
   
      }]
 }
@@ -260,4 +277,3 @@ PWD=$(pwd)
 cp -a glial pmacontrol
 sed "s#php App/Webroot/index.php#php ${PWD}/App/Webroot/index.php#g" -i pmacontrol
 mv pmacontrol /usr/local/bin/pmacontrol
-

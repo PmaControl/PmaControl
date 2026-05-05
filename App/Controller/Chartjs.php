@@ -3,9 +3,26 @@
 namespace App\Controller;
 
 use \Glial\Synapse\Controller;
+use App\Library\ChartPayload;
 use App\Library\Debug;
+use App\Library\Display;
+use App\Library\Extraction;
 use \Glial\Sgbd\Sgbd;
 
+/**
+ * Class responsible for chartjs workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Chartjs extends Controller
 {
 /*
@@ -47,71 +64,20 @@ class Chartjs extends Controller
         Debug::parseDebug($param);
 
         //$this->di['js']->addJavascript(array("moment.js", "Chart.bundle.js")); //, "hammer.min.js", "chartjs-plugin-zoom.js")
-        $this->di['js']->addJavascript(array("moment.js", "chart.min.js", "chartjs-plugin-crosshair.js"));
+        $this->di['js']->addJavascript(array("moment.js", "chart.min.js", "chartjs-plugin-crosshair.js", "formatters.js"));
         $slaves = Extraction::extract(array("status::com_select", "status::com_insert", "status::com_update", "status::com_delete"), array($id_mysql_server), $date, true, true);
 
 
-        $color  = array("orange" => "rgb(255, 159, 64)",
-            "blue" => "rgb(54, 162, 235)",
-            "red" => "rgb(255, 99, 132)",
-            "yellow" => "rgb(255, 205, 86)",
-            "green" => "rgb(75, 192, 192)",
-            "purple" => "rgb(153, 102, 255)",
-            "grey" => "rgb(201, 203, 207)"
+        $legacyChart = ChartPayload::legacyExtraction(
+            $slaves,
+            static function (array $slave): string {
+                return Display::ts_variable($slave['id_ts_variable']);
+            },
+            ['alpha' => 0.2]
         );
-
-        $alpha      = 0.2;
-        $background = array("orange" => "rgba(255, 159, 64, $alpha)",
-            "blue" => "rgba(54, 162, 235, $alpha)",
-            "red" => "rgba(255, 99, 132, $alpha)",
-            "yellow" => "rgba(255, 205, 86, $alpha)",
-            "green" => "rgba(75, 192, 192, $alpha)",
-            "purple" => "rgba(153, 102, 255, $alpha)",
-            "grey" => "rgba(201, 203, 207, $alpha)"
-        );
-
-        $graph   = array();
-        $tooltip = "var agregat = []\n";
-        $i       = 0;
-
-        $data['legend'] = array();
-        foreach ($slaves as $slave) {
-            //Debug::debug($slave);
-
-
-            $coul = next($color);
-            $back = next($background);
-
-
-            $slave['color']   = $coul;
-            $data['legend'][] = $slave;
-            // id_ts_variable
-
-            $graph[] = '{
-                label: "'.Display::ts_variable($slave['id_ts_variable']).'",
-                data: ['.$slave['graph'].'],
-                borderColor: "'.$coul.'",
-                fill:true,
-                pointBackgroundColor: "'.$back.'",
-                borderWidth: 2,
-                pointRadius: 0,
-                lineTension: 0,
-                backgroundColor: "'.$back.'",
-                interpolate: true,
-                showLine: true,
-            }';
-
-            //$tooltip .= 'agregat["'.$i.'"] = " -'."\t".'Min : '.self::format($slave['min']).' - Max : '.self::format($slave['max']).' - Avg : '
-            //    .' '.self::format($slave['avg']).' -'."\t".'Std : '.round(sqrt($slave['std']), 2).'"'."\n";
-
-            $tooltip .= 'agregat["'.$i.'"] = " -'."\t".'Min : '.round($slave['min'], 0).' - Max : '.round($slave['max'], 0).' - Avg : '
-                .' '.round($slave['avg'], 2).' -'."\t".'Std : '.round(sqrt($slave['std']), 2).'"'."\n";
-
-
-
-
-            $i++;
-        }
+        $graph          = $legacyChart['datasets_js'];
+        $tooltip        = $legacyChart['tooltip_js'];
+        $data['legend'] = $legacyChart['legend'];
 
         //debug($tooltip);
 
@@ -121,7 +87,7 @@ class Chartjs extends Controller
                 ticks:
                 {
                     callback: function(value, index, values){
-                        return FileConvertSize(value)
+                        return PmaFormat.number(value)
                     },
                 }
             }]";
@@ -148,16 +114,6 @@ class Chartjs extends Controller
 // //..' -  Max : '.self::format($slave['max']).' - Avg : '.self::format($slave['avg']).' - Std : '.$slave['std'].'"
         $this->di['js']->code_javascript('
 "use strict";
-
-function FileConvertSize(aSize){
-
-    return Math.round((aSize + Number.EPSILON) * 100) / 100;
-    aSize = Math.abs(parseInt(aSize, 10));
-    var def = [[1, "octets"], [1024, "ko"], [1024*1024, "Mo"], [1024*1024*1024, "Go"], [1024*1024*1024*1024, "To"]];
-    for(var i=0; i<def.length; i++){
-            if(aSize<def[i][0]) return (aSize/def[i-1][0]).toFixed(2)+" "+def[i-1][1];
-    }
-}
 
 '.$tooltip.'
 
@@ -261,7 +217,7 @@ options:
                     if (label) {
                         label += " : ";
                     }
-                    label += FileConvertSize(tooltipItem.yLabel);
+                    label += PmaFormat.number(tooltipItem.yLabel);
                     /* label += agregat[tooltipItem.datasetIndex]; */
                     return label;
                 }

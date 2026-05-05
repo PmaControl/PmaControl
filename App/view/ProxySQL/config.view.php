@@ -1,8 +1,13 @@
 <?php
 
+use App\Library\Security\CsrfRender;
 
 \Glial\Synapse\FactoryController::addNode("ProxySQL", "menu", $data['param']);
 
+$proxySqlUpdateCsrfField = CsrfRender::field($data, 'proxysql_update');
+$proxySqlUpdateCsrfToken = CsrfRender::token($data, 'proxysql_update');
+$proxySqlUpdateFieldCsrfAttributes = CsrfRender::attributes($data, 'proxysql_update_field');
+$proxySqlDeleteLineCsrfInput = CsrfRender::hiddenInput($data, 'proxysql_delete_line');
 
 $table_name = str_replace('_', ' ', $data['current']);
 $extra = $data['menu'][$table_name];
@@ -23,6 +28,16 @@ foreach ($data['menu'] as $elems => $sql)
 
 $current = str_replace('_', ' ', $data['current']);
 
+$renderUpdateButton = static function (string $from, string $to, string $class, string $label) use ($data, $proxySqlUpdateCsrfField, $proxySqlUpdateCsrfToken): string {
+    $action = LINK.'ProxySQL/update/'.$data['id_proxysql_server'].'/'.$from.'/'.$data['current'].'/'.$to;
+
+    return '<form method="post" action="'.htmlspecialchars($action, ENT_QUOTES, 'UTF-8').'" style="display:inline; margin:0;">'
+        . '<input type="hidden" name="'.$proxySqlUpdateCsrfField.'" value="'.$proxySqlUpdateCsrfToken.'">'
+        . '<button type="submit" class="'.htmlspecialchars($class, ENT_QUOTES, 'UTF-8').'">'
+        . htmlspecialchars($label, ENT_QUOTES, 'UTF-8')
+        . '</button></form>';
+};
+
 echo '</div>';
 echo "<br><br>";
 
@@ -38,7 +53,7 @@ echo '<div class="col-md-3">';
 echo '<div style="padding-top:10px;">';
 
 echo '<div class="arrow-container" style="background:rgb(92, 184, 92); text-align:center">
-    <a href="'.LINK.'ProxySQL/update/'.$data['id_proxysql_server'].'/SAVE/'.$data['current'].'/DISK" class="btn btn-success btn-custom">SAVE '.$current.' TO DISK</a>
+    '.$renderUpdateButton('SAVE', 'DISK', 'btn btn-success btn-custom', 'SAVE '.$current.' TO DISK').'
     <div class="arrow-left" style="border-color:transparent rgb(92, 184, 92) transparent transparent"></div>
     <div class="arrow-left-tail" style="border-color: rgb(92, 184, 92)  transparent  rgb(92, 184, 92) rgb(92, 184, 92);"></div>
 </div>';
@@ -46,7 +61,7 @@ echo "<br>";
 echo '<div class="arrow-container" style="background:rgb(91, 192, 222); text-align:center">
     <div class="arrow-right-tail" style="border-color: rgb(91, 192, 222) rgb(91, 192, 222)    rgb(91, 192, 222) transparent;"></div>
     <div class="arrow-right" style="border-color: transparent rgb(91, 192, 222)  transparent  rgb(91, 192, 222);"></div>
-    <a href="'.LINK.'ProxySQL/update/'.$data['id_proxysql_server'].'/LOAD/'.$data['current'].'/MEMORY" class="btn btn-info btn-custom">LOAD '.$current.' TO MEMORY</a>
+    '.$renderUpdateButton('LOAD', 'MEMORY', 'btn btn-info btn-custom', 'LOAD '.$current.' TO MEMORY').'
 </div>';
 echo '</div>';
 
@@ -61,13 +76,13 @@ echo '<div class="col-md-3">';
 
 echo '<div style="padding-top:10px;">';
 echo '<div class="arrow-container" style="background:rgb(240, 173, 78); text-align:center">
-    <a href="'.LINK.'ProxySQL/update/'.$data['id_proxysql_server'].'/SAVE/'.$data['current'].'/MEMORY" class="btn btn-warning">SAVE '.$current.' TO MEMORY</a>
+    '.$renderUpdateButton('SAVE', 'MEMORY', 'btn btn-warning', 'SAVE '.$current.' TO MEMORY').'
     <div class="arrow-left" style="border-color:transparent rgb(240, 173, 78) transparent transparent"></div>
     <div class="arrow-left-tail" style="border-color: rgb(240, 173, 78)  transparent  rgb(240, 173, 78) rgb(240, 173, 78);"></div>
 </div>';
 echo "<br>";
 echo '<div class="arrow-container" style="background:rgb(217, 83, 79); text-align:center">
-    <a href="'.LINK.'ProxySQL/update/'.$data['id_proxysql_server'].'/LOAD/'.$data['current'].'/RUNTIME" class="btn btn-danger">LOAD '.$current.' TO RUNTIME</a>
+    '.$renderUpdateButton('LOAD', 'RUNTIME', 'btn btn-danger', 'LOAD '.$current.' TO RUNTIME').'
     <div class="arrow-gg" style="border-color:rgb(217, 83, 79) rgb(217, 83, 79) rgb(217, 83, 79) transparent"></div>
     <div class="arrow-right" style="border-color: transparent  #ff0000  transparent rgb(217, 83, 79);"></div>
 </div>';
@@ -86,20 +101,24 @@ echo "<br>";
 
 foreach ($data['table'] as $table_name)
 {
+    $primary_key_cols = isset($data['primary_keys'][$table_name])
+        ? $data['primary_keys'][$table_name]
+        : (isset($data['primary_key']) ? $data['primary_key'] : array());
+
     echo '<div class="row">';
     echo '<div class="col-md-6">';
-    
+
     echo '<div class="panel panel-primary" style="overflow:auto">';
     echo '<div class="panel-heading">';
     echo '<h3 class="panel-title">'.$table_name.' ';
 
     if (! isset($extra['insert_or_delete']))
     {
-      echo '<a style="float:right; margin-top:-8px" href="'.LINK.'ProxySQL/addline/'.$data['id_proxysql_server'].'/'.$data['current'].'/" class="active btn btn-primary">
+      echo '<a style="float:right; margin-top:-8px" href="'.LINK.'ProxySQL/addLine/'.$data['id_proxysql_server'].'/'.$data['current'].'/'.$table_name.'/" class="active btn btn-primary">
       <span class="glyphicon glyphicon-plus"></span> Add a line</a>';
     }
-    
-    
+
+
     echo '</h3>';
     echo '</div>';
 
@@ -107,7 +126,7 @@ foreach ($data['table'] as $table_name)
     {
       echo '<table class="table table-condensed table-bordered table-striped" id="table">';
       $keys = array_keys(end($data['tables'][$table_name]));
-      
+
       echo '<tr>';
       foreach($keys as $key) {
           echo '<th>'.$key.'</th>';
@@ -125,25 +144,41 @@ foreach ($data['table'] as $table_name)
           foreach($line as $field => $elem) {
 
             $pk_table = [];
-            foreach($data['primary_key'] as $pk)
+            foreach($primary_key_cols as $pk)
             {
-                $pk_table[] = "$pk = '".$line[$pk]."'";
+                $pk_table[] = "$pk = '".str_replace("'", "''", (string) $line[$pk])."'";
             }
             $full_pk = implode (' AND ', $pk_table);
 
-            if (in_array($field , $data['primary_key']))
+            if (in_array($field , $primary_key_cols))
             {
-              echo '<td style="color:#777777;">'.$elem.'</td>'; 
+              echo '<td style="color:#777777;">'.$elem.'</td>';
             }
             else {
-              echo '<td class="line-edit" data-name="'.$field.'" data-pk="'.$full_pk .'" data-type="text" data-url="'. LINK.'ProxySQL/updateField/'.$data['id_proxysql_server'].'/'.$table_name.'" data-title="Enter value">';
-              echo $elem.'</td>'; 
+              $fieldAttr = htmlspecialchars((string) $field, ENT_QUOTES, 'UTF-8');
+              $pkAttr = htmlspecialchars($full_pk, ENT_QUOTES, 'UTF-8');
+              $urlAttr = htmlspecialchars(LINK.'ProxySQL/updateField/'.$data['id_proxysql_server'].'/'.$table_name, ENT_QUOTES, 'UTF-8');
+              echo '<td class="line-edit"'.$proxySqlUpdateFieldCsrfAttributes.' data-name="'.$fieldAttr.'" data-pk="'.$pkAttr.'" data-type="text" data-url="'.$urlAttr.'" data-title="Enter value">';
+              echo htmlspecialchars((string) $elem, ENT_QUOTES, 'UTF-8').'</td>';
             }
           }
 
           if (! isset($extra['insert_or_delete']))
           {
-            echo '<td style="padding:2px;"><a class="btn-xs btn btn-danger" href="'.LINK.'ProxySQL/deleteLine/'.$data['id_proxysql_server'].'/'.$table_name.'/'.base64_encode($full_pk).'/">'.__('Delete').'</a></td>';
+            $deleteAction = htmlspecialchars(LINK.'ProxySQL/deleteLine', ENT_QUOTES, 'UTF-8');
+            $deleteId = htmlspecialchars((string) $data['id_proxysql_server'], ENT_QUOTES, 'UTF-8');
+            $deleteCurrent = htmlspecialchars((string) $data['current'], ENT_QUOTES, 'UTF-8');
+            $deleteTable = htmlspecialchars((string) $table_name, ENT_QUOTES, 'UTF-8');
+            $deletePk = htmlspecialchars($full_pk, ENT_QUOTES, 'UTF-8');
+
+            echo '<td style="padding:2px;"><form method="post" action="'.$deleteAction.'" style="display:inline; margin:0;">'
+              .$proxySqlDeleteLineCsrfInput
+              .'<input type="hidden" name="id_proxysql_server" value="'.$deleteId.'">'
+              .'<input type="hidden" name="current" value="'.$deleteCurrent.'">'
+              .'<input type="hidden" name="table" value="'.$deleteTable.'">'
+              .'<input type="hidden" name="pk" value="'.$deletePk.'">'
+              .'<button type="submit" class="btn-xs btn btn-danger">'.__('Delete').'</button>'
+              .'</form></td>';
           }
           
           echo '</tr>';
@@ -192,4 +227,3 @@ foreach ($data['table'] as $table_name)
     echo '</div>';
 
 }
-

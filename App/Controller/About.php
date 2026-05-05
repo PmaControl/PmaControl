@@ -5,9 +5,41 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
 
+/**
+ * Class responsible for about workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class About extends Controller
 {
 
+/**
+ * Render about state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/about/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index()
     {
 
@@ -33,6 +65,27 @@ class About extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Retrieve about state through `getResult`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $sql Input value for `sql`.
+ * @phpstan-param string $sql
+ * @psalm-param string $sql
+ * @return mixed Returned value for getResult.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getResult()
+ * @example /fr/about/getResult
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getResult(string $sql)
     {
         $db= Sgbd::sql(DB_DEFAULT);

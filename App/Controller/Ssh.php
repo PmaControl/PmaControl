@@ -9,21 +9,73 @@ use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use \App\Library\Debug;
 use \App\Library\Ssh as SshLib;
+use App\Library\Security\CsrfGuard;
+use App\Library\Security\PositiveIntegerSelection;
 use App\Library\Post;
 use \Glial\I18n\I18n;
 use \Glial\Sgbd\Sgbd;
+use Glial\Security\Csrf;
 use \phpseclib3\Crypt\PublicKeyLoader;
 use \phpseclib3\Math\BigInteger;
 use \phpseclib3\Crypt\RSA;
 use \phpseclib3\Net\SSH2;
 
+/**
+ * Class responsible for ssh workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Ssh extends Controller
 {
     const KEY_WORKER_ASSOCIATE = 435665;
     const NB_WORKER            = 10;
+    private const SSH_SAVE_CSRF_SCOPE = 'ssh.save';
+    private const SSH_SAVE_REQUIRED_FIELDS = ['name', 'user', 'public_key', 'private_key'];
+    private const SSH_SAVE_FIELD_LIMITS = [
+        'name' => 64,
+        'user' => 64,
+    ];
+    private const SSH_KEY_SELECT_COLUMNS = [
+        '*' => '*',
+        'public_key' => 'public_key',
+    ];
 
+/**
+ * Stores `$logger` for logger.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     public $logger;
 
+/**
+ * Handle ssh state through `keys`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for keys.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::keys()
+ * @example /fr/ssh/keys
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function keys()
     {
         //https://guacamole.apache.org/releases/
@@ -31,6 +83,27 @@ class Ssh extends Controller
     }
 
 
+/**
+ * Prepare ssh state through `before`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for before.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::before()
+ * @example /fr/ssh/before
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function before($param)
     {
         $logger       = new Logger('Daemon');
@@ -41,6 +114,27 @@ class Ssh extends Controller
         $this->logger = $logger;
     }
 
+/**
+ * Create ssh state through `add`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for add.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::add()
+ * @example /fr/ssh/add
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function add($param)
     {
         $this->title = '<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>'." ".__("Add a key SSH");
@@ -74,21 +168,24 @@ class Ssh extends Controller
             });
         });');
 
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (CsrfGuard::isPost($_SERVER)) {
                 //traitement du UI en post
 
 
-                if (isset($_POST['ssh_key'])) {
-
-                    $keys = $_POST['ssh_key'];
-
-                    $keys['public_key']  = $_POST['ssh_key']['public_key'];
-                    $keys['private_key'] = $_POST['ssh_key']['private_key'];
-
-
-                    $this->save($keys);
+                $outcome = self::evaluateSaveRequest($_POST, $_SERVER, $_SESSION);
+                if ($outcome['status'] !== 200) {
+                    $this->view = false;
+                    $this->layout_name = false;
+                    self::sendSshSaveError($outcome['status'], $outcome['body'], $outcome['headers']);
+                    return;
                 }
+
+                $this->save($outcome['ssh_key']);
             }
+
+            $data['ssh_save_csrf_field'] = Csrf::DEFAULT_FIELD;
+            $data['ssh_save_csrf_token'] = Csrf::issueToken($_SESSION, self::SSH_SAVE_CSRF_SCOPE);
+            $this->set('data', $data);
         }
         
         /*
@@ -113,6 +210,161 @@ class Ssh extends Controller
          */
     }
 
+    public static function evaluateSaveRequest(array $post, array $server, array $session): array
+    {
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::SSH_SAVE_CSRF_SCOPE)) {
+            return self::buildSshSaveOutcome($failure['status'], $failure['body'], $failure['headers']);
+        }
+
+        $sshKey = self::normalizeSavePayload($post);
+        if ($sshKey === null) {
+            return self::buildSshSaveOutcome(400, "Invalid SSH key payload");
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'ssh_key' => $sshKey,
+        ];
+    }
+
+    public static function normalizeSavePayload(array $post): ?array
+    {
+        if (empty($post['ssh_key']) || ! is_array($post['ssh_key'])) {
+            return null;
+        }
+
+        $input = $post['ssh_key'];
+        foreach ($input as $field => $value) {
+            if (! is_string($field) || ! is_scalar($value)) {
+                return null;
+            }
+        }
+
+        $sshKey = [];
+        foreach (self::SSH_SAVE_REQUIRED_FIELDS as $field) {
+            if (! array_key_exists($field, $input) || (string) $input[$field] === '') {
+                return null;
+            }
+
+            if (
+                isset(self::SSH_SAVE_FIELD_LIMITS[$field])
+                && strlen((string) $input[$field]) > self::SSH_SAVE_FIELD_LIMITS[$field]
+            ) {
+                return null;
+            }
+
+            $sshKey[$field] = (string) $input[$field];
+        }
+
+        if (isset($input['id']) && (string) $input['id'] !== '') {
+            $id = (string) $input['id'];
+            if (! ctype_digit($id) || (int) $id < 1) {
+                return null;
+            }
+            $sshKey['id'] = (int) $id;
+        }
+
+        return $sshKey;
+    }
+
+    public static function buildSshKeyLookupSql(string $fingerprint, string $user, callable $escape): string
+    {
+        return "SELECT id from ssh_key WHERE fingerprint='"
+            . $escape($fingerprint)
+            . "' and user = '"
+            . $escape($user)
+            . "'";
+    }
+
+    public static function buildSshKeyByIdSql(int $idSshKey, string $columns = '*'): string
+    {
+        if (!isset(self::SSH_KEY_SELECT_COLUMNS[$columns])) {
+            throw new \InvalidArgumentException('Invalid SSH key select columns');
+        }
+
+        return "SELECT " . self::SSH_KEY_SELECT_COLUMNS[$columns] . " FROM ssh_key WHERE id = " . $idSshKey;
+    }
+
+    public static function buildSshKeysSql(?int $idSshKey = null): string
+    {
+        if ($idSshKey === null) {
+            return "SELECT * FROM `ssh_key`";
+        }
+
+        return "SELECT * FROM `ssh_key` WHERE id = ".$idSshKey;
+    }
+
+    public static function buildMysqlServerByIdSql(int $idMysqlServer): string
+    {
+        return "SELECT * FROM `mysql_server` WHERE `id`=".$idMysqlServer.";";
+    }
+
+    public static function normalizeSshKeyId($raw): ?int
+    {
+        return PositiveIntegerSelection::normalizeSingle($raw);
+    }
+
+    public static function normalizeTryAssociateParams(array $param): ?array
+    {
+        $idMysqlServer = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        $idSshKey = self::normalizeSshKeyId($param[1] ?? null);
+
+        if ($idMysqlServer === null || $idSshKey === null) {
+            return null;
+        }
+
+        return [
+            'id_mysql_server' => $idMysqlServer,
+            'id_ssh_key' => $idSshKey,
+        ];
+    }
+
+    private static function buildSshSaveOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'ssh_key' => null,
+        ];
+    }
+
+    private static function sendSshSaveError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+
+        if ($message !== '') {
+            echo $message;
+        }
+    }
+
+/**
+ * Update ssh state through `save`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $keys Input value for `keys`.
+ * @phpstan-param mixed $keys
+ * @psalm-param mixed $keys
+ * @return void Returned value for save.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::save()
+ * @example /fr/ssh/save
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function save($keys)
     {
         if (!empty($keys)) {
@@ -121,9 +373,7 @@ class Ssh extends Controller
             $db = Sgbd::sql(DB_DEFAULT);
 
 
-            $_POST['ssh_key']['user'] = $_POST['ssh_key']['user'] ?? '';
-
-            $sql = "SELECT id from ssh_key WHERE fingerprint='".$fingerprint."' and user = '".$_POST['ssh_key']['user']."'";
+            $sql = self::buildSshKeyLookupSql($fingerprint, $keys['user'], [$db, 'sql_real_escape_string']);
             $res = $db->sql_query($sql);
 
             $data            = array();
@@ -144,12 +394,12 @@ class Ssh extends Controller
 
             $error = array();
 
-            if (empty($_POST['ssh_key']['name'])) {
+            if (empty($keys['name'])) {
                 $error[] = __('The name of the key is required !');
             }
 
 
-            if (empty($_POST['ssh_key']['user'])) {
+            if (empty($keys['user'])) {
                 $error[] = __('The user of the key is required !');
             }
 
@@ -181,12 +431,12 @@ class Ssh extends Controller
 
                 //echo Post::getToPost();
 
-                if (empty($_POST['ssh_key']['id'])) {
+                if (empty($keys['id'])) {
                     unset($_POST['ssh_key']['id']);
                 }
 
-                $_SESSION['ssh_key']['private_key'] = $_POST['ssh_key']['private_key'];
-                $_SESSION['ssh_key']['public_key']  = $_POST['ssh_key']['public_key'];
+                $_SESSION['ssh_key']['private_key'] = $keys['private_key'];
+                $_SESSION['ssh_key']['public_key']  = $keys['public_key'];
 
                 unset($_POST['ssh_key']['private_key']);
                 unset($_POST['ssh_key']['public_key']);
@@ -207,7 +457,7 @@ class Ssh extends Controller
 
             $res = $db->sql_save($data);
             if (!$res) {
-                debug($data);
+                Debug::debug('ssh key save failed', 'Ssh::save');
 
                 throw new \Exception("PMACTRL-031 : Impossible to save ssh key");
             }
@@ -228,6 +478,28 @@ class Ssh extends Controller
         }
     }
 
+/**
+ * Handle ssh state through `parseConfig`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $configFile Input value for `configFile`.
+ * @phpstan-param mixed $configFile
+ * @psalm-param mixed $configFile
+ * @return mixed Returned value for parseConfig.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::parseConfig()
+ * @example /fr/ssh/parseConfig
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function parseConfig($configFile)
     {
 
@@ -267,6 +539,24 @@ class Ssh extends Controller
         throw new \Exception("PMACTRL-254 : JSON : ".$error, 80);
     }
 
+/**
+ * Render ssh state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/ssh/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index()
     {
 
@@ -277,6 +567,49 @@ class Ssh extends Controller
         $this->di['js']->code_javascript('
 (function(){
   new Clipboard(".copy-button");
+
+  // #164 — formatte un nombre de secondes en "12s" / "1m 23s" / "1h 02m".
+  function fmtElapsed(s){
+    s = Math.max(0, parseInt(s, 10) || 0);
+    if (s < 60) return s + "s";
+    if (s < 3600) {
+      var m = Math.floor(s/60), r = s%60;
+      return m + "m " + (r<10?"0":"") + r + "s";
+    }
+    var h = Math.floor(s/3600), m2 = Math.floor((s%3600)/60);
+    return h + "h " + (m2<10?"0":"") + m2 + "m";
+  }
+
+  // tick local : met à jour le compteur toutes les secondes sans hitter le serveur
+  function tickElapsed(){
+    var now = Math.floor(Date.now()/1000);
+    document.querySelectorAll(".associate-running").forEach(function(el){
+      var startedAt = parseInt(el.getAttribute("data-started-at"), 10);
+      if (!startedAt) return;
+      var span = el.querySelector(".associate-elapsed");
+      if (span) span.textContent = fmtElapsed(now - startedAt);
+    });
+  }
+
+  // poll serveur toutes les 5s : reload dès que le lock disparaît
+  function pollAssociateStatus(){
+    document.querySelectorAll(".associate-running").forEach(function(el){
+      var id = el.getAttribute("data-key-id");
+      if (!id) return;
+      fetch("'.LINK.'ssh/associate_status/" + id, {credentials:"same-origin"})
+        .then(function(r){ return r.json(); })
+        .then(function(j){
+          if (j && j.running === false) { window.location.reload(); return; }
+          if (j && j.started_at) { el.setAttribute("data-started-at", j.started_at); }
+        })
+        .catch(function(){});
+    });
+  }
+
+  if (document.querySelectorAll(".associate-running").length > 0){
+    setInterval(tickElapsed, 1000);
+    setInterval(pollAssociateStatus, 5000);
+  }
 })();
 
 ');
@@ -308,9 +641,38 @@ class Ssh extends Controller
 
         $data['ssh_supported'] = array('rsa', 'dsa', 'RSA', 'DSA', 'ED25519');
 
+        $data['running'] = array();
+        foreach ($data['keys'] as $k) {
+            $started_at = self::getAssociateStartedAt($k['id']);
+            if ($started_at !== null) {
+                $data['running'][$k['id']] = $started_at;
+            }
+        }
+
         $this->set('data', $data);
     }
 
+/**
+ * Delete ssh state through `delete`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for delete.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::delete()
+ * @example /fr/ssh/delete
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function delete($param)
     {
         $this->view = false;
@@ -327,6 +689,27 @@ class Ssh extends Controller
         header("location: ".LINK.$this->getClass()."/index");
     }
 
+/**
+ * Handle ssh state through `associate`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for associate.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::associate()
+ * @example /fr/ssh/associate
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function associate($param)
     {
         $this->view = false;
@@ -335,7 +718,36 @@ class Ssh extends Controller
         Debug::parseDebug($param);
 
 
-        $id_ssh_key = $param[0];
+        $id_ssh_key = (int) ($param[0] ?? 0);
+
+        if ($id_ssh_key <= 0) {
+            if (!IS_CLI) {
+                header("location: ".LINK.$this->getClass()."/index");
+            }
+            return;
+        }
+
+        // #163 — détache l'orchestration de la requête HTTP : la page doit revenir
+        // immédiatement à /index, le pipeline d'association continue en CLI background.
+        if (!IS_CLI) {
+            $php_bin = trim(explode(" ", shell_exec("whereis php"))[1] ?? PHP_BINARY);
+            $log     = TMP."log/associate_orchestrator_".$id_ssh_key.".log";
+            $cmd     = $php_bin." ".GLIAL_INDEX." Ssh associate ".$id_ssh_key." >> ".$log." 2>&1 &";
+            shell_exec($cmd);
+            header("location: ".LINK.$this->getClass()."/index");
+            return;
+        }
+
+        // #164 — pose un lock que la vue lit pour afficher "association en cours"
+        // et empêcher tout double-lancement.
+        $lock_file = TMP."lock".DS."ssh_associate_".$id_ssh_key.".lock";
+        if (!is_dir(dirname($lock_file))) {
+            mkdir(dirname($lock_file), 0775, true);
+        }
+        file_put_contents($lock_file, getmypid()."\n".date('c')."\n");
+        register_shutdown_function(static function () use ($lock_file) {
+            @unlink($lock_file);
+        });
 
         $keys = $this->getSshKeys($id_ssh_key);
 
@@ -349,7 +761,7 @@ class Ssh extends Controller
         $sql = "WITH z as (SELECT a.id
 FROM mysql_server a
 INNER JOIN link__mysql_server__ssh_key b ON a.id = b.id_mysql_server
-WHERE `active`=1 and b.id_ssh_key in(".$id_ssh_key."))
+WHERE `active`=1 AND a.is_vip=0 AND a.is_deleted=0 and b.id_ssh_key in(".$id_ssh_key."))
 SELECT b.id,b.ssh_port FROM mysql_server b, ssh_key c
 WHERE c.id in (".$id_ssh_key.")
 AND b.id NOT IN (select id from z)";
@@ -443,17 +855,14 @@ AND b.id NOT IN (select id from z)";
 
 
 // attend la fin des worker
-// on attend d'avoir vider la file d'attente
-        do {
-            $msg_qnum = msg_stat_queue($queue)['msg_qnum'];
-
-
-            sleep(2); // la queue est vide mais il faut prendre le temps de traité les msg
+// poll rapide tant que la queue contient des messages, puis grace finale
+// pour laisser les workers terminer leur dernier handshake SSH (timeout 3s + marge)
+        while (($msg_qnum = msg_stat_queue($queue)['msg_qnum']) > 0) {
             Debug::debug("Nombre de msg en attente : ".$msg_qnum);
-            if ($msg_qnum == 0) {
-                break;
-            }
-        } while (true);
+            usleep(200000);
+        }
+        Debug::debug("Queue vide — grace period 4s pour finaliser les workers");
+        sleep(4);
 
 // kill des workers !
         foreach ($pids as $pid) {
@@ -461,23 +870,109 @@ AND b.id NOT IN (select id from z)";
             $cmd = "kill ".$pid;
             shell_exec($cmd);
         }
-        
+
         if (!IS_CLI) {
             header("location: ".LINK.$this->getClass()."/index");
         }
     }
 
+/**
+ * Returns whether an associate orchestrator is currently running for a given
+ * SSH key id. Consumed by the index view (badge "association en cours") and by
+ * a small AJAX poller. Output is JSON: `{"running": true|false}`.
+ */
+    public function associate_status($param)
+    {
+        $this->view        = false;
+        $this->layout_name = false;
+
+        $id_ssh_key = (int) ($param[0] ?? 0);
+        $started_at = $id_ssh_key > 0 ? self::getAssociateStartedAt($id_ssh_key) : null;
+        $running    = $started_at !== null;
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'running'    => $running,
+            'id'         => $id_ssh_key,
+            'started_at' => $started_at,
+            'elapsed'    => $running ? max(0, time() - (int) $started_at) : null,
+        ]);
+    }
+
+/**
+ * Returns the unix timestamp at which the associate orchestrator for the
+ * given key started, or null if no live orchestrator is running. Stale
+ * locks (PID no longer alive) are removed as a side effect.
+ */
+    public static function getAssociateStartedAt($id_ssh_key)
+    {
+        $lock = TMP."lock".DS."ssh_associate_".((int) $id_ssh_key).".lock";
+        if (!is_file($lock)) {
+            return null;
+        }
+
+        $lines = explode("\n", (string) file_get_contents($lock));
+        $pid   = (int) trim($lines[0] ?? '0');
+        $iso   = trim($lines[1] ?? '');
+
+        if ($pid <= 0 || !file_exists("/proc/".$pid)) {
+            @unlink($lock);
+            return null;
+        }
+
+        $ts = $iso !== '' ? strtotime($iso) : false;
+        if ($ts === false) {
+            // pas de date dans le lock : on retombe sur mtime du fichier
+            $ts = (int) @filemtime($lock);
+        }
+        return (int) $ts;
+    }
+
+/**
+ * Returns true if a non-stale associate lock file exists for the given key.
+ * A lock is considered stale if its referenced PID is no longer alive — in
+ * that case the lock is removed and false is returned.
+ */
+    public static function isAssociateRunning($id_ssh_key)
+    {
+        return self::getAssociateStartedAt($id_ssh_key) !== null;
+    }
+
+/**
+ * Retrieve ssh state through `getSshKeys`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_ssh_key Input value for `id_ssh_key`.
+ * @phpstan-param int $id_ssh_key
+ * @psalm-param int $id_ssh_key
+ * @return mixed Returned value for getSshKeys.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getSshKeys()
+ * @example /fr/ssh/getSshKeys
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getSshKeys($id_ssh_key = "")
     {
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $where = "";
+        $normalizedSshKeyId = null;
 
-        if (!empty($id_ssh_key)) {
-            $where = " WHERE id = ".$id_ssh_key;
+        if ((string) $id_ssh_key !== "") {
+            $normalizedSshKeyId = self::normalizeSshKeyId($id_ssh_key);
+            if ($normalizedSshKeyId === null) {
+                throw new \InvalidArgumentException('Invalid SSH key id');
+            }
         }
 
-        $sql = "SELECT * FROM `ssh_key`".$where;
+        $sql = self::buildSshKeysSql($normalizedSshKeyId);
         $res = $db->sql_query($sql);
 
         $key = array();
@@ -489,17 +984,48 @@ AND b.id NOT IN (select id from z)";
         return $key;
     }
 
+/**
+ * Handle ssh state through `tryAssociate`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for tryAssociate.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::tryAssociate()
+ * @example /fr/ssh/tryAssociate
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function tryAssociate($param)
     {
-        if (! defined('NET_SSH2_LOGGING'))
-        {
-            define('NET_SSH2_LOGGING', 2);
-        }
         Debug::parseDebug($param);
 
+        if (! defined('NET_SSH2_LOGGING'))
+        {
+            define('NET_SSH2_LOGGING', Debug::$debug === true ? 2 : 0);
+        }
 
-        $id_mysql_server = $param[0];
-        $id_ssh_key      = $param[1];
+        $ids = self::normalizeTryAssociateParams($param);
+        if ($ids === null) {
+            $this->view = false;
+            if (!IS_CLI) {
+                http_response_code(400);
+            }
+            Debug::debug('Invalid SSH association identifiers', 'Ssh::tryAssociate');
+            return;
+        }
+
+        $id_mysql_server = $ids['id_mysql_server'];
+        $id_ssh_key      = $ids['id_ssh_key'];
 
         Debug::debug($id_mysql_server, "SERVER");
         Debug::debug($id_ssh_key, "KEY");
@@ -510,26 +1036,40 @@ AND b.id NOT IN (select id from z)";
         $db = Sgbd::sql(DB_DEFAULT);
 
 
-        $sql = "SELECT * FROM `mysql_server` WHERE `id`=".$id_mysql_server.";";
+        $sql = self::buildMysqlServerByIdSql($id_mysql_server);
         Debug::sql($sql);
 
         $res = $db->sql_query($sql);
+        $server = null;
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $server = $arr;
         }
 
-        $sql2 = "SELECT * FROM `ssh_key` WHERE `id`=".$id_ssh_key.";";
+        $sql2 = self::buildSshKeyByIdSql($id_ssh_key);
         Debug::sql($sql2);
         $res2 = $db->sql_query($sql2);
+        $key = null;
         while ($arr2 = $db->sql_fetch_array($res2, MYSQLI_ASSOC)) {
             $key = $arr2;
         }
 
+        if (!is_array($server) || !is_array($key)) {
+            Debug::debug('SSH association target not found', 'Ssh::tryAssociate');
+            return;
+        }
 
         $ip_port = $server['ip'].':'.$server['ssh_port'];
 
+        $fp = @fsockopen($server['ip'], (int) $server['ssh_port'], $errno, $errstr, 1.0);
+        if ($fp === false) {
+            $ret = "Connection to server (".$server['display_name']." ".$ip_port.") : TCP unreachable (".$errno." ".$errstr.")";
+            $this->logger->info($ret);
+            Debug::debug($ip_port, "TCP unreachable — skip");
+            return;
+        }
+        fclose($fp);
 
-        $ssh = new SSH2($server['ip'], $server['ssh_port']);
+        $ssh = new SSH2($server['ip'], $server['ssh_port'], 3);
         //$rsa = new RSA();
 
 
@@ -538,12 +1078,7 @@ AND b.id NOT IN (select id from z)";
 
         $login_successfull = true;
 
-
-        Debug::debug(Chiffrement::decrypt($key['private_key']), "PRIVATE KEY");
-
         $rsa = PublicKeyLoader::load(Chiffrement::decrypt($key['private_key']));
-
-        Debug::debug($rsa);
         /*
         if (RSA::loadFormat('OpenSSH', file_get_contents($key['private_key'])) === false) {
         //if ($rsa->loadKey($key['private_key']) === false) {
@@ -563,7 +1098,9 @@ AND b.id NOT IN (select id from z)";
 
             //Debug($ssh, "ssh");
         }
-echo $ssh->getLog();
+        if (Debug::$debug === true) {
+            echo $ssh->getLog();
+        }
 
 
         $msg = ($login_successfull) ? "Successfull" : "Failed";
@@ -590,15 +1127,40 @@ echo $ssh->getLog();
         }
     }
 
+/**
+ * Handle ssh state through `display_public`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for display_public.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::display_public()
+ * @example /fr/ssh/display_public
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function display_public($param)
     {
-        $id_ssh_key = $param[0];
-
         $this->view        = false;
         $this->layout_name = false;
 
+        $id_ssh_key = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        if ($id_ssh_key === null) {
+            http_response_code(400);
+            return;
+        }
+
         $db  = Sgbd::sql(DB_DEFAULT);
-        $sql = "select public_key from ssh_key where id =".$id_ssh_key;
+        $sql = self::buildSshKeyByIdSql($id_ssh_key, 'public_key');
 
         $res = $db->sql_query($sql);
 
@@ -608,52 +1170,27 @@ echo $ssh->getLog();
         }
     }
 
-    public function test_key($param)
-    {
-        Debug::parseDebug($param);
-
-
-        $ret = SshLib::isValid("-----BEGIN RSA PRIVATE KEY-----
-MIIEowIBAAKCAQEAqB17idEzGY67EBefjp7fd7BVj15uJKJPZY+ABRTjCeLt7BkV
-uUyJUU+YEFfGuYoFCyihLaKs8Bidy/xoF5DVnUXx0vwPke7YaulammwbS+19DGpf
-GhXdspbbFSFGfjuL5du9z0kdwS4bA9s0KZvv01tU1DjBpiGmrLa4//tHsQsKMRa8
-xTClEPnKllQOQklVnl0ICj4NC49ndhvlMqFMwiKvkXxGH+OKDtBmjI6DViyG9EK0
-2kcMkst5I3eaG1aDvsziRCZCXeI0/oRF1mbTTmWihVfh8id6DyZzSzWKCwWUn+IR
-wSRZXav53pUT4xuc1vJ+wECZHWpjAQrFOXwcHwIDAQABAoIBAGUJsyHVVXzax5qY
-WBEDcxMgK4wLGO9zjXxgjnR/ZSSf+paXTPMdCLqRt7a6ynjgdr+KH7SpvH5gjRX4
-ESd4qKnpS7mePE1c2z0GGqoMpysvBKTdmWK4GZIoEGvWn+NmLmJretyF+RgNebcL
-m4IWckD49zbFFb2fI+lRuEZA44mHO6iNReuRPOKDEi8SJxHBzFj4v8kQc+NjlIzU
-xrX2uRxhXdSLhYVyXmUHZPOqTqFNI272sIBFW+XQNFvraIOGCb+RazLOfY+8qtpg
-hhz/k41aVBYnWf3RXqk32z3UhBAEtnAUXV4dzwpKMhsquzYX/dD1H6U3RnC5BDzM
-Xuu4E+ECgYEA0nTyWdQrjL2QNU6oHL46VquMjE/69wFQNjDa3xS5gW9nx9WsAOHv
-76SVfuP5gggP50kAcLnS4IirWNF3g9WT6Vfly7H5WxfA2dsGPwGWweZDpoOK8MfJ
-GlRmeuAKqAYht/nj2G1vYF67G3WlnfruSpz6TBSuBLeOcTHqPe64ZEUCgYEAzH7b
-/h3fG/4+eWwk8vjps5Aep1cNk5WShATMAswbbor/yPCbMhNKOpCrTm8NxprOhYpi
-RdlxGmsfW7LKof3Oya50NklsNKD6XlezKbXdTBqLDtovATLSc2tCI2HIrVFyzsKt
-J0td81qMinRKfUJKXH1I3XXXmyGeWYCcH6oULxMCgYAm5RYlI+EokaAlOfQ327BM
-dEf1ZpKrM8LvQPgyYlImacB0Xjj7sMX3NCOs39UtAvBtfkBmlPE0Lg38zDmaU86S
-QXxmuO2suCccHC57Vn/WNggqrgTvmvy/sPl/nAhcJUX2Cmjhhtgep2NNH+EL4WRI
-xdo8VVYT6RiaMu9nosbRQQKBgAMp+1FlOOx/9IuAZtnzi/ohQrgoGqer6sZsJJPu
-gIYnVGnRfzU5Iy7gyiW+hiIKhyN9zqNyB9P20Fdk3sm+2ZI5RscIP8pYq0cGaFk+
-3RuuVXR3X77PAH6UrENL4gT8e6BDVtaCzgNT5VTHE9f4TJo9vgDfL+TQklikKsY6
-pXFNAoGBAIVe6alhrFOcbN/3Oizc9l2ohR3CyLfjv53DRkE6hth1NnYYi/ubiGW+
-hKJpixKUd4UzjhoBOc/yfncqaFtO8DG721rNQ2IGGrEgwJsNEihkS8m1hbQsRR/Y
-3Jqb39NMtJSyeAB6lHcoCjaVYoukjXbR/pjGsmiEGy+dfrauaur8
------END RSA PRIVATE KEY-----");
-
-        Debug::debug($ret);
-    }
-
-    public function test2_key($param)
-    {
-        Debug::parseDebug($param);
-
-
-        $ret = SshLib::isValid("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCoHXuJ0TMZjrsQF5+Ont93sFWPXm4kok9lj4AFFOMJ4u3sGRW5TIlRT5gQV8a5igULKKEtoqzwGJ3L/GgXkNWdRfHS/A+R7thq6VqabBtL7X0Mal8aFd2yltsVIUZ+O4vl273PSR3BLhsD2zQpm+/TW1TUOMGmIaastrj/+0exCwoxFrzFMKUQ+cqWVA5CSVWeXQgKPg0Lj2d2G+UyoUzCIq+RfEYf44oO0GaMjoNWLIb0QrTaRwySy3kjd5obVoO+zOJEJkJd4jT+hEXWZtNOZaKFV+HyJ3oPJnNLNYoLBZSf4hHBJFldq/nelRPjG5zW8n7AQJkdamMBCsU5fBwf root@aurelien-rdc");
-
-        Debug::debug($ret);
-    }
-
+/**
+ * Handle ssh state through `generate`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for generate.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::generate()
+ * @example /fr/ssh/generate
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function generate($param)
     {
 
@@ -726,9 +1263,38 @@ hKJpixKUd4UzjhoBOc/yfncqaFtO8DG721rNQ2IGGrEgwJsNEihkS8m1hbQsRR/Y
         }
     }
 
+/**
+ * Handle ssh state through `edit`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for edit.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::edit()
+ * @example /fr/ssh/edit
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function edit($param)
     {
-        $id_ssh_key            = $param[0];
+        $id_ssh_key = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        if ($id_ssh_key === null) {
+            $this->view = false;
+            if (!IS_CLI) {
+                header("location: ".LINK.$this->getClass()."/index");
+            }
+            return;
+        }
+
         $_GET['ssh_key']['id'] = $id_ssh_key;
 
         $this->add(array());
@@ -737,9 +1303,6 @@ hKJpixKUd4UzjhoBOc/yfncqaFtO8DG721rNQ2IGGrEgwJsNEihkS8m1hbQsRR/Y
 // ajout de la bonne vue
         $this->view = "add";
 
-
-        $id_ssh_key = $param[0];
-
         $this->title = '<span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>'." ".__("Edit a key SSH");
 
 
@@ -747,13 +1310,15 @@ hKJpixKUd4UzjhoBOc/yfncqaFtO8DG721rNQ2IGGrEgwJsNEihkS8m1hbQsRR/Y
 
             $db = Sgbd::sql(DB_DEFAULT);
 
-            $sql = "SELECT * FROM ssh_key WHERE id = ".$id_ssh_key;
+            $sql = self::buildSshKeyByIdSql($id_ssh_key);
             $res = $db->sql_query($sql);
 
             while ($ob = $db->sql_fetch_object($res)) {
+                $data = $this->get()['data'] ?? [];
 
-                $_SESSION['ssh_key']['private_key'] = Chiffrement::decrypt($ob->private_key);
-                $_SESSION['ssh_key']['public_key']  = Chiffrement::decrypt($ob->public_key);
+                $data['ssh_key']['private_key'] = Chiffrement::decrypt($ob->private_key);
+                $data['ssh_key']['public_key']  = Chiffrement::decrypt($ob->public_key);
+                $this->set('data', $data);
                 $_GET['ssh_key']['user']            = $ob->user;
                 $_GET['ssh_key']['name']            = $ob->name;
                 $_GET['ssh_key']['id']              = $ob->id;

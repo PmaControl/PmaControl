@@ -10,26 +10,110 @@ use \App\Library\Debug;
 use \App\Library\Mysql;
 use \App\Library\Table as Tablelib;
 
+/**
+ * Class responsible for table workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Table extends Controller {
 
     //number of line used by header to make a good analyse when condense the screen
     const NB_ROWS_EXTRA = 5;
     //number of line who feet in screen
     const MAX_HIGHT = 43;
-    const MAX_COLUMN = 4; // we don't count main table
+    const MAX_COLUMN = 5; // we don't count main table
 
+/**
+ * Stores `$type_graph` for type graph.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     static $type_graph = "compound";
+/**
+ * Stores `$table_number` for table number.
+ *
+ * @var int
+ * @phpstan-var int
+ * @psalm-var int
+ */
     static $table_number = 1;
 
+/**
+ * Stores `$tables` for tables.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $tables = array();
 
+/**
+ * Stores `$main_table` for main table.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $main_table = array();
+/**
+ * Stores `$edges` for edges.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $edges = array();
+/**
+ * Stores `$hidden_edges` for hidden edges.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $hidden_edges = array();
 
     //contain all result from query, the goal is not to surchage the main function, and keep it easy to maintain
+/**
+ * Stores `$result` for result.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $result = array();
 
+/**
+ * Handle table state through `mpd`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for mpd.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::mpd()
+ * @example /fr/table/mpd
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function mpd($param) {
 
         Debug::parseDebug($param);
@@ -48,7 +132,7 @@ class Table extends Controller {
         {
             $db = Mysql::getDbLink($id_mysql_server);
             $sql ="SELECT count(1) as cpt FROM information_schema.tables WHERE table_schema = '".$table_schema."' AND table_name = '".$table_name."'";
-            $res = $db->sql_query($sql);
+            $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql, $id_mysql_server, __METHOD__);
             while ($ob = $db->sql_fetch_object($res)) {
                 $cpt = $ob->cpt;
             }
@@ -129,7 +213,6 @@ class Table extends Controller {
         $graph = "";
         $graph .= Graphviz::generateStart(array());
 
-
         //debug(self::$main_table);
         //debug(self::$tables);
 
@@ -144,7 +227,6 @@ class Table extends Controller {
             $cluster['tooltip'] = $table_schema.".".$table_name;
             
             $graph .= Graphviz::openSubgraph($cluster);
-
 
             $premiere_table_de_chaque_colonne = array();
             foreach(self::$main_table['table_par_colonne'] as $colonne_numero => $tables) {
@@ -178,7 +260,7 @@ class Table extends Controller {
             //debug(self::$tables);
 
             //generate invisible edge bewteen column
-            $this->generateHiddenArrow($premiere_table_de_chaque_colonne);
+            $this->generateHiddenArrow($premiere_table_de_chaque_colonne, $table_schema);
 
             //edge between cluster and main table
             //$first_table = array_key_first());
@@ -203,7 +285,8 @@ class Table extends Controller {
             $tmp['referenced_table'] = $table_name;
             $tmp['tooltip'] = "* => ".$tmp['constraint_table'].".".$tmp['referenced_table'];
 
-            $tmp['arrow'] = $last_colone[$middle].":d".$pos1." -> ".$tmp['referenced_table'].":a".$pos2." ";
+            $tmp['arrow'] = Graphviz::tableNodeRef($table_schema, $last_colone[$middle], "d".$pos1)
+                ." -> ".Graphviz::tableNodeRef($table_schema, $tmp['referenced_table'], "a".$pos2)." ";
             $tmp['color'] = Graphviz::getColor($tmp['referenced_table']);
             
             // don't work :(
@@ -238,7 +321,7 @@ class Table extends Controller {
         if (self::$main_table['nb_column_right'] > 1)
         {
             $colones = $this->splitTableByColumnBasic(self::$main_table['link'],self::$main_table['nb_column_right']);
-            $this->generateHiddenArrow($colones);
+            $this->generateHiddenArrow($colones, $table_schema);
         }
 
         foreach(self::$hidden_edges as $hidden_edge){
@@ -260,6 +343,27 @@ class Table extends Controller {
         $this->set('data', $data);
     }
 
+/**
+ * Retrieve table state through `getElemeFromQuery`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $sql Input value for `sql`.
+ * @phpstan-param mixed $sql
+ * @psalm-param mixed $sql
+ * @return void Returned value for getElemeFromQuery.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getElemeFromQuery()
+ * @example /fr/table/getElemeFromQuery
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getElemeFromQuery($sql)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -307,7 +411,8 @@ class Table extends Controller {
             $tmp['constraint_table'] = $arr['constraint_table'];
             $tmp['referenced_table'] = $arr['referenced_table'];
             $tmp['tooltip'] = $arr['constraint_table'].".".$arr['constraint_column']." => ".$arr['referenced_table'].".".$arr['referenced_column'];
-            $tmp['arrow'] = $arr['constraint_table'].":d".$pos1." -> ".$arr['referenced_table'].":a".$pos2;
+            $tmp['arrow'] = Graphviz::tableNodeRef($arr['constraint_schema'], $arr['constraint_table'], "d".$pos1)
+                ." -> ".Graphviz::tableNodeRef($arr['referenced_schema'], $arr['referenced_table'], "a".$pos2);
             $tmp['color'] = Graphviz::getColor($arr['referenced_table']);
             $tmp['options']['arrowhead'] = "none";
             $tmp['options']['arrowtail'] = "crow";
@@ -319,6 +424,27 @@ class Table extends Controller {
         //debug(self::$tables);
     }
 
+/**
+ * Handle table state through `compressDisplay`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for compressDisplay.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::compressDisplay()
+ * @example /fr/table/compressDisplay
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function compressDisplay($param)
     {
         $id_mysql_server = $param[0] ?? "";
@@ -363,6 +489,27 @@ class Table extends Controller {
     }
 
 
+/**
+ * Retrieve table state through `getNumberOfColumn`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getNumberOfColumn.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getNumberOfColumn()
+ * @example /fr/table/getNumberOfColumn
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getNumberOfColumn($param)
     {
 
@@ -433,10 +580,33 @@ class Table extends Controller {
             //$this->generateHiddenArrow($tables_by_colone);
         }
     }
-    
     // C'est clairement le meilleur algorythme pour repartir des éléments en fonction de leur poids
     // Le problème c'est que par moment le passage des flèches est problèmatique avec graphviz
     
+/**
+ * Handle table state through `splitTableByColumn`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $tables_before Input value for `tables_before`.
+ * @phpstan-param mixed $tables_before
+ * @psalm-param mixed $tables_before
+ * @param mixed $nombreColonnes Input value for `nombreColonnes`.
+ * @phpstan-param mixed $nombreColonnes
+ * @psalm-param mixed $nombreColonnes
+ * @return mixed Returned value for splitTableByColumn.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::splitTableByColumn()
+ * @example /fr/table/splitTableByColumn
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function splitTableByColumn($tables_before,$nombreColonnes )
     {
 
@@ -513,11 +683,56 @@ class Table extends Controller {
     }
 
     // Fonction pour calculer le poids total d'une colonne
+/**
+ * Handle table state through `calculerPoidsColonne`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $colonne Input value for `colonne`.
+ * @phpstan-param mixed $colonne
+ * @psalm-param mixed $colonne
+ * @param mixed $tables_before Input value for `tables_before`.
+ * @phpstan-param mixed $tables_before
+ * @psalm-param mixed $tables_before
+ * @return mixed Returned value for calculerPoidsColonne.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::calculerPoidsColonne()
+ * @example /fr/table/calculerPoidsColonne
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function calculerPoidsColonne($colonne, $tables_before) {
         return array_sum(array_map(function($table) use ($tables_before) { return $tables_before[$table]; }, $colonne));
     }
 
-    public function generateHiddenArrow($tables)
+/**
+ * Handle table state through `generateHiddenArrow`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $tables Input value for `tables`.
+ * @phpstan-param mixed $tables
+ * @psalm-param mixed $tables
+ * @return void Returned value for generateHiddenArrow.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::generateHiddenArrow()
+ * @example /fr/table/generateHiddenArrow
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public function generateHiddenArrow($tables, string $tableSchema = '')
     {
         $maxElements = max(array_map('count', $tables));
 
@@ -541,10 +756,35 @@ class Table extends Controller {
 
         // Export des résultats
         foreach ($result as $key => $value) {
-            self::$hidden_edges[] =  $key . ":title -> " . $value.":title";
+            self::$hidden_edges[] = Graphviz::tableNodeRef($tableSchema, $key, 'title')
+                ." -> ".Graphviz::tableNodeRef($tableSchema, $value, 'title');
         }
     }
 
+/**
+ * Handle table state through `splitTableByColumnBasic`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $table Input value for `table`.
+ * @phpstan-param mixed $table
+ * @psalm-param mixed $table
+ * @param mixed $nombre_colonnes Input value for `nombre_colonnes`.
+ * @phpstan-param mixed $nombre_colonnes
+ * @psalm-param mixed $nombre_colonnes
+ * @return mixed Returned value for splitTableByColumnBasic.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::splitTableByColumnBasic()
+ * @example /fr/table/splitTableByColumnBasic
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function splitTableByColumnBasic($table, $nombre_colonnes)
     {
         $i=0;
@@ -563,6 +803,27 @@ class Table extends Controller {
     }
 
 
+/**
+ * Render table state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/table/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index($param)
     {
         //liste des tables d'un DB 
@@ -581,6 +842,30 @@ class Table extends Controller {
 
 
     // to remove and replace with the one from Graphiz
+/**
+ * Handle table state through `diluerCouleur`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $hex Input value for `hex`.
+ * @phpstan-param mixed $hex
+ * @psalm-param mixed $hex
+ * @param mixed $percent Input value for `percent`.
+ * @phpstan-param mixed $percent
+ * @psalm-param mixed $percent
+ * @return mixed Returned value for diluerCouleur.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::diluerCouleur()
+ * @example /fr/table/diluerCouleur
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function diluerCouleur($hex, $percent) {
         // Assurez-vous que le format hexadécimal est valide
         if (strlen($hex) != 7 || $hex[0] != '#') {
@@ -604,6 +889,27 @@ class Table extends Controller {
     }
 
 
+/**
+ * Handle table state through `Query`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for Query.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::Query()
+ * @example /fr/table/Query
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function Query($param)
     {
 

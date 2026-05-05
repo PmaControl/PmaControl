@@ -1,4 +1,7 @@
 <?php
+
+use App\Library\Security\CsrfRender;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -6,9 +9,12 @@
  */
 
 use Glial\Html\Form\Form;
+$exportTestDechiffrementCsrfField = CsrfRender::field($data, 'export_test_dechiffrement');
+$exportTestDechiffrementCsrfToken = CsrfRender::token($data, 'export_test_dechiffrement');
 ?>
 
 <form class="form2" action="<?= LINK ?>export/test_dechiffrement" enctype="multipart/form-data" method="post">
+    <input type="hidden" name="<?= $exportTestDechiffrementCsrfField ?>" value="<?= $exportTestDechiffrementCsrfToken ?>">
     <div class="panel panel-primary">
         <div class="panel-heading">
             <h3 class="panel-title"><?= __('Import configuration') ?></h3>

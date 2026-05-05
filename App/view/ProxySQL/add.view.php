@@ -1,6 +1,12 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 use Glial\Html\Form\Form;
+
+$data = $data ?? array();
+$proxySqlAddCsrfField = CsrfRender::field($data, 'proxysql_add');
+$proxySqlAddCsrfToken = CsrfRender::token($data, 'proxysql_add');
 
 if (empty($_GET['ssh']['password'])) {
     $_GET['ssh']['password'] = 22;
@@ -8,6 +14,7 @@ if (empty($_GET['ssh']['password'])) {
 ?>
 
 <form action="" method="post">
+    <input type="hidden" name="<?= $proxySqlAddCsrfField ?>" value="<?= $proxySqlAddCsrfToken ?>">
     <div class="panel panel-primary">
         <div class="panel-heading">
             <h3 class="panel-title"><?= __('ProxySQL') ?> : <?= __('Admin credentials') ?></h3>

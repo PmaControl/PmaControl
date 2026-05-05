@@ -9,16 +9,85 @@ use \Glial\Security\Crypt\Crypt;
 use \Glial\I18n\I18n;
 use \App\Library\Debug;
 use \App\Library\Graphviz;
+use \App\Library\Extraction2;
 use \App\Library\Mysql as Mysql2;
 use \Glial\Sgbd\Sgbd;
+use App\Library\Http\HttpResponse;
+use App\Library\Network\HostResolver;
+use App\Library\Security\CsrfGuard;
+use App\Library\Security\Identifier;
+use App\Library\Security\PositiveIntegerSelection;
+use Glial\Security\Csrf;
 
+/**
+ * Class responsible for mysql workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Mysql extends Controller
 {
     const DEBUG = true;
+    private const MYSQL_PLAYSKOOL_CSRF_SCOPE = 'mysql.playskool';
+    private const MYSQL_ADD_CSRF_SCOPE = 'mysql.add';
+    private const MYSQL_ADD_TEXT_MAX_LENGTH = 255;
+    private const MYSQL_PLAYSKOOL_TEXT_MAX_LENGTH = 255;
+    private const MYSQL_PLAYSKOOL_SQL_MAX_LENGTH = 65535;
 
+/**
+ * Stores `$foreign_key` for foreign key.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     public $foreign_key = array();
+/**
+ * Stores `$columns` for columns.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     public $columns     = array();
+/**
+ * Stores `$last_connection_used_ssl` for last connection used ssl.
+ *
+ * @var int
+ * @phpstan-var int
+ * @psalm-var int
+ */
+    private $last_connection_used_ssl = 0;
 
+/**
+ * Handle mysql state through `generate_passswd`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $length Input value for `length`.
+ * @phpstan-param mixed $length
+ * @psalm-param mixed $length
+ * @return mixed Returned value for generate_passswd.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generate_passswd()
+ * @example /fr/mysql/generate_passswd
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function generate_passswd($length)
     {
         $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -30,6 +99,25 @@ class Mysql extends Controller
     }
 
 //depracated !!
+/**
+ * Retrieve mysql state through `get_server`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for get_server.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::get_server()
+ * @example /fr/mysql/get_server
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function get_server()
     {
         $server = array();
@@ -56,6 +144,30 @@ class Mysql extends Controller
     }
 
 
+/**
+ * Handle mysql state through `shell_cmd`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $stdio Input value for `stdio`.
+ * @phpstan-param mixed $stdio
+ * @psalm-param mixed $stdio
+ * @param mixed $cmd Input value for `cmd`.
+ * @phpstan-param mixed $cmd
+ * @psalm-param mixed $cmd
+ * @return void Returned value for shell_cmd.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::shell_cmd()
+ * @example /fr/mysql/shell_cmd
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function shell_cmd($stdio, $cmd)
     {
         fwrite($stdio, $cmd."\n");
@@ -66,6 +178,24 @@ class Mysql extends Controller
         }
     }
 
+/**
+ * Handle mysql state through `after_edit_db`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @return void Returned value for after_edit_db.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::after_edit_db()
+ * @example /fr/mysql/after_edit_db
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function after_edit_db()
     {
         $this->view = false;
@@ -94,6 +224,27 @@ class Mysql extends Controller
         }
     }
 
+/**
+ * Handle mysql state through `user`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $params Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $params
+ * @psalm-param array<int,mixed> $params
+ * @return void Returned value for user.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::user()
+ * @example /fr/mysql/user
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function user($params)
     {
         $this->view = false;
@@ -161,6 +312,27 @@ class Mysql extends Controller
         echo $table2->Display();
     }
 
+/**
+ * Handle mysql state through `passwd`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $params Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $params
+ * @psalm-param array<int,mixed> $params
+ * @return void Returned value for passwd.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::passwd()
+ * @example /fr/mysql/passwd
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function passwd($params)
     {
         $this->view        = false;
@@ -227,6 +399,27 @@ class Mysql extends Controller
         echo $table2->Display();
     }
 
+/**
+ * Handle mysql state through `extract_query`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $Last_Error Input value for `Last_Error`.
+ * @phpstan-param mixed $Last_Error
+ * @psalm-param mixed $Last_Error
+ * @return mixed Returned value for extract_query.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::extract_query()
+ * @example /fr/mysql/extract_query
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function extract_query($Last_Error)
     {
         $sep = "Default database: 'PRODUCTION'. Query: '";
@@ -245,6 +438,28 @@ class Mysql extends Controller
         return $query;
     }
 
+/**
+ * Handle mysql state through `del`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for del.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::del()
+ * @example /fr/mysql/del
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function del($param)
     {
 
@@ -283,8 +498,31 @@ class Mysql extends Controller
         }
     }
 
+/**
+ * Handle mysql state through `exportUser`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for exportUser.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::exportUser()
+ * @example /fr/mysql/exportUser
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function exportUser($param)
     {
+        Debug::parseDebug($param);
 
         $this->layout_name = false;
         $this->view        = false;
@@ -297,7 +535,11 @@ class Mysql extends Controller
             }
         }
 
+        Debug::debug($users, "USERS");
+
         $def = Sgbd::sql(DB_DEFAULT);
+
+        $all = Extraction2::display(array("mysql_available"));
 
         $sql  = "SELECT * FROM mysql_server WHERE error = ''";
         $res2 = $def->sql_query($sql);
@@ -305,9 +547,10 @@ class Mysql extends Controller
         while ($ob2 = $def->sql_fetch_object($res2)) {
 
             $db = Sgbd::sql($ob2->name);
+
             foreach ($users as $user) {
 
-                $sql = "select * from mysql.user where user = '".$user."'";
+                $sql = "select * from mysql.user where user = '".$user ."'";
                 $res = $db->sql_query($sql);
 
                 $i  = 1;
@@ -345,20 +588,6 @@ class Mysql extends Controller
         }
     }
 
-    function uncrypt()
-    {
-        $this->view = false;
-        Crypt::$key = CRYPT_KEY;
-
-        $sql = "SELECT * from mysql_server";
-        $db  = Sgbd::sql(DB_DEFAULT);
-
-        $res = $db->sql_query($sql);
-
-        while ($ob = $db->sql_fetch_object($res)) {
-            debug(Crypt::decrypt($ob->passwd));
-        }
-    }
     /*
       SELECT SUBSTRING_INDEX(host, ':', 1) AS host_short,
       GROUP_CONCAT(DISTINCT USER)   AS users,
@@ -403,6 +632,24 @@ class Mysql extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Handle mysql state through `clusterDisplay`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for clusterDisplay.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::clusterDisplay()
+ * @example /fr/mysql/clusterDisplay
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function clusterDisplay()
     {
 
@@ -439,38 +686,224 @@ class Mysql extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Handle mysql state through `playskool`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for playskool.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::playskool()
+ * @example /fr/mysql/playskool
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function playskool()
     {
         $data['dbs'] = Sgbd::getAll();
+        $data['commands'] = [];
+        $data['form'] = [
+            'login' => '',
+            'sql' => '',
+            'dbs' => [],
+        ];
+        $data['mysql_playskool_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['mysql_playskool_csrf_token'] = Csrf::issueToken($_SESSION, self::MYSQL_PLAYSKOOL_CSRF_SCOPE);
 
         sort($data['dbs']);
 
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
-            $data['ret'] = '';
-
-            foreach ($_POST['db'] as $db => $on) {
-                $data['ret'] .= "mysql -h $db -u ".$_POST['login']." -p".$_POST['password']." -e '".str_replace("'", "\'", $_POST['sql'])."' > $db.log<br />";
+            $outcome = self::evaluatePlayskoolRequest($_POST, $_SERVER, $_SESSION, $data['dbs']);
+            if (!$outcome['allowed']) {
+                $this->view = false;
+                $this->layout_name = false;
+                HttpResponse::sendOutcome($outcome, null);
+                return;
             }
+
+            $data['form'] = $outcome['request'];
+            $data['commands'] = self::buildPlayskoolCommands($outcome['request']);
         }
         $this->set('data', $data);
     }
 
+    public static function evaluatePlayskoolRequest(
+        array $post,
+        array $server,
+        array $session,
+        array $availableDbs
+    ): array {
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::MYSQL_PLAYSKOOL_CSRF_SCOPE)) {
+            return [
+                'allowed' => false,
+                'status' => $failure['status'],
+                'body' => $failure['body'],
+                'headers' => $failure['headers'],
+                'request' => null,
+            ];
+        }
+
+        $request = self::normalizePlayskoolPayload($post, $availableDbs);
+        if ($request === null) {
+            return [
+                'allowed' => false,
+                'status' => 400,
+                'body' => 'Invalid MySQL playskool payload',
+                'headers' => [],
+                'request' => null,
+            ];
+        }
+
+        return [
+            'allowed' => true,
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'request' => $request,
+        ];
+    }
+
+    public static function normalizePlayskoolPayload(array $post, array $availableDbs): ?array
+    {
+        if (
+            empty($post['db'])
+            || !is_array($post['db'])
+            || !array_key_exists('login', $post)
+            || !array_key_exists('password', $post)
+            || !array_key_exists('sql', $post)
+        ) {
+            return null;
+        }
+
+        $login = self::normalizePlayskoolText($post['login'], self::MYSQL_PLAYSKOOL_TEXT_MAX_LENGTH, false);
+        $password = self::normalizePlayskoolText($post['password'], self::MYSQL_PLAYSKOOL_TEXT_MAX_LENGTH, false);
+        $sql = self::normalizePlayskoolText($post['sql'], self::MYSQL_PLAYSKOOL_SQL_MAX_LENGTH, false);
+        if ($login === null || $password === null || $sql === null) {
+            return null;
+        }
+
+        $available = [];
+        foreach ($availableDbs as $db) {
+            if (!is_scalar($db)) {
+                continue;
+            }
+            $available[self::formatPlayskoolDbName((string) $db)] = true;
+        }
+
+        $dbs = [];
+        foreach ($post['db'] as $db => $enabled) {
+            if (!is_scalar($enabled) || !is_string($db) || !isset($available[$db])) {
+                return null;
+            }
+
+            $dbs[] = $db;
+        }
+
+        $dbs = array_values(array_unique($dbs));
+        sort($dbs);
+        if (empty($dbs)) {
+            return null;
+        }
+
+        return [
+            'dbs' => $dbs,
+            'login' => $login,
+            'password' => $password,
+            'sql' => $sql,
+        ];
+    }
+
+    public static function buildPlayskoolCommands(array $request): array
+    {
+        $commands = [];
+        foreach ($request['dbs'] as $db) {
+            $commands[] = 'MYSQL_PWD=' . escapeshellarg($request['password'])
+                . ' mysql -h ' . escapeshellarg($db)
+                . ' -u ' . escapeshellarg($request['login'])
+                . ' -e ' . escapeshellarg($request['sql'])
+                . ' > ' . escapeshellarg($db . '.log');
+        }
+
+        return $commands;
+    }
+
+    public static function formatPlayskoolDbName(string $dbName): string
+    {
+        return str_replace('_', '-', $dbName);
+    }
+
+    private static function normalizePlayskoolText($value, int $maxLength, bool $allowEmpty): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $value = trim((string) $value);
+        if ((!$allowEmpty && $value === '') || strlen($value) > $maxLength) {
+            return null;
+        }
+
+        return $value;
+    }
+
+/**
+ * Handle mysql state through `mpd`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for mpd.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::mpd()
+ * @example /fr/mysql/mpd
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function mpd($param)
     {
 
         Debug::parseDebug($param);
 
-        $id_mysql_server = $param[0];
-        $database        = $param[1];
+        $request = self::normalizeGraphRequest($param);
+        if ($request === null) {
+            $this->view = false;
+            self::sendMysqlGraphError(400, 'Invalid MySQL graph request');
+            return;
+        }
+
+        $id_mysql_server = $request['id_mysql_server'];
+        $database        = $request['database'];
+        $graphParam      = [$id_mysql_server, $database];
 
         $default = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT name,display_name FROM mysql_server WHERE id=".intval($id_mysql_server);
+        $sql = "SELECT name,display_name FROM mysql_server WHERE id=".$id_mysql_server." LIMIT 1";
         $res = $default->sql_query($sql);
 
+        $name_connect = null;
         while ($ob = $default->sql_fetch_object($res)) {
             $name_connect         = $ob->name;
             $data['display_name'] = $ob->display_name;
+        }
+
+        if ($name_connect === null) {
+            $this->view = false;
+            self::sendMysqlGraphError(404, 'MySQL server not found');
+            return;
         }
 
         $table_to_purge = array();
@@ -488,6 +921,8 @@ class Mysql extends Controller
         $data['file']            = $file_name;
         $data['database']        = $database;
         $data['id_mysql_server'] = $id_mysql_server;
+        $data['foreign_key_mutation_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['foreign_key_mutation_csrf_token'] = Csrf::issueToken($_SESSION, ForeignKey::FOREIGN_KEY_MUTATION_CSRF_SCOPE);
 
         $path_parts = pathinfo($file_name);
 
@@ -495,13 +930,12 @@ class Mysql extends Controller
         $type = $path_parts['extension'];
         $file = $path_parts['filename'];
 
-        $sql = "SELECT * FROM `INFORMATION_SCHEMA`.`TABLES` 
-        WHERE TABLE_SCHEMA ='".$param[1]."' AND TABLE_TYPE IN ('BASE TABLE', 'SYSTEM VERSIONED') ORDER BY TABLE_NAME;";
+        $sql = self::buildGraphTablesQuery($db, $database);
         Debug::sql($sql);
 
-        $liste_table_connected = $this->tableListLinked($param);
+        $liste_table_connected = $this->tableListLinked($graphParam);
 
-        $tables = $db->sql_fetch_yield($sql);
+        $tables = $db->sql_fetch_yield(Mysql::protectInformationSchemaTablesQuery($db, $sql, $id_mysql_server));
 
         $fp = fopen($path.'/'.$file.'.dot', "w");
 
@@ -537,14 +971,15 @@ class Mysql extends Controller
 
                 //fwrite($fp, "\t edge [color=\"".$color."\"];".PHP_EOL);
                 fwrite($fp, "\t node [color=\"".$color."\" href=\"".LINK."table/mpd/".$id_mysql_server."/".$database."/".$table['TABLE_NAME']."/\" style=filled shape=box fontsize=8 ranksep=0 concentrate=true splines=true overlap=true];".PHP_EOL);
+                $nodeId = Graphviz::tableNodeId($database, $table['TABLE_NAME']);
 
 // shape=Mrecord
                 fwrite($fp,
-                    '  "'.$table['TABLE_NAME'].'" [style="" penwidth="3" fillcolor="yellow" fontname="arial" label =<<table border="0" cellborder="0" cellspacing="0" cellpadding="2" bgcolor="white"><tr><td colspan="2" bgcolor="black" color="white" align="center"><font color="white">'.$table['TABLE_NAME'].'</font></td></tr>');
+                    '  "'.$nodeId.'" [style="" penwidth="3" fillcolor="yellow" fontname="arial" label =<<table border="0" cellborder="0" cellspacing="0" cellpadding="2" bgcolor="white"><tr><td colspan="2" bgcolor="black" color="white" align="center"><font color="white">'.$table['TABLE_NAME'].'</font></td></tr>');
                 fwrite($fp, '<tr><td colspan="2" bgcolor="grey" align="left">'.$table['ENGINE'].' ('.$table['ROW_FORMAT'].')</td></tr>'.PHP_EOL);
                 fwrite($fp, '<tr><td colspan="2" bgcolor="grey" align="left">total of '.$table['TABLE_ROWS'].'</td></tr>');
 
-                $sql = "SELECT * FROM information_schema.`COLUMNS` WHERE TABLE_SCHEMA = '".$param[1]."' AND TABLE_NAME ='".$table['TABLE_NAME']."' ORDER BY ORDINAL_POSITION;";
+                $sql = self::buildGraphColumnsQuery($db, $database, (string) $table['TABLE_NAME']);
 
                 //Debug::sql($sql);
 
@@ -573,7 +1008,7 @@ class Mysql extends Controller
                 // GET FKS real and virtual
                 //$columns = $this->getColumns(array($id_mysql_server, $database));
 
-                $contraints = $this->getForeignKey($param);
+                $contraints = $this->getForeignKey($graphParam);
 
                 foreach ($contraints as $contraint) {
 
@@ -623,7 +1058,7 @@ class Mysql extends Controller
                      */
 
                     fwrite($fp,
-                        "\"".$contraint['TABLE_NAME']."\" -> \"".$contraint['REFERENCED_TABLE_NAME']."\""
+                        Graphviz::tableNodeRef($database, $contraint['TABLE_NAME'])." -> ".Graphviz::tableNodeRef($database, $contraint['REFERENCED_TABLE_NAME'])
                         .'[ arrowsize="1.5" penwidth="2" fontname="arial" fontsize=8 color="'.$color.'"
                           tooltip="'.$contraint['TABLE_NAME'].'.'.$contraint['COLUMN_NAME'].' => '.$contraint['REFERENCED_TABLE_NAME'].'.'.$contraint['REFERENCED_COLUMN_NAME'].'" edgeURL=""];'.PHP_EOL);
                 }
@@ -661,6 +1096,90 @@ class Mysql extends Controller
         $this->set('data', $data);
     }
 
+    public static function normalizeGraphRequest(array $param): ?array
+    {
+        $serverId = self::normalizeMysqlGraphServerId($param[0] ?? null);
+        $database = self::normalizeMysqlGraphDatabase($param[1] ?? null);
+
+        if ($serverId === null || $database === null) {
+            return null;
+        }
+
+        return [
+            'id_mysql_server' => $serverId,
+            'database' => $database,
+        ];
+    }
+
+    public static function buildGraphTablesQuery($db, string $database): string
+    {
+        $databaseSql = $db->sql_real_escape_string($database);
+
+        return "SELECT * FROM `INFORMATION_SCHEMA`.`TABLES` "
+            ."WHERE TABLE_SCHEMA = '".$databaseSql."' "
+            ."AND TABLE_TYPE IN ('BASE TABLE', 'SYSTEM VERSIONED') ORDER BY TABLE_NAME;";
+    }
+
+    public static function buildGraphColumnsQuery($db, string $database, string $table): string
+    {
+        $databaseSql = $db->sql_real_escape_string($database);
+        $tableSql = $db->sql_real_escape_string($table);
+
+        return "SELECT * FROM information_schema.`COLUMNS` "
+            ."WHERE TABLE_SCHEMA = '".$databaseSql."' "
+            ."AND TABLE_NAME = '".$tableSql."' ORDER BY ORDINAL_POSITION;";
+    }
+
+    private static function normalizeMysqlGraphServerId($value): ?int
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $ids = PositiveIntegerSelection::normalizeList($value, 1);
+
+        return $ids[0] ?? null;
+    }
+
+    private static function normalizeMysqlGraphDatabase($value): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $database = trim((string) $value);
+        if (!Identifier::isDatabaseName($database)) {
+            return null;
+        }
+
+        return $database;
+    }
+
+    private static function sendMysqlGraphError(int $statusCode, string $message): void
+    {
+        http_response_code($statusCode);
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
+    }
+
+/**
+ * Create mysql state through `addnagios`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for addnagios.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::addnagios()
+ * @example /fr/mysql/addnagios
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function addnagios()
     {
 //photoways
@@ -682,6 +1201,27 @@ class Mysql extends Controller
         }
     }
 
+/**
+ * Handle mysql state through `thread`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for thread.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::thread()
+ * @example /fr/mysql/thread
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function thread($param)
     {
         $db = Sgbd::sql(str_replace('-', '_', $param[0]));
@@ -762,6 +1302,28 @@ class Mysql extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Handle mysql state through `load_db`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for load_db.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::load_db()
+ * @example /fr/mysql/load_db
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function load_db($param)
     {
         $this->layout_name = false;
@@ -935,6 +1497,28 @@ class Mysql extends Controller
         Debug::sql($sql);
     }
 
+/**
+ * Retrieve mysql state through `getLogAndPos`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $filename Input value for `filename`.
+ * @phpstan-param mixed $filename
+ * @psalm-param mixed $filename
+ * @return mixed Returned value for getLogAndPos.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::getLogAndPos()
+ * @example /fr/mysql/getLogAndPos
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getLogAndPos($filename)
     {
         $handle = fopen($filename, "r");
@@ -965,6 +1549,28 @@ class Mysql extends Controller
         }
     }
 
+/**
+ * Handle mysql state through `cmd`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $cmd Input value for `cmd`.
+ * @phpstan-param mixed $cmd
+ * @psalm-param mixed $cmd
+ * @return mixed Returned value for cmd.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::cmd()
+ * @example /fr/mysql/cmd
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function cmd($cmd)
     {
         $code_retour = 0;
@@ -978,6 +1584,34 @@ class Mysql extends Controller
         }
     }
 
+/**
+ * Handle mysql state through `waitPosition`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $db Input value for `db`.
+ * @phpstan-param mixed $db
+ * @psalm-param mixed $db
+ * @param mixed $file Input value for `file`.
+ * @phpstan-param mixed $file
+ * @psalm-param mixed $file
+ * @param mixed $position Input value for `position`.
+ * @phpstan-param mixed $position
+ * @psalm-param mixed $position
+ * @return void Returned value for waitPosition.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::waitPosition()
+ * @example /fr/mysql/waitPosition
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function waitPosition($db, $file, $position)
     {
         $MS = new MasterSlave();
@@ -1012,11 +1646,50 @@ class Mysql extends Controller
         } while ($file != $Relay_Master_Log_File || $position != $Exec_Master_Log_Pos);
     }
 
+/**
+ * Handle mysql state through `after`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for after.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::after()
+ * @example /fr/mysql/after
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function after($param)
     {
 
     }
 
+/**
+ * Handle mysql state through `generate_config`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for generate_config.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::generate_config()
+ * @example /fr/mysql/generate_config
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function generate_config()
     {
         $db               = Sgbd::sql(DB_DEFAULT);
@@ -1025,8 +1698,41 @@ class Mysql extends Controller
         $this->ariane     = "> ".'<a href="'.LINK.'Plugins/index/">'.__('Tools box')."</a> > ".$this->title;
     }
 
+/**
+ * Create mysql state through `add`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for add.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::add()
+ * @example /fr/mysql/add
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function add($param)
     {
+        if ($_SERVER['REQUEST_METHOD'] == "POST") {
+            $outcome = self::evaluateAddRequest($_POST, $_SERVER, $_SESSION);
+            if (!$outcome['allowed']) {
+                $this->view = false;
+                $this->layout_name = false;
+                HttpResponse::sendOutcome($outcome, null);
+                return;
+            }
+
+            $_POST['mysql_server'] = $outcome['mysql_server'];
+        }
+
         $db = Sgbd::sql(DB_DEFAULT);
 
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
@@ -1048,8 +1754,31 @@ class Mysql extends Controller
                 }
 
 
-                $ret = $this->testMySQL($_POST['mysql_server']['ip'], $_POST['mysql_server']['port'], $_POST['mysql_server']['login'],
-                    $_POST['mysql_server']['password']);
+                try {
+                    $ret = $this->testMySQL(
+                        $_POST['mysql_server']['ip'],
+                        $_POST['mysql_server']['port'],
+                        $_POST['mysql_server']['login'],
+                        $_POST['mysql_server']['password']
+                    );
+                } catch (\Throwable $e) {
+
+                    $_SESSION['ERROR']['mysql_server']['login']    = I18n::getTranslation(__("Maybe this login is wrong"));
+                    $_SESSION['ERROR']['mysql_server']['password'] = I18n::getTranslation(__("Wrong password"));
+
+                    $rawError = (string) $e->getMessage();
+                    if (strpos($rawError, '1045') !== false || stripos($rawError, 'Access denied') !== false) {
+                        $msg = I18n::getTranslation(__("Access denied for this MySQL account (code 1045). Please verify login/password."));
+                    } else {
+                        $msg = $rawError;
+                    }
+
+                    $title = I18n::getTranslation(__("MySQL's connection error"));
+                    set_flash("error", $title, $msg);
+
+                    header("location: ".LINK."mysql/add/".$this->getPost());
+                    exit;
+                }
 
                 if ($ret !== true) {
                     //debug($_POST);
@@ -1078,6 +1807,22 @@ class Mysql extends Controller
                 $table['mysql_server']['database']            = $table['mysql_server']['database'] ?? "mysql";
                 $table['mysql_server']['is_password_crypted'] = "1";
                 $table['mysql_server']['id_environment']      = $table['mysql_server']['id_environement'] ?? 1;
+                $table['mysql_server']['is_ssl']              = $this->last_connection_used_ssl;
+                $table['mysql_server']['ssh_nat']             = trim((string) ($table['mysql_server']['ssh_nat'] ?? ''));
+                $table['mysql_server']['is_proxy']            = empty($_POST['mysql_server']['is_proxy']) ? 0 : 1;
+                $table['mysql_server']['is_vip']              = empty($_POST['mysql_server']['is_vip']) ? 0 : 1;
+
+                $sql = "SELECT id FROM mysql_server WHERE ip = '".$db->sql_real_escape_string($table['mysql_server']['ip'])."' AND port = '".intval($table['mysql_server']['port'])."' LIMIT 1";
+                $res = $db->sql_query($sql);
+
+                if ($db->sql_num_rows($res) > 0) {
+                    $msg   = I18n::getTranslation(__("This MySQL server already exists"));
+                    $title = I18n::getTranslation(__("Warning"));
+                    set_flash("caution", $title, $msg);
+
+                    header("location: ".LINK."mysql/add/".$this->getPost());
+                    exit;
+                }
 
                 /*
                   debug($table);
@@ -1085,7 +1830,24 @@ class Mysql extends Controller
                   exit;
                   /** */
 
-                $ret = $db->sql_save($table);
+                try {
+                    $ret = $db->sql_save($table);
+                } catch (\Throwable $e) {
+                    $rawError = (string) $e->getMessage();
+
+                    if (strpos($rawError, '1062') !== false || stripos($rawError, 'Duplicate entry') !== false) {
+                        $msg   = I18n::getTranslation(__("This MySQL server already exists"));
+                        $title = I18n::getTranslation(__("Warning"));
+                        set_flash("warning", $title, $msg);
+                    } else {
+                        $msg   = $rawError;
+                        $title = I18n::getTranslation(__("Error"));
+                        set_flash("error", $title, $msg);
+                    }
+
+                    header("location: ".LINK."mysql/add/".$this->getPost());
+                    exit;
+                }
 
                 if (!$ret) {
 
@@ -1107,7 +1869,7 @@ class Mysql extends Controller
                     set_flash("success", $title, $msg);
 
                     //echo "OK !!!";
-                    header("location: ".LINK."mysql/add/");
+                    header("location: ".LINK."mysql/add/".$this->getPost());
                     exit;
                 }
             } else {
@@ -1153,22 +1915,367 @@ class Mysql extends Controller
             $_GET['mysql_server']['port'] = 3306;
         }
 
+        $data['mysql_add_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['mysql_add_csrf_token'] = Csrf::issueToken($_SESSION, self::MYSQL_ADD_CSRF_SCOPE);
 
         $this->set('data', $data);
     }
 
+    public static function evaluateAddRequest(array $post, array $server, array $session): array
+    {
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::MYSQL_ADD_CSRF_SCOPE)) {
+            return [
+                'allowed' => false,
+                'status' => $failure['status'],
+                'body' => $failure['body'],
+                'headers' => $failure['headers'],
+                'mysql_server' => null,
+            ];
+        }
+
+        $mysqlServer = self::normalizeAddPayload($post);
+        if ($mysqlServer === null) {
+            return [
+                'allowed' => false,
+                'status' => 400,
+                'body' => 'Invalid MySQL add payload',
+                'headers' => [],
+                'mysql_server' => null,
+            ];
+        }
+
+        return [
+            'allowed' => true,
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'mysql_server' => $mysqlServer,
+        ];
+    }
+
+    public static function normalizeAddPayload(array $post): ?array
+    {
+        if (empty($post['mysql_server']) || !is_array($post['mysql_server'])) {
+            return null;
+        }
+
+        $source = $post['mysql_server'];
+        foreach ($source as $value) {
+            if (!is_scalar($value)) {
+                return null;
+            }
+        }
+
+        $host = self::normalizeAddHost($source['ip'] ?? '');
+        $port = self::normalizeAddPort($source['port'] ?? null);
+        $login = self::normalizeAddText($source['login'] ?? '', self::MYSQL_ADD_TEXT_MAX_LENGTH, false);
+        $password = self::normalizeAddText($source['password'] ?? '', self::MYSQL_ADD_TEXT_MAX_LENGTH, false);
+        $displayName = self::normalizeAddText($source['display_name'] ?? '', self::MYSQL_ADD_TEXT_MAX_LENGTH, true);
+        $idClient = self::normalizeOptionalPositiveInteger($source['id_client'] ?? null);
+        $idEnvironment = self::normalizeOptionalPositiveInteger($source['id_environement'] ?? null);
+
+        if (
+            $host === null
+            || $port === null
+            || $login === null
+            || $password === null
+            || $displayName === null
+            || $idClient === null
+            || $idEnvironment === null
+        ) {
+            return null;
+        }
+
+        $mysqlServer = [
+            'display_name' => $displayName,
+            'ip' => $host,
+            'port' => $port,
+            'login' => $login,
+            'password' => $password,
+            'is_proxy' => self::normalizeBooleanFlag($source['is_proxy'] ?? null),
+            'is_vip' => self::normalizeBooleanFlag($source['is_vip'] ?? null),
+        ];
+
+        if (array_key_exists('id_client', $source)) {
+            $mysqlServer['id_client'] = $idClient;
+        }
+
+        if (array_key_exists('id_environement', $source)) {
+            $mysqlServer['id_environement'] = $idEnvironment;
+        }
+
+        return $mysqlServer;
+    }
+
+    private static function normalizeAddHost($value): ?string
+    {
+        $host = self::normalizeAddText($value, self::MYSQL_ADD_TEXT_MAX_LENGTH, false);
+        if (
+            $host === null
+            || preg_match('/[\\x00-\\x1F\\x7F\\s\\/\\\\?#@]/', $host) === 1
+            || strpos($host, '://') !== false
+        ) {
+            return null;
+        }
+
+        return $host;
+    }
+
+    private static function normalizeAddText($value, int $maxLength, bool $allowEmpty): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $value = trim((string) $value);
+        if ((!$allowEmpty && $value === '') || strlen($value) > $maxLength) {
+            return null;
+        }
+
+        return $value;
+    }
+
+    private static function normalizeAddPort($value): ?int
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $port = trim((string) $value);
+        if ($port === '' || !ctype_digit($port)) {
+            return null;
+        }
+
+        $port = (int) $port;
+        if ($port < 1 || $port > 65535) {
+            return null;
+        }
+
+        return $port;
+    }
+
+    private static function normalizeOptionalPositiveInteger($value): ?int
+    {
+        if ($value === null) {
+            return 0;
+        }
+
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $value = trim((string) $value);
+        if ($value === '' || !ctype_digit($value) || (int) $value < 1) {
+            return null;
+        }
+
+        return (int) $value;
+    }
+
+    private static function normalizeBooleanFlag($value): int
+    {
+        if (!is_scalar($value)) {
+            return 0;
+        }
+
+        return in_array(strtolower(trim((string) $value)), ['1', 'true', 'on'], true) ? 1 : 0;
+    }
+
+/**
+ * Handle mysql state through `testMySQL`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $hostname Input value for `hostname`.
+ * @phpstan-param mixed $hostname
+ * @psalm-param mixed $hostname
+ * @param mixed $port Input value for `port`.
+ * @phpstan-param mixed $port
+ * @psalm-param mixed $port
+ * @param mixed $user Input value for `user`.
+ * @phpstan-param mixed $user
+ * @psalm-param mixed $user
+ * @param mixed $password Input value for `password`.
+ * @phpstan-param mixed $password
+ * @psalm-param mixed $password
+ * @return mixed Returned value for testMySQL.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::testMySQL()
+ * @example /fr/mysql/testMySQL
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function testMySQL($hostname, $port, $user, $password)
     {
 
-        $link = mysqli_connect($hostname.":".$port, $user, trim($password), "mysql");
+        $this->last_connection_used_ssl = 0;
+        $firstError                     = "";
+
+        $link = mysqli_init();
+        mysqli_options($link, MYSQLI_OPT_CONNECT_TIMEOUT, 1);
+                    mysqli_options($link, MYSQLI_OPT_SSL_VERIFY_SERVER_CERT, false);
+            mysqli_ssl_set($link, null, null, null, null, null);
+
+        // 1. Essayer sans SSL (sans propager l'erreur)
+        try {
+            if (!mysqli_real_connect($link, $hostname, $user, $password, "", $port)) {
+                // Échec de la première tentative : on passe à la deuxième
+                $firstError = mysqli_connect_error();
+                throw new \RuntimeException("Première tentative échouée (non critique)");
+            }
+        } catch (\RuntimeException $e) {
+            // On ignore l'erreur et on essaie avec SSL
+            mysqli_options($link, MYSQLI_OPT_SSL_VERIFY_SERVER_CERT, false);
+            mysqli_ssl_set($link, null, null, null, null, null);
+
+            if (!mysqli_real_connect($link, $hostname, $user, $password, "", $port, null, MYSQLI_CLIENT_SSL)) {
+                // Les deux tentatives ont échoué : on lève une exception "globale"
+                throw new \Exception(
+                    "Connexion MySQL impossible. Détails : " .
+                    mysqli_connect_error() .
+                    " (Erreur n°" . mysqli_connect_errno() . ")" .
+                    ($firstError ? " | Premier essai : " . $firstError : "")
+                );
+            }
+            $this->last_connection_used_ssl = 1;
+        }
+
+
+
+
+
+        /*
+        //$link = mysqli_connect($hostname.":".$port, $user, trim($password), "mysql");
+        $link = mysqli_init();
+        mysqli_options($link, MYSQLI_OPT_CONNECT_TIMEOUT, 1);
+        
+        if (! @mysqli_real_connect($link, $hostname, $user, $password, "", $port) )
+        {
+            unset($link);
+            $link = mysqli_init();
+            mysqli_options($link, MYSQLI_OPT_SSL_VERIFY_SERVER_CERT, false);
+            mysqli_ssl_set($link, null, null, null, null, null);
+            if (!mysqli_real_connect($link, $hostname, $user, $password, '', $port, null, MYSQLI_CLIENT_SSL)) {
+                throw new \Exception(
+                    "Impossible de se connecter au serveur MySQL : " .
+                    mysqli_connect_error() .
+                    " (Erreur n°" . mysqli_connect_errno() . ")"
+                );
+            }
+            else{
+                echo "GOOD !!!!!\n";
+            }
+        }/************ */
+
+
 
         if ($link) {
             return true;
         } else {
+            echo "GOOD !!!!!\n";
             return 'Connect Error ('.mysqli_connect_errno().') '.mysqli_connect_error();
         }
     }
 
+
+/**
+ * Handle mysql state through `aa`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for aa.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::aa()
+ * @example /fr/mysql/aa
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public function aa($param)
+    {
+        Debug::parseDebug($param);
+        $this->testMySQL("127.0.0.1","3306", "pmacontrol", "NDQ3ZjVkNDIzZjFlMGFiZGU1NWM1MzI4" );
+        Debug::debug("OK2");
+        //$this->testMySQL("127.0.0.1","8009", "pmacontrol", "Marneuse127*" );
+        Debug::debug("OK");
+
+    }
+
+/**
+ * Handle mysql state through `bb`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for bb.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::bb()
+ * @example /fr/mysql/bb
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public function bb($param)
+    {
+        Debug::parseDebug($param);
+
+        Debug::debug("OK2");
+        $this->testMySQL("127.0.0.1","8009", "pmacontrol", "Marneuse127*" );
+        Debug::debug("OK");
+
+    }
+
+
+
+/**
+ * Handle mysql state through `scanPort`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $ip Input value for `ip`.
+ * @phpstan-param mixed $ip
+ * @psalm-param mixed $ip
+ * @param mixed $port Input value for `port`.
+ * @phpstan-param mixed $port
+ * @psalm-param mixed $port
+ * @param mixed $timeOut Input value for `timeOut`.
+ * @phpstan-param mixed $timeOut
+ * @psalm-param mixed $timeOut
+ * @return mixed Returned value for scanPort.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::scanPort()
+ * @example /fr/mysql/scanPort
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function scanPort($ip, $port, $timeOut = 1)
     {
         $connection = @fsockopen($ip, $port, $errno, $errstr, $timeOut);
@@ -1182,6 +2289,24 @@ class Mysql extends Controller
         return false;
     }
 
+/**
+ * Retrieve mysql state through `getPost`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for getPost.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getPost()
+ * @example /fr/mysql/getPost
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getPost()
     {
         $ret = [];
@@ -1195,83 +2320,34 @@ class Mysql extends Controller
         return implode('/', $ret);
     }
 
+/**
+ * Handle mysql state through `reverseConfig`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for reverseConfig.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::reverseConfig()
+ * @example /fr/mysql/reverseConfig
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function reverseConfig($param)
     {
         $this->view = false;
 
         Debug::parseDebug($param);
 
-        $db = Sgbd::sql(DB_DEFAULT);
-
-        $sql = "SELECT * FROM mysql_server a ORDER BY id_client";
-        $res = $db->sql_query($sql);
-
-        $config = "";
-        while ($ob     = $db->sql_fetch_object($res)) {
-            $string = "[".$ob->name."]\n";
-            $string .= "driver=mysql\n";
-            $string .= "hostname=".$ob->ip."\n";
-            $string .= "port=".$ob->port."\n";
-            $string .= "user=".$ob->login."\n";
-            $string .= "password=".$ob->passwd."\n";
-            $string .= "crypted=1\n";
-            $string .= "database=".$ob->database."\n";
-
-            $config .= $string."\n\n";
-
-            Debug::debug($string);
-        }
-
-        file_put_contents(ROOT."/configuration/db.config.ini.php", $config);
-    }
-
-    public function parsecnf()
-    {
-
-        $myfile = file("/etc/mysql/my.cnf");
-
-        $cnf         = array();
-        $include_dir = array();
-        $parsed      = array();
-
-        foreach ($myfile as $line) {
-            $comment_removed   = explode('#', $line)[0];
-            $comment_removed_t = trim($comment_removed);
-
-            if (!empty($comment_removed_t)) {
-                if (substr($comment_removed_t, 0, 11) === "!includedir") {
-                    $include_dir[] = trim(str_replace("!includedir", "", $comment_removed_t));
-                }
-
-                $cnf[] = $comment_removed_t;
-            }
-        }
-
-        $pure_cnf = implode("\n", $cnf);
-
-        $for_split = preg_replace("/\[\w+\-?\d?\.?\d?\]/s", "###$0", $pure_cnf);
-
-        $sections = explode('###', $for_split);
-
-        unset($sections[0]);
-
-        foreach ($sections as $section) {
-            $lines        = explode("\n", $section);
-            $section_name = trim($lines[0], "[]");
-
-            unset($lines[0]);
-
-            foreach ($lines as $line) {
-                $options = explode("=", $line);
-
-                $var                           = trim($options[0]);
-                $val                           = trim($options[1]);
-                $parsed[$section_name][$var][] = $val;
-            }
-        }
-
-
-        print_r($parsed);
+        Mysql2::generateMySQLConfig();
     }
 
     /**
@@ -1300,26 +2376,48 @@ class Mysql extends Controller
         $slaves  = $default->isSlave();
 
         foreach ($slaves as $slave) {
-            if (!filter_var($slave['Master_Host'], FILTER_VALIDATE_IP)) {
+            $masterHost = $slave['Master_Host'] ?? '';
+            if (!is_scalar($masterHost)) {
+                continue;
+            }
 
-                $list_ip_destinations = trim(shell_exec("getent hosts ".$slave['Master_Host']." | awk '{print $1}'"));
-                $ips                  = explode("\n", $list_ip_destinations);
+            $masterHost = trim((string) $masterHost);
+            if ($masterHost === '' || filter_var($masterHost, FILTER_VALIDATE_IP)) {
+                continue;
+            }
 
-                foreach ($ips as $ip_destination) {
+            foreach (HostResolver::resolveIpv4Addresses($masterHost) as $ip_destination) {
+                $data = array();
+                $data['alias_dns']['dns']         = $masterHost;
+                $data['alias_dns']['port']        = $slave['Master_Port'] ?? '';
+                $data['alias_dns']['destination'] = $ip_destination;
 
-                    if (!filter_var($ip_destination, FILTER_VALIDATE_IP)) {
-
-                        $data['alias_dns']['dns']         = $slave['Master_Host'];
-                        $data['alias_dns']['port']        = $slave['Master_Port'];
-                        $data['alias_dns']['destination'] = $ip_destination;
-
-                        $default->sql_save($data);
-                    }
-                }
+                $default->sql_save($data);
             }
         }
     }
 
+/**
+ * Retrieve mysql state through `getColor`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $string Input value for `string`.
+ * @phpstan-param mixed $string
+ * @psalm-param mixed $string
+ * @return mixed Returned value for getColor.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getColor()
+ * @example /fr/mysql/getColor
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getColor($string)
     {
 
@@ -1335,28 +2433,76 @@ class Mysql extends Controller
     }
 
 
+/**
+ * Create mysql state through `addDate`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for addDate.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::addDate()
+ * @example /fr/mysql/addDate
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function addDate($param = array())
     {
         Mysql2::addMaxDate($param);
     }
 
+/**
+ * Handle mysql state through `tableListLinked`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for tableListLinked.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::tableListLinked()
+ * @example /fr/mysql/tableListLinked
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function tableListLinked($param)
     {
         Debug::parseDebug($param);
 
-        $id_mysql_sever = $param[0];
-        $database = $param[1];
+        $request = self::normalizeGraphRequest($param);
+        if ($request === null) {
+            return [];
+        }
+
+        $id_mysql_server = $request['id_mysql_server'];
+        $database        = $request['database'];
 
         $db = Sgbd::sql(DB_DEFAULT);
+        $databaseSql = $db->sql_real_escape_string($database);
 
         $sql2 = "SELECT table_name FROM `information_schema`.`KEY_COLUMN_USAGE` "
-            ."WHERE `CONSTRAINT_SCHEMA` ='".$database."' "
-            ."AND `REFERENCED_TABLE_SCHEMA`='".$database."' "
+            ."WHERE `CONSTRAINT_SCHEMA` ='".$databaseSql."' "
+            ."AND `REFERENCED_TABLE_SCHEMA`='".$databaseSql."' "
             ."AND `REFERENCED_TABLE_NAME` IS NOT NULL
                           UNION
              SELECT REFERENCED_TABLE_NAME as table_name FROM `information_schema`.`KEY_COLUMN_USAGE` "
-            ."WHERE `CONSTRAINT_SCHEMA` ='".$database."' "
-            ."AND `REFERENCED_TABLE_SCHEMA`='".$database."' "
+            ."WHERE `CONSTRAINT_SCHEMA` ='".$databaseSql."' "
+            ."AND `REFERENCED_TABLE_SCHEMA`='".$databaseSql."' "
             ."AND `REFERENCED_TABLE_NAME` IS NOT NULL";
 
         $res2 = $db->sql_query($sql2);
@@ -1369,9 +2515,9 @@ class Mysql extends Controller
         Debug::debug(count($liste_table_1), "Natural Foreign keys");
 
         $sql1 = "SELECT distinct a.`constraint_table` as table_name
-         FROM `foreign_key_virtual` a WHERE `constraint_schema` = '".$database."' AND a.id_mysql_server = ".$id_mysql_sever."
+         FROM `foreign_key_virtual` a WHERE `constraint_schema` = '".$databaseSql."' AND a.id_mysql_server = ".$id_mysql_server."
          UNION SELECT distinct b.`referenced_table` as table_name
-         FROM `foreign_key_virtual` b WHERE `referenced_schema` = '".$database."' AND b.id_mysql_server = ".$id_mysql_sever.";
+         FROM `foreign_key_virtual` b WHERE `referenced_schema` = '".$databaseSql."' AND b.id_mysql_server = ".$id_mysql_server.";
         ";
         Debug::sql($sql1);
 
@@ -1392,20 +2538,47 @@ class Mysql extends Controller
         return $liste_table_connected;
     }
 
+/**
+ * Retrieve mysql state through `getVirtualForeignKey`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getVirtualForeignKey.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getVirtualForeignKey()
+ * @example /fr/mysql/getVirtualForeignKey
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getVirtualForeignKey($param)
     {
         Debug::parseDebug($param);
 
-        $id_mysql_server = $param[0];
-        $database        = $param[1];
+        $request = self::normalizeGraphRequest($param);
+        if ($request === null) {
+            return [];
+        }
+
+        $id_mysql_server = $request['id_mysql_server'];
+        $database        = $request['database'];
 
         $db = Sgbd::sql(DB_DEFAULT);
+        $databaseSql = $db->sql_real_escape_string($database);
 
         $sql = "select constraint_schema as CONSTRAINT_SCHEMA,constraint_table as TABLE_NAME,constraint_column as COLUMN_NAME,
             referenced_schema as REFERENCED_TABLE_SCHEMA, referenced_table as REFERENCED_TABLE_NAME, referenced_column as REFERENCED_COLUMN_NAME
             from foreign_key_virtual
             WHERE id_mysql_server = ".$id_mysql_server."
-            AND constraint_schema = '".$database."';";
+            AND constraint_schema = '".$databaseSql."';";
 
         Debug::sql($sql);
 
@@ -1425,20 +2598,47 @@ class Mysql extends Controller
         return $foreign_key;
     }
 
+/**
+ * Retrieve mysql state through `getRealForeignKey`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getRealForeignKey.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getRealForeignKey()
+ * @example /fr/mysql/getRealForeignKey
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getRealForeignKey($param)
     {
 
         Debug::parseDebug($param);
 
-        $id_mysql_server = $param[0];
-        $database        = $param[1];
+        $request = self::normalizeGraphRequest($param);
+        if ($request === null) {
+            return [];
+        }
+
+        $id_mysql_server = $request['id_mysql_server'];
+        $database        = $request['database'];
 
         $db = Mysql2::getDbLink($id_mysql_server);
+        $databaseSql = $db->sql_real_escape_string($database);
 
         $sql = "SELECT CONSTRAINT_SCHEMA,TABLE_NAME,COLUMN_NAME, REFERENCED_TABLE_SCHEMA, REFERENCED_TABLE_NAME,REFERENCED_COLUMN_NAME"
             ." FROM `information_schema`.`KEY_COLUMN_USAGE` "
-            ."WHERE `CONSTRAINT_SCHEMA` ='".$database."' "
-            ."AND `REFERENCED_TABLE_SCHEMA`='".$database."' "
+            ."WHERE `CONSTRAINT_SCHEMA` ='".$databaseSql."' "
+            ."AND `REFERENCED_TABLE_SCHEMA`='".$databaseSql."' "
             ."AND `REFERENCED_TABLE_NAME` IS NOT NULL  ";
 
         Debug::sql($sql);
@@ -1459,12 +2659,40 @@ class Mysql extends Controller
         return $foreign_key;
     }
 
+/**
+ * Retrieve mysql state through `getForeignKey`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getForeignKey.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getForeignKey()
+ * @example /fr/mysql/getForeignKey
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getForeignKey($param)
     {
         Debug::parseDebug($param);
 
-        $fk1 = $this->getRealForeignKey($param);
-        $fk2 = $this->getVirtualForeignKey($param);
+        $request = self::normalizeGraphRequest($param);
+        if ($request === null) {
+            return [];
+        }
+
+        $graphParam = [$request['id_mysql_server'], $request['database']];
+
+        $fk1 = $this->getRealForeignKey($graphParam);
+        $fk2 = $this->getVirtualForeignKey($graphParam);
 
         //debug($fk2);
 
@@ -1476,6 +2704,27 @@ class Mysql extends Controller
         return $fks;
     }
 
+/**
+ * Handle mysql state through `audit`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for audit.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::audit()
+ * @example /fr/mysql/audit
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function audit($param)
     {
 

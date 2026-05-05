@@ -8,21 +8,86 @@
 namespace App\Library;
 
 //use phpseclib\Crypt\RSA;
+use phpseclib3\Crypt\PublicKeyLoader;
 use phpseclib3\Net\SSH2;
 use phpseclib3\Net\SFTP;
 use App\Library\Chiffrement;
 use App\Library\Debug;
+use Glial\Sgbd\Sgbd;
 
+/**
+ * Class responsible for transfer workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Transfer
 {
     /* used for link MySQL */
     static $db;
 
+/**
+ * Handle transfer state through `setDb`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $db Input value for `db`.
+ * @phpstan-param mixed $db
+ * @psalm-param mixed $db
+ * @return void Returned value for setDb.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::setDb()
+ * @example /fr/transfer/setDb
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function setDb($db)
     {
         self::$db = $db;
     }
 
+/**
+ * Handle transfer state through `sendFile`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param int $id_backup_storage_area Input value for `id_backup_storage_area`.
+ * @phpstan-param int $id_backup_storage_area
+ * @psalm-param int $id_backup_storage_area
+ * @param mixed $src Input value for `src`.
+ * @phpstan-param mixed $src
+ * @psalm-param mixed $src
+ * @param mixed $dst Input value for `dst`.
+ * @phpstan-param mixed $dst
+ * @psalm-param mixed $dst
+ * @return mixed Returned value for sendFile.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::sendFile()
+ * @example /fr/transfer/sendFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function sendFile($id_backup_storage_area, $src, $dst)
     {
 
@@ -47,6 +112,7 @@ class Transfer
 
 
 
+            $key = null;
             if (!empty($ob->private_key)) {
                 $pv_key = Chiffrement::decrypt($ob->private_key);
             }
@@ -56,8 +122,7 @@ class Transfer
 
             // priorité a la clef privé si les 2 sont remplie
             if (!empty($pv_key)) {
-                $key = new RSA();
-                $key->loadKey($pv_key);
+                $key = PublicKeyLoader::load($pv_key);
             }
 
             if (!$sftp->login($ob->user, $key)) {
@@ -77,7 +142,7 @@ class Transfer
 
             Debug::debug(pathinfo($dst), "Path_info");
 
-            $ssh->exec("mkdir -p ".$dst_dir);
+            $sftp->mkdir($dst_dir, -1, true);
 
             Debug::debug($dst_dir, "mkdir -p");
 
@@ -89,7 +154,7 @@ class Transfer
 
             $data['size'] = $sftp->size($dst);
 
-            $md5 = $ssh->exec("md5sum ".$dst);
+            $md5 = $ssh->exec(ShellCommand::remoteMd5sum($dst));
 
             $data['md5']      = explode(" ", $md5)[0];
             $data['pathfile'] = $dst;
@@ -113,6 +178,34 @@ class Transfer
         } //end while
     }
 
+/**
+ * Retrieve transfer state through `getFile`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $server Input value for `server`.
+ * @phpstan-param mixed $server
+ * @psalm-param mixed $server
+ * @param mixed $src Input value for `src`.
+ * @phpstan-param mixed $src
+ * @psalm-param mixed $src
+ * @param mixed $dst Input value for `dst`.
+ * @phpstan-param mixed $dst
+ * @psalm-param mixed $dst
+ * @return mixed Returned value for getFile.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::getFile()
+ * @example /fr/transfer/getFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function getFile($server, $src, $dst)
     {
         $start = microtime(true);
@@ -130,9 +223,9 @@ class Transfer
 
 
         // priorité a la clef privé si les 2 sont remplie
+        $key = null;
         if (!empty($server['private_key'])) {
-            $key = new RSA();
-            $key->loadKey($server['private_key']);
+            $key = PublicKeyLoader::load($server['private_key']);
         }
 
         if (!$sftp->login($server['user'], $key)) {
@@ -152,13 +245,40 @@ class Transfer
 
         $data['size'] = $sftp->size($src);
 
-        $md5 = $ssh->exec("md5sum ".$src." 2>1 >> /dev/null");
+        $md5 = $ssh->exec(ShellCommand::remoteMd5sum($src));
 
         $data['md5'] = explode(" ", $md5)[0];
 
         return $data;
     }
 
+/**
+ * Retrieve transfer state through `getFileFromMysql`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param mixed $src Input value for `src`.
+ * @phpstan-param mixed $src
+ * @psalm-param mixed $src
+ * @param mixed $dst Input value for `dst`.
+ * @phpstan-param mixed $dst
+ * @psalm-param mixed $dst
+ * @return mixed Returned value for getFileFromMysql.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getFileFromMysql()
+ * @example /fr/transfer/getFileFromMysql
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getFileFromMysql($id_mysql_server, $src, $dst)
     {
 

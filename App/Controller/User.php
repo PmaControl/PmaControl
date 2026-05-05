@@ -2,22 +2,109 @@
 
 namespace App\Controller;
 
+use App\Library\Security\AuthToken;
+use App\Library\Security\CsrfGuard;
+use App\Library\Security\PersistentAuthSession;
+use App\Library\Security\SessionFixationGuard;
+use Glial\Security\Csrf;
 use \Glial\Synapse\Controller;
 use \Glial\I18n\I18n;
 use \Glial\Sgbd\Sgbd;
 
 
+/**
+ * Class responsible for user workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class User extends Controller {
 
-    use \Glial\Neuron\MailBox\MailBox;
+    use \Glial\Neuron\MailBox\MailBox {
+        mailbox as private legacyMailbox;
+    }
 
+/**
+ * Stores `$module_group` for module group.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     public $module_group = "Users & access management";
+/**
+ * Stores `$method_administration` for method administration.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     public $method_administration = array("user", "roles");
 
+    private const USER_UPDATE_IDGROUP_CSRF_SCOPE = 'user.updateIdGroup';
+    private const USER_REGISTER_CSRF_SCOPE = 'user.register';
+    private const USER_PROFILE_CSRF_SCOPE = 'user.profile';
+    private const USER_PASSWORD_RECOVER_CSRF_SCOPE = 'user.passwordRecover';
+    private const USER_MAILBOX_CSRF_SCOPE = 'user.mailbox';
+    private const USER_LOST_PASSWORD_CSRF_SCOPE = 'user.lostPassword';
+    private const USER_CONNECTION_CSRF_SCOPE = 'user.connection';
+    private const USER_CONFIRM_TOKEN_TTL_SECONDS = 604800;
+    private const USER_RESET_TOKEN_TTL_SECONDS = 3600;
+
+/**
+ * Prepare user state through `before`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for before.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::before()
+ * @example /fr/user/before
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function before($param) {
         
     }
 
+/**
+ * Handle user state through `after`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for after.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::after()
+ * @example /fr/user/after
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function after($param) {
         if (!IS_CLI) {
 
@@ -25,6 +112,96 @@ class User extends Controller {
         }
     }
 
+    public function mailbox($param)
+    {
+        $this->data['user_mailbox_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $this->data['user_mailbox_csrf_token'] = Csrf::issueToken($_SESSION, self::USER_MAILBOX_CSRF_SCOPE);
+
+        if (CsrfGuard::isPost($_SERVER)) {
+            $outcome = self::evaluateMailboxRequest($_POST, $_SERVER, $_SESSION, $param);
+            if ($outcome['status'] !== 200) {
+                $msg = I18n::getTranslation(__($outcome['body']));
+                $title = I18n::getTranslation(__("Error"));
+                set_flash("error", $title, $msg);
+                header("location: " . LINK . self::mailboxRedirectPath($param));
+                return;
+            }
+
+            $_POST['mailbox_main']['id_user_main__to'] = (string)$outcome['recipient_id'];
+        }
+
+        $this->legacyMailbox($param);
+    }
+
+    public static function evaluateMailboxRequest(array $post, array $server, array $session, array $params): array
+    {
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::USER_MAILBOX_CSRF_SCOPE)) {
+            return self::buildMailboxOutcome($failure['status'], $failure['body'], $failure['headers']);
+        }
+
+        if (($params[0] ?? '') !== 'compose') {
+            return self::buildMailboxOutcome(400, "Invalid mailbox action");
+        }
+
+        $recipientId = self::normalizeMailboxRecipientPayload($post);
+        if ($recipientId === null) {
+            return self::buildMailboxOutcome(400, "Invalid mailbox payload");
+        }
+
+        return self::buildMailboxOutcome(200, "", [], $recipientId);
+    }
+
+    public static function normalizeMailboxRecipientPayload(array $post): ?int
+    {
+        if (empty($post['mailbox_main']) || !is_array($post['mailbox_main'])) {
+            return null;
+        }
+
+        return self::normalizePositiveInteger($post['mailbox_main']['id_user_main__to'] ?? null);
+    }
+
+    private static function mailboxRedirectPath(array $params): string
+    {
+        $request = (string)($params[0] ?? 'all_mails');
+        if ($request === '') {
+            $request = 'all_mails';
+        }
+
+        return "user/mailbox/" . $request . "/";
+    }
+
+    private static function buildMailboxOutcome(
+        int $statusCode,
+        string $message,
+        array $headers = [],
+        int $recipientId = 0
+    ): array {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'recipient_id' => $recipientId,
+        ];
+    }
+
+/**
+ * Render user state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/user/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function index() {
         //$this->di['js']->addJavascript(array("jquery-latest.min.js"));
         $this->title = __("Members");
@@ -55,9 +232,33 @@ class User extends Controller {
             $data['group'][] = $tmp;
         }
 
+        $data['user_update_idgroup_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['user_update_idgroup_csrf_token'] = Csrf::issueToken(
+            $_SESSION,
+            self::USER_UPDATE_IDGROUP_CSRF_SCOPE
+        );
+
         $this->set("data", $data);
     }
 
+/**
+ * Handle user state through `is_logged`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for is_logged.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::is_logged()
+ * @example /fr/user/is_logged
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function is_logged() {
 
         die(); // voir dans le boot.php
@@ -98,40 +299,24 @@ class User extends Controller {
         $this->set("_SITE", $_SITE);
     }
 
-    function block_newsletter() {
-        //Vous Ã¯Â¿Â½tes maintenant abonnÃ¯Â¿Â½ Ã¯Â¿Â½ la lettre d'information.
-        //Veuillez renseigner le champ correctement...
-        //include_once("class/mail.lib.php");
-        $_MSG = "";
-
-        if (!empty($_POST['newsletter'])) {
-            if (mail::IsSyntaxEmail($_POST['newsletter'])) {
-                $sql = "select * from UserNewsLetter where Email = '" . $db->sql_real_escape_string($_POST['newsletter']) . "'";
-                $res = sql::sql_query($sql);
-
-
-                if ($db->sql_num_rows($res) != 0) {
-                    $_MSG = __("You are removed from our newslettter");
-                    $sql = "DELETE FROM UserNewsLetter where Email = '" . $db->sql_real_escape_string($_POST['newsletter']) . "'";
-                    sql::sql_query($sql);
-                } else {
-                    $sql = "INSERT INTO UserNewsLetter SET 
-					Email = '" . $db->sql_real_escape_string($_POST['newsletter']) . "', 
-					IP='" . $_SERVER['REMOTE_ADDR'] . "', 
-					UserAgent='" . $_SERVER['HTTP_USER_AGENT'] . "', 
-					DateInserted=now()";
-
-                    sql::sql_query($sql);
-
-                    $_MSG = __("Your Email has been added !");
-                }
-            } else {
-
-                $_MSG = __("Your Email is not valid !");
-            }
-        }
-    }
-
+/**
+ * Handle user state through `city`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for city.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::city()
+ * @example /fr/user/city
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function city() {
         /*
           [path] => en/user/city/
@@ -157,6 +342,24 @@ class User extends Controller {
         $this->set("data", $data);
     }
 
+/**
+ * Handle user state through `author`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for author.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::author()
+ * @example /fr/user/author
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function author() {
         /*
           [path] => en/user/city/
@@ -177,6 +380,24 @@ class User extends Controller {
         $this->set("data", $data);
     }
 
+/**
+ * Handle user state through `register`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for register.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::register()
+ * @example /fr/user/register
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function register() {
         $this->title = __("Registration");
         $this->ariane = "> <a href=\"" . LINK . "user/\">" . __("Members") . "</a> > " . $this->title;
@@ -215,10 +436,20 @@ class User extends Controller {
 
         $data = array();
         $data['geolocalisation_country'] = $db->sql_to_array($res);
+        $data['user_register_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['user_register_csrf_token'] = Csrf::issueToken($_SESSION, self::USER_REGISTER_CSRF_SCOPE);
 
         $this->set('data', $data);
 
-        if (!empty($_POST['user_main'])) {
+        if (CsrfGuard::isPost($_SERVER)) {
+            $outcome = self::evaluateRegisterRequest($_POST, $_SERVER, $_SESSION);
+            if ($outcome['status'] !== 200) {
+                $msg = I18n::getTranslation(__($outcome['body']));
+                $title = I18n::getTranslation(__("Error"));
+                set_flash("error", $title, $msg);
+                header("location: " . LINK . "user/register/");
+                return;
+            }
 
             if (!empty($_COOKIE['IdUser'])) {
 
@@ -236,7 +467,10 @@ class User extends Controller {
             $data['user_main']['date_last_login'] = date("Y-m-d H:i:s");
             $data['user_main']['date_last_connected'] = date("Y-m-d H:i:s");
             $data['user_main']['date_created'] = date("c");
-            $data['user_main']['key_auth'] = sha1(uniqid());
+            $confirmationToken = AuthToken::generateToken();
+            $data['user_main']['key_auth'] = '';
+            $data['user_main']['confirm_token_hash'] = AuthToken::hashToken($confirmationToken);
+            $data['user_main']['confirm_token_expires_at'] = AuthToken::expiresAt(self::USER_CONFIRM_TOKEN_TTL_SECONDS);
             $data['user_main']['name'] = mb_convert_case($data['user_main']['name'], MB_CASE_UPPER, "UTF-8");
             $data['user_main']['id_group'] = 2;
 
@@ -278,16 +512,21 @@ class User extends Controller {
 
 
                 $subject = __("Confirm your registration on ") . SITE_NAME;
+                $confirmationUrl = AuthToken::buildHttpsUrl(
+                    $_SERVER,
+                    LINK . 'user/confirmation/' . rawurlencode($data['user_main']['email']) . "/" . $confirmationToken
+                );
+                $confirmationUrlHtml = htmlspecialchars($confirmationUrl, ENT_QUOTES, 'UTF-8');
 
                 $msg = __('Hello') . ' ' . $data['user_main']['firstname'] . ' ' . $data['user_main']['name'] . ' !<br />
-				' . __('Thank you for registering on ') . ' <a href="' . SITE_URL . '">' . SITE_NAME . '</a><br />
-				<br />
-				' . __("To finalise your registration, please click on the confirmation link below. Once you've done this, your registration will be complete.") . '<br />
-				' . __('Please') . ' <a href="' . 'http://' . $_SERVER['SERVER_NAME'] . LINK . 'user/confirmation/' . $data['user_main']['email'] . "/" . $data['user_main']['key_auth'] . '"> ' . __('click here') . '</a> ' . __('to confirm your registration
-				or copy and paste the following URL into your browser:') . '
-				' . 'http://' . $_SERVER['SERVER_NAME'] . LINK . 'user/confirmation/' . $data['user_main']['email'] . '/' . $data['user_main']['key_auth'] . '<br />
-                <br />
-				' . __('Many thanks');
+					' . __('Thank you for registering on ') . ' <a href="' . SITE_URL . '">' . SITE_NAME . '</a><br />
+					<br />
+					' . __("To finalise your registration, please click on the confirmation link below. Once you've done this, your registration will be complete.") . '<br />
+					' . __('Please') . ' <a href="' . $confirmationUrlHtml . '"> ' . __('click here') . '</a> ' . __('to confirm your registration
+					or copy and paste the following URL into your browser:') . '
+					' . $confirmationUrlHtml . '<br />
+	                <br />
+					' . __('Many thanks');
 
 
                 $msg = I18n::getTranslation($msg);
@@ -317,7 +556,7 @@ class User extends Controller {
                 set_flash("success", $title, $msg);
 
 
-                $this->login($data['user_main']['login'], $password_non_hashed);
+                $this->establishSession($data['user_main']['login'], $password_non_hashed);
 
                 header("location: " . LINK . ROUTE_DEFAULT);
                 exit;
@@ -325,6 +564,46 @@ class User extends Controller {
         }
     }
 
+    public static function evaluateRegisterRequest(array $post, array $server, array $session): array
+    {
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::USER_REGISTER_CSRF_SCOPE)) {
+            return self::buildRegisterOutcome($failure['status'], $failure['body'], $failure['headers']);
+        }
+
+        if (empty($post['user_main']) || !is_array($post['user_main'])) {
+            return self::buildRegisterOutcome(400, "Invalid registration payload");
+        }
+
+        return self::buildRegisterOutcome(200, "");
+    }
+
+    private static function buildRegisterOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+        ];
+    }
+
+/**
+ * Handle user state through `lost_password`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for lost_password.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::lost_password()
+ * @example /fr/user/lost_password
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function lost_password() {
         $this->di['js']->addJavascript(array("jquery-latest.min.js"));
 
@@ -333,10 +612,23 @@ class User extends Controller {
 
         $this->title = __("Password forgotten ?");
         $this->ariane = "> <a href=\"" . LINK . "user/\">" . __("Members") . "</a> > " . $this->title;
+        $data = array();
+        $data['user_lost_password_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['user_lost_password_csrf_token'] = Csrf::issueToken($_SESSION, self::USER_LOST_PASSWORD_CSRF_SCOPE);
+        $this->set("data", $data);
 
-        if (!empty($_POST['user_main']['email'])) {
+        if (CsrfGuard::isPost($_SERVER)) {
+            $outcome = self::evaluateLostPasswordRequest($_POST, $_SERVER, $_SESSION);
+            if ($outcome['status'] !== 200) {
+                $msg = I18n::getTranslation(__($outcome['body']));
+                $title = I18n::getTranslation(__("Error"));
+                set_flash("error", $title, $msg);
+                header("location: " . LINK . "user/lost_password/");
+                return;
+            }
 
-            $sql = "SELECT * FROM user_main WHERE email='" . $db->sql_real_escape_string($_POST['user_main']['email']) . "'";
+            $email = $outcome['email'];
+            $sql = "SELECT * FROM user_main WHERE email='" . $db->sql_real_escape_string($email) . "'";
 
             $res = $db->sql_query($sql);
 
@@ -346,12 +638,7 @@ class User extends Controller {
                 $msg = I18n::getTranslation(__("This email does not exist in our database"));
                 set_flash("error", $title, $msg);
 
-                $ret = array();
-                foreach ($_POST['user_main'] as $var => $val) {
-                    $ret[] = "user_main:" . $var . ":" . urlencode($val);
-                }
-
-                $param = implode("/", $ret);
+                $param = "user_main:email:" . urlencode($email);
 
                 header("location: " . LINK . "user/lost_password/" . $param);
                 exit;
@@ -361,18 +648,26 @@ class User extends Controller {
 
                 $recover = array();
                 $recover['user_main']['id'] = $ob->id;
-                $recover['user_main']['key_auth'] = sha1(uniqid());
+                $resetToken = AuthToken::generateToken();
+                $recover['user_main']['key_auth'] = '';
+                $recover['user_main']['reset_token_hash'] = AuthToken::hashToken($resetToken);
+                $recover['user_main']['reset_token_expires_at'] = AuthToken::expiresAt(self::USER_RESET_TOKEN_TTL_SECONDS);
                 if (!$db->sql_save($recover)) {
                     die('problem with set key_auth');
                 }
 
                 $subject = __("Instructions to Recover your password on : ") . " " . SITE_NAME . "";
+                $resetUrl = AuthToken::buildHttpsUrl(
+                    $_SERVER,
+                    LINK . 'user/password_recover/' . rawurlencode($ob->email) . '/' . $resetToken
+                );
+                $resetUrlHtml = htmlspecialchars($resetUrl, ENT_QUOTES, 'UTF-8');
                 $msg = __('Hello') . ' ' . $ob->firstname . ' ' . $ob->name . ' !<br />
-				<br />
-				' . __("To finalise of recover your password, please click on the following link :") . '<br />
-				' . 'http://' . $_SERVER['SERVER_NAME'] . '/en/' . 'user/password_recover/' . $ob->email . '/' . $recover['user_main']['key_auth'] . '<br />
-                <br />
-				' . __('Many thanks');
+					<br />
+					' . __("To finalise of recover your password, please click on the following link :") . '<br />
+					' . $resetUrlHtml . '<br />
+	                <br />
+					' . __('Many thanks');
 
                 $subject = I18n::getTranslation($subject);
                 $msg = I18n::getTranslation($msg);
@@ -400,68 +695,123 @@ class User extends Controller {
         }
     }
 
+    public static function evaluateLostPasswordRequest(array $post, array $server, array $session): array
+    {
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::USER_LOST_PASSWORD_CSRF_SCOPE)) {
+            return self::buildLostPasswordOutcome($failure['status'], $failure['body'], $failure['headers']);
+        }
+
+        $email = self::normalizeLostPasswordPayload($post);
+        if ($email === null) {
+            return self::buildLostPasswordOutcome(400, "Invalid lost password payload");
+        }
+
+        return self::buildLostPasswordOutcome(200, "", [], $email);
+    }
+
+    public static function normalizeLostPasswordPayload(array $post): ?string
+    {
+        if (empty($post['user_main']) || !is_array($post['user_main'])) {
+            return null;
+        }
+
+        $email = trim((string)($post['user_main']['email'] ?? ''));
+        if ($email === '' || filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+            return null;
+        }
+
+        return $email;
+    }
+
+    private static function buildLostPasswordOutcome(
+        int $statusCode,
+        string $message,
+        array $headers = [],
+        string $email = ''
+    ): array {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'email' => $email,
+        ];
+    }
+
+/**
+ * Handle user state through `password_recover`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for password_recover.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::password_recover()
+ * @example /fr/user/password_recover
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function password_recover($param) {
         $db = Sgbd::sql(DB_DEFAULT);
 
 
         $this->title = __("Recover your password");
         $this->ariane = "> <a href=\"" . LINK . "user/\">" . __("Members") . "</a> > " . $this->title;
+        $data = array();
+        $data['user_password_recover_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['user_password_recover_csrf_token'] = Csrf::issueToken($_SESSION, self::USER_PASSWORD_RECOVER_CSRF_SCOPE);
+        $this->set("data", $data);
 
-        $sql = "SELECT * FROM user_main WHERE email='" . $db->sql_real_escape_string($param[0]) . "'
-			AND key_auth='" . $db->sql_real_escape_string($param[1]) . "'";
+        $isPost = CsrfGuard::isPost($_SERVER);
+        if ($isPost) {
+            $outcome = self::evaluatePasswordRecoverRequest($_POST, $_SERVER, $_SESSION);
+            if ($outcome['status'] !== 200) {
+                $msg = I18n::getTranslation(__($outcome['body']));
+                $title = I18n::getTranslation(__("Error"));
+                set_flash("error", $title, $msg);
+                header("location: " . LINK . self::passwordRecoverRedirectPath($param));
+                return;
+            }
+        }
+
+        $email = rawurldecode((string)($param[0] ?? ''));
+        $token = rawurldecode((string)($param[1] ?? ''));
+        $sql = "SELECT * FROM user_main WHERE email='" . $db->sql_real_escape_string($email) . "'";
 
         $res = $db->sql_query($sql);
+        $ob = $db->sql_num_rows($res) === 1 ? $db->sql_fetch_object($res) : null;
 
-        if ($db->sql_num_rows($res) === 0) {
+        if ($ob === null || !AuthToken::verifyToken(
+            $token,
+            $ob->reset_token_hash ?? '',
+            $ob->reset_token_expires_at ?? null
+        )) {
             $title = I18n::getTranslation(__("Error"));
             $msg = I18n::getTranslation(__("This link to recover your password is not valid anymore. Make a new request."));
             set_flash("error", $title, $msg);
 
-            header("location: " . LINK . "user/lost_password/" . $param);
+            header("location: " . LINK . "user/lost_password/");
             exit;
         } else {
-            if ($_SERVER['REQUEST_METHOD'] == "POST") {
+            if ($isPost) {
+                $tmp = array();
+                $tmp['user_main']['id'] = $ob->id;
+                $tmp['user_main']['key_auth'] = "";
+                $tmp['user_main']['reset_token_hash'] = null;
+                $tmp['user_main']['reset_token_expires_at'] = null;
+                $tmp['user_main']['password'] = $this->di['auth']->hash_password($ob->login, $outcome['password']);
+                $_POST['user_main']['password2'] = $this->di['auth']->hash_password($ob->login, $outcome['password']);
 
-                $ob = $db->sql_fetch_object($res);
+                $password_non_hash = $outcome['password'];
 
-                $recover = array();
-                $recover['user_main']['id'] = $ob->id;
-                $recover['user_main']['password'] = $_POST['user_main']['password'];
-
-
-                if ($db->sql_save($recover)) {
-                    $tmp = array();
-                    $tmp['user_main']['id'] = $ob->id;
-                    $tmp['user_main']['key_auth'] = "";
-                    $tmp['user_main']['password'] = $this->di['auth']->hash_password($ob->login, $_POST['user_main']['password']);
-                    $_POST['user_main']['password2'] = $this->di['auth']->hash_password($ob->login, $_POST['user_main']['password']);
-
-
-                    $password_non_hash = $_POST['user_main']['password'];
-
-                    if (!$db->sql_save($tmp)) {
-                        $error = $db->sql_error();
-                        print_r($error);
-                        print_r($tmp);
-
-                        die('problem with delete key_auth');
-                    }
-
-                    /*
-                      debug($ob->login);
-                      debug($password_non_hash);
-                      exit;
-                     */
-                    $this->login($ob->login, $password_non_hash);
-
-
-                    $title = I18n::getTranslation(__("Success"));
-                    $msg = I18n::getTranslation(__("Your password has been updated successfully"));
-
-                    set_flash("success", $title, $msg);
-                    header("location: " . LINK . ROUTE_DEFAULT);
-                    exit;
-                } else {
+                if (!$db->sql_save($tmp)) {
                     $error = $db->sql_error();
                     $_SESSION['ERROR'] = $error;
 
@@ -472,10 +822,86 @@ class User extends Controller {
                     header("location: " . LINK . "user/password_recover/" . $param[0] . "/" . $param[1]);
                     exit;
                 }
+
+                $this->establishSession($ob->login, $password_non_hash);
+
+
+                $title = I18n::getTranslation(__("Success"));
+                $msg = I18n::getTranslation(__("Your password has been updated successfully"));
+
+                set_flash("success", $title, $msg);
+                header("location: " . LINK . ROUTE_DEFAULT);
+                exit;
             }
         }
     }
 
+    public static function evaluatePasswordRecoverRequest(array $post, array $server, array $session): array
+    {
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::USER_PASSWORD_RECOVER_CSRF_SCOPE)) {
+            return self::buildPasswordRecoverOutcome($failure['status'], $failure['body'], $failure['headers']);
+        }
+
+        $password = self::normalizePasswordRecoverPayload($post);
+        if ($password === null) {
+            return self::buildPasswordRecoverOutcome(400, "Invalid password recovery payload");
+        }
+
+        return self::buildPasswordRecoverOutcome(200, "", [], $password);
+    }
+
+    public static function normalizePasswordRecoverPayload(array $post): ?string
+    {
+        if (empty($post['user_main']) || !is_array($post['user_main'])) {
+            return null;
+        }
+
+        $password = (string)($post['user_main']['password'] ?? '');
+
+        return trim($password) === '' ? null : $password;
+    }
+
+    private static function passwordRecoverRedirectPath(array $params): string
+    {
+        if (empty($params[0]) || empty($params[1])) {
+            return "user/lost_password/";
+        }
+
+        return "user/password_recover/" . $params[0] . "/" . $params[1];
+    }
+
+    private static function buildPasswordRecoverOutcome(
+        int $statusCode,
+        string $message,
+        array $headers = [],
+        string $password = ''
+    ): array {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'password' => $password,
+        ];
+    }
+
+/**
+ * Handle user state through `block_last_registered`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for block_last_registered.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::block_last_registered()
+ * @example /fr/user/block_last_registered
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function block_last_registered() {
 
 
@@ -487,6 +913,24 @@ class User extends Controller {
         $this->set("data", $data);
     }
 
+/**
+ * Handle user state through `block_last_online`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for block_last_online.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::block_last_online()
+ * @example /fr/user/block_last_online
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function block_last_online() {
 
 
@@ -498,6 +942,24 @@ class User extends Controller {
         $this->set("data", $data);
     }
 
+/**
+ * Handle user state through `admin_user`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for admin_user.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::admin_user()
+ * @example /fr/user/admin_user
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function admin_user() {
         $module = array();
         $module['picture'] = "administration/ico-users.gif";
@@ -507,38 +969,81 @@ class User extends Controller {
         return $module;
     }
 
+/**
+ * Handle user state through `confirmation`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int|string,mixed> $data Input value for `data`.
+ * @phpstan-param array<int|string,mixed> $data
+ * @psalm-param array<int|string,mixed> $data
+ * @return void Returned value for confirmation.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::confirmation()
+ * @example /fr/user/confirmation
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function confirmation($data) {
         $db = Sgbd::sql(DB_DEFAULT);
 
 
-        $sql = "SELECT * FROM user_main WHERE email = '" . $db->sql_real_escape_string($data[0]) . "'";
+        $email = rawurldecode((string)($data[0] ?? ''));
+        $token = rawurldecode((string)($data[1] ?? ''));
+        $sql = "SELECT * FROM user_main WHERE email = '" . $db->sql_real_escape_string($email) . "'";
         $res = $db->sql_query($sql);
 
         if ($db->sql_num_rows($res) == 1) {
             $ob = $db->sql_fetch_object($res);
 
-            if (($ob->key_auth == $data[1]) && !empty($ob->key_auth)) {
+            if (AuthToken::verifyToken(
+                $token,
+                $ob->confirm_token_hash ?? '',
+                $ob->confirm_token_expires_at ?? null
+            )) {
                 $type = "success";
                 $title = "New user account confirmed !";
                 $msg = "Your registration is now complete !";
 
-                $sql = "UPDATE user_main SET is_valid = 1, key_auth ='',id_group=2  WHERE email = '" . $db->sql_real_escape_string($data[0]) . "'";
+                $sql = "UPDATE user_main
+                    SET is_valid = 1,
+                        key_auth = '',
+                        confirm_token_hash = NULL,
+                        confirm_token_expires_at = NULL
+                    WHERE id = " . (int) $ob->id;
                 $db->sql_query($sql);
 
-                function login($login, $password) {
-                    $_POST['user_main']['login'] = $login;
-                    $_POST['user_main']['password'] = $password;
-                    $_SERVER['REQUEST_METHOD'] = "POST";
-
-                    $ret = $this->di['auth']->authenticate();
-                    $id_user = $this->di['auth']->getIdUserTriingLogin();
-
-                    if (!empty($id_user)) {
-                        $this->log($id_user, $ret);
-                    }
-                }
-
-                $this->login($ob->login, $ob->password);
+/**
+ * Handle user state through `establishSession`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $login Input value for `login`.
+ * @phpstan-param mixed $login
+ * @psalm-param mixed $login
+ * @param mixed $password Input value for `password`.
+ * @phpstan-param mixed $password
+ * @psalm-param mixed $password
+ * @return void Returned value for login.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::establishSession()
+ * @example internal session bootstrap
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+                $this->establishSession($ob->login, $ob->password);
             } else {
                 $type = "error";
                 $title = "Error";
@@ -562,6 +1067,30 @@ class User extends Controller {
         exit;
     }
 
+/**
+ * Handle user state through `log`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_user Input value for `id_user`.
+ * @phpstan-param int $id_user
+ * @psalm-param int $id_user
+ * @param mixed $success Input value for `success`.
+ * @phpstan-param mixed $success
+ * @psalm-param mixed $success
+ * @return void Returned value for log.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::log()
+ * @example /fr/user/log
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function log($id_user, $success) {
 
         $db = Sgbd::sql(DB_DEFAULT);
@@ -581,28 +1110,65 @@ class User extends Controller {
         }
     }
 
+/**
+ * Handle user state through `profil`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for profil.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::profil()
+ * @example /fr/user/profil
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function profil($param) {
 
         $db = Sgbd::sql(DB_DEFAULT);
         $this->layout_name = "admin";
+        $this->data['user_profile_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $this->data['user_profile_csrf_token'] = Csrf::issueToken($_SESSION, self::USER_PROFILE_CSRF_SCOPE);
 
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
-            if (!empty($_POST['shoutbox']['text'])) {
-                $data = array();
-                $data['shoutbox'] = $_POST['shoutbox'];
-                $data['shoutbox']['id_user_main'] = $user->id;
-                $data['shoutbox']['id_user_main__box'] = $db->sql_real_escape_string($param[0]);
-                $data['shoutbox']['date'] = date("Y-m-d H:i:s");
-                $data['shoutbox']['id_history_etat'] = 1;
+        if (CsrfGuard::isPost($_SERVER)) {
+            $outcome = self::evaluateProfileRequest(
+                $_POST,
+                $_SERVER,
+                $_SESSION,
+                $param,
+                $GLOBALS['_SITE'] ?? []
+            );
 
-                if (!$db->sql_save($data)) {
-                    debug($db->sql_error());
-                    die("problem to save msg en shoutbox");
-                }
-
-                header("location: " . LINK . "user/profil/" . $param[0]);
-                exit;
+            if ($outcome['status'] !== 200) {
+                $msg = I18n::getTranslation(__($outcome['body']));
+                $title = I18n::getTranslation(__("Error"));
+                set_flash("error", $title, $msg);
+                header("location: " . LINK . self::profileRedirectPath($param));
+                return;
             }
+
+            $data = array();
+            $data['shoutbox']['text'] = $outcome['message'];
+            $data['shoutbox']['id_user_main'] = $outcome['id_user_main'];
+            $data['shoutbox']['id_user_main__box'] = $outcome['id_user_main__box'];
+            $data['shoutbox']['date'] = date("Y-m-d H:i:s");
+            $data['shoutbox']['id_history_etat'] = 1;
+
+            if (!$db->sql_save($data)) {
+                debug($db->sql_error());
+                die("problem to save msg en shoutbox");
+            }
+
+            header("location: " . LINK . "user/profil/" . $outcome['id_user_main__box']);
+            exit;
         }
         $this->data['id'] = $db->sql_real_escape_string($param[0]);
 
@@ -653,6 +1219,102 @@ GROUP BY d.id";
         $this->set("data", $this->data);
     }
 
+    public static function evaluateProfileRequest(
+        array $post,
+        array $server,
+        array $session,
+        array $params,
+        array $site
+    ): array {
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::USER_PROFILE_CSRF_SCOPE)) {
+            return self::buildProfileOutcome($failure['status'], $failure['body'], $failure['headers']);
+        }
+
+        $message = self::normalizeProfileMessagePayload($post);
+        $profileUserId = self::normalizePositiveInteger($params[0] ?? null);
+        $currentUserId = self::normalizePositiveInteger($site['IdUser'] ?? null);
+
+        if ($message === null || $profileUserId === null || $currentUserId === null) {
+            return self::buildProfileOutcome(400, "Invalid profile message payload");
+        }
+
+        return self::buildProfileOutcome(200, "", [], $message, $currentUserId, $profileUserId);
+    }
+
+    public static function normalizeProfileMessagePayload(array $post): ?string
+    {
+        if (empty($post['shoutbox']) || !is_array($post['shoutbox'])) {
+            return null;
+        }
+
+        $message = (string)($post['shoutbox']['text'] ?? '');
+
+        return trim($message) === '' ? null : $message;
+    }
+
+    private static function normalizePositiveInteger(mixed $value): ?int
+    {
+        if (is_int($value)) {
+            return $value > 0 ? $value : null;
+        }
+
+        if (!is_string($value)) {
+            return null;
+        }
+
+        $value = trim($value);
+        if ($value === '' || !ctype_digit($value)) {
+            return null;
+        }
+
+        $integer = (int)$value;
+
+        return $integer > 0 ? $integer : null;
+    }
+
+    private static function profileRedirectPath(array $params): string
+    {
+        $profileUserId = self::normalizePositiveInteger($params[0] ?? null);
+
+        return $profileUserId === null ? "user/" : "user/profil/" . $profileUserId;
+    }
+
+    private static function buildProfileOutcome(
+        int $statusCode,
+        string $message,
+        array $headers = [],
+        string $profileMessage = '',
+        int $currentUserId = 0,
+        int $profileUserId = 0
+    ): array {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'message' => $profileMessage,
+            'id_user_main' => $currentUserId,
+            'id_user_main__box' => $profileUserId,
+        ];
+    }
+
+/**
+ * Handle user state through `user_main`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for user_main.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::user_main()
+ * @example /fr/user/user_main
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function user_main() {
         /*
           [path] => en/user/city/
@@ -677,6 +1339,27 @@ GROUP BY d.id";
         $this->set("data", $data);
     }
 
+/**
+ * Handle user state through `settings`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for settings.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::settings()
+ * @example /fr/user/settings
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function settings($param) {
 
         $this->data['request'] = $param[0];
@@ -713,13 +1396,48 @@ GROUP BY d.id";
         $this->set("data", $this->data);
     }
 
+/**
+ * Handle user state through `photo`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for photo.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::photo()
+ * @example /fr/user/photo
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function photo($param) {
-
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
-            
-        }
     }
 
+/**
+ * Retrieve user state through `get_new_mail`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for get_new_mail.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::get_new_mail()
+ * @example /fr/user/get_new_mail
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function get_new_mail() {
 
 
@@ -734,6 +1452,24 @@ GROUP BY d.id";
         return $data[0]["cpt"];
     }
 
+/**
+ * Handle user state through `send_confirmation`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for send_confirmation.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::send_confirmation()
+ * @example /fr/user/send_confirmation
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function send_confirmation() {
 
         include_once(LIBRARY . "Glial/user/user.php");
@@ -743,17 +1479,59 @@ GROUP BY d.id";
         exit;
     }
 
+/**
+ * Handle user state through `connection`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for connection.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::connection()
+ * @example /fr/user/connection
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function connection() {
         $this->di['js']->addJavascript(array("jquery-latest.min.js"));
 
 
         $this->title = __("Log on");
         $this->ariane = "> <a href=\"" . LINK . "user/\">" . __("Members") . "</a> > " . $this->title;
+        $data = array();
+        $data['user_connection_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['user_connection_csrf_token'] = Csrf::issueToken($_SESSION, self::USER_CONNECTION_CSRF_SCOPE);
+        $this->set("data", $data);
 
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            if ($this->di['auth']->authenticate()) {
+        if (CsrfGuard::isPost($_SERVER)) {
+            $outcome = self::evaluateConnectionRequest($_POST, $_SERVER, $_SESSION);
+            if ($outcome['status'] !== 200) {
+                $msg = I18n::getTranslation(__($outcome['body']));
+                $title = I18n::getTranslation(__("Error"));
+                set_flash("error", $title, $msg);
+                header("Location: " . LINK . "user/connection/");
+                return;
+            }
 
+            $_POST['user_main']['login'] = $outcome['login'];
+            $_POST['user_main']['password'] = $outcome['password'];
+
+            $authenticated = (bool) $this->di['auth']->authenticate();
+            SessionFixationGuard::enforceRegenerationAfterSuccessfulAuthentication($authenticated);
+
+            if ($authenticated) {
+
+                PersistentAuthSession::issueForAuthenticatedUser(
+                    $this->di['auth'],
+                    Sgbd::sql(DB_DEFAULT),
+                    $_SERVER
+                );
 
                 $id_user = $this->di['auth']->getIdUserTriingLogin();
 
@@ -787,13 +1565,100 @@ GROUP BY d.id";
         }
     }
 
+    public static function evaluateConnectionRequest(array $post, array $server, array $session): array
+    {
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::USER_CONNECTION_CSRF_SCOPE)) {
+            return self::buildConnectionOutcome($failure['status'], $failure['body'], $failure['headers']);
+        }
+
+        $credentials = self::normalizeConnectionPayload($post);
+        if ($credentials === null) {
+            return self::buildConnectionOutcome(400, "Invalid connection payload");
+        }
+
+        return self::buildConnectionOutcome(200, "", [], $credentials['login'], $credentials['password']);
+    }
+
+    public static function normalizeConnectionPayload(array $post): ?array
+    {
+        if (empty($post['user_main']) || !is_array($post['user_main'])) {
+            return null;
+        }
+
+        $login = trim((string)($post['user_main']['login'] ?? ''));
+        $password = (string)($post['user_main']['password'] ?? '');
+
+        if ($login === '' || $password === '') {
+            return null;
+        }
+
+        return [
+            'login' => $login,
+            'password' => $password,
+        ];
+    }
+
+    private static function buildConnectionOutcome(
+        int $statusCode,
+        string $message,
+        array $headers = [],
+        string $login = '',
+        string $password = ''
+    ): array {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'login' => $login,
+            'password' => $password,
+        ];
+    }
+
+/**
+ * Handle user state through `logout`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for logout.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::logout()
+ * @example /fr/user/logout
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function logout() {
+        PersistentAuthSession::revokeCurrent(Sgbd::sql(DB_DEFAULT), $_COOKIE, $_SERVER);
         $this->di['auth']->logout();
+        SessionFixationGuard::regenerateActiveSession();
 
         header("Location: " . LINK . "user/connection/");
         exit;
     }
 
+/**
+ * Update user state through `updateGroup`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for updateGroup.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::updateGroup()
+ * @example /fr/user/updateGroup
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function updateGroup() {
 
         $roles = $this->di['acl']->getAlias();
@@ -811,12 +1676,40 @@ GROUP BY d.id";
         //$db->sql_multi_query($sql);
     }
 
-    private function login($login, $password) {
+/**
+ * Handle user state through `establishSession`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $login Input value for `login`.
+ * @phpstan-param mixed $login
+ * @psalm-param mixed $login
+ * @param mixed $password Input value for `password`.
+ * @phpstan-param mixed $password
+ * @psalm-param mixed $password
+ * @return void Returned value for login.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::establishSession()
+ * @example internal session bootstrap
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function establishSession($login, $password) {
         $_POST['user_main']['login'] = $login;
         $_POST['user_main']['password'] = $password;
         $_SERVER['REQUEST_METHOD'] = "POST";
 
         $ret = $this->di['auth']->authenticate();
+        SessionFixationGuard::enforceRegenerationAfterSuccessfulAuthentication((bool) $ret);
+        if ($ret) {
+            PersistentAuthSession::deleteLegacyCookies($_SERVER);
+        }
         $id_user = $this->di['auth']->getIdUserTriingLogin();
 
         if (!empty($id_user)) {
@@ -824,40 +1717,123 @@ GROUP BY d.id";
         }
     }
 
+/**
+ * Update user state through `update_idgroup`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for update_idgroup.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::update_idgroup()
+ * @example /fr/user/update_idgroup
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function update_idgroup() {
         $this->layout = false;
         $this->view = false;
 
 
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
+        $outcome = self::evaluateUpdateIdGroupRequest($_POST, $_SERVER, $_SESSION);
+        if ($outcome['status'] !== 200) {
+            $msg = I18n::getTranslation(__($outcome['body']));
+            $title = I18n::getTranslation(__("Error"));
+            set_flash("error", $title, $msg);
+            header('location: ' . LINK . "user/index");
+            return;
+        }
 
-            $db = Sgbd::sql(DB_DEFAULT);
+        $db = Sgbd::sql(DB_DEFAULT);
 
-            foreach ($_POST['user_main'] as $id_user_main => $value) {
+        foreach ($outcome['updates'] as $id_user_main => $id_group) {
 
-                $user_main = [];
-                $user_main['user_main']['id'] = $id_user_main;
-                $user_main['user_main']['id_group'] = $value['id_group'];
+            $user_main = [];
+            $user_main['user_main']['id'] = $id_user_main;
+            $user_main['user_main']['id_group'] = $id_group;
 
-                $yes = $db->sql_save($user_main);
+            $yes = $db->sql_save($user_main);
 
-                if (!$yes) {
+            if (!$yes) {
 
-                    $msg = I18n::getTranslation(__("Impossible to update the group for these users !") . $extra);
-                    $title = I18n::getTranslation(__("Error"));
-                    set_flash("error", $title, $msg);
+                $msg = I18n::getTranslation(__("Impossible to update the group for these users !"));
+                $title = I18n::getTranslation(__("Error"));
+                set_flash("error", $title, $msg);
 
-                    header('location: ' . LINK . "user/index");
-                }
+                header('location: ' . LINK . "user/index");
+                return;
+            }
+        }
+
+        $msg = I18n::getTranslation(__("The group of these users has been updated"));
+        $title = I18n::getTranslation(__("Success"));
+        set_flash("success", $title, $msg);
+
+
+        header('location: ' . LINK . 'user/index/');
+    }
+
+    public static function evaluateUpdateIdGroupRequest(array $post, array $server, array $session): array
+    {
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::USER_UPDATE_IDGROUP_CSRF_SCOPE)) {
+            return self::buildUpdateIdGroupOutcome($failure['status'], $failure['body'], $failure['headers']);
+        }
+
+        $updates = self::normalizeUpdateIdGroupPayload($post);
+        if ($updates === null) {
+            return self::buildUpdateIdGroupOutcome(400, "Invalid user group update payload");
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'updates' => $updates,
+        ];
+    }
+
+    public static function normalizeUpdateIdGroupPayload(array $post): ?array
+    {
+        if (empty($post['user_main']) || !is_array($post['user_main'])) {
+            return null;
+        }
+
+        $updates = [];
+        foreach ($post['user_main'] as $id_user_main => $value) {
+            if (!is_array($value)) {
+                return null;
             }
 
-            $msg = I18n::getTranslation(__("The group of these users has been updated") . $extra);
-            $title = I18n::getTranslation(__("Success"));
-            set_flash("success", $title, $msg);
+            $userId = (string)$id_user_main;
+            $groupId = (string)($value['id_group'] ?? '');
 
+            if (!ctype_digit($userId) || (int)$userId < 1) {
+                return null;
+            }
 
-            header('location: ' . LINK . 'user/index/');
+            if (!ctype_digit($groupId) || (int)$groupId < 1) {
+                return null;
+            }
+
+            $updates[(int)$userId] = (int)$groupId;
         }
+
+        return $updates !== [] ? $updates : null;
+    }
+
+    private static function buildUpdateIdGroupOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'updates' => [],
+        ];
     }
 
 }

@@ -7,49 +7,76 @@
 
 namespace App\Library;
 
+use App\Library\Security\ServerFilterWhere;
 use \Glial\Sgbd\Sgbd;
 
 
+/**
+ * Trait responsible for filter workflows.
+ *
+ * This trait belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 trait Filter
 {
 
+/**
+ * Retrieve filter state through `getFilter`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param mixed $alias Input value for `alias`.
+ * @phpstan-param mixed $alias
+ * @psalm-param mixed $alias
+ * @return mixed Returned value for getFilter.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getFilter()
+ * @example /fr/filter/getFilter
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static private function getFilter($id_mysql_server = array(), $alias = 'a')
     {
-
-        $where = "";
-        if (!empty($_GET['environment']['libelle'])) {
-            $environment = $_GET['environment']['libelle'];
-        }
-        if (!empty($_SESSION['environment']['libelle']) && empty($_GET['environment']['libelle'])) {
-            $environment                    = $_SESSION['environment']['libelle'];
-            $_GET['environment']['libelle'] = $environment;
-        }
-
-        if (!empty($_SESSION['client']['libelle'])) {
-            $client = $_SESSION['client']['libelle'];
-        }
-        if (!empty($_GET['client']['libelle']) && empty($_GET['client']['libelle'])) {
-            $client                    = $_GET['client']['libelle'];
-            $_GET['client']['libelle'] = $client;
-        }
-
-        if (!empty($environment)) {
-            $where .= " AND `".$alias."`.id_environment IN (".implode(',', json_decode($environment, true)).")";
-        }
-        if (!empty($client)) {
-            $where .= " AND `".$alias."`.id_client IN (".implode(',', json_decode($client, true)).")";
-        }
-
-        if (! empty($id_mysql_server))
-        {
-            $where .= " AND `".$alias."`.id IN (".implode(',', $id_mysql_server).") ";
-        }
-
-        return $where;
+        return ServerFilterWhere::build($_GET, $_SESSION, $id_mysql_server, $alias);
     }
 
     
 
+/**
+ * Retrieve filter state through `getServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for getServer.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getServer()
+ * @example /fr/filter/getServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getServer()
     {
 
@@ -77,6 +104,27 @@ trait Filter
 
 
 
+/**
+ * Handle filter state through `generateServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @return mixed Returned value for generateServer.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateServer()
+ * @example /fr/filter/generateServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function generateServer($id_mysql_server)
     {
 

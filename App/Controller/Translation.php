@@ -5,22 +5,92 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use \Glial\I18n\I18n;
 use \Glial\Sgbd\Sgbd;
+use App\Library\Security\CsrfGuard;
 use \App\Library\Debug;
+use Glial\Security\Csrf;
 use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
+/**
+ * Class responsible for translation workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Translation extends Controller
 {
+    private const TRANSLATION_ADMIN_CSRF_SCOPE = 'translation.admin_translation';
+    private const TRANSLATION_ADMIN_MAX_UPDATES = 500;
+    private const TRANSLATION_ADMIN_MAX_TEXT_LENGTH = 65535;
+
+/**
+ * Stores `$module_group` for module group.
+ *
+ * @var string
+ * @phpstan-var string
+ * @psalm-var string
+ */
     public $module_group = "Other";
 
+/**
+ * Stores `$logger` for logger.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     private $logger;
 
+/**
+ * Render translation state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/translation/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function index()
     {
         $this->title  = __("Translations");
         $this->ariane = "> <a href=\"\">".__("Administration")."</a> > ".$this->title;
     }
 
+/**
+ * Handle translation state through `admin_translation`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for admin_translation.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::admin_translation()
+ * @example /fr/translation/admin_translation
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function admin_translation()
     {
 
@@ -31,33 +101,39 @@ class Translation extends Controller
         $this->title  = __("Translations");
         $this->ariane = "> <a href=\"\">".__("Administration")."</a> > ".$this->title;
 
+        $data = [];
+        $lg_available = explode(",", LANGUAGE_AVAILABLE);
+        $postOutcome = null;
+
         if ($_SERVER['REQUEST_METHOD'] == "POST") {
-            if (!empty($_POST['field-to-update'])) {
-                $_POST['field-to-update'] = mb_substr($_POST['field-to-update'], 0, -1);
+            $postOutcome = self::evaluateAdminTranslationRequest($_POST, $_SERVER, $_SESSION, $lg_available);
+            if ($postOutcome['status'] !== 200) {
+                $this->view        = false;
+                $this->layout_name = false;
+                self::sendAdminTranslationError($postOutcome['status'], $postOutcome['body'], $postOutcome['headers']);
+                return;
+            }
+        }
 
-                $data_to_update = explode(";", $_POST['field-to-update']);
+        $db = Sgbd::sql(DB_DEFAULT);
 
-                foreach ($data_to_update as $key) {
+        if ($postOutcome !== null && $postOutcome['target'] !== null) {
+            $table = 'translation_'.$postOutcome['target'];
 
-                    $key_extrated = explode("-", $key);
+            foreach ($postOutcome['updates'] as $update) {
+                $data_to_save = [];
+                $data_to_save[$table]['id']             = $update['id'];
+                $data_to_save[$table]['text']           = $update['text'];
+                $data_to_save[$table]['translate_auto'] = 0;
 
-                    $data['translation_'.$_POST['none']['id_to']]['id']             = $key_extrated[1];
-                    $data['translation_'.$_POST['none']['id_to']]['text']           = $_POST[$key];
-                    $data['translation_'.$_POST['none']['id_to']]['translate_auto'] = 0;
-
-                    $db->set_history_type(5);
-                    $db->sql_save($data);
-                }
+                $db->set_history_type(5);
+                $db->sql_save($data_to_save);
             }
         }
 
         $count = 0;
 
-        $db = Sgbd::sql(DB_DEFAULT);
-
         $tables = $db->getListTable("table");
-
-        $lg_available = explode(",", LANGUAGE_AVAILABLE);
 
         foreach ($tables['table'] as $table) {
             if (mb_strstr($table, 'translation_')) {
@@ -107,6 +183,8 @@ class Translation extends Controller
 
             empty($_GET['from']) ? $data['from'] = 'en' : $data['from'] = $_GET['from'];
             empty($_GET['to']) ? $data['to']   = I18n::Get() : $data['to']   = $_GET['to'];
+            $data['translation_admin_csrf_field'] = Csrf::DEFAULT_FIELD;
+            $data['translation_admin_csrf_token'] = Csrf::issueToken($_SESSION, self::TRANSLATION_ADMIN_CSRF_SCOPE);
 
             $this->javascript                  = array("jquery-1.4.2.min.js");
             $this->di['js']->code_javascript[] = '
@@ -210,6 +288,162 @@ class Translation extends Controller
         }
     }
 
+    public static function evaluateAdminTranslationRequest(
+        array $post,
+        array $server,
+        array $session,
+        array $availableLanguages
+    ): array {
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::TRANSLATION_ADMIN_CSRF_SCOPE)) {
+            return self::buildAdminTranslationOutcome($failure['status'], $failure['body'], $failure['headers']);
+        }
+
+        $payload = self::normalizeAdminTranslationPayload($post, $availableLanguages);
+        if ($payload === null) {
+            return self::buildAdminTranslationOutcome(400, 'Invalid translation payload');
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'target' => $payload['target'],
+            'updates' => $payload['updates'],
+        ];
+    }
+
+    public static function normalizeAdminTranslationPayload(array $post, array $availableLanguages): ?array
+    {
+        if (! array_key_exists('field-to-update', $post)) {
+            return [
+                'target' => null,
+                'updates' => [],
+            ];
+        }
+
+        if (! is_scalar($post['field-to-update'])) {
+            return null;
+        }
+
+        $keys = self::normalizeAdminTranslationKeys((string) $post['field-to-update']);
+        if ($keys === null) {
+            return null;
+        }
+
+        if ($keys === []) {
+            return [
+                'target' => null,
+                'updates' => [],
+            ];
+        }
+
+        $target = self::normalizeAdminTranslationTarget($post, $availableLanguages);
+        if ($target === null) {
+            return null;
+        }
+
+        $updates = [];
+        foreach ($keys as $key => $id) {
+            if (! array_key_exists($key, $post) || ! is_scalar($post[$key])) {
+                return null;
+            }
+
+            $text = (string) $post[$key];
+            if (mb_strlen($text, 'UTF-8') > self::TRANSLATION_ADMIN_MAX_TEXT_LENGTH) {
+                return null;
+            }
+
+            $updates[] = [
+                'id' => $id,
+                'text' => $text,
+            ];
+        }
+
+        return [
+            'target' => $target,
+            'updates' => $updates,
+        ];
+    }
+
+    private static function normalizeAdminTranslationKeys(string $fieldToUpdate): ?array
+    {
+        $rawKeys = array_filter(explode(';', trim($fieldToUpdate)), static fn (string $key): bool => $key !== '');
+        if (count($rawKeys) > self::TRANSLATION_ADMIN_MAX_UPDATES) {
+            return null;
+        }
+
+        $keys = [];
+        foreach ($rawKeys as $key) {
+            if (! preg_match('/^id-([1-9][0-9]{0,9})$/', $key, $matches)) {
+                return null;
+            }
+
+            if (array_key_exists($key, $keys)) {
+                return null;
+            }
+
+            $keys[$key] = (int) $matches[1];
+        }
+
+        return $keys;
+    }
+
+    private static function normalizeAdminTranslationTarget(array $post, array $availableLanguages): ?string
+    {
+        if (
+            ! isset($post['none'])
+            || ! is_array($post['none'])
+            || ! array_key_exists('id_to', $post['none'])
+            || ! is_scalar($post['none']['id_to'])
+        ) {
+            return null;
+        }
+
+        $target = (string) $post['none']['id_to'];
+        $languages = array_values(array_filter(array_map('trim', $availableLanguages), static fn (string $lang): bool => $lang !== ''));
+
+        return in_array($target, $languages, true) ? $target : null;
+    }
+
+    private static function buildAdminTranslationOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'target' => null,
+            'updates' => [],
+        ];
+    }
+
+    private static function sendAdminTranslationError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
+    }
+
+/**
+ * Delete translation state through `delete_tmp_files`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for delete_tmp_files.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::delete_tmp_files()
+ * @example /fr/translation/delete_tmp_files
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function delete_tmp_files()
     {
         $cmd = "cd ".TMP."translations; rm *.csv";
@@ -236,6 +470,24 @@ class Translation extends Controller
         exit;
     }
 
+/**
+ * Delete translation state through `delete_table_cach`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for delete_table_cach.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::delete_table_cach()
+ * @example /fr/translation/delete_table_cach
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function delete_table_cach()
     {
         $sql = "SHOW TABLES";
@@ -270,6 +522,27 @@ class Translation extends Controller
         exit;
     }
 
+/**
+ * Retrieve translation state through `getNew`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getNew.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getNew()
+ * @example /fr/translation/getNew
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function getNew($param)
     {
 
@@ -321,6 +594,27 @@ GROUP by a.`text`, a.`language`;";
         }
     }
 
+/**
+ * Handle translation state through `askApiGoogle`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for askApiGoogle.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::askApiGoogle()
+ * @example /fr/translation/askApiGoogle
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function askApiGoogle($param)
     {
         $from   = $param[0];
@@ -338,7 +632,6 @@ GROUP by a.`text`, a.`language`;";
         $handle   = curl_init($url);
         curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);     //We want the result to be saved into variable, not printed out
         $response = curl_exec($handle);
-        curl_close($handle);
 
         Debug::debug(json_decode($response, true));
         $data = json_decode($response, true);
@@ -352,6 +645,27 @@ GROUP by a.`text`, a.`language`;";
         
     }
 
+/**
+ * Handle translation state through `settings`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for settings.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::settings()
+ * @example /fr/translation/settings
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function settings($param)
     {
 

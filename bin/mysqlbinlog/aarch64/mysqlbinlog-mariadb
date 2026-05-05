@@ -1,0 +1,5 @@
+#!/bin/sh
+echo "ERROR: MariaDB mysqlbinlog for aarch64 not installed." >&2
+echo "Install mariadb-client and run:" >&2
+echo "  cp /usr/bin/mariadb-binlog $(dirname $0)/mysqlbinlog-mariadb" >&2
+exit 1

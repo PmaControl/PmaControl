@@ -1,4 +1,7 @@
 <?php
+
+use App\Library\Security\CsrfRender;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -7,13 +10,14 @@
 
 function human_filesize($bytes, $decimals = 2)
 {
-    $sz     = ' KMGTP';
-    $factor = floor((strlen($bytes) - 1) / 3);
-    return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor))." ".@$sz[$factor]."o";
+    return \App\Library\Format::bytes($bytes, $decimals);
 }
 
 use \Glial\Html\Form\Form;
 use \Glial\Synapse\FactoryController;
+
+$archivesRestoreCsrfField = CsrfRender::field($data, 'archives_restore');
+$archivesRestoreCsrfToken = CsrfRender::token($data, 'archives_restore');
 
 echo '<div class="well">';
 \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
@@ -67,6 +71,7 @@ if (!empty($data['cleaner'])) {
         echo '<td>';
 
         echo '<form method="post" action="'.LINK.'archives/restore">';
+        echo '<input type="hidden" name="'.$archivesRestoreCsrfField.'" value="'.$archivesRestoreCsrfToken.'" />';
 
         echo '<input type="hidden" name="id_cleaner_main" value="'.$cleaner[0].'" />';
         echo 'Servers : ';

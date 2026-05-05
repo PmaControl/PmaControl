@@ -1,7 +1,7 @@
 <?php
 
 
-echo '<form action="" method="post" class="form-inline">';
+echo '<form action="" method="get" class="form-inline">';
 echo '<div class="form-group">';
 
 
@@ -14,9 +14,8 @@ echo '</form>';
 
 echo '<br />';
 
-if (!empty($_POST['mysql_server']['id'] ))
+if (!empty($data['id_mysql_server']))
 {
-	\Glial\Synapse\FactoryController::addNode("Spider", "testIfSpiderExist", array($_POST['mysql_server']['id']));
-	\Glial\Synapse\FactoryController::addNode("Spider", "Server", array($_POST['mysql_server']['id']));
+	\Glial\Synapse\FactoryController::addNode("Spider", "testIfSpiderExist", array($data['id_mysql_server']));
+	\Glial\Synapse\FactoryController::addNode("Spider", "Server", array($data['id_mysql_server']));
 }
-

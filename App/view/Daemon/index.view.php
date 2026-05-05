@@ -1,7 +1,12 @@
 <?php
 
+use App\Library\Security\CsrfRender;
 
 use \Glial\Synapse\FactoryController;
+
+$daemonUpdateCsrfAttributes = CsrfRender::attributes($data, 'daemon_update');
+$agentControlCsrfInput = CsrfRender::hiddenInput($data, 'agent_control');
+$daemonControlCsrfInput = CsrfRender::hiddenInput($data, 'daemon_control');
 
 if (empty($_GET['ajax'])) {
     echo '<div id="daemon-index">';
@@ -18,6 +23,7 @@ echo '<th>'.__('Date').'</th>';
 echo '<th>'.__("Refresh time").'</th>';
 //echo '<th>'.__("Queue number").'</th>';
 //echo '<th>'.__("Queue msg").'</th>';
+echo '<th>'.__("Enabled").'</th>';
 echo '<th>'.__("Path").'</th>';
 echo '<th>'.__("Command").'</th>';
 echo '</tr>';
@@ -31,15 +37,21 @@ foreach ($data['daemon'] as $daemon) {
     echo '<td>'.$daemon['date'].'</td>';
    // echo '<td class="line-edit" data-name="thread_concurency" data-pk="'.$daemon['id'].'" data-type="text" data-url="'.LINK.'daemon/update" data-title="Enter class">'.$daemon['thread_concurency'].'</td>';
   //  echo '<td>'.$daemon['max_delay'].'</td>';
-    echo '<td class="line-edit" data-name="refresh_time" data-pk="'.$daemon['id'].'" data-type="text" data-url="'.LINK.'daemon/update" data-title="Enter class">'.$daemon['refresh_time'].'</td>';
+    echo '<td class="line-edit" data-name="refresh_time" data-pk="'.$daemon['id'].'" data-type="text" data-url="'.LINK.'daemon/update" data-title="Enter class"'.$daemonUpdateCsrfAttributes.'>'.$daemon['refresh_time'].'</td>';
   //  echo '<td class="line-edit" data-name="queue_number" data-pk="'.$daemon['id'].'" data-type="text" data-url="'.LINK.'daemon/update" data-title="Enter class">'.$daemon['queue_number'].'</td>';
   //  echo '<td>'.$daemon['nb_msg'].'</td>';
+    if ($daemon['is_enabled']) {
+        echo '<td><span class="label label-success">Enabled</span></td>';
+    } else {
+        echo '<td><span class="label label-default">Disabled</span></td>';
+    }
     echo '<td>'.$daemon['class'].'/'.$daemon['method'].' '.$daemon['params'].'</td>';
     echo '<td>';
 
+    $daemonId = (int) $daemon['id'];
     echo ' <div style="float:right" class="btn-toolbar btn-group btn-group-xs" role="group" aria-label="Default button group">';
-    echo '&nbsp;<a href="'.LINK.'Agent/stop/'.$daemon['id'].'" type="button" class="btn btn-primary" style="font-size:12px"> <span class="glyphicon glyphicon-stop" aria-hidden="true" style="font-size:12px"></span> Stop Daemon</a>';
-    echo '<a href="'.LINK.'Agent/start/'.$daemon['id'].'" type="button" class="btn btn-primary" style="font-size:12px"> <span class="glyphicon glyphicon-play" aria-hidden="true" style="font-size:12px"></span> Start Daemon</a>';
+    echo '&nbsp;<form method="post" action="'.LINK.'Agent/stop/'.$daemonId.'" style="display:inline">'.$agentControlCsrfInput.'<button type="submit" class="btn btn-primary" style="font-size:12px"> <span class="glyphicon glyphicon-stop" aria-hidden="true" style="font-size:12px"></span> Stop Daemon</button></form>';
+    echo '<form method="post" action="'.LINK.'Agent/start/'.$daemonId.'" style="display:inline">'.$agentControlCsrfInput.'<button type="submit" class="btn btn-primary" style="font-size:12px"> <span class="glyphicon glyphicon-play" aria-hidden="true" style="font-size:12px"></span> Start Daemon</button></form>';
     if (empty($daemon['pid'])) {
         echo '<a href="'.LINK.'Server/listing/logs" type="button" class="btn btn-warning" style="font-size:12px"><span class="glyphicon glyphicon-warning-sign" aria-hidden="true" style="font-size:13px"></span> Stopped</a>';
     } else {
@@ -65,8 +77,8 @@ if (empty($_GET['ajax'])) {
     echo '</div>';
 
     echo ' <div class="btn-group" role="group" aria-label="Default button group">';
-    echo '&nbsp;<a href="'.LINK.'Daemon/stopAll/" type="button" class="btn btn-primary" style="font-size:12px"> <span class="glyphicon glyphicon-stop" aria-hidden="true" style="font-size:12px"></span> Stop All Daemons</a>';
-    echo '<a href="'.LINK.'Daemon/startAll" type="button" class="btn btn-primary" style="font-size:12px"> <span class="glyphicon glyphicon-play" aria-hidden="true" style="font-size:12px"></span> Start All Daemons</a>';
+    echo '&nbsp;<form method="post" action="'.LINK.'Daemon/stopAll/" style="display:inline">'.$daemonControlCsrfInput.'<button type="submit" class="btn btn-primary" style="font-size:12px"> <span class="glyphicon glyphicon-stop" aria-hidden="true" style="font-size:12px"></span> Stop All Daemons</button></form>';
+    echo '<form method="post" action="'.LINK.'Daemon/startAll" style="display:inline">'.$daemonControlCsrfInput.'<button type="submit" class="btn btn-primary" style="font-size:12px"> <span class="glyphicon glyphicon-play" aria-hidden="true" style="font-size:12px"></span> Start All Daemons</button></form>';
     echo '</div>';
     echo '<a href="'.LINK.'Daemon/refresh" type="button" title="Use this if there are troubles after crash of server, can take several seconds" class="btn btn-warning" style="font-size:12px"> <span class="glyphicon glyphicon-refresh" aria-hidden="true" style="font-size:12px"></span> Refresh all</a>';
     echo '<br /><br />';

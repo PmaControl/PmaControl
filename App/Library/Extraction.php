@@ -22,14 +22,125 @@ namespace App\Library;
 
 use \Glial\Sgbd\Sgbd;
 
+/**
+ * Class responsible for extraction workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Extraction
 {
 
     use \App\Library\Filter;
+/**
+ * Stores `$variable` for variable.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $variable   = array();
+/**
+ * Stores `$server` for server.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $server     = array();
+/**
+ * Stores `$groupbyday` for groupbyday.
+ *
+ * @var bool
+ * @phpstan-var bool
+ * @psalm-var bool
+ */
     static $groupbyday = false;
 
+    public static function buildSelectFields(string $radical, bool $graph = false): string
+    {
+        if ($radical === 'slave') {
+            return " a.`id_mysql_server`, a.`id_ts_variable`, a.`connection_name`,a.`date`,a.`value` ";
+        }
+
+        $fields = " a.`id_mysql_server`, a.`id_ts_variable`, '' as connection_name,a.`date`";
+
+        if ($graph) {
+            return $fields.", ((a.`value` - LAG(a.`value`) OVER W))/(TIME_TO_SEC(TIMEDIFF(a.date, lag(a.date) OVER W))) as value  ";
+        }
+
+        return $fields.", a.`value` as value ";
+    }
+
+    public static function normalizeDisplayValue($value): string
+    {
+        if (is_null($value)) {
+            return '';
+        }
+
+        return trim((string) $value);
+    }
+
+    public static function appendDisplayRow(array $table, object $row, bool $range): array
+    {
+        $metricName = self::$variable[$row->id_ts_variable]['name'];
+        $connectionName = isset($row->connection_name) ? (string) $row->connection_name : '';
+        $value = self::normalizeDisplayValue($row->value ?? '');
+
+        if ($range) {
+            $table[$row->id_mysql_server][$connectionName][$row->date]['id_mysql_server'] = $row->id_mysql_server;
+            $table[$row->id_mysql_server][$connectionName][$row->date]['date'] = $row->date;
+            $table[$row->id_mysql_server][$connectionName][$row->date][$metricName] = $value;
+        } else {
+            $table[$row->id_mysql_server][$connectionName]['id_mysql_server'] = $row->id_mysql_server;
+            $table[$row->id_mysql_server][$connectionName]['date'] = $row->date;
+            $table[$row->id_mysql_server][$connectionName][$metricName] = $value;
+        }
+
+        return $table;
+    }
+
+/**
+ * Handle extraction state through `extract`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $var Input value for `var`.
+ * @phpstan-param mixed $var
+ * @psalm-param mixed $var
+ * @param mixed $server Input value for `server`.
+ * @phpstan-param mixed $server
+ * @psalm-param mixed $server
+ * @param mixed $date Input value for `date`.
+ * @phpstan-param mixed $date
+ * @psalm-param mixed $date
+ * @param mixed $range Input value for `range`.
+ * @phpstan-param mixed $range
+ * @psalm-param mixed $range
+ * @param mixed $graph Input value for `graph`.
+ * @phpstan-param mixed $graph
+ * @psalm-param mixed $graph
+ * @return mixed Returned value for extract.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::extract()
+ * @example /fr/extraction/extract
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function extract($var = array(), $server = array(), $date = "", $range = false, $graph = false)
     {
 
@@ -42,7 +153,10 @@ class Extraction
         $db = Sgbd::sql(DB_DEFAULT);
 
         if (empty($server)) {
-            $server = self::getServerList();
+            $server = Extraction2::getServerList();
+        }
+        else{
+            Extraction2::$server = $server;
         }
 
         $extra_where = "";
@@ -115,24 +229,10 @@ class Extraction
             foreach ($data_type as $type => $tab_ids) {
 
                 //debug($radical);
-                if ($radical == "slave") {
-                    $fields = " a.`id_mysql_server`, a.`id_ts_variable`, a.`connection_name`,a.`date`,a.`value` ";
-                } else {
-                    $fields = " a.`id_mysql_server`, a.`id_ts_variable`, '' as connection_name,a.`date`";
+                $fields = self::buildSelectFields((string) $radical, (bool) $graph);
 
-                    if ($graph === true) {
-                        //$fields .= ",  (a.`value` - LAG(a.`value`) OVER W) as value ";
-                        //$fields .= ",  TIME_TO_SEC(TIMEDIFF(a.date, lag(a.date) OVER W)) as diff "; //diefenre en sec entre 2 capture de metrics
-                        $fields .= ", ((a.`value` - LAG(a.`value`) OVER W))/(TIME_TO_SEC(TIMEDIFF(a.date, lag(a.date) OVER W))) as value  "; // in case of difference
-
-                        $WINDOW = " WINDOW W AS (ORDER BY a.date) ";
-                        //$WINDOW = " WINDOW W AS (PARTION BY EXTRACT(DAY_MINUTE FROM a.date) ORDER BY a.date) ";
-                    } else {
-                        $fields .= ", a.`value` as value ";
-                    }
-
-                    //a.`value`";
-                    // $fields = " a.`id_mysql_server`, a.`id_ts_variable`, '' as connection_name,a.`date`,avg(a.`value`) as value";
+                if ($graph === true && $radical !== 'slave') {
+                    $WINDOW = " WINDOW W AS (ORDER BY a.date) ";
                 }
 
                 foreach ($tab_ids as $id_ts_variable) {
@@ -188,9 +288,13 @@ class Extraction
             }
 
 
+            // Emit strict ISO 8601 (YYYY-MM-DDTHH:MM:SS) so `new Date(...)` parses
+            // identically across browsers. The legacy "YYYY-MM-DD HH:MM:SS" form is
+            // only conditionally accepted (implementation-defined per ECMA-262) and
+            // produced silent Invalid Date entries that Chart.js skipped — issue #742.
             $sql3 .= "
                 connection_name,
-                group_concat(concat('{x:new Date(\'',t.`date`, '\'),y:',t.`value`,'}') ORDER BY t.`date` ASC) as graph,
+                group_concat(concat('{x:new Date(\'',DATE_FORMAT(t.`date`, '%Y-%m-%dT%H:%i:%s'), '\'),y:',t.`value`,'}') ORDER BY t.`date` ASC) as graph,
                 round(min(t.`value`),2) as `min`,
                 round(max(t.`value`),2) as `max`,
                 round(avg(t.`value`),2) as `avg`,
@@ -224,31 +328,42 @@ class Extraction
         return $res2;
     }
 
-    static private function getServerList()
-    {
-        $db = Sgbd::sql(DB_DEFAULT);
 
-        if (empty(self::$server)) {
-            $sql = "SELECT id FROM mysql_server a WHERE 1=1 ".self::getFilter();
 
-            $res = $db->sql_query($sql);
-
-            $server = array();
-            while ($ob     = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-                $server[] = $ob['id'];
-                //self::$server[] = $ob;
-            }
-
-            if (count($server) === 0) {//int negatif pour être sur de rien remonté
-                $server[] = "-999";
-            }
-
-            self::$server = $server;
-        }
-
-        return self::$server;
-    }
-
+/**
+ * Handle extraction state through `display`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $var Input value for `var`.
+ * @phpstan-param mixed $var
+ * @psalm-param mixed $var
+ * @param mixed $server Input value for `server`.
+ * @phpstan-param mixed $server
+ * @psalm-param mixed $server
+ * @param mixed $date Input value for `date`.
+ * @phpstan-param mixed $date
+ * @psalm-param mixed $date
+ * @param mixed $range Input value for `range`.
+ * @phpstan-param mixed $range
+ * @psalm-param mixed $range
+ * @param mixed $graph Input value for `graph`.
+ * @phpstan-param mixed $graph
+ * @psalm-param mixed $graph
+ * @return mixed Returned value for display.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::display()
+ * @example /fr/extraction/display
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function display($var = array(), $server = array(), $date = "", $range = false, $graph = false)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -275,25 +390,34 @@ class Extraction
             //debug(self::$variable[$ob->id_ts_variable]);
             //$ob->value ?? '';
 
-            if (is_null($ob->value)){
-                $ob->value = '';
-            }
-
-            if ($range) {
-                $table[$ob->id_mysql_server][$ob->connection_name][$ob->date]['id_mysql_server']                            = $ob->id_mysql_server;
-                $table[$ob->id_mysql_server][$ob->connection_name][$ob->date]['date']                                       = $ob->date;
-                $table[$ob->id_mysql_server][$ob->connection_name][$ob->date][self::$variable[$ob->id_ts_variable]['name']] = trim($ob->value);
-            } else {
-                $table[$ob->id_mysql_server][$ob->connection_name]['id_mysql_server']                            = $ob->id_mysql_server;
-                $table[$ob->id_mysql_server][$ob->connection_name]['date']                                       = $ob->date;
-                $table[$ob->id_mysql_server][$ob->connection_name][self::$variable[$ob->id_ts_variable]['name']] = trim($ob->value);
-            }
+            $table = self::appendDisplayRow($table, $ob, (bool) $range);
         }
 
         //debug($table);
         return $table;
     }
 
+/**
+ * Retrieve extraction state through `getIdVariable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $var Input value for `var`.
+ * @phpstan-param mixed $var
+ * @psalm-param mixed $var
+ * @return mixed Returned value for getIdVariable.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getIdVariable()
+ * @example /fr/extraction/getIdVariable
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getIdVariable($var)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -344,6 +468,27 @@ class Extraction
         return $variable;
     }
 
+/**
+ * Handle extraction state through `count_recursive`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $array Input value for `array`.
+ * @phpstan-param mixed $array
+ * @psalm-param mixed $array
+ * @return mixed Returned value for count_recursive.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::count_recursive()
+ * @example /fr/extraction/count_recursive
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function count_recursive($array)
     {
         if (!is_array($array)) {
@@ -358,6 +503,30 @@ class Extraction
         return $count;
     }
 
+/**
+ * Handle extraction state through `setOption`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $var Input value for `var`.
+ * @phpstan-param mixed $var
+ * @psalm-param mixed $var
+ * @param mixed $val Input value for `val`.
+ * @phpstan-param mixed $val
+ * @psalm-param mixed $val
+ * @return void Returned value for setOption.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::setOption()
+ * @example /fr/extraction/setOption
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function setOption($var, $val)
     {
         self::$$var = $val;
@@ -409,6 +578,39 @@ class Extraction
         return $res;
     }
 
+/**
+ * Handle extraction state through `display2`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $var Input value for `var`.
+ * @phpstan-param mixed $var
+ * @psalm-param mixed $var
+ * @param mixed $server Input value for `server`.
+ * @phpstan-param mixed $server
+ * @psalm-param mixed $server
+ * @param mixed $date Input value for `date`.
+ * @phpstan-param mixed $date
+ * @psalm-param mixed $date
+ * @param mixed $range Input value for `range`.
+ * @phpstan-param mixed $range
+ * @psalm-param mixed $range
+ * @param mixed $graph Input value for `graph`.
+ * @phpstan-param mixed $graph
+ * @psalm-param mixed $graph
+ * @return void Returned value for display2.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::display2()
+ * @example /fr/extraction/display2
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function display2($var = array(), $server = array(), $date = "", $range = false, $graph = false)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -420,6 +622,28 @@ class Extraction
     }
 
 
+/**
+ * Handle extraction state through `isExist`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $var Input value for `var`.
+ * @phpstan-param mixed $var
+ * @psalm-param mixed $var
+ * @return mixed Returned value for isExist.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::isExist()
+ * @example /fr/extraction/isExist
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function isExist($var)
     {
         $db = Sgbd::sql(DB_DEFAULT);

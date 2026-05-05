@@ -1,4 +1,7 @@
 <?php
+
+use App\Library\Security\CsrfRender;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -6,28 +9,60 @@
  */
 
 use Glial\Html\Form\Form;
+use App\Library\SysTooltips;
+
+$data = $data ?? array();
+$selectedMysqlServerId = $data['selected_mysql_server_id'] ?? null;
+$selectedMysqlServerFound = !empty($data['selected_mysql_server_found']);
+$selectedMysqlServerNameRaw = (string)($data['selected_mysql_server_name'] ?? '');
+$selectedMysqlServerName = htmlspecialchars($selectedMysqlServerNameRaw, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+$selectedMysqlServerNameJsonRaw = json_encode($selectedMysqlServerNameRaw, JSON_HEX_APOS | JSON_HEX_QUOT);
+if ($selectedMysqlServerNameJsonRaw === false) {
+    $selectedMysqlServerNameJsonRaw = '""';
+}
+$selectedMysqlServerNameJson = htmlspecialchars(
+    $selectedMysqlServerNameJsonRaw,
+    ENT_QUOTES | ENT_SUBSTITUTE,
+    'UTF-8'
+);
+$mysqlsysVersion = htmlspecialchars((string) ($data['variables'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+$mysqlsysVersionUnsupported = !empty($data['mysqlsys_version_unsupported']);
+$mysqlsysUpdateConfigCsrfAttributes = CsrfRender::attributes($data, 'mysqlsys_update_config');
+$mysqlsysResetCsrfInput = CsrfRender::hiddenInput($data, 'mysqlsys_reset');
+$mysqlsysDropCsrfInput = CsrfRender::hiddenInput($data, 'mysqlsys_drop');
 
 echo '<div class="well">';
 
 \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
 
-function remove($array) {
-    $params = explode("/", trim($_GET['url'], "/"));
+function remove($array, $selectedMysqlServerId = null) {
+    $params = explode("/", trim($_GET['url'] ?? '', "/"));
+    $hasMysqlServer = false;
+    $removeMysqlServer = in_array('mysql_server', $array, true);
 
     foreach ($params as $key => $param) {
+        if (strstr($param, 'mysql_server:')) {
+            $hasMysqlServer = true;
+        }
+
         foreach ($array as $var) {
             if (strstr($param, $var . ':')) {
                 unset($params[$key]);
             }
         }
     }
+
+    if ($selectedMysqlServerId !== null && !$hasMysqlServer && !$removeMysqlServer) {
+        $params[] = 'mysql_server:id:' . (int) $selectedMysqlServerId;
+    }
+
     $ret = implode('/', $params);
 
     return $ret;
 }
 
 echo '<br /><br />';
-echo '<form action="" method="POST">';
+echo '<form action="" method="get">';
 echo __("Server") . " : ";
 
 \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_server", "id", array("data-width" => "auto")));
@@ -36,20 +71,33 @@ echo ' ';
 
 
 echo '<button type="submit" class="btn btn-primary">Filter</button>';
+echo '</form>';
 
-if (!empty($_GET['mysql_server']['id'])) {
-    echo ' ';
-    echo '<a href="' . LINK . 'Mysqlsys/reset/' . $_GET['mysql_server']['id'] . '" class="btn btn-warning" role="button" title="This option will truncate all table of PERFORMANCE_SCHEMA to reset statistiques in MySQL-sys" aria-pressed="true">Reset Statistics</a>';
-    echo ' ';
-    echo '<a href="' . LINK . 'Mysqlsys/drop/' . $_GET['mysql_server']['id'] . '" class="btn btn-danger" role="button" aria-pressed="true" title="This will DROP DATABASE `sys`; after this you can reinstall Mysql-sys for new version for example">Uninstall MySQL-sys</a>';
+if ($selectedMysqlServerId !== null && $selectedMysqlServerFound) {
+    echo '<div class="mysqlsys-actions" style="margin-top: 8px;">';
+    echo '<form action="' . LINK . 'Mysqlsys/reset" method="post" style="display: inline-block; margin-right: 8px;">';
+    echo $mysqlsysResetCsrfInput;
+    echo '<input type="hidden" name="id_mysql_server" value="' . (int) $selectedMysqlServerId . '">';
+    echo '<button type="submit" class="btn btn-warning" title="This option will truncate all table of PERFORMANCE_SCHEMA to reset statistiques in MySQL-sys">Reset Statistics</button>';
+    echo '</form>';
+
+    echo '<form action="' . LINK . 'Mysqlsys/drop" method="post" style="display: inline-block;" onsubmit="return confirm(\'DROP DATABASE sys on \' + ' . $selectedMysqlServerNameJson . ' + \'?\');">';
+    echo $mysqlsysDropCsrfInput;
+    echo '<input type="hidden" name="id_mysql_server" value="' . (int) $selectedMysqlServerId . '">';
+    echo '<label class="checkbox-inline" title="Confirm DROP DATABASE sys">';
+    echo '<input type="checkbox" name="confirm" value="DROP_SYS" required> DROP_SYS';
+    echo '</label> ';
+    echo '<input type="text" class="form-control input-sm" name="confirm_server_name" value="" placeholder="' . $selectedMysqlServerName . '" aria-label="Confirm MySQL server name" required style="display: inline-block; width: 180px;"> ';
+    echo '<button type="submit" class="btn btn-danger" title="This will DROP DATABASE `sys`; after this you can reinstall Mysql-sys for new version for example">Uninstall MySQL-sys</button>';
+    echo '</form>';
+    echo '</div>';
 }
 
-echo '</form>';
 echo '</div>';
 
 //debug($data['innodb']);
 
-if (!empty($_GET['mysql_server']['id'])) {
+if ($selectedMysqlServerId !== null && $selectedMysqlServerFound) {
 
     if (!empty($data['view_available']) && count($data['view_available']) > 0 && !empty($data['innodb'])) {
         ?>
@@ -70,7 +118,7 @@ if (!empty($_GET['mysql_server']['id'])) {
                     //$url = $_GET['url'];
 
                     $i++;
-                    $url = remove(array("mysqlsys"));
+                    $url = remove(array("mysqlsys"), $selectedMysqlServerId);
 
                     if (!empty($_GET['mysqlsys']) && $view == $_GET['mysqlsys']) {
                         echo '<a href="' . LINK . $url . '/mysqlsys:' . $view . '"><b>' . $i . '. ' . $view . '</b></a><br/>';
@@ -100,7 +148,7 @@ if (!empty($_GET['mysql_server']['id'])) {
 
                             echo '<th>' . __("Top") . '</th>';
                             foreach ($line as $var => $val) {
-                                echo '<th>' . $var . '</th>';
+                                echo SysTooltips::th($var);
                             }
                             echo '</tr>';
                         }
@@ -112,32 +160,32 @@ if (!empty($_GET['mysql_server']['id'])) {
 
                             if ($data['name_table'] == 'sys_config' && $var == "value") {
 
-                                echo '<td class="line-edit" data-name="' . $line['variable'] . '" data-pk="' . $_GET['mysql_server']['id'] . '" data-type="text" data-url="' . LINK . 'mysqlsys/updateConfig" data-title="Enter Libelle">';
+                                echo '<td class="line-edit" data-name="' . $line['variable'] . '" data-pk="' . (int) $selectedMysqlServerId . '" data-type="text" data-url="' . LINK . 'mysqlsys/updateConfig" data-title="Enter Libelle"' . $mysqlsysUpdateConfigCsrfAttributes . '>';
                             } else {
                                 echo '<td>';
                             }
 
                             if ($var == "query") {
+                                $query = (string)($val ?? '');
+                                $queryExcerpt = $query;
 
                                 echo '<button class="btn btn-default btn-xs" type="button" data-toggle="collapse" data-target="#collapseExample' . $i . '">'
                                 . '<i class="fa fa-plus"></i></button>';
                                 echo ' <span>';
 
-                                echo '<div class="collapse" id="collapseExample' . $i . '">' . SqlFormatter::format($val) . '</div>';
+                                echo '<div class="collapse" id="collapseExample' . $i . '">' . SqlFormatter::format($query) . '</div>';
 
-                                $nb_length = intval(strlen($val));
+                                $nb_length = mb_strlen($query, 'UTF-8');
 
                                 if ($nb_length > 64) {
-
-                                    echo substr($val, 0, 32) . "..." . substr($val, -32);
-                                } else {
-                                    echo $val;
+                                    $queryExcerpt = mb_substr($query, 0, 32, 'UTF-8') . "..." . mb_substr($query, -32, 32, 'UTF-8');
                                 }
+                                echo htmlspecialchars($queryExcerpt, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
                                 echo '</span>';
 
                             } else if ($var == "digest")
                             {
-                                echo '<a href="'.LINK.'/Query/byDigest/'.$val.'/'.$_GET['mysql_server']['id'].'/'.$line['db'].'/">'.$val.'</a>';
+                                echo '<a href="'.LINK.'/Query/byDigest/'.$val.'/'.(int) $selectedMysqlServerId.'/'.$line['db'].'/">'.$val.'</a>';
                             }
                             else if ($var == "percent" || $var == "auto_increment_ratio") {
                                 $percent = round($val * 100, 2);
@@ -161,7 +209,7 @@ if (!empty($_GET['mysql_server']['id'])) {
                     }
                     echo "</table>";
 
-                    echo '<a href="'.LINK.'mysqlsys/export/'.$_GET['mysql_server']['id'].'/'.$_GET['mysqlsys'].'" class="btn btn-primary active" role="button">Export Dokuwiki</a>';
+                    echo '<a href="'.LINK.'mysqlsys/export/'.(int) $selectedMysqlServerId.'/'.$_GET['mysqlsys'].'" class="btn btn-primary active" role="button">Export Dokuwiki</a>';
 
                     
                 } else {
@@ -172,13 +220,13 @@ if (!empty($_GET['mysql_server']['id'])) {
             </div>
         </div>
         <?php
-    } elseif (version_compare($data['variables'], "5.6", "<=")) {
+    } elseif ($mysqlsysVersionUnsupported) {
 
         echo '<div class="well" style="border-left-color: #5cb85c;   border-left-width: 10px;">
             <p><b>Error :</b></p>';
 
         echo "This version of MySQL / MariaDB / Percona Server is not compatible with mysql-sys !<br />"
-        . " mysql-sys require version of MySQL / MariaDB / Percona Server 5.6 (<b>" . $data['variables'] . "</b>) at minimum.";
+        . " mysql-sys require version of MySQL / MariaDB / Percona Server 5.6 (<b>" . $mysqlsysVersion . "</b>) at minimum.";
 
         echo '</div>';
     } elseif (empty($data['innodb'])) {
@@ -192,9 +240,9 @@ if (!empty($_GET['mysql_server']['id'])) {
         echo '<div class="well" style="border-left-color: #5cb85c;   border-left-width: 10px;">
             <p><b>Install:</b></p>';
 
-        echo 'Your version of MySQL / MariaDB / Percona Server: <b>' . $data['variables'] . "</b><br />";
+        echo 'Your version of MySQL / MariaDB / Percona Server: <b>' . $mysqlsysVersion . "</b><br />";
         echo 'mysql-sys is not yet installed on this server, do you want to install it ? ';
-        echo '<a href="' . LINK . 'mysqlsys/install/mysql_server:id:' . $_GET['mysql_server']['id'] . '" role="button" class="btn btn-primary">Install MySQL-sys</a>';
+        echo '<a href="' . LINK . 'mysqlsys/install/mysql_server:id:' . (int) $selectedMysqlServerId . '" role="button" class="btn btn-primary">Install MySQL-sys</a>';
 
         echo '</div>';
     }

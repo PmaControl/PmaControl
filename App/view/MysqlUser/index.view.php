@@ -6,7 +6,7 @@
  */
 
 
-echo '<form method="post" action="">';
+echo '<form method="get" action="">';
 echo '<div class="well">';
 echo '<div class="row">';
 echo '<div class="col-md-10">';

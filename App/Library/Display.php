@@ -8,18 +8,126 @@
 namespace App\Library;
 
 use \Glial\Sgbd\Sgbd;
+use App\Controller\Tunnel;
 
+/**
+ * Class responsible for display workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Display
 {
+/**
+ * Stores `$server` for server.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $server      = array();
+    static $tunnel      = array();
+    static $info_bubble_loaded = false;
+
+    /**
+     * Render a status dot.
+     *
+     * @param string $state 'ok' = green, 'fail' = red with pulse halo, 'info' = blue (no pulse)
+     * @return string HTML span
+     */
+    public static function statusDot(string $state): string
+    {
+        if ($state === 'ok') {
+            return '<span class="sv-dot ok"></span>';
+        }
+        if ($state === 'info') {
+            return '<span class="sv-dot info"></span>';
+        }
+        return '<span class="sv-dot fail halo"></span>';
+    }
+
+    /**
+     * Format seconds into human-readable duration (e.g. 7d 21h 51m).
+     *
+     * @param int|string|null $seconds
+     * @return string
+     */
+    public static function humanDuration($seconds): string
+    {
+        return Format::duration($seconds);
+    }
+
+/**
+ * Stores `$ts_variable` for ts variable.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $ts_variable = array();
 
+/**
+ * Handle display state through `server`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $arr Input value for `arr`.
+ * @phpstan-param mixed $arr
+ * @psalm-param mixed $arr
+ * @return mixed Returned value for server.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::server()
+ * @example /fr/display/server
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function server($arr)
     {
         return '<span title="'.$arr['libelle'].'" class="label label-'.$arr['class'].'">'.$arr['letter'].'</span>'
             .' <a href="">'.$arr['display_name'].'</a> <small class="text-muted">'.$arr['ip'].'</small>';
     }
 
+/**
+ * Handle display state through `srv`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param mixed $withip Input value for `withip`.
+ * @phpstan-param mixed $withip
+ * @psalm-param mixed $withip
+ * @param mixed $url Input value for `url`.
+ * @phpstan-param mixed $url
+ * @psalm-param mixed $url
+ * @return mixed Returned value for srv.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::srv()
+ * @example /fr/display/srv
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function srv($id_mysql_server, $withip = true, $url = '')
     {
         if (empty(self::$server)) {
@@ -37,6 +145,14 @@ class Display
             }
         }
 
+        if (empty(self::$server[$id_mysql_server])) {
+            return '';
+        }
+
+        if (empty(self::$tunnel)) {
+            self::$tunnel = self::getTunnelDetails();
+        }
+
         $url1 = '';
         $url2 = '';
 
@@ -45,16 +161,126 @@ class Display
             $url2 = '</a>';
         }
 
-        $ret = '<span title="'.self::$server[$id_mysql_server]['libelle'].'" class="label label-'.self::$server[$id_mysql_server]['class'].'">'.self::$server[$id_mysql_server]['letter'].'</span>'
-            ." ".$url1.self::$server[$id_mysql_server]['display_name'].$url2.' ';
+        $server = self::$server[$id_mysql_server];
+        $localEndpoint = trim((string)$server['ip']).':'.trim((string)$server['port']);
+        $tunnel = self::$tunnel[$localEndpoint] ?? null;
+        $realEndpoint = $tunnel['remote'] ?? $localEndpoint;
+        $dataInfo = htmlspecialchars(self::buildTunnelInfo($localEndpoint, $tunnel), ENT_QUOTES, 'UTF-8');
+        $script = self::renderInfoBubbleAssets();
+
+        $ret = $script.'<span title="'.$server['libelle'].'" class="label label-'.$server['class'].'">'.$server['letter'].'</span> ';
+
+        $ret .= $url1.'<span data-info="'.$dataInfo.'">'.$server['display_name'].'</span>'.$url2.' ';
 
         if ($withip) {
-            $ret .= '<small class="text-muted">'.self::$server[$id_mysql_server]['ip'].':'.self::$server[$id_mysql_server]['port'].'</small> ';
+            $ret .= $url1.'<small class="text-muted" data-info="'.$dataInfo.'">'.$realEndpoint.'</small>'.$url2.' ';
         }
 
         return $ret;
     }
 
+    static public function renderInfoBubbleAssets(): string
+    {
+        return '';
+    }
+
+    static public function getTunnelInfoForEndpoint(string $ip, int $port): array
+    {
+        if (empty(self::$tunnel)) {
+            self::$tunnel = self::getTunnelDetails();
+        }
+
+        $localEndpoint = trim($ip).':'.$port;
+        $tunnel = self::$tunnel[$localEndpoint] ?? null;
+
+        return [
+            'local' => $localEndpoint,
+            'remote' => $tunnel['remote'] ?? $localEndpoint,
+            'info' => self::buildTunnelInfo($localEndpoint, $tunnel),
+        ];
+    }
+
+    static private function getTunnelDetails(): array
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql = "SELECT local_host, local_port, remote_host, remote_port, servers_jump
+                FROM ssh_tunnel
+                WHERE date_end IS NULL";
+
+        $res = $db->sql_query($sql);
+        $details = [];
+
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $local = trim((string)$row['local_host']).':'.(int)$row['local_port'];
+            $remote = trim((string)$row['remote_host']).':'.(int)$row['remote_port'];
+            $jumps = json_decode((string)$row['servers_jump'], true);
+            $hops = [];
+
+            if (is_array($jumps)) {
+                foreach ($jumps as $jump) {
+                    if (!is_array($jump)) {
+                        continue;
+                    }
+
+                    $jumpHost = trim((string)($jump['ip'] ?? $jump['host'] ?? $jump['remote_host'] ?? ''));
+                    $jumpPort = (int)($jump['port'] ?? 22);
+
+                    if ($jumpHost === '') {
+                        continue;
+                    }
+
+                    $hops[] = $jumpHost.':'.$jumpPort;
+                }
+            }
+
+            $details[$local] = [
+                'remote' => $remote,
+                'hops' => $hops,
+            ];
+        }
+
+        return $details;
+    }
+
+    static private function buildTunnelInfo(string $localEndpoint, ?array $tunnel): string
+    {
+        if (empty($tunnel['remote'])) {
+            return $localEndpoint;
+        }
+
+        $parts = [$localEndpoint];
+
+        foreach (($tunnel['hops'] ?? []) as $hop) {
+            $parts[] = (string)$hop;
+        }
+
+        $parts[] = (string)$tunnel['remote'];
+
+        return implode(' 🔀 ', $parts);
+    }
+
+/**
+ * Handle display state through `srvjs`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @return mixed Returned value for srvjs.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::srvjs()
+ * @example /fr/display/srvjs
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function srvjs($id_mysql_server)
     {
         if (empty(self::$server)) {
@@ -77,11 +303,53 @@ class Display
         return $ret;
     }
 
+/**
+ * Handle display state through `icon`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $icon Input value for `icon`.
+ * @phpstan-param mixed $icon
+ * @psalm-param mixed $icon
+ * @return mixed Returned value for icon.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::icon()
+ * @example /fr/display/icon
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function icon($icon)
     {
         return str_replace(array('[IMG]', '{IMG}'), IMG, $icon);
     }
 
+/**
+ * Handle display state through `icon32`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $icon Input value for `icon`.
+ * @phpstan-param mixed $icon
+ * @psalm-param mixed $icon
+ * @return mixed Returned value for icon32.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::icon32()
+ * @example /fr/display/icon32
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function icon32($icon)
     {
         $icon = preg_replace('/height="(\d+)"/', 'height="32"', $icon);
@@ -90,6 +358,27 @@ class Display
         return str_replace(array('[IMG]', '{IMG}'), IMG, $icon);
     }
 
+/**
+ * Handle display state through `ts_variable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_ts_variable Input value for `id_ts_variable`.
+ * @phpstan-param int $id_ts_variable
+ * @psalm-param int $id_ts_variable
+ * @return mixed Returned value for ts_variable.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::ts_variable()
+ * @example /fr/display/ts_variable
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function ts_variable($id_ts_variable)
     {
         if (empty(self::$ts_variable)) {

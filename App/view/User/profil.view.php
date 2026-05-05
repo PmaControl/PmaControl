@@ -1,4 +1,9 @@
 <?php
+use App\Library\Security\CsrfRender;
+
+$userProfileCsrfField = CsrfRender::field($data, 'user_profile');
+$userProfileCsrfToken = CsrfRender::token($data, 'user_profile');
+
 echo "<div id=\"menu_admin_crop\">";
 echo "<div class=\"title_box\"><a href=\"\">" . __('Photo') . "</a></div>";
 echo "<div>";
@@ -25,6 +30,7 @@ foreach ($data['shoutbox'] as $line)
 	$i++;
 }
 echo '<form action="" method="post">';
+echo '<input type="hidden" name="' . $userProfileCsrfField . '" value="' . $userProfileCsrfToken . '">';
 echo input("shoutbox", "text", "textform shoutbox");
 echo "<input class=\"button btBlueTest overlayW btMedium\" type=\"submit\" value=\"" . __("Send") . "\" />";
 echo '</form>';

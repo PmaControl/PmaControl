@@ -1,0 +1,37 @@
+# ForeignKey
+
+- Type: class
+- Namespace: `App\Controller`
+- Source: `App/Controller/ForeignKey.php`
+
+- `autoDetect($param)`: Handle foreign key state through `autoDetect`.
+- `import($param)`: Handle foreign key state through `import`.
+- `autoId($param)`: Handle foreign key state through `autoId`.
+- `isTableExist($param)`: Handle foreign key state through `isTableExist`.
+- `cleanUp($param)`: Handle foreign key state through `cleanUp`.
+- `findField($param)`: Handle foreign key state through `findField`.
+- `getAll($param)`: Retrieve foreign key state through `getAll`.
+- `fill($param)`: Handle foreign key state through `fill`.
+- `getPrefix($param)`: Handle foreign key state through `getPrefix`.
+- `getIdPosition($param)`: Handle foreign key state through `getIdPosition`.
+- `getConbinaison($param)`: Retrieve foreign key state through `getConbinaison`.
+- `getDatabase($param)`: Retrieve foreign key state through `getDatabase`.
+- `sort_and_count_array($name_arr)`: Handle foreign key state through `sort_and_count_array`.
+- `getPrimaryKey($id_mysql_server, $database, $table)`: Retrieve foreign key state through `getPrimaryKey`.
+- `getIdFromComposedPk($param)`: Retrieve foreign key state through `getIdFromComposedPk`.
+- `getIdFromColumnName($param)`: Handle foreign key state through `getIdFromColumnName`.
+- `createVirtualForeignKey($param)`: Create foreign key state through `createVirtualForeignKey`.
+- `addForeignKey($param)`: Create foreign key state through `addForeignKey`.
+- `settingPrefix($param)`: Handle foreign key state through `settingPrefix`.
+- `add($param)`: Create foreign key state through `add`.
+- `dropForeignKey($param)`: Handle foreign key state through `dropForeignKey`.
+- `rmForeignKey($param)`: Handle foreign key state through `rmForeignKey`.
+- `getRealForeignKey($param)`: Retrieve foreign key state through `getRealForeignKey`.
+- `importRealForeignKey($param)`: Handle foreign key state through `importRealForeignKey`.
+- `menu($param)`: Handle foreign key state through `menu`.
+- `index($param)`: Render foreign key state through `index`.
+- `virtual($param)`: Handle foreign key state through `virtual`.
+- `real($param)`: Handle foreign key state through `real`.
+- `proposal($param)`: Handle foreign key state through `proposal`.
+- `blackList($param)`: Handle foreign key state through `blackList`.
+- `custom($param)`: Handle foreign key state through `custom`.

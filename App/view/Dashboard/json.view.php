@@ -1,7 +1,8 @@
 <?php
+use App\Library\Html;
 use Glial\Html\Form\Form;
 ?>
-<form method="post">
+<form method="get">
 <?php
 
 //debug($data);
@@ -60,7 +61,7 @@ foreach($data['json'] as $elem)
   echo '<div class="panel panel-primary" style="margin-bottom:5px">';
     echo '<div class="panel-heading">';
         echo '<h3 class="panel-title">';
-        echo "#".$j." - ". $elem['date'];
+        echo "#".$j." - ". Html::escape($elem['date'] ?? '');
           
         echo '</h3>';
   echo '</div>';
@@ -79,7 +80,7 @@ foreach($data['json'] as $elem)
     $headers = array_keys($elem['value'][0]); // Récupère les clés du premier élément
     echo "<th>#</th>";
     foreach ($headers as $header) {
-        echo "<th>" . htmlspecialchars($header) . "</th>";
+        echo "<th>" . Html::escape($header) . "</th>";
     }
 
     echo "</tr>";
@@ -116,18 +117,30 @@ foreach($data['json'] as $elem)
               }
             }*/
 
-            if ($header == 'waiting_query' || $header == 'blocking_query') {
-              $value = str_replace('<pre', '<pre style="max-width:300px"', \SqlFormatter::format($value));
-            }
-
             $td = '';
             if ($header == "INFO")
             {
               $td = 'style="min-width:1000px"';
             }
 
+            if (($header === 'waiting_query' || $header === 'blocking_query') && !is_array($value))
+            {
+              $renderedSql = \SqlFormatter::format((string) $value);
+              if (str_contains($renderedSql, '<pre style="')) {
+                $renderedSql = str_replace('<pre style="', '<pre style="max-width:300px;', $renderedSql);
+              } else {
+                $renderedSql = str_replace('<pre', '<pre style="max-width:300px"', $renderedSql);
+              }
+              echo "<td $td>" . $renderedSql . "</td>";
+            }
+            elseif (is_array($value))
+            {
+              echo "<td $td><pre>" . Html::escape(print_r($value, true)) . "</pre></td>";
+            }
+            else{
+              echo "<td $td>" . Html::escape($value) . "</td>";
+            }
             
-            echo "<td $td>" . $value . "</td>";
         }
         echo "</tr>";
     }
@@ -137,4 +150,3 @@ foreach($data['json'] as $elem)
   echo '</div>';
   echo '</div>';
 }
-

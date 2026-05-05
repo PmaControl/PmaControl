@@ -18,7 +18,8 @@ use Glial\Html\Form\Form;
     //print_r($_GET);
     //echo $data['sql'];
 
-    echo '<form class="form-inline" action="" method="post">';
+    echo '<form class="form-inline" action="" method="get">';
+    echo '<input type="hidden" name="server_id_filter" value="1" />';
     echo ' <div class="form-group" role="group" aria-label="Default button group">';
 
     echo __("Server : ");
@@ -66,6 +67,5 @@ if (!empty($data['fields_required'])) {
 
     echo '<canvas style="width: 100%; height: 450px;" id="myChart" height="450" width="1600"></canvas>';
 }
-
 
 

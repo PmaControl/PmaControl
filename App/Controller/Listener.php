@@ -9,18 +9,173 @@ use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use \App\Library\Debug;
 use \App\Library\EngineV4;
+use App\Library\Kpi\EventLog;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Extraction;
 use \App\Library\Extraction2;
 
 
 
+
+/*
+
+MariaDB [pmacontrol]> select b.file_name, `from`, count(1) from ts_variable a inner join ts_file b on a.id_ts_file = b.id GROUP by b.file_name, `from`;
++-----------------------------------------------+------------------------+----------+
+| file_name                                     | from                   | count(1) |
++-----------------------------------------------+------------------------+----------+
+| information_schema__metadata_lock_info        | information_schema     |        1 |
+| information_schema__plugins                   | information_schema     |        1 |
+| is_tables                                     | information_schema     |        3 |
+| mysql_binlog                                  | master_status          |        2 |
+| mysql_binlog                                  | mysql_binlog           |        6 |
+| mysql_global                                  | slave                  |       62 |
+| mysql_global                                  | status                 |      926 |
+| mysql_global_variable                         | variables              |     1102 |
+| mysql_innodb_metrics                          | innodb_metrics         |       76 |
+| mysql_processlist                             | mysql_processlist      |        1 |
+| mysql_schemata                                | mysql_database         |        1 |
+| mysql_server                                  | mysql_server           |        3 |
+| mysql_statistics                              | mysql_latency          |        4 |
+| mysql_table                                   | mysql_table            |        1 |
+| mysql_variable_gtid                           | gtid                   |        4 |
+| mysql_velocity                                | velocity               |        3 |
+| proxysql_connect_error                        | proxysql_connect_error |        1 |
+| proxysql_runtime_checksums_values             | proxysql_runtime       |        1 |
+| proxysql_runtime_global_variables             | proxysql_runtime       |        1 |
+| proxysql_runtime_mysql_galera_hostgroups      | proxysql_runtime       |        1 |
+| proxysql_runtime_mysql_query_rules            | proxysql_runtime       |        1 |
+| proxysql_runtime_mysql_replication_hostgroups | proxysql_runtime       |        1 |
+| proxysql_runtime_mysql_servers                | proxysql_runtime       |        1 |
+| proxysql_runtime_mysql_users                  | proxysql_runtime       |        1 |
+| proxysql_runtime_proxysql_servers             | proxysql_runtime       |        1 |
+| proxysql_server                               | proxysql_server        |        3 |
+| ps_events_statements_summary_by_digest        | performance_schema     |        1 |
+| ps_memory_summary_global_by_event_name        | performance_schema     |        1 |
+| ssh_hardware                                  | ssh_hardware           |       11 |
+| ssh_server                                    | ssh_server             |        4 |
+| ssh_stats                                     | ssh_stats              |       15 |
++-----------------------------------------------+------------------------+----------+
+31 rows in set (0,003 sec)
+*/
+
 class Listener extends Controller
 {
+/**
+ * Stores `$logger` for logger.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $logger;
 
-    static $database = array();
+/**
+ * Stores `$load_listener` for load listener.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
+    static $load_listener = [];
 
+    public static function recordEvent(string $type, string $message, ?int $idServer = null, ?string $date = null, $db = null): array
+    {
+        return EventLog::recordEvent($type, $message, $idServer, $date, $db);
+    }
+
+    public static function closeEvent(string $type, ?int $idServer = null, ?string $date = null, $db = null): array
+    {
+        return EventLog::closeEvent($type, $idServer, $date, $db);
+    }
+
+    /*
+    contain all post treatment and alert
+    */
+    public static function load($param)
+    {
+        self::$load_listener['mysql_schemata']['mysql_database'] = "Listerner::updateDatabase";
+        self::$load_listener['mysql_global_variable']['variables'] = "Listerner::afterUpdateVariable";
+        self::$load_listener['performance_schema']['performance_schema'] = "Digest::integrate";
+        self::$load_listener['ssh_hardware']['ssh_hardware'] = "Alias::updateAlias";
+    }
+
+/**
+ * Handle listener state through `init`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for init.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::init()
+ * @example /fr/listener/init
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public static function init($param)
+    {
+        Debug::parseDebug($param);
+        
+        self::load($param);
+
+        Debug::debug(self::$load_listener);
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        
+        foreach(self::$load_listener as $ts_file => $froms)
+        {
+            foreach($froms as $from => $elem)
+            {
+                $splited = explode('::', $elem);
+                $sql ="SELECT count(1) as cpt FROM listener_main WHERE `class` = '".$splited[0]."' AND `method` = '".$splited[1]."'";
+                Debug::sql($sql);
+                $res = $db->sql_query($sql);
+
+                while($ob = $db->sql_fetch_object($res))
+                {
+                    if ($ob->cpt === "0")
+                    {
+                        $sql = "INSERT INTO listener_main SELECT NULL, id,'".$splited[0]."', '".$splited[1]."',1 FROM ts_file WHERE file_name IN('".$ts_file."') ;";
+                        Debug::sql($sql);
+
+                        $db->sql_query($sql);
+                    }
+                }
+            }
+        }
+
+    }
+
+/**
+ * Prepare listener state through `before`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for before.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::before()
+ * @example /fr/listener/before
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function before($param)
     {
         $monolog       = new Logger("Listener");
@@ -30,6 +185,27 @@ class Listener extends Controller
         $this->logger = $monolog;
     }
 
+/**
+ * Handle listener state through `checkAll`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for checkAll.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::checkAll()
+ * @example /fr/listener/checkAll
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function checkAll($param)
     {
         Debug::parseDebug($param);
@@ -37,13 +213,36 @@ class Listener extends Controller
         $this->check(array());
     }
 
+/**
+ * Handle listener state through `check`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for check.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::check()
+ * @example /fr/listener/check
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function check($param)
     {
         Debug::parseDebug($param);
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql ="SELECT id_ts_file, id_mysql_server, TIMESTAMPDIFF(SECOND,  `last_date_listener`, `date`) from ts_max_date where last_date_listener != date ORDER BY 3 DESC;";
+        $sql ="SELECT id_ts_file, id_mysql_server, TIMESTAMPDIFF(SECOND,  `last_date_listener`, `date`) 
+        FROM ts_max_date WHERE last_date_listener != date AND id_ts_file in (SELECT distinct id_ts_file FROM listener_main)
+        ORDER BY 3 DESC;";
         Debug::sql($sql);
         $res = $db->sql_query($sql);
 
@@ -53,6 +252,27 @@ class Listener extends Controller
     }
 
 
+/**
+ * Retrieve listener state through `getUpdateTodo`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getUpdateTodo.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getUpdateTodo()
+ * @example /fr/listener/getUpdateTodo
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getUpdateTodo($param)
     {
         Debug::parseDebug($param);
@@ -77,7 +297,7 @@ class Listener extends Controller
         FROM ts_max_date 
         WHERE id_ts_file = ".$id_ts_file." 
             AND id_mysql_server = ".$id_mysql_server." 
-            AND last_date_listener != date LIMIT 1)
+            AND last_date_listener != `date` LIMIT 1)
         GROUP BY a.id_mysql_server, a.id_ts_file;";
 
 
@@ -90,6 +310,27 @@ class Listener extends Controller
         }
     }
 
+/**
+ * Handle listener state through `dispatch`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $arr Input value for `arr`.
+ * @phpstan-param mixed $arr
+ * @psalm-param mixed $arr
+ * @return void Returned value for dispatch.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::dispatch()
+ * @example /fr/listener/dispatch
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function dispatch($arr )
     {
 
@@ -103,11 +344,18 @@ class Listener extends Controller
 
             case EngineV4::FILE_MYSQL_VARIABLE:
                 $this->afterUpdateVariable($arr);
+                //$this->detectProxy($arr);
                 break;
 
-            case "ps_events_statements_summary_by_digest":
-                $this->collectQuery($arr);
+            case "performance_schema":
+                Digest::integrate([$arr['id_mysql_server'],$arr['min_date'] ]);
                 break;
+
+            case "ssh_hardware":
+                $alias = new Alias("","",[]);
+                $alias->updateAlias($arr);
+                break;
+
 
             default:
 
@@ -119,6 +367,27 @@ class Listener extends Controller
     }
 
 
+/**
+ * Update listener state through `updateListener`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for updateListener.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::updateListener()
+ * @example /fr/listener/updateListener
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function updateListener($param)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -198,10 +467,6 @@ class Listener extends Controller
             // write something to log
             return;
         }
-
-
-
-
 
         $data = json_decode($this->extract($res)['database'], true);
 
@@ -290,6 +555,27 @@ class Listener extends Controller
     }
 
 
+/**
+ * Handle listener state through `test1`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for test1.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::test1()
+ * @example /fr/listener/test1
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function test1($param)
     {
         Debug::parseDebug($param);
@@ -298,6 +584,27 @@ class Listener extends Controller
         Debug::debug($res);
     }
 
+/**
+ * Handle listener state through `test2`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for test2.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::test2()
+ * @example /fr/listener/test2
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function test2($param)
     {
         Debug::parseDebug($param);
@@ -330,6 +637,27 @@ class Listener extends Controller
         }
     }
 
+/**
+ * Handle listener state through `test4`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for test4.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::test4()
+ * @example /fr/listener/test4
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function test4($param)
     {
         Debug::parseDebug($param);
@@ -352,7 +680,29 @@ class Listener extends Controller
 
 
 
+    //TODO to move on Variable.php
     //after upgrading mysql_global_variable
+/**
+ * Handle listener state through `afterUpdateVariable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for afterUpdateVariable.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::afterUpdateVariable()
+ * @example /fr/listener/afterUpdateVariable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function afterUpdateVariable($param)
     {
         Debug::parseDebug($param);
@@ -366,14 +716,16 @@ class Listener extends Controller
             $param['min_date'] = $param[1];
         }
 
-
-
-
         Debug::debug($param);
 
+        $data = array();
         $extract = Extraction2::display(array('variables::'), array($param['id_mysql_server']), array($param['min_date']));
         
-        if (! empty($extract))
+        if (
+            ! empty($extract)
+            && isset($extract[$param['id_mysql_server']])
+            && is_array($extract[$param['id_mysql_server']])
+        )
         {
             //Debug::debug($extract, "EXTRACT");
             $data[$param['id_mysql_server']] = $extract[$param['id_mysql_server']];
@@ -384,7 +736,25 @@ class Listener extends Controller
         {
             unset($data[$param['id_mysql_server']]['date']);
         }
-        //Debug::debug($data , "VARIABLES");
+        Debug::debug($data , "VARIABLES");
+
+        // normalize values to strings to avoid array/object values reaching sql_real_escape_string
+        foreach ($data as $id_mysql_server => $variables) {
+            foreach ($variables as $variable => $value) {
+                if (is_array($value) || is_object($value)) {
+                    $data[$id_mysql_server][$variable] = json_encode(
+                        $value,
+                        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+                    );
+                } elseif (is_bool($value)) {
+                    $data[$id_mysql_server][$variable] = $value ? '1' : '0';
+                } elseif ($value === null) {
+                    $data[$id_mysql_server][$variable] = '';
+                } else {
+                    $data[$id_mysql_server][$variable] = (string) $value;
+                }
+            }
+        }
 
         //to upgrade 
         //        => SELECT if different update and then update
@@ -394,8 +764,6 @@ class Listener extends Controller
         {
 
             $db  = Sgbd::sql(DB_DEFAULT);
-
-
             $sql = "SELECT * FROM `global_variable` WHERE `id_mysql_server` IN (" . implode(',', array_keys($data)) . ");";
             Debug::sql($sql);
             $res = $db->sql_query($sql);
@@ -439,7 +807,7 @@ class Listener extends Controller
 
             //insert
             if (!empty($insert) && count($insert) > 0) {
-                Debug::debug($insert, "TO INSERT");
+                //Debug::debug($insert, "TO INSERT");
                 $elem_ins = array();
                 foreach ($insert as $id_mysql_server => $variables) {
                     foreach ($variables as $variable => $value) {
@@ -449,7 +817,7 @@ class Listener extends Controller
 
                 if (!empty($elem_ins)) {
                     $sql = "INSERT INTO global_variable (`id_mysql_server`,`variable_name`,`value`) VALUES " . implode(",", $elem_ins) . ";";
-                    Debug::sql($sql);
+                    //Debug::sql($sql);
                     //$this->logger->debug("INSERT SQL : $sql");
                     $db->sql_query($sql);
                 }
@@ -457,7 +825,7 @@ class Listener extends Controller
 
             //delete
             if (!empty($delete) && count($delete) > 0) {
-                Debug::debug($delete, "TO DELETE");
+                //Debug::debug($delete, "TO DELETE");
                 $elem_del = array();
                 foreach ($delete as $id_mysql_server => $variables) {
                     foreach ($variables as $variable => $value) {
@@ -474,7 +842,7 @@ class Listener extends Controller
 
             //update
             if (!empty($update) && count($update) > 0) {
-                Debug::debug($update, "TO UPDATE");
+                //Debug::debug($update, "TO UPDATE");
                 $elem_upt = array();
                 foreach ($update as $id_mysql_server => $variables) {
                     foreach ($variables as $variable => $value) {
@@ -500,6 +868,27 @@ class Listener extends Controller
 
 
 
+/**
+ * Handle listener state through `resetAll`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for resetAll.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::resetAll()
+ * @example /fr/listener/resetAll
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function resetAll($param)
     {
         Debug::parseDebug($parma);
@@ -521,6 +910,27 @@ class Listener extends Controller
 
     }
 
+/**
+ * Handle listener state through `status`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for status.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::status()
+ * @example /fr/listener/status
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function status($param)
     {
   
@@ -528,11 +938,11 @@ class Listener extends Controller
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql ="select b.id as id_mysql_server, b.display_name, b.id, c.file_name , `date`, last_date_listener, TIMESTAMPDIFF(SECOND,  `last_date_listener`, `date`) AS diff_seconds
+        $sql ="SELECT b.id as id_mysql_server, b.display_name, b.id, c.file_name , `date`, last_date_listener, TIMESTAMPDIFF(SECOND,  `last_date_listener`, `date`) AS diff_seconds
         from ts_max_date a 
         inner join mysql_server b on a.id_mysql_server = b.id 
         INNER JOIN ts_file c on c.id = a.id_ts_file 
-        WHERE b.id = 1
+        WHERE  b.id = 126 
         order by 5 desc, display_name, file_name;";
         Debug::sql($sql);
 
@@ -546,17 +956,42 @@ class Listener extends Controller
         }
         $cmd = "cd ".TMP.'md5 && find . -type f ! -name ".*" -printf "%M %u %g %TY-%Tm-%Td %TH:%TM:%TS %p\n" | sed \'s/\.[0-9]*//\'';
 
+        $data['md5'] = [];
+
+
         Debug::debug($cmd);
         $text = shell_exec($cmd );
 
-        $data['md5'] = $this->splitAndFormat($text);
+        if (!empty($text)) {
+            $data['md5'] = $this->splitAndFormat($text);
+        }
+
         Debug::debug($data);
-
         $this->set('data', $data);
-
     }
 
 
+/**
+ * Handle listener state through `splitAndFormat`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $text Input value for `text`.
+ * @phpstan-param mixed $text
+ * @psalm-param mixed $text
+ * @return mixed Returned value for splitAndFormat.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::splitAndFormat()
+ * @example /fr/listener/splitAndFormat
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function splitAndFormat($text)
     {
         $data = array();
@@ -591,6 +1026,27 @@ class Listener extends Controller
     }
 
 
+/**
+ * Handle listener state through `test5`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for test5.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::test5()
+ * @example /fr/listener/test5
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function test5( $param )
     {
         Debug::parseDebug($param);
@@ -601,229 +1057,36 @@ class Listener extends Controller
         Debug::debug($gg);
     }
 
-
-    /*
-    ps_events_statements_summary_by_digest
-    */
-    public function collectQuery($param)
-    {
-
-        $db = Sgbd::sql(DB_DEFAULT);
-
-        Debug::debug($param,"ICI");
-
-        $id_mysql_server = $param['id_mysql_server'];
-        $date= $param['min_date'];
-
-        $queries = Extraction2::display(array("performance_schema::events_statements_summary_by_digest"), 
-        array($id_mysql_server), array($date));
-
-        if (empty($queries[$id_mysql_server]['events_statements_summary_by_digest']['data'])) {
-            return true;
-        }
-
-        //Debug::debug($queries, "query");
-
-        $param['queries'] = $queries[$id_mysql_server]['events_statements_summary_by_digest']['data'];
-        
-        $id_query = $this->insertNewQuery($param);
-
-        if (!empty($id_query)) // case P_S not activated or INNODB not activated
-        {
-            $register = $this->selectIdfromDigest(array($id_query));
-        }
-        
-        
-        $i = 0;
-
-        $SQL = [];
-        foreach($queries[$id_mysql_server]['events_statements_summary_by_digest']['data'] as $query)
-        {
-            $i++;
-            Debug::debug($query);
-
-            $data_lower = array_change_key_case($query, CASE_LOWER);
-
-
-            //SCHEMA_NAME
-            $id_mysql_database = $this->getIdDatabase(array($id_mysql_server, $data_lower['schema_name']));
-
-            if (empty($id_mysql_database))
-            {
-                continue;
-            }
-
-            $id_mysql_query = $register[$data_lower['digest']];
-            
-            $result = array_filter($data_lower, function($value, $key) {
-                return (strpos($key, 'sum') === 0 || strpos($key, 'count_star') === 0);
-            }, ARRAY_FILTER_USE_BOTH);
-
-            $result['id_mysql_query'] = $id_mysql_query;
-            $result['id_mysql_server'] = $id_mysql_server;
-            $result['id_mysql_database'] = $id_mysql_database;
-            
-            //$result['date'] = $date;
-
-            if ($i ===1) {
-                $keys = array_keys($result);
-            }
-
-            $val = array_values($result);
-            Debug::debug($result);
-
-            $SQL[] = "('".$date."' ,".implode(",", $val).")";
-        }
-
-        $fields  = 'INSERT INTO ts_mysql_query (`date`, `'. implode('`,`', $keys).'`) VALUES ';
-
-        $sql = $fields.implode(",",$SQL).";";
-        $db->sql_query($sql);
-
-        Debug::debug($sql);
-    }
-
-    public function insertNewQuery($param)
-    {
-        $id_mysql_server = $param['id_mysql_server'];
-        $date= $param['min_date'];
-        $queries = $param['queries'];
-
-        $db = Sgbd::sql(DB_DEFAULT);
-
-        $id_query = $this->getDigestFromDate(array($id_mysql_server, $date));
-
-        if (empty($id_query)){
-            return $id_query;
-        }
-
-        $nb_id = count($id_query);
-
-        $list = implode("','", $id_query);
-
-        $sql2 = "SELECT count(1) as cpt FROM mysql_query WHERE digest_mariadb IN ('".$list."')";
-        Debug::sql($sql2);
-        $res2 = $db->sql_query($sql2);
-
-
-        $register = $this->selectIdfromDigest(array($id_query));
-        $keys = array_keys($register);
-
-        while ($ob2 = $db->sql_fetch_object($res2))
-        {
-            if ($nb_id > $ob2->cpt)
-            {
-                foreach($queries as $query)
-                {
-                    if (in_array($query['DIGEST'], $keys)) {
-                        continue;
-                    }
-
-                    $sql3 = "INSERT IGNORE INTO mysql_query (digest_mariadb, query_mariadb,digest_mysql,query_mysql)
-                    VALUES ('".$query['DIGEST']."','".$db->sql_real_escape_string($query['DIGEST_TEXT'])."',
-                    '".$query['DIGEST']."','".$db->sql_real_escape_string($query['DIGEST_TEXT'])."')";
-                    Debug::sql($sql3);
-                    $db->sql_query($sql3);
-                }
-            }
-        }
-
-        return $id_query;
-    }
-
-    public function selectIdfromDigest($param)
+/**
+ * Handle listener state through `purgeAll`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for purgeAll.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::purgeAll()
+ * @example /fr/listener/purgeAll
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public static function purgeAll($param)
     {
         Debug::parseDebug($param);
 
-
-        $id_query = $param[0];
-
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $list = implode("','", $id_query);
-
-        $sql = "SELECT id, digest_mariadb FROM mysql_query WHERE digest_mariadb IN ('".$list."');";
-        $res = $db->sql_query($sql);
-
-        $data = [];
-        while ($ob = $db->sql_fetch_object($res)) {
-            $data[$ob->digest_mariadb] = $ob->id;
-        }
-
-        Debug::debug($data);
-
-        return $data;
-    }
-
-    public function getDigestFromDate($param)
-    {
-        Debug::parseDebug($param);
-
-        $id_mysql_server = $param[0];
-        $date= $param[1];
-
-        $db = Sgbd::sql(DB_DEFAULT);
-
-        $sql = "SELECT JSON_KEYS(value, '$.data') AS digests, date FROM ts_value_general_json 
-        WHERE id_mysql_server = ".$id_mysql_server." 
-        AND id_ts_variable IN (SELECT id from ts_variable WHERE name = 'events_statements_summary_by_digest') 
-        AND  date = '".$date."' LIMIT 1";
+        $sql = "TRUNCATE TABLE listener_main;";
         Debug::sql($sql);
-
-        $res = $db->sql_query($sql);
-
-        while($ob = $db->sql_fetch_object($res)) {
-            $data = json_decode($ob->digests);
-        }
-
-        Debug::debug($data);
-
-        return $data;
-
-    }
-
-
-    public function getIdDatabase($param)
-    {
-        Debug::parseDebug($param);
-        $id_mysql_server = $param[0];
-        $database = $param[1];
-
-
-        if (!empty(self::$database[$id_mysql_server][$database]))
-        {
-            return self::$database[$id_mysql_server][$database];
-        }
-        else
-        {
-            $db = Sgbd::sql(DB_DEFAULT);
-
-            if (empty($database))
-            {
-                $database = 'NONE';
-            }
-
-            
-
-
-
-            $sql = "SELECT id from mysql_database where id_mysql_server=$id_mysql_server and schema_name='".$database."';";
-            $res = $db->sql_query($sql);
-
-            while($ob = $db->sql_fetch_object($res))
-            {
-                self::$database[$id_mysql_server][$database] = $ob->id;
-                Debug::debug($ob->id, "id_mysql_database");
-                return $ob->id;
-            }
-
-
-            $sql ="INSERT INTO mysql_database SET schema_name='$database', id_mysql_server=$id_mysql_server";
-            $db->sql_query($sql);
-            return false;
-
-
-        }
+        $db->sql_query($sql);
     }
 
 
@@ -849,25 +1112,17 @@ WHERE a.date > (select b.date_previous_execution from listener b where id_ts_fil
 GROUP BY id_mysql_server, id_ts_file
 */
 
-
-
 /*
-
 UPDATE performance_schema.setup_consumers 
 SET enabled = 'YES' 
 WHERE name IN ('events_statements_history', 'events_statements_history_long');
 
-
 UPDATE performance_schema.setup_instruments SET enabled = 'YES', timed = 'YES' WHERE name LIKE 'statement/%';
-
 */
 
 
 
 /*
-
-
-
 SELECT t.*
 FROM ts_value_general_int t
 JOIN (
