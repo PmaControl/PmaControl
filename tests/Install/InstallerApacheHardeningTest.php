@@ -155,6 +155,7 @@ final class InstallerApacheHardeningTest extends TestCase
         self::assertStringContainsString('PMACTRL_HARDEN_APACHE_DOCROOT="${PMACTRL_HARDEN_APACHE_DOCROOT:-1}"', $this->remoteInstall);
         self::assertStringContainsString('pmactrl_harden_apache_docroot', $this->remoteInstall);
         self::assertSame(2, substr_count($this->remoteInstall, 'bash /srv/www/pmacontrol/ci/check-web-exposure.sh http://127.0.0.1 /pmacontrol/'));
+        self::assertStringContainsString('PMACTRL_INSTALL_DEV_DEPS=1 ./install.sh -c /tmp/pmacontrol-ci-config.json', $this->remoteInstall);
     }
 
     public function testExposureSmokeCheckBlocksInternalPathsButDoesNotBlockSite(): void

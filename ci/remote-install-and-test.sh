@@ -228,7 +228,7 @@ cat > /tmp/pmacontrol-ci-config.json <<EOF
 EOF
 
 cd /srv/www/pmacontrol
-./install.sh -c /tmp/pmacontrol-ci-config.json
+PMACTRL_INSTALL_DEV_DEPS=1 ./install.sh -c /tmp/pmacontrol-ci-config.json
 
 HTTP_CODE="$(curl -s -o /tmp/pmacontrol-home.html -w '%{http_code}' http://127.0.0.1/pmacontrol/ || true)"
 case "${HTTP_CODE}" in
