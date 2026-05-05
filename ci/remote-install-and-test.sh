@@ -76,7 +76,7 @@ if [[ "${OS_KEY}" == "ubuntu-26.04" ]]; then
             exit 1
             ;;
     esac
-    /srv/www/pmacontrol/ci/check-web-exposure.sh http://127.0.0.1 /pmacontrol/
+    bash /srv/www/pmacontrol/ci/check-web-exposure.sh http://127.0.0.1 /pmacontrol/
 
     ./vendor/bin/phpunit --testsuite "PmaControl Test Suite"
     echo "CI install success on ${OS_KEY} for commit ${GIT_COMMIT:-unknown}"
@@ -239,7 +239,7 @@ case "${HTTP_CODE}" in
         exit 1
         ;;
 esac
-/srv/www/pmacontrol/ci/check-web-exposure.sh http://127.0.0.1 /pmacontrol/
+bash /srv/www/pmacontrol/ci/check-web-exposure.sh http://127.0.0.1 /pmacontrol/
 
 ./vendor/bin/phpunit --testsuite "PmaControl Test Suite"
 
