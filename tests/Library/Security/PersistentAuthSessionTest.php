@@ -50,16 +50,50 @@ final class PersistentAuthSessionTest extends TestCase
         $this->assertStringNotContainsString($server['HTTP_USER_AGENT'], $sql);
         $this->assertStringNotContainsString($server['REMOTE_ADDR'], $sql);
 
+        // Issue #762: opaque cookie must be set BEFORE legacy cookies are
+        // expired — otherwise an INSERT failure between the two leaves the
+        // browser without any auth cookie at all (already merged below in
+        // testIssueKeepsLegacyCookiesWhenInsertFails).
         $this->assertSame(
             [
+                PersistentAuthSession::COOKIE_NAME,
                 PersistentAuthSession::LEGACY_COOKIE_LOGIN,
                 PersistentAuthSession::LEGACY_COOKIE_PASSWORD,
-                PersistentAuthSession::COOKIE_NAME,
             ],
             array_column($cookies, 'name')
         );
-        $this->assertSame(str_repeat('01', 16) . '.' . $rawVerifier, $cookies[2]['value']);
-        $this->assertGreaterThan(1710000000, $cookies[2]['options']['expires']);
+        $this->assertSame(str_repeat('01', 16) . '.' . $rawVerifier, $cookies[0]['value']);
+        $this->assertGreaterThan(1710000000, $cookies[0]['options']['expires']);
+    }
+
+    public function testIssueKeepsLegacyCookiesWhenInsertFails(): void
+    {
+        $db = new Issue624PersistentAuthFakeDb();
+        $db->failNextWrite = true;
+        $auth = new Issue624PersistentAuthFakeAuth((object) ['id' => 42, 'id_group' => 3]);
+        $server = $this->server();
+        $cookies = [];
+        $setter = $this->cookieRecorder($cookies);
+
+        $created = PersistentAuthSession::issueForAuthenticatedUser(
+            $auth,
+            $db,
+            $server,
+            [],
+            $setter,
+            $this->randomBytesQueue([str_repeat("\x01", 16), str_repeat("\x02", 32)]),
+            1710000000
+        );
+
+        $this->assertFalse($created, 'Failed INSERT should be reported up to the caller.');
+        $this->assertSame(
+            [],
+            $cookies,
+            'When the INSERT fails (e.g. user_persistent_auth_session table is missing), '
+            . 'no cookie mutation must happen — neither the new opaque cookie nor the '
+            . 'legacy login/password cookies. Otherwise the user is logged out on the '
+            . 'next redirect (regression #762).'
+        );
     }
 
     public function testOpaqueCookieAuthenticatesUserAndRotatesVerifier(): void
@@ -400,6 +434,9 @@ final class Issue624PersistentAuthFakeDb
     /** @var array<int,string> */
     public $queries = [];
 
+    /** @var bool */
+    public $failNextWrite = false;
+
     /** @var array<int,object> */
     private $rows;
 
@@ -425,7 +462,16 @@ final class Issue624PersistentAuthFakeDb
             return new Issue624PersistentAuthFakeResult($this->rows);
         }
 
+        if ($this->failNextWrite && stripos($sql, 'INSERT') === 0) {
+            return false;
+        }
+
         return true;
+    }
+
+    public function sql_error(): string
+    {
+        return $this->failNextWrite ? "Table 'pmacontrol.user_persistent_auth_session' doesn't exist" : '';
     }
 
     public function sql_num_rows(Issue624PersistentAuthFakeResult $result): int

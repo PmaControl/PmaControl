@@ -219,15 +219,41 @@ final class PersistentAuthSession
             $db
         ));
 
-        self::deleteLegacyCookies($server, $trustedProxies, $setter);
+        // Issue #762: only switch the user from legacy cookies to the opaque
+        // cookie *after* the INSERT into user_persistent_auth_session is
+        // confirmed. If the INSERT failed (e.g. the migration was not applied
+        // and the table is missing) we keep the legacy cookies in place so
+        // the user stays logged in via the legacy fallback in Glial Auth.
         if (!$created) {
-            self::deleteOpaqueCookie($server, $trustedProxies, $setter);
+            self::logIssueFailure($db, $idUser);
             return false;
         }
 
         self::setOpaqueCookie($cookie['value'], strtotime($expiresAt . ' UTC') ?: time(), $server, $trustedProxies, $setter);
+        self::deleteLegacyCookies($server, $trustedProxies, $setter);
 
         return true;
+    }
+
+    /**
+     * @param mixed $db
+     */
+    private static function logIssueFailure($db, int $idUser): void
+    {
+        $error = '';
+        if (is_object($db) && method_exists($db, 'sql_error')) {
+            try {
+                $error = (string) $db->sql_error();
+            } catch (Throwable $throwable) {
+                $error = '';
+            }
+        }
+
+        error_log(sprintf(
+            'PersistentAuthSession: failed to insert opaque token row for user_main.id=%d (db error: %s) — keeping legacy cookies as fallback. Has the migration sql/incremental_v2/20260502_persistent_auth_sessions.sql been applied?',
+            $idUser,
+            $error === '' ? 'unknown' : $error
+        ));
     }
 
     /**
