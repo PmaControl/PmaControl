@@ -90,6 +90,11 @@ nmap -Pn -n -sT -T2 --max-rate 20 -p 111,3306 <pmacontrol-host-ip>
 Forgejo CI includes the `ubuntu2604` target in
 `.forgejo/workflows/proxmox-install-matrix.yml`.
 
+The Proxmox matrix runs two jobs in parallel. `debian12` and `ubuntu2404` are
+created on `pve-2`; `debian13` and `ubuntu2604` are created on `pve-3`.
+Before each target starts, `ci/cleanup-proxmox-ci-vms.sh` removes stale
+`ci-pmacontrol-*` VMs older than 30 minutes on the target node.
+
 The Proxmox runner maps it to template `923` by default:
 
 ```bash

@@ -1,13 +1,19 @@
 # Build, test, run
 
-## Install
+## Production Install
+
+```bash
+composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+```
+
+## Development/Test Install
 
 ```bash
 composer install --no-interaction
 composer dump-autoload                 # after adding new PSR-4 classes
 ```
 
-Target: PHP 8.2+. Required extensions: `curl`, `gd`, `mbstring`, `dom`, `gmp`, `mysqlnd`, `openssl`, `pcntl`, `posix`, `ssh2`. System packages: MariaDB 10.11 (or compatible MySQL), `graphviz`, `curl`, `dos2unix`. Web server: Apache 2.4 / Nginx with PHP 8.2, DocumentRoot on `App/Webroot/`.
+Target: PHP 8.2+. Required extensions: `curl`, `gd`, `mbstring`, `dom`, `gmp`, `mysqlnd`, `openssl`, `pcntl`, `posix`, `sodium`, `ssh2`. System packages: MariaDB 10.11 (or compatible MySQL), `graphviz`, `curl`, `dos2unix`. Web server: Apache 2.4 / Nginx with PHP 8.2, DocumentRoot on `App/Webroot/`.
 
 ## Test
 

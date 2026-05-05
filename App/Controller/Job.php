@@ -85,6 +85,7 @@ class Job extends Controller {
             } else {
                 $log = "";
             }
+            $log = Mydumper::redactPasswords($log);
             $log = Mydumper::ParseLog($converter->convert($log));
             $ob['log_msg'] = $log;
 
@@ -93,6 +94,7 @@ class Job extends Controller {
             } else {
                 $error = "";
             }
+            $error = Mydumper::redactPasswords($error);
             $error = Mydumper::ParseLog($converter->convert($error));
             $ob['error_msg'] = $error;
 

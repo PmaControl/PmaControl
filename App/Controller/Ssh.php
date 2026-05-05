@@ -287,6 +287,40 @@ class Ssh extends Controller
         return "SELECT " . self::SSH_KEY_SELECT_COLUMNS[$columns] . " FROM ssh_key WHERE id = " . $idSshKey;
     }
 
+    public static function buildSshKeysSql(?int $idSshKey = null): string
+    {
+        if ($idSshKey === null) {
+            return "SELECT * FROM `ssh_key`";
+        }
+
+        return "SELECT * FROM `ssh_key` WHERE id = ".$idSshKey;
+    }
+
+    public static function buildMysqlServerByIdSql(int $idMysqlServer): string
+    {
+        return "SELECT * FROM `mysql_server` WHERE `id`=".$idMysqlServer.";";
+    }
+
+    public static function normalizeSshKeyId($raw): ?int
+    {
+        return PositiveIntegerSelection::normalizeSingle($raw);
+    }
+
+    public static function normalizeTryAssociateParams(array $param): ?array
+    {
+        $idMysqlServer = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        $idSshKey = self::normalizeSshKeyId($param[1] ?? null);
+
+        if ($idMysqlServer === null || $idSshKey === null) {
+            return null;
+        }
+
+        return [
+            'id_mysql_server' => $idMysqlServer,
+            'id_ssh_key' => $idSshKey,
+        ];
+    }
+
     private static function buildSshSaveOutcome(int $statusCode, string $message, array $headers = []): array
     {
         return [
@@ -929,13 +963,16 @@ AND b.id NOT IN (select id from z)";
     {
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $where = "";
+        $normalizedSshKeyId = null;
 
-        if (!empty($id_ssh_key)) {
-            $where = " WHERE id = ".$id_ssh_key;
+        if ((string) $id_ssh_key !== "") {
+            $normalizedSshKeyId = self::normalizeSshKeyId($id_ssh_key);
+            if ($normalizedSshKeyId === null) {
+                throw new \InvalidArgumentException('Invalid SSH key id');
+            }
         }
 
-        $sql = "SELECT * FROM `ssh_key`".$where;
+        $sql = self::buildSshKeysSql($normalizedSshKeyId);
         $res = $db->sql_query($sql);
 
         $key = array();
@@ -970,15 +1007,25 @@ AND b.id NOT IN (select id from z)";
  */
     public function tryAssociate($param)
     {
-        if (! defined('NET_SSH2_LOGGING'))
-        {
-            define('NET_SSH2_LOGGING', 2);
-        }
         Debug::parseDebug($param);
 
+        if (! defined('NET_SSH2_LOGGING'))
+        {
+            define('NET_SSH2_LOGGING', Debug::$debug === true ? 2 : 0);
+        }
 
-        $id_mysql_server = $param[0];
-        $id_ssh_key      = $param[1];
+        $ids = self::normalizeTryAssociateParams($param);
+        if ($ids === null) {
+            $this->view = false;
+            if (!IS_CLI) {
+                http_response_code(400);
+            }
+            Debug::debug('Invalid SSH association identifiers', 'Ssh::tryAssociate');
+            return;
+        }
+
+        $id_mysql_server = $ids['id_mysql_server'];
+        $id_ssh_key      = $ids['id_ssh_key'];
 
         Debug::debug($id_mysql_server, "SERVER");
         Debug::debug($id_ssh_key, "KEY");
@@ -989,21 +1036,27 @@ AND b.id NOT IN (select id from z)";
         $db = Sgbd::sql(DB_DEFAULT);
 
 
-        $sql = "SELECT * FROM `mysql_server` WHERE `id`=".$id_mysql_server.";";
+        $sql = self::buildMysqlServerByIdSql($id_mysql_server);
         Debug::sql($sql);
 
         $res = $db->sql_query($sql);
+        $server = null;
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $server = $arr;
         }
 
-        $sql2 = "SELECT * FROM `ssh_key` WHERE `id`=".$id_ssh_key.";";
+        $sql2 = self::buildSshKeyByIdSql($id_ssh_key);
         Debug::sql($sql2);
         $res2 = $db->sql_query($sql2);
+        $key = null;
         while ($arr2 = $db->sql_fetch_array($res2, MYSQLI_ASSOC)) {
             $key = $arr2;
         }
 
+        if (!is_array($server) || !is_array($key)) {
+            Debug::debug('SSH association target not found', 'Ssh::tryAssociate');
+            return;
+        }
 
         $ip_port = $server['ip'].':'.$server['ssh_port'];
 
@@ -1045,7 +1098,9 @@ AND b.id NOT IN (select id from z)";
 
             //Debug($ssh, "ssh");
         }
-echo $ssh->getLog();
+        if (Debug::$debug === true) {
+            echo $ssh->getLog();
+        }
 
 
         $msg = ($login_successfull) ? "Successfull" : "Failed";

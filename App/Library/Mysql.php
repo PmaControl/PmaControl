@@ -13,6 +13,7 @@ use App\Library\Tag;
 use \Glial\Security\Crypt\Crypt;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Debug;
+use App\Library\Security\ForeignKeyRoute;
 use App\Controller\Dot3;
 
 /**
@@ -1289,6 +1290,21 @@ END IF;";
 
 
 /**
+ * Build the KEY_COLUMN_USAGE lookup used by getRealForeignKey.
+ */
+    public static function buildRealForeignKeyQuery($db, string $database): string
+    {
+        $databaseSql = $db->sql_real_escape_string($database);
+
+        return "SELECT CONSTRAINT_SCHEMA as constraint_schema,TABLE_NAME as constraint_table,COLUMN_NAME as constraint_column,"
+            ." REFERENCED_TABLE_SCHEMA as referenced_schema, REFERENCED_TABLE_NAME as referenced_table,REFERENCED_COLUMN_NAME as referenced_column"
+            ." FROM `information_schema`.`KEY_COLUMN_USAGE` "
+            ."WHERE `CONSTRAINT_SCHEMA` ='".$databaseSql."' "
+            ."AND `REFERENCED_TABLE_SCHEMA`='".$databaseSql."' "
+            ."AND `REFERENCED_TABLE_NAME` IS NOT NULL  ";
+    }
+
+/**
  * Retrieve mysql state through `getRealForeignKey`.
  *
  * This routine may read or mutate framework state, superglobals or persistence layers.
@@ -1314,17 +1330,17 @@ END IF;";
 
         Debug::parseDebug($param);
 
-        $id_mysql_server = $param[0];
-        $database        = $param[1];
+        $route = ForeignKeyRoute::normalize($param);
+        if ($route === null) {
+            return [];
+        }
+
+        $id_mysql_server = $route['id_mysql_server'];
+        $database        = $route['database'];
 
         $db = Mysql::getDbLink($id_mysql_server);
 
-        $sql = "SELECT CONSTRAINT_SCHEMA as constraint_schema,TABLE_NAME as constraint_table,COLUMN_NAME as constraint_column,"
-            ." REFERENCED_TABLE_SCHEMA as referenced_schema, REFERENCED_TABLE_NAME as referenced_table,REFERENCED_COLUMN_NAME as referenced_column"
-            ." FROM `information_schema`.`KEY_COLUMN_USAGE` "
-            ."WHERE `CONSTRAINT_SCHEMA` ='".$database."' "
-            ."AND `REFERENCED_TABLE_SCHEMA`='".$database."' "
-            ."AND `REFERENCED_TABLE_NAME` IS NOT NULL  ";
+        $sql = self::buildRealForeignKeyQuery($db, $database);
 
         Debug::sql($sql);
 

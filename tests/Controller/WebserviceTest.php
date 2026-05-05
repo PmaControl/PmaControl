@@ -71,6 +71,30 @@ final class WebserviceTest extends TestCase
         $this->assertStringNotContainsString('CsrfGuard::', $source);
     }
 
+    public function testPushServerRateLimitsBasicAuthFailures(): void
+    {
+        $source = file_get_contents(__DIR__ . '/../../App/Controller/Webservice.php');
+
+        $this->assertIsString($source);
+        $method = self::extractMethodSource($source, 'public function pushServer');
+
+        $this->assertStringContainsString('use App\\Library\\Security\\BasicAuthRateLimiter;', $source);
+        $this->assertStringContainsString('BasicAuthRateLimiter::check($db, $authUser, $remoteAddr)', $method);
+        $this->assertStringContainsString('BasicAuthRateLimiter::recordFailure($db, $authUser, $remoteAddr)', $method);
+        $this->assertStringContainsString('BasicAuthRateLimiter::clearFailures($db, $authUser, $remoteAddr)', $method);
+        $this->assertStringContainsString('self::pushServerRateLimitOutcome($rateLimit)', $method);
+        $this->assertStringContainsString('self::pushServerUnauthorizedOutcome($this->return)', $method);
+        $this->assertStringNotContainsString('$this->saveHistory(false, $jsonData);', $method);
+        $this->assertStringContainsString("'status' => 429", $source);
+        $this->assertStringContainsString("'Retry-After'", $source);
+
+        $rateLimitCheck = strpos($method, 'BasicAuthRateLimiter::check($db, $authUser, $remoteAddr)');
+        $credentialCheck = strpos($method, '$id_user_main = $this->checkCredentials');
+        $this->assertIsInt($rateLimitCheck);
+        $this->assertIsInt($credentialCheck);
+        $this->assertLessThan($credentialCheck, $rateLimitCheck);
+    }
+
     public function testCheckCredentialsUsesMutualizedConstantTimeComparison(): void
     {
         $source = file_get_contents(__DIR__ . '/../../App/Controller/Webservice.php');
@@ -159,6 +183,26 @@ final class WebserviceTest extends TestCase
             "COMMENT 'redacted legacy field; Basic Auth password is never stored'",
             $schema
         );
+    }
+
+    public function testWebserviceAuthFailureSchemaStoresRateLimitCounters(): void
+    {
+        $migration = file_get_contents(__DIR__ . '/../../sql/incremental_v2/20260502_webservice_basic_auth_rate_limit.sql');
+        $schema = file_get_contents(__DIR__ . '/../../sql/full/pmacontrol.sql');
+
+        $this->assertIsString($migration);
+        $this->assertStringContainsString('CREATE TABLE IF NOT EXISTS `webservice_auth_failure`', $migration);
+        $this->assertStringContainsString('`user` varchar(64)', $migration);
+        $this->assertStringContainsString('`remote_addr` varchar(45)', $migration);
+        $this->assertStringContainsString('`failure_count` int(11) NOT NULL DEFAULT 0', $migration);
+        $this->assertStringContainsString('UNIQUE KEY `uniq_webservice_auth_failure_user_remote` (`user`, `remote_addr`)', $migration);
+        $this->assertStringContainsString('KEY `idx_webservice_auth_failure_blocked_until` (`blocked_until`)', $migration);
+        $this->assertStringContainsString('DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin', $migration);
+
+        $this->assertIsString($schema);
+        $this->assertStringContainsString('CREATE TABLE `webservice_auth_failure`', $schema);
+        $this->assertStringContainsString('UNIQUE KEY `uniq_webservice_auth_failure_user_remote` (`user`,`remote_addr`)', $schema);
+        $this->assertStringContainsString('DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin', $schema);
     }
 
     public function testLegacyJsonCheckDelegatesToApiGuard(): void

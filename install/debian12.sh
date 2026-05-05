@@ -136,7 +136,11 @@ fi
 #mv composer.phar /usr/local/bin/composer
 
 #export COMPOSER_ALLOW_SUPERUSER=1
-sudo -u www-data composer install
+composer_install_args=(--no-dev --no-interaction --prefer-dist --optimize-autoloader)
+if [[ $DEV_MOD -eq 1 ]]; then
+    composer_install_args=(--no-interaction)
+fi
+sudo -u www-data composer install "${composer_install_args[@]}"
 
 
 service apache2 restart

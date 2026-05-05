@@ -18,6 +18,7 @@ use \App\Library\Debug;
 use \App\Library\Mysql;
 use App\Library\Http\HttpResponse;
 use App\Library\Security\CsrfGuard;
+use App\Library\Security\ForeignKeyRoute;
 use App\Library\Security\Identifier;
 use App\Library\Security\PositiveIntegerSelection;
 use App\Library\Security\SafeRedirect;
@@ -313,15 +314,21 @@ class ForeignKey extends Controller
 
         Debug::parseDebug($param);
 
-        $id_mysql_server = $param[0];
-        $table_name      = $param[2];
-        $database_name   = $param[1];
+        $route = self::normalizeServerDatabaseRoute($param);
+        if ($route === null || !is_scalar($param[2] ?? null)) {
+            return false;
+        }
+
+        $id_mysql_server = $route['id_mysql_server'];
+        $table_name      = trim((string) $param[2]);
+        $database_name   = $route['database'];
+        if ($table_name === '') {
+            return false;
+        }
 
         $db = Mysql::getDbLink($id_mysql_server);
 
-        $sql = "SELECT TABLE_SCHEMA, TABLE_NAME 
-        FROM `information_schema`.`tables` WHERE `TABLE_SCHEMA` = '".$database_name."' 
-        AND  LOWER(`TABLE_NAME`) = LOWER('".$table_name."');";
+        $sql = self::buildTableExistSql($db, $database_name, $table_name);
         $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql, $id_mysql_server, __METHOD__);
 
         $nb_tables = $db->sql_num_rows($res);
@@ -482,8 +489,7 @@ class ForeignKey extends Controller
         $database = $route['database'];
         $param = $route['param'];
 
-        $sql = "SELECT * FROM foreign_key_virtual WHERE id_mysql_server = ".$id_mysql_server." 
-        AND (constraint_schema ='".$database."' OR referenced_schema ='".$database."')";
+        $sql = self::buildForeignKeyCacheSelectSql($db, 'foreign_key_virtual', $id_mysql_server, $database);
         
         $res = $db->sql_query($sql);
 
@@ -517,12 +523,17 @@ class ForeignKey extends Controller
 
         Debug::parseDebug($param);
 
-        $id_mysql_server = $param[0];
-        $database_name   = $param[1];
+        $route = self::normalizeServerDatabaseRoute($param);
+        if ($route === null) {
+            return [];
+        }
+
+        $id_mysql_server = $route['id_mysql_server'];
+        $database_name   = $route['database'];
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT * FROM foreign_key_remove_prefix WHERE id_mysql_server='".$id_mysql_server."' AND database_name='".$database_name."'";
+        $sql = self::buildForeignKeyRemovePrefixSelectSql($db, $id_mysql_server, $database_name);
         $res = $db->sql_query($sql);
 
         $data['prefix'] = array();
@@ -610,8 +621,13 @@ class ForeignKey extends Controller
     {
         Debug::parseDebug($param);
 
-        $id_mysql_server = $param[0];
-        $database_name   = $param[1];
+        $route = self::normalizeServerDatabaseRoute($param);
+        if ($route === null || !is_scalar($param[2] ?? null)) {
+            return false;
+        }
+
+        $id_mysql_server = $route['id_mysql_server'];
+        $database_name   = $route['database'];
         $table_name      = $param[2];
 
         $all_prefix = $this->getPrefix($param);
@@ -1196,17 +1212,53 @@ class ForeignKey extends Controller
 
     public static function normalizeServerDatabaseRoute(array $param): ?array
     {
-        $idMysqlServer = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
-        $database = self::normalizeDatabaseName($param[1] ?? null);
-        if ($idMysqlServer === null || $database === null) {
-            return null;
+        return ForeignKeyRoute::normalize($param);
+    }
+
+    public static function buildForeignKeyCacheSelectSql(
+        $db,
+        string $tableName,
+        int $idMysqlServer,
+        string $database,
+        bool $ordered = false
+    ): string {
+        $allowedTables = [
+            'foreign_key_virtual',
+            'foreign_key_real',
+            'foreign_key_proposal',
+            'foreign_key_blacklist',
+        ];
+        if (!in_array($tableName, $allowedTables, true)) {
+            throw new \InvalidArgumentException('Invalid foreign-key cache table.');
         }
 
-        return [
-            'id_mysql_server' => $idMysqlServer,
-            'database' => $database,
-            'param' => [$idMysqlServer, $database],
-        ];
+        $databaseSql = $db->sql_real_escape_string($database);
+        $sql = "SELECT * FROM ".$tableName." WHERE id_mysql_server = ".$idMysqlServer
+            ." AND (constraint_schema ='".$databaseSql."' OR referenced_schema ='".$databaseSql."')";
+
+        if ($ordered) {
+            $sql .= " ORDER BY id_mysql_server, constraint_schema,constraint_table, constraint_column";
+        }
+
+        return $sql;
+    }
+
+    public static function buildForeignKeyRemovePrefixSelectSql($db, int $idMysqlServer, string $database): string
+    {
+        $databaseSql = $db->sql_real_escape_string($database);
+
+        return "SELECT * FROM foreign_key_remove_prefix WHERE id_mysql_server=".$idMysqlServer
+            ." AND database_name='".$databaseSql."'";
+    }
+
+    public static function buildTableExistSql($db, string $database, string $table): string
+    {
+        $databaseSql = $db->sql_real_escape_string($database);
+        $tableSql = $db->sql_real_escape_string($table);
+
+        return "SELECT TABLE_SCHEMA, TABLE_NAME "
+            ."FROM `information_schema`.`tables` WHERE `TABLE_SCHEMA` = '".$databaseSql."' "
+            ."AND  LOWER(`TABLE_NAME`) = LOWER('".$tableSql."');";
     }
 
     private static function resolvePositiveIntegerMutationId(array $param, array $post, bool $isCli): ?int
@@ -1479,8 +1531,7 @@ class ForeignKey extends Controller
 
         $db = Mysql::getDbLink($id_mysql_server);
 
-        $sql = "SELECT * FROM `foreign_key_real` WHERE id_mysql_server = ".$id_mysql_server." AND "
-            ." (constraint_schema = '".$database."' OR 	referenced_schema = '".$database."')";
+        $sql = self::buildForeignKeyCacheSelectSql($db, 'foreign_key_real', $id_mysql_server, $database);
 
         Debug::sql($sql);
 
@@ -1533,8 +1584,9 @@ class ForeignKey extends Controller
 
         if ($database !== false)
         {
-            $sql .= " AND `REFERENCED_TABLE_SCHEMA`='".$database."' "
-            ." AND `CONSTRAINT_SCHEMA` ='".$database."' ";
+            $databaseSql = $db->sql_real_escape_string($database);
+            $sql .= " AND `REFERENCED_TABLE_SCHEMA`='".$databaseSql."' "
+            ." AND `CONSTRAINT_SCHEMA` ='".$databaseSql."' ";
         }
 
         Debug::sql($sql);
@@ -1543,7 +1595,8 @@ class ForeignKey extends Controller
         
         if ($database !== false)
         {
-            $sql2 .=" AND (constraint_table ='".$database."' OR referenced_table ='".$database."')";
+            $databaseSql = $default->sql_real_escape_string($database);
+            $sql2 .=" AND (constraint_table ='".$databaseSql."' OR referenced_table ='".$databaseSql."')";
         }
         Debug::sql($sql2);
 
@@ -1663,9 +1716,7 @@ class ForeignKey extends Controller
         $database = $route['database'];
         $param = $route['param'];
 
-        $sql = "SELECT * FROM foreign_key_virtual WHERE id_mysql_server = ".$id_mysql_server." 
-        AND (constraint_schema ='".$database."' OR referenced_schema ='".$database."')
-        ORDER BY id_mysql_server, constraint_schema,constraint_table, constraint_column";
+        $sql = self::buildForeignKeyCacheSelectSql($db, 'foreign_key_virtual', $id_mysql_server, $database, true);
         
         $res = $db->sql_query($sql);
 
@@ -1722,9 +1773,7 @@ class ForeignKey extends Controller
 
         $_GET['mysql_server']['id'] = $id_mysql_server;
 
-        $sql = "SELECT * FROM foreign_key_real WHERE id_mysql_server = ".$id_mysql_server." 
-        AND (constraint_schema ='".$database."' OR referenced_schema ='".$database."') 
-        ORDER BY id_mysql_server, constraint_schema,constraint_table, constraint_column";
+        $sql = self::buildForeignKeyCacheSelectSql($db, 'foreign_key_real', $id_mysql_server, $database, true);
         
         $res = $db->sql_query($sql);
 
@@ -1783,9 +1832,7 @@ class ForeignKey extends Controller
         $database = $route['database'];
         $param = $route['param'];
 
-        $sql = "SELECT * FROM foreign_key_proposal WHERE id_mysql_server = ".$id_mysql_server." 
-        AND (constraint_schema ='".$database."' OR referenced_schema ='".$database."') 
-        ORDER BY id_mysql_server, constraint_schema,constraint_table, constraint_column";
+        $sql = self::buildForeignKeyCacheSelectSql($db, 'foreign_key_proposal', $id_mysql_server, $database, true);
         
         $res = $db->sql_query($sql);
 
@@ -1842,9 +1889,7 @@ class ForeignKey extends Controller
         $database = $route['database'];
         $param = $route['param'];
 
-        $sql = "SELECT * FROM foreign_key_blacklist WHERE id_mysql_server = ".$id_mysql_server." 
-        AND (constraint_schema ='".$database."' OR referenced_schema ='".$database."') 
-        ORDER BY id_mysql_server, constraint_schema,constraint_table, constraint_column";
+        $sql = self::buildForeignKeyCacheSelectSql($db, 'foreign_key_blacklist', $id_mysql_server, $database, true);
         
         $res = $db->sql_query($sql);
 

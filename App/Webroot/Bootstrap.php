@@ -39,6 +39,7 @@ use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 use App\Library\Security\CookieSecurity;
+use App\Library\Security\PersistentAuthSession;
 use App\Library\Security\RouteExposurePolicy;
 use Glial\Synapse\Glial;
 
@@ -57,6 +58,17 @@ if (!IS_CLI) {
 $config = new Config;
 $config->load(CONFIG);
 FactoryController::addDi("config", $config);
+
+// Issue #746: Apache mod_php and the daemon CLI may run different PHP builds
+// (e.g. mod_php on 8.2 with date.timezone=Europe/Paris vs /usr/bin/php → 8.5
+// with date.timezone unset, defaulting to UTC). When that drift happens,
+// Integrate writes ts_value_* timestamps in UTC while Extraction::extract
+// filters with NOW() in CEST, and "last hour" graph windows silently return
+// zero rows. Force the same effective timezone in every PHP process that
+// boots through this file, regardless of php.ini.
+\App\Library\Bootstrap\TimezoneAligner::apply(
+    defined('PMACONTROL_TIMEZONE') ? PMACONTROL_TIMEZONE : null
+);
 
 $log = new Logger('Glial');
 
@@ -195,12 +207,23 @@ if (IS_CLI) {
 
         $auth->setLog($log);
 
-        //not used yet
-        $auth->setFctToHashCookie(function ($password) {
-            return password_hash($password.$_SERVER['HTTP_USER_AGENT'].$_SERVER['REMOTE_ADDR'], PASSWORD_DEFAULT);
-        });
-
-        $is_auth = $auth->authenticate(false);
+        $persistentAuth = PersistentAuthSession::authenticate(
+            $auth,
+            Sgbd::sql(DB_DEFAULT),
+            $_COOKIE,
+            $_SERVER,
+            $cookieTrustedProxies ?? []
+        );
+        $legacyPersistentAuth = !$persistentAuth && PersistentAuthSession::hasLegacyCookies($_COOKIE);
+        $is_auth = $persistentAuth || $auth->authenticate(false);
+        if ($legacyPersistentAuth && $is_auth) {
+            PersistentAuthSession::issueForAuthenticatedUser(
+                $auth,
+                Sgbd::sql(DB_DEFAULT),
+                $_SERVER,
+                $cookieTrustedProxies ?? []
+            );
+        }
 
 
         FactoryController::addDi("auth", $auth);

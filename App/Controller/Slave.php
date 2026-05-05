@@ -428,59 +428,77 @@ class Slave extends Controller
  */
     private function generateGraph($slaves)
     {
-        $this->di['js']->addJavascript(array("moment.js", "chart-4.5.1.umd.min.js", "chartjs-adapter-moment.min.js"));
+        // Issue #742: per-replica sparkline drawn directly on the 160×17
+        // canvas with the raw 2D context. Chart.js v4 silently fails to lay
+        // out a chart in a 17px-tall canvas (axis/legend hidden, but the
+        // internal layout box still collapses), and the time-scale variant
+        // additionally needed chartjs-adapter-moment. Native canvas drawing
+        // sidesteps both problems and removes a few hundred kB of JS.
+        if (empty($slaves)) {
+            return;
+        }
 
-        if (!empty($slaves)) {
-            foreach ($slaves as $slave) {
-
-                $this->di['js']->code_javascript('
-(function() {
-Chart.defaults.plugins.legend.display = false;
-
-var canvas = document.getElementById("myChart'.$slave['id_mysql_server'].crc32($slave['connection_name']).'");
-if (!canvas) return;
-var existing = Chart.getChart(canvas);
-if (existing) existing.destroy();
-var ctx = canvas.getContext("2d");
-
-new Chart(ctx, {
-    type: "line",
-    data: {
-        datasets: [{
-            fill: true,
-            backgroundColor: "rgba(22,40,90,0.3)",
-            data: ['.$slave['graph'].'],
-            borderColor: "rgba(0,0,0,1)",
-            borderWidth: 2,
-            pointRadius: 0,
-            tension: 0
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            tooltip: { enabled: false },
-            legend: { display: false }
-        },
-        scales: {
-            x: {
-                type: "time",
-                display: false,
-                grid: { display: false }
-            },
-            y: {
-                display: false,
-                min: 0,
-                grid: { display: false }
+        foreach ($slaves as $slave) {
+            $values = self::extractSparklineYValues((string) ($slave['graph'] ?? ''));
+            if (empty($values)) {
+                continue;
             }
+            $valuesJs = '[' . implode(',', $values) . ']';
+            $canvasId = 'myChart' . $slave['id_mysql_server'] . crc32($slave['connection_name']);
+
+            $this->di['js']->code_javascript('
+try{(function(){
+var id="'.$canvasId.'";
+var c=document.getElementById(id);
+if(!c){console.warn("[spark] canvas missing",id);return;}
+if(!c.getContext){console.warn("[spark] no getContext",id);return;}
+var d='.$valuesJs.';
+var ctx=c.getContext("2d");
+var w=c.width,h=c.height;
+var rect=c.getBoundingClientRect();
+console.log("[spark]",id,"w=",w,"h=",h,"rect=",rect.width+"x"+rect.height,"n=",d.length);
+ctx.clearRect(0,0,w,h);
+var n=d.length,mx=0;
+for(var i=0;i<n;i++){var v=d[i];if(v!==null&&v>mx)mx=v;}
+if(mx<=0)mx=1;
+function px(i){return n>1?(i/(n-1))*(w-1):0;}
+function py(v){if(v===null)return null;return (h-1)-(v/mx)*(h-1);}
+ctx.beginPath();ctx.moveTo(0,h);
+var started=false;
+for(var i=0;i<n;i++){var y=py(d[i]);if(y===null)continue;var x=px(i);if(!started){ctx.lineTo(x,h);ctx.lineTo(x,y);started=true;}else{ctx.lineTo(x,y);}}
+ctx.lineTo(w,h);ctx.closePath();
+ctx.fillStyle="rgba(22,40,90,0.3)";ctx.fill();
+ctx.beginPath();started=false;
+for(var i=0;i<n;i++){var y=py(d[i]);if(y===null){started=false;continue;}var x=px(i);if(!started){ctx.moveTo(x,y);started=true;}else{ctx.lineTo(x,y);}}
+ctx.strokeStyle="rgba(0,0,0,1)";ctx.lineWidth=1;ctx.stroke();
+})();}catch(e){console.error("[spark] failed",e);}
+');
         }
     }
-});
-})();
-');
+
+    /**
+     * Pull the y values out of the "{x:new Date('…'),y:N},{x:…,y:M}" payload
+     * emitted by Extraction::extract($graph=true). Numbers are kept as numeric
+     * strings; NULL or missing values become "null" so Chart.js draws a gap
+     * at the right index.
+     *
+     * @return array<int,string>
+     */
+    private static function extractSparklineYValues(string $graphPayload): array
+    {
+        if ($graphPayload === '') {
+            return [];
+        }
+
+        $values = [];
+        if (preg_match_all('/y:([^},]+)/', $graphPayload, $matches)) {
+            foreach ($matches[1] as $raw) {
+                $raw = trim($raw);
+                $values[] = is_numeric($raw) ? (string) (float) $raw : 'null';
             }
         }
+
+        return $values;
     }
 
 /**

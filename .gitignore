@@ -16,4 +16,4 @@ packages.json
 .vscode/
 .claude/
 script/__pycache__/
-.env
+.env*

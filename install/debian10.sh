@@ -1,6 +1,8 @@
 #!/bin/bash
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=install/lib/harden_apache.sh
+. "${SCRIPT_DIR}/lib/harden_apache.sh"
 # shellcheck source=install/lib/install_secrets.sh
 . "${SCRIPT_DIR}/lib/install_secrets.sh" || exit 1
 trap cleanup_install_ssh_key EXIT
@@ -9,6 +11,7 @@ trap 'cleanup_install_ssh_key; exit 130' INT
 trap 'cleanup_install_ssh_key; exit 143' TERM
 
 password=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
+PMACTRL_HARDEN_APACHE_DOCROOT="${PMACTRL_HARDEN_APACHE_DOCROOT:-1}"
 
 apt-get update
 apt-get -y upgrade
@@ -62,6 +65,7 @@ sed -i 's/\/var\/www/\/srv\/www/g' /etc/apache2/apache2.conf
 sed -i 's/\/var\/www\/html/\/srv\/www/g' /etc/apache2/sites-enabled/000-default.conf
 
 awk '/AllowOverride/ && ++i==3 {sub(/None/,"All")}1' /etc/apache2/apache2.conf > /tmp/xfgh && mv /tmp/xfgh /etc/apache2/apache2.conf
+pmactrl_harden_apache_docroot
 
 mkdir -p /srv/www/
 cd /srv/www/
@@ -86,7 +90,11 @@ cd pmacontrol
 git pull origin develop
 git config core.fileMode false
 
-composer install -n
+composer_install_args=(--no-dev --no-interaction --prefer-dist --optimize-autoloader)
+if [[ "${PMACTRL_INSTALL_DEV_DEPS:-0}" == "1" ]]; then
+  composer_install_args=(--no-interaction)
+fi
+composer install "${composer_install_args[@]}"
 
 service apache2 restart
 

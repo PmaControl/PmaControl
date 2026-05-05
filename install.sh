@@ -195,7 +195,11 @@ if test -f ./vendor/glial/glial/Glial/Bootstrap.php; then
 else
     echo "File /vendor/glial/glial/Glial/Bootstrap.php doesn't exist!"
     composer -V foo >/dev/null 2>&1 || { echo >&2 "PmaControl require composer but it's not installed.  Aborting."; echo "To install composer : ";echo ""; echo "        curl -sS https://getcomposer.org/installer | php";  echo "        \$ mv composer.phar /usr/local/bin/composer"; echo ""; exit 1;}
-    composer install
+    composer_install_args=(--no-dev --no-interaction --prefer-dist --optimize-autoloader)
+    if [ "${PMACTRL_INSTALL_DEV_DEPS:-0}" = "1" ]; then
+        composer_install_args=(--no-interaction)
+    fi
+    composer install "${composer_install_args[@]}"
     echo "Composer Installed !"
 fi
 

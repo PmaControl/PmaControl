@@ -97,4 +97,33 @@ final class ExtractionTest extends TestCase
 
         $this->assertSame(4, $count);
     }
+
+    /**
+     * Regression coverage for issue #742.
+     *
+     * The graph payload feeds Chart.js via `data: [{x:new Date('...'),y:...},…]`.
+     * The "YYYY-MM-DD HH:MM:SS" form returned by raw `t.\`date\`` is only
+     * conditionally accepted by `Date(string)` per ECMA-262 — V8 tolerates it,
+     * other engines or future versions may emit Invalid Date silently and the
+     * curve disappears (Chart.js skips NaN). Wrap in DATE_FORMAT to emit strict
+     * ISO 8601 with a `T` separator.
+     */
+    public function testGraphSqlEmitsIso8601DatesForChartJsConsumption(): void
+    {
+        $source = (string) file_get_contents(
+            __DIR__ . '/../../App/Library/Extraction.php'
+        );
+
+        $this->assertStringContainsString(
+            "DATE_FORMAT(t.`date`, '%Y-%m-%dT%H:%i:%s')",
+            $source,
+            'group_concat must wrap the date in DATE_FORMAT to produce strict ISO 8601 (issue #742).'
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            "/concat\\('\\{x:new Date\\(\\\\'',\\s*t\\.`date`\\s*,\\s*'\\\\'\\)/",
+            $source,
+            'Legacy non-ISO concat(\'{x:new Date(\\\'\', t.`date`, …) must not come back '
+            . '— it produced silent Invalid Date entries on /slave/index after the Chart.js v4 migration.'
+        );
+    }
 }

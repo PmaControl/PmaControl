@@ -1384,13 +1384,32 @@ class Dot3 extends Controller
         }
 
         $db = Sgbd::sql(DB_DEFAULT, "RUN");
-        $db->sql_query(self::buildMarkSvgGeneratedSql($id_dot3_information));
+        foreach (self::buildMarkSvgGeneratedStatements($id_dot3_information) as $sql) {
+            $db->sql_query($sql);
+        }
     }
 
     private static function buildMarkSvgGeneratedSql(int $id_dot3_information): string
     {
         return "UPDATE dot3_information SET is_svg_generated = " . $id_dot3_information
             . " WHERE id = " . $id_dot3_information;
+    }
+
+    /**
+     * @return array<int,string>
+     *
+     * Why: saveGraph() leaves the shared "RUN" connection with AUTOCOMMIT=0, and the
+     * daemon launches each Dot3 cycle as a one-shot PHP process — without an explicit
+     * COMMIT here the UPDATE is rolled back on process exit and is_svg_generated never
+     * persists, so Architecture::buildLatestReadyDot3InformationSql() always falls back
+     * to the previous (stale) snapshot.
+     */
+    private static function buildMarkSvgGeneratedStatements(int $id_dot3_information): array
+    {
+        return [
+            self::buildMarkSvgGeneratedSql($id_dot3_information),
+            'COMMIT',
+        ];
     }
 
     public function renderImportedGraphs(array $dot3Information): array
@@ -2067,7 +2086,12 @@ class Dot3 extends Controller
 
     }
 
-    private function isMutualMasterReplication(array $servers, int $idMaster, int $idSlave, int $idDot3Information): bool
+    /**
+     * @param int|string $idDot3Information Numeric snapshot id, or virtual
+     *        "import:<md5>" id forwarded by renderImportedGraphGroup() through
+     *        the Cluster::viewDot preview_key flow (#757).
+     */
+    private function isMutualMasterReplication(array $servers, int $idMaster, int $idSlave, $idDot3Information): bool
     {
         if ($idMaster <= 0 || $idSlave <= 0 || empty($servers[$idMaster]['@slave'])) {
             return false;
@@ -2833,9 +2857,15 @@ class Dot3 extends Controller
             $server = $dot3_information['information']['servers'][$id_mysql_server];
             $is_vip_server = $this->isVipServer($server);
 
-            //consideringg if we don't have the version of server, this server is too old and we don't have fresh data to display.
-            if (empty($server['version']) && ! $is_vip_server)
-            {
+            // Issue #735: a monitored server that is unreachable for longer than the
+            // ts_value_general_text retention window keeps `mysql_available=0` and
+            // `mysql_error` fresh, but its `version` was purged from the partition.
+            // Skipping on missing `version` alone made these nodes silently disappear
+            // from /architecture/index. Skip only when we have nothing to display.
+            $hasMonitoringSignal = !empty($server['version'])
+                || isset($server['mysql_available'])
+                || !empty($server['mysql_error']);
+            if (!$hasMonitoringSignal && !$is_vip_server) {
                 continue;
             }
 

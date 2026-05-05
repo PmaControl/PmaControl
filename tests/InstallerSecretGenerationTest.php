@@ -29,11 +29,7 @@ final class InstallerSecretGenerationTest extends TestCase
     public function testTrackedNonFixtureFilesDoNotEmbedPrivateKeyMaterial(): void
     {
         $root = dirname(__DIR__);
-        $files = [];
-        $exitCode = 0;
-        exec('git -C ' . escapeshellarg($root) . ' ls-files', $files, $exitCode);
-
-        $this->assertSame(0, $exitCode);
+        $files = self::trackedFilesOrSkip($root);
 
         $privateKeyMarkerRegex = '/-----' . 'BEGIN (?:[A-Z0-9 ]+ )?PRIVATE KEY-----/';
         $legacyPrivateKeyPrefix = 'MIIJKQIBAAKCAgEA' . 'sLxsW';
@@ -61,6 +57,33 @@ final class InstallerSecretGenerationTest extends TestCase
             $this->assertStringNotContainsString($legacyPrivateKeyPrefix, $content, $path);
             $this->assertStringNotContainsString($legacyPublicKeyPrefix, $content, $path);
         }
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function trackedFilesOrSkip(string $root): array
+    {
+        if (!is_dir($root . '/.git') && !is_file($root . '/.git')) {
+            self::markTestSkipped('Git metadata is not available; tracked file secret scan requires git ls-files.');
+        }
+
+        $files = [];
+        $output = [];
+        $exitCode = 0;
+        exec('git -C ' . escapeshellarg($root) . ' ls-files 2>&1', $output, $exitCode);
+
+        if ($exitCode !== 0) {
+            self::markTestSkipped('Unable to list tracked files with git ls-files: ' . implode("\n", $output));
+        }
+
+        foreach ($output as $path) {
+            if ($path !== '') {
+                $files[] = $path;
+            }
+        }
+
+        return $files;
     }
 
     public function testSharedInstallSecretHelperGeneratesPasswordsAtInstallTime(): void

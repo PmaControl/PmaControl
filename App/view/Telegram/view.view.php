@@ -1,6 +1,11 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 $bot = $data['bot'] ?? [];
+$telegramDeleteCsrfField = CsrfRender::field($data, 'telegram_delete');
+$telegramDeleteCsrfToken = CsrfRender::token($data, 'telegram_delete');
+$deleteConfirm = htmlspecialchars(__("Delete this bot?"), ENT_QUOTES, 'UTF-8');
 
 echo '<div class="row">';
 echo '<div class="col-md-8">';
@@ -17,7 +22,11 @@ echo '</table>';
 
 echo '<div class="btn-group">';
 echo '<a class="btn btn-default" href="'.LINK.'telegram/index">'.__("Back to list").'</a>';
-echo '<a class="btn btn-danger" href="'.LINK.'telegram/delete/'.$bot['id'].'?redirect=telegram/index" onclick="return confirm(\''.__("Delete this bot?").'\');">'.__("Delete").'</a>';
+echo '<form method="post" action="'.LINK.'telegram/delete/'.(int)$bot['id'].'" style="display:inline" data-confirm="'.$deleteConfirm.'" onsubmit="return confirm(this.getAttribute(\'data-confirm\'));">';
+echo '<input type="hidden" name="'.$telegramDeleteCsrfField.'" value="'.$telegramDeleteCsrfToken.'">';
+echo '<input type="hidden" name="id_telegram_bot" value="'.(int)$bot['id'].'">';
+echo '<button type="submit" class="btn btn-danger">'.__("Delete").'</button>';
+echo '</form>';
 echo '</div>';
 
 echo '</div>';

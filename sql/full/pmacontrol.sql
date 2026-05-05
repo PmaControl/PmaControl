@@ -175404,6 +175404,8 @@ CREATE TABLE `plugin_main` (
   `fichier` varchar(255) NOT NULL,
   `date_installation` datetime NOT NULL,
   `md5_zip` varchar(32) NOT NULL,
+  `sha256_zip` char(64) NOT NULL DEFAULT '',
+  `signature_zip` text DEFAULT NULL,
   `version` char(10) NOT NULL,
   `est_actif` int(11) NOT NULL DEFAULT 0,
   `type_licence` varchar(50) NOT NULL,
@@ -176076,6 +176078,35 @@ CREATE TABLE `user_main` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `user_persistent_auth_session`
+--
+
+DROP TABLE IF EXISTS `user_persistent_auth_session`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `user_persistent_auth_session` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `id_user_main` int(11) NOT NULL,
+  `selector` char(32) NOT NULL,
+  `token_hash` char(64) NOT NULL,
+  `user_agent_hash` char(64) DEFAULT NULL,
+  `ip_hash` char(64) DEFAULT NULL,
+  `date_created` datetime NOT NULL,
+  `date_last_used` datetime DEFAULT NULL,
+  `date_expires` datetime NOT NULL,
+  `date_absolute_expires` datetime NOT NULL,
+  `date_revoked` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_user_persistent_auth_selector` (`selector`),
+  KEY `idx_user_persistent_auth_user` (`id_user_main`),
+  KEY `idx_user_persistent_auth_expires` (`date_expires`),
+  KEY `idx_user_persistent_auth_absolute_expires` (`date_absolute_expires`),
+  KEY `idx_user_persistent_auth_active` (`id_user_main`,`date_revoked`,`date_expires`),
+  CONSTRAINT `user_persistent_auth_session_ibfk_1` FOREIGN KEY (`id_user_main`) REFERENCES `user_main` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `user_main_login`
 --
 
@@ -176161,6 +176192,28 @@ CREATE TABLE `webservice_history_main` (
   KEY `id_user_main` (`id_user_main`),
   CONSTRAINT `webservice_history_main_ibfk_1` FOREIGN KEY (`id_user_main`) REFERENCES `user_main` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `webservice_auth_failure`
+--
+
+DROP TABLE IF EXISTS `webservice_auth_failure`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `webservice_auth_failure` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `remote_addr` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `failure_count` int(11) NOT NULL DEFAULT 0,
+  `window_started_at` datetime NOT NULL,
+  `last_failed_at` datetime NOT NULL,
+  `blocked_until` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_webservice_auth_failure_user_remote` (`user`,`remote_addr`),
+  KEY `idx_webservice_auth_failure_blocked_until` (`blocked_until`),
+  KEY `idx_webservice_auth_failure_last_failed_at` (`last_failed_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
