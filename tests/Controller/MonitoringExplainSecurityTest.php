@@ -49,12 +49,8 @@ final class MonitoringExplainSecurityTest extends TestCase
         self::assertSame(400, $badDigest['status']);
     }
 
-    public function testExplainSqlBuildersUseTypedInputs(): void
+    public function testExplainDigestSqlBuilderUsesTypedInputs(): void
     {
-        self::assertSame(
-            'SELECT * FROM mysql_server where id= 7',
-            Monitoring::buildExplainServerSql(7)
-        );
         self::assertSame(
             "select * from performance_schema.events_statements_history_long where DIGEST='0123456789ABCDEF'",
             Monitoring::buildExplainDigestSql('0123456789ABCDEF')
@@ -79,14 +75,16 @@ final class MonitoringExplainSecurityTest extends TestCase
         $explain = self::extractMethodSource($controller, 'public function explain');
 
         self::assertStringContainsString('use App\\Library\\Security\\PositiveIntegerSelection;', $controller);
+        self::assertStringContainsString('use App\\Library\\Mysql;', $controller);
         self::assertStringContainsString('evaluateExplainRequest($_GET, $_SERVER)', $explain);
-        self::assertStringContainsString('buildExplainServerSql($idMysqlServer)', $explain);
+        self::assertStringContainsString('Mysql::getDbLink($idMysqlServer)', $explain);
         self::assertStringContainsString('buildExplainDigestSql($digest)', $explain);
-        self::assertStringContainsString('sendExplainError($outcome)', $explain);
+        self::assertStringContainsString('sendExplainError', $explain);
         self::assertStringNotContainsString('$_GET[\'mysql_server\'][\'id\']', $explain);
         self::assertStringNotContainsString('$_GET[\'digest\']', $explain);
         self::assertStringNotContainsString('where DIGEST=\'".$_GET', $controller);
         self::assertStringNotContainsString('where id= ".$_GET', $controller);
+        self::assertStringNotContainsString('SELECT * FROM mysql_server where id', $controller);
     }
 
     private function legacyServerSql(string $idMysqlServer): string

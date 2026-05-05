@@ -7,6 +7,7 @@ use \Glial\Html\Pagination\Pagination;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Debug;
 use App\Library\Http\HttpResponse;
+use App\Library\Mysql;
 use App\Library\Security\PositiveIntegerSelection;
 
 /**
@@ -504,11 +505,6 @@ class Monitoring extends Controller
         return strtoupper($digest);
     }
 
-    public static function buildExplainServerSql(int $idMysqlServer): string
-    {
-        return "SELECT * FROM mysql_server where id= ".$idMysqlServer;
-    }
-
     public static function buildExplainDigestSql(string $digest): string
     {
         return "select * from performance_schema.events_statements_history_long where DIGEST='".$digest."'";
@@ -549,15 +545,9 @@ class Monitoring extends Controller
         $idMysqlServer = (int)$outcome['id_mysql_server'];
         $digest = (string)$outcome['digest'];
 
-        $db  = Sgbd::sql(DB_DEFAULT);
-        $sql = self::buildExplainServerSql($idMysqlServer);
-        $res = $db->sql_query($sql);
-        $remote = null;
-        while ($ob  = $db->sql_fetch_object($res)) {
-            $remote = Sgbd::sql($ob->name);
-        }
-
-        if ($remote === null) {
+        try {
+            $remote = Mysql::getDbLink($idMysqlServer);
+        } catch (\Throwable $e) {
             $this->sendExplainError([
                 'status' => 404,
                 'body' => 'Monitoring server not found.',
@@ -608,21 +598,11 @@ class Monitoring extends Controller
  */
     private function getServer()
     {
-        $db = Sgbd::sql(DB_DEFAULT);
-
         $idMysqlServer = self::normalizeExplainServerId($_GET['mysql_server']['id'] ?? null);
         if ($idMysqlServer === null) {
             throw new \InvalidArgumentException('Invalid monitoring server id');
         }
 
-        $sql = self::buildExplainServerSql($idMysqlServer);
-
-        $res = $db->sql_query($sql);
-
-        while ($ob = $db->sql_fetch_object($res)) {
-            $remote = Sgbd::sql($ob->name);
-        }
-
-        return $remote;
+        return Mysql::getDbLink($idMysqlServer);
     }
 }
