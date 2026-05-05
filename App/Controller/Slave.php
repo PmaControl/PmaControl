@@ -406,36 +406,6 @@ class Slave extends Controller
     }
 
 /**
- * Issue #742 diagnostic action: render the same per-replica sparkline data
- * Slave/index uses, in a stripped-down HTML page with no CSS and no layout.
- * If the canvas draws here but not on /slave/index, the bug is in the index
- * layout (CSS, table sizing, …); if it doesn't draw here either, it's the
- * canvas drawing path itself.
- */
-    public function testSlave()
-    {
-        $this->layout_name = false;
-
-        $slaves = Extraction::extract($this->getReplicationLagVariables(), array(), "1 hour", false, true);
-        $slaves = $this->normalizeReplicationLagGraphRows($slaves ?: []);
-
-        $rows = [];
-        foreach ($slaves as $slave) {
-            $values = self::extractSparklineYValues((string) ($slave['graph'] ?? ''));
-            if (empty($values)) {
-                continue;
-            }
-            $rows[] = [
-                'id_mysql_server' => $slave['id_mysql_server'],
-                'connection_name' => $slave['connection_name'] ?? '',
-                'values'          => $values,
-            ];
-        }
-
-        $this->set('rows', $rows);
-    }
-
-/**
  * Handle slave state through `generateGraph`.
  *
  * This routine may read or mutate framework state, superglobals or persistence layers.

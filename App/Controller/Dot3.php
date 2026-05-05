@@ -2086,7 +2086,12 @@ class Dot3 extends Controller
 
     }
 
-    private function isMutualMasterReplication(array $servers, int $idMaster, int $idSlave, int $idDot3Information): bool
+    /**
+     * @param int|string $idDot3Information Numeric snapshot id, or virtual
+     *        "import:<md5>" id forwarded by renderImportedGraphGroup() through
+     *        the Cluster::viewDot preview_key flow (#757).
+     */
+    private function isMutualMasterReplication(array $servers, int $idMaster, int $idSlave, $idDot3Information): bool
     {
         if ($idMaster <= 0 || $idSlave <= 0 || empty($servers[$idMaster]['@slave'])) {
             return false;
