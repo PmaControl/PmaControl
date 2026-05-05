@@ -65,6 +65,7 @@ if [[ "${OS_KEY}" == "ubuntu-26.04" ]]; then
     PMACTRL_GIT_BRANCH="${GITHUB_REF_NAME:-commercial}" \
     PMACTRL_FORCE_REINSTALL=0 \
     PMACTRL_RUN_PHPUNIT=0 \
+    PMACTRL_SKIP_UPGRADE=1 \
     bash install/ubuntu26.04.sh
 
     HTTP_CODE="$(curl -s -o /tmp/pmacontrol-home.html -w '%{http_code}' http://127.0.0.1/pmacontrol/ || true)"
