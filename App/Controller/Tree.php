@@ -156,29 +156,48 @@ class Tree extends Controller
         return PositiveIntegerSelection::normalizeSingle($get['menu']['id']);
     }
 
-    public static function normalizeRoutePositiveInteger(array $param, int $offset, ?int $fallback = null): ?int
+    public static function normalizeRoutePositiveInteger($param, int $offset, ?int $fallback = null): ?int
     {
-        if (! array_key_exists($offset, $param) || $param[$offset] === '') {
+        $routeParams = self::normalizeRouteParameters($param);
+        if (! array_key_exists($offset, $routeParams) || $routeParams[$offset] === '') {
             return $fallback;
         }
 
-        return PositiveIntegerSelection::normalizeSingle($param[$offset]);
+        return PositiveIntegerSelection::normalizeSingle($routeParams[$offset]);
     }
 
     /**
      * @return int|string|null Returns the legacy string NULL for root node creation.
      */
-    public static function normalizeRouteTreeParentId(array $param, int $offset)
+    public static function normalizeRouteTreeParentId($param, int $offset)
     {
-        if (! array_key_exists($offset, $param)) {
+        $routeParams = self::normalizeRouteParameters($param);
+        if (! array_key_exists($offset, $routeParams)) {
             return null;
         }
 
-        if (is_scalar($param[$offset]) && strtoupper(trim((string) $param[$offset])) === 'NULL') {
+        if (is_scalar($routeParams[$offset]) && strtoupper(trim((string) $routeParams[$offset])) === 'NULL') {
             return 'NULL';
         }
 
-        return self::normalizeRoutePositiveInteger($param, $offset);
+        return self::normalizeRoutePositiveInteger($routeParams, $offset);
+    }
+
+    private static function normalizeRouteParameters($param): array
+    {
+        if (is_array($param)) {
+            return $param;
+        }
+
+        if ($param === null || $param === '') {
+            return [];
+        }
+
+        if (is_scalar($param)) {
+            return [$param];
+        }
+
+        return [];
     }
 
     private static function buildTreeIndexOutcome(int $statusCode, string $message, array $headers = []): array

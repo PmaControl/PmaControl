@@ -8,6 +8,7 @@
 namespace App\Controller;
 
 use App\Library\Security\ApiRequestGuard;
+use App\Library\Security\BasicAuthRateLimiter;
 use App\Library\Security\SecretRedactor;
 use App\Library\Security\SecretComparison;
 use \Glial\Synapse\Controller;
@@ -78,10 +79,22 @@ class Webservice extends Controller
             return;
         }
 
+        $db = Sgbd::sql(DB_DEFAULT);
+        $authUser = BasicAuthRateLimiter::normalizeUser($_SERVER['PHP_AUTH_USER']);
+        $remoteAddr = BasicAuthRateLimiter::remoteAddr($_SERVER);
+        $rateLimit = BasicAuthRateLimiter::check($db, $authUser, $remoteAddr);
+        if (!$rateLimit['allowed']) {
+            $this->return['authenticate'] = "ko";
+            $this->return['error'][] = "Too many authentication failures";
+            self::sendPushServerGuardError(self::pushServerRateLimitOutcome($rateLimit));
+            return;
+        }
+
         $id_user_main = $this->checkCredentials($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']);
         Debug::debug($id_user_main, "Authorized Access");
 
         if ($id_user_main === true) {
+            BasicAuthRateLimiter::clearFailures($db, $authUser, $remoteAddr);
             $finale_name = "/tmp/tmp.".uniqid();
             file_put_contents($finale_name, json_encode(json_decode($jsonData)));
 
@@ -89,8 +102,17 @@ class Webservice extends Controller
             $this->parseServer($finale_name);
             Mysql::onAddMysqlServer();
         } else {
+            $rateLimit = BasicAuthRateLimiter::recordFailure($db, $authUser, $remoteAddr);
             $this->return['authenticate'] = "ko";
             $this->return['error'][]      = "Unauthorized access";
+            $this->saveHistory($id_user_main, $jsonData);
+
+            if (!$rateLimit['allowed']) {
+                self::sendPushServerGuardError(self::pushServerRateLimitOutcome($rateLimit));
+            } else {
+                self::sendPushServerGuardError(self::pushServerUnauthorizedOutcome($this->return));
+            }
+            return;
         }
 
         $this->saveHistory($id_user_main, $jsonData);
@@ -636,5 +658,30 @@ class Webservice extends Controller
 
         header('Content-Type: application/json');
         echo json_encode($guard['body'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n";
+    }
+
+    private static function pushServerUnauthorizedOutcome(array $body): array
+    {
+        return [
+            'allowed' => false,
+            'status' => 401,
+            'body' => $body,
+            'headers' => ['WWW-Authenticate' => 'Basic realm="My Realm"'],
+        ];
+    }
+
+    private static function pushServerRateLimitOutcome(array $rateLimit): array
+    {
+        return [
+            'allowed' => false,
+            'status' => 429,
+            'body' => [
+                'authenticate' => 'ko',
+                'error' => ['Too many authentication failures'],
+            ],
+            'headers' => [
+                'Retry-After' => (string)max(1, (int)$rateLimit['retry_after']),
+            ],
+        ];
     }
 }
