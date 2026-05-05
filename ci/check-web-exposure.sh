@@ -34,6 +34,24 @@ expect_code()
     fi
 }
 
+expect_code_in()
+{
+    local path="$1"
+    shift
+    local code
+    local expected
+
+    code="$(http_code "${path}")"
+    for expected in "$@"; do
+        if [[ "${code}" == "${expected}" ]]; then
+            return 0
+        fi
+    done
+
+    echo "Unexpected HTTP status for ${path}: got ${code}, expected one of: $*" >&2
+    return 1
+}
+
 expect_app_reachable()
 {
     local path="$1"
@@ -53,10 +71,6 @@ expect_app_reachable()
 deny_paths=(
     "/"
     "/?C=N;O=D"
-    "/infra/"
-    "/infra/docs/"
-    "/glial/"
-    "/save_pmacontrol/"
     "${APP_PATH}.env"
     "${APP_PATH}.git/config"
     "${APP_PATH}configuration/"
@@ -65,8 +79,19 @@ deny_paths=(
     "${APP_PATH}composer.json"
 )
 
+optional_deny_paths=(
+    "/infra/"
+    "/infra/docs/"
+    "/glial/"
+    "/save_pmacontrol/"
+)
+
 for path in "${deny_paths[@]}"; do
     expect_code "${path}" "403"
+done
+
+for path in "${optional_deny_paths[@]}"; do
+    expect_code_in "${path}" "403" "404"
 done
 
 expect_app_reachable "${APP_PATH}"

@@ -208,6 +208,14 @@ final class LdapIndexSecurityTest extends TestCase
         $this->assertStringContainsString('method="post"', $view);
     }
 
+    public function testUpdateConfigFileDoesNotReadMissingRootDnSearchFallback(): void
+    {
+        $controller = (string) file_get_contents(__DIR__ . '/../../App/Controller/Ldap.php');
+
+        $this->assertStringContainsString('$fallbackRootDnSearch = $var[\'root_dn_search\'] ?? $var[\'ROOT_DN_SEARCH\'] ?? \'\';', $controller);
+        $this->assertStringNotContainsString('$val = $var[\'root_dn_search\'];', $controller);
+    }
+
     private function sameSitePostServer(): array
     {
         return [

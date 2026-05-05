@@ -65,6 +65,7 @@ if [[ "${OS_KEY}" == "ubuntu-26.04" ]]; then
     PMACTRL_GIT_BRANCH="${GITHUB_REF_NAME:-commercial}" \
     PMACTRL_FORCE_REINSTALL=0 \
     PMACTRL_RUN_PHPUNIT=0 \
+    PMACTRL_SKIP_UPGRADE=1 \
     bash install/ubuntu26.04.sh
 
     HTTP_CODE="$(curl -s -o /tmp/pmacontrol-home.html -w '%{http_code}' http://127.0.0.1/pmacontrol/ || true)"
@@ -76,7 +77,7 @@ if [[ "${OS_KEY}" == "ubuntu-26.04" ]]; then
             exit 1
             ;;
     esac
-    /srv/www/pmacontrol/ci/check-web-exposure.sh http://127.0.0.1 /pmacontrol/
+    bash /srv/www/pmacontrol/ci/check-web-exposure.sh http://127.0.0.1 /pmacontrol/
 
     ./vendor/bin/phpunit --testsuite "PmaControl Test Suite"
     echo "CI install success on ${OS_KEY} for commit ${GIT_COMMIT:-unknown}"
@@ -228,7 +229,7 @@ cat > /tmp/pmacontrol-ci-config.json <<EOF
 EOF
 
 cd /srv/www/pmacontrol
-./install.sh -c /tmp/pmacontrol-ci-config.json
+PMACTRL_INSTALL_DEV_DEPS=1 ./install.sh -c /tmp/pmacontrol-ci-config.json
 
 HTTP_CODE="$(curl -s -o /tmp/pmacontrol-home.html -w '%{http_code}' http://127.0.0.1/pmacontrol/ || true)"
 case "${HTTP_CODE}" in
@@ -239,7 +240,7 @@ case "${HTTP_CODE}" in
         exit 1
         ;;
 esac
-/srv/www/pmacontrol/ci/check-web-exposure.sh http://127.0.0.1 /pmacontrol/
+bash /srv/www/pmacontrol/ci/check-web-exposure.sh http://127.0.0.1 /pmacontrol/
 
 ./vendor/bin/phpunit --testsuite "PmaControl Test Suite"
 

@@ -154,7 +154,9 @@ final class InstallerApacheHardeningTest extends TestCase
         self::assertStringContainsString('install/lib/harden_apache.sh', $this->remoteInstall);
         self::assertStringContainsString('PMACTRL_HARDEN_APACHE_DOCROOT="${PMACTRL_HARDEN_APACHE_DOCROOT:-1}"', $this->remoteInstall);
         self::assertStringContainsString('pmactrl_harden_apache_docroot', $this->remoteInstall);
-        self::assertSame(2, substr_count($this->remoteInstall, 'ci/check-web-exposure.sh http://127.0.0.1 /pmacontrol/'));
+        self::assertSame(2, substr_count($this->remoteInstall, 'bash /srv/www/pmacontrol/ci/check-web-exposure.sh http://127.0.0.1 /pmacontrol/'));
+        self::assertStringContainsString('PMACTRL_INSTALL_DEV_DEPS=1 ./install.sh -c /tmp/pmacontrol-ci-config.json', $this->remoteInstall);
+        self::assertStringContainsString('PMACTRL_SKIP_UPGRADE=1', $this->remoteInstall);
     }
 
     public function testExposureSmokeCheckBlocksInternalPathsButDoesNotBlockSite(): void
@@ -165,6 +167,8 @@ final class InstallerApacheHardeningTest extends TestCase
         self::assertStringContainsString('"/glial/"', $this->webExposureCheck);
         self::assertStringContainsString('"${APP_PATH}.git/config"', $this->webExposureCheck);
         self::assertStringContainsString('"${APP_PATH}configuration/"', $this->webExposureCheck);
+        self::assertStringContainsString('optional_deny_paths=(', $this->webExposureCheck);
+        self::assertStringContainsString('expect_code_in "${path}" "403" "404"', $this->webExposureCheck);
         self::assertStringNotContainsString('"/site/"', $this->webExposureCheck);
         self::assertStringContainsString('expect_app_reachable "${APP_PATH}"', $this->webExposureCheck);
     }
