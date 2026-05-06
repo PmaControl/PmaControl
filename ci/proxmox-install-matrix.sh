@@ -219,14 +219,15 @@ candidate_nodes() {
 cleanup_stale_ci_vms() {
     local node host
 
-    if [[ ! -x "${WORKSPACE}/ci/cleanup-proxmox-ci-vms.sh" ]]; then
+    if [[ ! -r "${WORKSPACE}/ci/cleanup-proxmox-ci-vms.sh" ]]; then
+        printf '[ci:%s:scheduler] cleanup script not readable; skipping stale CI VM cleanup\n' "${TARGET_OS}" >&2
         return 0
     fi
 
     for node in $(candidate_nodes); do
         host="$(node_host "${node}")"
         printf '[ci:%s:scheduler] cleaning stale CI VMs on %s (%s)\n' "${TARGET_OS}" "${node}" "${host}"
-        if ! "${WORKSPACE}/ci/cleanup-proxmox-ci-vms.sh" \
+        if ! bash "${WORKSPACE}/ci/cleanup-proxmox-ci-vms.sh" \
             --node "${host}" \
             --age-minutes "${PMACTRL_CI_CLEANUP_AGE_MINUTES:-30}"; then
             printf '[ci:%s:scheduler] cleanup warning on %s (%s); continuing with scheduler checks\n' "${TARGET_OS}" "${node}" "${host}" >&2
