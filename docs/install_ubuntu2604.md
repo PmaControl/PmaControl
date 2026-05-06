@@ -90,10 +90,21 @@ nmap -Pn -n -sT -T2 --max-rate 20 -p 111,3306 <pmacontrol-host-ip>
 Forgejo CI includes the `ubuntu2604` target in
 `.forgejo/workflows/proxmox-install-matrix.yml`.
 
-The Proxmox matrix runs two jobs in parallel. `debian12` and `ubuntu2404` are
-created on `pve-2`; `debian13` and `ubuntu2604` are created on `pve-3`.
-Before each target starts, `ci/cleanup-proxmox-ci-vms.sh` removes stale
-`ci-pmacontrol-*` VMs older than 30 minutes on the target node.
+The Proxmox matrix runs four jobs in parallel. Each job takes the scheduler
+lock only while it cleans stale CI VMs, selects a Proxmox node, clones the VM,
+assigns the static IP, and starts the guest. The install/test phase then runs
+outside that lock.
+
+By default the scheduler can use `pve-2` and `pve-3`. It selects the eligible
+node with the lowest current CI load, then RAM and CPU usage. A node is not
+eligible when RAM is above `80%`, when projected RAM after adding the CI VM
+would exceed `80%`, or when CPU is above `60%`. These defaults can be changed
+with `PMACTRL_CI_NODES`, `PMACTRL_CI_MAX_RAM_PCT`, `PMACTRL_CI_MAX_CPU_PCT`,
+and `PMACTRL_CI_VM_MEMORY_MB`. `PMACTRL_CI_NODE` still forces one node, but the
+same CPU/RAM thresholds are enforced.
+
+Before scheduling, `ci/cleanup-proxmox-ci-vms.sh` removes stale
+`ci-pmacontrol-*` VMs older than 30 minutes on each candidate node.
 
 CI VMs use a reserved static IPv4 pool to avoid depending on dynamic DHCP
 discovery during guest boot. The default pool is `10.68.68.39-46`, with two
@@ -104,6 +115,9 @@ the same address:
 - `debian13`: `10.68.68.41-42`
 - `ubuntu2404`: `10.68.68.43-44`
 - `ubuntu2604`: `10.68.68.45-46`
+
+That gives four primary CI addresses plus four secondary addresses for another
+prepared VM per target.
 
 The pool can be shifted with `PMACTRL_CI_STATIC_IP_PREFIX`,
 `PMACTRL_CI_STATIC_IP_START`, `PMACTRL_CI_STATIC_IP_COUNT`, and
