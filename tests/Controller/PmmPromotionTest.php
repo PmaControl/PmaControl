@@ -49,6 +49,7 @@ final class PmmPromotionTest extends TestCase
 
         foreach ([
             'Pmm/index',
+            'Pmm/overview',
             'Pmm/menu',
             'Pmm/innodb',
             'Pmm/galera',
@@ -101,9 +102,14 @@ final class PmmPromotionTest extends TestCase
 
     public function testPmmViewsDoNotDefaultToMysqlServerOne(): void
     {
+        $controller = (string) file_get_contents($this->root . '/App/Controller/Pmm.php');
         $menuView = (string) file_get_contents($this->root . '/App/view/Pmm/menu.view.php');
         $partialView = (string) file_get_contents($this->root . '/App/view/Pmm/_dashboard_partial.view.php');
         $serverMenuView = (string) file_get_contents($this->root . '/App/view/MysqlServer/menu.view.php');
+
+        $this->assertStringContainsString('public function overview($param = [])', $controller);
+        $this->assertStringContainsString('$this->view = \'index\';', $controller);
+        $this->assertStringContainsString('$this->renderDashboard(\'overview\', $param);', $controller);
 
         $this->assertStringContainsString('? (int)$param[0] : 0', $menuView);
         $this->assertStringContainsString('if ($serverId < 1)', $menuView);
@@ -112,6 +118,6 @@ final class PmmPromotionTest extends TestCase
 
         $this->assertStringContainsString('$serverLabel = $serverId > 0', $partialView);
         $this->assertStringContainsString('No server selected', $partialView);
-        $this->assertStringContainsString('$menu[\'Pmm\'][\'index\'] = __(\'PMM\');', $serverMenuView);
+        $this->assertStringContainsString('$menu[\'Pmm\'][\'overview\'] = __(\'PMM\');', $serverMenuView);
     }
 }

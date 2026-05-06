@@ -20,6 +20,12 @@ class Pmm extends Controller
         $this->renderDashboard('overview', $param);
     }
 
+    public function overview($param = [])
+    {
+        $this->view = 'index';
+        $this->renderDashboard('overview', $param);
+    }
+
     public function system($param = [])
     {
         $this->renderDashboard('system', $param);
