@@ -86,17 +86,6 @@ class ServerStateTimelineTest extends TestCase
         $this->assertTrue($range['live_enabled']);
     }
 
-    public function testFillLatestMissingBucketFromCurrentStatusOnlyTouchesLastNullBucket(): void
-    {
-        $reflection = new \ReflectionClass(ServerStateTimeline::class);
-        $method = $reflection->getMethod('fillLatestMissingBucketFromCurrentStatus');
-
-        $values = [1, null, null];
-        $result = $method->invoke(null, $values, 1);
-
-        $this->assertSame([1, null, 1], $result);
-    }
-
     public function testComputeServerRatioExposesCoverageAndMissingBuckets(): void
     {
         $ratio = $this->invokePrivate('computeServerRatio', [[1, 1, 1, null, null]]);

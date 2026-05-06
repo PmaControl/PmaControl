@@ -459,21 +459,6 @@ class ServerStateTimeline
         return (int) ceil(self::STALE_THRESHOLD_SECONDS / self::AGGREGATION_BUCKET_SECONDS);
     }
 
-    private static function fillLatestMissingBucketFromCurrentStatus(array $values, ?int $currentStatus): array
-    {
-        if ($currentStatus === null || empty($values)) {
-            return $values;
-        }
-
-        $lastIndex = count($values) - 1;
-
-        if ($values[$lastIndex] === null) {
-            $values[$lastIndex] = $currentStatus;
-        }
-
-        return $values;
-    }
-
     private static function getCurrentBucket(): \DateTimeImmutable
     {
         $timestamp = time();
