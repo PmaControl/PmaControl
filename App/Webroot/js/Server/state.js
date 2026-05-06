@@ -2,11 +2,13 @@
     "use strict";
 
     var charts = {};
+    var chartValues = {};
     var labels = [];
     var lastBucketKey = null;
     var stateConfig = window.serverStateConfig || {};
     var stateRoot = document.getElementById("server-state-root");
     var pollTimer = null;
+    var staleBucketCount = 3;
 
     if (!stateConfig.initialUrl && typeof window.GLIAL_LINK !== "undefined") {
         stateConfig.initialUrl = window.GLIAL_LINK + "server/stateInitial/ajax:true";
@@ -156,12 +158,16 @@
         });
 
         if (payload.stats) {
-            signalCount = (payload.stats.one || 0) + (payload.stats.two || 0) + (payload.stats.zero || 0);
-            greyCount = Math.max((payload.stats.total || 0) - signalCount, 0);
+            signalCount = payload.stats.signal || ((payload.stats.one || 0) + (payload.stats.two || 0) + (payload.stats.zero || 0));
+            greyCount = payload.stats.missing || Math.max((payload.stats.total || 0) - signalCount, 0);
         }
 
         if (payload.range && payload.range.title) {
             chartTitle = payload.range.title;
+        }
+
+        if (payload.range && payload.range.stale_bucket_count) {
+            staleBucketCount = payload.range.stale_bucket_count;
         }
 
         var html = [
@@ -187,7 +193,7 @@
             '<div class="server-state-panel-body">',
             '<table class="table table-condensed table-bordered table-striped server-state-table">',
             '<thead>',
-            '<tr><th>Server</th><th>Current status</th><th>(nombre de 1) / (nombre 0 + 1)</th><th>Timeline</th></tr>',
+            '<tr><th>Server</th><th>Current status</th><th>Availability / Coverage</th><th>Timeline</th></tr>',
             '</thead>',
             '<tbody>'
         ];
@@ -196,7 +202,7 @@
             html.push(
                 '<tr data-server-id="' + server.server_id + '">',
                 '<td class="server-state-name">' + (server.display_html || server.name) + '</td>',
-                '<td><span class="' + statusClass(server.current_status) + '">' + statusLabel(server.current_status) + '</span></td>',
+                '<td class="server-state-status-cell">' + formatStatusHtml(server.current_status, server.is_stale) + '</td>',
                 '<td><span class="server-state-ratio">' + formatRatio(server.ratio) + '</span></td>',
                 '<td><div class="server-state-chart-wrap"><canvas id="server-state-chart-' + server.server_id + '"></canvas></div></td>',
                 '</tr>'
@@ -234,31 +240,42 @@
                 return;
             }
 
+            chartValues[server.server_id] = (server.values || []).slice();
             charts[server.server_id] = createChart(canvas, server.values);
         });
     }
 
     function formatRatio(ratio) {
         if (!ratio) {
-            return "0 / 0";
+            ratio = computeRatio([]);
         }
 
-        return ratio.label || ((ratio.one || 0) + " / " + (ratio.signal || 0));
+        return [
+            '<span class="server-state-ratio-line">Availability: ' + escapeHtml(ratio.availability_label || ratio.label || ((ratio.one || 0) + " / " + (ratio.availability_signal || 0))) + '</span>',
+            '<span class="server-state-ratio-line server-state-ratio-muted">Coverage: ' + escapeHtml(ratio.coverage_label || ((ratio.signal || 0) + " / " + (ratio.total || 0))) + '</span>',
+            '<span class="server-state-ratio-line server-state-ratio-muted">' + escapeHtml(ratio.missing_label || ((ratio.missing || 0) + " missing")) + '</span>'
+        ].join("");
     }
 
-    function updateStatusCell(serverId, value) {
+    function formatStatusHtml(value, isStale) {
+        return [
+            '<span class="' + statusClass(value) + '">' + statusLabel(value) + '</span>',
+            isStale ? '<span class="server-state-stale-badge">STALE</span>' : ''
+        ].join("");
+    }
+
+    function updateStatusCell(serverId, value, isStale) {
         var row = stateRoot.querySelector('tr[data-server-id="' + serverId + '"]');
         if (!row) {
             return;
         }
 
-        var statusNode = row.querySelector(".server-state-status");
+        var statusNode = row.querySelector(".server-state-status-cell");
         if (!statusNode) {
             return;
         }
 
-        statusNode.className = statusClass(value);
-        statusNode.textContent = statusLabel(value);
+        statusNode.innerHTML = formatStatusHtml(value, isStale);
     }
 
     function updateRatioCell(serverId) {
@@ -272,20 +289,54 @@
             return;
         }
 
-        var colors = charts[serverId].data.datasets[0].backgroundColor || [];
-        var oneCount = 0;
-        var signalCount = 0;
+        ratioNode.innerHTML = formatRatio(computeRatio(chartValues[serverId] || []));
+    }
 
-        colors.forEach(function (color) {
-            if (color === colorForValue(1)) {
+    function computeRatio(values) {
+        var zeroCount = 0;
+        var oneCount = 0;
+        var twoCount = 0;
+        var signalCount = 0;
+        var totalCount = values.length;
+
+        values.forEach(function (value) {
+            if (value === 1) {
                 oneCount++;
                 signalCount++;
-            } else if (color === colorForValue(0)) {
+            } else if (value === 0) {
+                zeroCount++;
+                signalCount++;
+            } else if (value === 2) {
+                twoCount++;
                 signalCount++;
             }
         });
 
-        ratioNode.textContent = oneCount + " / " + signalCount;
+        return {
+            zero: zeroCount,
+            one: oneCount,
+            two: twoCount,
+            signal: signalCount,
+            availability_signal: oneCount + zeroCount,
+            missing: Math.max(totalCount - signalCount, 0),
+            total: totalCount,
+            availability_label: oneCount + " / " + (oneCount + zeroCount),
+            coverage_label: signalCount + " / " + totalCount,
+            missing_label: Math.max(totalCount - signalCount, 0) + " missing"
+        };
+    }
+
+    function isStale(values) {
+        var tail;
+
+        if (!values || values.length < staleBucketCount) {
+            return false;
+        }
+
+        tail = values.slice(values.length - staleBucketCount);
+        return tail.every(function (value) {
+            return value === null;
+        });
     }
 
     function applyLivePayload(payload) {
@@ -301,6 +352,10 @@
             var statusValue = Object.prototype.hasOwnProperty.call(payload.current_statuses, serverId) ? payload.current_statuses[serverId] : null;
             var colors = chart.data.datasets[0].backgroundColor;
 
+            if (!chartValues[serverId]) {
+                chartValues[serverId] = [];
+            }
+
             if (isNewBucket) {
                 chart.data.labels.shift();
                 chart.data.labels.push(payload.label);
@@ -308,11 +363,16 @@
                 chart.data.datasets[0].data.push(1);
                 colors.shift();
                 colors.push(colorForValue(value));
+                chartValues[serverId].shift();
+                chartValues[serverId].push(value);
             } else if (colors.length > 0) {
                 colors[colors.length - 1] = colorForValue(value);
+                if (chartValues[serverId].length > 0) {
+                    chartValues[serverId][chartValues[serverId].length - 1] = value;
+                }
             }
 
-            updateStatusCell(serverId, statusValue);
+            updateStatusCell(serverId, statusValue, isStale(chartValues[serverId]));
             updateRatioCell(serverId);
             chart.update("none");
         });
