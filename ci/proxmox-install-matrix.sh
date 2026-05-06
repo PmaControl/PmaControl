@@ -193,14 +193,42 @@ ensure_storage_free() {
 }
 
 find_free_vmid() {
-    local candidate
-    for candidate in $(seq "${VMID_START}" "${VMID_END}"); do
-        if ! compgen -G "/etc/pve/nodes/*/qemu-server/${candidate}.conf" >/dev/null; then
+    local candidate slot used_slots
+    used_slots=" $(target_active_slots) "
+
+    for slot in $(seq 0 $((CI_STATIC_IPS_PER_TARGET - 1))); do
+        if [[ "${used_slots}" == *" ${slot} "* ]]; then
+            continue
+        fi
+
+        for ((candidate = VMID_START + slot; candidate <= VMID_END; candidate += CI_STATIC_IPS_PER_TARGET)); do
+            if vmid_has_config "${candidate}"; then
+                continue
+            fi
+            if vmid_has_storage_images "${candidate}"; then
+                printf '[ci:%s:%s] skipping VMID %s: storage %s still has image volumes\n' \
+                    "${TARGET_OS}" "${RUN_NODE:-unassigned}" "${candidate}" "${STORAGE}" >&2
+                continue
+            fi
             echo "${candidate}"
             return 0
-        fi
+        done
     done
+
     return 1
+}
+
+vmid_has_config() {
+    local candidate="$1"
+
+    compgen -G "/etc/pve/nodes/*/qemu-server/${candidate}.conf" >/dev/null
+}
+
+vmid_has_storage_images() {
+    local candidate="$1"
+
+    pvesm list "${STORAGE}" --vmid "${candidate}" 2>/dev/null |
+        awk 'NR > 1 && $3 == "images" {found = 1} END {exit found ? 0 : 1}'
 }
 
 candidate_nodes() {
@@ -252,6 +280,41 @@ for item in resources:
     if name.startswith(prefix) and not item.get("template") and item.get("status") != "stopped":
         count += 1
 print(count)
+PY
+    rm -f "${resources_file}"
+}
+
+target_active_slots() {
+    local resources_file
+    resources_file="$(mktemp)"
+    pvesh get /cluster/resources --type vm --output-format json > "${resources_file}"
+    python3 - \
+        "${resources_file}" \
+        "${VM_NAME_PREFIX}" \
+        "${TARGET_OS}" \
+        "${VMID_START}" \
+        "${VMID_END}" \
+        "${CI_STATIC_IPS_PER_TARGET}" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], "r", encoding="utf-8") as handle:
+    resources = json.load(handle)
+prefix = f"{sys.argv[2]}-{sys.argv[3]}-"
+vmid_start = int(sys.argv[4])
+vmid_end = int(sys.argv[5])
+slots_per_target = int(sys.argv[6])
+slots = set()
+
+for item in resources:
+    name = item.get("name") or ""
+    if not name.startswith(prefix) or item.get("template") or item.get("status") == "stopped":
+        continue
+    vmid = int(item.get("vmid") or 0)
+    if vmid_start <= vmid <= vmid_end:
+        slots.add((vmid - vmid_start) % slots_per_target)
+
+print(" ".join(str(slot) for slot in sorted(slots)))
 PY
     rm -f "${resources_file}"
 }
@@ -369,7 +432,10 @@ allocate_and_start_vm() {
     ensure_storage_free
     ensure_target_slot_available
 
-    VMID="$(find_free_vmid)"
+    if ! VMID="$(find_free_vmid)"; then
+        echo "Unable to find a free VMID/IP slot for target ${TARGET_OS}" >&2
+        exit 1
+    fi
     VM_NAME="${VM_NAME_PREFIX}-${TARGET_OS}-${VMID}"
     resolve_static_vm_ip
     create_ci_cloudinit_snippet
