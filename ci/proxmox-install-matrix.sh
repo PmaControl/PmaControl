@@ -231,6 +231,25 @@ vmid_has_storage_images() {
         awk 'NR > 1 && $3 == "images" {found = 1} END {exit found ? 0 : 1}'
 }
 
+ensure_storage_image_dir() {
+    local image_root="/mnt/pve/${STORAGE}/images"
+
+    if [[ -d "${image_root}" ]]; then
+        install -d -m 0755 "${image_root}/${VMID}"
+    fi
+
+    if [[ "${RUN_NODE}" != "${LOCAL_NODE}" ]]; then
+        # shellcheck disable=SC2016
+        pve_node_cmd bash -c '
+            image_root="$1"
+            vmid="$2"
+            if [[ -d "${image_root}" ]]; then
+                install -d -m 0755 "${image_root}/${vmid}"
+            fi
+        ' bash "${image_root}" "${VMID}"
+    fi
+}
+
 candidate_nodes() {
     local node nodes
 
@@ -439,6 +458,7 @@ allocate_and_start_vm() {
     VM_NAME="${VM_NAME_PREFIX}-${TARGET_OS}-${VMID}"
     resolve_static_vm_ip
     create_ci_cloudinit_snippet
+    ensure_storage_image_dir
 
     log "cloning template ${TEMPLATE_ID} to VM ${VMID}"
     clone_args=(qm clone "${TEMPLATE_ID}" "${VMID}" --name "${VM_NAME}" --full 1 --storage "${STORAGE}")
