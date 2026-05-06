@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Pentagone extérieur (bleu marine) -->
+  <polygon points="100,5 190.35,70.65 155.84,176.86 44.16,176.86 9.65,70.65"
+           fill="#1c2d5c"/>
+
+  <!-- Branches blanches reliant les sommets extérieurs aux sommets intérieurs -->
+  <g stroke="#ffffff" stroke-width="5" stroke-linecap="butt">
+    <line x1="100"    y1="5"      x2="100"    y2="55"/>
+    <line x1="190.35" y1="70.65"  x2="142.80" y2="86.10"/>
+    <line x1="155.84" y1="176.86" x2="126.45" y2="136.41"/>
+    <line x1="44.16"  y1="176.86" x2="73.55"  y2="136.41"/>
+    <line x1="9.65"   y1="70.65"  x2="57.20"  y2="86.10"/>
+  </g>
+
+  <!-- Pentagone intérieur (orange) avec bordure blanche -->
+  <polygon points="100,55 142.80,86.10 126.45,136.41 73.55,136.41 57.20,86.10"
+           fill="#f29100"
+           stroke="#ffffff"
+           stroke-width="5"
+           stroke-linejoin="miter"/>
+</svg>
