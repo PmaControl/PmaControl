@@ -32,7 +32,7 @@ final class ServerMainDensityTest extends TestCase
         self::assertStringContainsString('<th><?= __("Tag") ?></th>', $this->source);
         self::assertStringContainsString('class="sm-env-cell"', $this->source);
         self::assertStringContainsString('class="sm-tag-cell"', $this->source);
-        self::assertStringContainsString('colspan="11"', $this->source);
+        self::assertStringContainsString('colspan="12"', $this->source);
     }
 
     public function testStatusActionsMovedToDetailRowWithWorkerKillAction(): void
