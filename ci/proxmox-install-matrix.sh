@@ -249,7 +249,7 @@ prefix = f"{sys.argv[2]}-{sys.argv[3]}-"
 count = 0
 for item in resources:
     name = item.get("name") or ""
-    if name.startswith(prefix) and not item.get("template"):
+    if name.startswith(prefix) and not item.get("template") and item.get("status") != "stopped":
         count += 1
 print(count)
 PY
@@ -260,7 +260,7 @@ ensure_target_slot_available() {
     local count
     count="$(target_ci_vm_count)"
     if (( count >= CI_STATIC_IPS_PER_TARGET )); then
-        echo "Target ${TARGET_OS} already has ${count} CI VM(s); static IP slots available: ${CI_STATIC_IPS_PER_TARGET}" >&2
+        echo "Target ${TARGET_OS} already has ${count} active CI VM(s); static IP slots available: ${CI_STATIC_IPS_PER_TARGET}" >&2
         exit 1
     fi
 }
