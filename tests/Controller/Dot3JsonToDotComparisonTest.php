@@ -237,6 +237,64 @@ final class Dot3JsonToDotComparisonTest extends TestCase
     }
 
     /**
+     * Regression coverage for issue #737.
+     *
+     * MySQL Router endpoints use the `mysqlrouter_server::*` telemetry family.
+     * They must not disappear from /architecture/index when the classic MySQL
+     * `version` and `mysql_available` fields are absent from the Dot3 JSON.
+     */
+    public function testJsonMysqlRouterWithoutMysqlAvailableStillRendersAsOkNode(): void
+    {
+        Dot3::$information[self::DOT3_INFORMATION_ID]['information'] = $this->routerInformation([
+            'mysqlrouter_available' => '1',
+        ]);
+
+        $dot3 = $this->newDot3();
+        $dot3->buildServer([self::DOT3_INFORMATION_ID, [179]]);
+
+        $this->assertArrayHasKey(179, Dot3::$build_server);
+        $this->assertSame('1', Dot3::$build_server[179]['mysqlrouter_available']);
+        $this->assertArrayNotHasKey('mysql_available', Dot3::$build_server[179]);
+        $this->assertSame('#FFFFFF', Dot3::$build_server[179]['background']);
+
+        $dot = $dot3->writeDot();
+        $this->assertStringContainsString('prodCluster-router-1-rw-split', $dot);
+    }
+
+    public function testJsonMysqlRouterDownWithoutMysqlAvailableStillRendersAsRedNode(): void
+    {
+        Dot3::$information[self::DOT3_INFORMATION_ID]['information'] = $this->routerInformation([
+            'mysqlrouter_available' => '0',
+            'mysqlrouter_error' => 'MySQL Router endpoint unreachable',
+        ]);
+
+        $dot3 = $this->newDot3();
+        $dot3->buildServer([self::DOT3_INFORMATION_ID, [179]]);
+
+        $this->assertArrayHasKey(179, Dot3::$build_server);
+        $this->assertSame('#FFCCCC', Dot3::$build_server[179]['background']);
+        $this->assertSame('MySQL Router endpoint unreachable', Dot3::$build_server[179]['error'] ?? null);
+
+        $dot = $dot3->writeDot();
+        $this->assertStringContainsString('prodCluster-router-1-rw-split', $dot);
+    }
+
+    public function testJsonMysqlRouterWithRouteMetadataButNoAvailabilityRendersAsBusyNode(): void
+    {
+        Dot3::$information[self::DOT3_INFORMATION_ID]['information'] = $this->routerInformation();
+
+        $dot3 = $this->newDot3();
+        $dot3->buildServer([self::DOT3_INFORMATION_ID, [179]]);
+
+        $this->assertArrayHasKey(
+            179,
+            Dot3::$build_server,
+            'Existing Dot3 snapshots that have router metadata but predate mysqlrouter_available extraction must still render a node.'
+        );
+        $this->assertSame('#FFFF99', Dot3::$build_server[179]['background']);
+    }
+
+    /**
      * Defense-in-depth for issue #735: a server with absolutely no monitoring
      * signal (no version, no mysql_available, no mysql_error) is still skipped.
      * This guards the normal "client not monitored" / "registered but never
@@ -274,6 +332,45 @@ final class Dot3JsonToDotComparisonTest extends TestCase
         $this->assertArrayHasKey('mapping', $decoded);
 
         return $decoded;
+    }
+
+    private function routerInformation(array $overrides = []): array
+    {
+        return [
+            'mapping' => [],
+            'servers' => [
+                179 => array_merge([
+                    'id_mysql_server' => 179,
+                    'display_name' => 'prodCluster-router-1-rw-split',
+                    'ip' => '10.68.68.134',
+                    'ip_real' => '10.68.68.134',
+                    'port' => '6450',
+                    'port_real' => '6450',
+                    'is_proxy' => '1',
+                    'is_proxysql' => '0',
+                    'is_vip' => '0',
+                    'mysqlrouter_routes' => [
+                        'bootstrap_rw_split' => [
+                            'bindPort' => 6450,
+                            'destinations' => [
+                                ['address' => '10.68.68.131', 'port' => 3306],
+                            ],
+                        ],
+                    ],
+                    'mysqlrouter_metadata_config' => [
+                        'bootstrap' => [
+                            'groupReplicationId' => 'b62a1be2-1caa-11f1-895d-bc24110e621d',
+                            'nodes' => [
+                                ['hostname' => '10.68.68.131', 'port' => 3306],
+                            ],
+                        ],
+                    ],
+                    'mysqlrouter_metadata_status' => [
+                        'refreshSucceeded' => 1,
+                    ],
+                ], $overrides),
+            ],
+        ];
     }
 
     private function newDot3(): Dot3
