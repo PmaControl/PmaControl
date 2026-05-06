@@ -212,7 +212,8 @@ if (empty($_GET['ajax'])):
 .sm-cve-cell { position: relative; white-space: nowrap; min-width: 64px; }
 .sm-cve-trigger { display: inline-flex; align-items: center; gap: 4px; border: 1px solid #cbd5e1;
                   border-radius: 999px; padding: 2px 7px; font-size: 10px; font-weight: 800;
-                  background: #f8fafc; color: #334155; cursor: default; }
+                  background: #f8fafc; color: #334155; cursor: pointer; text-decoration: none; }
+.sm-cve-trigger:hover, .sm-cve-trigger:focus { color: inherit; text-decoration: none; }
 .sm-cve-trigger.critical { background: #fee2e2; border-color: #fecaca; color: #9f1239; }
 .sm-cve-trigger.high { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
 .sm-cve-trigger.medium { background: #fef3c7; border-color: #fde68a; color: #92400e; }
@@ -436,11 +437,11 @@ if (empty($data['servers'])) {
             $cveKnownExploited = (int)($cveImpact['known_exploited'] ?? 0);
             $cveItems = $cveImpact['items'] ?? [];
             ?>
-            <span class="sm-cve-trigger <?= $cveSeverity ?>" tabindex="0">
+            <a class="sm-cve-trigger <?= $cveSeverity ?>" href="<?= LINK ?>MysqlServer/cve/<?= (int)$server['id'] ?>/pmacontrol" tabindex="0" title="<?= __('Open server CVE tab') ?>">
                 <i class="fa fa-shield" aria-hidden="true"></i>
                 <?= $cveCount ?>
                 <?php if ($cveKnownExploited > 0): ?><span class="sm-cve-kev-dot" title="CISA KEV"></span><?php endif; ?>
-            </span>
+            </a>
             <div class="sm-cve-pop">
                 <div class="sm-cve-pop-title">
                     <span><?= $cveCount ?> <?= __('matching CVEs') ?></span>

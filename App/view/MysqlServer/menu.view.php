@@ -20,6 +20,7 @@ $runDateLabel = (string) ($param[2] ?? '');
 
 $menu= array();
 $menu['MysqlServer']['main'] = __('Info');
+$menu['MysqlServer']['cve'] = __('CVE');
 $menu['MysqlServer']['processlist'] = __('Processlist');
 $menu['MysqlServer']['logs'] = __('Logs');
 $menu['MysqlServer']['replication'] = __('Replication');
