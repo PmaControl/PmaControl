@@ -13,8 +13,8 @@ echo '<style>
 .server-state-summary-col { flex:1 1 0; min-width:0; }
 .server-state-table { table-layout: fixed; margin-bottom:0; background:#fff; }
 .server-state-table th:nth-child(1) { width: 280px; }
-.server-state-table th:nth-child(2) { width: 140px; }
-.server-state-table th:nth-child(3) { width: 100px; }
+.server-state-table th:nth-child(2) { width: 170px; }
+.server-state-table th:nth-child(3) { width: 210px; }
 .server-state-table thead th { background:#f8fafc; color:#334155; border-bottom:1px solid #d8e1ea; }
 .server-state-chart-wrap { width: 100%; height: 28px; }
 .server-state-chart-wrap canvas { display:block; width:100% !important; height:28px !important; }
@@ -23,6 +23,9 @@ echo '<style>
 .server-state-status.readonly { color:#2563eb; }
 .server-state-status.down { color:#de2d26; }
 .server-state-status.na { color:#7f7f7f; }
+.server-state-stale-badge { display:inline-block;margin-left:8px;padding:2px 6px;border-radius:3px;background:#f59e0b;color:#111827;font-size:11px;font-weight:700;vertical-align:middle; }
+.server-state-ratio-line { display:block;line-height:1.35;white-space:nowrap; }
+.server-state-ratio-muted { color:#64748b;font-size:12px; }
 #server-state-root .loading { color:#666; padding:16px 0; }
 .server-state-summary-card { background:#fff;border:1px solid #d7dde6;border-left:5px solid #2563eb;border-radius:4px;padding:12px 14px;min-height:86px;margin-bottom:12px; }
 .server-state-summary-label { color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:.04em; }
@@ -84,7 +87,8 @@ echo '<li>If at least one <code>mysql_available = 0</code> is present inside a 1
 echo '<li>If no <code>0</code> exists and at least one <code>mysql_available = 2</code> exists, that bucket is rendered in blue and interpreted as <code>READ ONLY</code>.</li>';
 echo '<li>If no <code>0</code> or <code>2</code> exists and at least one <code>mysql_available = 1</code> exists, that bucket is rendered in green.</li>';
 echo '<li>If no value is collected during the whole 10-second bucket, that bucket is rendered in grey.</li>';
-echo '<li>When the latest bucket is still missing but the current status is already known, the screen uses the current status for that last bucket to avoid a false grey segment caused by ingestion lag.</li>';
+echo '<li><code>Availability</code> counts real UP over UP + DOWN. <code>Coverage</code> counts collected UP + DOWN + READ ONLY buckets over all expected buckets.</li>';
+echo '<li>A <code>STALE</code> badge is displayed when the latest expected buckets are missing, so collection gaps are visible instead of being hidden by a perfect ratio.</li>';
 echo '<li>Preset ranges stay live. Custom date ranges are static and limited to 24 hours.</li>';
 echo '</ul>';
 echo '</div>';

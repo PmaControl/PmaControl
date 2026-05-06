@@ -8,6 +8,7 @@ class ServerStateTimeline
 {
     public const AGGREGATION_BUCKET_SECONDS = 10;
     public const LIVE_SAFETY_DELAY_SECONDS = 5;
+    public const STALE_THRESHOLD_SECONDS = 30;
     public const INITIAL_CACHE_TTL = 10;
     public const LIVE_CACHE_TTL = 5;
     public const RANGE_PRESETS = [
@@ -23,7 +24,7 @@ class ServerStateTimeline
         $bucketStart = $range['start'];
         $bucketEnd = $range['end'];
         $pointCount = self::getPointCount($bucketStart, $bucketEnd);
-        $cacheKey = 'initial-' . md5(json_encode([$serverIds, $bucketStart->format('Y-m-d H:i:s'), $bucketEnd->format('Y-m-d H:i:s')]));
+        $cacheKey = 'initial-v2-' . md5(json_encode([$serverIds, $bucketStart->format('Y-m-d H:i:s'), $bucketEnd->format('Y-m-d H:i:s')]));
 
         return self::remember($cacheKey, self::INITIAL_CACHE_TTL, function () use ($servers, $serverIds, $bucketStart, $bucketEnd, $pointCount, $range) {
             $rows = self::fetchAvailabilityRows($serverIds, $bucketStart, $bucketEnd);
@@ -36,10 +37,6 @@ class ServerStateTimeline
                 $serverId = (int) $server['id'];
                 $serverValues = $series[$serverId] ?? array_fill(0, $pointCount, null);
 
-                if (!empty($range['live_enabled'])) {
-                    $serverValues = self::fillLatestMissingBucketFromCurrentStatus($serverValues, $currentStatuses[$serverId] ?? null);
-                }
-
                 $payloadServers[] = [
                     'server_id' => $serverId,
                     'name' => $server['name'],
@@ -47,6 +44,8 @@ class ServerStateTimeline
                     'current_status' => $currentStatuses[$serverId] ?? null,
                     'values' => $serverValues,
                     'ratio' => self::computeServerRatio($serverValues),
+                    'is_stale' => self::detectStale($serverValues),
+                    'last_signal_age_seconds' => self::lastSignalAgeSeconds($serverValues),
                 ];
             }
 
@@ -76,18 +75,12 @@ class ServerStateTimeline
 
         $bucketStart = self::getStableBucket($options);
         $bucketEnd = $bucketStart->modify('+' . (self::AGGREGATION_BUCKET_SECONDS - 1) . ' seconds');
-        $cacheKey = 'live-' . md5(json_encode([$serverIds, $bucketStart->format('Y-m-d H:i:s')]));
+        $cacheKey = 'live-v2-' . md5(json_encode([$serverIds, $bucketStart->format('Y-m-d H:i:s')]));
 
         return self::remember($cacheKey, self::LIVE_CACHE_TTL, function () use ($serverIds, $bucketStart, $bucketEnd) {
             $rows = self::fetchAvailabilityRows($serverIds, $bucketStart, $bucketEnd);
             $values = self::buildCurrentBucketValues($serverIds, $rows, $bucketStart);
             $currentStatuses = self::fetchCurrentStatuses($serverIds);
-
-            foreach ($values as $serverId => $value) {
-                if ($value === null && array_key_exists($serverId, $currentStatuses) && $currentStatuses[$serverId] !== null) {
-                    $values[$serverId] = $currentStatuses[$serverId];
-                }
-            }
 
             return [
                 'bucket_key' => $bucketStart->format('Y-m-d H:i:s'),
@@ -134,6 +127,7 @@ class ServerStateTimeline
             'range_mode' => $mode,
             'start' => $start,
             'end' => $end,
+            'stale_bucket_count' => self::getStaleBucketCount(),
             'start_value' => $start->format('Y-m-d\TH:i'),
             'end_value' => $end->format('Y-m-d\TH:i'),
             'live_enabled' => $mode === 'preset',
@@ -392,44 +386,77 @@ class ServerStateTimeline
             'zero' => $zeroCount,
             'one' => $oneCount,
             'two' => $twoCount,
+            'signal' => $zeroCount + $oneCount + $twoCount,
+            'missing' => max(0, $totalCount - ($zeroCount + $oneCount + $twoCount)),
             'total' => $totalCount,
         ];
     }
 
     private static function computeServerRatio(array $values): array
     {
+        $zeroCount = 0;
         $oneCount = 0;
+        $twoCount = 0;
         $signalCount = 0;
+        $totalCount = 0;
 
         foreach ($values as $value) {
+            $totalCount++;
+
             if ($value === 1) {
                 $oneCount++;
                 $signalCount++;
             } elseif ($value === 0) {
+                $zeroCount++;
+                $signalCount++;
+            } elseif ($value === 2) {
+                $twoCount++;
                 $signalCount++;
             }
         }
 
+        $availabilitySignalCount = $oneCount + $zeroCount;
+        $missingCount = max(0, $totalCount - $signalCount);
+
         return [
+            'zero' => $zeroCount,
             'one' => $oneCount,
+            'two' => $twoCount,
             'signal' => $signalCount,
-            'label' => $oneCount . ' / ' . $signalCount,
+            'availability_signal' => $availabilitySignalCount,
+            'missing' => $missingCount,
+            'total' => $totalCount,
+            'label' => $oneCount . ' / ' . $availabilitySignalCount,
+            'availability_label' => $oneCount . ' / ' . $availabilitySignalCount,
+            'coverage_label' => $signalCount . ' / ' . $totalCount,
+            'missing_label' => $missingCount . ' missing',
         ];
     }
 
-    private static function fillLatestMissingBucketFromCurrentStatus(array $values, ?int $currentStatus): array
+    private static function detectStale(array $values): bool
     {
-        if ($currentStatus === null || empty($values)) {
-            return $values;
+        $staleBucketCount = self::getStaleBucketCount();
+        if (count($values) < $staleBucketCount) {
+            return false;
         }
 
-        $lastIndex = count($values) - 1;
+        return array_slice($values, -$staleBucketCount) === array_fill(0, $staleBucketCount, null);
+    }
 
-        if ($values[$lastIndex] === null) {
-            $values[$lastIndex] = $currentStatus;
+    private static function lastSignalAgeSeconds(array $values): ?int
+    {
+        for ($index = count($values) - 1; $index >= 0; $index--) {
+            if ($values[$index] !== null) {
+                return (count($values) - 1 - $index) * self::AGGREGATION_BUCKET_SECONDS;
+            }
         }
 
-        return $values;
+        return null;
+    }
+
+    private static function getStaleBucketCount(): int
+    {
+        return (int) ceil(self::STALE_THRESHOLD_SECONDS / self::AGGREGATION_BUCKET_SECONDS);
     }
 
     private static function getCurrentBucket(): \DateTimeImmutable

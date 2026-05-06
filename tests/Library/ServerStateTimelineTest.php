@@ -86,14 +86,83 @@ class ServerStateTimelineTest extends TestCase
         $this->assertTrue($range['live_enabled']);
     }
 
-    public function testFillLatestMissingBucketFromCurrentStatusOnlyTouchesLastNullBucket(): void
+    public function testComputeServerRatioExposesCoverageAndMissingBuckets(): void
+    {
+        $ratio = $this->invokePrivate('computeServerRatio', [[1, 1, 1, null, null]]);
+
+        $this->assertSame(0, $ratio['zero']);
+        $this->assertSame(3, $ratio['one']);
+        $this->assertSame(0, $ratio['two']);
+        $this->assertSame(3, $ratio['signal']);
+        $this->assertSame(3, $ratio['availability_signal']);
+        $this->assertSame(2, $ratio['missing']);
+        $this->assertSame(5, $ratio['total']);
+        $this->assertSame('3 / 3', $ratio['availability_label']);
+        $this->assertSame('3 / 5', $ratio['coverage_label']);
+        $this->assertSame('2 missing', $ratio['missing_label']);
+    }
+
+    public function testComputeServerRatioSeparatesAvailabilityFromCoverage(): void
+    {
+        $ratio = $this->invokePrivate('computeServerRatio', [[1, 1, 0, null]]);
+
+        $this->assertSame(1, $ratio['zero']);
+        $this->assertSame(2, $ratio['one']);
+        $this->assertSame(3, $ratio['signal']);
+        $this->assertSame(3, $ratio['availability_signal']);
+        $this->assertSame(1, $ratio['missing']);
+        $this->assertSame(4, $ratio['total']);
+        $this->assertSame('2 / 3', $ratio['availability_label']);
+        $this->assertSame('3 / 4', $ratio['coverage_label']);
+    }
+
+    public function testComputeServerRatioReportsEmptyCoverageWhenAllBucketsAreMissing(): void
+    {
+        $ratio = $this->invokePrivate('computeServerRatio', [[null, null, null]]);
+
+        $this->assertSame(0, $ratio['signal']);
+        $this->assertSame(0, $ratio['availability_signal']);
+        $this->assertSame(3, $ratio['missing']);
+        $this->assertSame(3, $ratio['total']);
+        $this->assertSame('0 / 0', $ratio['availability_label']);
+        $this->assertSame('0 / 3', $ratio['coverage_label']);
+    }
+
+    public function testDetectStaleReturnsTrueWhenLatestExpectedBucketsAreMissing(): void
+    {
+        $this->assertTrue($this->invokePrivate('detectStale', [[1, 1, null, null, null]]));
+    }
+
+    public function testDetectStaleReturnsFalseWhenOnlyTwoLatestBucketsAreMissing(): void
+    {
+        $this->assertFalse($this->invokePrivate('detectStale', [[1, 1, 1, null, null]]));
+    }
+
+    public function testDetectStaleReturnsFalseWhenLatestBucketHasSignal(): void
+    {
+        $this->assertFalse($this->invokePrivate('detectStale', [[null, null, null, 1]]));
+    }
+
+    public function testComputeStatsExposesMissingBucketCount(): void
+    {
+        $stats = $this->invokePrivate('computeStats', [[
+            ['values' => [1, 0, null]],
+            ['values' => [2, null]],
+        ]]);
+
+        $this->assertSame(1, $stats['zero']);
+        $this->assertSame(1, $stats['one']);
+        $this->assertSame(1, $stats['two']);
+        $this->assertSame(3, $stats['signal']);
+        $this->assertSame(2, $stats['missing']);
+        $this->assertSame(5, $stats['total']);
+    }
+
+    private function invokePrivate(string $methodName, array $arguments)
     {
         $reflection = new \ReflectionClass(ServerStateTimeline::class);
-        $method = $reflection->getMethod('fillLatestMissingBucketFromCurrentStatus');
+        $method = $reflection->getMethod($methodName);
 
-        $values = [1, null, null];
-        $result = $method->invoke(null, $values, 1);
-
-        $this->assertSame([1, null, 1], $result);
+        return $method->invokeArgs(null, $arguments);
     }
 }
