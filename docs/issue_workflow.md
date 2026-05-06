@@ -18,3 +18,17 @@ Topic-specific docs may add extra checks, but they do not replace this process.
 For internal execution, the first pass is handled by Codex and the independent pass by Claude. Claude should post its own issue comment whenever possible. Avoid pass-through comments; only relay Claude's technical result if direct posting is blocked.
 
 Issue comments for this workflow may identify the Codex and Claude passes so the interaction is auditable. Commit messages, PR descriptions, changelogs, release notes, screenshots and functional documentation remain focused on the technical diagnosis, changes, tests and links.
+
+## Claude Forgejo authentication preflight
+
+Before Claude posts, it must load the dedicated Forgejo credentials and prove the token owner:
+
+```bash
+set -a
+. /srv/www/pmacontrol/.env_claude
+set +a
+login=$(curl -fsS -H "Authorization: token $GITEA_TOKEN" "$GITEA_URL/api/v1/user" | jq -r '.login')
+test "$login" = "claude"
+```
+
+If this preflight fails, do not post with any fallback token. In particular, never use `/srv/www/infra/.env_git` for Claude issue comments; that file is for another technical account and will attribute comments to the wrong user.

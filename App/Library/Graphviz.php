@@ -687,7 +687,17 @@ class Graphviz
         exec($dot, $output_svg, $result_svg);
         $svgErrorOutput = trim(implode("\n", $output_svg));
 
-        if ($result_svg !== 0) {
+        // Issue #772: even when `dot` returned exit !=0 (typically a missing
+        // icon asset that Graphviz escalates to a fatal warning), the SVG
+        // it just wrote may still be perfectly readable — minus that one
+        // missing icon. The previous code blindly retried with the
+        // `svg:svg` and `svg:cairo` fallbacks and OVERWROTE the good SVG
+        // with the cairo output, which strips ALL <image> tags from the
+        // graph. End result on the user side: every cluster sharing a
+        // group with one missing icon (eg ProxySQL) lost every icon
+        // (mysql, vip, gr, router, …). Only fall back when the primary
+        // attempt didn't produce a usable file.
+        if ($result_svg !== 0 && !self::isUsableSvgFile($file_name)) {
             $fallbacks = array('svg', 'svg:svg', 'svg:cairo');
             foreach ($fallbacks as $fallback) {
                 if ($fallback === $type) {
@@ -758,6 +768,51 @@ class Graphviz
     public static function getLastGenerateDotError(): string
     {
         return self::$lastGenerateDotError;
+    }
+
+    /**
+     * Issue #772: tells whether a Graphviz output file is a usable SVG —
+     * exists, has content, and starts with `<svg` after optional XML
+     * prolog. Used by generateDot() to decide whether a non-zero exit
+     * from `dot` means "retry with cairo" or "keep this output, just
+     * one icon is missing".
+     */
+    public static function isUsableSvgFile(string $file_name): bool
+    {
+        if (!file_exists($file_name) || filesize($file_name) === 0) {
+            return false;
+        }
+
+        $head = file_get_contents($file_name, false, null, 0, 256);
+        if (!is_string($head) || $head === '') {
+            return false;
+        }
+
+        return stripos(ltrim($head), '<svg') !== false
+            || stripos($head, '<?xml') === 0;
+    }
+
+    /**
+     * Issue #772: pick `<base>.svg` if it exists in `App/Webroot/image/dot/`,
+     * otherwise `<base>.png`, otherwise the explicit fallback. Lets callers
+     * stop hardcoding `.svg` for icons that haven't been migrated yet
+     * (and conversely, stop hardcoding `.png` for icons that *have*
+     * been migrated — both halves of the proxysql/maxscale story).
+     */
+    public static function resolveDotIconAsset(string $base, string $fallback = ''): string
+    {
+        if ($base === '') {
+            return $fallback;
+        }
+
+        $dir = ROOT.DS.'App'.DS.'Webroot'.DS.'image'.DS.'dot'.DS;
+        foreach (['svg', 'png'] as $ext) {
+            if (file_exists($dir.$base.'.'.$ext)) {
+                return $base.'.'.$ext;
+            }
+        }
+
+        return $fallback;
     }
 
 /**
@@ -1294,26 +1349,33 @@ class Graphviz
             || stripos((string)($server['version'] ?? ''), '-router') !== false
             || stripos((string)($server['version_comment'] ?? ''), 'router') !== false;
 
-        $image_logo = strtolower($fork).'.svg';
-        if ($image_logo === '.svg' || $image_logo === 'sql.svg') {
+        // Issue #772: prefer `.svg` when the file is on disk, fall back to
+        // `.png` otherwise. The previous code unconditionally referenced
+        // `proxysql.svg` from the default branch and `proxysql.png` from
+        // the `is_proxysql == "1"` branch. When the .svg side wasn't
+        // committed, Graphviz exited with "No or improper image file"
+        // and the cascade in generateDot() degraded the entire group
+        // SVG to cairo (no icons at all).
+        $image_logo = self::resolveDotIconAsset(strtolower($fork));
+        if ($image_logo === '' || $image_logo === '.svg' || $image_logo === 'sql.svg') {
             $image_logo = 'mysql.svg';
         }
 
         if ($isVipServer) {
-            $image_logo = 'vip.svg';
+            $image_logo = self::resolveDotIconAsset('vip', 'vip.svg');
             $version_label = 'VIP';
         }
 
         if (!empty($server['is_proxysql']) && $server['is_proxysql'] == "1" ) {
-            $image_logo = 'proxysql.png';
+            $image_logo = self::resolveDotIconAsset('proxysql', 'proxysql.png');
         }
 
         if (!empty($server['is_maxscale']) && $server['is_maxscale'] == "1" ) {
-            $image_logo = 'maxscale.png';
+            $image_logo = self::resolveDotIconAsset('maxscale', 'maxscale.png');
         }
 
         if (!$isVipServer && $isMysqlRouter) {
-            $image_logo = 'router.svg';
+            $image_logo = self::resolveDotIconAsset('router', 'router.svg');
             $version_label = 'MySQL Router';
         }
 
