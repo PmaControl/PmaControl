@@ -83,7 +83,10 @@ class Cve extends Controller
             . "   ON av.`id_cve_product` = p.`id` AND av.`is_current` = 1"
             . " WHERE p.`is_active` = 1"
             . " GROUP BY p.`id`, p.`product_code`, p.`product_name`, p.`product_family`, p.`icon_class`, p.`color`"
-            . " ORDER BY FIELD(p.`product_code`, 'mysql', 'mariadb', 'percona', 'xtrabackup', 'pmm', 'mariadb_backup',"
+            . " ORDER BY FIELD(p.`product_code`, 'mysql', 'mysql_cluster', 'mysql_client', 'mysql_connectors',"
+            . " 'mysql_enterprise_backup', 'mysql_enterprise_firewall', 'mysql_enterprise_monitor', 'mysql_installer',"
+            . " 'mysql_shell', 'mysql_shell_vscode', 'mysql_workbench', 'enterprise_manager_mysql',"
+            . " 'mariadb', 'percona', 'xtrabackup', 'pmm', 'mariadb_backup',"
             . " 'proxysql', 'maxscale',"
             . " 'haproxy', 'vitess', 'tidb', 'singlestore', 'aurora_mysql', 'rds_mysql', 'galera'), p.`product_name`";
 

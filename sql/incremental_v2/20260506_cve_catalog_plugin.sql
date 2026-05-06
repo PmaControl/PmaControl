@@ -98,6 +98,17 @@ INSERT INTO `cve_product`
   (`product_code`, `product_name`, `product_family`, `icon_class`, `color`)
 VALUES
   ('mysql', 'MySQL Server', 'mysql_like', 'fa fa-database', '#e97b00'),
+  ('mysql_cluster', 'MySQL Cluster', 'component', 'fa fa-object-group', '#d97706'),
+  ('mysql_client', 'MySQL Client', 'component', 'fa fa-terminal', '#b45309'),
+  ('mysql_connectors', 'MySQL Connectors', 'component', 'fa fa-plug', '#92400e'),
+  ('mysql_enterprise_backup', 'MySQL Enterprise Backup', 'component', 'fa fa-archive', '#a16207'),
+  ('mysql_enterprise_firewall', 'MySQL Enterprise Firewall', 'component', 'fa fa-shield', '#b91c1c'),
+  ('mysql_enterprise_monitor', 'MySQL Enterprise Monitor', 'component', 'fa fa-line-chart', '#1d4ed8'),
+  ('mysql_installer', 'MySQL Installer', 'component', 'fa fa-download', '#0f766e'),
+  ('mysql_shell', 'MySQL Shell', 'component', 'fa fa-terminal', '#0369a1'),
+  ('mysql_shell_vscode', 'MySQL Shell for VS Code', 'component', 'fa fa-code', '#2563eb'),
+  ('mysql_workbench', 'MySQL Workbench', 'component', 'fa fa-wrench', '#7c2d12'),
+  ('enterprise_manager_mysql', 'Enterprise Manager for MySQL Database', 'component', 'fa fa-desktop', '#4338ca'),
   ('mariadb', 'MariaDB Server', 'mysql_like', 'fa fa-database', '#003545'),
   ('percona', 'Percona Server', 'mysql_like', 'fa fa-database', '#c3281c'),
   ('xtrabackup', 'Percona XtraBackup', 'component', 'fa fa-archive', '#6b21a8'),

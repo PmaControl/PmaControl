@@ -44,6 +44,18 @@ final class CveCatalogBuilderTest extends TestCase
     public function testNormalizeProductCodeAcceptsUiAliases(): void
     {
         self::assertSame('mysql', CveCatalogBuilder::normalizeProductCode('mysql_server'));
+        self::assertSame('mysql', CveCatalogBuilder::normalizeProductCode('MySQL Server [8478]'));
+        self::assertSame('mysql_cluster', CveCatalogBuilder::normalizeProductCode('MySQL Cluster'));
+        self::assertSame('mysql_client', CveCatalogBuilder::normalizeProductCode('MySQL Client'));
+        self::assertSame('mysql_connectors', CveCatalogBuilder::normalizeProductCode('MySQL Connectors'));
+        self::assertSame('mysql_enterprise_backup', CveCatalogBuilder::normalizeProductCode('MySQL Enterprise Backup'));
+        self::assertSame('mysql_enterprise_firewall', CveCatalogBuilder::normalizeProductCode('MySQL Enterprise Firewall'));
+        self::assertSame('mysql_enterprise_monitor', CveCatalogBuilder::normalizeProductCode('MySQL Enterprise Monitor'));
+        self::assertSame('mysql_installer', CveCatalogBuilder::normalizeProductCode('MySQL Installer'));
+        self::assertSame('mysql_shell', CveCatalogBuilder::normalizeProductCode('MySQL Shell'));
+        self::assertSame('mysql_shell_vscode', CveCatalogBuilder::normalizeProductCode('MySQL Shell for VS Code'));
+        self::assertSame('mysql_workbench', CveCatalogBuilder::normalizeProductCode('MySQL Workbench'));
+        self::assertSame('enterprise_manager_mysql', CveCatalogBuilder::normalizeProductCode('Enterprise Manager for MySQL Database'));
         self::assertSame('aurora_mysql', CveCatalogBuilder::normalizeProductCode('Aurora MySQL'));
         self::assertSame('rds_mysql', CveCatalogBuilder::normalizeProductCode('RDS for MySQL'));
         self::assertSame('xtrabackup', CveCatalogBuilder::normalizeProductCode('Percona XtraBackup'));
@@ -79,6 +91,24 @@ final class CveCatalogBuilderTest extends TestCase
         self::assertNull($method->invoke(null, [
             'product' => 'Percona Server for MySQL',
             'affected_versions' => 'cpe:2.3:a:percona:toolkit:3.6.0:*:*:*:*:*:*:*',
+        ]));
+    }
+
+    public function testOracleCpuRowsUseProductSpecificTags(): void
+    {
+        $method = new ReflectionMethod(CveCatalogBuilder::class, 'productFromOracleCpuRow');
+
+        self::assertSame('mysql', $method->invoke(null, [
+            'product' => 'MySQL Server',
+        ]));
+        self::assertSame('mysql_shell_vscode', $method->invoke(null, [
+            'product' => 'MySQL Shell for VS Code',
+        ]));
+        self::assertSame('mysql_enterprise_monitor', $method->invoke(null, [
+            'product' => 'MySQL Enterprise Monitor [8480]',
+        ]));
+        self::assertNull($method->invoke(null, [
+            'product' => 'Oracle Security Alert CVE-2021-44228',
         ]));
     }
 }

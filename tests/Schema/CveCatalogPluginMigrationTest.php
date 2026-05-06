@@ -43,6 +43,17 @@ final class CveCatalogPluginMigrationTest extends TestCase
     {
         foreach ([
             "('mysql', 'MySQL Server'",
+            "('mysql_cluster', 'MySQL Cluster'",
+            "('mysql_client', 'MySQL Client'",
+            "('mysql_connectors', 'MySQL Connectors'",
+            "('mysql_enterprise_backup', 'MySQL Enterprise Backup'",
+            "('mysql_enterprise_firewall', 'MySQL Enterprise Firewall'",
+            "('mysql_enterprise_monitor', 'MySQL Enterprise Monitor'",
+            "('mysql_installer', 'MySQL Installer'",
+            "('mysql_shell', 'MySQL Shell'",
+            "('mysql_shell_vscode', 'MySQL Shell for VS Code'",
+            "('mysql_workbench', 'MySQL Workbench'",
+            "('enterprise_manager_mysql', 'Enterprise Manager for MySQL Database'",
             "('mariadb', 'MariaDB Server'",
             "('percona', 'Percona Server'",
             "('xtrabackup', 'Percona XtraBackup'",
@@ -65,11 +76,14 @@ final class CveCatalogPluginMigrationTest extends TestCase
     {
         $productPath = __DIR__ . '/../../sql/incremental_v2/20260506_cve_component_tags.sql';
         $sourcePath = __DIR__ . '/../../sql/incremental_v2/20260506_zz_cve_component_feed_source_products.sql';
+        $oracleProductPath = __DIR__ . '/../../sql/incremental_v2/20260506_zzz_cve_oracle_mysql_product_tags.sql';
         self::assertFileExists($productPath);
         self::assertFileExists($sourcePath);
+        self::assertFileExists($oracleProductPath);
 
         $productMigration = (string)file_get_contents($productPath);
         $sourceMigration = (string)file_get_contents($sourcePath);
+        $oracleProductMigration = (string)file_get_contents($oracleProductPath);
 
         foreach ([
             "('xtrabackup', 'Percona XtraBackup'",
@@ -80,6 +94,14 @@ final class CveCatalogPluginMigrationTest extends TestCase
         }
 
         foreach ([
+            "('mysql_cluster', 'MySQL Cluster'",
+            "('mysql_enterprise_monitor', 'MySQL Enterprise Monitor'",
+            "('mysql_shell_vscode', 'MySQL Shell for VS Code'",
+        ] as $productSeed) {
+            self::assertStringContainsString($productSeed, $oracleProductMigration);
+        }
+
+        foreach ([
             "'nvd' AS `source_code`, 'xtrabackup'",
             "'nvd', 'pmm'",
             "'nvd', 'mariadb_backup'",
@@ -87,6 +109,15 @@ final class CveCatalogPluginMigrationTest extends TestCase
             "'percona_advisory', 'pmm'",
         ] as $sourceSeed) {
             self::assertStringContainsString($sourceSeed, $sourceMigration);
+        }
+
+        foreach ([
+            "'mysql_cluster', 'MySQL Cluster'",
+            "'mysql_enterprise_monitor', 'MySQL Enterprise Monitor'",
+            "'mysql_shell_vscode', 'MySQL Shell for VS Code'",
+            "WHERE s.`code` = 'oracle_cpu'",
+        ] as $sourceSeed) {
+            self::assertStringContainsString($sourceSeed, $oracleProductMigration);
         }
     }
 

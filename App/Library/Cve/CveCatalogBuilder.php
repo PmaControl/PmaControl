@@ -156,8 +156,37 @@ final class CveCatalogBuilder
     /** @param array<string,array<string,mixed>> $catalog @param list<array<string,mixed>> $affected */
     private function collectOracleCpu(array &$catalog, array &$affected): void
     {
-        foreach ($this->fetchAll("SELECT * FROM `cve_source_oracle_cpu` WHERE `is_current` = 1 AND `cve_id` IS NOT NULL") as $row) {
+        $rows = $this->fetchAll("SELECT * FROM `cve_source_oracle_cpu` WHERE `is_current` = 1 AND `cve_id` IS NOT NULL");
+        $detailedRows = [];
+        foreach ($rows as $row) {
+            $productCode = self::productFromOracleCpuRow($row);
+            if ($productCode === null) {
+                continue;
+            }
+
+            if ($this->nullableString($row['affected_versions'] ?? null) !== null
+                || $this->nullableString($row['component'] ?? null) !== null
+                || $this->nullableString($row['base_score'] ?? null) !== null
+            ) {
+                $detailedRows[(string)$row['cve_id'] . ':' . $productCode] = true;
+            }
+        }
+
+        foreach ($rows as $row) {
             $cveId = (string)$row['cve_id'];
+            $productCode = self::productFromOracleCpuRow($row);
+            if ($productCode === null) {
+                continue;
+            }
+
+            $detailKey = $cveId . ':' . $productCode;
+            $isGenericMappingRow = $this->nullableString($row['affected_versions'] ?? null) === null
+                && $this->nullableString($row['component'] ?? null) === null
+                && $this->nullableString($row['base_score'] ?? null) === null;
+            if ($isGenericMappingRow && isset($detailedRows[$detailKey])) {
+                continue;
+            }
+
             $this->mergeCatalog($catalog, $cveId, [
                 'severity' => self::severityFromScore($row['base_score'] ?? null),
                 'cvss_v3_score' => $this->nullableFloat($row['base_score'] ?? null),
@@ -166,13 +195,14 @@ final class CveCatalogBuilder
                 'source_code' => 'oracle_cpu',
             ]);
 
-            $affected[] = $this->affectedRow($cveId, 'mysql', [
-                'version_text' => $this->nullableString($row['affected_versions'] ?? null) ?: 'Oracle CPU advisory',
+            $affected[] = $this->affectedRow($cveId, $productCode, [
+                'version_text' => $this->nullableString($row['affected_versions'] ?? null)
+                    ?: 'Oracle CPU advisory for ' . ((string)($row['product'] ?? 'Oracle MySQL')),
                 'fixed_version' => $row['fixed_versions'] ?? null,
                 'source_code' => 'oracle_cpu',
                 'source_url' => $row['source_url'] ?? null,
                 'match_method' => 'oracle_cpu',
-                'match_confidence' => 'medium',
+                'match_confidence' => $isGenericMappingRow ? 'medium' : 'high',
                 'raw_match_json' => $row['raw_json'] ?? null,
             ]);
         }
@@ -533,6 +563,17 @@ final class CveCatalogBuilder
     {
         $products = [
             ['mysql', 'MySQL Server', 'mysql_like', 'fa fa-database', '#e97b00'],
+            ['mysql_cluster', 'MySQL Cluster', 'component', 'fa fa-object-group', '#d97706'],
+            ['mysql_client', 'MySQL Client', 'component', 'fa fa-terminal', '#b45309'],
+            ['mysql_connectors', 'MySQL Connectors', 'component', 'fa fa-plug', '#92400e'],
+            ['mysql_enterprise_backup', 'MySQL Enterprise Backup', 'component', 'fa fa-archive', '#a16207'],
+            ['mysql_enterprise_firewall', 'MySQL Enterprise Firewall', 'component', 'fa fa-shield', '#b91c1c'],
+            ['mysql_enterprise_monitor', 'MySQL Enterprise Monitor', 'component', 'fa fa-line-chart', '#1d4ed8'],
+            ['mysql_installer', 'MySQL Installer', 'component', 'fa fa-download', '#0f766e'],
+            ['mysql_shell', 'MySQL Shell', 'component', 'fa fa-terminal', '#0369a1'],
+            ['mysql_shell_vscode', 'MySQL Shell for VS Code', 'component', 'fa fa-code', '#2563eb'],
+            ['mysql_workbench', 'MySQL Workbench', 'component', 'fa fa-wrench', '#7c2d12'],
+            ['enterprise_manager_mysql', 'Enterprise Manager for MySQL Database', 'component', 'fa fa-desktop', '#4338ca'],
             ['mariadb', 'MariaDB Server', 'mysql_like', 'fa fa-database', '#003545'],
             ['percona', 'Percona Server', 'mysql_like', 'fa fa-database', '#c3281c'],
             ['xtrabackup', 'Percona XtraBackup', 'component', 'fa fa-archive', '#6b21a8'],
@@ -705,9 +746,36 @@ final class CveCatalogBuilder
     public static function normalizeProductCode(string $value): ?string
     {
         $value = strtolower(trim($value));
+        $value = preg_replace('/\s*\[[^\]]+\]\s*$/', '', $value) ?? $value;
+        $value = preg_replace('/\s+/', ' ', trim($value)) ?? $value;
         $aliases = [
             'mysql' => 'mysql',
             'mysql_server' => 'mysql',
+            'mysql server' => 'mysql',
+            'mysql cluster' => 'mysql_cluster',
+            'mysql_cluster' => 'mysql_cluster',
+            'mysql client' => 'mysql_client',
+            'mysql_client' => 'mysql_client',
+            'mysql connectors' => 'mysql_connectors',
+            'mysql_connectors' => 'mysql_connectors',
+            'mysql connector' => 'mysql_connectors',
+            'mysql enterprise backup' => 'mysql_enterprise_backup',
+            'mysql_enterprise_backup' => 'mysql_enterprise_backup',
+            'mysql enterprise firewall' => 'mysql_enterprise_firewall',
+            'mysql_enterprise_firewall' => 'mysql_enterprise_firewall',
+            'mysql enterprise monitor' => 'mysql_enterprise_monitor',
+            'mysql_enterprise_monitor' => 'mysql_enterprise_monitor',
+            'mysql installer' => 'mysql_installer',
+            'mysql_installer' => 'mysql_installer',
+            'mysql shell' => 'mysql_shell',
+            'mysql_shell' => 'mysql_shell',
+            'mysql shell for vs code' => 'mysql_shell_vscode',
+            'mysql_shell_for_vs_code' => 'mysql_shell_vscode',
+            'mysql_shell_vscode' => 'mysql_shell_vscode',
+            'mysql workbench' => 'mysql_workbench',
+            'mysql_workbench' => 'mysql_workbench',
+            'enterprise manager for mysql database' => 'enterprise_manager_mysql',
+            'enterprise_manager_mysql' => 'enterprise_manager_mysql',
             'mariadb' => 'mariadb',
             'mariadb server' => 'mariadb',
             'percona' => 'percona',
@@ -742,6 +810,30 @@ final class CveCatalogBuilder
         ];
 
         return $aliases[$value] ?? null;
+    }
+
+    /**
+     * @param array<string,mixed> $row
+     */
+    private static function productFromOracleCpuRow(array $row): ?string
+    {
+        $product = self::normalizeProductCode((string)($row['product'] ?? ''));
+        if ($product !== null) {
+            return $product;
+        }
+
+        $raw = (string)($row['raw_json'] ?? '');
+        if ($raw !== '') {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                $product = self::normalizeProductCode((string)($decoded['product'] ?? ''));
+                if ($product !== null) {
+                    return $product;
+                }
+            }
+        }
+
+        return null;
     }
 
     /** @return list<string> */

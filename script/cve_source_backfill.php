@@ -13,6 +13,7 @@ declare(strict_types=1);
  * - Oracle public CVE to advisory mapping for MySQL products.
  * - MariaDB community server CVE documentation.
  * - AWS Aurora MySQL CVE list and AWS security bulletin RSS pages.
+ * - Oracle MySQL Risk Matrix pages for product-scoped Oracle CPU rows.
  *
  * Usage:
  *   php script/cve_source_backfill.php --database=pmacontrol
@@ -295,10 +296,10 @@ final class CveSourceBackfill
         $runId = $this->startRun('oracle_cpu', 'backfill');
         $seen = 0;
         $inserted = 0;
-        $url = 'https://www.oracle.com/security-alerts/public-vuln-to-advisory-mapping.html';
+        $mappingUrl = 'https://www.oracle.com/security-alerts/public-vuln-to-advisory-mapping.html';
 
         try {
-            $rows = $this->htmlRows($this->httpGet($url), $url);
+            $rows = $this->htmlRows($this->httpGet($mappingUrl), $mappingUrl);
             foreach ($rows as $rowData) {
                 $text = implode(' ', $rowData['cells']);
                 if (!preg_match('/CVE-\d{4}-\d+/', $text, $m) || stripos($text, 'MySQL') === false) {
@@ -325,7 +326,7 @@ final class CveSourceBackfill
                     'base_score' => null,
                     'cvss_vector' => null,
                     'source_url' => $this->absoluteUrl($sourceUrl, 'https://www.oracle.com'),
-                    'raw_json' => $this->json($rowData + ['source_url' => $url]),
+                    'raw_json' => $this->json($rowData + ['source_url' => $mappingUrl]),
                 ];
 
                 $inserted += $this->upsertHistory(
@@ -333,6 +334,36 @@ final class CveSourceBackfill
                     ['source_key' => (string)$row['source_key']],
                     $row
                 );
+            }
+
+            foreach ($this->oracleMysqlRiskMatrixUrls() as $riskMatrixUrl) {
+                $htmlUrl = strtok($riskMatrixUrl, '#') ?: $riskMatrixUrl;
+                $riskRows = $this->oracleMysqlRiskMatrixRows($this->httpGet($htmlUrl), $riskMatrixUrl);
+                foreach ($riskRows as $item) {
+                    $seen++;
+                    $row = [
+                        'id_cve_feed_run' => $runId,
+                        'source_key' => 'oracle:mysql-risk-matrix:' . $item['cpu_cycle'] . ':' . $item['cve_id'] . ':' . sha1($item['product'] . '|' . $item['component'] . '|' . $item['affected_versions']),
+                        'advisory_id' => 'Oracle Critical Patch Update ' . $item['cpu_cycle'],
+                        'cpu_cycle' => $item['cpu_cycle'],
+                        'release_date' => null,
+                        'cve_id' => $item['cve_id'],
+                        'product' => $item['product'],
+                        'component' => $item['component'],
+                        'affected_versions' => $item['affected_versions'],
+                        'fixed_versions' => null,
+                        'base_score' => $item['base_score'],
+                        'cvss_vector' => null,
+                        'source_url' => $riskMatrixUrl,
+                        'raw_json' => $this->json($item),
+                    ];
+
+                    $inserted += $this->upsertHistory(
+                        'cve_source_oracle_cpu',
+                        ['source_key' => (string)$row['source_key']],
+                        $row
+                    );
+                }
             }
 
             $this->finishRun($runId, 'success', $seen, $inserted, 0);
@@ -935,6 +966,130 @@ final class CveSourceBackfill
         }
 
         return $rows;
+    }
+
+    /** @return list<string> */
+    private function oracleMysqlRiskMatrixUrls(): array
+    {
+        return [
+            'https://www.oracle.com/security-alerts/cpujul2022.html#AppendixMSQL',
+        ];
+    }
+
+    /**
+     * @return list<array{
+     *   cve_id:string,
+     *   product:string,
+     *   component:?string,
+     *   protocol:?string,
+     *   remote_exploit_without_auth:?string,
+     *   base_score:?string,
+     *   attack_vector:?string,
+     *   attack_complexity:?string,
+     *   privileges_required:?string,
+     *   user_interaction:?string,
+     *   scope:?string,
+     *   confidentiality:?string,
+     *   integrity:?string,
+     *   availability:?string,
+     *   affected_versions:?string,
+     *   notes:?string,
+     *   cpu_cycle:string,
+     *   source_url:string,
+     *   hrefs:list<string>
+     * }>
+     */
+    private function oracleMysqlRiskMatrixRows(string $html, string $sourceUrl): array
+    {
+        $previous = libxml_use_internal_errors(true);
+        $dom = new DOMDocument();
+        $dom->loadHTML($html);
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        $xpath = new DOMXPath($dom);
+        $table = $xpath->query('//*[@id="AppendixMSQL"]/following::table[1]')->item(0);
+        if ($table === null) {
+            return [];
+        }
+
+        $cycle = $this->oracleCpuCycleFromHtml($xpath, $sourceUrl);
+        $rows = [];
+        foreach ($xpath->query('.//tbody/tr', $table) ?: [] as $node) {
+            $cellNodes = $xpath->query('./th|./td', $node);
+            if ($cellNodes === false || $cellNodes->length < 16) {
+                continue;
+            }
+
+            $cells = [];
+            $hrefs = [];
+            foreach ($cellNodes as $cellNode) {
+                $cells[] = $this->htmlCellText($cellNode->textContent);
+                foreach ($xpath->query('.//a[@href]', $cellNode) ?: [] as $link) {
+                    $hrefs[] = $this->absoluteUrl($link->getAttribute('href'), $sourceUrl);
+                }
+            }
+
+            if (!preg_match('/^CVE-\d{4}-\d+$/', $cells[0] ?? '')) {
+                continue;
+            }
+
+            $rows[] = [
+                'cve_id' => $cells[0],
+                'product' => $cells[1],
+                'component' => $this->nullable($cells[2] ?? null),
+                'protocol' => $this->nullable($cells[3] ?? null),
+                'remote_exploit_without_auth' => $this->nullable($cells[4] ?? null),
+                'base_score' => $this->nullable($cells[5] ?? null),
+                'attack_vector' => $this->nullable($cells[6] ?? null),
+                'attack_complexity' => $this->nullable($cells[7] ?? null),
+                'privileges_required' => $this->nullable($cells[8] ?? null),
+                'user_interaction' => $this->nullable($cells[9] ?? null),
+                'scope' => $this->nullable($cells[10] ?? null),
+                'confidentiality' => $this->nullable($cells[11] ?? null),
+                'integrity' => $this->nullable($cells[12] ?? null),
+                'availability' => $this->nullable($cells[13] ?? null),
+                'affected_versions' => $this->nullable($cells[14] ?? null),
+                'notes' => $this->nullable($cells[15] ?? null),
+                'cpu_cycle' => $cycle,
+                'source_url' => $sourceUrl,
+                'hrefs' => array_values(array_unique($hrefs)),
+            ];
+        }
+
+        return $rows;
+    }
+
+    private function htmlCellText(string $value): string
+    {
+        $value = str_replace(["\xc2\xa0", "Un-\nchanged", "Un- changed"], [' ', 'Unchanged', 'Unchanged'], $value);
+        $value = html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $value = preg_replace('/\s+/', ' ', $value) ?? $value;
+
+        return trim($value);
+    }
+
+    private function oracleCpuCycleFromHtml(DOMXPath $xpath, string $sourceUrl): string
+    {
+        foreach ($xpath->query('//h1|//h2|//h3') ?: [] as $node) {
+            $text = $this->htmlCellText($node->textContent);
+            if (preg_match('/Oracle Critical Patch Update Advisory\s*-\s*(.+)$/i', $text, $m) === 1) {
+                return trim($m[1]);
+            }
+        }
+
+        if (preg_match('/cpu([a-z]{3})(\d{4})\.html/i', $sourceUrl, $m) === 1) {
+            $months = [
+                'jan' => 'January',
+                'apr' => 'April',
+                'jul' => 'July',
+                'oct' => 'October',
+            ];
+            $month = $months[strtolower($m[1])] ?? strtoupper($m[1]);
+            return $month . ' ' . $m[2];
+        }
+
+        return 'unknown';
     }
 
     /** @return list<array<string,string|null>> */
