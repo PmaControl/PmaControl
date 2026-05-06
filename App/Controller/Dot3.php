@@ -1581,6 +1581,19 @@ class Dot3 extends Controller
             } elseif (stripos(ltrim($svgPayload), '<svg') !== 0) {
                 $this->logger->emergency('[DOT3-SVG-INVALID] Non-SVG payload detected in SVG pipeline: '
                     . $file_name . ' md5=' . $md5 . ' id_dot3_information=' . $id_dot3_information);
+            } elseif (
+                stripos($svgPayload, '<image') === false
+                && stripos($svgPayload, 'pmac-icon-') === false
+            ) {
+                // Issue #772: well-formed SVG but no <image> tags and no
+                // post-processed <symbol id="pmac-icon-…"> either. That's
+                // exactly the cairo-fallback shape (text rendered as
+                // glyph paths, all icons silently dropped). Surfacing
+                // it loudly lets us catch the next regression of this
+                // class instead of letting users see iconless graphs
+                // for weeks.
+                $this->logger->emergency('[DOT3-SVG-NO-ICONS] SVG without <image> nor pmac-icon-* — likely Graphviz cairo fallback dropped all icons: '
+                    . $file_name . ' md5=' . $md5 . ' id_dot3_information=' . $id_dot3_information . ' size=' . strlen($svgPayload));
             }
 
             $dot3_graph['dot3_graph']['filename'] = $file_name;
