@@ -613,9 +613,7 @@ class MysqlRouter extends Controller
                     $existingLinks[$id_mysql_server] = true;
                 }
 
-                $db->sql_query(
-                    "UPDATE mysql_server SET is_proxy = 1 WHERE id = " . $id_mysql_server . " AND is_proxy != 1"
-                );
+                $db->sql_query(self::buildMarkRouterEndpointMonitoredSql($id_mysql_server));
             }
 
             $result['listeners'][] = [
@@ -633,5 +631,12 @@ class MysqlRouter extends Controller
         sort($result['matched_ids']);
 
         return $result;
+    }
+
+    public static function buildMarkRouterEndpointMonitoredSql(int $idMysqlServer): string
+    {
+        return "UPDATE mysql_server SET is_proxy = 1, is_monitored = 1"
+            . " WHERE id = " . $idMysqlServer
+            . " AND (is_proxy != 1 OR is_monitored != 1)";
     }
 }
