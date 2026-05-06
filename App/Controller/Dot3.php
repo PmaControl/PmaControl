@@ -346,6 +346,7 @@ class Dot3 extends Controller
                 "variables::server_uuid", "variables::super_read_only",
                 "maxscale::maxscale_listeners", "maxscale::maxscale_servers","maxscale::maxscale_services", "maxscale::maxscale_monitors", 
                 "mysqlrouter::mysqlrouter_routes", "mysqlrouter::mysqlrouter_metadata_config", "mysqlrouter::mysqlrouter_metadata_status",
+                "mysqlrouter_server::mysqlrouter_available", "mysqlrouter_server::mysqlrouter_ping", "mysqlrouter_server::mysqlrouter_error",
                 "auto_increment_increment", "auto_increment_offset", "log_slave_updates", "variables::system_time_zone", "status::wsrep_provider_version",
                 "ssh_stats::mysql_datadir_path", "ssh_stats::mysql_datadir_total_size", "ssh_stats::mysql_datadir_clean_size",
                 "ssh_stats::mysql_sst_elapsed_sec", "ssh_stats::mysql_sst_in_progress",
@@ -2875,9 +2876,7 @@ class Dot3 extends Controller
             // `mysql_error` fresh, but its `version` was purged from the partition.
             // Skipping on missing `version` alone made these nodes silently disappear
             // from /architecture/index. Skip only when we have nothing to display.
-            $hasMonitoringSignal = !empty($server['version'])
-                || isset($server['mysql_available'])
-                || !empty($server['mysql_error']);
+            $hasMonitoringSignal = self::hasGraphMonitoringSignal($server);
             if (!$hasMonitoringSignal && !$is_vip_server) {
                 continue;
             }
@@ -2890,23 +2889,9 @@ class Dot3 extends Controller
             //Debug::debug($dot3_information['information']['servers'][$id_mysql_server],"INFO_SERVER");
             $tmp = array();
 
-            // to remove server with organization not monitored
-            if (! isset($server['mysql_available']))
-            {
+            $tmp = self::resolveServerGraphNodeState($server);
+            if ($tmp === null) {
                 continue;
-            }
-            
-            if ($server['mysql_available'] == "1")
-            {
-                $tmp = self::$config['NODE_OK'];
-            }
-            elseif($server['mysql_available'] == "0"){
-                $tmp = self::$config['NODE_ERROR'];
-                $tmp['error'] = $server['mysql_error'];
-            }
-            else
-            { // il faudrait ajouter si ok et +1 minute sans monitoring (avec le serveur le récent)
-                $tmp = self::$config['NODE_BUSY'];
             }
 
             // ADD there color for Galera Cluster
@@ -2918,6 +2903,55 @@ class Dot3 extends Controller
 
             self::$build_server[$id_mysql_server] = $tmp;
         }
+    }
+
+    private static function hasGraphMonitoringSignal(array $server): bool
+    {
+        return !empty($server['version'])
+            || isset($server['mysql_available'])
+            || !empty($server['mysql_error'])
+            || self::hasMysqlRouterGraphSignal($server);
+    }
+
+    private static function hasMysqlRouterGraphSignal(array $server): bool
+    {
+        return isset($server['mysqlrouter_available'])
+            || !empty($server['mysqlrouter_error'])
+            || !empty($server['mysqlrouter_routes'])
+            || !empty($server['mysqlrouter_metadata_status'])
+            || !empty($server['mysqlrouter_metadata_config']);
+    }
+
+    private static function resolveServerGraphNodeState(array $server): ?array
+    {
+        $availability = $server['mysql_available'] ?? null;
+        $error = (string)($server['mysql_error'] ?? $server['mysqlrouter_error'] ?? '');
+
+        if ($availability === null && self::isMysqlRouterNode($server)) {
+            $availability = $server['mysqlrouter_available'] ?? null;
+            $error = (string)($server['mysqlrouter_error'] ?? $error);
+        }
+
+        if ($availability === null) {
+            if (self::isMysqlRouterNode($server) && self::hasMysqlRouterGraphSignal($server)) {
+                return self::$config['NODE_BUSY'];
+            }
+
+            return null;
+        }
+
+        if ((string)$availability === "1") {
+            return self::$config['NODE_OK'];
+        }
+
+        if ((string)$availability === "0") {
+            $tmp = self::$config['NODE_ERROR'];
+            $tmp['error'] = $error;
+            return $tmp;
+        }
+
+        // il faudrait ajouter si ok et +1 minute sans monitoring (avec le serveur le récent)
+        return self::$config['NODE_BUSY'];
     }
 
 /**
@@ -5024,7 +5058,13 @@ class Dot3 extends Controller
 
     private function isServerOfflineForGraph(array $server): bool
     {
-        return isset($server['mysql_available']) && (string)$server['mysql_available'] === '0';
+        if (isset($server['mysql_available']) && (string)$server['mysql_available'] === '0') {
+            return true;
+        }
+
+        return self::isMysqlRouterNode($server)
+            && isset($server['mysqlrouter_available'])
+            && (string)$server['mysqlrouter_available'] === '0';
     }
 
     public function generateGroupMysqlRouter($information)
