@@ -8,6 +8,9 @@ BRIDGE="${PMACTRL_CI_BRIDGE:-vmbr0}"
 SSH_OPTS=(-o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5)
 PVE_SSH_OPTS=(-o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10)
 VM_NAME_PREFIX="ci-pmacontrol"
+VM_NETMASK="${PMACTRL_CI_NETMASK:-24}"
+VM_GATEWAY="${PMACTRL_CI_GATEWAY:-10.68.68.1}"
+VM_FIREWALL="${PMACTRL_CI_FIREWALL:-0}"
 RESULT="failure"
 LOCK_WAIT_SECONDS="${PMACTRL_CI_LOCK_WAIT_SECONDS:-21600}"
 MIN_FREE_KIB="${PMACTRL_CI_MIN_FREE_KIB:-5242880}"
@@ -17,6 +20,7 @@ LOCAL_NODE="$(hostname -s)"
 RUN_NODE=""
 RUN_HOST=""
 LOCK_FILE=""
+STATIC_VM_IP=""
 VMID=""
 VM_NAME=""
 VM_IP=""
@@ -43,24 +47,28 @@ case "${TARGET_OS}" in
         VMID_START=9300
         VMID_END=9399
         RUN_NODE="${PMACTRL_CI_NODE:-pve-2}"
+        STATIC_VM_IP="${PMACTRL_CI_DEBIAN12_IP:-10.68.68.11}"
         ;;
     debian13)
         TEMPLATE_ID=921
         VMID_START=9400
         VMID_END=9499
         RUN_NODE="${PMACTRL_CI_NODE:-pve-3}"
+        STATIC_VM_IP="${PMACTRL_CI_DEBIAN13_IP:-10.68.68.12}"
         ;;
     ubuntu2404)
         TEMPLATE_ID=922
         VMID_START=9500
         VMID_END=9599
         RUN_NODE="${PMACTRL_CI_NODE:-pve-2}"
+        STATIC_VM_IP="${PMACTRL_CI_UBUNTU2404_IP:-10.68.68.13}"
         ;;
     ubuntu2604)
         TEMPLATE_ID="${PMACTRL_CI_UBUNTU2604_TEMPLATE_ID:-923}"
         VMID_START=9600
         VMID_END=9699
         RUN_NODE="${PMACTRL_CI_NODE:-pve-3}"
+        STATIC_VM_IP="${PMACTRL_CI_UBUNTU2604_IP:-10.68.68.14}"
         ;;
     *)
         echo "Unsupported target OS: ${TARGET_OS}" >&2
@@ -160,13 +168,20 @@ wait_for_agent() {
 get_vm_ip() {
     local payload
     payload="$(pve_node_cmd qm agent "${VMID}" network-get-interfaces)"
-    python3 - <<'PY' "${payload}"
+    python3 - <<'PY' "${payload}" "${STATIC_VM_IP}"
 import json
 import sys
 
 data = json.loads(sys.argv[1])
+expected_ip = sys.argv[2]
 if isinstance(data, dict):
     data = data.get("result", [])
+for iface in data:
+    for addr in iface.get("ip-addresses", []):
+        ip = addr.get("ip-address", "")
+        if addr.get("ip-address-type") == "ipv4" and ip == expected_ip:
+            print(ip)
+            raise SystemExit(0)
 for iface in data:
     for addr in iface.get("ip-addresses", []):
         ip = addr.get("ip-address", "")
@@ -257,13 +272,14 @@ if [[ "${RUN_NODE}" != "${LOCAL_NODE}" ]]; then
     clone_args+=(--target "${RUN_NODE}")
 fi
 "${clone_args[@]}" >/dev/null
+log "using static IPv4 ${STATIC_VM_IP}/${VM_NETMASK} via ${VM_GATEWAY}"
 pve_node_cmd qm set "${VMID}" \
     --memory 4096 \
     --cores 4 \
     --balloon 0 \
-    --net0 "virtio,bridge=${BRIDGE},firewall=1" \
+    --net0 "virtio,bridge=${BRIDGE},firewall=${VM_FIREWALL}" \
     --ciuser root \
-    --ipconfig0 ip=dhcp \
+    --ipconfig0 "ip=${STATIC_VM_IP}/${VM_NETMASK},gw=${VM_GATEWAY}" \
     --cicustom "user=local:snippets/${VM_NAME}.yaml" >/dev/null
 pve_node_cmd qm start "${VMID}" >/dev/null
 
