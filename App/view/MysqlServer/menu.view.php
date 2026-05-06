@@ -23,7 +23,7 @@ $menu['MysqlServer']['main'] = __('Info');
 $menu['MysqlServer']['processlist'] = __('Processlist');
 $menu['MysqlServer']['logs'] = __('Logs');
 $menu['MysqlServer']['replication'] = __('Replication');
-$menu['Pmm']['index'] = __('PMM');
+$menu['Pmm']['overview'] = __('PMM');
 $menu['Cluster']['svg'] = __('Cluster');
 $menu['Query']['all'] = __('Queries');
 $menu['MysqlDatabase']['mpd'] = __('Database');
@@ -37,7 +37,7 @@ foreach($menu as $controller => $views)
       ($node[0] === "$controller" && $node[1] === "$view")
       || strtolower($node[0]) == strtolower($view)
       || ($node[0] === 'MysqlServer' && $node[1] === 'runDetail' && $controller === 'MysqlServer' && $view === 'main')
-      || ($node[0] === 'Pmm' && $controller === 'Pmm' && $view === 'index')
+      || ($node[0] === 'Pmm' && $controller === 'Pmm' && $view === 'overview')
       || ($node[0] === 'Cluster' && $node[1] === 'viewDot' && $controller === 'Cluster' && $view === 'svg')
     ){
       $active ='active';
