@@ -67,6 +67,22 @@ function serverStatus($server, $extra, $isEffectiveMonitored) {
     return 'ok';
 }
 
+function server_main_cve_severity_class($severity): string {
+    $severity = strtolower((string)$severity);
+    return in_array($severity, ['critical', 'high', 'medium', 'low', 'none'], true) ? $severity : 'unknown';
+}
+
+function server_main_cve_score($score): string {
+    return is_numeric($score) ? number_format((float)$score, 1) : 'n/a';
+}
+
+function server_main_cve_short_title($title, $max = 92): string {
+    $title = trim((string)$title);
+    if ($title === '') return '';
+    if (mb_strlen($title, 'UTF-8') <= $max) return $title;
+    return mb_substr($title, 0, $max, 'UTF-8').'…';
+}
+
 // Count servers by status
 $statusCounts = ['ok' => 0, 'warning' => 0, 'error' => 0, 'acknowledged' => 0, 'unmonitored' => 0];
 if (!empty($data['servers'])) {
@@ -193,6 +209,38 @@ if (empty($_GET['ajax'])):
 .sm-ver { white-space: nowrap; font-size: 11px; color: #475569; }
 .sm-ver img { vertical-align: middle; }
 
+.sm-cve-cell { position: relative; white-space: nowrap; min-width: 64px; }
+.sm-cve-trigger { display: inline-flex; align-items: center; gap: 4px; border: 1px solid #cbd5e1;
+                  border-radius: 999px; padding: 2px 7px; font-size: 10px; font-weight: 800;
+                  background: #f8fafc; color: #334155; cursor: default; }
+.sm-cve-trigger.critical { background: #fee2e2; border-color: #fecaca; color: #9f1239; }
+.sm-cve-trigger.high { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
+.sm-cve-trigger.medium { background: #fef3c7; border-color: #fde68a; color: #92400e; }
+.sm-cve-trigger.low { background: #dbeafe; border-color: #bfdbfe; color: #1e40af; }
+.sm-cve-trigger.none, .sm-cve-trigger.unknown { background: #f1f5f9; border-color: #e2e8f0; color: #64748b; }
+.sm-cve-kev-dot { display:inline-block; width:6px; height:6px; border-radius:50%; background:#dc2626; box-shadow:0 0 0 2px #fee2e2; }
+.sm-cve-pop { display: none; position: absolute; left: 0; top: 100%; width: 420px; max-width: 52vw;
+              background: #0f172a; color: #e5e7eb; border: 1px solid #334155; border-radius: 8px;
+              box-shadow: 0 18px 40px rgba(15,23,42,.35); padding: 10px; z-index: 30; white-space: normal; }
+.sm-cve-cell:hover .sm-cve-pop, .sm-cve-cell:focus-within .sm-cve-pop { display: block; }
+.sm-cve-pop-title { display:flex; justify-content:space-between; gap:8px; color:#fff; font-weight:800; margin-bottom:7px; }
+.sm-cve-pop-sub { color:#94a3b8; font-size:10px; font-weight:600; }
+.sm-cve-item { border-top:1px solid #1e293b; padding:7px 0; }
+.sm-cve-item:first-of-type { border-top:0; }
+.sm-cve-id { font-weight:800; color:#bfdbfe; text-decoration:none; }
+.sm-cve-id:hover { color:#fff; text-decoration:underline; }
+.sm-cve-sev { display:inline-block; min-width:54px; text-align:center; border-radius:999px; padding:1px 5px;
+              color:#fff; font-size:9px; font-weight:800; text-transform:uppercase; margin-left:4px; }
+.sm-cve-sev.critical { background:#9f1239; }
+.sm-cve-sev.high { background:#dc2626; }
+.sm-cve-sev.medium { background:#d97706; }
+.sm-cve-sev.low { background:#2563eb; }
+.sm-cve-sev.none, .sm-cve-sev.unknown { background:#64748b; }
+.sm-cve-item-title { color:#cbd5e1; font-size:10px; margin-top:3px; line-height:1.35; }
+.sm-cve-item-meta { color:#94a3b8; font-size:9px; margin-top:3px; }
+.sm-cve-more { color:#cbd5e1; border-top:1px solid #1e293b; padding-top:7px; font-size:10px; font-weight:700; }
+.sm-cve-empty { color: var(--sm-muted); font-size: 10px; }
+
 .sm-badge { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 3px; font-weight: 600; }
 .sm-badge.ok   { background: #d1fae5; color: #065f46; }
 .sm-badge.good { background: #dbeafe; color: #1e40af; }
@@ -313,6 +361,7 @@ if (empty($_GET['ajax'])):
     <th style="width:4px;padding:0"></th>
     <th></th>
     <th class="sm-srv"><?= __("Server") ?></th>
+    <th><?= __("CVE") ?></th>
     <th><?= __("Environment") ?></th>
     <th><?= __("Tag") ?></th>
     <th><?= __("Host") ?></th>
@@ -326,7 +375,7 @@ if (empty($_GET['ajax'])):
 <tbody>
 <?php
 if (empty($data['servers'])) {
-    echo '<tr><td colspan="11" class="sm-empty"><i class="fa fa-server"></i> '.__('No servers found').'</td></tr>';
+    echo '<tr><td colspan="12" class="sm-empty"><i class="fa fa-server"></i> '.__('No servers found').'</td></tr>';
 } else {
     foreach ($data['servers'] as $server) {
         $isEffectiveMonitored = !empty($server['effective_is_monitored']) && (string)$server['effective_is_monitored'] === "1";
@@ -341,6 +390,7 @@ if (empty($data['servers'])) {
         $isProxyServer = !empty($server['is_proxy']) && (string)$server['is_proxy'] === "1";
         $isProxyLikeServer = $isProxyServer || (!empty($extra['is_proxysql']) && (string)$extra['is_proxysql'] === "1");
         $status = serverStatus($server, $extra, $isEffectiveMonitored);
+        $cveImpact = $data['cve_impacts'][(int)$server['id']] ?? null;
 
         $rowClass = '';
         if ($status === 'error') $rowClass = 'sm-row-err';
@@ -375,6 +425,55 @@ if (empty($data['servers'])) {
                 <span class="sm-ro">R/O</span>
             <?php endif; ?>
         </div>
+    </td>
+
+    <!-- CVE -->
+    <td class="sm-cve-cell">
+        <?php if (!empty($cveImpact) && !empty($cveImpact['count'])): ?>
+            <?php
+            $cveSeverity = server_main_cve_severity_class($cveImpact['max_severity'] ?? 'unknown');
+            $cveCount = (int)$cveImpact['count'];
+            $cveKnownExploited = (int)($cveImpact['known_exploited'] ?? 0);
+            $cveItems = $cveImpact['items'] ?? [];
+            ?>
+            <span class="sm-cve-trigger <?= $cveSeverity ?>" tabindex="0">
+                <i class="fa fa-shield" aria-hidden="true"></i>
+                <?= $cveCount ?>
+                <?php if ($cveKnownExploited > 0): ?><span class="sm-cve-kev-dot" title="CISA KEV"></span><?php endif; ?>
+            </span>
+            <div class="sm-cve-pop">
+                <div class="sm-cve-pop-title">
+                    <span><?= $cveCount ?> <?= __('matching CVEs') ?></span>
+                    <span class="sm-cve-pop-sub"><?= htmlspecialchars((string)($cveImpact['product_code'] ?? ''), ENT_QUOTES) ?> <?= htmlspecialchars((string)($cveImpact['server_version'] ?? ''), ENT_QUOTES) ?></span>
+                </div>
+                <?php foreach ($cveItems as $item): ?>
+                    <?php $itemSeverity = server_main_cve_severity_class($item['severity'] ?? 'unknown'); ?>
+                    <div class="sm-cve-item">
+                        <div>
+                            <a class="sm-cve-id" href="https://nvd.nist.gov/vuln/detail/<?= htmlspecialchars((string)$item['cve_id'], ENT_QUOTES) ?>" target="_blank" rel="noopener noreferrer">
+                                <?= htmlspecialchars((string)$item['cve_id'], ENT_QUOTES) ?>
+                            </a>
+                            <span class="sm-cve-sev <?= $itemSeverity ?>"><?= htmlspecialchars((string)($item['severity'] ?? 'unknown'), ENT_QUOTES) ?></span>
+                            <?php if (!empty($item['known_exploited'])): ?><span class="sm-badge crit">KEV</span><?php endif; ?>
+                        </div>
+                        <?php if (!empty($item['title'])): ?>
+                            <div class="sm-cve-item-title"><?= htmlspecialchars(server_main_cve_short_title($item['title']), ENT_QUOTES) ?></div>
+                        <?php endif; ?>
+                        <div class="sm-cve-item-meta">
+                            CVSS <?= htmlspecialchars(server_main_cve_score($item['score'] ?? null), ENT_QUOTES) ?>
+                            · <?= htmlspecialchars((string)($item['match_method'] ?? ''), ENT_QUOTES) ?>
+                            · <?= htmlspecialchars((string)($item['match_confidence'] ?? ''), ENT_QUOTES) ?>
+                            <?php if (!empty($item['published_at'])): ?> · <?= htmlspecialchars((string)$item['published_at'], ENT_QUOTES) ?><?php endif; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+                <?php if ($cveCount > count($cveItems)): ?>
+                    <div class="sm-cve-more">+ <?= $cveCount - count($cveItems) ?> <?= __('more CVEs') ?></div>
+                <?php endif; ?>
+            </div>
+        <?php else: ?>
+            <span class="sm-cve-empty">-</span>
+        <?php endif; ?>
     </td>
 
     <!-- Environment -->
@@ -486,7 +585,7 @@ if (empty($data['servers'])) {
         if ($errMsg || $hasStatusActions):
 ?>
 <tr class="sm-detail-row<?= $errMsg ? ' sm-err-row' : '' ?>" data-search="<?= htmlspecialchars($searchText, ENT_QUOTES) ?>">
-    <td colspan="11">
+    <td colspan="12">
         <div class="sm-detail-line">
             <?php if ($errMsg): ?>
                 <div class="sm-err-text"><i class="fa fa-exclamation-triangle"></i> <?= $errMsg ?></div>
