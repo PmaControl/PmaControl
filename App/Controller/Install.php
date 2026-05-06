@@ -962,13 +962,13 @@ ssl=".($server['is_ssl'] ?? 0)."";
     private function generate_key()
     {
 
-        $key = str_replace("'", "", $this->rand_char(256));
+        $key = bin2hex(random_bytes(32));
 
         $data = "<?php
 
 if (! defined('CRYPT_KEY'))
 {
-    define('CRYPT_KEY', '".$key."');
+    define('CRYPT_KEY', ".var_export($key, true).");
 }
 ";
 
