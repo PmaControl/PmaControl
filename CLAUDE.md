@@ -4,6 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 PmaControl is a MySQL/MariaDB supervision platform in PHP 8.2 on the **Glial** framework (`/srv/www/glial/Glial/`, Composer `glial/glial 5.1.*`). Application code lives under `App/{Controller,view,Library,Webroot}/`. Only load the references below when the current task actually needs them.
 
+## Branch and PR Target
+
+The active integration target is `master`. Create issue branches from an up-to-date `origin/master`, open PRs against `master`, and merge through PRs only. Do not target `commercial` for new issue work unless the user explicitly overrides this rule for a specific task.
+
 ## Per-topic references — `docs/`
 
 | Load when working on… | File |

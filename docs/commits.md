@@ -17,6 +17,7 @@ Group related changes per commit. Avoid WIP messages. **Do NOT add `Co-Authored-
 - Link any tracked issue.
 - Include screenshots for UI tweaks.
 - Mention configuration or schema changes explicitly so operators can rehearse upgrades.
+- Target `master` for new issue PRs. Do not open new issue PRs against `commercial` unless the user explicitly asks for that exception.
 
 ## Tooling visibility — strict
 
