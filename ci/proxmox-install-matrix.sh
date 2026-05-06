@@ -240,15 +240,8 @@ ensure_storage_image_dir() {
         install -d -m 0755 "${image_root}/${VMID}"
     fi
 
-    if [[ "${RUN_NODE}" != "${LOCAL_NODE}" ]]; then
-        # shellcheck disable=SC2016
-        pve_node_cmd bash -c '
-            image_root="$1"
-            vmid="$2"
-            if [[ -d "${image_root}" ]]; then
-                install -d -m 0755 "${image_root}/${vmid}"
-            fi
-        ' bash "${image_root}" "${VMID}"
+    if [[ "${RUN_NODE}" != "${LOCAL_NODE}" ]] && pve_node_cmd test -d "${image_root}"; then
+        pve_node_cmd install -d -m 0755 "${image_root}/${VMID}"
     fi
 }
 
