@@ -19,6 +19,7 @@ use App\Library\Security\RouteMutationRequest;
 use App\Library\ServerStateTimeline;
 
 use App\Library\Chiffrement;
+use App\Library\Cve\ServerCveImpactMatcher;
 use \Glial\Sgbd\Sgbd;
 use Glial\Security\Csrf;
 use \Monolog\Logger;
@@ -532,6 +533,13 @@ class Server extends Controller
                 }
             }
         }
+
+        $data['cve_impacts'] = ServerCveImpactMatcher::loadForServerMain(
+            $db,
+            $data['servers'] ?? [],
+            $data['extra'] ?? [],
+            empty($_GET['ajax'])
+        );
 
         $this->set('data', $data);
     }
