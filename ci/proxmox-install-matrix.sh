@@ -8,6 +8,7 @@ BRIDGE="${PMACTRL_CI_BRIDGE:-vmbr0}"
 SSH_OPTS=(-o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5)
 PVE_SSH_OPTS=(-o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10)
 VM_NAME_PREFIX="ci-pmacontrol"
+VM_MEMORY_MB="${PMACTRL_CI_VM_MEMORY_MB:-4096}"
 VM_NETMASK="${PMACTRL_CI_NETMASK:-24}"
 VM_GATEWAY="${PMACTRL_CI_GATEWAY:-10.68.68.1}"
 VM_FIREWALL="${PMACTRL_CI_FIREWALL:-0}"
@@ -15,6 +16,10 @@ CI_STATIC_IP_PREFIX="${PMACTRL_CI_STATIC_IP_PREFIX:-10.68.68}"
 CI_STATIC_IP_START="${PMACTRL_CI_STATIC_IP_START:-39}"
 CI_STATIC_IP_COUNT="${PMACTRL_CI_STATIC_IP_COUNT:-8}"
 CI_STATIC_IPS_PER_TARGET="${PMACTRL_CI_STATIC_IPS_PER_TARGET:-2}"
+CI_CANDIDATE_NODES="${PMACTRL_CI_NODES:-pve-2 pve-3}"
+CI_MAX_RAM_PCT="${PMACTRL_CI_MAX_RAM_PCT:-80}"
+CI_MAX_CPU_PCT="${PMACTRL_CI_MAX_CPU_PCT:-60}"
+CI_SCHEDULER_LOCK_FILE="${PMACTRL_CI_SCHEDULER_LOCK_FILE:-/run/lock/pmacontrol-proxmox-scheduler.lock}"
 RESULT="failure"
 LOCK_WAIT_SECONDS="${PMACTRL_CI_LOCK_WAIT_SECONDS:-21600}"
 MIN_FREE_KIB="${PMACTRL_CI_MIN_FREE_KIB:-5242880}"
@@ -23,7 +28,6 @@ SSH_PUBLIC_KEY_FILE="${PMACTRL_CI_SSH_PUBLIC_KEY_FILE:-/root/.ssh/id_rsa.pub}"
 LOCAL_NODE="$(hostname -s)"
 RUN_NODE=""
 RUN_HOST=""
-LOCK_FILE=""
 STATIC_VM_IP=""
 STATIC_VM_IP_SLOT_START=""
 VMID=""
@@ -42,7 +46,7 @@ require_cmd() {
     }
 }
 
-for cmd in qm ssh python3 tar git flock pvesm install; do
+for cmd in qm ssh python3 tar git flock pvesm pvesh install; do
     require_cmd "${cmd}"
 done
 
@@ -82,7 +86,6 @@ case "${TARGET_OS}" in
         TEMPLATE_ID=920
         VMID_START=9300
         VMID_END=9399
-        RUN_NODE="${PMACTRL_CI_NODE:-pve-2}"
         STATIC_VM_IP="${PMACTRL_CI_DEBIAN12_IP:-}"
         STATIC_VM_IP_SLOT_START=0
         ;;
@@ -90,7 +93,6 @@ case "${TARGET_OS}" in
         TEMPLATE_ID=921
         VMID_START=9400
         VMID_END=9499
-        RUN_NODE="${PMACTRL_CI_NODE:-pve-3}"
         STATIC_VM_IP="${PMACTRL_CI_DEBIAN13_IP:-}"
         STATIC_VM_IP_SLOT_START=2
         ;;
@@ -98,7 +100,6 @@ case "${TARGET_OS}" in
         TEMPLATE_ID=922
         VMID_START=9500
         VMID_END=9599
-        RUN_NODE="${PMACTRL_CI_NODE:-pve-2}"
         STATIC_VM_IP="${PMACTRL_CI_UBUNTU2404_IP:-}"
         STATIC_VM_IP_SLOT_START=4
         ;;
@@ -106,7 +107,6 @@ case "${TARGET_OS}" in
         TEMPLATE_ID="${PMACTRL_CI_UBUNTU2604_TEMPLATE_ID:-923}"
         VMID_START=9600
         VMID_END=9699
-        RUN_NODE="${PMACTRL_CI_NODE:-pve-3}"
         STATIC_VM_IP="${PMACTRL_CI_UBUNTU2604_IP:-}"
         STATIC_VM_IP_SLOT_START=6
         ;;
@@ -116,25 +116,33 @@ case "${TARGET_OS}" in
         ;;
 esac
 
-LOCK_FILE="${PMACTRL_CI_LOCK_FILE:-/run/lock/pmacontrol-proxmox-install-${RUN_NODE}.lock}"
-case "${RUN_NODE}" in
-    pve-2)
-        RUN_HOST="${PMACTRL_CI_NODE_HOST:-10.68.68.121}"
-        ;;
-    pve-3)
-        RUN_HOST="${PMACTRL_CI_NODE_HOST:-10.68.68.122}"
-        ;;
-    *)
-        RUN_HOST="${PMACTRL_CI_NODE_HOST:-${RUN_NODE}}"
-        ;;
-esac
+node_host() {
+    local node="$1"
 
-if [[ "${PMACTRL_CI_LOCK_HELD:-0}" != "1" ]]; then
-    log "waiting for CI lock ${LOCK_FILE}"
-    export PMACTRL_CI_LOCK_HELD=1
-    export PMACTRL_CI_NODE="${RUN_NODE}"
-    exec flock --close -w "${LOCK_WAIT_SECONDS}" "${LOCK_FILE}" bash "$0" "${TARGET_OS}"
-fi
+    if [[ -n "${PMACTRL_CI_NODE_HOST:-}" && "${node}" == "${PMACTRL_CI_NODE:-}" ]]; then
+        printf '%s\n' "${PMACTRL_CI_NODE_HOST}"
+        return 0
+    fi
+
+    case "${node}" in
+        pve-1)
+            printf '%s\n' "${PMACTRL_CI_PVE1_HOST:-10.68.68.120}"
+            ;;
+        pve-2)
+            printf '%s\n' "${PMACTRL_CI_PVE2_HOST:-10.68.68.121}"
+            ;;
+        pve-3)
+            printf '%s\n' "${PMACTRL_CI_PVE3_HOST:-10.68.68.122}"
+            ;;
+        *)
+            printf '%s\n' "${node}"
+            ;;
+    esac
+}
+
+set_run_host() {
+    RUN_HOST="$(node_host "${RUN_NODE}")"
+}
 
 should_destroy_vm() {
     [[ "${RESULT}" == "success" || "${KEEP_FAILED_VM}" != "1" ]]
@@ -193,6 +201,197 @@ find_free_vmid() {
         fi
     done
     return 1
+}
+
+candidate_nodes() {
+    local node nodes
+
+    if [[ -n "${PMACTRL_CI_NODE:-}" ]]; then
+        printf '%s\n' "${PMACTRL_CI_NODE}"
+    else
+        nodes="${CI_CANDIDATE_NODES//,/ }"
+        for node in ${nodes}; do
+            printf '%s\n' "${node}"
+        done
+    fi
+}
+
+cleanup_stale_ci_vms() {
+    local node host
+
+    if [[ ! -x "${WORKSPACE}/ci/cleanup-proxmox-ci-vms.sh" ]]; then
+        return 0
+    fi
+
+    for node in $(candidate_nodes); do
+        host="$(node_host "${node}")"
+        printf '[ci:%s:scheduler] cleaning stale CI VMs on %s (%s)\n' "${TARGET_OS}" "${node}" "${host}"
+        if ! "${WORKSPACE}/ci/cleanup-proxmox-ci-vms.sh" \
+            --node "${host}" \
+            --age-minutes "${PMACTRL_CI_CLEANUP_AGE_MINUTES:-30}"; then
+            printf '[ci:%s:scheduler] cleanup warning on %s (%s); continuing with scheduler checks\n' "${TARGET_OS}" "${node}" "${host}" >&2
+        fi
+    done
+}
+
+target_ci_vm_count() {
+    local resources_file
+    resources_file="$(mktemp)"
+    pvesh get /cluster/resources --type vm --output-format json > "${resources_file}"
+    python3 - "${resources_file}" "${VM_NAME_PREFIX}" "${TARGET_OS}" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], "r", encoding="utf-8") as handle:
+    resources = json.load(handle)
+prefix = f"{sys.argv[2]}-{sys.argv[3]}-"
+count = 0
+for item in resources:
+    name = item.get("name") or ""
+    if name.startswith(prefix) and not item.get("template"):
+        count += 1
+print(count)
+PY
+    rm -f "${resources_file}"
+}
+
+ensure_target_slot_available() {
+    local count
+    count="$(target_ci_vm_count)"
+    if (( count >= CI_STATIC_IPS_PER_TARGET )); then
+        echo "Target ${TARGET_OS} already has ${count} CI VM(s); static IP slots available: ${CI_STATIC_IPS_PER_TARGET}" >&2
+        exit 1
+    fi
+}
+
+select_run_node() {
+    local status_file resources_file selection node_cpu_pct node_ram_pct node_projected_ram_pct node_ci_count node_score
+
+    status_file="$(mktemp)"
+    resources_file="$(mktemp)"
+    pvesh get /nodes --output-format json > "${status_file}"
+    pvesh get /cluster/resources --type vm --output-format json > "${resources_file}"
+    selection="$(
+        python3 - \
+            "${status_file}" \
+            "${resources_file}" \
+            "${CI_CANDIDATE_NODES}" \
+            "${PMACTRL_CI_NODE:-}" \
+            "${CI_MAX_RAM_PCT}" \
+            "${CI_MAX_CPU_PCT}" \
+            "${VM_NAME_PREFIX}" \
+            "${VM_MEMORY_MB}" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], "r", encoding="utf-8") as handle:
+    nodes = {item.get("node"): item for item in json.load(handle)}
+with open(sys.argv[2], "r", encoding="utf-8") as handle:
+    resources = json.load(handle)
+configured_candidates = [node for node in sys.argv[3].replace(",", " ").split() if node]
+forced_node = sys.argv[4].strip()
+max_ram_pct = float(sys.argv[5])
+max_cpu_pct = float(sys.argv[6])
+prefix = f"{sys.argv[7]}-"
+vm_memory_bytes = float(sys.argv[8]) * 1024.0 * 1024.0
+candidates = [forced_node] if forced_node else configured_candidates
+
+if not candidates:
+    print("No Proxmox candidate nodes configured", file=sys.stderr)
+    raise SystemExit(1)
+
+active_ci_by_node = {node: 0 for node in candidates}
+for item in resources:
+    name = item.get("name") or ""
+    node = item.get("node")
+    if node in active_ci_by_node and name.startswith(prefix) and item.get("status") != "stopped":
+        active_ci_by_node[node] += 1
+
+eligible = []
+rejected = []
+for node in candidates:
+    info = nodes.get(node)
+    if not info:
+        rejected.append(f"{node}: missing node status")
+        continue
+    if info.get("status") != "online":
+        rejected.append(f"{node}: status={info.get('status')}")
+        continue
+
+    maxmem = float(info.get("maxmem") or 0)
+    mem = float(info.get("mem") or 0)
+    cpu_pct = float(info.get("cpu") or 0) * 100.0
+    ram_pct = (mem / maxmem * 100.0) if maxmem > 0 else 100.0
+    projected_ram_pct = ((mem + vm_memory_bytes) / maxmem * 100.0) if maxmem > 0 else 100.0
+    active_ci = active_ci_by_node.get(node, 0)
+
+    if ram_pct > max_ram_pct:
+        rejected.append(f"{node}: RAM {ram_pct:.1f}% > {max_ram_pct:.1f}%")
+        continue
+    if projected_ram_pct > max_ram_pct:
+        rejected.append(f"{node}: RAM after CI VM {projected_ram_pct:.1f}% > {max_ram_pct:.1f}%")
+        continue
+    if cpu_pct > max_cpu_pct:
+        rejected.append(f"{node}: CPU {cpu_pct:.1f}% > {max_cpu_pct:.1f}%")
+        continue
+
+    score = (active_ci * 1000.0) + projected_ram_pct + cpu_pct
+    eligible.append((score, projected_ram_pct, ram_pct, cpu_pct, active_ci, node))
+
+if not eligible:
+    print("No eligible Proxmox node for CI launch", file=sys.stderr)
+    for reason in rejected:
+        print(f" - {reason}", file=sys.stderr)
+    raise SystemExit(1)
+
+score, projected_ram_pct, ram_pct, cpu_pct, active_ci, node = min(eligible)
+print(f"{node} {cpu_pct:.1f} {ram_pct:.1f} {projected_ram_pct:.1f} {active_ci} {score:.1f}")
+PY
+    )"
+    rm -f "${status_file}" "${resources_file}"
+
+    read -r RUN_NODE node_cpu_pct node_ram_pct node_projected_ram_pct node_ci_count node_score <<< "${selection}"
+    set_run_host
+    log "selected Proxmox node ${RUN_NODE} (${RUN_HOST}): cpu=${node_cpu_pct}%, ram=${node_ram_pct}% projected=${node_projected_ram_pct}%, active_ci=${node_ci_count}, score=${node_score}"
+}
+
+allocate_and_start_vm() {
+    log "waiting for CI scheduler lock ${CI_SCHEDULER_LOCK_FILE}"
+    exec 9>"${CI_SCHEDULER_LOCK_FILE}"
+    if ! flock -w "${LOCK_WAIT_SECONDS}" 9; then
+        echo "Unable to acquire CI scheduler lock ${CI_SCHEDULER_LOCK_FILE}" >&2
+        exit 1
+    fi
+
+    cleanup_stale_ci_vms
+    select_run_node
+    ensure_storage_free
+    ensure_target_slot_available
+
+    VMID="$(find_free_vmid)"
+    VM_NAME="${VM_NAME_PREFIX}-${TARGET_OS}-${VMID}"
+    resolve_static_vm_ip
+    create_ci_cloudinit_snippet
+
+    log "cloning template ${TEMPLATE_ID} to VM ${VMID}"
+    clone_args=(qm clone "${TEMPLATE_ID}" "${VMID}" --name "${VM_NAME}" --full 1 --storage "${STORAGE}")
+    if [[ "${RUN_NODE}" != "${LOCAL_NODE}" ]]; then
+        clone_args+=(--target "${RUN_NODE}")
+    fi
+    "${clone_args[@]}" >/dev/null
+    log "using static IPv4 ${STATIC_VM_IP}/${VM_NETMASK} via ${VM_GATEWAY}"
+    pve_node_cmd qm set "${VMID}" \
+        --memory "${VM_MEMORY_MB}" \
+        --cores 4 \
+        --balloon 0 \
+        --net0 "virtio,bridge=${BRIDGE},firewall=${VM_FIREWALL}" \
+        --ciuser root \
+        --ipconfig0 "ip=${STATIC_VM_IP}/${VM_NETMASK},gw=${VM_GATEWAY}" \
+        --cicustom "user=local:snippets/${VM_NAME}.yaml" >/dev/null
+    pve_node_cmd qm start "${VMID}" >/dev/null
+
+    flock -u 9
+    exec 9>&-
 }
 
 wait_for_agent() {
@@ -295,34 +494,7 @@ run_remote_install() {
         "TARGET_OS='${TARGET_OS}' GIT_COMMIT='${GITHUB_SHA:-manual}' bash /srv/www/pmacontrol/ci/remote-install-and-test.sh"
 }
 
-if [[ -x "${WORKSPACE}/ci/cleanup-proxmox-ci-vms.sh" ]]; then
-    "${WORKSPACE}/ci/cleanup-proxmox-ci-vms.sh" \
-        --node "${RUN_HOST}" \
-        --age-minutes "${PMACTRL_CI_CLEANUP_AGE_MINUTES:-30}"
-fi
-
-ensure_storage_free
-VMID="$(find_free_vmid)"
-VM_NAME="${VM_NAME_PREFIX}-${TARGET_OS}-${VMID}"
-resolve_static_vm_ip
-create_ci_cloudinit_snippet
-
-log "cloning template ${TEMPLATE_ID} to VM ${VMID}"
-clone_args=(qm clone "${TEMPLATE_ID}" "${VMID}" --name "${VM_NAME}" --full 1 --storage "${STORAGE}")
-if [[ "${RUN_NODE}" != "${LOCAL_NODE}" ]]; then
-    clone_args+=(--target "${RUN_NODE}")
-fi
-"${clone_args[@]}" >/dev/null
-log "using static IPv4 ${STATIC_VM_IP}/${VM_NETMASK} via ${VM_GATEWAY}"
-pve_node_cmd qm set "${VMID}" \
-    --memory 4096 \
-    --cores 4 \
-    --balloon 0 \
-    --net0 "virtio,bridge=${BRIDGE},firewall=${VM_FIREWALL}" \
-    --ciuser root \
-    --ipconfig0 "ip=${STATIC_VM_IP}/${VM_NETMASK},gw=${VM_GATEWAY}" \
-    --cicustom "user=local:snippets/${VM_NAME}.yaml" >/dev/null
-pve_node_cmd qm start "${VMID}" >/dev/null
+allocate_and_start_vm
 
 log "waiting for guest agent"
 if ! wait_for_agent; then
