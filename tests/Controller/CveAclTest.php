@@ -1,0 +1,20 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Controller\Cve;
+use PHPUnit\Framework\TestCase;
+
+final class CveAclTest extends TestCase
+{
+    public function testCveIndexRouteExistsAndIsWhitelisted(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $sampleAcl = (string) file_get_contents($root . '/config_sample/acl.config.ini');
+        $method = new ReflectionMethod(Cve::class, 'index');
+
+        $this->assertTrue($method->isPublic());
+        $this->assertStringContainsString('Member[] = "Cve/index"', $sampleAcl);
+        $this->assertStringContainsString('ReadOnly[] = "Cve/index"', $sampleAcl);
+    }
+}
