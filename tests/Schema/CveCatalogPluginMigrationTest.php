@@ -21,6 +21,7 @@ final class CveCatalogPluginMigrationTest extends TestCase
         foreach ([
             'cve_product',
             'cve_catalog',
+            'cve_exclusion',
             'cve_product_affected_version',
             'cve_server_cache',
         ] as $table) {
@@ -70,6 +71,25 @@ final class CveCatalogPluginMigrationTest extends TestCase
         self::assertStringContainsString("'{LINK}cve/index'", $this->migration);
         self::assertStringContainsString("'cve'", $this->migration);
         self::assertStringContainsString("'index'", $this->migration);
+    }
+
+    public function testExclusionAdminMigrationSeedsFalsePositiveAndSuperAdminMenu(): void
+    {
+        $path = __DIR__ . '/../../sql/incremental_v2/20260506_zzzz_cve_exclusion_admin.sql';
+        self::assertFileExists($path);
+
+        $migration = (string)file_get_contents($path);
+
+        self::assertStringContainsString('CREATE TABLE IF NOT EXISTS `cve_exclusion`', $migration);
+        self::assertStringContainsString('CVE-2022-22965', $migration);
+        self::assertStringContainsString('Spring Framework / Enterprise Manager false positive', $migration);
+        self::assertStringContainsString('ON DUPLICATE KEY UPDATE', $migration);
+        self::assertStringContainsString("'CVE exclusions'", $migration);
+        self::assertStringContainsString("'{LINK}cve/exclusions'", $migration);
+        self::assertStringContainsString("'<i class=\"fa fa-ban\" aria-hidden=\"true\"></i>'", $migration);
+        self::assertStringContainsString("'cve'", $migration);
+        self::assertStringContainsString("'exclusions'", $migration);
+        self::assertStringContainsString("`title` = 'SuperAdmin'", $migration);
     }
 
     public function testComponentTagMigrationsSeedProductsAndSourceScopes(): void

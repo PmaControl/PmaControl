@@ -37,6 +37,20 @@ CREATE TABLE IF NOT EXISTS `cve_catalog` (
   KEY `idx_cve_catalog_known_exploited` (`known_exploited`,`severity`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+CREATE TABLE IF NOT EXISTS `cve_exclusion` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `cve_id` varchar(32) NOT NULL,
+  `is_disabled` tinyint(1) NOT NULL DEFAULT 1,
+  `reason` text NULL,
+  `disabled_by` varchar(128) DEFAULT NULL,
+  `disabled_at` datetime DEFAULT NULL,
+  `date_created` datetime NOT NULL DEFAULT current_timestamp(),
+  `date_updated` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_cve_exclusion_cve_id` (`cve_id`),
+  KEY `idx_cve_exclusion_disabled` (`is_disabled`,`disabled_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 CREATE TABLE IF NOT EXISTS `cve_product_affected_version` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `id_cve_catalog` bigint(20) unsigned NOT NULL,

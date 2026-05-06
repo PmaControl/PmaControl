@@ -181,6 +181,34 @@ final class ServerCveImpactMatcher
         return true;
     }
 
+    private static function tableExists($db, string $table): bool
+    {
+        $table = $db->sql_real_escape_string($table);
+        $res = $db->sql_query("SHOW TABLES LIKE '{$table}'");
+
+        return $res && $db->sql_num_rows($res) > 0;
+    }
+
+    private static function exclusionJoin($db, string $catalogAlias, string $exclusionAlias): string
+    {
+        if (!self::tableExists($db, 'cve_exclusion')) {
+            return '';
+        }
+
+        return " LEFT JOIN `cve_exclusion` {$exclusionAlias}"
+            . " ON {$exclusionAlias}.`cve_id` = {$catalogAlias}.`cve_id`"
+            . " AND {$exclusionAlias}.`is_disabled` = 1";
+    }
+
+    private static function exclusionWhere($db, string $exclusionAlias): string
+    {
+        if (!self::tableExists($db, 'cve_exclusion')) {
+            return '';
+        }
+
+        return " AND {$exclusionAlias}.`cve_id` IS NULL";
+    }
+
     /**
      * @param array<int,array{product_code:string,version:string,version_comment:string}> $serverContexts
      */
@@ -282,13 +310,22 @@ final class ServerCveImpactMatcher
             $quotedProducts[] = "'".$db->sql_real_escape_string($productCode)."'";
         }
 
-        $sql = "SELECT `id_cve_catalog`, `id_cve_product`, `product_code`, `version_text`,"
-            . " `version_start_including`, `version_start_excluding`, `version_end_including`, `version_end_excluding`,"
-            . " `match_confidence`"
-            . " FROM `cve_product_affected_version`"
-            . " WHERE `is_current` = 1"
-            . "   AND `match_method` = 'cpe'"
-            . "   AND `product_code` IN (".implode(',', $quotedProducts).")";
+        $exclusionJoin = self::exclusionJoin($db, 'c', 'cx');
+        $exclusionWhere = self::exclusionWhere($db, 'cx');
+        $catalogJoin = $exclusionJoin !== ''
+            ? " INNER JOIN `cve_catalog` c ON c.`id` = av.`id_cve_catalog`"
+            : '';
+
+        $sql = "SELECT av.`id_cve_catalog`, av.`id_cve_product`, av.`product_code`, av.`version_text`,"
+            . " av.`version_start_including`, av.`version_start_excluding`, av.`version_end_including`, av.`version_end_excluding`,"
+            . " av.`match_confidence`"
+            . " FROM `cve_product_affected_version` av"
+            . $catalogJoin
+            . $exclusionJoin
+            . " WHERE av.`is_current` = 1"
+            . "   AND av.`match_method` = 'cpe'"
+            . "   AND av.`product_code` IN (".implode(',', $quotedProducts).")"
+            . $exclusionWhere;
         $res = $db->sql_query($sql);
         $rows = [];
 
@@ -348,12 +385,15 @@ final class ServerCveImpactMatcher
     {
         $serverIds = array_keys($serverContexts);
         $idsSql = implode(',', array_map('intval', $serverIds));
+        $exclusionJoin = self::exclusionJoin($db, 'c', 'cx');
+        $exclusionWhere = self::exclusionWhere($db, 'cx');
         $sql = "SELECT sc.`id_mysql_server`, sc.`product_code`, sc.`server_version`, sc.`match_method`, sc.`match_confidence`,"
             . " c.`cve_id`, c.`title`, c.`summary`, c.`severity`, c.`cvss_v2_score`, c.`cvss_v3_score`, c.`cvss_v4_score`,"
             . " c.`known_exploited`, c.`published_at`"
             . " FROM `cve_server_cache` sc"
             . " INNER JOIN `cve_catalog` c ON c.`id` = sc.`id_cve_catalog`"
-            . " WHERE sc.`is_active` = 1 AND sc.`id_mysql_server` IN ({$idsSql})"
+            . $exclusionJoin
+            . " WHERE sc.`is_active` = 1 AND sc.`id_mysql_server` IN ({$idsSql}){$exclusionWhere}"
             . " ORDER BY FIELD(c.`severity`, 'critical', 'high', 'medium', 'low', 'none', 'unknown'),"
             . "          c.`known_exploited` DESC, c.`published_at` DESC, c.`cve_id` DESC";
         $res = $db->sql_query($sql);
