@@ -95,6 +95,14 @@ created on `pve-2`; `debian13` and `ubuntu2604` are created on `pve-3`.
 Before each target starts, `ci/cleanup-proxmox-ci-vms.sh` removes stale
 `ci-pmacontrol-*` VMs older than 30 minutes on the target node.
 
+CI VMs use static IPv4 addresses because DHCP replies are not available for
+fresh VM guests on every Proxmox node:
+
+- `debian12`: `10.68.68.11`
+- `debian13`: `10.68.68.12`
+- `ubuntu2404`: `10.68.68.13`
+- `ubuntu2604`: `10.68.68.14`
+
 The Proxmox runner maps it to template `923` by default:
 
 ```bash
