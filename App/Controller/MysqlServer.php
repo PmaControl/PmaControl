@@ -481,17 +481,18 @@ class MysqlServer extends Controller
                 $metadataLockEnabled = in_array($id_mysql_server, $metadataLockServerIds, true);
             }
 
-            if (
-                ServerCapabilities::supports($db, 'percona_processlist_56')
-                && ! ServerCapabilities::supports($db, 'percona_processlist_57')
-            )
-            {
-                $sql = "SHOW FULL PROCESSLIST";
-            }
-            else if (self::shouldUsePerfSchemaProcesslist($db, $has_perf_threads))
-            {
-                if ($has_innodb_trx) {
-                    $sql = "SELECT /* pmacontrol-processlist */
+            try {
+                if (
+                    ServerCapabilities::supports($db, 'percona_processlist_56')
+                    && ! ServerCapabilities::supports($db, 'percona_processlist_57')
+                )
+                {
+                    $sql = "SHOW FULL PROCESSLIST";
+                }
+                else if (self::shouldUsePerfSchemaProcesslist($db, $has_perf_threads))
+                {
+                    if ($has_innodb_trx) {
+                        $sql = "SELECT /* pmacontrol-processlist */
                         $id_mysql_server                    AS id_mysql_server,
                         processlist_id                      AS id,
                         IFNULL(thread_id, '0')              AS mysql_thread_id,
@@ -520,8 +521,8 @@ class MysqlServer extends Controller
                         AND ".($showSystemThreads ? "1 = 1" : "(processlist_info IS NOT NULL OR trx_query IS NOT NULL)")."
                         AND IFNULL(processlist_state, '') NOT LIKE 'Group Replication Module%'
                         ORDER BY processlist_time DESC;";
-                } else {
-                    $sql = "SELECT /* pmacontrol-processlist */
+                    } else {
+                        $sql = "SELECT /* pmacontrol-processlist */
                         $id_mysql_server                    AS id_mysql_server,
                         processlist_id                      AS id,
                         IFNULL(thread_id, '0')              AS mysql_thread_id,
@@ -549,13 +550,13 @@ class MysqlServer extends Controller
                         AND ".($showSystemThreads ? "1 = 1" : "processlist_info IS NOT NULL")."
                         AND IFNULL(processlist_state, '') NOT LIKE 'Group Replication Module%'
                         ORDER BY processlist_time DESC;";
+                    }
+
+
                 }
-
-
-            }
-            else if ($has_info_processlist)
-            {
-                /*
+                else if ($has_info_processlist)
+                {
+                    /*
                 $sql ="SELECT 
                     p.ID AS mysql_thread_id,
                     p.USER AS user,
@@ -577,8 +578,8 @@ class MysqlServer extends Controller
                     p.TIME DESC;";
                 */
 
-                if ($has_innodb_trx) {
-                    $sql ="SELECT /* pmacontrol-processlist */
+                    if ($has_innodb_trx) {
+                        $sql ="SELECT /* pmacontrol-processlist */
                         $id_mysql_server AS id_mysql_server,
                         p.ID AS id,
                         t.trx_mysql_thread_id as mysql_thread_id,
@@ -601,8 +602,8 @@ class MysqlServer extends Controller
                     WHERE ".($showSystemThreads ? "1 = 1" : "(command != 'Sleep' AND command NOT LIKE 'Binlog Dump%')")."
                     ORDER BY 
                         p.TIME DESC;";
-                } else {
-                    $sql ="SELECT /* pmacontrol-processlist */
+                    } else {
+                        $sql ="SELECT /* pmacontrol-processlist */
                         $id_mysql_server AS id_mysql_server,
                         p.ID AS id,
                         p.ID as mysql_thread_id,
@@ -624,14 +625,41 @@ class MysqlServer extends Controller
                     WHERE ".($showSystemThreads ? "1 = 1" : "(command != 'Sleep' AND command NOT LIKE 'Binlog Dump%')")."
                     ORDER BY 
                         p.TIME DESC;";
+                    }
                 }
-            }
-            else
-            {
-                $sql = "SHOW FULL PROCESSLIST";
+                else
+                {
+                    $sql = "SHOW FULL PROCESSLIST";
+                }
+            } catch (\Throwable $e) {
+                if (!self::isProxySqlHostgroupError($e->getMessage())) {
+                    throw $e;
+                }
+
+                self::addProxySqlHostgroupOfflineDiagnostics(
+                    $data,
+                    (int)$id_mysql_server,
+                    $credentials,
+                    $e->getMessage()
+                );
+                continue;
             }
 
-            $processlistQuery = self::executeProcesslistQuery($db, $sql, (int)$id_mysql_server);
+            try {
+                $processlistQuery = self::executeProcesslistQuery($db, $sql, (int)$id_mysql_server);
+            } catch (\Throwable $e) {
+                if (!self::isProxySqlHostgroupError($e->getMessage())) {
+                    throw $e;
+                }
+
+                self::addProxySqlHostgroupOfflineDiagnostics(
+                    $data,
+                    (int)$id_mysql_server,
+                    $credentials,
+                    $e->getMessage()
+                );
+                continue;
+            }
             $res = $processlistQuery['result'];
             $processlistDb = $processlistQuery['db'];
             $sql = $processlistQuery['sql'];
@@ -641,6 +669,16 @@ class MysqlServer extends Controller
                     'Processlist query recovered through fallback for id_mysql_server='
                     . (int)$id_mysql_server . ' reason=' . $processlistQuery['fallback_reason']
                 );
+            }
+
+            if (!$res && self::isProxySqlHostgroupError($processlistQuery['fallback_reason'])) {
+                self::addProxySqlHostgroupOfflineDiagnostics(
+                    $data,
+                    (int)$id_mysql_server,
+                    $credentials,
+                    $processlistQuery['fallback_reason']
+                );
+                continue;
             }
 
             if (!$res) {
@@ -4651,7 +4689,7 @@ class MysqlServer extends Controller
             $query['result'] = $db->sql_query($sql);
             return $query;
         } catch (\Throwable $e) {
-            if (!self::isProxySqlHostgroupLockError($e->getMessage()) || $sql === "SHOW FULL PROCESSLIST") {
+            if (!self::isProxySqlHostgroupError($e->getMessage()) || $sql === "SHOW FULL PROCESSLIST") {
                 throw $e;
             }
 
@@ -4680,15 +4718,55 @@ class MysqlServer extends Controller
 
         $query['sql'] = "SHOW FULL PROCESSLIST";
         $query['db'] = $db;
-        $query['result'] = $db->sql_query($query['sql']);
+        try {
+            $query['result'] = $db->sql_query($query['sql']);
+        } catch (\Throwable $e) {
+            if (!self::isProxySqlHostgroupError($e->getMessage())) {
+                throw $e;
+            }
+
+            $query['fallback_reason'] .= ' ; fallback_hostgroup_unavailable: ' . $e->getMessage();
+            $query['result'] = false;
+        }
 
         return $query;
     }
 
+    private static function addProxySqlHostgroupOfflineDiagnostics(
+        array &$data,
+        int $idMysqlServer,
+        array $credentials,
+        string $message
+    ): void {
+        $data['offline_diagnostics'][$idMysqlServer] = [
+            'id_mysql_server' => $idMysqlServer,
+            'ip' => (string)($credentials['ip'] ?? ''),
+            'port' => (int)($credentials['port'] ?? 0),
+            'mysql_available' => 0,
+            'mysql_error' => 'ProxySQL backend hostgroup unavailable: ' . $message,
+            'port_open' => 1,
+            'port_message' => 'ProxySQL endpoint reachable; backend hostgroup unavailable',
+            'mysql_test_message' => '',
+        ];
+    }
+
+    private static function isProxySqlHostgroupError(string $message): bool
+    {
+        $message = strtolower($message);
+
+        if (strpos($message, 'hostgroup') === false) {
+            return false;
+        }
+
+        return (
+            strpos($message, 'connection is locked to hostgroup') !== false
+            && strpos($message, 'trying to reach hostgroup') !== false
+        ) || strpos($message, 'max connect timeout reached while reaching hostgroup') !== false;
+    }
+
     private static function isProxySqlHostgroupLockError(string $message): bool
     {
-        return stripos($message, 'ProxySQL Error: connection is locked to hostgroup') !== false
-            && stripos($message, 'trying to reach hostgroup') !== false;
+        return self::isProxySqlHostgroupError($message);
     }
 
 }
