@@ -27,6 +27,15 @@ final class CliRootGuardTest extends TestCase
         $this->assertFalse(CliRootGuard::shouldReexec(true, 0, ['index.php', 'webservice', 'importMysqlServerPlain'], []));
     }
 
+    public function testExportGenerateDumpKeepsRootSoItCanFixOwnership(): void
+    {
+        // Issue #777: generateDump must run as root when invoked as root,
+        // because dropping to www-data would prevent it from re-chowning
+        // sql/full/pmacontrol.sql when a previous root invocation left
+        // the file with mismatched ownership.
+        $this->assertFalse(CliRootGuard::shouldReexec(true, 0, ['index.php', 'export', 'generateDump'], []));
+    }
+
     public function testReexecEnvironmentPreventsLoop(): void
     {
         $this->assertFalse(CliRootGuard::shouldReexec(

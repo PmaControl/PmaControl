@@ -33,7 +33,7 @@ use PHPUnit\Framework\TestCase;
  */
 final class ExportGenerateDumpAtomicWriteTest extends TestCase
 {
-    public function testBuildDumpCommandQuotesEverythingAndUsesDefaultsExtraFile(): void
+    public function testBuildDumpCommandQuotesEverythingAndUsesDefaultsFile(): void
     {
         $cmd = Export::buildDumpCommand(
             '/tmp/creds-abc',
@@ -46,12 +46,19 @@ final class ExportGenerateDumpAtomicWriteTest extends TestCase
 
         $this->assertIsString($cmd);
 
-        // Credentials path is read by mysqldump itself, never on argv.
-        $this->assertStringContainsString("--defaults-extra-file='/tmp/creds-abc'", $cmd);
+        // --defaults-file= MUST be the first argument (mysqldump rule)
+        // and must use the full-override form, not --defaults-extra-file
+        // — otherwise /root/.my.cnf wins over our user/password when
+        // invoked as root.
+        $this->assertStringContainsString("mysqldump --defaults-file='/tmp/creds-abc'", $cmd);
+        $this->assertStringNotContainsString('--defaults-extra-file', $cmd, 'Use --defaults-file= for full override (root precedence trap).');
 
-        // No password leak: the legacy -p<plaintext> form must be gone.
+        // No password leak: the legacy -p<plaintext> and --password forms
+        // must both be gone.
         $this->assertStringNotContainsString(' -p', $cmd, 'Password must never be passed on the command line.');
         $this->assertStringNotContainsString(' --password', $cmd);
+        // Same for the user — it's in the defaults file, not on argv.
+        $this->assertStringNotContainsString('--user', $cmd);
 
         // Quoted database, table list, redirect target.
         $this->assertStringContainsString("'pmacontrol'", $cmd);
@@ -120,6 +127,33 @@ final class ExportGenerateDumpAtomicWriteTest extends TestCase
         // make sure the dangerous fragment is gone from what's left.
         $strippedOfQuotedArgs = preg_replace("/'(?:[^']|'\\\\'')*'/", '', $cmd);
         $this->assertStringNotContainsString('rm -rf', (string) $strippedOfQuotedArgs);
+    }
+
+    public function testNormalizeDumpOwnershipOnNonExistingPathIsNoOp(): void
+    {
+        // Issue #777: post-dump ownership normalization must never fail
+        // the dump itself — when the file does not exist (eg the dump
+        // never wrote anything), this method must just return.
+        $missing = sys_get_temp_dir().'/pmacontrol-no-such-file-'.bin2hex(random_bytes(6));
+        Export::normalizeDumpOwnership($missing); // no exception expected
+        $this->assertFileDoesNotExist($missing);
+    }
+
+    public function testNormalizeDumpOwnershipBestEffortChmodsTo664(): void
+    {
+        // The chown/chgrp branch only succeeds when the test process is
+        // root (uncommon in CI), so we only assert on the chmod path
+        // which always works on a file the caller can own.
+        $path = tempnam(sys_get_temp_dir(), 'pmacontrol-dump-perms-');
+        chmod($path, 0o600);
+
+        try {
+            Export::normalizeDumpOwnership($path);
+            $perms = fileperms($path) & 0o777;
+            $this->assertSame(0o664, $perms, 'normalizeDumpOwnership must drop the file to mode 0664.');
+        } finally {
+            @unlink($path);
+        }
     }
 
     public function testWriteDefaultsExtraFileIsZero600AndContainsClientBlock(): void

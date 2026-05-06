@@ -46,6 +46,16 @@ final class CliRootGuard
                 'exportmysqlserverplain',
                 'importmysqlserverplain',
             ],
+            // Issue #777: generateDump writes sql/full/pmacontrol.sql which
+            // is owned by www-data. The standard reexec flow drops the
+            // process to www-data, but on hosts where the file ended up
+            // root-owned (eg from a previous root invocation), www-data
+            // can no longer truncate it. Keeping root for this command
+            // lets generateDump succeed *and* re-chown the file back to
+            // www-data so subsequent www-data runs work cleanly.
+            'export' => [
+                'generatedump',
+            ],
         ];
 
         return isset($rootActions[$controller]) && in_array($action, $rootActions[$controller], true);

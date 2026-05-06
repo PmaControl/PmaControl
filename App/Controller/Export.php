@@ -147,7 +147,7 @@ class Export extends Controller
             ));
         }
 
-        $defaultsExtraFile = self::writeDefaultsExtraFile(
+        $defaultsFile = self::writeDefaultsExtraFile(
             (string) $connect['hostname'],
             (int)    $connect['port'],
             (string) $connect['user'],
@@ -155,26 +155,61 @@ class Export extends Controller
         );
 
         try {
-            $this->dumpInto($finalPath, $defaultsExtraFile, (string) $connect['database'], $table_with_data,        ['--skip-dump-date'],                          '>');
-            $this->dumpInto($finalPath, $defaultsExtraFile, (string) $connect['database'], $table_with_data_expand, ['--skip-dump-date', '--skip-extended-insert'], '>>');
-            $this->dumpInto($finalPath, $defaultsExtraFile, (string) $connect['database'], $table_without_data,     ['--skip-dump-date', '-d'],                    '>>');
+            $this->dumpInto($finalPath, $defaultsFile, (string) $connect['database'], $table_with_data,        ['--skip-dump-date'],                          '>');
+            $this->dumpInto($finalPath, $defaultsFile, (string) $connect['database'], $table_with_data_expand, ['--skip-dump-date', '--skip-extended-insert'], '>>');
+            $this->dumpInto($finalPath, $defaultsFile, (string) $connect['database'], $table_without_data,     ['--skip-dump-date', '-d'],                    '>>');
         } finally {
-            @unlink($defaultsExtraFile);
+            @unlink($defaultsFile);
+            // Issue #777: when invoked as root (CliRootGuard keeps
+            // generateDump at root, see CliRootGuard::shouldKeepRoot()),
+            // bring the ownership back to www-data so subsequent
+            // www-data-context invocations (web UI, worker, …) can keep
+            // truncating the file. We do it in finally so a partial /
+            // failed dump still gets a recoverable owner — the next run
+            // can then overwrite cleanly. No-op when not root: chown
+            // fails silently.
+            self::normalizeDumpOwnership($finalPath);
         }
+    }
+
+    /**
+     * Best-effort: bring `sql/full/pmacontrol.sql` back to
+     * `www-data:www-data 0664`. Only effective when the calling process
+     * is root; otherwise the chown/chgrp calls fail silently and the
+     * existing ownership is left in place.
+     */
+    public static function normalizeDumpOwnership(string $path): void
+    {
+        if (!file_exists($path)) {
+            return;
+        }
+
+        @chown($path, 'www-data');
+        @chgrp($path, 'www-data');
+        @chmod($path, 0664);
     }
 
     /**
      * Build the mysqldump shell command that writes (or appends) into a
      * temp file. All variable inputs go through escapeshellarg so a
      * hostile database/table name can't break out of the shell context.
-     * Credentials are read from `--defaults-extra-file=` instead of `-p`
-     * on the command line, so they never appear in `ps`.
+     *
+     * Credentials and connection settings are read from a `--defaults-file=`
+     * (full override of mysqldump's option file search). This:
+     *   - keeps the password out of `ps -ef` (it's in a 0600 temp file),
+     *   - sidesteps the precedence trap where mysqldump as root would
+     *     otherwise read /root/.my.cnf AFTER --defaults-extra-file and
+     *     overwrite our user/password with whatever the system root
+     *     account uses.
+     *
+     * `--defaults-file=` must be the FIRST argument on argv (mysqldump
+     * requirement).
      *
      * @param array<int,string> $tables
      * @param array<int,string> $extraOpts
      */
     public static function buildDumpCommand(
-        string $defaultsExtraFile,
+        string $defaultsFile,
         string $database,
         array $tables,
         array $extraOpts,
@@ -192,7 +227,7 @@ class Export extends Controller
         $optsQuoted   = array_map('escapeshellarg', $extraOpts);
         $tablesQuoted = array_map('escapeshellarg', $tables);
 
-        return 'mysqldump --defaults-extra-file='.escapeshellarg($defaultsExtraFile).' '
+        return 'mysqldump --defaults-file='.escapeshellarg($defaultsFile).' '
              .implode(' ', $optsQuoted).' '
              .escapeshellarg($database).' '
              .implode(' ', $tablesQuoted)
@@ -201,9 +236,12 @@ class Export extends Controller
     }
 
     /**
-     * Write a `[client]` block in a 0600 temp file so mysqldump can pick
-     * up the password without it ever appearing on the command line
-     * (where any local user can read it via `ps`).
+     * Write a `[client]` block in a 0600 temp file. The file is meant to
+     * be passed via `--defaults-file=` (full override of mysqldump's
+     * standard search list) so:
+     *   - the password never appears on argv (no leak in `ps -ef`),
+     *   - root invocations don't pick up /root/.my.cnf and fail with
+     *     "Access denied for user 'root'@'127.0.0.1'".
      */
     public static function writeDefaultsExtraFile(string $hostname, int $port, string $user, string $password): string
     {
@@ -232,20 +270,24 @@ class Export extends Controller
      * @param array<int,string> $tables
      * @param array<int,string> $extraOpts
      */
-    private function dumpInto(string $tmpPath, string $defaultsExtraFile, string $database, array $tables, array $extraOpts, string $redirect): void
+    private function dumpInto(string $tmpPath, string $defaultsFile, string $database, array $tables, array $extraOpts, string $redirect): void
     {
-        $cmd = self::buildDumpCommand($defaultsExtraFile, $database, $tables, $extraOpts, $tmpPath, $redirect);
+        $cmd = self::buildDumpCommand($defaultsFile, $database, $tables, $extraOpts, $tmpPath, $redirect);
         if ($cmd === null) {
             return;
         }
 
+        // exec() returns the exit code of the *last* command in a pipeline,
+        // and the project's pipeline ends in `sed > file` which exits 0
+        // even when mysqldump has already errored out. Wrap in `bash -o
+        // pipefail` so any failure in the pipeline (mysqldump auth fails,
+        // sed missing, redirection refused, …) propagates to the exit
+        // code we read here.
+        $wrapped = 'bash -o pipefail -c '.escapeshellarg($cmd).' 2>&1';
+
         $output = [];
         $code   = 0;
-        // exec() returns the exit code, unlike shell_exec() which silently
-        // dropped it and let three failed mysqldump calls chain into a
-        // false-success exit-0. The user-visible "Permission denied" was
-        // only ever surfacing on stderr because of that.
-        exec($cmd.' 2>&1', $output, $code);
+        exec($wrapped, $output, $code);
 
         if ($code !== 0) {
             throw new \RuntimeException(sprintf(
