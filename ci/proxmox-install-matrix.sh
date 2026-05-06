@@ -11,6 +11,10 @@ VM_NAME_PREFIX="ci-pmacontrol"
 VM_NETMASK="${PMACTRL_CI_NETMASK:-24}"
 VM_GATEWAY="${PMACTRL_CI_GATEWAY:-10.68.68.1}"
 VM_FIREWALL="${PMACTRL_CI_FIREWALL:-0}"
+CI_STATIC_IP_PREFIX="${PMACTRL_CI_STATIC_IP_PREFIX:-10.68.68}"
+CI_STATIC_IP_START="${PMACTRL_CI_STATIC_IP_START:-39}"
+CI_STATIC_IP_COUNT="${PMACTRL_CI_STATIC_IP_COUNT:-8}"
+CI_STATIC_IPS_PER_TARGET="${PMACTRL_CI_STATIC_IPS_PER_TARGET:-2}"
 RESULT="failure"
 LOCK_WAIT_SECONDS="${PMACTRL_CI_LOCK_WAIT_SECONDS:-21600}"
 MIN_FREE_KIB="${PMACTRL_CI_MIN_FREE_KIB:-5242880}"
@@ -21,6 +25,7 @@ RUN_NODE=""
 RUN_HOST=""
 LOCK_FILE=""
 STATIC_VM_IP=""
+STATIC_VM_IP_SLOT_START=""
 VMID=""
 VM_NAME=""
 VM_IP=""
@@ -41,34 +46,69 @@ for cmd in qm ssh python3 tar git flock pvesm install; do
     require_cmd "${cmd}"
 done
 
+ci_static_ip() {
+    local offset="$1"
+    local last_octet
+
+    if (( offset < 0 || offset >= CI_STATIC_IP_COUNT )); then
+        echo "Static CI IP slot ${offset} is outside configured pool size ${CI_STATIC_IP_COUNT}" >&2
+        exit 1
+    fi
+
+    last_octet=$((CI_STATIC_IP_START + offset))
+    if (( last_octet < 1 || last_octet > 254 )); then
+        echo "Static CI IP ${CI_STATIC_IP_PREFIX}.${last_octet} is outside a usable IPv4 host range" >&2
+        exit 1
+    fi
+
+    printf '%s.%d' "${CI_STATIC_IP_PREFIX}" "${last_octet}"
+}
+
+resolve_static_vm_ip() {
+    local vmid_offset
+    local slot
+
+    if [[ -n "${STATIC_VM_IP}" ]]; then
+        return 0
+    fi
+
+    vmid_offset=$((VMID - VMID_START))
+    slot=$((STATIC_VM_IP_SLOT_START + (vmid_offset % CI_STATIC_IPS_PER_TARGET)))
+    STATIC_VM_IP="$(ci_static_ip "${slot}")"
+}
+
 case "${TARGET_OS}" in
     debian12)
         TEMPLATE_ID=920
         VMID_START=9300
         VMID_END=9399
         RUN_NODE="${PMACTRL_CI_NODE:-pve-2}"
-        STATIC_VM_IP="${PMACTRL_CI_DEBIAN12_IP:-10.68.68.11}"
+        STATIC_VM_IP="${PMACTRL_CI_DEBIAN12_IP:-}"
+        STATIC_VM_IP_SLOT_START=0
         ;;
     debian13)
         TEMPLATE_ID=921
         VMID_START=9400
         VMID_END=9499
         RUN_NODE="${PMACTRL_CI_NODE:-pve-3}"
-        STATIC_VM_IP="${PMACTRL_CI_DEBIAN13_IP:-10.68.68.12}"
+        STATIC_VM_IP="${PMACTRL_CI_DEBIAN13_IP:-}"
+        STATIC_VM_IP_SLOT_START=2
         ;;
     ubuntu2404)
         TEMPLATE_ID=922
         VMID_START=9500
         VMID_END=9599
         RUN_NODE="${PMACTRL_CI_NODE:-pve-2}"
-        STATIC_VM_IP="${PMACTRL_CI_UBUNTU2404_IP:-10.68.68.13}"
+        STATIC_VM_IP="${PMACTRL_CI_UBUNTU2404_IP:-}"
+        STATIC_VM_IP_SLOT_START=4
         ;;
     ubuntu2604)
         TEMPLATE_ID="${PMACTRL_CI_UBUNTU2604_TEMPLATE_ID:-923}"
         VMID_START=9600
         VMID_END=9699
         RUN_NODE="${PMACTRL_CI_NODE:-pve-3}"
-        STATIC_VM_IP="${PMACTRL_CI_UBUNTU2604_IP:-10.68.68.14}"
+        STATIC_VM_IP="${PMACTRL_CI_UBUNTU2604_IP:-}"
+        STATIC_VM_IP_SLOT_START=6
         ;;
     *)
         echo "Unsupported target OS: ${TARGET_OS}" >&2
@@ -264,6 +304,7 @@ fi
 ensure_storage_free
 VMID="$(find_free_vmid)"
 VM_NAME="${VM_NAME_PREFIX}-${TARGET_OS}-${VMID}"
+resolve_static_vm_ip
 create_ci_cloudinit_snippet
 
 log "cloning template ${TEMPLATE_ID} to VM ${VMID}"

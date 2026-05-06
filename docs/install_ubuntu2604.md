@@ -95,13 +95,20 @@ created on `pve-2`; `debian13` and `ubuntu2604` are created on `pve-3`.
 Before each target starts, `ci/cleanup-proxmox-ci-vms.sh` removes stale
 `ci-pmacontrol-*` VMs older than 30 minutes on the target node.
 
-CI VMs use static IPv4 addresses because DHCP replies are not available for
-fresh VM guests on every Proxmox node:
+CI VMs use a reserved static IPv4 pool to avoid depending on dynamic DHCP
+discovery during guest boot. The default pool is `10.68.68.39-46`, with two
+slots per target so a re-run can keep a failed VM without immediately reusing
+the same address:
 
-- `debian12`: `10.68.68.11`
-- `debian13`: `10.68.68.12`
-- `ubuntu2404`: `10.68.68.13`
-- `ubuntu2604`: `10.68.68.14`
+- `debian12`: `10.68.68.39-40`
+- `debian13`: `10.68.68.41-42`
+- `ubuntu2404`: `10.68.68.43-44`
+- `ubuntu2604`: `10.68.68.45-46`
+
+The pool can be shifted with `PMACTRL_CI_STATIC_IP_PREFIX`,
+`PMACTRL_CI_STATIC_IP_START`, `PMACTRL_CI_STATIC_IP_COUNT`, and
+`PMACTRL_CI_STATIC_IPS_PER_TARGET`. Per-target overrides still take precedence,
+for example `PMACTRL_CI_UBUNTU2604_IP`.
 
 The Proxmox runner maps it to template `923` by default:
 
