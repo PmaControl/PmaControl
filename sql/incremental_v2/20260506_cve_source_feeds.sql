@@ -355,6 +355,9 @@ INNER JOIN (
   SELECT 'nvd' AS `source_code`, 'mysql' AS `product_code`, 'MySQL Server' AS `product_name`, 'oracle' AS `cpe_vendor`, 'mysql' AS `cpe_product`, 'Historical coverage must include MySQL 4.1 and newer.' AS `notes`
   UNION ALL SELECT 'nvd', 'mariadb', 'MariaDB Server', 'mariadb', 'mariadb', 'Use CPE when present; vendor advisories remain authoritative for fixed versions.'
   UNION ALL SELECT 'nvd', 'percona_server', 'Percona Server for MySQL', 'percona', 'percona_server', 'Percona build suffixes require product-aware version parsing.'
+  UNION ALL SELECT 'nvd', 'xtrabackup', 'Percona XtraBackup', 'percona', 'xtrabackup', 'Component CVEs must not be merged into Percona Server.'
+  UNION ALL SELECT 'nvd', 'pmm', 'Percona Monitoring and Management', 'percona', 'monitoring_and_management', 'PMM CVEs must stay separate from Percona Server.'
+  UNION ALL SELECT 'nvd', 'mariadb_backup', 'MariaDB Backup', 'mariadb', 'mariadb_backup', 'Backup component CVEs must stay separate from MariaDB Server.'
   UNION ALL SELECT 'nvd', 'proxysql', 'ProxySQL', 'proxysql', 'proxysql', 'CPE coverage may be incomplete; component GHSA is the fallback.'
   UNION ALL SELECT 'nvd', 'haproxy', 'HAProxy', 'haproxy', 'haproxy', 'Use CPE when available; component GHSA/vendor data may be required.'
   UNION ALL SELECT 'nvd', 'maxscale', 'MariaDB MaxScale', 'mariadb', 'maxscale', 'MariaDB advisories are preferred for fixed versions.'
@@ -374,6 +377,8 @@ INNER JOIN (
   UNION ALL SELECT 'mariadb_security', 'mariadb', 'MariaDB Server', 'mariadb', 'mariadb', 'Authoritative MariaDB security source.'
   UNION ALL SELECT 'mariadb_security', 'maxscale', 'MariaDB MaxScale', 'mariadb', 'maxscale', 'Authoritative MaxScale security source.'
   UNION ALL SELECT 'percona_advisory', 'percona_server', 'Percona Server for MySQL', 'percona', 'percona_server', 'Authoritative Percona advisory source.'
+  UNION ALL SELECT 'percona_advisory', 'xtrabackup', 'Percona XtraBackup', 'percona', 'xtrabackup', 'Authoritative Percona advisory source for XtraBackup.'
+  UNION ALL SELECT 'percona_advisory', 'pmm', 'Percona Monitoring and Management', 'percona', 'monitoring_and_management', 'Authoritative Percona advisory source for PMM.'
   UNION ALL SELECT 'component_ghsa', 'proxysql', 'ProxySQL', NULL, NULL, 'Component-scoped GHSA feed.'
   UNION ALL SELECT 'component_ghsa', 'maxscale', 'MariaDB MaxScale', NULL, NULL, 'Component-scoped GHSA feed.'
   UNION ALL SELECT 'component_ghsa', 'haproxy', 'HAProxy', NULL, NULL, 'Component-scoped GHSA feed.'

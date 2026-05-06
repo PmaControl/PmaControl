@@ -45,6 +45,9 @@ final class CveCatalogPluginMigrationTest extends TestCase
             "('mysql', 'MySQL Server'",
             "('mariadb', 'MariaDB Server'",
             "('percona', 'Percona Server'",
+            "('xtrabackup', 'Percona XtraBackup'",
+            "('pmm', 'Percona Monitoring and Management'",
+            "('mariadb_backup', 'MariaDB Backup'",
             "('proxysql', 'ProxySQL'",
             "('aurora_mysql', 'Amazon Aurora MySQL'",
         ] as $productSeed) {
@@ -56,6 +59,35 @@ final class CveCatalogPluginMigrationTest extends TestCase
         self::assertStringContainsString("'{LINK}cve/index'", $this->migration);
         self::assertStringContainsString("'cve'", $this->migration);
         self::assertStringContainsString("'index'", $this->migration);
+    }
+
+    public function testComponentTagMigrationsSeedProductsAndSourceScopes(): void
+    {
+        $productPath = __DIR__ . '/../../sql/incremental_v2/20260506_cve_component_tags.sql';
+        $sourcePath = __DIR__ . '/../../sql/incremental_v2/20260506_zz_cve_component_feed_source_products.sql';
+        self::assertFileExists($productPath);
+        self::assertFileExists($sourcePath);
+
+        $productMigration = (string)file_get_contents($productPath);
+        $sourceMigration = (string)file_get_contents($sourcePath);
+
+        foreach ([
+            "('xtrabackup', 'Percona XtraBackup'",
+            "('pmm', 'Percona Monitoring and Management'",
+            "('mariadb_backup', 'MariaDB Backup'",
+        ] as $productSeed) {
+            self::assertStringContainsString($productSeed, $productMigration);
+        }
+
+        foreach ([
+            "'nvd' AS `source_code`, 'xtrabackup'",
+            "'nvd', 'pmm'",
+            "'nvd', 'mariadb_backup'",
+            "'percona_advisory', 'xtrabackup'",
+            "'percona_advisory', 'pmm'",
+        ] as $sourceSeed) {
+            self::assertStringContainsString($sourceSeed, $sourceMigration);
+        }
     }
 
     private function tableBlock(string $table): string

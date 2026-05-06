@@ -207,6 +207,11 @@ final class CveCatalogBuilder
     {
         foreach ($this->fetchAll("SELECT * FROM `cve_source_percona_advisory` WHERE `is_current` = 1 AND `cve_id` IS NOT NULL") as $row) {
             $cveId = (string)$row['cve_id'];
+            $productCode = self::productFromPerconaAdvisoryRow($row);
+            if ($productCode === null) {
+                continue;
+            }
+
             $this->mergeCatalog($catalog, $cveId, [
                 'severity' => self::severity((string)($row['severity'] ?? 'unknown')),
                 'published_at' => $row['published_at'] ?? null,
@@ -214,7 +219,7 @@ final class CveCatalogBuilder
                 'source_code' => 'percona_advisory',
             ]);
 
-            $affected[] = $this->affectedRow($cveId, 'percona', [
+            $affected[] = $this->affectedRow($cveId, $productCode, [
                 'version_text' => $this->nullableString($row['affected_versions'] ?? null) ?: 'Percona advisory or NVD-derived range',
                 'fixed_version' => $row['fixed_versions'] ?? null,
                 'source_code' => 'percona_advisory',
@@ -530,6 +535,9 @@ final class CveCatalogBuilder
             ['mysql', 'MySQL Server', 'mysql_like', 'fa fa-database', '#e97b00'],
             ['mariadb', 'MariaDB Server', 'mysql_like', 'fa fa-database', '#003545'],
             ['percona', 'Percona Server', 'mysql_like', 'fa fa-database', '#c3281c'],
+            ['xtrabackup', 'Percona XtraBackup', 'component', 'fa fa-archive', '#6b21a8'],
+            ['pmm', 'Percona Monitoring and Management', 'component', 'fa fa-line-chart', '#7f1d1d'],
+            ['mariadb_backup', 'MariaDB Backup', 'component', 'fa fa-archive', '#0f766e'],
             ['proxysql', 'ProxySQL', 'proxy', 'fa fa-random', '#1f2937'],
             ['maxscale', 'MariaDB MaxScale', 'proxy', 'fa fa-exchange', '#00a7c8'],
             ['haproxy', 'HAProxy', 'proxy', 'fa fa-share-alt', '#2563eb'],
@@ -612,13 +620,27 @@ final class CveCatalogBuilder
         if (($vendor === 'oracle' || $vendor === 'mysql') && in_array($product, ['mysql', 'mysql_server'], true)) {
             return 'mysql';
         }
+        $targetSoftware = $parts[10] ?? '';
+        if ($vendor === 'percona' && $targetSoftware === 'mongodb') {
+            return null;
+        }
+
+        if ($vendor === 'mariadb' && in_array($product, ['mariadb_backup', 'mariadb-backup', 'mariabackup'], true)) {
+            return 'mariadb_backup';
+        }
         if ($vendor === 'mariadb' && $product === 'mariadb') {
             return 'mariadb';
         }
         if ($vendor === 'mariadb' && $product === 'maxscale') {
             return 'maxscale';
         }
-        if ($vendor === 'percona' && str_contains($product, 'percona')) {
+        if ($vendor === 'percona' && in_array($product, ['xtrabackup', 'percona_xtrabackup', 'percona-xtrabackup'], true)) {
+            return 'xtrabackup';
+        }
+        if ($vendor === 'percona' && in_array($product, ['monitoring_and_management', 'percona_monitoring_and_management', 'pmm', 'pmm_server'], true)) {
+            return 'pmm';
+        }
+        if ($vendor === 'percona' && in_array($product, ['percona_server', 'percona_server_for_mysql'], true)) {
             return 'percona';
         }
         if ($vendor === 'proxysql' || $product === 'proxysql') {
@@ -690,6 +712,20 @@ final class CveCatalogBuilder
             'mariadb server' => 'mariadb',
             'percona' => 'percona',
             'percona_server' => 'percona',
+            'percona server' => 'percona',
+            'percona_server_for_mysql' => 'percona',
+            'percona server for mysql' => 'percona',
+            'xtrabackup' => 'xtrabackup',
+            'percona xtrabackup' => 'xtrabackup',
+            'percona_xtrabackup' => 'xtrabackup',
+            'pmm' => 'pmm',
+            'pmm server' => 'pmm',
+            'percona monitoring and management' => 'pmm',
+            'monitoring_and_management' => 'pmm',
+            'mariadb-backup' => 'mariadb_backup',
+            'mariadb backup' => 'mariadb_backup',
+            'mariadb_backup' => 'mariadb_backup',
+            'mariabackup' => 'mariadb_backup',
             'proxysql' => 'proxysql',
             'maxscale' => 'maxscale',
             'haproxy' => 'haproxy',
@@ -712,6 +748,25 @@ final class CveCatalogBuilder
     private static function productsFromText(string $text): array
     {
         $text = strtolower($text);
+        if (preg_match('/\bpercona[-\s]+toolkit\b|\bmongodb\b/', $text) === 1) {
+            return [];
+        }
+
+        $componentProducts = [];
+        foreach ([
+            'xtrabackup' => '/\b(?:percona[-_\s]+)?xtrabackup\b/',
+            'pmm' => '/\bpmm(?:[-_\s]+server)?\b|\bpercona[-_\s]+monitoring[-_\s]+and[-_\s]+management\b/',
+            'mariadb_backup' => '/\bmariadb[-_\s]+backup\b|\bmariabackup\b/',
+        ] as $product => $pattern) {
+            if (preg_match($pattern, $text) === 1) {
+                $componentProducts[] = $product;
+            }
+        }
+
+        if ($componentProducts !== []) {
+            return array_values(array_unique($componentProducts));
+        }
+
         $products = [];
         foreach ([
             'proxysql' => '/\bproxysql\b/',
@@ -791,6 +846,49 @@ final class CveCatalogBuilder
         }
         if (str_contains($package, 'haproxy')) {
             return 'haproxy';
+        }
+        if (str_contains($package, 'xtrabackup')) {
+            return 'xtrabackup';
+        }
+        if (str_contains($package, 'pmm') || str_contains($package, 'monitoring-and-management')) {
+            return 'pmm';
+        }
+        if (str_contains($package, 'mariadb-backup')) {
+            return 'mariadb_backup';
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array<string,mixed> $row
+     */
+    private static function productFromPerconaAdvisoryRow(array $row): ?string
+    {
+        $text = strtolower(implode(' ', array_filter(array_map(
+            static fn($value): string => is_scalar($value) ? (string)$value : '',
+            [
+                $row['product'] ?? null,
+                $row['affected_versions'] ?? null,
+                $row['fixed_versions'] ?? null,
+                $row['raw_json'] ?? null,
+            ]
+        ))));
+
+        if (str_contains($text, 'monitoring_and_management') || str_contains($text, 'monitoring and management') || preg_match('/\bpmm(?:[-_\s]+server)?\b/', $text) === 1) {
+            return 'pmm';
+        }
+        if (str_contains($text, 'xtrabackup')) {
+            return 'xtrabackup';
+        }
+        if (str_contains($text, 'mariadb-backup') || str_contains($text, 'mariadb_backup') || str_contains($text, 'mariadb backup')) {
+            return 'mariadb_backup';
+        }
+        if (str_contains($text, 'toolkit') || str_contains($text, 'mongodb')) {
+            return null;
+        }
+        if (str_contains($text, 'percona_server') || str_contains($text, 'percona server')) {
+            return 'percona';
         }
 
         return null;

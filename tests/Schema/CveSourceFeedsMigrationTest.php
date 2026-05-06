@@ -90,6 +90,11 @@ final class CveSourceFeedsMigrationTest extends TestCase
         $this->assertStringContainsString("'aurora_mysql', 'Amazon Aurora MySQL'", $this->migration);
         $this->assertStringContainsString("'rds_mysql', 'Amazon RDS for MySQL'", $this->migration);
         $this->assertStringContainsString("'component_ghsa', 'proxysql', 'ProxySQL'", $this->migration);
+        $this->assertStringContainsString("'nvd', 'xtrabackup', 'Percona XtraBackup'", $this->migration);
+        $this->assertStringContainsString("'nvd', 'pmm', 'Percona Monitoring and Management'", $this->migration);
+        $this->assertStringContainsString("'nvd', 'mariadb_backup', 'MariaDB Backup'", $this->migration);
+        $this->assertStringContainsString("'percona_advisory', 'xtrabackup', 'Percona XtraBackup'", $this->migration);
+        $this->assertStringContainsString("'percona_advisory', 'pmm', 'Percona Monitoring and Management'", $this->migration);
     }
 
     /**
