@@ -805,7 +805,12 @@ class Graphviz
             return $fallback;
         }
 
-        $dir = ROOT.DS.'App'.DS.'Webroot'.DS.'image'.DS.'dot'.DS;
+        $dir = ROOT
+            . DIRECTORY_SEPARATOR . 'App'
+            . DIRECTORY_SEPARATOR . 'Webroot'
+            . DIRECTORY_SEPARATOR . 'image'
+            . DIRECTORY_SEPARATOR . 'dot'
+            . DIRECTORY_SEPARATOR;
         foreach (['svg', 'png'] as $ext) {
             if (file_exists($dir.$base.'.'.$ext)) {
                 return $base.'.'.$ext;
