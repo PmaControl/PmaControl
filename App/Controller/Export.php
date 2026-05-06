@@ -129,30 +129,132 @@ class Export extends Controller
             $connect['port'] = 3306;
         }
 
-// a remplacer par une implementation full PHP
+        // Issue #777: the legacy code chained three shell_exec() calls
+        // that wrote into sql/full/pmacontrol.sql via `>` and `>>`. When
+        // the redirection failed (file owned by another user, no write
+        // permission, full disk, …), shell_exec dropped the exit code
+        // and the controller returned 0 with a silently corrupted dump.
+        // We now go through dumpInto() which captures the exit status
+        // and throws on failure, plus we read credentials from a 0600
+        // [client] file so the password stops appearing in `ps`.
+        $finalPath = ROOT.'/sql/full/pmacontrol.sql';
 
-        $cmd = "mysqldump --skip-dump-date -h ".$connect['hostname']
-            ." -u ".$connect['user']
-            ." -P ".$connect['port']
-            ." -p'".Chiffrement::decrypt($connect['password'])
-            ."' ".$connect['database']." ".implode(" ", $table_with_data)." | sed 's/ AUTO_INCREMENT=[0-9]*\b//' > ".ROOT."/sql/full/pmacontrol.sql 2>&1";
-        shell_exec($cmd);
+        if (file_exists($finalPath) && !is_writable($finalPath)) {
+            throw new \RuntimeException(sprintf(
+                '%s exists but is not writable by the current process (likely owned by another user). '
+                .'Fix with: chown www-data:www-data %1$s && chmod 664 %1$s',
+                $finalPath
+            ));
+        }
 
-        $cmd = "mysqldump --skip-dump-date -h ".$connect['hostname']
-            ." -u ".$connect['user']
-            ." -P ".$connect['port']
-            ." --skip-extended-insert"
-            ." -p'".Chiffrement::decrypt($connect['password'])
-            ."' ".$connect['database']." ".implode(" ", $table_with_data_expand)." | sed 's/ AUTO_INCREMENT=[0-9]*\b//' >> ".ROOT."/sql/full/pmacontrol.sql 2>&1";
-        shell_exec($cmd);
+        $defaultsExtraFile = self::writeDefaultsExtraFile(
+            (string) $connect['hostname'],
+            (int)    $connect['port'],
+            (string) $connect['user'],
+            Chiffrement::decrypt((string) $connect['password'])
+        );
 
-        $cmd = "mysqldump --skip-dump-date -h ".$connect['hostname']
-            ." -u ".$connect['user']
-            ." -P ".$connect['port']
-            ." -d "
-            ." -p'".Chiffrement::decrypt($connect['password'])
-            ."' ".$connect['database']." ".implode(" ", $table_without_data)." | sed 's/ AUTO_INCREMENT=[0-9]*\b//' >> ".ROOT."/sql/full/pmacontrol.sql 2>&1";
-        shell_exec($cmd);
+        try {
+            $this->dumpInto($finalPath, $defaultsExtraFile, (string) $connect['database'], $table_with_data,        ['--skip-dump-date'],                          '>');
+            $this->dumpInto($finalPath, $defaultsExtraFile, (string) $connect['database'], $table_with_data_expand, ['--skip-dump-date', '--skip-extended-insert'], '>>');
+            $this->dumpInto($finalPath, $defaultsExtraFile, (string) $connect['database'], $table_without_data,     ['--skip-dump-date', '-d'],                    '>>');
+        } finally {
+            @unlink($defaultsExtraFile);
+        }
+    }
+
+    /**
+     * Build the mysqldump shell command that writes (or appends) into a
+     * temp file. All variable inputs go through escapeshellarg so a
+     * hostile database/table name can't break out of the shell context.
+     * Credentials are read from `--defaults-extra-file=` instead of `-p`
+     * on the command line, so they never appear in `ps`.
+     *
+     * @param array<int,string> $tables
+     * @param array<int,string> $extraOpts
+     */
+    public static function buildDumpCommand(
+        string $defaultsExtraFile,
+        string $database,
+        array $tables,
+        array $extraOpts,
+        string $tmpPath,
+        string $redirect
+    ): ?string {
+        if ($tables === []) {
+            return null;
+        }
+
+        if ($redirect !== '>' && $redirect !== '>>') {
+            throw new \InvalidArgumentException('Unsupported redirect operator: '.$redirect);
+        }
+
+        $optsQuoted   = array_map('escapeshellarg', $extraOpts);
+        $tablesQuoted = array_map('escapeshellarg', $tables);
+
+        return 'mysqldump --defaults-extra-file='.escapeshellarg($defaultsExtraFile).' '
+             .implode(' ', $optsQuoted).' '
+             .escapeshellarg($database).' '
+             .implode(' ', $tablesQuoted)
+             ." | sed 's/ AUTO_INCREMENT=[0-9]*\\b//' "
+             .$redirect.' '.escapeshellarg($tmpPath);
+    }
+
+    /**
+     * Write a `[client]` block in a 0600 temp file so mysqldump can pick
+     * up the password without it ever appearing on the command line
+     * (where any local user can read it via `ps`).
+     */
+    public static function writeDefaultsExtraFile(string $hostname, int $port, string $user, string $password): string
+    {
+        $path = tempnam(sys_get_temp_dir(), 'pmacontrol-mysqldump-');
+        if ($path === false) {
+            throw new \RuntimeException('Unable to allocate a temp file for mysqldump credentials.');
+        }
+
+        chmod($path, 0600);
+
+        $contents = "[client]\n"
+            .'host='.$hostname."\n"
+            .'port='.$port."\n"
+            .'user='.$user."\n"
+            .'password='.$password."\n";
+
+        if (file_put_contents($path, $contents) === false) {
+            @unlink($path);
+            throw new \RuntimeException('Unable to write the mysqldump credentials temp file.');
+        }
+
+        return $path;
+    }
+
+    /**
+     * @param array<int,string> $tables
+     * @param array<int,string> $extraOpts
+     */
+    private function dumpInto(string $tmpPath, string $defaultsExtraFile, string $database, array $tables, array $extraOpts, string $redirect): void
+    {
+        $cmd = self::buildDumpCommand($defaultsExtraFile, $database, $tables, $extraOpts, $tmpPath, $redirect);
+        if ($cmd === null) {
+            return;
+        }
+
+        $output = [];
+        $code   = 0;
+        // exec() returns the exit code, unlike shell_exec() which silently
+        // dropped it and let three failed mysqldump calls chain into a
+        // false-success exit-0. The user-visible "Permission denied" was
+        // only ever surfacing on stderr because of that.
+        exec($cmd.' 2>&1', $output, $code);
+
+        if ($code !== 0) {
+            throw new \RuntimeException(sprintf(
+                'mysqldump pipeline failed (exit=%d) for tables [%s]: %s',
+                $code,
+                implode(', ', $tables),
+                trim(implode("\n", $output))
+            ));
+        }
     }
 
 /**
