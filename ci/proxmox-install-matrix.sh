@@ -22,6 +22,8 @@ CI_MAX_CPU_PCT="${PMACTRL_CI_MAX_CPU_PCT:-60}"
 CI_SCHEDULER_LOCK_FILE="${PMACTRL_CI_SCHEDULER_LOCK_FILE:-/run/lock/pmacontrol-proxmox-scheduler.lock}"
 RESULT="failure"
 LOCK_WAIT_SECONDS="${PMACTRL_CI_LOCK_WAIT_SECONDS:-21600}"
+CI_SCHEDULER_WAIT_SECONDS="${PMACTRL_CI_SCHEDULER_WAIT_SECONDS:-${LOCK_WAIT_SECONDS}}"
+CI_SCHEDULER_RETRY_SECONDS="${PMACTRL_CI_SCHEDULER_RETRY_SECONDS:-30}"
 MIN_FREE_KIB="${PMACTRL_CI_MIN_FREE_KIB:-5242880}"
 KEEP_FAILED_VM="${PMACTRL_CI_KEEP_FAILED_VM:-0}"
 SSH_PUBLIC_KEY_FILE="${PMACTRL_CI_SSH_PUBLIC_KEY_FILE:-/root/.ssh/id_rsa.pub}"
@@ -343,8 +345,9 @@ ensure_target_slot_available() {
     count="$(target_ci_vm_count)"
     if (( count >= CI_STATIC_IPS_PER_TARGET )); then
         echo "Target ${TARGET_OS} already has ${count} active CI VM(s); static IP slots available: ${CI_STATIC_IPS_PER_TARGET}" >&2
-        exit 1
+        return 1
     fi
+    return 0
 }
 
 select_run_node() {
@@ -354,7 +357,7 @@ select_run_node() {
     resources_file="$(mktemp)"
     pvesh get /nodes --output-format json > "${status_file}"
     pvesh get /cluster/resources --type vm --output-format json > "${resources_file}"
-    selection="$(
+    if ! selection="$(
         python3 - \
             "${status_file}" \
             "${resources_file}" \
@@ -430,8 +433,15 @@ if not eligible:
 score, projected_ram_pct, ram_pct, cpu_pct, active_ci, node = min(eligible)
 print(f"{node} {cpu_pct:.1f} {ram_pct:.1f} {projected_ram_pct:.1f} {active_ci} {score:.1f}")
 PY
-    )"
+    )"; then
+        rm -f "${status_file}" "${resources_file}"
+        return 1
+    fi
     rm -f "${status_file}" "${resources_file}"
+
+    if [[ -z "${selection}" ]]; then
+        return 1
+    fi
 
     read -r RUN_NODE node_cpu_pct node_ram_pct node_projected_ram_pct node_ci_count node_score <<< "${selection}"
     set_run_host
@@ -439,46 +449,86 @@ PY
 }
 
 allocate_and_start_vm() {
-    log "waiting for CI scheduler lock ${CI_SCHEDULER_LOCK_FILE}"
-    exec 9>"${CI_SCHEDULER_LOCK_FILE}"
-    if ! flock -w "${LOCK_WAIT_SECONDS}" 9; then
-        echo "Unable to acquire CI scheduler lock ${CI_SCHEDULER_LOCK_FILE}" >&2
-        exit 1
-    fi
+    local deadline now remaining sleep_seconds pending_reason
+    local -a clone_args
 
-    cleanup_stale_ci_vms
-    select_run_node
-    ensure_storage_free
-    ensure_target_slot_available
+    deadline=$(($(date +%s) + CI_SCHEDULER_WAIT_SECONDS))
 
-    if ! VMID="$(find_free_vmid)"; then
-        echo "Unable to find a free VMID/IP slot for target ${TARGET_OS}" >&2
-        exit 1
-    fi
-    VM_NAME="${VM_NAME_PREFIX}-${TARGET_OS}-${VMID}"
-    resolve_static_vm_ip
-    create_ci_cloudinit_snippet
-    ensure_storage_image_dir
+    while true; do
+        pending_reason=""
+        RUN_NODE=""
+        RUN_HOST=""
+        VMID=""
+        VM_NAME=""
 
-    log "cloning template ${TEMPLATE_ID} to VM ${VMID}"
-    clone_args=(qm clone "${TEMPLATE_ID}" "${VMID}" --name "${VM_NAME}" --full 1 --storage "${STORAGE}")
-    if [[ "${RUN_NODE}" != "${LOCAL_NODE}" ]]; then
-        clone_args+=(--target "${RUN_NODE}")
-    fi
-    "${clone_args[@]}" >/dev/null
-    log "using static IPv4 ${STATIC_VM_IP}/${VM_NETMASK} via ${VM_GATEWAY}"
-    pve_node_cmd qm set "${VMID}" \
-        --memory "${VM_MEMORY_MB}" \
-        --cores 4 \
-        --balloon 0 \
-        --net0 "virtio,bridge=${BRIDGE},firewall=${VM_FIREWALL}" \
-        --ciuser root \
-        --ipconfig0 "ip=${STATIC_VM_IP}/${VM_NETMASK},gw=${VM_GATEWAY}" \
-        --cicustom "user=local:snippets/${VM_NAME}.yaml" >/dev/null
-    pve_node_cmd qm start "${VMID}" >/dev/null
+        case "${TARGET_OS}" in
+            debian12) STATIC_VM_IP="${PMACTRL_CI_DEBIAN12_IP:-}" ;;
+            debian13) STATIC_VM_IP="${PMACTRL_CI_DEBIAN13_IP:-}" ;;
+            ubuntu2404) STATIC_VM_IP="${PMACTRL_CI_UBUNTU2404_IP:-}" ;;
+            ubuntu2604) STATIC_VM_IP="${PMACTRL_CI_UBUNTU2604_IP:-}" ;;
+        esac
 
-    flock -u 9
-    exec 9>&-
+        log "waiting for CI scheduler lock ${CI_SCHEDULER_LOCK_FILE}"
+        exec 9>"${CI_SCHEDULER_LOCK_FILE}"
+        if ! flock -w "${LOCK_WAIT_SECONDS}" 9; then
+            echo "Unable to acquire CI scheduler lock ${CI_SCHEDULER_LOCK_FILE}" >&2
+            exit 1
+        fi
+
+        cleanup_stale_ci_vms
+        if ! select_run_node; then
+            pending_reason="No eligible Proxmox node for CI launch"
+        elif ! ensure_target_slot_available; then
+            pending_reason="No static IP slot currently available for target ${TARGET_OS}"
+        else
+            ensure_storage_free
+            if VMID="$(find_free_vmid)"; then
+                VM_NAME="${VM_NAME_PREFIX}-${TARGET_OS}-${VMID}"
+                resolve_static_vm_ip
+                create_ci_cloudinit_snippet
+                ensure_storage_image_dir
+
+                log "cloning template ${TEMPLATE_ID} to VM ${VMID}"
+                clone_args=(qm clone "${TEMPLATE_ID}" "${VMID}" --name "${VM_NAME}" --full 1 --storage "${STORAGE}")
+                if [[ "${RUN_NODE}" != "${LOCAL_NODE}" ]]; then
+                    clone_args+=(--target "${RUN_NODE}")
+                fi
+                "${clone_args[@]}" >/dev/null
+                log "using static IPv4 ${STATIC_VM_IP}/${VM_NETMASK} via ${VM_GATEWAY}"
+                pve_node_cmd qm set "${VMID}" \
+                    --memory "${VM_MEMORY_MB}" \
+                    --cores 4 \
+                    --balloon 0 \
+                    --net0 "virtio,bridge=${BRIDGE},firewall=${VM_FIREWALL}" \
+                    --ciuser root \
+                    --ipconfig0 "ip=${STATIC_VM_IP}/${VM_NETMASK},gw=${VM_GATEWAY}" \
+                    --cicustom "user=local:snippets/${VM_NAME}.yaml" >/dev/null
+                pve_node_cmd qm start "${VMID}" >/dev/null
+
+                flock -u 9
+                exec 9>&-
+                return 0
+            fi
+            pending_reason="Unable to find a free VMID/IP slot for target ${TARGET_OS}"
+        fi
+
+        flock -u 9
+        exec 9>&-
+
+        now="$(date +%s)"
+        if (( now >= deadline )); then
+            echo "${pending_reason}; waited ${CI_SCHEDULER_WAIT_SECONDS}s" >&2
+            exit 1
+        fi
+
+        remaining=$((deadline - now))
+        sleep_seconds="${CI_SCHEDULER_RETRY_SECONDS}"
+        if (( sleep_seconds > remaining )); then
+            sleep_seconds="${remaining}"
+        fi
+        log "${pending_reason}; retrying in ${sleep_seconds}s"
+        sleep "${sleep_seconds}"
+    done
 }
 
 wait_for_agent() {
