@@ -106,8 +106,11 @@ final class PersistentAuthSessionTest extends TestCase
             (object) [
                 'persistent_auth_session_id' => 7,
                 'token_hash' => PersistentAuthSession::hashVerifier($verifier),
+                'previous_token_hash' => null,
+                'previous_token_expires' => null,
                 'user_agent_hash' => $fingerprint['user_agent_hash'],
                 'ip_hash' => $fingerprint['ip_hash'],
+                'date_last_used' => null,
                 'date_expires' => '2026-12-01 00:00:00',
                 'date_absolute_expires' => '2026-12-15 00:00:00',
                 'date_revoked' => null,
@@ -141,8 +144,13 @@ final class PersistentAuthSessionTest extends TestCase
         $this->assertSame($selector . '.' . str_repeat('03', 32), $cookies[0]['value']);
     }
 
-    public function testConcurrentRotationFailureRevokesSession(): void
+    public function testConcurrentRotationLossAcceptsSessionViaGraceWindow(): void
     {
+        // Issue #773: when two parallel requests arrive with the same cookie,
+        // only one wins the CAS rotation. Before the fix the loser revoked
+        // the session; with the grace window it must still authenticate
+        // because its verifier is now in `previous_token_hash` (server-side)
+        // or will land there once the winner commits.
         $selector = str_repeat('a', 32);
         $verifier = str_repeat('b', 64);
         $server = $this->server();
@@ -151,8 +159,11 @@ final class PersistentAuthSessionTest extends TestCase
             (object) [
                 'persistent_auth_session_id' => 7,
                 'token_hash' => PersistentAuthSession::hashVerifier($verifier),
+                'previous_token_hash' => null,
+                'previous_token_expires' => null,
                 'user_agent_hash' => $fingerprint['user_agent_hash'],
                 'ip_hash' => $fingerprint['ip_hash'],
+                'date_last_used' => null,
                 'date_expires' => '2026-12-01 00:00:00',
                 'date_absolute_expires' => '2026-12-15 00:00:00',
                 'date_revoked' => null,
@@ -174,12 +185,151 @@ final class PersistentAuthSessionTest extends TestCase
             1710000000
         );
 
-        $this->assertFalse($authenticated);
-        $this->assertSame(0, $auth->getIdUserTriingLogin());
+        $this->assertTrue($authenticated, 'Lost rotation race must not log out the user (issue #773).');
+        $this->assertSame(42, $auth->getIdUserTriingLogin());
         $sql = implode("\n", $db->queries);
-        $this->assertStringContainsString("AND `token_hash` = '" . PersistentAuthSession::hashVerifier($verifier) . "'", $sql);
-        $this->assertStringContainsString('SET `date_revoked`', $sql);
-        $this->assertSame('', $cookies[0]['value']);
+        $this->assertStringNotContainsString('SET `date_revoked`', $sql, 'No revoke on rotation race.');
+        $this->assertSame([], $cookies, 'Loser of rotation race must not emit Set-Cookie.');
+    }
+
+    public function testInFlightVerifierMatchingPreviousHashAuthenticatesWithoutRotating(): void
+    {
+        // Once the winner's UPDATE has committed, in-flight requests still
+        // carrying the old verifier hit `previous_token_hash` directly. They
+        // must authenticate without re-rotating and without sending a new
+        // Set-Cookie (which would fight the cookie the winner already set).
+        $selector = str_repeat('a', 32);
+        $oldVerifier = str_repeat('b', 64);
+        $newVerifier = str_repeat('c', 64);
+        $server = $this->server();
+        $fingerprint = PersistentAuthSession::fingerprint($server);
+        $db = new Issue624PersistentAuthFakeDb([
+            (object) [
+                'persistent_auth_session_id' => 7,
+                'token_hash' => PersistentAuthSession::hashVerifier($newVerifier),
+                'previous_token_hash' => PersistentAuthSession::hashVerifier($oldVerifier),
+                'previous_token_expires' => gmdate('Y-m-d H:i:s', 1710000000 + 8),
+                'user_agent_hash' => $fingerprint['user_agent_hash'],
+                'ip_hash' => $fingerprint['ip_hash'],
+                'date_last_used' => gmdate('Y-m-d H:i:s', 1710000000),
+                'date_expires' => '2026-12-01 00:00:00',
+                'date_absolute_expires' => '2026-12-15 00:00:00',
+                'date_revoked' => null,
+                'id' => 42,
+                'id_group' => 5,
+            ],
+        ]);
+        $auth = new Issue624PersistentAuthFakeAuth();
+        $cookies = [];
+
+        $authenticated = PersistentAuthSession::authenticate(
+            $auth,
+            $db,
+            [PersistentAuthSession::COOKIE_NAME => $selector . '.' . $oldVerifier],
+            $server,
+            [],
+            $this->cookieRecorder($cookies),
+            null,
+            1710000000
+        );
+
+        $this->assertTrue($authenticated);
+        $this->assertSame(42, $auth->getIdUserTriingLogin());
+        $sql = implode("\n", $db->queries);
+        $this->assertStringNotContainsString('UPDATE `user_persistent_auth_session`', $sql, 'Must not touch the row when serving via previous-token grace.');
+        $this->assertSame([], $cookies);
+    }
+
+    public function testCooldownSkipsRotationAndJustTouchesRow(): void
+    {
+        // A second request within ROTATE_COOLDOWN_SECONDS keeps the existing
+        // verifier and only refreshes date_last_used. This is what kills the
+        // AJAX/auto-refresh storm that used to drown the rotation pipeline.
+        $selector = str_repeat('a', 32);
+        $verifier = str_repeat('b', 64);
+        $server = $this->server();
+        $fingerprint = PersistentAuthSession::fingerprint($server);
+        $db = new Issue624PersistentAuthFakeDb([
+            (object) [
+                'persistent_auth_session_id' => 7,
+                'token_hash' => PersistentAuthSession::hashVerifier($verifier),
+                'previous_token_hash' => null,
+                'previous_token_expires' => null,
+                'user_agent_hash' => $fingerprint['user_agent_hash'],
+                'ip_hash' => $fingerprint['ip_hash'],
+                'date_last_used' => gmdate('Y-m-d H:i:s', 1710000000 - 5),
+                'date_expires' => '2026-12-01 00:00:00',
+                'date_absolute_expires' => '2026-12-15 00:00:00',
+                'date_revoked' => null,
+                'id' => 42,
+                'id_group' => 5,
+            ],
+        ]);
+        $auth = new Issue624PersistentAuthFakeAuth();
+        $cookies = [];
+
+        $authenticated = PersistentAuthSession::authenticate(
+            $auth,
+            $db,
+            [PersistentAuthSession::COOKIE_NAME => $selector . '.' . $verifier],
+            $server,
+            [],
+            $this->cookieRecorder($cookies),
+            null,
+            1710000000
+        );
+
+        $this->assertTrue($authenticated);
+        $sql = implode("\n", $db->queries);
+        $this->assertStringContainsString('UPDATE `user_persistent_auth_session`', $sql, 'Touch UPDATE must run.');
+        $this->assertStringNotContainsString('`previous_token_hash` = `token_hash`', $sql, 'No rotation during cooldown.');
+        $this->assertStringNotContainsString("`token_hash` = '", $sql, 'No new token_hash assignment during cooldown.');
+        $this->assertSame([], $cookies, 'No Set-Cookie during cooldown.');
+    }
+
+    public function testAjaxRequestNeverRotatesEvenAfterCooldown(): void
+    {
+        // AJAX requests are the worst race amplifier (parallel by nature, fire
+        // continuously from dashboards). Even if the cooldown elapsed, we
+        // still skip rotation on AJAX and only touch the row.
+        $selector = str_repeat('a', 32);
+        $verifier = str_repeat('b', 64);
+        $server = $this->server();
+        $server['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
+        $fingerprint = PersistentAuthSession::fingerprint($server);
+        $db = new Issue624PersistentAuthFakeDb([
+            (object) [
+                'persistent_auth_session_id' => 7,
+                'token_hash' => PersistentAuthSession::hashVerifier($verifier),
+                'previous_token_hash' => null,
+                'previous_token_expires' => null,
+                'user_agent_hash' => $fingerprint['user_agent_hash'],
+                'ip_hash' => $fingerprint['ip_hash'],
+                'date_last_used' => gmdate('Y-m-d H:i:s', 1710000000 - 600),
+                'date_expires' => '2026-12-01 00:00:00',
+                'date_absolute_expires' => '2026-12-15 00:00:00',
+                'date_revoked' => null,
+                'id' => 42,
+                'id_group' => 5,
+            ],
+        ]);
+        $auth = new Issue624PersistentAuthFakeAuth();
+        $cookies = [];
+
+        $authenticated = PersistentAuthSession::authenticate(
+            $auth,
+            $db,
+            [PersistentAuthSession::COOKIE_NAME => $selector . '.' . $verifier],
+            $server,
+            [],
+            $this->cookieRecorder($cookies),
+            null,
+            1710000000
+        );
+
+        $this->assertTrue($authenticated);
+        $this->assertStringNotContainsString("`token_hash` = '", implode("\n", $db->queries), 'AJAX must never rotate.');
+        $this->assertSame([], $cookies);
     }
 
     public function testReplayAfterRotationRevokesSession(): void
@@ -193,8 +343,11 @@ final class PersistentAuthSessionTest extends TestCase
             (object) [
                 'persistent_auth_session_id' => 7,
                 'token_hash' => PersistentAuthSession::hashVerifier($newVerifier),
+                'previous_token_hash' => null,
+                'previous_token_expires' => null,
                 'user_agent_hash' => $fingerprint['user_agent_hash'],
                 'ip_hash' => $fingerprint['ip_hash'],
+                'date_last_used' => null,
                 'date_expires' => '2026-12-01 00:00:00',
                 'date_absolute_expires' => '2026-12-15 00:00:00',
                 'date_revoked' => null,
@@ -229,8 +382,11 @@ final class PersistentAuthSessionTest extends TestCase
             (object) [
                 'persistent_auth_session_id' => 7,
                 'token_hash' => PersistentAuthSession::hashVerifier($verifier),
+                'previous_token_hash' => null,
+                'previous_token_expires' => null,
                 'user_agent_hash' => hash('sha256', 'different-agent'),
                 'ip_hash' => null,
+                'date_last_used' => null,
                 'date_expires' => '2026-12-01 00:00:00',
                 'date_absolute_expires' => '2026-12-15 00:00:00',
                 'date_revoked' => null,
@@ -269,8 +425,11 @@ final class PersistentAuthSessionTest extends TestCase
             (object) [
                 'persistent_auth_session_id' => 7,
                 'token_hash' => PersistentAuthSession::hashVerifier($verifier),
+                'previous_token_hash' => null,
+                'previous_token_expires' => null,
                 'user_agent_hash' => $fingerprint['user_agent_hash'],
                 'ip_hash' => $fingerprint['ip_hash'],
+                'date_last_used' => null,
                 'date_expires' => '2026-12-01 00:00:00',
                 'date_absolute_expires' => '2026-12-15 00:00:00',
                 'date_revoked' => null,
@@ -363,6 +522,15 @@ final class PersistentAuthSessionTest extends TestCase
             'uniq_user_persistent_auth_selector',
         ] as $needle) {
             $this->assertStringContainsString($needle, $migration);
+            $this->assertStringContainsString($needle, $fullSchema);
+        }
+
+        // Issue #773: grace-window columns are needed to absorb parallel
+        // requests that race the verifier rotation.
+        $graceMigration = file_get_contents(__DIR__ . '/../../../sql/incremental_v2/20260506_persistent_auth_grace_window.sql');
+        $this->assertIsString($graceMigration);
+        foreach (['previous_token_hash', 'previous_token_expires'] as $needle) {
+            $this->assertStringContainsString($needle, $graceMigration);
             $this->assertStringContainsString($needle, $fullSchema);
         }
     }
