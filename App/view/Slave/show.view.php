@@ -680,7 +680,7 @@ $(document).ready(function() {
                                style="width:70px;padding:4px 8px;border:1px solid #cbd5e1;border-radius:4px;font-size:13px;text-align:center">
                         <input type="range" id="sv-parallel-range" min="0" max="<?= $maxThreads ?>" value="<?= $currentThreads ?>"
                                style="flex:1;min-width:100px;accent-color:#1e3a8a">
-                        <?php if ($data['parallel_mode'] !== null):
+                        <?php if (($data['parallel_mode'] ?? null) !== null):
                             $modes = ['conservative', 'optimistic', 'aggressive', 'minimal', 'none'];
                         ?>
                         <select id="sv-parallel-mode" style="padding:4px 6px;border:1px solid #cbd5e1;border-radius:4px;font-size:12px">

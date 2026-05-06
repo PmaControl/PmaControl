@@ -96,6 +96,42 @@ final class SlaveTest extends TestCase
         $this->assertSame('3', $normalized[1]['']['seconds_behind_master']);
     }
 
+    public function testNormalizeParallelReplicationSettingsUsesCollectedFallbacks(): void
+    {
+        $method = new ReflectionMethod(Slave::class, 'normalizeParallelReplicationSettings');
+
+        $this->assertSame(
+            [
+                'parallel_threads' => 4,
+                'parallel_mode' => 'optimistic',
+            ],
+            $method->invoke(null, [
+                'slave_parallel_threads' => '4',
+                'slave_parallel_mode' => ' optimistic ',
+            ])
+        );
+
+        $this->assertSame(
+            [
+                'parallel_threads' => 8,
+                'parallel_mode' => null,
+            ],
+            $method->invoke(null, [
+                'replica_parallel_workers' => '8',
+                'slave_parallel_workers' => '4',
+                'slave_parallel_mode' => '',
+            ])
+        );
+    }
+
+    public function testSlaveViewGuardsMissingParallelMode(): void
+    {
+        $view = (string) file_get_contents(dirname(__DIR__, 2) . '/App/view/Slave/show.view.php');
+
+        $this->assertStringContainsString("(\$data['parallel_mode'] ?? null) !== null", $view);
+        $this->assertStringNotContainsString("\$data['parallel_mode'] !== null", $view);
+    }
+
     public function testNormalizeReplicationLagGraphRowsPrefersSourceMetric(): void
     {
         $method = new ReflectionMethod(Slave::class, 'normalizeReplicationLagGraphRows');

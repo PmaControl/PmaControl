@@ -184,6 +184,38 @@ class Slave extends Controller
             : 'slave_parallel_workers';
     }
 
+    private static function getParallelReplicationSettingsFromTimeSeries(int $idMysqlServer): array
+    {
+        $display = Extraction::display([
+            'variables::replica_parallel_workers',
+            'variables::slave_parallel_workers',
+            'variables::slave_parallel_threads',
+            'variables::slave_parallel_mode',
+        ], [$idMysqlServer]);
+
+        return self::normalizeParallelReplicationSettings($display[$idMysqlServer][''] ?? []);
+    }
+
+    private static function normalizeParallelReplicationSettings(array $values): array
+    {
+        $threads = 0;
+        foreach (['replica_parallel_workers', 'slave_parallel_workers', 'slave_parallel_threads'] as $key) {
+            if (isset($values[$key]) && is_numeric($values[$key])) {
+                $threads = max(0, (int) $values[$key]);
+                break;
+            }
+        }
+
+        $mode = isset($values['slave_parallel_mode']) && is_scalar($values['slave_parallel_mode'])
+            ? trim((string) $values['slave_parallel_mode'])
+            : '';
+
+        return [
+            'parallel_threads' => $threads,
+            'parallel_mode' => $mode !== '' ? $mode : null,
+        ];
+    }
+
     private function normalizeReplicationLagGraphRows(iterable $rows): array
     {
         return $this->normalizeReplicationLagRows(
@@ -545,6 +577,9 @@ ctx.strokeStyle="rgba(0,0,0,1)";ctx.lineWidth=1;ctx.stroke();
         }
 
         $data['slave'] = array();
+        $parallelSettings = self::getParallelReplicationSettingsFromTimeSeries((int) $id_mysql_server);
+        $data['parallel_threads'] = $parallelSettings['parallel_threads'];
+        $data['parallel_mode'] = $parallelSettings['parallel_mode'];
 
         $data['server'] = Extraction::display(array("mysql_server::mysql_available"));
 
@@ -610,9 +645,7 @@ ctx.strokeStyle="rgba(0,0,0,1)";ctx.lineWidth=1;ctx.stroke();
                 $data['slave'] = $slave;
             }
 
-            // Fetch parallel threads and CPU count
-            $data['parallel_threads'] = 0;
-            $data['parallel_mode'] = null;
+            // Live values override the last collected time-series values when the server answers.
             $isMariaDB = (stripos($data['server_type'], 'mariadb') !== false);
 
             if ($isMariaDB) {
