@@ -175237,6 +175237,7 @@ CREATE TABLE `mysql_server` (
   `is_root` int(11) NOT NULL DEFAULT 1,
   `is_monitored` int(11) NOT NULL DEFAULT 1,
   `is_proxy` int(11) NOT NULL DEFAULT 0,
+  `is_ndb_cluster_node` tinyint(1) NOT NULL DEFAULT 0,
   `is_vip` tinyint(1) NOT NULL DEFAULT 0,
   `is_acknowledged` int(11) NOT NULL DEFAULT 0,
   `timeout` int(11) GENERATED ALWAYS AS (case when `is_proxy` = 1 then 11 else 1 end) VIRTUAL,
@@ -175327,6 +175328,73 @@ CREATE TABLE `myxplain` (
   `json` text NOT NULL DEFAULT '' COMMENT 'used in future for explain format=json',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `ndb_cluster`
+--
+
+DROP TABLE IF EXISTS `ndb_cluster`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ndb_cluster` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `display_name` varchar(100) NOT NULL,
+  `ndb_version` varchar(40) DEFAULT NULL,
+  `no_of_replicas` tinyint(4) DEFAULT NULL,
+  `is_deleted` tinyint(1) NOT NULL DEFAULT 0,
+  `date_inserted` datetime NOT NULL DEFAULT current_timestamp(),
+  `date_updated` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `u_ndb_cluster_name` (`display_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=COMPRESSED;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `ndb_cluster__mysql_server`
+--
+
+DROP TABLE IF EXISTS `ndb_cluster__mysql_server`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ndb_cluster__mysql_server` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id_ndb_cluster` int(10) unsigned NOT NULL,
+  `id_mysql_server` int(11) NOT NULL,
+  `date` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `u_ndb_cluster_mysql_server` (`id_ndb_cluster`,`id_mysql_server`),
+  KEY `idx_ndb_cluster_mysql_server_msid` (`id_mysql_server`),
+  CONSTRAINT `fk_ndb_cluster_mysql_server` FOREIGN KEY (`id_ndb_cluster`) REFERENCES `ndb_cluster` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `ndb_node`
+--
+
+DROP TABLE IF EXISTS `ndb_node`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ndb_node` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id_ndb_cluster` int(10) unsigned NOT NULL,
+  `ndb_node_id` smallint(5) unsigned NOT NULL,
+  `role` enum('mgmd','data','sql') NOT NULL,
+  `hostname` varchar(100) NOT NULL DEFAULT '',
+  `ip` varchar(45) NOT NULL DEFAULT '',
+  `port` smallint(5) unsigned DEFAULT NULL,
+  `node_group` smallint(6) DEFAULT NULL,
+  `is_primary` tinyint(1) NOT NULL DEFAULT 0,
+  `status` varchar(40) NOT NULL DEFAULT 'UNKNOWN',
+  `ndb_version` varchar(40) DEFAULT NULL,
+  `uptime_sec` int(10) unsigned DEFAULT NULL,
+  `date_seen` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `u_ndb_node_clusterid_nodeid` (`id_ndb_cluster`,`ndb_node_id`),
+  KEY `idx_ndb_node_role_status` (`id_ndb_cluster`,`role`,`status`),
+  CONSTRAINT `fk_ndb_node_cluster` FOREIGN KEY (`id_ndb_cluster`) REFERENCES `ndb_cluster` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=COMPRESSED;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
