@@ -1,4 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 200 200">
   <!-- Pentagone extérieur (bleu marine) -->
   <polygon points="100,5 190.35,70.65 155.84,176.86 44.16,176.86 9.65,70.65"
            fill="#1c2d5c"/>
