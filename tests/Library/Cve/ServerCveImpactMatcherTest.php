@@ -63,4 +63,33 @@ final class ServerCveImpactMatcherTest extends TestCase
             'version_text' => '8.0.36',
         ]));
     }
+
+    public function testReferencesFromJsonExtractsDeduplicatedHttpLinks(): void
+    {
+        $refs = ServerCveImpactMatcher::referencesFromJson(json_encode([
+            'referenceData' => [
+                ['url' => 'https://example.test/advisory', 'source' => 'Vendor'],
+                ['url' => 'https://example.test/advisory', 'source' => 'Duplicate'],
+                ['url' => 'ftp://example.test/ignored', 'source' => 'Ignored'],
+                ['url' => 'https://nvd.nist.gov/vuln/detail/CVE-2026-0001'],
+            ],
+        ]), 5);
+
+        $this->assertCount(2, $refs);
+        $this->assertSame('https://example.test/advisory', $refs[0]['url']);
+        $this->assertSame('Vendor', $refs[0]['label']);
+        $this->assertSame('https://nvd.nist.gov/vuln/detail/CVE-2026-0001', $refs[1]['url']);
+    }
+
+    public function testProductsFromGroupConcatParsesParkTags(): void
+    {
+        $products = ServerCveImpactMatcher::productsFromGroupConcat(
+            "mysql\tMySQL Server\t#e97b00\nproxysql\tProxySQL\t#1f2937"
+        );
+
+        $this->assertSame([
+            ['product_code' => 'mysql', 'product_name' => 'MySQL Server', 'color' => '#e97b00'],
+            ['product_code' => 'proxysql', 'product_name' => 'ProxySQL', 'color' => '#1f2937'],
+        ], $products);
+    }
 }

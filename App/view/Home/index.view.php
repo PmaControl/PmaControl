@@ -4,6 +4,7 @@ use App\Library\Format;
 $s = $data['servers'];
 $d = $data['daemons'];
 $r = $data['replication'];
+$cvePark = is_array($data['cve_park'] ?? null) ? $data['cve_park'] : ['is_ready' => false, 'stats' => [], 'cves' => []];
 $availPct = ($s['total'] > 0) ? round(($data['available'] / max(1, $data['available'] + $data['unavailable'])) * 100, 1) : 0;
 $replOkPct = ($r['total'] > 0) ? round(($r['ok'] / $r['total']) * 100, 1) : 100;
 $daemonOkPct = ($d['total'] > 0) ? round(($d['running'] / $d['total']) * 100, 0) : 0;
@@ -14,6 +15,37 @@ function hm_num($n) {
     if ($n >= 1e6) return round($n/1e6, 1).'M';
     if ($n >= 1e3) return round($n/1e3, 1).'K';
     return $n;
+}
+
+if (!function_exists('home_cve_severity_class')) {
+    function home_cve_severity_class($severity): string {
+        $severity = strtolower((string)$severity);
+
+        return in_array($severity, ['critical', 'high', 'medium', 'low', 'none'], true) ? $severity : 'unknown';
+    }
+}
+
+if (!function_exists('home_cve_score')) {
+    function home_cve_score(array $cve): string {
+        foreach (['cvss_v4_score', 'cvss_v3_score', 'cvss_v2_score', 'score'] as $field) {
+            if (isset($cve[$field]) && is_numeric($cve[$field])) {
+                return number_format((float)$cve[$field], 1);
+            }
+        }
+
+        return 'n/a';
+    }
+}
+
+if (!function_exists('home_cve_short_text')) {
+    function home_cve_short_text($text, int $max = 96): string {
+        $text = trim((string)$text);
+        if (strlen($text) <= $max) {
+            return $text;
+        }
+
+        return rtrim(substr($text, 0, $max - 1)).'…';
+    }
 }
 
 $versionColors = ['MariaDB' => '#003545', 'MySQL' => '#e97b00', 'Percona' => '#c3281c', 'ProxySQL' => '#2a2a2a', 'MaxScale' => '#00b5e2', 'MySQL Router' => '#5a9e3f'];
@@ -85,6 +117,27 @@ $versionColors = ['MariaDB' => '#003545', 'MySQL' => '#e97b00', 'Percona' => '#c
             border-radius: 0 4px 4px 0; font-size: 12px; color: #991b1b; display: flex; align-items: center; gap: 8px; }
 .hm-alert-name { font-weight: 700; min-width: 160px; }
 .hm-alert-msg { flex: 1; color: #7f1d1d; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── CVE park view ── */
+.hm-cve-summary { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.hm-cve-badge { display:inline-flex; align-items:center; gap:4px; border-radius:999px; padding:2px 8px; font-size:10px; font-weight:800; text-transform:uppercase; background:rgba(255,255,255,.18); color:#fff; }
+.hm-cve-scroll { max-height:460px; overflow:auto; }
+.hm-cve-table { width:100%; margin:0; font-size:12px; }
+.hm-cve-table th { position:sticky; top:0; z-index:1; background:#f8fafc; color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:.04em; border-bottom:1px solid var(--border); padding:7px 8px; }
+.hm-cve-table td { border-bottom:1px solid #f1f5f9; padding:8px; vertical-align:top; }
+.hm-cve-id { color:#1e3a8a; font-weight:900; text-decoration:none; white-space:nowrap; }
+.hm-cve-id:hover { color:#0f172a; text-decoration:underline; }
+.hm-cve-title { color:#334155; font-size:11px; margin-top:2px; max-width:560px; }
+.hm-cve-sev { display:inline-block; border-radius:999px; color:#fff; font-size:10px; font-weight:900; min-width:58px; text-align:center; padding:2px 6px; text-transform:uppercase; }
+.hm-cve-sev.critical { background:#9f1239; }
+.hm-cve-sev.high { background:#dc2626; }
+.hm-cve-sev.medium { background:#d97706; }
+.hm-cve-sev.low { background:#2563eb; }
+.hm-cve-sev.none, .hm-cve-sev.unknown { background:#64748b; }
+.hm-cve-product { display:inline-block; border-radius:999px; color:#fff; font-size:10px; font-weight:800; padding:2px 7px; margin:1px 2px 1px 0; text-decoration:none; }
+.hm-cve-product:hover { color:#fff; opacity:.85; text-decoration:none; }
+.hm-cve-count { display:inline-block; border-radius:999px; background:#e0f2fe; color:#075985; padding:2px 8px; font-size:11px; font-weight:900; white-space:nowrap; }
+.hm-cve-empty { padding:16px; color:var(--muted); background:#f8fafc; border:1px dashed var(--border); border-radius:6px; }
 </style>
 
 <div class="hm">
@@ -252,6 +305,91 @@ $versionColors = ['MariaDB' => '#003545', 'MySQL' => '#e97b00', 'Percona' => '#c
             </span>
         </div>
         <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
+
+<?php if (!empty($cvePark['is_ready'])): ?>
+<?php $cveStats = is_array($cvePark['stats'] ?? null) ? $cvePark['stats'] : []; ?>
+<div class="hm-card" style="margin-bottom:16px;border-left:4px solid #9f1239">
+    <div class="hm-card-head" style="background:linear-gradient(135deg,#111827,#9f1239)">
+        <span>
+            <i class="fa fa-shield"></i>
+            <?= __('CVEs impacting the park') ?>
+            <span class="hm-badge"><?= (int)($cveStats['total_cves'] ?? 0) ?></span>
+        </span>
+        <span class="hm-cve-summary">
+            <span class="hm-cve-badge"><?= (int)($cveStats['impacted_servers'] ?? 0) ?> <?= __('servers') ?></span>
+            <span class="hm-cve-badge"><?= (int)($cveStats['critical_cves'] ?? 0) ?> critical</span>
+            <span class="hm-cve-badge"><?= (int)($cveStats['high_cves'] ?? 0) ?> high</span>
+            <span class="hm-cve-badge"><?= (int)($cveStats['known_exploited_cves'] ?? 0) ?> KEV</span>
+            <a href="<?= LINK ?>cve/index" class="hm-badge" style="color:#fff;text-decoration:none"><?= __('Inventory') ?></a>
+        </span>
+    </div>
+    <div class="hm-card-body" style="padding:0">
+        <?php if (empty($cvePark['cves'])): ?>
+            <div style="padding:14px">
+                <div class="hm-cve-empty">
+                    <?= __('No active CVE impact is currently present in cve_server_cache.') ?>
+                </div>
+            </div>
+        <?php else: ?>
+            <div class="hm-cve-scroll">
+                <table class="hm-cve-table">
+                    <thead>
+                        <tr>
+                            <th><?= __('CVE') ?></th>
+                            <th><?= __('Severity') ?></th>
+                            <th><?= __('Products') ?></th>
+                            <th><?= __('Servers') ?></th>
+                            <th><?= __('Published') ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($cvePark['cves'] as $cve): ?>
+                            <?php
+                            $severityClass = home_cve_severity_class($cve['severity'] ?? 'unknown');
+                            $products = is_array($cve['products'] ?? null) ? $cve['products'] : [];
+                            ?>
+                            <tr>
+                                <td>
+                                    <a class="hm-cve-id" href="https://nvd.nist.gov/vuln/detail/<?= htmlspecialchars((string)$cve['cve_id'], ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">
+                                        <?= htmlspecialchars((string)$cve['cve_id'], ENT_QUOTES, 'UTF-8') ?>
+                                    </a>
+                                    <?php if (!empty($cve['known_exploited'])): ?>
+                                        <span class="hm-cve-sev critical">KEV</span>
+                                    <?php endif; ?>
+                                    <div class="hm-cve-title">
+                                        <?= htmlspecialchars(home_cve_short_text($cve['title'] ?: $cve['summary']), ENT_QUOTES, 'UTF-8') ?>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="hm-cve-sev <?= $severityClass ?>"><?= htmlspecialchars((string)($cve['severity'] ?? 'unknown'), ENT_QUOTES, 'UTF-8') ?></span>
+                                    <div style="color:var(--muted);font-size:11px;margin-top:3px">CVSS <?= htmlspecialchars(home_cve_score($cve), ENT_QUOTES, 'UTF-8') ?></div>
+                                </td>
+                                <td>
+                                    <?php foreach ($products as $product): ?>
+                                        <a
+                                            href="<?= LINK ?>cve/index/<?= htmlspecialchars((string)$product['product_code'], ENT_QUOTES, 'UTF-8') ?>"
+                                            class="hm-cve-product"
+                                            style="background:<?= htmlspecialchars((string)$product['color'], ENT_QUOTES, 'UTF-8') ?>">
+                                            <?= htmlspecialchars((string)$product['product_name'], ENT_QUOTES, 'UTF-8') ?>
+                                        </a>
+                                    <?php endforeach; ?>
+                                </td>
+                                <td><span class="hm-cve-count"><?= (int)($cve['impacted_servers'] ?? 0) ?></span></td>
+                                <td>
+                                    <?= htmlspecialchars((string)($cve['published_at'] ?? 'n/a'), ENT_QUOTES, 'UTF-8') ?>
+                                    <?php if (!empty($cve['last_calculated'])): ?>
+                                        <div style="color:var(--muted);font-size:10px"><?= __('cache') ?> <?= htmlspecialchars((string)$cve['last_calculated'], ENT_QUOTES, 'UTF-8') ?></div>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
     </div>
 </div>
 <?php endif; ?>

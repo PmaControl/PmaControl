@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Library\Display;
+use App\Library\Cve\ServerCveImpactMatcher;
 use App\Library\Format;
 use App\Library\MysqlLogCollector;
 use App\Library\Security\SafeRedirect;
@@ -1932,6 +1933,78 @@ class MysqlServer extends Controller
  * @since 5.0
  * @version 1.0
  */
+    public function cve($param)
+    {
+        Debug::parseDebug($param);
+
+        if (empty($param[0]) || !ctype_digit((string)$param[0])) {
+            throw new \Exception("Usage: /mysqlserver/cve/{id_mysql_server}");
+        }
+
+        $id_mysql_server = (int)$param[0];
+        $_GET['mysql_server']['id'] = $id_mysql_server;
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $server = self::loadCveServerIdentity($db, $id_mysql_server);
+        if ($server === []) {
+            throw new \Exception("Unknown mysql server: ".$id_mysql_server);
+        }
+
+        $raw = Extraction2::display(["version", "version_comment", "mysql_server::mysql_available"], [$id_mysql_server]);
+        $extra = self::firstExtractionRow($raw);
+        $context = ServerCveImpactMatcher::serverContext($server, $extra);
+        $isReady = ServerCveImpactMatcher::tablesAvailable($db);
+        $summary = [];
+        $cves = [];
+
+        if ($isReady && $context !== null) {
+            $summaries = ServerCveImpactMatcher::loadForServerMain($db, [$server], [$id_mysql_server => $extra], true);
+            $summary = $summaries[$id_mysql_server] ?? [];
+            $cves = ServerCveImpactMatcher::loadServerDetails($db, $id_mysql_server, $context);
+        }
+
+        $this->title = __("Server CVEs");
+        $this->set('data', [
+            'id_mysql_server' => $id_mysql_server,
+            'server' => $server,
+            'extra' => $extra,
+            'context' => $context,
+            'is_ready' => $isReady,
+            'summary' => $summary,
+            'cves' => $cves,
+        ]);
+        $this->set('param', $param);
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    private static function loadCveServerIdentity($db, int $id_mysql_server): array
+    {
+        $sql = "SELECT `id`, `display_name`, `ip`, `port`, `is_proxy`, `is_vip`, `is_deleted`"
+            . " FROM `mysql_server`"
+            . " WHERE `id` = ".(int)$id_mysql_server
+            . " LIMIT 1";
+        $res = $db->sql_query($sql);
+        $row = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+
+        return is_array($row) ? $row : [];
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    private static function firstExtractionRow($raw): array
+    {
+        if (!is_array($raw) || $raw === []) {
+            return [];
+        }
+
+        $row = reset($raw);
+
+        return is_array($row) ? $row : [];
+    }
+
     public function main($param)
     {
         Debug::parseDebug($param);

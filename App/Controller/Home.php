@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
+use App\Library\Cve\ServerCveImpactMatcher;
 use App\Library\Extraction2;
 use App\Library\Format;
 use App\Library\OrphanRefreshScanner;
@@ -133,6 +134,7 @@ class Home extends Controller {
             $data['versions'][$key] = ($data['versions'][$key] ?? 0) + 1;
         }
         arsort($data['versions']);
+        $data['cve_park'] = self::buildCveParkData($db, $versionData);
 
         // ── 8. Data volume (from information_schema, fast) ──
         $data['ts_rows'] = 0;
@@ -211,6 +213,45 @@ class Home extends Controller {
             default:
                 return 'MySQL';
         }
+    }
+
+    private static function buildCveParkData($db, array $versionData): array
+    {
+        if (!ServerCveImpactMatcher::tablesAvailable($db)) {
+            return ServerCveImpactMatcher::loadParkSummary($db);
+        }
+
+        $servers = self::loadCveServerRows($db);
+        if ($servers !== []) {
+            $extraByServer = [];
+            foreach ($versionData as $id => $row) {
+                if (is_array($row)) {
+                    $extraByServer[(int)$id] = $row;
+                }
+            }
+            ServerCveImpactMatcher::loadForServerMain($db, $servers, $extraByServer, true);
+        }
+
+        return ServerCveImpactMatcher::loadParkSummary($db);
+    }
+
+    /**
+     * @return list<array<string,mixed>>
+     */
+    private static function loadCveServerRows($db): array
+    {
+        $sql = "SELECT `id`, `is_proxy`, `is_vip`"
+            . " FROM `mysql_server`"
+            . " WHERE `is_deleted` = 0"
+            . " ORDER BY `id`";
+        $res = $db->sql_query($sql);
+        $servers = [];
+
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $servers[] = $row;
+        }
+
+        return $servers;
     }
 
     public static function classifyReplicationChannel(array $channel): string

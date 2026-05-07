@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Controller\Cve;
+use App\Controller\MysqlServer;
 use PHPUnit\Framework\TestCase;
 
 final class CveAclTest extends TestCase
@@ -28,5 +29,18 @@ final class CveAclTest extends TestCase
         $this->assertStringContainsString('SuperAdministrator[] = "Cve/exclusions"', $sampleAcl);
         $this->assertStringNotContainsString('Member[] = "Cve/exclusions"', $sampleAcl);
         $this->assertStringNotContainsString('ReadOnly[] = "Cve/exclusions"', $sampleAcl);
+    }
+
+    public function testMysqlServerCveTabRouteExistsAndIsWhitelisted(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $sampleAcl = (string) file_get_contents($root . '/config_sample/acl.config.ini');
+        $method = new ReflectionMethod(MysqlServer::class, 'cve');
+        $menu = (string) file_get_contents($root . '/App/view/MysqlServer/menu.view.php');
+
+        $this->assertTrue($method->isPublic());
+        $this->assertStringContainsString('Member[] = "MysqlServer/cve"', $sampleAcl);
+        $this->assertStringContainsString('ReadOnly[] = "MysqlServer/cve"', $sampleAcl);
+        $this->assertStringContainsString("\$menu['MysqlServer']['cve']", $menu);
     }
 }
