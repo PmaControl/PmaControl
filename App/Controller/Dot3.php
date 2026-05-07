@@ -1413,6 +1413,74 @@ class Dot3 extends Controller
         ];
     }
 
+    private static function buildGraphCacheMd5(string $dot): string
+    {
+        return md5($dot . "\n# dot3-assets\n" . self::buildDotAssetFingerprint($dot));
+    }
+
+    private static function buildDotAssetFingerprint(string $dot): string
+    {
+        if ($dot === '' || stripos($dot, '<IMG') === false) {
+            return '';
+        }
+
+        if (!preg_match_all('/<IMG\b[^>]*\bSRC="([^"]+)"/i', $dot, $matches)) {
+            return '';
+        }
+
+        $fingerprints = array();
+        foreach (array_unique($matches[1]) as $src) {
+            $path = self::resolveDotAssetPath((string) $src);
+            if ($path === null) {
+                $fingerprints[] = 'missing:' . $src;
+                continue;
+            }
+
+            $hash = hash_file('sha256', $path);
+            if ($hash === false) {
+                $fingerprints[] = 'unreadable:' . $path;
+                continue;
+            }
+
+            $fingerprints[] = $path . ':' . $hash;
+        }
+
+        sort($fingerprints, SORT_STRING);
+        return hash('sha256', implode("\n", $fingerprints));
+    }
+
+    private static function resolveDotAssetPath(string $src): ?string
+    {
+        if ($src === '') {
+            return null;
+        }
+
+        $parsedPath = parse_url($src, PHP_URL_PATH);
+        $path = is_string($parsedPath) && $parsedPath !== '' ? $parsedPath : $src;
+        if ($path === '') {
+            return null;
+        }
+
+        $candidates = array();
+        if ($path[0] === '/') {
+            $candidates[] = $path;
+        }
+
+        $basename = basename($path);
+        if ($basename !== '' && defined('ROOT')) {
+            $candidates[] = ROOT . '/App/Webroot/image/dot/' . $basename;
+            $candidates[] = ROOT . '/App/Webroot/image/icon/' . $basename;
+        }
+
+        foreach ($candidates as $candidate) {
+            if (is_string($candidate) && $candidate !== '' && is_file($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
     public function renderImportedGraphs(array $dot3Information): array
     {
         if (empty($dot3Information['information']) || !is_array($dot3Information['information'])) {
@@ -1544,7 +1612,7 @@ class Dot3 extends Controller
     {
         $db = Sgbd::sql(DB_DEFAULT, "RUN");
 
-        $md5 = md5($dot);
+        $md5 = self::buildGraphCacheMd5($dot);
         $dot3_graph = array();
 
         $sql = "SET AUTOCOMMIT=0;";
