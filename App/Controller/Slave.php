@@ -71,6 +71,19 @@ class Slave extends Controller
     }
 
     /**
+     * Reject any positional segment that looks like a Glial key:value
+     * (e.g. `ajax:true`) — those land in `$param` alongside positional
+     * args and would otherwise be misread as a `connection_name`. (#816)
+     */
+    public static function extractConnectionNameParam(string $value): string
+    {
+        if ($value === '' || strpos($value, ':') !== false) {
+            return '';
+        }
+        return self::sanitizeConnectionName($value);
+    }
+
+    /**
      * Build the SQL for STOP/START replication, fork-aware.
      * MariaDB:                STOP SLAVE 'conn_name'
      * MySQL  < 8.0.22:        STOP SLAVE FOR CHANNEL 'conn_name'
@@ -982,7 +995,17 @@ $(document).ready(function() {
 
         btn.prop("disabled", true).html("<i class=\"fa fa-spinner fa-spin\"></i> '.__('Loading').'...");
 
-        $.get(GLIAL_LINK + "slave/showGraphDay/" + server + "/" + newDay + "/" + encodeURIComponent(replName) + "/ajax:true/", function(html) {
+        // Single-source replicas have replName="", which used to bleed into the
+        // route as "//" — Apache collapsed it and ajax:true ended up as
+        // $param[2] (the connection_name slot), filtering every row out.
+        // Append the segment only when it carries a real value. (#816)
+        var path = "slave/showGraphDay/" + server + "/" + newDay + "/";
+        if (replName) {
+            path += encodeURIComponent(replName) + "/";
+        }
+        path += "ajax:true/";
+
+        $.get(GLIAL_LINK + path, function(html) {
             var trimmed = $.trim(html.replace(/<script[\s\S]*?<\/script>/gi, ""));
             if (trimmed.length > 10) {
                 var $parts = $($.parseHTML(html, document, true));
@@ -1319,7 +1342,12 @@ var chart = new Chart(ctx, {
 
         $id_mysql_server = $param[0];
         $day = $param[1];
-        $replication_name = $param[2] ?? '';
+        // Glial pushes "key:value" segments into $param too, so a stale
+        // browser hitting `…/<day>//ajax:true/` would land "ajax:true" in
+        // the connection_name slot and silently filter every row out (#816).
+        // A real connection_name can never contain ":" — sanitizeConnectionName
+        // strips it — so colon-bearing segments are framework noise.
+        $replication_name = self::extractConnectionNameParam($param[2] ?? '');
 
         Extraction::setOption('groupbyday', true);
 
