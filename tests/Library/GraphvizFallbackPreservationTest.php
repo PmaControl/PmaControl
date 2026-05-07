@@ -122,9 +122,28 @@ final class GraphvizFallbackPreservationTest extends TestCase
 
         $svg = (string) file_get_contents($dotSvg);
         $this->assertStringNotContainsString('fill="#000000"', $svg);
+        foreach ([
+            'M1.000000,251.000000',
+            'M311.000000,0.999999',
+            'M260.000000,600.000000',
+            'M601.000000,266.000000',
+        ] as $legacyBackdropPath) {
+            $this->assertStringNotContainsString($legacyBackdropPath, $svg);
+        }
+    }
 
-        preg_match_all('/<path\s+fill="([^"]+)"/i', $svg, $matches);
-        $this->assertGreaterThanOrEqual(4, count($matches[1]));
-        $this->assertSame(['none', 'none', 'none', 'none'], array_slice($matches[1], 0, 4));
+    public function testMaxScaleSvgKeepsGraphvizReadableXmlHeader(): void
+    {
+        $dotSvg = ROOT.DS.'App'.DS.'Webroot'.DS.'image'.DS.'dot'.DS.'maxscale.svg';
+        $iconSvg = ROOT.DS.'App'.DS.'Webroot'.DS.'image'.DS.'icon'.DS.'maxscale.svg';
+
+        $this->assertFileExists($dotSvg);
+        $this->assertFileExists($iconSvg);
+        $this->assertSame(hash_file('sha256', $dotSvg), hash_file('sha256', $iconSvg));
+
+        $svg = (string) file_get_contents($dotSvg);
+        $this->assertStringStartsWith('<?xml version="1.0"', $svg);
+        $this->assertStringContainsString('width="32"', $svg);
+        $this->assertStringContainsString('height="32"', $svg);
     }
 }
