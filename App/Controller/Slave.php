@@ -1019,6 +1019,11 @@ $(document).ready(function() {
                 for (var i = 0; i < scripts.length; i++) {
                     $.globalEval(scripts[i]);
                 }
+                // Re-arm Binlog Analysis drag-select on the freshly added
+                // canvases — the show view binds at load time only (#818).
+                if (typeof window.attachLagDragSelectAll === "function") {
+                    window.attachLagDragSelectAll();
+                }
             } else {
                 // No data for this day — show placeholder
                 var placeholder = $("<div class=\"sv-chart-wrap\" style=\"display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:12px;border:1px dashed #e2e8f0;border-radius:6px;margin-bottom:4px\">" + newDay + " — '.__('no data').'</div>");

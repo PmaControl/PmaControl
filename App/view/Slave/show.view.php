@@ -1060,79 +1060,87 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('sv-ba-end').addEventListener('change', checkDates);
 
     // ---- Intercept Chart.js drag selection on lag charts ----
-    // We hook into the existing lag charts after they render.
-    // Use a simple mousedown/mouseup on the chart canvas to capture time range.
-    setTimeout(function() {
-        var canvases = document.querySelectorAll('.sv-chart-wrap canvas');
-        canvases.forEach(function(canvas) {
-            var chart = Chart.getChart(canvas);
-            if (!chart) return;
+    // Wired both at initial render and after each "Load previous day"
+    // prepends a new chart (#818). Idempotent via a sentinel attribute.
+    function attachLagDragSelect(canvas) {
+        if (!canvas || canvas.dataset.dragSelectBound === '1') return;
+        var chart = Chart.getChart(canvas);
+        if (!chart) return;
+        canvas.dataset.dragSelectBound = '1';
 
-            var dragStart = null;
-            var selBox = document.createElement('div');
-            selBox.style.cssText = 'position:absolute;background:rgba(30,58,138,0.15);border:1px dashed #1e3a8a;pointer-events:none;display:none;top:0;bottom:0;z-index:10';
-            canvas.parentElement.style.position = 'relative';
-            canvas.parentElement.appendChild(selBox);
+        var dragStart = null;
+        var selBox = document.createElement('div');
+        selBox.style.cssText = 'position:absolute;background:rgba(30,58,138,0.15);border:1px dashed #1e3a8a;pointer-events:none;display:none;top:0;bottom:0;z-index:10';
+        canvas.parentElement.style.position = 'relative';
+        canvas.parentElement.appendChild(selBox);
 
-            canvas.addEventListener('mousedown', function(e) {
-                if (e.button !== 0) return;
-                var rect = canvas.getBoundingClientRect();
-                dragStart = { x: e.clientX - rect.left, clientX: e.clientX };
-                selBox.style.display = 'block';
-                selBox.style.left = dragStart.x + 'px';
-                selBox.style.width = '0px';
-            });
+        canvas.addEventListener('mousedown', function(e) {
+            if (e.button !== 0) return;
+            var rect = canvas.getBoundingClientRect();
+            dragStart = { x: e.clientX - rect.left, clientX: e.clientX };
+            selBox.style.display = 'block';
+            selBox.style.left = dragStart.x + 'px';
+            selBox.style.width = '0px';
+        });
 
-            canvas.addEventListener('mousemove', function(e) {
-                if (!dragStart) return;
-                var rect = canvas.getBoundingClientRect();
-                var curX = e.clientX - rect.left;
-                var left = Math.min(dragStart.x, curX);
-                var width = Math.abs(curX - dragStart.x);
-                selBox.style.left = left + 'px';
-                selBox.style.width = width + 'px';
-            });
+        canvas.addEventListener('mousemove', function(e) {
+            if (!dragStart) return;
+            var rect = canvas.getBoundingClientRect();
+            var curX = e.clientX - rect.left;
+            var left = Math.min(dragStart.x, curX);
+            var width = Math.abs(curX - dragStart.x);
+            selBox.style.left = left + 'px';
+            selBox.style.width = width + 'px';
+        });
 
-            canvas.addEventListener('mouseup', function(e) {
-                if (!dragStart) return;
-                var rect = canvas.getBoundingClientRect();
-                var endX = e.clientX - rect.left;
+        canvas.addEventListener('mouseup', function(e) {
+            if (!dragStart) return;
+            var rect = canvas.getBoundingClientRect();
+            var endX = e.clientX - rect.left;
 
-                var xScale = chart.scales.x;
-                var startVal = xScale.getValueForPixel(Math.min(dragStart.x, endX));
-                var endVal = xScale.getValueForPixel(Math.max(dragStart.x, endX));
+            var xScale = chart.scales.x;
+            var startVal = xScale.getValueForPixel(Math.min(dragStart.x, endX));
+            var endVal = xScale.getValueForPixel(Math.max(dragStart.x, endX));
 
+            dragStart = null;
+            selBox.style.display = 'none';
+
+            if (Math.abs(endX - parseFloat(selBox.style.left)) < 5) return; // too small
+
+            var startDate = new Date(startVal);
+            var endDate = new Date(endVal);
+
+            // Format for datetime-local input: YYYY-MM-DDTHH:MM:SS
+            function pad(n) { return n < 10 ? '0'+n : n; }
+            function fmtDT(d) {
+                return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())
+                    +'T'+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+            }
+
+            document.getElementById('sv-ba-start').value = fmtDT(startDate);
+            document.getElementById('sv-ba-end').value = fmtDT(endDate);
+            checkDates();
+
+            // Scroll to the analysis card
+            document.getElementById('sv-binlog-analysis-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+
+        canvas.addEventListener('mouseleave', function() {
+            if (dragStart) {
                 dragStart = null;
                 selBox.style.display = 'none';
-
-                if (Math.abs(endX - parseFloat(selBox.style.left)) < 5) return; // too small
-
-                var startDate = new Date(startVal);
-                var endDate = new Date(endVal);
-
-                // Format for datetime-local input: YYYY-MM-DDTHH:MM:SS
-                function pad(n) { return n < 10 ? '0'+n : n; }
-                function fmtDT(d) {
-                    return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())
-                        +'T'+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
-                }
-
-                document.getElementById('sv-ba-start').value = fmtDT(startDate);
-                document.getElementById('sv-ba-end').value = fmtDT(endDate);
-                checkDates();
-
-                // Scroll to the analysis card
-                document.getElementById('sv-binlog-analysis-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
-            });
-
-            canvas.addEventListener('mouseleave', function() {
-                if (dragStart) {
-                    dragStart = null;
-                    selBox.style.display = 'none';
-                }
-            });
+            }
         });
-    }, 1000);
+    }
+
+    function attachLagDragSelectAll() {
+        document.querySelectorAll('.sv-chart-wrap canvas').forEach(attachLagDragSelect);
+    }
+    // Expose so the "Load previous day" handler in Slave.php can re-arm
+    // newly-prepended charts after `$.globalEval` instantiates them.
+    window.attachLagDragSelectAll = attachLagDragSelectAll;
+
+    setTimeout(attachLagDragSelectAll, 1000);
 
     // ---- Launch analysis ----
     document.getElementById('sv-ba-launch').addEventListener('click', function() {
