@@ -96,6 +96,13 @@ final class FormatTest extends TestCase
         $label = Format::mysqlVersion('2.5.5', 'ProxySQL');
 
         $this->assertStringContainsString('ProxySQL', $label);
+        $this->assertStringContainsString('/assets/icon/proxysql.svg', $label);
         $this->assertStringContainsString('2.5.5', $label);
+    }
+
+    public function testGetLogoUsesSvgProxyAndMaxScaleIcons(): void
+    {
+        $this->assertStringContainsString('/assets/icon/proxysql.svg', Format::getLogo('proxysql'));
+        $this->assertStringContainsString('/assets/icon/maxscale.svg', Format::getLogo('maxscale'));
     }
 }
