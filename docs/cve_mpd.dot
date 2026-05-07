@@ -1,0 +1,193 @@
+digraph cve_mpd {
+  graph [
+    rankdir=LR,
+    bgcolor="white",
+    fontname="Helvetica",
+    fontsize=11,
+    labelloc="t",
+    label="PmaControl CVE - MPD"
+  ];
+
+  node [
+    shape=plaintext,
+    fontname="Helvetica",
+    fontsize=10
+  ];
+
+  edge [
+    fontname="Helvetica",
+    fontsize=9,
+    color="#475569",
+    arrowsize=0.7
+  ];
+
+  subgraph cluster_sources {
+    label="Raw source feeds";
+    color="#cbd5e1";
+    style="rounded";
+
+    cve_feed_source [label=<
+      <table border="0" cellborder="1" cellspacing="0" cellpadding="5">
+        <tr><td bgcolor="#0f172a"><font color="white"><b>cve_feed_source</b></font></td></tr>
+        <tr><td align="left">PK id</td></tr>
+        <tr><td align="left">code, name, source_kind</td></tr>
+        <tr><td align="left">url_base, cadence_hours</td></tr>
+      </table>
+    >];
+
+    cve_feed_source_product [label=<
+      <table border="0" cellborder="1" cellspacing="0" cellpadding="5">
+        <tr><td bgcolor="#0f172a"><font color="white"><b>cve_feed_source_product</b></font></td></tr>
+        <tr><td align="left">PK id</td></tr>
+        <tr><td align="left">FK id_cve_feed_source</td></tr>
+        <tr><td align="left">product_code, cpe_vendor</td></tr>
+      </table>
+    >];
+
+    cve_feed_run [label=<
+      <table border="0" cellborder="1" cellspacing="0" cellpadding="5">
+        <tr><td bgcolor="#0f172a"><font color="white"><b>cve_feed_run</b></font></td></tr>
+        <tr><td align="left">PK id</td></tr>
+        <tr><td align="left">FK id_cve_feed_source</td></tr>
+        <tr><td align="left">run_mode, status, cursors</td></tr>
+      </table>
+    >];
+
+    source_tables [label=<
+      <table border="0" cellborder="1" cellspacing="0" cellpadding="5">
+        <tr><td bgcolor="#334155"><font color="white"><b>cve_source_*</b></font></td></tr>
+        <tr><td align="left">nvd, osv, ghsa</td></tr>
+        <tr><td align="left">cisa_kev, oracle_cpu</td></tr>
+        <tr><td align="left">mariadb_security</td></tr>
+        <tr><td align="left">percona_advisory</td></tr>
+        <tr><td align="left">component_ghsa</td></tr>
+        <tr><td align="left">aws_security_bulletin</td></tr>
+      </table>
+    >];
+  }
+
+  subgraph cluster_catalog {
+    label="Normalized CVE catalog";
+    color="#bae6fd";
+    style="rounded";
+
+    cve_product [label=<
+      <table border="0" cellborder="1" cellspacing="0" cellpadding="5">
+        <tr><td bgcolor="#0369a1"><font color="white"><b>cve_product</b></font></td></tr>
+        <tr><td align="left">PK id</td></tr>
+        <tr><td align="left">UNQ product_code</td></tr>
+        <tr><td align="left">family, icon, color</td></tr>
+      </table>
+    >];
+
+    cve_catalog [label=<
+      <table border="0" cellborder="1" cellspacing="0" cellpadding="5">
+        <tr><td bgcolor="#0369a1"><font color="white"><b>cve_catalog</b></font></td></tr>
+        <tr><td align="left">PK id</td></tr>
+        <tr><td align="left">UNQ cve_id</td></tr>
+        <tr><td align="left">severity, CVSS, dates</td></tr>
+        <tr><td align="left">KEV overlay flags</td></tr>
+      </table>
+    >];
+
+    cve_product_affected_version [label=<
+      <table border="0" cellborder="1" cellspacing="0" cellpadding="5">
+        <tr><td bgcolor="#0369a1"><font color="white"><b>cve_product_affected_version</b></font></td></tr>
+        <tr><td align="left">PK id</td></tr>
+        <tr><td align="left">FK id_cve_catalog</td></tr>
+        <tr><td align="left">FK id_cve_product</td></tr>
+        <tr><td align="left">version_start/end</td></tr>
+        <tr><td align="left">source_code, match_method</td></tr>
+      </table>
+    >];
+  }
+
+  subgraph cluster_runtime {
+    label="Runtime matching and UI filters";
+    color="#bbf7d0";
+    style="rounded";
+
+    mysql_server [label=<
+      <table border="0" cellborder="1" cellspacing="0" cellpadding="5">
+        <tr><td bgcolor="#166534"><font color="white"><b>mysql_server</b></font></td></tr>
+        <tr><td align="left">PK id</td></tr>
+        <tr><td align="left">version via Extraction2</td></tr>
+        <tr><td align="left">is_proxy, is_vip</td></tr>
+      </table>
+    >];
+
+    cve_server_cache [label=<
+      <table border="0" cellborder="1" cellspacing="0" cellpadding="5">
+        <tr><td bgcolor="#166534"><font color="white"><b>cve_server_cache</b></font></td></tr>
+        <tr><td align="left">PK id</td></tr>
+        <tr><td align="left">id_mysql_server</td></tr>
+        <tr><td align="left">FK id_cve_catalog</td></tr>
+        <tr><td align="left">FK id_cve_product</td></tr>
+        <tr><td align="left">server_version</td></tr>
+      </table>
+    >];
+
+    cve_exclusion [label=<
+      <table border="0" cellborder="1" cellspacing="0" cellpadding="5">
+        <tr><td bgcolor="#991b1b"><font color="white"><b>cve_exclusion</b></font></td></tr>
+        <tr><td align="left">PK id</td></tr>
+        <tr><td align="left">UNQ cve_id</td></tr>
+        <tr><td align="left">is_disabled, reason</td></tr>
+      </table>
+    >];
+  }
+
+  subgraph cluster_ui {
+    label="Application surfaces";
+    color="#fde68a";
+    style="rounded";
+
+    cve_ui [label=<
+      <table border="0" cellborder="1" cellspacing="0" cellpadding="5">
+        <tr><td bgcolor="#92400e"><font color="white"><b>CVE UI</b></font></td></tr>
+        <tr><td align="left">Plugin &gt; cve/index</td></tr>
+        <tr><td align="left">SuperAdmin &gt; cve/exclusions</td></tr>
+        <tr><td align="left">server/main hover</td></tr>
+        <tr><td align="left">home/index + MysqlServer tab</td></tr>
+      </table>
+    >];
+  }
+
+  cve_feed_source -> cve_feed_source_product [label="1:N"];
+  cve_feed_source -> cve_feed_run [label="1:N"];
+  cve_feed_run -> source_tables [label="id_cve_feed_run", color="#64748b"];
+
+  source_tables -> cve_catalog [
+    label="catalog rebuild",
+    style=dashed,
+    color="#0284c7"
+  ];
+  source_tables -> cve_product_affected_version [
+    label="version ranges",
+    style=dashed,
+    color="#0284c7"
+  ];
+
+  cve_catalog -> cve_product_affected_version [label="1:N"];
+  cve_product -> cve_product_affected_version [label="1:N"];
+
+  mysql_server -> cve_server_cache [
+    label="logical id_mysql_server",
+    style=dashed,
+    color="#16a34a"
+  ];
+  cve_catalog -> cve_server_cache [label="1:N"];
+  cve_product -> cve_server_cache [label="1:N"];
+
+  cve_catalog -> cve_exclusion [
+    label="logical cve_id",
+    style=dashed,
+    color="#991b1b"
+  ];
+
+  cve_product -> cve_ui [label="filters/tags"];
+  cve_catalog -> cve_ui [label="CVE details"];
+  cve_product_affected_version -> cve_ui [label="affected versions"];
+  cve_server_cache -> cve_ui [label="server impacts"];
+  cve_exclusion -> cve_ui [label="hide false positives"];
+}
