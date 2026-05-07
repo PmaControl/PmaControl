@@ -14,7 +14,9 @@ if (!defined('LINK')) {
 }
 
 if (!defined('IMG')) {
-    define('IMG', '/img/');
+    // Match the value used by tests/Library/FormatTest.php so the two
+    // tests don't race on the autoload order of the global IMG constant.
+    define('IMG', '/assets');
 }
 
 final class ProxySqlAddLineViewTest extends TestCase
