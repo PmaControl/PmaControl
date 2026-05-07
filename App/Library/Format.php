@@ -249,7 +249,7 @@ class Format
                 break;
 
             case 'proxysql':
-                $name .= '<img title="ProxySQL" alt="ProxySQL" height="14" width="14" src="'.IMG.'/icon/proxysql.png"/>';
+                $name .= '<img title="ProxySQL" alt="ProxySQL" height="14" width="14" src="'.IMG.'/icon/proxysql.svg"/>';
                 $name .= ' ProxySQL';
                 break;
 
@@ -315,7 +315,7 @@ class Format
                 break;
 
             case 'proxysql':
-                $logo = '<img title="ProxySQL" alt="ProxySQL" height="14" width="14" src="'.IMG.'/icon/proxysql.png"/>';
+                $logo = '<img title="ProxySQL" alt="ProxySQL" height="14" width="14" src="'.IMG.'/icon/proxysql.svg"/>';
                 break;
 
             case 'mysql router':
@@ -323,7 +323,7 @@ class Format
                 break;
 
             case 'maxscale':
-                $logo = '<img title="MaxScale" alt="MaxScale" height="16" width="16" src="'.IMG.'/icon/maxscale.png"/>';
+                $logo = '<img title="MaxScale" alt="MaxScale" height="16" width="16" src="'.IMG.'/icon/maxscale.svg"/>';
                 break;
 
             case 'singlestore':
