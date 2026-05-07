@@ -110,4 +110,21 @@ final class GraphvizFallbackPreservationTest extends TestCase
             Graphviz::resolveDotIconAsset('definitely-not-a-real-asset-'.bin2hex(random_bytes(4)), 'mysql.svg')
         );
     }
+
+    public function testProxySqlSvgKeepsTransparentBackdropPaths(): void
+    {
+        $dotSvg = ROOT.DS.'App'.DS.'Webroot'.DS.'image'.DS.'dot'.DS.'proxysql.svg';
+        $iconSvg = ROOT.DS.'App'.DS.'Webroot'.DS.'image'.DS.'icon'.DS.'proxysql.svg';
+
+        $this->assertFileExists($dotSvg);
+        $this->assertFileExists($iconSvg);
+        $this->assertSame(hash_file('sha256', $dotSvg), hash_file('sha256', $iconSvg));
+
+        $svg = (string) file_get_contents($dotSvg);
+        $this->assertStringNotContainsString('fill="#000000"', $svg);
+
+        preg_match_all('/<path\s+fill="([^"]+)"/i', $svg, $matches);
+        $this->assertGreaterThanOrEqual(4, count($matches[1]));
+        $this->assertSame(['none', 'none', 'none', 'none'], array_slice($matches[1], 0, 4));
+    }
 }
