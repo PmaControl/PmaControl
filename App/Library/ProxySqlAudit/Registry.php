@@ -46,6 +46,7 @@ final class Registry
             \App\Library\ProxySqlAudit\Checks\QueryRules\DestinationHostgroupUndefined::class,    // #920
             \App\Library\ProxySqlAudit\Checks\QueryRules\FlagInOutCycle::class,                   // #921
             \App\Library\ProxySqlAudit\Checks\Cluster\ProxySqlServersDuplicate::class,            // #922
+            \App\Library\ProxySqlAudit\Checks\Cluster\AsymmetricPeering::class,                   // #923
         ];
     }
 }
