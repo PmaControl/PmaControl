@@ -1261,59 +1261,16 @@ document.addEventListener('DOMContentLoaded', function() {
         var container = document.getElementById('sv-ba-results');
         container.style.display = 'block';
 
-        // Info table
-        var sizeMb = (d.total_size_bytes / 1048576).toFixed(1);
-        var totalRows = (parseInt(d.total_inserts)||0) + (parseInt(d.total_updates)||0) + (parseInt(d.total_deletes)||0);
-        var infoHtml = '<tr><td><b>Server</b></td><td>' + (d.mysql_version||'?') + ', server_id=' + (d.server_id||'?') + '</td></tr>'
-            + '<tr><td><b>Size</b></td><td>' + sizeMb + ' MB</td></tr>'
-            + '<tr><td><b>Period</b></td><td>' + d.time_start + ' &rarr; ' + d.time_end + ' (' + d.duration_seconds + 's)</td></tr>'
-            + '<tr><td><b>Transactions</b></td><td>' + numberFmt(d.total_transactions) + '</td></tr>'
-            + '<tr><td><b>DDL</b></td><td>' + (d.total_ddl > 0 ? d.total_ddl + ' statement(s) &mdash; <a href="#sv-ba-ddl-head" onclick="document.getElementById(\'sv-ba-ddl-head\').click()">see details</a>' : 'None &mdash; 100% DML row-based') + '</td></tr>';
-        document.getElementById('sv-ba-info-table').innerHTML = infoHtml;
+        // Store refs first so the window-aware paint can read them.
+        _baVolData = d.volume_per_second || [];
+        _baTopTables = d.top_tables || [];
+        _baAnalysis = d;
 
-        // DML table
-        var dmlHtml = '<tr><td>INSERT</td><td class="text-right"><b>' + numberFmt(d.total_inserts) + '</b></td></tr>'
-            + '<tr><td>UPDATE</td><td class="text-right"><b>' + numberFmt(d.total_updates) + '</b></td></tr>'
-            + '<tr><td>DELETE</td><td class="text-right"><b>' + numberFmt(d.total_deletes) + '</b></td></tr>'
-            + '<tr style="background:#f0f4ff"><td><b>Total</b></td><td class="text-right"><b>' + numberFmt(totalRows) + ' rows in ' + d.duration_seconds + 's</b></td></tr>';
-        document.getElementById('sv-ba-dml-table').innerHTML = dmlHtml;
-
-        // Risk factors
-        var risksHtml = '';
-        // 1. Throughput
-        risksHtml += '<div style="margin-bottom:12px"><b>1. Write Throughput</b><ul style="margin:4px 0 0 20px">'
-            + '<li>Peak: <b>' + numberFmt(d.peak_txn_per_sec) + ' txn/s</b></li>'
-            + '<li>Avg: <b>' + d.avg_txn_per_sec + ' txn/s</b></li>'
-            + '<li>~' + numberFmt(Math.round(totalRows / Math.max(1, d.duration_seconds))) + ' row changes/s</li></ul></div>';
-        // 2. Parallelism
-        var distrib = d.parallelism_distribution || {};
-        var distribStr = Object.keys(distrib).map(function(k) { return distrib[k] + ' groups of ' + k; }).join(', ');
-        risksHtml += '<div style="margin-bottom:12px"><b>2. MTS Parallelism</b><ul style="margin:4px 0 0 20px">'
-            + '<li>Txn/s: min=<b>' + (d.min_txn_per_sec || 0) + '</b> avg=<b>' + d.avg_txn_per_sec + '</b> max=<b>' + d.peak_txn_per_sec + '</b></li>'
-            + '<li><b>' + d.sequential_pct + '%</b> of seconds with single txn (no parallelism possible)</li>'
-            + '<li>Max parallelism: <b>' + d.max_parallelism + ' txn/s</b> in a single second</li>'
-            + '<li>Distribution: ' + distribStr + '</li></ul></div>';
-        // 3. Large txn
-        risksHtml += '<div style="margin-bottom:12px"><b>3. Large Transactions</b><ul style="margin:4px 0 0 20px">'
-            + '<li>' + d.large_txn_500k + ' txn &gt; 500 KB, ' + d.large_txn_100k + ' txn &gt; 100 KB</li>'
-            + '<li>Max: <b>' + Math.round(d.max_txn_size_bytes / 1024) + ' KB</b></li></ul></div>';
-        // 4. Databases
-        risksHtml += '<div><b>4. Multi-database</b>: <b>' + d.databases_count + '</b> databases modified</div>';
-        document.getElementById('sv-ba-risks').innerHTML = risksHtml;
-
-        // Top tables
-        var tables = d.top_tables || [];
-        document.getElementById('sv-ba-tables-count').textContent = tables.length;
-        var tbodyHtml = '';
-        tables.forEach(function(t) {
-            var total = (t.inserts||0) + (t.updates||0) + (t.deletes||0);
-            tbodyHtml += '<tr><td><code>' + escHtml(t.table) + '</code></td>'
-                + '<td class="text-right">' + numberFmt(t.inserts) + '</td>'
-                + '<td class="text-right">' + numberFmt(t.updates) + '</td>'
-                + '<td class="text-right">' + numberFmt(t.deletes) + '</td>'
-                + '<td class="text-right"><b>' + numberFmt(total) + '</b></td></tr>';
-        });
-        document.getElementById('sv-ba-tables-tbody').innerHTML = tbodyHtml;
+        // Window-dependent panels (General Info, DML Volume, Risk Factors,
+        // Top tables HTML, treemaps) — re-rendered on every zoom (#826).
+        // Risk factor 3 (large txn) is global — paintWindowedPanels reads
+        // it from `d` directly and tags the section "(full window)".
+        paintWindowedPanels(computeWindowAggregates(d, null), d);
 
         // DDL Details
         var ddls = d.ddl_details || [];
@@ -1357,18 +1314,198 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         document.getElementById('sv-ba-recs-list').innerHTML = recsHtml;
 
-        // Store refs for zoom-based treemap rebuild
-        _baVolData = d.volume_per_second || [];
-        _baTopTables = d.top_tables || [];
-        _baAnalysis = d;
-
-        // Treemaps
-        renderTreemaps(d.top_tables || []);
-
         // Chart
         renderChart(d.volume_per_second || [], d.lag_data || []);
         renderParallelismChart(d.volume_per_second || [], d);
         renderBinlogTimeline(d.binlog_file_ranges || []);
+    }
+
+    // ---- Window-aware aggregates + render (issue #826) ------------------
+    //
+    // `win = null` means "full window" — use the totals already stored in
+    // the analysis row. With a {xMin,xMax} object (zoom in ms) we
+    // recompute every metric we can derive from `volume_per_second` and
+    // `binlog_file_ranges[].tables`. Risk factor 3 (large transactions)
+    // and DDL details have no per-time data; we leave those at their
+    // global values and tag risk 3 with "(full window)" when zoomed.
+    function computeWindowAggregates(d, win) {
+        // Fast path — no zoom, just return what the backend already gave us.
+        if (!win || !Number.isFinite(win.xMin) || !Number.isFinite(win.xMax)) {
+            return {
+                window: null,
+                period_start: d.time_start,
+                period_end: d.time_end,
+                duration_seconds: parseInt(d.duration_seconds) || 0,
+                size_bytes: parseInt(d.total_size_bytes) || 0,
+                total_transactions: parseInt(d.total_transactions) || 0,
+                total_inserts: parseInt(d.total_inserts) || 0,
+                total_updates: parseInt(d.total_updates) || 0,
+                total_deletes: parseInt(d.total_deletes) || 0,
+                peak_txn_per_sec: parseInt(d.peak_txn_per_sec) || 0,
+                min_txn_per_sec:  parseInt(d.min_txn_per_sec)  || 0,
+                avg_txn_per_sec:  parseFloat(d.avg_txn_per_sec) || 0,
+                sequential_pct:   parseFloat(d.sequential_pct)  || 0,
+                max_parallelism:  parseInt(d.max_parallelism)   || 0,
+                parallelism_distribution: d.parallelism_distribution || {},
+                databases_count:  parseInt(d.databases_count)   || 0,
+                top_tables: d.top_tables || []
+            };
+        }
+
+        var xMin = win.xMin, xMax = win.xMax;
+
+        // Pass 1: per-second volume → size, transactions, txn-rate stats
+        var sizeBytes = 0, totalTxn = 0;
+        var peakTxn = 0, minTxn = Number.POSITIVE_INFINITY, secondsCount = 0;
+        var sumTxn = 0, secondsWithSingleTxn = 0, maxPar = 0;
+        var distrib = {};
+        (d.volume_per_second || []).forEach(function(p) {
+            var ms = parseTimelineTs(p.ts);
+            if (ms === null || ms < xMin || ms > xMax) return;
+            secondsCount++;
+            sizeBytes += (parseInt(p.bytes) || 0);
+            var txn = parseInt(p.txn) || 0;
+            totalTxn += txn;
+            sumTxn += txn;
+            if (txn > peakTxn) peakTxn = txn;
+            if (txn < minTxn) minTxn = txn;
+            if (txn > maxPar) maxPar = txn;
+            if (txn === 1) secondsWithSingleTxn++;
+            // Bucket distribution into the same buckets as the backend
+            // emits (1, 2-5, 6-10, 11-50, 51-100, 100+).
+            var bucket;
+            if (txn <= 1) bucket = '1';
+            else if (txn <= 5) bucket = '2-5';
+            else if (txn <= 10) bucket = '6-10';
+            else if (txn <= 50) bucket = '11-50';
+            else if (txn <= 100) bucket = '51-100';
+            else bucket = '100+';
+            distrib[bucket] = (distrib[bucket] || 0) + 1;
+        });
+        if (minTxn === Number.POSITIVE_INFINITY) minTxn = 0;
+        var avgTxn = secondsCount > 0 ? (sumTxn / secondsCount) : 0;
+        var sequentialPct = secondsCount > 0
+            ? Math.round((secondsWithSingleTxn / secondsCount) * 1000) / 10
+            : 0;
+
+        // Pass 2: per-file table breakdown → DML totals + top tables + db count
+        var ranges = d.binlog_file_ranges || [];
+        var tableMerge = {};
+        var dbSet = {};
+        var inserts = 0, updates = 0, deletes = 0;
+        ranges.forEach(function(fr) {
+            var fStart = parseTimelineTs(fr.start);
+            var fEnd = parseTimelineTs(fr.end);
+            if (fStart === null || fEnd === null) return;
+            if (fEnd < xMin || fStart > xMax) return; // no overlap
+            (fr.tables || []).forEach(function(t) {
+                var ti = parseInt(t.inserts) || 0;
+                var tu = parseInt(t.updates) || 0;
+                var td = parseInt(t.deletes) || 0;
+                inserts += ti; updates += tu; deletes += td;
+                if (!tableMerge[t.table]) {
+                    tableMerge[t.table] = { table: t.table, inserts: 0, updates: 0, deletes: 0 };
+                }
+                tableMerge[t.table].inserts += ti;
+                tableMerge[t.table].updates += tu;
+                tableMerge[t.table].deletes += td;
+                var m = String(t.table || '').match(/^`([^`]+)`\./);
+                if (m) dbSet[m[1]] = true;
+            });
+        });
+        var topTables = Object.keys(tableMerge).map(function(k) { return tableMerge[k]; })
+            .filter(function(r) { return (r.inserts + r.updates + r.deletes) > 0; })
+            .sort(function(a, b) {
+                return (b.inserts + b.updates + b.deletes) - (a.inserts + a.updates + a.deletes);
+            });
+
+        function fmtTs(ms) {
+            var dt = new Date(ms);
+            function pad(n) { return n < 10 ? '0' + n : '' + n; }
+            return dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate())
+                + ' ' + pad(dt.getHours()) + ':' + pad(dt.getMinutes()) + ':' + pad(dt.getSeconds());
+        }
+
+        return {
+            window: { xMin: xMin, xMax: xMax },
+            period_start: fmtTs(xMin),
+            period_end:   fmtTs(xMax),
+            duration_seconds: Math.max(1, Math.round((xMax - xMin) / 1000)),
+            size_bytes: sizeBytes,
+            total_transactions: totalTxn,
+            total_inserts: inserts,
+            total_updates: updates,
+            total_deletes: deletes,
+            peak_txn_per_sec: peakTxn,
+            min_txn_per_sec:  minTxn,
+            avg_txn_per_sec:  Math.round(avgTxn * 10) / 10,
+            sequential_pct:   sequentialPct,
+            max_parallelism:  maxPar,
+            parallelism_distribution: distrib,
+            databases_count:  Object.keys(dbSet).length,
+            top_tables: topTables
+        };
+    }
+
+    function paintWindowedPanels(agg, d) {
+        var zoomed = !!agg.window;
+        var zoomTag = zoomed ? ' <small style="color:#7c3aed">(zoomed)</small>' : '';
+        var totalRows = agg.total_inserts + agg.total_updates + agg.total_deletes;
+        var sizeMb = (agg.size_bytes / 1048576).toFixed(1);
+
+        // General Info table
+        var infoHtml = '<tr><td><b>Server</b></td><td>' + (d.mysql_version || '?') + ', server_id=' + (d.server_id || '?') + '</td></tr>'
+            + '<tr><td><b>Size</b></td><td>' + sizeMb + ' MB' + zoomTag + '</td></tr>'
+            + '<tr><td><b>Period</b></td><td>' + agg.period_start + ' &rarr; ' + agg.period_end + ' (' + agg.duration_seconds + 's)' + zoomTag + '</td></tr>'
+            + '<tr><td><b>Transactions</b></td><td>' + numberFmt(agg.total_transactions) + zoomTag + '</td></tr>'
+            + '<tr><td><b>DDL</b></td><td>' + (d.total_ddl > 0
+                ? d.total_ddl + ' statement(s) <small style="color:#94a3b8">(full window)</small> &mdash; <a href="#sv-ba-ddl-head" onclick="document.getElementById(\'sv-ba-ddl-head\').click()">see details</a>'
+                : 'None &mdash; 100% DML row-based') + '</td></tr>';
+        document.getElementById('sv-ba-info-table').innerHTML = infoHtml;
+
+        // DML Volume table
+        var dmlHtml = '<tr><td>INSERT</td><td class="text-right"><b>' + numberFmt(agg.total_inserts) + '</b></td></tr>'
+            + '<tr><td>UPDATE</td><td class="text-right"><b>' + numberFmt(agg.total_updates) + '</b></td></tr>'
+            + '<tr><td>DELETE</td><td class="text-right"><b>' + numberFmt(agg.total_deletes) + '</b></td></tr>'
+            + '<tr style="background:#f0f4ff"><td><b>Total' + zoomTag + '</b></td><td class="text-right"><b>' + numberFmt(totalRows) + ' rows in ' + agg.duration_seconds + 's</b></td></tr>';
+        document.getElementById('sv-ba-dml-table').innerHTML = dmlHtml;
+
+        // Risk Factors — 1, 2, 4 are window-derived; 3 stays global.
+        var distribStr = Object.keys(agg.parallelism_distribution).map(function(k) {
+            return agg.parallelism_distribution[k] + ' groups of ' + k;
+        }).join(', ') || '<em style="color:#94a3b8">none</em>';
+        var risksHtml = '';
+        risksHtml += '<div style="margin-bottom:12px"><b>1. Write Throughput</b>' + zoomTag + '<ul style="margin:4px 0 0 20px">'
+            + '<li>Peak: <b>' + numberFmt(agg.peak_txn_per_sec) + ' txn/s</b></li>'
+            + '<li>Avg: <b>' + agg.avg_txn_per_sec + ' txn/s</b></li>'
+            + '<li>~' + numberFmt(Math.round(totalRows / Math.max(1, agg.duration_seconds))) + ' row changes/s</li></ul></div>';
+        risksHtml += '<div style="margin-bottom:12px"><b>2. MTS Parallelism</b>' + zoomTag + '<ul style="margin:4px 0 0 20px">'
+            + '<li>Txn/s: min=<b>' + agg.min_txn_per_sec + '</b> avg=<b>' + agg.avg_txn_per_sec + '</b> max=<b>' + agg.peak_txn_per_sec + '</b></li>'
+            + '<li><b>' + agg.sequential_pct + '%</b> of seconds with single txn (no parallelism possible)</li>'
+            + '<li>Max parallelism: <b>' + agg.max_parallelism + ' txn/s</b> in a single second</li>'
+            + '<li>Distribution: ' + distribStr + '</li></ul></div>';
+        // Risk 3 is global — no per-txn timestamps available.
+        risksHtml += '<div style="margin-bottom:12px"><b>3. Large Transactions</b> <small style="color:#94a3b8">(full window)</small><ul style="margin:4px 0 0 20px">'
+            + '<li>' + d.large_txn_500k + ' txn &gt; 500 KB, ' + d.large_txn_100k + ' txn &gt; 100 KB</li>'
+            + '<li>Max: <b>' + Math.round(d.max_txn_size_bytes / 1024) + ' KB</b></li></ul></div>';
+        risksHtml += '<div><b>4. Multi-database</b>' + zoomTag + ': <b>' + agg.databases_count + '</b> databases modified</div>';
+        document.getElementById('sv-ba-risks').innerHTML = risksHtml;
+
+        // Top tables HTML table
+        document.getElementById('sv-ba-tables-count').textContent = agg.top_tables.length;
+        var tbodyHtml = '';
+        agg.top_tables.forEach(function(t) {
+            var total = (t.inserts || 0) + (t.updates || 0) + (t.deletes || 0);
+            tbodyHtml += '<tr><td><code>' + escHtml(t.table) + '</code></td>'
+                + '<td class="text-right">' + numberFmt(t.inserts) + '</td>'
+                + '<td class="text-right">' + numberFmt(t.updates) + '</td>'
+                + '<td class="text-right">' + numberFmt(t.deletes) + '</td>'
+                + '<td class="text-right"><b>' + numberFmt(total) + '</b></td></tr>';
+        });
+        document.getElementById('sv-ba-tables-tbody').innerHTML = tbodyHtml;
+
+        // Treemaps (DML by Database / DML by Table)
+        renderTreemaps(agg.top_tables);
     }
 
     // ---- Treemaps: databases + tables ----
@@ -1569,7 +1706,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         zoom: {
                             drag: { enabled: true, backgroundColor: 'rgba(33,150,243,0.15)', borderColor: '#2196F3', borderWidth: 1 },
                             mode: 'x',
-                            onZoomComplete: function(ctx) { syncZoom(ctx.chart, baParallelChart); syncZoom(ctx.chart, baTimelineChart); rebuildTreemapsFromZoom(ctx.chart); }
+                            onZoomComplete: function(ctx) { syncZoom(ctx.chart, baParallelChart); syncZoom(ctx.chart, baTimelineChart); rebuildPanelsFromZoom(ctx.chart); }
                         }
                     }
                 }
@@ -1694,7 +1831,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         zoom: {
                             drag: { enabled: true, backgroundColor: 'rgba(16,185,129,0.15)', borderColor: '#10b981', borderWidth: 1 },
                             mode: 'x',
-                            onZoomComplete: function(ctx) { syncZoom(ctx.chart, baChart); syncZoom(ctx.chart, baTimelineChart); rebuildTreemapsFromZoom(ctx.chart); }
+                            onZoomComplete: function(ctx) { syncZoom(ctx.chart, baChart); syncZoom(ctx.chart, baTimelineChart); rebuildPanelsFromZoom(ctx.chart); }
                         }
                     }
                 },
@@ -1892,7 +2029,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             onZoomComplete: function(ctx) {
                                 syncZoom(ctx.chart, baChart);
                                 syncZoom(ctx.chart, baParallelChart);
-                                rebuildTreemapsFromZoom(ctx.chart);
+                                rebuildPanelsFromZoom(ctx.chart);
                             }
                         }
                     }
@@ -1917,53 +2054,23 @@ document.addEventListener('DOMContentLoaded', function() {
         bindTimelineTooltip(canvas);
     }
 
-    // ---- Rebuild treemaps from zoom window ----
-    function rebuildTreemapsFromZoom(chart) {
+    // ---- Rebuild every window-dependent panel from the zoom (#826) ----
+    // Called on each chart's onZoomComplete and from the Reset Zoom button
+    // (with `chart = null` to mean "full window"). Renders General Info,
+    // DML Volume, Risk Factors, top-tables HTML and both treemaps.
+    function rebuildPanelsFromZoom(chart) {
         if (!_baAnalysis) return;
-
-        // null chart = reset zoom → use full data
-        if (!chart || !chart.scales || !chart.scales.x) {
-            renderTreemaps(_baTopTables);
-            return;
-        }
-
-        var xMin = chart.scales.x.min;
-        var xMax = chart.scales.x.max;
+        var win = (chart && chart.scales && chart.scales.x)
+            ? { xMin: chart.scales.x.min, xMax: chart.scales.x.max }
+            : null;
+        // If the analysis has no per-file table breakdown, the partial
+        // recompute would zero out DML totals and top tables. Fall back to
+        // full-window so the panels stay populated.
         var ranges = _baAnalysis.binlog_file_ranges || [];
-
-        if (!ranges.length || !ranges[0].tables) {
-            // No per-file DML data — fall back to full
-            renderTreemaps(_baTopTables);
-            return;
+        if (win && (!ranges.length || !ranges[0].tables)) {
+            win = null;
         }
-
-        // Find which binlog files overlap the zoom window
-        var merged = {};
-        ranges.forEach(function(fr) {
-            var fStart = parseTimelineTs(fr.start);
-            var fEnd = parseTimelineTs(fr.end);
-            if (fStart === null || fEnd === null) return;
-            // File overlaps zoom window?
-            if (fEnd >= xMin && fStart <= xMax) {
-                (fr.tables || []).forEach(function(t) {
-                    if (!merged[t.table]) {
-                        merged[t.table] = { table: t.table, inserts: 0, updates: 0, deletes: 0 };
-                    }
-                    merged[t.table].inserts += (t.inserts || 0);
-                    merged[t.table].updates += (t.updates || 0);
-                    merged[t.table].deletes += (t.deletes || 0);
-                });
-            }
-        });
-
-        var result = Object.keys(merged).map(function(k) { return merged[k]; })
-            .filter(function(t) { return (t.inserts + t.updates + t.deletes) > 0; });
-
-        if (result.length === 0) {
-            renderTreemaps(_baTopTables);
-        } else {
-            renderTreemaps(result);
-        }
+        paintWindowedPanels(computeWindowAggregates(_baAnalysis, win), _baAnalysis);
     }
 
     // ---- Load past analyses ----
@@ -2028,7 +2135,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (baChart) { baChart.resetZoom(); }
         if (baParallelChart) { baParallelChart.resetZoom(); }
         if (baTimelineChart) { baTimelineChart.resetZoom(); }
-        rebuildTreemapsFromZoom(null);
+        rebuildPanelsFromZoom(null);
     });
 
     // ---- Init: load history on page load ----
