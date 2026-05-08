@@ -17,6 +17,14 @@ final class MysqlbinlogExecBitTest extends TestCase
         $repoRoot = realpath(__DIR__ . '/../..');
         $this->assertNotFalse($repoRoot, 'repo root must resolve');
 
+        // The proxmox install matrix rsyncs the workspace into a fresh
+        // VM with `--exclude=.git`, so `git ls-files` would return
+        // nothing there. Skip cleanly in that environment — pre-merge
+        // dev runs (and any git-aware CI) still enforce the contract.
+        if (!is_dir($repoRoot . '/.git')) {
+            $this->markTestSkipped('not in a git checkout — exec-bit guard runs in dev / git-aware CI only');
+        }
+
         // Read all entries under bin/mysqlbinlog/ from the git index, not
         // the working tree — a developer could `chmod +x` locally without
         // updating the index. We're guarding what gets committed.
