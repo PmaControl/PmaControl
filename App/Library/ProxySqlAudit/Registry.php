@@ -35,6 +35,7 @@ final class Registry
             \App\Library\ProxySqlAudit\Checks\User\FrontendBackendTwinMissing::class,         // #909
             \App\Library\ProxySqlAudit\Checks\User\DefaultHostgroupUndefined::class,          // #910
             \App\Library\ProxySqlAudit\Checks\User\SuspiciousDefaultSchema::class,            // #911
+            \App\Library\ProxySqlAudit\Checks\User\MonitorUserMissingOnBackends::class,       // #912
         ];
     }
 }
