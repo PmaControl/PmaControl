@@ -41,6 +41,7 @@ final class Registry
             \App\Library\ProxySqlAudit\Checks\User\WeakDefaultPassword::class,                    // #915
             \App\Library\ProxySqlAudit\Checks\Monitor\MonitorUsernameUnset::class,                // #916
             \App\Library\ProxySqlAudit\Checks\Monitor\IntervalOutliers::class,                    // #917
+            \App\Library\ProxySqlAudit\Checks\Monitor\PtHeartbeatMisconfig::class,                // #918
         ];
     }
 }
