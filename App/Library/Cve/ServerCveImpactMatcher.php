@@ -447,7 +447,7 @@ final class ServerCveImpactMatcher
         $references = [];
         self::collectReferences($decoded, $references, max(1, $limit));
 
-        return array_values($references);
+        return self::labelReferencesForDisplay(array_values($references));
     }
 
     /**
@@ -505,6 +505,147 @@ final class ServerCveImpactMatcher
                 self::collectReferences($child, $references, $limit);
             }
         }
+    }
+
+    /**
+     * @param list<array{url:string,label:string}> $references
+     * @return list<array{url:string,label:string}>
+     */
+    private static function labelReferencesForDisplay(array $references): array
+    {
+        $byDomain = [];
+        $metadata = [];
+
+        foreach ($references as $index => $reference) {
+            $url = (string)$reference['url'];
+            $domain = self::referenceDomain($url);
+            if ($domain === '') {
+                $references[$index]['label'] = $url;
+                continue;
+            }
+
+            $metadata[$index] = [
+                'domain' => $domain,
+                'segments' => self::referencePathSegments($url),
+                'url' => $url,
+            ];
+            $byDomain[$domain][] = $index;
+        }
+
+        foreach ($byDomain as $domain => $indexes) {
+            if (count($indexes) === 1) {
+                $references[$indexes[0]]['label'] = $domain;
+                continue;
+            }
+
+            $maxDepth = 0;
+            foreach ($indexes as $index) {
+                $maxDepth = max($maxDepth, count($metadata[$index]['segments']));
+            }
+
+            for ($depth = 1; $depth <= max(1, $maxDepth); $depth++) {
+                $labels = [];
+                $isUnique = true;
+
+                foreach ($indexes as $index) {
+                    $label = self::referenceLabelAtDepth(
+                        $domain,
+                        $metadata[$index]['segments'],
+                        $depth
+                    );
+                    if (isset($labels[$label])) {
+                        $isUnique = false;
+                        break;
+                    }
+                    $labels[$label] = true;
+                }
+
+                if ($isUnique) {
+                    foreach ($indexes as $index) {
+                        $references[$index]['label'] = self::referenceLabelAtDepth(
+                            $domain,
+                            $metadata[$index]['segments'],
+                            $depth
+                        );
+                    }
+                    continue 2;
+                }
+            }
+
+            $seenLabels = [];
+            foreach ($indexes as $index) {
+                $label = self::referenceFullLabel($domain, $metadata[$index]['url']);
+                if (isset($seenLabels[$label])) {
+                    $seenLabels[$label]++;
+                    $label .= ' #' . $seenLabels[$label];
+                } else {
+                    $seenLabels[$label] = 1;
+                }
+                $references[$index]['label'] = $label;
+            }
+        }
+
+        return $references;
+    }
+
+    private static function referenceDomain(string $url): string
+    {
+        $host = parse_url($url, PHP_URL_HOST);
+        if (!is_string($host) || trim($host) === '') {
+            return '';
+        }
+
+        $host = strtolower(trim($host));
+        return preg_replace('/^www\./', '', $host) ?? $host;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function referencePathSegments(string $url): array
+    {
+        $path = parse_url($url, PHP_URL_PATH);
+        if (!is_string($path) || trim($path, '/') === '') {
+            return [];
+        }
+
+        $segments = [];
+        foreach (explode('/', trim($path, '/')) as $segment) {
+            $segment = trim(rawurldecode($segment));
+            if ($segment !== '') {
+                $segments[] = $segment;
+            }
+        }
+
+        return $segments;
+    }
+
+    /**
+     * @param list<string> $segments
+     */
+    private static function referenceLabelAtDepth(string $domain, array $segments, int $depth): string
+    {
+        if ($segments === []) {
+            return $domain;
+        }
+
+        return $domain . '/' . implode('/', array_slice($segments, 0, $depth));
+    }
+
+    private static function referenceFullLabel(string $domain, string $url): string
+    {
+        $label = self::referenceLabelAtDepth($domain, self::referencePathSegments($url), PHP_INT_MAX);
+        $query = parse_url($url, PHP_URL_QUERY);
+        if (is_string($query) && $query !== '') {
+            $label .= '?' . $query;
+        }
+
+        $fragment = parse_url($url, PHP_URL_FRAGMENT);
+        if (is_string($fragment) && $fragment !== '') {
+            $label .= '#' . $fragment;
+        }
+
+        return $label;
     }
 
     /**
