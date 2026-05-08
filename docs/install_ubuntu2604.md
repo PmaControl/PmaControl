@@ -134,6 +134,23 @@ The remote test path runs `install/ubuntu26.04.sh`, checks that
 `http://127.0.0.1/pmacontrol/` returns `200`, `301`, or `302`, then runs the
 PHPUnit suite.
 
+### Issue #779 closure checks
+
+The IPv4 failure tracked in #779 is considered fixed by the static Proxmox CI
+pool. The CI runner no longer depends on dynamic DHCP discovery to know the VM
+address: the address is assigned through `ipconfig0`, then reused directly for
+the remote install checks.
+
+Before closing #779, verify that the following points are still true:
+
+- the reserved pool remains `10.68.68.39-46`;
+- the scheduler can spread jobs across `pve-2` and `pve-3`;
+- node selection still refuses hosts above `80%` RAM or `60%` CPU;
+- the latest Proxmox install matrix runs are green after these safeguards.
+
+The closure validation on 2026-05-08 used Forgejo runs #918 through #924, all
+green after the static IPv4 and scheduler changes.
+
 ## Private Forgejo Checkout
 
 For a private Forgejo repository, provide the repository URL explicitly:
