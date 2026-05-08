@@ -451,7 +451,7 @@ if (empty($data['servers'])) {
                     <?php $itemSeverity = server_main_cve_severity_class($item['severity'] ?? 'unknown'); ?>
                     <div class="sm-cve-item">
                         <div>
-                            <a class="sm-cve-id" href="https://nvd.nist.gov/vuln/detail/<?= htmlspecialchars((string)$item['cve_id'], ENT_QUOTES) ?>" target="_blank" rel="noopener noreferrer">
+                            <a class="sm-cve-id" href="<?= LINK ?>cve/show/<?= htmlspecialchars(rawurlencode((string)$item['cve_id']), ENT_QUOTES) ?>">
                                 <?= htmlspecialchars((string)$item['cve_id'], ENT_QUOTES) ?>
                             </a>
                             <span class="sm-cve-sev <?= $itemSeverity ?>"><?= htmlspecialchars((string)($item['severity'] ?? 'unknown'), ENT_QUOTES) ?></span>

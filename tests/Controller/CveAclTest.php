@@ -19,6 +19,17 @@ final class CveAclTest extends TestCase
         $this->assertStringContainsString('ReadOnly[] = "Cve/index"', $sampleAcl);
     }
 
+    public function testCveShowRouteExistsAndIsWhitelisted(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $sampleAcl = (string) file_get_contents($root . '/config_sample/acl.config.ini');
+        $method = new ReflectionMethod(Cve::class, 'show');
+
+        $this->assertTrue($method->isPublic());
+        $this->assertStringContainsString('Member[] = "Cve/show"', $sampleAcl);
+        $this->assertStringContainsString('ReadOnly[] = "Cve/show"', $sampleAcl);
+    }
+
     public function testCveExclusionsRouteExistsAndIsSuperAdminOnly(): void
     {
         $root = dirname(__DIR__, 2);

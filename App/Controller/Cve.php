@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Library\Cve\ServerCveImpactMatcher;
 use App\Library\Security\CsrfGuard;
 use Glial\Security\Csrf;
 use Glial\Synapse\Controller;
@@ -12,6 +13,7 @@ class Cve extends Controller
     private const EXCLUSIONS_CSRF_SCOPE = 'cve.exclusions';
     private const EXCLUSIONS_LIMIT = 250;
     private const EXCLUSIONS_MAX_VISIBLE = 500;
+    private const DETAIL_REFERENCE_LIMIT = 1000;
 
     public function index($param)
     {
@@ -50,6 +52,51 @@ class Cve extends Controller
         $data['products'] = $products;
         $data['stats'] = $this->loadStats($db, $filter, $query);
         $data['cves'] = $this->loadCves($db, $filter, $query, (int)$data['limit']);
+
+        $this->set('data', $data);
+    }
+
+    public function show($param)
+    {
+        $this->title = __('CVE details');
+        $db = Sgbd::sql(DB_DEFAULT);
+        $routeParams = $this->normalizeRouteParameters($param);
+        $cveId = self::normalizeCveId($routeParams[0] ?? ($_GET['cve_id'] ?? null));
+
+        $data = [
+            'is_ready' => true,
+            'not_found' => false,
+            'cve_id' => $cveId,
+            'cve' => [],
+            'affected' => [],
+            'impacted_servers' => [],
+            'source_rows' => [],
+        ];
+
+        if (!$this->tableExists($db, 'cve_catalog') || !$this->tableExists($db, 'cve_product_affected_version')) {
+            $data['is_ready'] = false;
+            $this->set('data', $data);
+            return;
+        }
+
+        if ($cveId === null) {
+            $data['not_found'] = true;
+            $this->set('data', $data);
+            return;
+        }
+
+        $cve = $this->loadCveDetail($db, $cveId);
+        if ($cve === []) {
+            $data['not_found'] = true;
+            $this->set('data', $data);
+            return;
+        }
+
+        $catalogId = (int)$cve['id'];
+        $data['cve'] = $cve;
+        $data['affected'] = $this->loadCveAffectedRows($db, $catalogId);
+        $data['impacted_servers'] = $this->loadCveImpactedServers($db, $catalogId);
+        $data['source_rows'] = $this->loadCveSourceRows($db, $cveId);
 
         $this->set('data', $data);
     }
@@ -393,6 +440,164 @@ class Cve extends Controller
         return array_values($cves);
     }
 
+    /**
+     * @return array<string,mixed>
+     */
+    private function loadCveDetail($db, string $cveId): array
+    {
+        $cveSql = $db->sql_real_escape_string($cveId);
+        $hasExclusion = $this->tableExists($db, 'cve_exclusion');
+        $exclusionColumns = $hasExclusion
+            ? ", COALESCE(x.`is_disabled`, 0) AS `is_disabled`, x.`reason`, x.`disabled_by`, x.`disabled_at`"
+            : ", 0 AS `is_disabled`, NULL AS `reason`, NULL AS `disabled_by`, NULL AS `disabled_at`";
+        $exclusionJoin = $hasExclusion
+            ? " LEFT JOIN `cve_exclusion` x ON x.`cve_id` = c.`cve_id`"
+            : '';
+
+        $sql = "SELECT c.*{$exclusionColumns}"
+            . " FROM `cve_catalog` c"
+            . $exclusionJoin
+            . " WHERE c.`cve_id` = '{$cveSql}'"
+            . " LIMIT 1";
+        $res = $db->sql_query($sql);
+        $row = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+        if (!is_array($row)) {
+            return [];
+        }
+
+        $row['known_exploited'] = (int)($row['known_exploited'] ?? 0);
+        $row['is_disabled'] = (int)($row['is_disabled'] ?? 0);
+        $row['references'] = ServerCveImpactMatcher::referencesFromJson(
+            $row['references_json'] ?? null,
+            self::DETAIL_REFERENCE_LIMIT
+        );
+        $row['source_codes'] = ServerCveImpactMatcher::sourceCodesFromJson($row['source_codes_json'] ?? null);
+        $row['cwes'] = self::jsonScalarList($row['cwe_json'] ?? null);
+
+        return $row;
+    }
+
+    /**
+     * @return list<array<string,mixed>>
+     */
+    private function loadCveAffectedRows($db, int $catalogId): array
+    {
+        $sql = "SELECT av.*, p.`product_name`, p.`product_family`, p.`icon_class`, p.`color`"
+            . " FROM `cve_product_affected_version` av"
+            . " INNER JOIN `cve_product` p ON p.`id` = av.`id_cve_product`"
+            . " WHERE av.`id_cve_catalog` = ".(int)$catalogId
+            . "   AND av.`is_current` = 1"
+            . " ORDER BY p.`product_family`, p.`product_name`, av.`source_code`,"
+            . "          av.`version_start_including`, av.`version_start_excluding`,"
+            . "          av.`version_end_including`, av.`version_end_excluding`, av.`version_text`";
+        $res = $db->sql_query($sql);
+        $rows = [];
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $rows[] = $row;
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @return list<array<string,mixed>>
+     */
+    private function loadCveImpactedServers($db, int $catalogId): array
+    {
+        if (!$this->tableExists($db, 'cve_server_cache') || !$this->tableExists($db, 'mysql_server')) {
+            return [];
+        }
+
+        $sql = "SELECT sc.`id_mysql_server`, sc.`product_code`, sc.`server_version`,"
+            . " sc.`server_version_comment`, sc.`match_method`, sc.`match_confidence`, sc.`date_calculated`,"
+            . " ms.`display_name`, ms.`name`, ms.`ip`, ms.`port`, ms.`is_proxy`, ms.`is_vip`"
+            . " FROM `cve_server_cache` sc"
+            . " INNER JOIN `mysql_server` ms ON ms.`id` = sc.`id_mysql_server` AND ms.`is_deleted` = 0"
+            . " WHERE sc.`is_active` = 1"
+            . "   AND sc.`id_cve_catalog` = ".(int)$catalogId
+            . " ORDER BY ms.`display_name`, ms.`name`, ms.`ip`, ms.`port`, sc.`product_code`, sc.`server_version`";
+        $res = $db->sql_query($sql);
+        $rows = [];
+        $seen = [];
+
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $serverId = (int)($row['id_mysql_server'] ?? 0);
+            $productCode = (string)($row['product_code'] ?? '');
+            $serverVersion = (string)($row['server_version'] ?? '');
+            $key = $serverId."\n".$productCode."\n".$serverVersion;
+            if (isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+
+            $displayName = trim((string)($row['display_name'] ?? ''));
+            if ($displayName === '') {
+                $displayName = trim((string)($row['name'] ?? ''));
+            }
+            if ($displayName === '') {
+                $displayName = trim((string)($row['ip'] ?? ''));
+            }
+            $row['display_name'] = $displayName;
+            $rows[] = $row;
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @return list<array{source:string,table:string,rows:list<array<string,mixed>>}>
+     */
+    private function loadCveSourceRows($db, string $cveId): array
+    {
+        $definitions = [
+            ['source' => 'NVD', 'table' => 'cve_source_nvd', 'where' => "`cve_id` = '{cve}'"],
+            ['source' => 'CISA KEV', 'table' => 'cve_source_cisa_kev', 'where' => "`cve_id` = '{cve}'"],
+            ['source' => 'GitHub Security Advisory', 'table' => 'cve_source_ghsa', 'where' => "(`cve_id` = '{cve}' OR `identifiers_json` LIKE '{like}')"],
+            ['source' => 'OSV', 'table' => 'cve_source_osv', 'where' => "(`osv_id` = '{cve}' OR `aliases_json` LIKE '{like}' OR `raw_json` LIKE '{like}')"],
+            ['source' => 'Oracle CPU', 'table' => 'cve_source_oracle_cpu', 'where' => "`cve_id` = '{cve}'"],
+            ['source' => 'MariaDB Security', 'table' => 'cve_source_mariadb_security', 'where' => "`cve_id` = '{cve}'"],
+            ['source' => 'Percona Advisory', 'table' => 'cve_source_percona_advisory', 'where' => "`cve_id` = '{cve}'"],
+            ['source' => 'Component GHSA', 'table' => 'cve_source_component_ghsa', 'where' => "(`cve_id` = '{cve}' OR `raw_json` LIKE '{like}')"],
+            ['source' => 'AWS Security Bulletin', 'table' => 'cve_source_aws_security_bulletin', 'where' => "`cve_id` = '{cve}'"],
+        ];
+        $cveSql = $db->sql_real_escape_string($cveId);
+        $likeSql = '%'.$db->sql_real_escape_string($cveId).'%';
+        $sourceRows = [];
+
+        foreach ($definitions as $definition) {
+            if (!$this->tableExists($db, $definition['table'])) {
+                continue;
+            }
+
+            $where = str_replace(
+                ['{cve}', '{like}'],
+                [$cveSql, $likeSql],
+                $definition['where']
+            );
+            $sql = "SELECT *"
+                . " FROM `".$definition['table']."`"
+                . " WHERE `is_current` = 1"
+                . "   AND {$where}"
+                . " ORDER BY `id` DESC"
+                . " LIMIT 20";
+            $res = $db->sql_query($sql);
+            $rows = [];
+            while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                $rows[] = $row;
+            }
+
+            if ($rows !== []) {
+                $sourceRows[] = [
+                    'source' => $definition['source'],
+                    'table' => $definition['table'],
+                    'rows' => $rows,
+                ];
+            }
+        }
+
+        return $sourceRows;
+    }
+
     private function searchWhere($db, string $query, string $catalogAlias = 'c', string $affectedAlias = 'av'): string
     {
         if ($query === '') {
@@ -649,6 +854,46 @@ class Cve extends Controller
         $cveId = strtoupper(trim((string)$value));
 
         return preg_match('/^CVE-\d{4}-\d{4,}$/', $cveId) === 1 ? $cveId : null;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function jsonScalarList($json): array
+    {
+        $decoded = json_decode((string)$json, true);
+        if (!is_array($decoded)) {
+            return [];
+        }
+
+        $values = [];
+        self::collectJsonScalars($decoded, $values);
+
+        return array_keys($values);
+    }
+
+    /**
+     * @param mixed $node
+     * @param array<string,bool> $values
+     */
+    private static function collectJsonScalars($node, array &$values): void
+    {
+        if (is_array($node)) {
+            foreach ($node as $value) {
+                self::collectJsonScalars($value, $values);
+            }
+
+            return;
+        }
+
+        if (!is_scalar($node)) {
+            return;
+        }
+
+        $value = trim((string)$node);
+        if ($value !== '') {
+            $values[$value] = true;
+        }
     }
 
     private static function currentActor(): string

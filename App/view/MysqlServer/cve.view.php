@@ -176,7 +176,7 @@ foreach ($cves as $cve) {
             <div class="mscve-card">
                 <div class="mscve-card-head">
                     <div>
-                        <a class="mscve-id" href="https://nvd.nist.gov/vuln/detail/<?= htmlspecialchars((string)$cve['cve_id'], ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">
+                        <a class="mscve-id" href="<?= LINK ?>cve/show/<?= htmlspecialchars(rawurlencode((string)$cve['cve_id']), ENT_QUOTES, 'UTF-8') ?>">
                             <?= htmlspecialchars((string)$cve['cve_id'], ENT_QUOTES, 'UTF-8') ?>
                         </a>
                         <?php if (!empty($cve['title'])): ?>

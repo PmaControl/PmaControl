@@ -353,7 +353,7 @@ $versionColors = ['MariaDB' => '#003545', 'MySQL' => '#e97b00', 'Percona' => '#c
                             ?>
                             <tr>
                                 <td>
-                                    <a class="hm-cve-id" href="<?= LINK ?>cve/index?q=<?= urlencode((string)$cve['cve_id']) ?>">
+                                    <a class="hm-cve-id" href="<?= LINK ?>cve/show/<?= htmlspecialchars(rawurlencode((string)$cve['cve_id']), ENT_QUOTES, 'UTF-8') ?>">
                                         <?= htmlspecialchars((string)$cve['cve_id'], ENT_QUOTES, 'UTF-8') ?>
                                     </a>
                                     <?php if (!empty($cve['known_exploited'])): ?>

@@ -175,7 +175,7 @@ $filterPath = $filter !== 'all' ? '/'.rawurlencode((string)$filter) : '';
                 <tr>
                     <td>
                         <div class="cve-id">
-                            <a href="https://nvd.nist.gov/vuln/detail/<?= cve_h($cve['cve_id']) ?>" target="_blank" rel="noopener noreferrer">
+                            <a href="<?= LINK ?>cve/show/<?= cve_h(rawurlencode((string)$cve['cve_id'])) ?>">
                                 <?= cve_h($cve['cve_id']) ?>
                             </a>
                         </div>
