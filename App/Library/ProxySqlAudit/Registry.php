@@ -51,6 +51,7 @@ final class Registry
             \App\Library\ProxySqlAudit\Checks\Runtime\ShunnedTooLong::class,                      // #925
             \App\Library\ProxySqlAudit\Checks\Runtime\ZombieSessions::class,                      // #926
             \App\Library\ProxySqlAudit\Checks\Runtime\ConnectFailuresGrowing::class,              // #927
+            \App\Library\ProxySqlAudit\Checks\Runtime\ErrlogStorm::class,                         // #928
         ];
     }
 }
