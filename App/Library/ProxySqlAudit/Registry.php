@@ -48,6 +48,7 @@ final class Registry
             \App\Library\ProxySqlAudit\Checks\Cluster\ProxySqlServersDuplicate::class,            // #922
             \App\Library\ProxySqlAudit\Checks\Cluster\AsymmetricPeering::class,                   // #923
             \App\Library\ProxySqlAudit\Checks\Cluster\ClusterDiffsBeforeSyncZero::class,          // #924
+            \App\Library\ProxySqlAudit\Checks\Runtime\ShunnedTooLong::class,                      // #925
         ];
     }
 }
