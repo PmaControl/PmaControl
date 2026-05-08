@@ -38,6 +38,7 @@ final class Registry
             \App\Library\ProxySqlAudit\Checks\User\MonitorUserMissingOnBackends::class,           // #912
             \App\Library\ProxySqlAudit\Checks\User\MonitorUserMissingReplicationGrants::class,    // #913
             \App\Library\ProxySqlAudit\Checks\User\MonitorUserHostMismatch::class,                // #914
+            \App\Library\ProxySqlAudit\Checks\User\WeakDefaultPassword::class,                    // #915
         ];
     }
 }
