@@ -77,8 +77,24 @@ final class ServerCveImpactMatcherTest extends TestCase
 
         $this->assertCount(2, $refs);
         $this->assertSame('https://example.test/advisory', $refs[0]['url']);
-        $this->assertSame('Vendor', $refs[0]['label']);
+        $this->assertSame('example.test', $refs[0]['label']);
         $this->assertSame('https://nvd.nist.gov/vuln/detail/CVE-2026-0001', $refs[1]['url']);
+        $this->assertSame('nvd.nist.gov', $refs[1]['label']);
+    }
+
+    public function testReferencesFromJsonDisambiguatesRepeatedDomainsWithPathPrefixes(): void
+    {
+        $refs = ServerCveImpactMatcher::referencesFromJson(json_encode([
+            'referenceData' => [
+                ['url' => 'https://www.oracle.com/security-alerts/cpujul2022.html#AppendixMSQL', 'source' => 'ignored-1'],
+                ['url' => 'https://www.oracle.com/security-alerts/cpuapr2022.html#AppendixMSQL', 'source' => 'ignored-2'],
+                ['url' => 'https://nvd.nist.gov/vuln/detail/CVE-2022-0001'],
+            ],
+        ]), 5);
+
+        $this->assertSame('oracle.com/security-alerts/cpujul2022.html', $refs[0]['label']);
+        $this->assertSame('oracle.com/security-alerts/cpuapr2022.html', $refs[1]['label']);
+        $this->assertSame('nvd.nist.gov', $refs[2]['label']);
     }
 
     public function testProductsFromGroupConcatParsesParkTags(): void
