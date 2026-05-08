@@ -44,6 +44,7 @@ final class Registry
             \App\Library\ProxySqlAudit\Checks\Monitor\PtHeartbeatMisconfig::class,                // #918
             \App\Library\ProxySqlAudit\Checks\Monitor\ServerVersionDrift::class,                  // #919
             \App\Library\ProxySqlAudit\Checks\QueryRules\DestinationHostgroupUndefined::class,    // #920
+            \App\Library\ProxySqlAudit\Checks\QueryRules\FlagInOutCycle::class,                   // #921
         ];
     }
 }
