@@ -22,6 +22,9 @@ One topic per file. Load only what the current task needs.
 - [data_geoip.md](data_geoip.md) — GeoIP country / city lookup tables
 - [worker_architecture.md](worker_architecture.md) — daemon / worker / System V queue architecture
 
+## Proxies
+- [proxysql_audit.md](proxysql_audit.md) — `/ProxySQL/audit/<id>/` configuration-audit framework, severity vocabulary, how to add a check (EPIC #895)
+
 ## Frontend & analytics
 - [chart_js.md](chart_js.md) — Chart.js 4.5.1 v4 API quirks
 - [extraction.md](extraction.md) — `App\Library\Extraction` time-series helper
