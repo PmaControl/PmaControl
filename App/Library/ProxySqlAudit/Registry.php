@@ -26,6 +26,7 @@ final class Registry
             \App\Library\ProxySqlAudit\Checks\Topology\GroupReplicationAsGalera::class,       // #900
             \App\Library\ProxySqlAudit\Checks\Topology\AsyncReplicationAsClusterTable::class, // #901
             \App\Library\ProxySqlAudit\Checks\Topology\GaleraHostgroupIdCollision::class,     // #902
+            \App\Library\ProxySqlAudit\Checks\Topology\BackendInMultipleClusterTypes::class,  // #903
         ];
     }
 }
