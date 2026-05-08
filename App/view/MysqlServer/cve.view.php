@@ -88,6 +88,12 @@ foreach ($cves as $cve) {
 .mscve-table { width:100%; margin:8px 0 0; font-size:12px; }
 .mscve-table th { color:#475569; font-size:10px; text-transform:uppercase; letter-spacing:.04em; border-bottom:1px solid var(--border); padding:5px; }
 .mscve-table td { border-bottom:1px solid #f1f5f9; padding:6px 5px; vertical-align:top; }
+.mscve-servers { display:flex; flex-direction:column; gap:5px; min-width:190px; }
+.mscve-server { display:block; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:5px 7px; color:#0f172a; text-decoration:none; }
+.mscve-server:hover { background:#eef2ff; color:#111827; text-decoration:none; }
+.mscve-server-name { display:block; font-weight:800; }
+.mscve-server-version { display:block; margin-top:1px; color:#1d4ed8; font-weight:700; }
+.mscve-server-endpoint { display:block; margin-top:1px; color:#64748b; font-size:11px; }
 .mscve-links { margin-top:8px; display:flex; flex-wrap:wrap; gap:6px; }
 .mscve-link { background:#eef2ff; color:#3730a3; border-radius:6px; padding:3px 7px; font-size:11px; font-weight:700; text-decoration:none; }
 .mscve-link:hover { background:#e0e7ff; color:#111827; text-decoration:none; }
@@ -165,6 +171,7 @@ foreach ($cves as $cve) {
             $severityClass = mysqlserver_cve_severity_class($cve['severity'] ?? 'unknown');
             $references = is_array($cve['references'] ?? null) ? $cve['references'] : [];
             $affectedRows = is_array($cve['affected'] ?? null) ? $cve['affected'] : [];
+            $impactedServers = is_array($cve['impacted_servers'] ?? null) ? $cve['impacted_servers'] : [];
             ?>
             <div class="mscve-card">
                 <div class="mscve-card-head">
@@ -201,15 +208,50 @@ foreach ($cves as $cve) {
                             <thead>
                                 <tr>
                                     <th><?= __('Affected versions') ?></th>
+                                    <th><?= __('Impacted servers') ?></th>
                                     <th><?= __('Fixed in') ?></th>
                                     <th><?= __('Source') ?></th>
                                     <th><?= __('Confidence') ?></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($affectedRows as $affected): ?>
+                                <?php foreach ($affectedRows as $affectedIndex => $affected): ?>
                                     <tr>
                                         <td><?= htmlspecialchars((string)($affected['version_text'] ?? 'n/a'), ENT_QUOTES, 'UTF-8') ?></td>
+                                        <?php if ($affectedIndex === 0): ?>
+                                            <td rowspan="<?= max(1, count($affectedRows)) ?>">
+                                                <?php if ($impactedServers !== []): ?>
+                                                    <div class="mscve-servers">
+                                                        <?php foreach ($impactedServers as $impactedServer): ?>
+                                                            <?php
+                                                            $impactedServerId = (int)($impactedServer['id_mysql_server'] ?? 0);
+                                                            $impactedServerName = trim((string)($impactedServer['display_name'] ?? ''));
+                                                            if ($impactedServerName === '') {
+                                                                $impactedServerName = 'server #'.$impactedServerId;
+                                                            }
+                                                            $impactedVersion = trim((string)($impactedServer['server_version'] ?? ''));
+                                                            $impactedProduct = trim((string)($impactedServer['product_code'] ?? ''));
+                                                            $impactedEndpoint = trim((string)($impactedServer['ip'] ?? ''));
+                                                            if (!empty($impactedServer['port'])) {
+                                                                $impactedEndpoint .= ':'.(int)$impactedServer['port'];
+                                                            }
+                                                            ?>
+                                                            <a class="mscve-server" href="<?= LINK ?>MysqlServer/cve/<?= $impactedServerId ?>/pmacontrol">
+                                                                <span class="mscve-server-name"><?= htmlspecialchars($impactedServerName, ENT_QUOTES, 'UTF-8') ?></span>
+                                                                <span class="mscve-server-version">
+                                                                    <?= htmlspecialchars(trim($impactedProduct.' '.($impactedVersion !== '' ? $impactedVersion : 'n/a')), ENT_QUOTES, 'UTF-8') ?>
+                                                                </span>
+                                                                <?php if ($impactedEndpoint !== ''): ?>
+                                                                    <span class="mscve-server-endpoint"><?= htmlspecialchars($impactedEndpoint, ENT_QUOTES, 'UTF-8') ?></span>
+                                                                <?php endif; ?>
+                                                            </a>
+                                                        <?php endforeach; ?>
+                                                    </div>
+                                                <?php else: ?>
+                                                    <span class="text-muted"><?= __('n/a') ?></span>
+                                                <?php endif; ?>
+                                            </td>
+                                        <?php endif; ?>
                                         <td><?= htmlspecialchars((string)($affected['fixed_version'] ?? 'n/a'), ENT_QUOTES, 'UTF-8') ?></td>
                                         <td>
                                             <?php if (!empty($affected['source_url'])): ?>
