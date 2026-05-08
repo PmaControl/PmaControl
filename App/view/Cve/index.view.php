@@ -22,8 +22,15 @@ function cve_score(array $cve): string
     return 'n/a';
 }
 
+function cve_query_suffix(string $query): string
+{
+    return $query !== '' ? '?q='.urlencode($query) : '';
+}
+
 $stats = $data['stats'];
 $filter = $data['filter'];
+$query = (string)($data['query'] ?? '');
+$filterPath = $filter !== 'all' ? '/'.rawurlencode((string)$filter) : '';
 ?>
 
 <style>
@@ -40,6 +47,8 @@ $filter = $data['filter'];
 .cve-filter:hover, .cve-filter:focus { text-decoration:none; background:#eef6ff; color:#0f172a; }
 .cve-filter.active { background:#0f172a; color:#fff; border-color:#0f172a; }
 .cve-filter .count { opacity:.72; font-weight:600; }
+.cve-search { display:flex; gap:8px; margin-bottom:10px; }
+.cve-search input { max-width:360px; }
 .cve-table-wrap { background:#fff; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
 .cve-table { margin-bottom:0; }
 .cve-table > thead > tr > th { background:#f8fafc; color:#334155; border-bottom:1px solid var(--line); font-size:12px; text-transform:uppercase; letter-spacing:.06em; }
@@ -63,6 +72,13 @@ $filter = $data['filter'];
 .cve-source { margin-top:4px; color:#64748b; font-size:11px; }
 .cve-source a { color:#2563eb; }
 .cve-more { color:#64748b; font-size:11px; font-weight:700; padding:5px; }
+.cve-servers { margin-top:10px; display:flex; flex-direction:column; gap:5px; }
+.cve-servers-title { color:#475569; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; }
+.cve-server { display:inline-block; border:1px solid #e2e8f0; background:#f8fafc; border-radius:6px; padding:5px 7px; color:#0f172a; text-decoration:none; }
+.cve-server:hover, .cve-server:focus { background:#eef2ff; color:#111827; text-decoration:none; }
+.cve-server-name { font-weight:800; }
+.cve-server-version { margin-left:5px; color:#1d4ed8; font-weight:700; }
+.cve-server-endpoint { display:block; color:#64748b; font-size:11px; margin-top:1px; }
 @media (max-width: 900px) {
     .cve-kpis { grid-template-columns:repeat(2,1fr); }
     .cve-table > thead { display:none; }
@@ -112,13 +128,21 @@ $filter = $data['filter'];
     </div>
 
     <div class="cve-filters">
-        <a class="cve-filter <?= $filter === 'all' ? 'active' : '' ?>" href="<?= LINK ?>cve/index">
+        <form class="cve-search" method="GET" action="<?= LINK ?>cve/index<?= cve_h($filterPath) ?>">
+            <input class="form-control" type="search" name="q" value="<?= cve_h($query) ?>" placeholder="<?= __('Search CVE, title, version or source') ?>">
+            <button class="btn btn-primary" type="submit"><i class="fa fa-search"></i> <?= __('Search') ?></button>
+            <?php if ($query !== ''): ?>
+                <a class="btn btn-default" href="<?= LINK ?>cve/index<?= cve_h($filterPath) ?>"><?= __('Clear') ?></a>
+            <?php endif; ?>
+        </form>
+
+        <a class="cve-filter <?= $filter === 'all' ? 'active' : '' ?>" href="<?= LINK ?>cve/index<?= cve_h(cve_query_suffix($query)) ?>">
             <i class="fa fa-list" aria-hidden="true"></i> <?= __('All') ?>
             <span class="count"><?= (int)$stats['total_cves'] ?></span>
         </a>
         <?php foreach ($data['products'] as $product): ?>
             <a class="cve-filter <?= $filter === $product['product_code'] ? 'active' : '' ?>"
-               href="<?= LINK ?>cve/index/<?= cve_h($product['product_code']) ?>">
+               href="<?= LINK ?>cve/index/<?= cve_h($product['product_code']) ?><?= cve_h(cve_query_suffix($query)) ?>">
                 <i class="<?= cve_h($product['icon_class']) ?>" aria-hidden="true" style="color:<?= cve_h($product['color']) ?>"></i>
                 <?= cve_h($product['product_name']) ?>
                 <span class="count"><?= (int)$product['cve_count'] ?></span>
@@ -160,6 +184,41 @@ $filter = $data['filter'];
                             <?= __('Published') ?>: <?= cve_h($cve['published_at'] ?: 'n/a') ?>
                             &middot; <?= __('Updated') ?>: <?= cve_h($cve['last_modified_at'] ?: 'n/a') ?>
                         </div>
+                        <?php
+                        $impactedServers = is_array($cve['impacted_servers'] ?? null) ? $cve['impacted_servers'] : [];
+                        $displayedServers = array_slice($impactedServers, 0, 10);
+                        $remainingServers = max(0, count($impactedServers) - count($displayedServers));
+                        ?>
+                        <?php if ($displayedServers !== []): ?>
+                            <div class="cve-servers">
+                                <div class="cve-servers-title"><?= __('Impacted servers') ?></div>
+                                <?php foreach ($displayedServers as $impactedServer): ?>
+                                    <?php
+                                    $impactedServerId = (int)($impactedServer['id_mysql_server'] ?? 0);
+                                    $impactedServerName = trim((string)($impactedServer['display_name'] ?? ''));
+                                    if ($impactedServerName === '') {
+                                        $impactedServerName = 'server #'.$impactedServerId;
+                                    }
+                                    $impactedProduct = trim((string)($impactedServer['product_code'] ?? ''));
+                                    $impactedVersion = trim((string)($impactedServer['server_version'] ?? ''));
+                                    $impactedEndpoint = trim((string)($impactedServer['ip'] ?? ''));
+                                    if (!empty($impactedServer['port'])) {
+                                        $impactedEndpoint .= ':'.(int)$impactedServer['port'];
+                                    }
+                                    ?>
+                                    <a class="cve-server" href="<?= LINK ?>MysqlServer/cve/<?= $impactedServerId ?>/pmacontrol">
+                                        <span class="cve-server-name"><?= cve_h($impactedServerName) ?></span>
+                                        <span class="cve-server-version"><?= cve_h(trim($impactedProduct.' '.($impactedVersion !== '' ? $impactedVersion : 'n/a'))) ?></span>
+                                        <?php if ($impactedEndpoint !== ''): ?>
+                                            <span class="cve-server-endpoint"><?= cve_h($impactedEndpoint) ?></span>
+                                        <?php endif; ?>
+                                    </a>
+                                <?php endforeach; ?>
+                                <?php if ($remainingServers > 0): ?>
+                                    <div class="cve-more">+ <?= $remainingServers ?> <?= __('more impacted servers') ?></div>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
                     </td>
                     <td>
                         <span class="cve-sev <?= $severity ?>"><?= cve_h($cve['severity']) ?></span>
