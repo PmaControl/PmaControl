@@ -36,14 +36,26 @@ class Mysql
 
     public static function sqlQuerySilentCompat($db, $sql, $table = "", $type = "")
     {
-        if (method_exists($db, 'sql_query_silent')) {
-            return $db->sql_query_silent($sql, $table, $type);
-        }
-
+        // Some Glial paths echo backtrace files + the mysqli error to
+        // stdout BEFORE rethrowing (see Sgbd/Sql/Mysql/Mysql.php::_query),
+        // so even a "silent" query can leak text into the HTML response —
+        // e.g. "Erreur : ProxySQL Error: connection is locked to
+        // hostgroup 1 but trying to reach hostgroup 2" on processlist
+        // probes against a ProxySQL backend (#891). Capture-and-discard
+        // anything the driver writes during the silent path.
+        ob_start();
         try {
-            return $db->sql_query($sql, $table, $type);
-        } catch (\Throwable $e) {
-            return false;
+            if (method_exists($db, 'sql_query_silent')) {
+                return $db->sql_query_silent($sql, $table, $type);
+            }
+
+            try {
+                return $db->sql_query($sql, $table, $type);
+            } catch (\Throwable $e) {
+                return false;
+            }
+        } finally {
+            ob_end_clean();
         }
     }
 /**

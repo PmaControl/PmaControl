@@ -136,6 +136,9 @@ class Home extends Controller {
         arsort($data['versions']);
         $data['cve_park'] = self::buildCveParkData($db, $versionData);
 
+        // ── ProxySQL audit snapshot (#929) ──
+        $data['proxysql_audit'] = self::buildProxysqlAuditCard($db);
+
         // ── 8. Data volume (from information_schema, fast) ──
         $data['ts_rows'] = 0;
         $sql = "SELECT SUM(TABLE_ROWS) AS total FROM information_schema.tables WHERE TABLE_SCHEMA='pmacontrol' AND TABLE_NAME LIKE 'ts_value%'";
@@ -321,5 +324,74 @@ class Home extends Controller {
         }
 
         return $summary;
+    }
+
+    /**
+     * #929 — aggregate `proxysql_audit_snapshot` for the home-page card.
+     *
+     * Returns the totals across all ProxySQL servers, the worst-offending
+     * server (max critical, then max warning) for the deep-link, and the
+     * "available" flag — false when the snapshot table doesn't exist yet
+     * (migration pending) so the view can render a discreet placeholder
+     * instead of a hard error.
+     *
+     * @return array{
+     *   available: bool,
+     *   total_servers: int,
+     *   critical: int,
+     *   warning: int,
+     *   info: int,
+     *   worst_id: int|null,
+     *   worst_name: string|null
+     * }
+     */
+    public static function buildProxysqlAuditCard($db): array
+    {
+        $card = [
+            'available'     => false,
+            'total_servers' => 0,
+            'critical'      => 0,
+            'warning'       => 0,
+            'info'          => 0,
+            'worst_id'      => null,
+            'worst_name'    => null,
+        ];
+
+        if (!method_exists($db, 'sql_query_silent')) {
+            return $card;
+        }
+
+        $sql = "SELECT s.id_proxysql_server, s.findings_critical, s.findings_warning, "
+             .        "s.findings_info, p.display_name "
+             . "FROM proxysql_audit_snapshot s "
+             . "JOIN proxysql_server p ON p.id = s.id_proxysql_server "
+             . "ORDER BY s.findings_critical DESC, s.findings_warning DESC";
+        $res = $db->sql_query_silent($sql);
+        if ($res === false) {
+            return $card;
+        }
+
+        $card['available'] = true;
+        $worstScore = -1;
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $crit = (int) ($row['findings_critical'] ?? 0);
+            $warn = (int) ($row['findings_warning']  ?? 0);
+            $info = (int) ($row['findings_info']     ?? 0);
+            $card['total_servers']++;
+            $card['critical'] += $crit;
+            $card['warning']  += $warn;
+            $card['info']     += $info;
+
+            // Worst-offending = highest critical, tie-broken by warning.
+            // Score = crit*1e6 + warn keeps the comparison simple.
+            $score = $crit * 1000000 + $warn;
+            if ($score > $worstScore) {
+                $worstScore = $score;
+                $card['worst_id']   = (int) ($row['id_proxysql_server'] ?? 0);
+                $card['worst_name'] = (string) ($row['display_name']    ?? '');
+            }
+        }
+
+        return $card;
     }
 }

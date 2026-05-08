@@ -312,6 +312,7 @@ final class ServerCveImpactMatcher
                     'references' => self::referencesFromJson($row['references_json'] ?? null, 6),
                     'source_codes' => self::sourceCodesFromJson($row['source_codes_json'] ?? null),
                     'affected' => [],
+                    'impacted_servers' => [],
                 ];
             }
 
@@ -336,7 +337,74 @@ final class ServerCveImpactMatcher
             ];
         }
 
+        self::attachImpactedServers($db, $cves);
+
         return array_values($cves);
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $cves
+     */
+    private static function attachImpactedServers($db, array &$cves): void
+    {
+        if ($cves === []) {
+            return;
+        }
+
+        $ids = array_map('intval', array_keys($cves));
+        $ids = array_values(array_filter($ids, static function (int $id): bool {
+            return $id > 0;
+        }));
+        if ($ids === []) {
+            return;
+        }
+
+        $sql = "SELECT sc.`id_cve_catalog`, sc.`id_mysql_server`, sc.`product_code`, sc.`server_version`,"
+            . " sc.`match_method`, sc.`match_confidence`, sc.`date_calculated`,"
+            . " ms.`display_name`, ms.`name`, ms.`ip`, ms.`port`"
+            . " FROM `cve_server_cache` sc"
+            . " INNER JOIN `mysql_server` ms ON ms.`id` = sc.`id_mysql_server` AND ms.`is_deleted` = 0"
+            . " WHERE sc.`is_active` = 1"
+            . "   AND sc.`id_cve_catalog` IN (".implode(',', $ids).")"
+            . " ORDER BY sc.`id_cve_catalog`, ms.`display_name`, ms.`name`, ms.`ip`, ms.`port`, sc.`product_code`";
+        $res = $db->sql_query($sql);
+        $seen = [];
+
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $id = (int)($row['id_cve_catalog'] ?? 0);
+            if ($id <= 0 || !isset($cves[$id])) {
+                continue;
+            }
+
+            $serverId = (int)($row['id_mysql_server'] ?? 0);
+            $productCode = (string)($row['product_code'] ?? '');
+            $serverVersion = (string)($row['server_version'] ?? '');
+            $key = $serverId."\n".$productCode."\n".$serverVersion;
+            if (isset($seen[$id][$key])) {
+                continue;
+            }
+            $seen[$id][$key] = true;
+
+            $displayName = trim((string)($row['display_name'] ?? ''));
+            if ($displayName === '') {
+                $displayName = trim((string)($row['name'] ?? ''));
+            }
+            if ($displayName === '') {
+                $displayName = trim((string)($row['ip'] ?? ''));
+            }
+
+            $cves[$id]['impacted_servers'][] = [
+                'id_mysql_server' => $serverId,
+                'display_name' => $displayName,
+                'ip' => $row['ip'],
+                'port' => $row['port'],
+                'product_code' => $productCode,
+                'server_version' => $serverVersion,
+                'match_method' => $row['match_method'],
+                'match_confidence' => $row['match_confidence'],
+                'date_calculated' => $row['date_calculated'],
+            ];
+        }
     }
 
     /**
@@ -447,7 +515,7 @@ final class ServerCveImpactMatcher
         $references = [];
         self::collectReferences($decoded, $references, max(1, $limit));
 
-        return array_values($references);
+        return self::labelReferencesForDisplay(array_values($references));
     }
 
     /**
@@ -505,6 +573,147 @@ final class ServerCveImpactMatcher
                 self::collectReferences($child, $references, $limit);
             }
         }
+    }
+
+    /**
+     * @param list<array{url:string,label:string}> $references
+     * @return list<array{url:string,label:string}>
+     */
+    private static function labelReferencesForDisplay(array $references): array
+    {
+        $byDomain = [];
+        $metadata = [];
+
+        foreach ($references as $index => $reference) {
+            $url = (string)$reference['url'];
+            $domain = self::referenceDomain($url);
+            if ($domain === '') {
+                $references[$index]['label'] = $url;
+                continue;
+            }
+
+            $metadata[$index] = [
+                'domain' => $domain,
+                'segments' => self::referencePathSegments($url),
+                'url' => $url,
+            ];
+            $byDomain[$domain][] = $index;
+        }
+
+        foreach ($byDomain as $domain => $indexes) {
+            if (count($indexes) === 1) {
+                $references[$indexes[0]]['label'] = $domain;
+                continue;
+            }
+
+            $maxDepth = 0;
+            foreach ($indexes as $index) {
+                $maxDepth = max($maxDepth, count($metadata[$index]['segments']));
+            }
+
+            for ($depth = 1; $depth <= max(1, $maxDepth); $depth++) {
+                $labels = [];
+                $isUnique = true;
+
+                foreach ($indexes as $index) {
+                    $label = self::referenceLabelAtDepth(
+                        $domain,
+                        $metadata[$index]['segments'],
+                        $depth
+                    );
+                    if (isset($labels[$label])) {
+                        $isUnique = false;
+                        break;
+                    }
+                    $labels[$label] = true;
+                }
+
+                if ($isUnique) {
+                    foreach ($indexes as $index) {
+                        $references[$index]['label'] = self::referenceLabelAtDepth(
+                            $domain,
+                            $metadata[$index]['segments'],
+                            $depth
+                        );
+                    }
+                    continue 2;
+                }
+            }
+
+            $seenLabels = [];
+            foreach ($indexes as $index) {
+                $label = self::referenceFullLabel($domain, $metadata[$index]['url']);
+                if (isset($seenLabels[$label])) {
+                    $seenLabels[$label]++;
+                    $label .= ' #' . $seenLabels[$label];
+                } else {
+                    $seenLabels[$label] = 1;
+                }
+                $references[$index]['label'] = $label;
+            }
+        }
+
+        return $references;
+    }
+
+    private static function referenceDomain(string $url): string
+    {
+        $host = parse_url($url, PHP_URL_HOST);
+        if (!is_string($host) || trim($host) === '') {
+            return '';
+        }
+
+        $host = strtolower(trim($host));
+        return preg_replace('/^www\./', '', $host) ?? $host;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function referencePathSegments(string $url): array
+    {
+        $path = parse_url($url, PHP_URL_PATH);
+        if (!is_string($path) || trim($path, '/') === '') {
+            return [];
+        }
+
+        $segments = [];
+        foreach (explode('/', trim($path, '/')) as $segment) {
+            $segment = trim(rawurldecode($segment));
+            if ($segment !== '') {
+                $segments[] = $segment;
+            }
+        }
+
+        return $segments;
+    }
+
+    /**
+     * @param list<string> $segments
+     */
+    private static function referenceLabelAtDepth(string $domain, array $segments, int $depth): string
+    {
+        if ($segments === []) {
+            return $domain;
+        }
+
+        return $domain . '/' . implode('/', array_slice($segments, 0, $depth));
+    }
+
+    private static function referenceFullLabel(string $domain, string $url): string
+    {
+        $label = self::referenceLabelAtDepth($domain, self::referencePathSegments($url), PHP_INT_MAX);
+        $query = parse_url($url, PHP_URL_QUERY);
+        if (is_string($query) && $query !== '') {
+            $label .= '?' . $query;
+        }
+
+        $fragment = parse_url($url, PHP_URL_FRAGMENT);
+        if (is_string($fragment) && $fragment !== '') {
+            $label .= '#' . $fragment;
+        }
+
+        return $label;
     }
 
     /**

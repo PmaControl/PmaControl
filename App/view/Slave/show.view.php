@@ -13,17 +13,13 @@ $slaveSetupSourceCsrfField = CsrfRender::field($data, 'slave_setup_source');
 $slaveSetupSourceCsrfToken = CsrfRender::token($data, 'slave_setup_source');
 
 $isMariaDB = isset($data['server_type']) && stripos($data['server_type'], 'mariadb') !== false;
-$isMySQLNewSyntax = !$isMariaDB && isset($data['server_version']) && version_compare((string)$data['server_version'], '8.0.22', '>=');
 
-if (empty($data['replication_name'])) {
-    $show = $isMySQLNewSyntax ? 'SHOW REPLICA STATUS;' : 'SHOW SLAVE STATUS;';
-} elseif ($isMariaDB) {
-    $show = 'SHOW SLAVE \''.$data['replication_name'].'\' STATUS;';
-} elseif ($isMySQLNewSyntax) {
-    $show = 'SHOW REPLICA STATUS FOR CHANNEL \''.$data['replication_name'].'\';';
-} else {
-    $show = 'SHOW SLAVE STATUS FOR CHANNEL \''.$data['replication_name'].'\';';
-}
+// Single source of truth for SHOW REPLICA/SLAVE STATUS gating (#830).
+$show = \App\Controller\Slave::buildShowReplicaStatusSql(
+    (string)($data['server_type']    ?? ''),
+    (string)($data['server_version'] ?? ''),
+    (string)($data['replication_name'] ?? '') !== '' ? (string)$data['replication_name'] : null
+) . ';';
 
 // Key variable extraction (MySQL 5/MariaDB + MySQL 8 compat)
 $sv = $data['slave'];

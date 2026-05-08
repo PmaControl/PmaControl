@@ -1,0 +1,67 @@
+---
+title: 'Percona MySQL University @Portland: June 17'
+source:
+  name: Percona Blog
+  url: https://www.percona.com/blog/percona-mysql-university-portland-june-17-2013/
+  post_id: 7001
+source_author:
+  name: Peter Zaitsev
+  slug: pz
+  url: https://www.percona.com/blog/author/pz/
+  website: ''
+published_at: '2013-05-22T19:32:23'
+published_at_gmt: '2013-05-22T19:32:23'
+modified_at: '2026-03-25T16:57:45'
+modified_at_gmt: '2026-03-25T16:57:45'
+curator:
+  name: Sylvain ARBAUDIE
+  slug: sylvain-arbaudie
+  source_url: https://www.pmacontrol.fr/fr/site/blog_author/sylvain-arbaudie/
+matched_topics:
+- MySQL
+matched_filters:
+- category:mysql:83
+categories:
+- MySQL
+category_slugs:
+- mysql
+tags:
+- Percona MySQL University
+- Peter Zaitsev
+- Portland
+tag_slugs:
+- percona-mysql-university
+- peter-zaitsev
+- portland
+featured_image_url: https://www.percona.com/wp-content/uploads/2026/03/PMySQLU-scaled.jpg
+image_count: 1
+graph_or_chart_count: 0
+content_import: metadata_excerpt_headings_and_source_image_urls_only
+copyright_notice: Percona All Rights Reserved; full article text and local image copies are not reproduced.
+---
+
+# Percona MySQL University @Portland: June 17
+
+Source: [Percona Blog](https://www.percona.com/blog/percona-mysql-university-portland-june-17-2013/)
+
+Auteur source: [Peter Zaitsev](https://www.percona.com/blog/author/pz/)
+
+Publication: 2013-05-22T19:32:23
+
+Curateur PmaControl: [Sylvain ARBAUDIE](../../../authors/sylvain-arbaudie.md)
+
+## Note de droits
+
+Fiche de veille uniquement: les metadonnees, l'extrait public, les titres de sections detectes et les URLs des visuels sont conserves. Le texte complet et les copies locales des images restent sur la source Percona.
+
+## Extrait public
+
+Portland is a well-recognized hub for Open Source technologies in the Northwest, home to conferences such as OSCON and Open Source Bridge as well as hosts of OpenSQL Camp in 2009. As such it is a very natural place for our next Percona MySQL University event scheduled for June 17. We run this event in … Continued
+
+## Images et graphiques reperes
+
+- featured / image: [Percona MySQL University @Portland: June 17](https://www.percona.com/wp-content/uploads/2026/03/PMySQLU-scaled.jpg)
+
+## Auteur source
+
+Peter managed the High Performance Group within MySQL until 2006, when he founded Percona. Peter has a Master's Degree in Computer Science and is an expert in database kernels, computer hardware, and application scaling.

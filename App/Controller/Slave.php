@@ -113,15 +113,93 @@ class Slave extends Controller
      * Returns true iff the server expects the new MySQL "REPLICA" replication
      * terminology (added in MySQL 8.0.22). MariaDB and pre-8.0.22 MySQL must
      * keep using SLAVE / SHOW SLAVE STATUS / RESET SLAVE / START SLAVE UNTIL.
+     * Public so views and other libraries can route through the same gate
+     * without duplicating it (#830).
      *
      * @param mixed $db Glial DB handle exposing getServerType() and getVersion()
      */
-    private static function usesReplicaSyntax($db): bool
+    public static function usesReplicaSyntax($db): bool
     {
-        if (stripos($db->getServerType(), 'mariadb') !== false) {
+        return self::supportsReplicaStatusSyntax(
+            (string) $db->getServerType(),
+            (string) $db->getVersion()
+        );
+    }
+
+    /**
+     * Pure-data variant of {@see usesReplicaSyntax} for callers that only
+     * have the type/version strings (e.g. the show.view.php template
+     * already has `$data['server_type']` / `$data['server_version']`).
+     */
+    public static function supportsReplicaStatusSyntax(string $serverType, string $serverVersion): bool
+    {
+        if (stripos($serverType, 'mariadb') !== false) {
             return false;
         }
-        return version_compare((string) $db->getVersion(), '8.0.22', '>=');
+        return version_compare($serverVersion, '8.0.22', '>=');
+    }
+
+    /**
+     * Build the right `SHOW {SLAVE|REPLICA} STATUS [FOR CHANNEL '<name>']`
+     * SQL for the given server. Centralizes the gating that was
+     * duplicated across Slave.php / show.view.php / BinlogAnalyzer.php
+     * and the buggy Glial `Mysql::isSlave()` (#830).
+     *
+     * @param string      $serverType    e.g. "MySQL", "Percona", "MariaDB"
+     * @param string      $serverVersion full version string (e.g. "5.6.51-91.0-log")
+     * @param string|null $channel       optional connection_name / channel name;
+     *                                   already validated by the caller
+     */
+    public static function buildShowReplicaStatusSql(string $serverType, string $serverVersion, ?string $channel = null): string
+    {
+        $isMariaDB = stripos($serverType, 'mariadb') !== false;
+        $channel = $channel === null ? '' : self::sanitizeConnectionName($channel);
+
+        if ($isMariaDB) {
+            // MariaDB has its own per-connection variant. Empty channel
+            // returns the default SHOW SLAVE STATUS.
+            if ($channel === '') {
+                return 'SHOW SLAVE STATUS';
+            }
+            return "SHOW SLAVE '" . $channel . "' STATUS";
+        }
+
+        $keyword = self::supportsReplicaStatusSyntax($serverType, $serverVersion) ? 'REPLICA' : 'SLAVE';
+        if ($channel === '') {
+            return "SHOW $keyword STATUS";
+        }
+        return "SHOW $keyword STATUS FOR CHANNEL '" . $channel . "'";
+    }
+
+    /**
+     * Replace `$db->isSlave()` (Glial's buggy version) with a single
+     * call that uses the same gate as the rest of PmaControl (#830).
+     * Returns the rows of `SHOW {SLAVE|REPLICA} STATUS` (potentially
+     * many on multi-source replicas), already normalized via Glial's
+     * `normalizeReplicationStatusRow` so callers can keep reading
+     * either Slave_* or Replica_* keys.
+     *
+     * @return list<array<string,mixed>>
+     */
+    public static function fetchReplicaStatusRows($db): array
+    {
+        $sql = self::buildShowReplicaStatusSql(
+            (string) $db->getServerType(),
+            (string) $db->getVersion(),
+            null
+        );
+        $res = $db->sql_query_silent($sql);
+        if (!$res) {
+            return [];
+        }
+        $rows = [];
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            if (method_exists('\\Glial\\Sgbd\\Sql\\Mysql\\Mysql', 'normalizeReplicationStatusRow')) {
+                $row = \Glial\Sgbd\Sql\Mysql\Mysql::normalizeReplicationStatusRow($row);
+            }
+            $rows[] = $row;
+        }
+        return $rows;
     }
 
     /**
@@ -601,8 +679,9 @@ ctx.strokeStyle="rgba(0,0,0,1)";ctx.lineWidth=1;ctx.stroke();
         if ($data['server'][$server['id']]['']['mysql_available'] === "1") {
             $link_slave = Sgbd::sql($server['name']);
 
-            
-            $slaves = $link_slave->isSlave();
+            // Use PmaControl's centralized gate, not Glial's buggy
+            // `isSlave()` (which picks REPLICA on Percona 5.6) — #830.
+            $slaves = self::fetchReplicaStatusRows($link_slave);
 
             $data['all_connections'] = [];
             foreach ($slaves as $s) {
@@ -1401,7 +1480,9 @@ var chart = new Chart(ctx, {
         $server_data = Extraction::display(array("mysql_server::mysql_available"));
         if (!empty($server_data[$id_mysql_server]['']['mysql_available']) && $server_data[$id_mysql_server]['']['mysql_available'] === "1") {
             $link = Sgbd::sql($server['name']);
-            $slaves = $link->isSlave();
+            // Centralized gate — Glial's `isSlave()` mis-selects REPLICA on
+            // Percona 5.6 (#830).
+            $slaves = self::fetchReplicaStatusRows($link);
 
             $slave = [];
             if (count($slaves) === 1) {

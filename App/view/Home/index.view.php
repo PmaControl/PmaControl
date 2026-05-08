@@ -288,6 +288,54 @@ $versionColors = ['MariaDB' => '#003545', 'MySQL' => '#e97b00', 'Percona' => '#c
 </div>
 <?php endif; ?>
 
+<?php
+// #929 — ProxySQL audit summary card. Severity colour: critical>0 red,
+// else warning>0 orange, else green. Click-through to the worst-offending
+// server's audit page.
+$pa = $data['proxysql_audit'] ?? null;
+if (is_array($pa) && !empty($pa['available']) && (int) ($pa['total_servers'] ?? 0) > 0):
+    $paCrit = (int) ($pa['critical'] ?? 0);
+    $paWarn = (int) ($pa['warning']  ?? 0);
+    $paInfo = (int) ($pa['info']     ?? 0);
+    if ($paCrit > 0) {
+        $paAccent = '#dc2626'; // red
+        $paIcon   = 'fa-exclamation-triangle';
+        $paBadge  = 'critical';
+    } elseif ($paWarn > 0) {
+        $paAccent = '#f59e0b'; // orange
+        $paIcon   = 'fa-exclamation-circle';
+        $paBadge  = 'warning';
+    } else {
+        $paAccent = '#16a34a'; // green
+        $paIcon   = 'fa-check-circle';
+        $paBadge  = 'clean';
+    }
+    $paWorstId   = (int) ($pa['worst_id']   ?? 0);
+    $paWorstName = (string) ($pa['worst_name'] ?? '');
+?>
+<div class="hm-card hm-proxysql-audit" data-severity="<?= htmlspecialchars($paBadge) ?>" style="margin-bottom:16px;border-left:4px solid <?= $paAccent ?>">
+    <div class="hm-card-head" style="background:linear-gradient(135deg,<?= $paAccent ?>cc,<?= $paAccent ?>)">
+        <span><i class="fa <?= $paIcon ?>"></i> <?= __('ProxySQL audit') ?> (<?= (int) $pa['total_servers'] ?> <?= __('servers') ?>)</span>
+        <?php if ($paWorstId > 0): ?>
+        <a href="<?= LINK ?>ProxySQL/audit/<?= $paWorstId ?>/" class="hm-badge" style="color:#fff;text-decoration:none">
+            <?= __('View worst') ?><?= $paWorstName !== '' ? ': ' . htmlspecialchars($paWorstName) : '' ?>
+        </a>
+        <?php endif; ?>
+    </div>
+    <div class="hm-card-body" style="padding:8px 16px">
+        <span class="hm-pa-sev hm-pa-sev-critical" style="color:#dc2626;font-weight:600;margin-right:14px">
+            <i class="fa fa-times-circle"></i> <?= $paCrit ?> <?= __('critical') ?>
+        </span>
+        <span class="hm-pa-sev hm-pa-sev-warning" style="color:#b45309;font-weight:600;margin-right:14px">
+            <i class="fa fa-exclamation"></i> <?= $paWarn ?> <?= __('warning') ?>
+        </span>
+        <span class="hm-pa-sev hm-pa-sev-info" style="color:#2563eb;margin-right:14px">
+            <i class="fa fa-info-circle"></i> <?= $paInfo ?> <?= __('info') ?>
+        </span>
+    </div>
+</div>
+<?php endif; ?>
+
 <?php if (!empty($data['stuck_analyses'])): ?>
 <div class="hm-card" style="margin-bottom:16px">
     <div class="hm-card-head" style="background:linear-gradient(135deg,#7f1d1d,#991b1b)">
@@ -353,7 +401,7 @@ $versionColors = ['MariaDB' => '#003545', 'MySQL' => '#e97b00', 'Percona' => '#c
                             ?>
                             <tr>
                                 <td>
-                                    <a class="hm-cve-id" href="https://nvd.nist.gov/vuln/detail/<?= htmlspecialchars((string)$cve['cve_id'], ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer">
+                                    <a class="hm-cve-id" href="<?= LINK ?>cve/show/<?= htmlspecialchars(rawurlencode((string)$cve['cve_id']), ENT_QUOTES, 'UTF-8') ?>">
                                         <?= htmlspecialchars((string)$cve['cve_id'], ENT_QUOTES, 'UTF-8') ?>
                                     </a>
                                     <?php if (!empty($cve['known_exploited'])): ?>
