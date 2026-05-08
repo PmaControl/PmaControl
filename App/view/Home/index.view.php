@@ -401,7 +401,7 @@ if (is_array($pa) && !empty($pa['available']) && (int) ($pa['total_servers'] ?? 
                             ?>
                             <tr>
                                 <td>
-                                    <a class="hm-cve-id" href="<?= LINK ?>cve/index?q=<?= urlencode((string)$cve['cve_id']) ?>">
+                                    <a class="hm-cve-id" href="<?= LINK ?>cve/show/<?= htmlspecialchars(rawurlencode((string)$cve['cve_id']), ENT_QUOTES, 'UTF-8') ?>">
                                         <?= htmlspecialchars((string)$cve['cve_id'], ENT_QUOTES, 'UTF-8') ?>
                                     </a>
                                     <?php if (!empty($cve['known_exploited'])): ?>

@@ -136,7 +136,7 @@ $action = LINK.'cve/exclusions'.($query !== '' ? '?q='.urlencode($query) : '');
                         </td>
                         <td>
                             <div class="cve-exclusions-id">
-                                <a href="https://nvd.nist.gov/vuln/detail/<?= cve_exclusions_h($row['cve_id']) ?>" target="_blank" rel="noopener noreferrer">
+                                <a href="<?= LINK ?>cve/show/<?= cve_exclusions_h(rawurlencode((string)$row['cve_id'])) ?>">
                                     <?= cve_exclusions_h($row['cve_id']) ?>
                                 </a>
                             </div>
