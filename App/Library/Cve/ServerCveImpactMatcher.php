@@ -312,6 +312,7 @@ final class ServerCveImpactMatcher
                     'references' => self::referencesFromJson($row['references_json'] ?? null, 6),
                     'source_codes' => self::sourceCodesFromJson($row['source_codes_json'] ?? null),
                     'affected' => [],
+                    'impacted_servers' => [],
                 ];
             }
 
@@ -336,7 +337,74 @@ final class ServerCveImpactMatcher
             ];
         }
 
+        self::attachImpactedServers($db, $cves);
+
         return array_values($cves);
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $cves
+     */
+    private static function attachImpactedServers($db, array &$cves): void
+    {
+        if ($cves === []) {
+            return;
+        }
+
+        $ids = array_map('intval', array_keys($cves));
+        $ids = array_values(array_filter($ids, static function (int $id): bool {
+            return $id > 0;
+        }));
+        if ($ids === []) {
+            return;
+        }
+
+        $sql = "SELECT sc.`id_cve_catalog`, sc.`id_mysql_server`, sc.`product_code`, sc.`server_version`,"
+            . " sc.`match_method`, sc.`match_confidence`, sc.`date_calculated`,"
+            . " ms.`display_name`, ms.`name`, ms.`ip`, ms.`port`"
+            . " FROM `cve_server_cache` sc"
+            . " INNER JOIN `mysql_server` ms ON ms.`id` = sc.`id_mysql_server` AND ms.`is_deleted` = 0"
+            . " WHERE sc.`is_active` = 1"
+            . "   AND sc.`id_cve_catalog` IN (".implode(',', $ids).")"
+            . " ORDER BY sc.`id_cve_catalog`, ms.`display_name`, ms.`name`, ms.`ip`, ms.`port`, sc.`product_code`";
+        $res = $db->sql_query($sql);
+        $seen = [];
+
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $id = (int)($row['id_cve_catalog'] ?? 0);
+            if ($id <= 0 || !isset($cves[$id])) {
+                continue;
+            }
+
+            $serverId = (int)($row['id_mysql_server'] ?? 0);
+            $productCode = (string)($row['product_code'] ?? '');
+            $serverVersion = (string)($row['server_version'] ?? '');
+            $key = $serverId."\n".$productCode."\n".$serverVersion;
+            if (isset($seen[$id][$key])) {
+                continue;
+            }
+            $seen[$id][$key] = true;
+
+            $displayName = trim((string)($row['display_name'] ?? ''));
+            if ($displayName === '') {
+                $displayName = trim((string)($row['name'] ?? ''));
+            }
+            if ($displayName === '') {
+                $displayName = trim((string)($row['ip'] ?? ''));
+            }
+
+            $cves[$id]['impacted_servers'][] = [
+                'id_mysql_server' => $serverId,
+                'display_name' => $displayName,
+                'ip' => $row['ip'],
+                'port' => $row['port'],
+                'product_code' => $productCode,
+                'server_version' => $serverVersion,
+                'match_method' => $row['match_method'],
+                'match_confidence' => $row['match_confidence'],
+                'date_calculated' => $row['date_calculated'],
+            ];
+        }
     }
 
     /**

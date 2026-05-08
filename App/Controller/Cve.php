@@ -21,6 +21,7 @@ class Cve extends Controller
         $data = [
             'is_ready' => true,
             'filter' => 'all',
+            'query' => '',
             'products' => [],
             'stats' => [
                 'total_cves' => 0,
@@ -42,11 +43,13 @@ class Cve extends Controller
         $routeParams = $this->normalizeRouteParameters($param);
         $products = $this->loadProducts($db);
         $filter = $this->normalizeProductFilter($routeParams[0] ?? 'all', $products);
+        $query = self::normalizeSearchQuery($_GET['q'] ?? '');
 
         $data['filter'] = $filter;
+        $data['query'] = $query;
         $data['products'] = $products;
-        $data['stats'] = $this->loadStats($db, $filter);
-        $data['cves'] = $this->loadCves($db, $filter, (int)$data['limit']);
+        $data['stats'] = $this->loadStats($db, $filter, $query);
+        $data['cves'] = $this->loadCves($db, $filter, $query, (int)$data['limit']);
 
         $this->set('data', $data);
     }
@@ -273,9 +276,10 @@ class Cve extends Controller
     /**
      * @return array{total_cves:int,critical_cves:int,high_cves:int,known_exploited_cves:int,affected_versions:int}
      */
-    private function loadStats($db, string $filter): array
+    private function loadStats($db, string $filter, string $query): array
     {
         $where = $this->productWhere($db, $filter);
+        $searchWhere = $this->searchWhere($db, $query, 'c', 'av');
         $exclusionJoin = $this->exclusionJoin($db, 'c', 'cx');
         $exclusionWhere = $this->exclusionWhere($db, 'cx');
         $sql = "SELECT"
@@ -287,7 +291,7 @@ class Cve extends Controller
             . " FROM `cve_catalog` c"
             . " INNER JOIN `cve_product_affected_version` av ON av.`id_cve_catalog` = c.`id` AND av.`is_current` = 1"
             . $exclusionJoin
-            . " WHERE 1=1 {$where}{$exclusionWhere}";
+            . " WHERE 1=1 {$where}{$searchWhere}{$exclusionWhere}";
 
         $res = $db->sql_query($sql);
         $row = $db->sql_fetch_array($res, MYSQLI_ASSOC) ?: [];
@@ -304,10 +308,12 @@ class Cve extends Controller
     /**
      * @return array<int,array<string,mixed>>
      */
-    private function loadCves($db, string $filter, int $limit): array
+    private function loadCves($db, string $filter, string $query, int $limit): array
     {
         $where = $this->productWhere($db, $filter);
         $selectedWhere = $this->productWhere($db, $filter, 'av0');
+        $searchWhere = $this->searchWhere($db, $query, 'c', 'av');
+        $selectedSearchWhere = $this->searchWhere($db, $query, 'c0', 'av0');
         $exclusionJoin = $this->exclusionJoin($db, 'c', 'cx');
         $exclusionWhere = $this->exclusionWhere($db, 'cx');
         $selectedExclusionJoin = $this->exclusionJoin($db, 'c0', 'cx0');
@@ -325,7 +331,7 @@ class Cve extends Controller
             . "   FROM `cve_catalog` c0"
             . "   INNER JOIN `cve_product_affected_version` av0 ON av0.`id_cve_catalog` = c0.`id` AND av0.`is_current` = 1"
             . $selectedExclusionJoin
-            . "   WHERE 1=1 {$selectedWhere}{$selectedExclusionWhere}"
+            . "   WHERE 1=1 {$selectedWhere}{$selectedSearchWhere}{$selectedExclusionWhere}"
             . "   GROUP BY c0.`id`, c0.`severity`, c0.`known_exploited`, c0.`published_at`, c0.`cve_id`"
             . "   ORDER BY FIELD(c0.`severity`, 'critical', 'high', 'medium', 'low', 'none', 'unknown'),"
             . "            c0.`known_exploited` DESC,"
@@ -337,7 +343,7 @@ class Cve extends Controller
             . " INNER JOIN `cve_product_affected_version` av ON av.`id_cve_catalog` = c.`id` AND av.`is_current` = 1"
             . " INNER JOIN `cve_product` p ON p.`id` = av.`id_cve_product`"
             . $exclusionJoin
-            . " WHERE 1=1 {$where}{$exclusionWhere}"
+            . " WHERE 1=1 {$where}{$searchWhere}{$exclusionWhere}"
             . " ORDER BY FIELD(c.`severity`, 'critical', 'high', 'medium', 'low', 'none', 'unknown'),"
             . "          c.`known_exploited` DESC,"
             . "          c.`published_at` DESC,"
@@ -364,6 +370,7 @@ class Cve extends Controller
                     'known_ransomware_campaign_use' => $row['known_ransomware_campaign_use'],
                     'source_codes_json' => $row['source_codes_json'],
                     'affected' => [],
+                    'impacted_servers' => [],
                 ];
             }
 
@@ -381,7 +388,90 @@ class Cve extends Controller
             ];
         }
 
+        $this->attachImpactedServers($db, $cves);
+
         return array_values($cves);
+    }
+
+    private function searchWhere($db, string $query, string $catalogAlias = 'c', string $affectedAlias = 'av'): string
+    {
+        if ($query === '') {
+            return '';
+        }
+
+        $like = "'%".$db->sql_real_escape_string($query)."%'";
+        return " AND ("
+            . "{$catalogAlias}.`cve_id` LIKE {$like}"
+            . " OR {$catalogAlias}.`title` LIKE {$like}"
+            . " OR {$catalogAlias}.`summary` LIKE {$like}"
+            . " OR {$affectedAlias}.`version_text` LIKE {$like}"
+            . " OR {$affectedAlias}.`fixed_version` LIKE {$like}"
+            . " OR {$affectedAlias}.`source_code` LIKE {$like}"
+            . ")";
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $cves
+     */
+    private function attachImpactedServers($db, array &$cves): void
+    {
+        if ($cves === []) {
+            return;
+        }
+
+        $ids = array_map('intval', array_keys($cves));
+        $ids = array_values(array_filter($ids, static function (int $id): bool {
+            return $id > 0;
+        }));
+        if ($ids === []) {
+            return;
+        }
+
+        $sql = "SELECT sc.`id_cve_catalog`, sc.`id_mysql_server`, sc.`product_code`, sc.`server_version`,"
+            . " sc.`match_method`, sc.`match_confidence`,"
+            . " ms.`display_name`, ms.`name`, ms.`ip`, ms.`port`"
+            . " FROM `cve_server_cache` sc"
+            . " INNER JOIN `mysql_server` ms ON ms.`id` = sc.`id_mysql_server` AND ms.`is_deleted` = 0"
+            . " WHERE sc.`is_active` = 1"
+            . "   AND sc.`id_cve_catalog` IN (".implode(',', $ids).")"
+            . " ORDER BY sc.`id_cve_catalog`, ms.`display_name`, ms.`name`, ms.`ip`, ms.`port`, sc.`product_code`";
+        $res = $db->sql_query($sql);
+        $seen = [];
+
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $id = (int)($row['id_cve_catalog'] ?? 0);
+            if ($id <= 0 || !isset($cves[$id])) {
+                continue;
+            }
+
+            $serverId = (int)($row['id_mysql_server'] ?? 0);
+            $productCode = (string)($row['product_code'] ?? '');
+            $serverVersion = (string)($row['server_version'] ?? '');
+            $key = $serverId."\n".$productCode."\n".$serverVersion;
+            if (isset($seen[$id][$key])) {
+                continue;
+            }
+            $seen[$id][$key] = true;
+
+            $displayName = trim((string)($row['display_name'] ?? ''));
+            if ($displayName === '') {
+                $displayName = trim((string)($row['name'] ?? ''));
+            }
+            if ($displayName === '') {
+                $displayName = trim((string)($row['ip'] ?? ''));
+            }
+
+            $cves[$id]['impacted_servers'][] = [
+                'id_mysql_server' => $serverId,
+                'display_name' => $displayName,
+                'ip' => $row['ip'],
+                'port' => $row['port'],
+                'product_code' => $productCode,
+                'server_version' => $serverVersion,
+                'match_method' => $row['match_method'],
+                'match_confidence' => $row['match_confidence'],
+            ];
+        }
     }
 
     private function productWhere($db, string $filter, string $alias = 'av'): string
