@@ -1,0 +1,219 @@
+{
+  "main": {
+    "id": "b42d0ee735f8dbc7",
+    "type": "split",
+    "children": [
+      {
+        "id": "e8ed9e6d6577a53d",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "d9ff5c519fdab838",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "pmm_aria_2026-03-20.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "pmm_aria_2026-03-20"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "660c1ec9c88f2267",
+    "type": "split",
+    "children": [
+      {
+        "id": "7c45c893cab8fc47",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "9dfbd31d114f1108",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Explorateur de fichiers"
+            }
+          },
+          {
+            "id": "db4449459610b13f",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Rechercher"
+            }
+          },
+          {
+            "id": "dd25f6574831e8ec",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Signets"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "6fb2cb6da1009dd0",
+    "type": "split",
+    "children": [
+      {
+        "id": "989baffa71bfe10e",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "f643d375d751a4e8",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "pmm_aria_2026-03-20.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Rétrolien pour pmm_aria_2026-03-20"
+            }
+          },
+          {
+            "id": "42f8e863f82a450b",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "pmm_aria_2026-03-20.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Liens sortants de pmm_aria_2026-03-20"
+            }
+          },
+          {
+            "id": "f1ddf8e7987eabf9",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Mots-clés"
+            }
+          },
+          {
+            "id": "3e8b5f1a1f7aab68",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "Toutes les propriétés"
+            }
+          },
+          {
+            "id": "c29aea20b09c73cc",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "pmm_aria_2026-03-20.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Plan de pmm_aria_2026-03-20"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Ouvrir le sélecteur rapide": false,
+      "graph:Ouvrir la vue graphique": false,
+      "canvas:Créer une nouvelle toile": false,
+      "daily-notes:Ouvrir la note quotidienne": false,
+      "templates:Insérer le modèle": false,
+      "command-palette:Ouvrir la palette de commandes": false,
+      "bases:Créer une nouvelle base": false
+    }
+  },
+  "active": "d9ff5c519fdab838",
+  "lastOpenFiles": [
+    "worker_architecture.md",
+    "vip-servers.md",
+    "tips.md",
+    "time_series_tables.md",
+    "sql_error_log_collection_analysis_2026-03-19.md",
+    "slave_show_page.md",
+    "Sans titre.base",
+    "cve_mpd.svg",
+    "glial_framework.md",
+    "glial-ajax.md",
+    "global_variable_non_default_id1.md",
+    "group_replication.md",
+    "information_schema_tables_timeout_review_2026-04-03.md",
+    "install_debian13.md",
+    "extraction.md",
+    "cve.md",
+    "Sans titre.canvas",
+    "plugin_packages.md",
+    "audit_securite.md",
+    "build_test.md",
+    "chart_js.md",
+    "srv/www/pmacontrol/documentation/pmm_proxysql_2026-03-20.md",
+    "srv/www/pmacontrol/documentation",
+    "srv/www/pmacontrol",
+    "srv/www",
+    "srv",
+    "alert.md",
+    "README.md",
+    "galera_ist_validation_2026-03-21.md",
+    "csrf.md"
+  ]
+}

@@ -1,0 +1,59 @@
+---
+title: Can we get faster expression handling in MySQL
+source:
+  name: Percona Blog
+  url: https://www.percona.com/blog/can-we-get-faster-expression-handling-in-mysql/
+  post_id: 2263
+source_author:
+  name: Peter Zaitsev
+  slug: pz
+  url: https://www.percona.com/blog/author/pz/
+  website: ''
+published_at: '2010-03-30T19:30:02'
+published_at_gmt: '2010-03-30T19:30:02'
+modified_at: '2026-03-23T21:39:39'
+modified_at_gmt: '2026-03-23T21:39:39'
+curator:
+  name: Sylvain ARBAUDIE
+  slug: sylvain-arbaudie
+  source_url: https://www.pmacontrol.fr/fr/site/blog_author/sylvain-arbaudie/
+matched_topics:
+- MySQL
+matched_filters:
+- category:mysql:83
+categories:
+- Insight for Developers
+- MySQL
+category_slugs:
+- insight-for-developers
+- mysql
+tags: []
+tag_slugs: []
+featured_image_url: ''
+image_count: 0
+graph_or_chart_count: 0
+content_import: metadata_excerpt_headings_and_source_image_urls_only
+copyright_notice: Percona All Rights Reserved; full article text and local image copies are not reproduced.
+---
+
+# Can we get faster expression handling in MySQL
+
+Source: [Percona Blog](https://www.percona.com/blog/can-we-get-faster-expression-handling-in-mysql/)
+
+Auteur source: [Peter Zaitsev](https://www.percona.com/blog/author/pz/)
+
+Publication: 2010-03-30T19:30:02
+
+Curateur PmaControl: [Sylvain ARBAUDIE](../../../authors/sylvain-arbaudie.md)
+
+## Note de droits
+
+Fiche de veille uniquement: les metadonnees, l'extrait public, les titres de sections detectes et les URLs des visuels sont conserves. Le texte complet et les copies locales des images restent sur la source Percona.
+
+## Extrait public
+
+Andrew from Sphinx continues to work on improving SQL (or SphinxQL) support and now he published benchmarks comparing arithmetic expression handling in Sphinx to one in MySQL. The result ? Sphinx scored 3x to 20x faster. Andrew goes to explain results are not 100% comparable (as we can see in the table results are even … Continued
+
+## Auteur source
+
+Peter managed the High Performance Group within MySQL until 2006, when he founded Percona. Peter has a Master's Degree in Computer Science and is an expert in database kernels, computer hardware, and application scaling.
