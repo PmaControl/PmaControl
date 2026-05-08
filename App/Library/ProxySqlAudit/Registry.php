@@ -29,6 +29,7 @@ final class Registry
             \App\Library\ProxySqlAudit\Checks\Topology\BackendInMultipleClusterTypes::class,  // #903
             \App\Library\ProxySqlAudit\Checks\Hostgroup\EmptyDefaultHostgroup::class,         // #904
             \App\Library\ProxySqlAudit\Checks\Hostgroup\OrphanHostgroup::class,               // #905
+            \App\Library\ProxySqlAudit\Checks\Hostgroup\AllServersShunnedTooLong::class,      // #906
         ];
     }
 }
