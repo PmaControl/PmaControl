@@ -5017,7 +5017,22 @@ GROUP BY C.ID, C.INFO;";
         // $import['table']['proxysql_connect_error'] = $this->getErrorConnect($param);
         }
 
-        
+        // #929: persist the audit snapshot for the home-page card. The
+        // audit registry is read-only against the ProxySQL admin schema
+        // and Runner::runAll already swallows per-check failures.
+        try {
+            \App\Library\ProxySqlAudit\Snapshot::record(
+                $db,
+                (int) $id_proxysql_server,
+                Sgbd::sql(DB_DEFAULT)
+            );
+        } catch (\Throwable $e) {
+            $this->logger->warning(
+                'proxysql_audit_snapshot failed for id_proxysql_server='
+                . (int) $id_proxysql_server . ': ' . $e->getMessage()
+            );
+        }
+
         $db->sql_close();
 
     }
