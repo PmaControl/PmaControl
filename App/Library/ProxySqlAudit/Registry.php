@@ -42,6 +42,7 @@ final class Registry
             \App\Library\ProxySqlAudit\Checks\Monitor\MonitorUsernameUnset::class,                // #916
             \App\Library\ProxySqlAudit\Checks\Monitor\IntervalOutliers::class,                    // #917
             \App\Library\ProxySqlAudit\Checks\Monitor\PtHeartbeatMisconfig::class,                // #918
+            \App\Library\ProxySqlAudit\Checks\Monitor\ServerVersionDrift::class,                  // #919
         ];
     }
 }
