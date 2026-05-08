@@ -1497,8 +1497,68 @@ class ProxySQL extends Controller
         }
 
         $data['menu'] = $sqls;
+        $data['proxysql_server_links'] = self::buildProxysqlServerLinks(
+            (string) $current_config_tab,
+            (int) $id_proxysql_server
+        );
 
         $this->set('data', $data);
+    }
+
+    /**
+     * Build a `"hostname:port" => peer_id` map of ProxySQL nodes
+     * registered in pmacontrol, so the PROXYSQL_SERVERS view can
+     * render a cross-link from each peer row to that peer's own
+     * `/ProxySQL/config/<peer_id>/` page (#893).
+     *
+     * Returns an empty map when not on the PROXYSQL_SERVERS tab so
+     * the lookup is paid for only when the view will use it.
+     *
+     * @return array<string,int>
+     */
+    public static function buildProxysqlServerLinks(string $currentTab, int $currentProxysqlServerId): array
+    {
+        if (strtoupper($currentTab) !== 'PROXYSQL_SERVERS') {
+            return [];
+        }
+
+        $links = [];
+        try {
+            $db = Sgbd::sql(DB_DEFAULT);
+            $res = $db->sql_query_silent(
+                "SELECT id, hostname, port FROM proxysql_server"
+            );
+            if ($res === false) {
+                return [];
+            }
+            while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                $peerId = (int) ($row['id'] ?? 0);
+                if ($peerId <= 0 || $peerId === $currentProxysqlServerId) {
+                    // No self-link.
+                    continue;
+                }
+                $hostname = trim((string) ($row['hostname'] ?? ''));
+                $port = (int) ($row['port'] ?? 0);
+                if ($hostname === '' || $port <= 0) {
+                    continue;
+                }
+                $links[self::proxysqlServerLinkKey($hostname, $port)] = $peerId;
+            }
+        } catch (\Throwable $e) {
+            // Cross-link is purely additive — if the lookup fails the
+            // view just doesn't render the icon.
+            return [];
+        }
+        return $links;
+    }
+
+    /**
+     * Canonical "hostname:port" key the controller and view share so
+     * lookups don't silently miss on whitespace / leading-zero ports.
+     */
+    public static function proxysqlServerLinkKey(string $hostname, int $port): string
+    {
+        return strtolower(trim($hostname)) . ':' . $port;
     }
 
 /**

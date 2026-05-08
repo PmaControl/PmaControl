@@ -9,6 +9,38 @@ $proxySqlUpdateCsrfToken = CsrfRender::token($data, 'proxysql_update');
 $proxySqlUpdateFieldCsrfAttributes = CsrfRender::attributes($data, 'proxysql_update_field');
 $proxySqlDeleteLineCsrfInput = CsrfRender::hiddenInput($data, 'proxysql_delete_line');
 
+// Map of "hostname:port" => peer id_proxysql_server (#893).
+$proxySqlServerLinks = isset($data['proxysql_server_links']) && is_array($data['proxysql_server_links'])
+    ? $data['proxysql_server_links']
+    : [];
+
+// Render an inline "→ open this ProxySQL config" link when the row's
+// (hostname, port) is registered as a peer in pmacontrol.
+$renderPeerProxySqlLink = static function (array $line) use ($proxySqlServerLinks, $data): string {
+    if (empty($proxySqlServerLinks)) {
+        return '';
+    }
+    $hostname = isset($line['hostname']) ? (string) $line['hostname'] : '';
+    $port = isset($line['port']) ? (int) $line['port'] : 0;
+    if ($hostname === '' || $port <= 0) {
+        return '';
+    }
+    $key = strtolower(trim($hostname)) . ':' . $port;
+    if (!isset($proxySqlServerLinks[$key])) {
+        return '';
+    }
+    $peerId = (int) $proxySqlServerLinks[$key];
+    $href = htmlspecialchars(
+        LINK . 'ProxySQL/config/' . $peerId . '/PROXYSQL_SERVERS/',
+        ENT_QUOTES,
+        'UTF-8'
+    );
+    $title = htmlspecialchars(__('Open this ProxySQL configuration'), ENT_QUOTES, 'UTF-8');
+    return ' <a class="sv-ba-peer-link" href="' . $href . '" title="' . $title . '" '
+        . 'style="display:inline-block;margin-left:4px;color:#1e3a8a;text-decoration:none">'
+        . '<span class="glyphicon glyphicon-share-alt"></span></a>';
+};
+
 $table_name = str_replace('_', ' ', $data['current']);
 $extra = $data['menu'][$table_name];
 
@@ -138,9 +170,11 @@ foreach ($data['table'] as $table_name)
 
       echo '</tr>';
 
+      $isProxySqlServersTable = ($table_name === 'proxysql_servers');
       foreach($data['tables'][$table_name] as $line)
       {
           echo '<tr>';
+          $peerLinkHtml = $isProxySqlServersTable ? $renderPeerProxySqlLink($line) : '';
           foreach($line as $field => $elem) {
 
             $pk_table = [];
@@ -150,16 +184,20 @@ foreach ($data['table'] as $table_name)
             }
             $full_pk = implode (' AND ', $pk_table);
 
+            // Append the peer-config cross-link to the hostname cell so
+            // the operator can jump to that ProxySQL's own config page (#893).
+            $linkSuffix = ($isProxySqlServersTable && $field === 'hostname') ? $peerLinkHtml : '';
+
             if (in_array($field , $primary_key_cols))
             {
-              echo '<td style="color:#777777;">'.$elem.'</td>';
+              echo '<td style="color:#777777;">'.$elem.$linkSuffix.'</td>';
             }
             else {
               $fieldAttr = htmlspecialchars((string) $field, ENT_QUOTES, 'UTF-8');
               $pkAttr = htmlspecialchars($full_pk, ENT_QUOTES, 'UTF-8');
               $urlAttr = htmlspecialchars(LINK.'ProxySQL/updateField/'.$data['id_proxysql_server'].'/'.$table_name, ENT_QUOTES, 'UTF-8');
               echo '<td class="line-edit"'.$proxySqlUpdateFieldCsrfAttributes.' data-name="'.$fieldAttr.'" data-pk="'.$pkAttr.'" data-type="text" data-url="'.$urlAttr.'" data-title="Enter value">';
-              echo htmlspecialchars((string) $elem, ENT_QUOTES, 'UTF-8').'</td>';
+              echo htmlspecialchars((string) $elem, ENT_QUOTES, 'UTF-8').$linkSuffix.'</td>';
             }
           }
 
@@ -208,11 +246,14 @@ foreach ($data['table'] as $table_name)
       }
       echo '</tr>';
 
+      $isRuntimeProxySqlServersTable = ($table_name === 'proxysql_servers');
       foreach($data['tables']['runtime_'.$table_name] as $line)
       {
           echo '<tr>';
+          $peerLinkHtml = $isRuntimeProxySqlServersTable ? $renderPeerProxySqlLink($line) : '';
           foreach($line as $field => $elem) {
-              echo '<td>'.$elem.'</td>'; 
+              $linkSuffix = ($isRuntimeProxySqlServersTable && $field === 'hostname') ? $peerLinkHtml : '';
+              echo '<td>'.$elem.$linkSuffix.'</td>';
           }
           echo '</tr>';
       }
