@@ -33,7 +33,8 @@ final class NdbCollector
      * @param array<string,mixed> $cluster Row from `ndb_cluster`
      * @return array{
      *   reachable:bool, parsed_nodes:int, upserted:int,
-     *   errors:list<string>, command:string
+     *   errors:list<string>, command:string,
+     *   alerts_opened:int, alerts_resolved:int
      * }
      */
     public function collect(object $db, array $cluster): array
@@ -41,11 +42,13 @@ final class NdbCollector
         $idCluster = (int) ($cluster['id'] ?? 0);
         if ($idCluster <= 0) {
             return [
-                'reachable'    => false,
-                'parsed_nodes' => 0,
-                'upserted'     => 0,
-                'errors'       => ['NdbCollector: missing cluster id'],
-                'command'      => '',
+                'reachable'       => false,
+                'parsed_nodes'    => 0,
+                'upserted'        => 0,
+                'errors'          => ['NdbCollector: missing cluster id'],
+                'command'         => '',
+                'alerts_opened'   => 0,
+                'alerts_resolved' => 0,
             ];
         }
 
@@ -68,13 +71,51 @@ final class NdbCollector
             $db->sql_query($sql);
         }
 
+        // Lot 7: emit alerts based on the freshly-UPSERTed node rows.
+        // We re-read instead of trusting `$parsed` because the row may have
+        // been refined by NdbInfoCollector between cycles (memory columns).
+        $alerts = ['opened' => 0, 'resolved' => 0];
+        if ($parsed['reachable']) {
+            $nodes = $this->loadNodes($db, $idCluster);
+            $alerts = (new NdbAlertEmitter())->emit($db, $cluster, $nodes);
+        }
+
         return [
-            'reachable'    => $parsed['reachable'],
-            'parsed_nodes' => count($parsed['nodes']),
-            'upserted'     => $upserted,
-            'errors'       => $parsed['errors'],
-            'command'      => $fetched['command'],
+            'reachable'       => $parsed['reachable'],
+            'parsed_nodes'    => count($parsed['nodes']),
+            'upserted'        => $upserted,
+            'errors'          => $parsed['errors'],
+            'command'         => $fetched['command'],
+            'alerts_opened'   => $alerts['opened'],
+            'alerts_resolved' => $alerts['resolved'],
         ];
+    }
+
+    /**
+     * @return list<array<string,mixed>>
+     */
+    private function loadNodes(object $db, int $idCluster): array
+    {
+        $sql = "SELECT ndb_node_id, role, hostname, ip, port, node_group, "
+            . "is_primary, status, ndb_version, uptime_sec, "
+            . "memory_used_mb, memory_total_mb, data_memory_used_mb, index_memory_used_mb "
+            . "FROM `ndb_node` WHERE id_ndb_cluster = " . $idCluster;
+        $res = $db->sql_query($sql);
+        if (!$res) {
+            return [];
+        }
+
+        $rows = [];
+        if (method_exists($db, 'sql_fetch_array')) {
+            while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                $rows[] = $row;
+            }
+        } elseif (is_iterable($res)) {
+            foreach ($res as $row) {
+                $rows[] = (array) $row;
+            }
+        }
+        return $rows;
     }
 
     /**

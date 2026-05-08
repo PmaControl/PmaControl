@@ -164,6 +164,20 @@ class Dot3 extends Controller
     static $mysqlrouter = array();
 
 /**
+ * Stores `$ndb_cluster` for ndb cluster discovery (epic #799 / lot 5).
+ *
+ * @var array<int|string,mixed>
+ */
+    static $ndb_cluster = array();
+
+/**
+ * Stores `$build_ndb_cluster` once a per-group build pass populates it.
+ *
+ * @var array<int|string,mixed>
+ */
+    static $build_ndb_cluster = array();
+
+/**
  * Stores `$rank_same` for rank same.
  *
  * @var array<int|string,mixed>
@@ -647,6 +661,64 @@ class Dot3 extends Controller
                 }
             }
         }
+
+        return $tmp_group;
+    }
+
+    /**
+     * Discover NDB clusters from `ndb_cluster__mysql_server` and emit groups
+     * keyed by cluster id. Each group contains the SQL/API mysql_server ids
+     * attached to the cluster (operator-managed link). The mgmd/data nodes
+     * have no `id_mysql_server` so they are not grouped here — they are
+     * rendered as standalone graphviz nodes by `Graphviz::generateNdbCluster`
+     * once `buildNdbCluster` has populated the build state.
+     *
+     * Side effect: stores the resulting tmp_group in `self::$ndb_cluster`
+     * for the per-group build pass to consume.
+     */
+    public function generateGroupNdbCluster($information)
+    {
+        $tmp_group = array();
+
+        if (empty($information['servers']) || !is_array($information['servers'])) {
+            return $tmp_group;
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT c.id AS id_ndb_cluster, l.id_mysql_server "
+            . "FROM `ndb_cluster` c "
+            . "LEFT JOIN `ndb_cluster__mysql_server` l ON l.id_ndb_cluster = c.id "
+            . "WHERE c.is_deleted = 0";
+        $res = $db->sql_query($sql);
+        if (!$res) {
+            return $tmp_group;
+        }
+
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $clusterKey = 'ndb_'.(int)$row['id_ndb_cluster'];
+            if (!isset($tmp_group[$clusterKey])) {
+                $tmp_group[$clusterKey] = array();
+            }
+            if (!empty($row['id_mysql_server'])) {
+                $idSrv = (int)$row['id_mysql_server'];
+                if (isset($information['servers'][$idSrv])) {
+                    $tmp_group[$clusterKey][] = $idSrv;
+                }
+            }
+        }
+
+        // Drop empty entries (no SQL/API node attached): they would not be
+        // tied to any group and array_diff() would always succeed, polluting
+        // every per-group render. They are still rendered because of the
+        // empty $cluster_members short-circuit below in buildNdbCluster.
+        foreach ($tmp_group as $key => $members) {
+            $tmp_group[$key] = array_values(array_unique(array_map('intval', $members)));
+            if (empty($tmp_group[$key])) {
+                unset($tmp_group[$key]);
+            }
+        }
+
+        self::$ndb_cluster = $tmp_group;
 
         return $tmp_group;
     }
@@ -1317,12 +1389,13 @@ class Dot3 extends Controller
                 self::$rank_same = array();
                 self::$build_galera = array();
                 self::$build_innodb_cluster = array();
+                self::$build_ndb_cluster = array();
                 self::$build_mysqlrouter = array();
                 self::$build_ms = array();
                 self::$build_server = array();
 
                 //Debug::debug($group, "GROUP");
-            
+
                 //Debug::debug(self::$build_galera);
 
                 $this->buildServer(array($id_dot3_information, $group));
@@ -1330,6 +1403,7 @@ class Dot3 extends Controller
                 // il faut builder les serveur avant Galera => Galera va surcharger le noeud en cas de desync / donor / non-primary
                 $this->buildGaleraCluster(array($id_dot3_information, $group));
                 $this->buildInnoDBCluster(array($id_dot3_information, $group));
+                $this->buildNdbCluster(array($id_dot3_information, $group));
                 $this->buildGroupMysqlRouter(array($id_dot3_information, $group));
 
                 // Edge informative pour SST (joiner offline vu dans incoming_addresses d'un noeud actif)
@@ -1523,6 +1597,7 @@ class Dot3 extends Controller
         self::$rank_same = array();
         self::$build_galera = array();
         self::$build_innodb_cluster = array();
+        self::$build_ndb_cluster = array();
         self::$build_mysqlrouter = array();
         self::$build_ms = array();
         self::$build_server = array();
@@ -1530,6 +1605,7 @@ class Dot3 extends Controller
         $this->buildServer(array($id_dot3_information, $group));
         $this->buildGaleraCluster(array($id_dot3_information, $group));
         $this->buildInnoDBCluster(array($id_dot3_information, $group));
+        $this->buildNdbCluster(array($id_dot3_information, $group));
         $this->buildGroupMysqlRouter(array($id_dot3_information, $group));
         $this->buildGaleraSstHintLink(array($id_dot3_information, $group));
         $this->buildLink(array($id_dot3_information, $group));
@@ -1760,6 +1836,7 @@ class Dot3 extends Controller
 
         $dot .= Graphviz::generateGalera(self::$build_galera);
         $dot .= Graphviz::generateInnoDBCluster(self::$build_innodb_cluster);
+        $dot .= Graphviz::generateNdbCluster(self::$build_ndb_cluster);
     
         foreach(self::$build_ms as $edge) {
             $dot .= Graphviz::generateEdge($edge);
@@ -1920,6 +1997,7 @@ class Dot3 extends Controller
 
         self::$galera = array();
         self::$innodb_cluster = array();
+        self::$ndb_cluster = array();
         self::$mysqlrouter = array();
 
         $galera = $this->generateMeasuredGroup('galera', $idDot3Run, function () use ($dot3_information) {
@@ -1929,6 +2007,9 @@ class Dot3 extends Controller
 
         $innodb_cluster = $this->generateMeasuredGroup('innodb_cluster', $idDot3Run, function () use ($dot3_information) {
             return $this->generateGroupInnoDBCluster($dot3_information['information']);
+        });
+        $ndb_cluster = $this->generateMeasuredGroup('ndb_cluster', $idDot3Run, function () use ($dot3_information) {
+            return $this->generateGroupNdbCluster($dot3_information['information']);
         });
         $mysqlrouter = $this->generateMeasuredGroup('mysqlrouter', $idDot3Run, function () use ($dot3_information) {
             return $this->generateGroupMysqlRouter($dot3_information['information']);
@@ -1950,7 +2031,7 @@ class Dot3 extends Controller
         });
         
 
-        $group = $this->array_merge_group(array_merge($galera, $innodb_cluster, $mysqlrouter, $master_slave, $proxysql, $maxscale, $vip));
+        $group = $this->array_merge_group(array_merge($galera, $innodb_cluster, $ndb_cluster, $mysqlrouter, $master_slave, $proxysql, $maxscale, $vip));
 
        //Debug::debug($group, "GROUP");
         //die();
@@ -4724,6 +4805,117 @@ class Dot3 extends Controller
             } else {
                 self::$build_innodb_cluster[$cluster_id]['config'] = 'INNODB_CLUSTER_OK';
             }
+        }
+    }
+
+    /**
+     * Epic #799 / lot 5 — populate `self::$build_ndb_cluster` for the
+     * current per-group render. We accept the cluster only when ALL the
+     * SQL/API mysql_server ids it advertises are within the current group
+     * (same gating as `buildInnoDBCluster`), or when the cluster has no
+     * SQL/API node attached at all (orphan cluster — render once on the
+     * first group seen).
+     */
+    public function buildNdbCluster($param)
+    {
+        $group = $param[1];
+
+        if (empty(self::$ndb_cluster)) {
+            return;
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        foreach (self::$ndb_cluster as $clusterKey => $cluster_members) {
+            // Same gating as buildInnoDBCluster: only render in groups whose
+            // mysql_server set is a superset of the cluster's SQL/API nodes.
+            if (!empty($cluster_members) && !empty(array_diff($cluster_members, $group))) {
+                continue;
+            }
+
+            $idCluster = (int) substr((string)$clusterKey, 4); // strip 'ndb_' prefix
+
+            $sql = "SELECT id, display_name, ndb_version, no_of_replicas "
+                . "FROM `ndb_cluster` WHERE id = " . $idCluster . " AND is_deleted = 0";
+            $res = $db->sql_query($sql);
+            $clusterRow = $res ? $db->sql_fetch_array($res, MYSQLI_ASSOC) : false;
+            if (!$clusterRow) {
+                continue;
+            }
+
+            $sql = "SELECT ndb_node_id, role, hostname, ip, port, node_group, "
+                . "is_primary, status, ndb_version, uptime_sec, "
+                . "memory_used_mb, memory_total_mb, data_memory_used_mb, index_memory_used_mb "
+                . "FROM `ndb_node` WHERE id_ndb_cluster = " . $idCluster
+                . " ORDER BY FIELD(role,'mgmd','data','sql'), node_group, ndb_node_id";
+            $res = $db->sql_query($sql);
+            $nodes = array(
+                'mgmd' => array(),
+                'data' => array(),
+                'sql'  => array(),
+            );
+            $nodeGroups = array();
+            $totals = array(
+                'mgmd_up' => 0, 'mgmd' => 0,
+                'data_up' => 0, 'data' => 0,
+                'sql_up'  => 0, 'sql'  => 0,
+            );
+
+            if ($res) {
+                while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                    $role = (string)($row['role'] ?? '');
+                    if (!isset($nodes[$role])) {
+                        continue;
+                    }
+                    $row['_started'] = (strtoupper((string)($row['status'] ?? '')) === 'STARTED'
+                        || strtoupper((string)($row['status'] ?? '')) === 'CONNECTED');
+                    $nodes[$role][] = $row;
+                    $totals[$role]++;
+                    if (!empty($row['_started'])) {
+                        $totals[$role.'_up']++;
+                    }
+                    if ($role === 'data') {
+                        $ng = $row['node_group'] === null ? -1 : (int)$row['node_group'];
+                        if (!isset($nodeGroups[$ng])) {
+                            $nodeGroups[$ng] = array('total' => 0, 'up' => 0);
+                        }
+                        $nodeGroups[$ng]['total']++;
+                        if (!empty($row['_started'])) {
+                            $nodeGroups[$ng]['up']++;
+                        }
+                    }
+                }
+            }
+
+            // State classification mirrors the alert code mapping
+            // (see App/Service/Ndb/NdbAlertEmitter): a node group with zero
+            // started data nodes drives the cluster to CRIT.
+            $config = 'NDB_CLUSTER_OK';
+            $any_ng_lost = false;
+            foreach ($nodeGroups as $ngStats) {
+                if ($ngStats['up'] === 0 && $ngStats['total'] > 0) {
+                    $any_ng_lost = true;
+                    break;
+                }
+            }
+            if ($any_ng_lost || $totals['mgmd_up'] === 0) {
+                $config = 'NDB_CLUSTER_CRIT';
+            } elseif ($totals['data_up'] < $totals['data']
+                || $totals['sql_up']  < $totals['sql']) {
+                $config = 'NDB_CLUSTER_WARN';
+            }
+
+            self::$build_ndb_cluster[$idCluster] = array(
+                'id_cluster'     => $idCluster,
+                'name'           => (string)$clusterRow['display_name'],
+                'ndb_version'    => (string)($clusterRow['ndb_version'] ?? ''),
+                'no_of_replicas' => $clusterRow['no_of_replicas'] !== null ? (int)$clusterRow['no_of_replicas'] : null,
+                'nodes'          => $nodes,
+                'node_groups'    => $nodeGroups,
+                'totals'         => $totals,
+                'sql_members'    => $cluster_members,
+                'config'         => $config,
+            );
         }
     }
 
