@@ -1980,9 +1980,16 @@ document.addEventListener('DOMContentLoaded', function() {
             list.forEach(function(a) {
                 var sizeMb = (a.total_size_bytes / 1048576).toFixed(1);
                 var statusCls = a.status === 'done' ? 'success' : (a.status === 'error' ? 'danger' : 'warning');
+                // "YYYY-MM-DD HH:MM → HH:MM" — same date once; full datetime on both
+                // sides only when the analysis spans midnight (#822 follow-up).
+                var sd = a.time_start.substr(0, 10), ed = a.time_end.substr(0, 10);
+                var sh = a.time_start.substr(11, 5), eh = a.time_end.substr(11, 5);
+                var rangeLabel = sd === ed
+                    ? sd + ' ' + sh + '&rarr;' + eh
+                    : sd + ' ' + sh + '&rarr;' + ed + ' ' + eh;
                 html += '<button class="btn btn-xs btn-default sv-ba-history-btn" data-id="' + a.id + '" data-status="' + a.status + '">'
                     + '<span class="label label-' + statusCls + '">' + a.status + '</span> '
-                    + a.time_start.substr(11, 5) + '&rarr;' + a.time_end.substr(11, 5)
+                    + rangeLabel
                     + ' <small>(' + sizeMb + 'MB, ' + numberFmt(a.total_transactions) + ' txn)</small>'
                     + '</button>';
             });
