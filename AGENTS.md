@@ -4,6 +4,13 @@ See **[CLAUDE.md](CLAUDE.md)** — the single source of truth for repository gui
 
 It is a thin index: per-topic rules live in `docs/`, deep references in `documentation/`. Load only what the current task needs.
 
+## Workspace Policy
+
+- Keep `/srv/www/pmacontrol` on `master` by default.
+- Do not use `/srv/www/pmacontrol` as the active implementation workspace unless the user explicitly says so.
+- Use a dedicated worktree under `/srv/www/pmacontrol-worktrees/` for feature work, fixes, reviews, PR preparation and experiments.
+- Only leave `/srv/www/pmacontrol` on a non-`master` branch when the user gives a clear contrary instruction, and switch it back to `master` as soon as that exception is no longer needed.
+
 ## Claude Code
 
 Claude Code is available locally through the `claude` CLI.
