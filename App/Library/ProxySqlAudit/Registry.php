@@ -22,9 +22,10 @@ final class Registry
     {
         // Lots 1-7 plug their classes in here as their sub-issues land.
         return [
-            \App\Library\ProxySqlAudit\Checks\Topology\GaleraAsGroupReplication::class,      // #899
-            \App\Library\ProxySqlAudit\Checks\Topology\GroupReplicationAsGalera::class,      // #900
+            \App\Library\ProxySqlAudit\Checks\Topology\GaleraAsGroupReplication::class,       // #899
+            \App\Library\ProxySqlAudit\Checks\Topology\GroupReplicationAsGalera::class,       // #900
             \App\Library\ProxySqlAudit\Checks\Topology\AsyncReplicationAsClusterTable::class, // #901
+            \App\Library\ProxySqlAudit\Checks\Topology\GaleraHostgroupIdCollision::class,     // #902
         ];
     }
 }
