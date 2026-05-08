@@ -31,6 +31,7 @@ final class Registry
             \App\Library\ProxySqlAudit\Checks\Hostgroup\OrphanHostgroup::class,               // #905
             \App\Library\ProxySqlAudit\Checks\Hostgroup\AllServersShunnedTooLong::class,      // #906
             \App\Library\ProxySqlAudit\Checks\Hostgroup\ReaderHostgroupReadOnlyOff::class,    // #907
+            \App\Library\ProxySqlAudit\Checks\Hostgroup\WriterCountExceedsMaxWriters::class,  // #908
         ];
     }
 }
