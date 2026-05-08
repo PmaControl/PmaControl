@@ -1512,7 +1512,37 @@ document.addEventListener('DOMContentLoaded', function() {
     var baTreemapDb = null, baTreemapTbl = null;
 
     function renderTreemaps(topTables) {
-        if (!topTables || !topTables.length) return;
+        // When a zoom yields no per-file table data (e.g. older analyses or
+        // a window that falls between probed boundaries), tear down the
+        // existing treemap and show an explicit placeholder rather than
+        // leaving the previous render visible — that's what looked like
+        // "the treemap doesn't recalculate" (#826 follow-up).
+        if (!topTables || !topTables.length) {
+            if (baTreemapDb) { baTreemapDb.destroy(); baTreemapDb = null; }
+            if (baTreemapTbl) { baTreemapTbl.destroy(); baTreemapTbl = null; }
+            ['sv-ba-treemap-db', 'sv-ba-treemap-tbl'].forEach(function(canvasId) {
+                var canvas = document.getElementById(canvasId);
+                if (!canvas) return;
+                var wrap = canvas.parentElement;
+                if (!wrap) return;
+                wrap.querySelectorAll('.sv-ba-treemap-empty').forEach(function(el) { el.remove(); });
+                canvas.style.display = 'none';
+                var note = document.createElement('div');
+                note.className = 'sv-ba-treemap-empty';
+                note.style.cssText = 'display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:12px;text-align:center;padding:12px';
+                note.textContent = '<?= __("No table breakdown for this window") ?>';
+                wrap.appendChild(note);
+            });
+            return;
+        }
+        // Restore canvases if they were hidden by a previous empty render.
+        ['sv-ba-treemap-db', 'sv-ba-treemap-tbl'].forEach(function(canvasId) {
+            var canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            canvas.style.display = '';
+            var wrap = canvas.parentElement;
+            if (wrap) wrap.querySelectorAll('.sv-ba-treemap-empty').forEach(function(el) { el.remove(); });
+        });
 
         // Parse `db`.`table` → extract db and table
         var dbTotals = {};
@@ -1842,7 +1872,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ---- Binlog file timeline (custom Gantt-style bars) ----
     function parseTimelineTs(ts) {
-        var value = String(ts || '').replace(' ', 'T');
+        // The analyzer sometimes emits boundary timestamps with a 1-digit
+        // hour, e.g. "2026-05-08 1:27:19". `new Date("…T1:27:19")` returns
+        // NaN in every engine because ISO 8601 demands a 2-digit hour, so
+        // the previous `replace(' ', 'T')` silently dropped those rows
+        // from the zoom-windowed aggregation (#826 follow-up).
+        // Pad H / M / S to two digits before parsing.
+        var value = String(ts || '').replace(
+            /^(\d{4}-\d{1,2}-\d{1,2}) (\d{1,2}):(\d{1,2}):(\d{1,2})$/,
+            function (_, d, h, m, s) {
+                function pad(n) { return n.length === 1 ? '0' + n : n; }
+                return d + 'T' + pad(h) + ':' + pad(m) + ':' + pad(s);
+            }
+        );
+        if (value === String(ts || '')) {
+            // Didn't match the expected shape — let Date have a go anyway.
+            value = value.replace(' ', 'T');
+        }
         var parsed = new Date(value).getTime();
         return Number.isFinite(parsed) ? parsed : null;
     }

@@ -76,6 +76,49 @@ final class SlaveBinlogAnalysisZoomPanelsTest extends TestCase
         );
     }
 
+    public function testParseTimelineTsPadsSingleDigitClockFields(): void
+    {
+        // 1-digit hour tokens like "2026-05-08 1:27:19" come straight from
+        // the analyzer; the previous `replace(' ', 'T')` produced
+        // "2026-05-08T1:27:19" which `new Date(...)` rejects as NaN, so
+        // every overlapping file silently dropped out of the zoom-windowed
+        // walk — treemap froze, panels zeroed (#826 follow-up).
+        // Pin the padding regex shape so the fix can't regress.
+        $this->assertStringContainsString(
+            '(\d{1,2}):(\d{1,2}):(\d{1,2})',
+            $this->view,
+            'parseTimelineTs must accept 1-or-2 digit clock fields and pad them before Date parsing'
+        );
+        $this->assertStringContainsString(
+            'function pad(n) { return n.length === 1 ? \'0\' + n : n; }',
+            $this->view,
+            'Single-digit pad helper must exist inside parseTimelineTs'
+        );
+    }
+
+    public function testEmptyZoomWindowShowsExplicitTreemapPlaceholder(): void
+    {
+        // When a zoom window has no per-file table data, the treemaps must
+        // be torn down and replaced with a placeholder — the prior
+        // early-return left the previous render visible, which the user
+        // read as "the treemap doesn't recalculate".
+        $this->assertStringContainsString(
+            'sv-ba-treemap-empty',
+            $this->view,
+            'Empty-window placeholder element must be inserted'
+        );
+        $this->assertStringContainsString(
+            'No table breakdown for this window',
+            $this->view,
+            'Placeholder must carry the operator-facing message'
+        );
+        $this->assertStringContainsString(
+            'baTreemapDb.destroy()',
+            $this->view,
+            'Empty-window path must destroy the previous treemap, not leave it'
+        );
+    }
+
     public function testRiskFactor3IsTaggedAsFullWindow(): void
     {
         // Large-transaction risk factor has no per-time data — paintWindowedPanels
