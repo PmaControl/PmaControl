@@ -96,7 +96,36 @@ final class ServerCapabilitiesTest extends TestCase
                 'mariadb_skip_replication_variable',
                 ['MariaDB' => '5.5.21'],
             ],
+            // SHOW REPLICA STATUS — MySQL 8.0.22+ / Percona 8.0.22+ only.
+            // MariaDB intentionally omitted: it never supports the keyword. (#830)
+            'show_replica_status_syntax' => [
+                'show_replica_status_syntax',
+                ['MySQL' => '8.0.22', 'Percona' => '8.0.22', 'Percona Server' => '8.0.22'],
+            ],
         ];
+    }
+
+    public function testShowReplicaStatusSyntaxRejectsMariaDBOfAnyVersion(): void
+    {
+        // Even MariaDB 11.x must NOT report support — the keyword doesn't exist there.
+        $maria = new ServerCapabilitiesFakeDb(['MariaDB' => '11.4.0']);
+        $this->assertFalse(ServerCapabilities::supports($maria, 'show_replica_status_syntax'));
+
+        $maria106 = new ServerCapabilitiesFakeDb(['MariaDB' => '10.6.19']);
+        $this->assertFalse(ServerCapabilities::supports($maria106, 'show_replica_status_syntax'));
+    }
+
+    public function testShowReplicaStatusSyntaxAcceptsMysqlAndPerconaAt8022(): void
+    {
+        $mysql8022 = new ServerCapabilitiesFakeDb(['MySQL' => '8.0.22']);
+        $this->assertTrue(ServerCapabilities::supports($mysql8022, 'show_replica_status_syntax'));
+
+        $percona8022 = new ServerCapabilitiesFakeDb(['Percona' => '8.0.22-13']);
+        $this->assertTrue(ServerCapabilities::supports($percona8022, 'show_replica_status_syntax'));
+
+        // 8.0.21 must still be on SLAVE.
+        $mysql8021 = new ServerCapabilitiesFakeDb(['MySQL' => '8.0.21']);
+        $this->assertFalse(ServerCapabilities::supports($mysql8021, 'show_replica_status_syntax'));
     }
 }
 

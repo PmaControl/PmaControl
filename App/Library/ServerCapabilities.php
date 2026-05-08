@@ -56,6 +56,15 @@ final class ServerCapabilities
         'mariadb_skip_replication_variable' => [
             'MariaDB' => '5.5.21',
         ],
+        // SHOW REPLICA STATUS / FOR CHANNEL '...' was introduced in
+        // MySQL 8.0.22 (and the matching Percona Server release).
+        // MariaDB has no such keyword — it always uses SLAVE / SHOW
+        // ALL SLAVES STATUS — so it's intentionally absent here. (#830)
+        'show_replica_status_syntax' => [
+            'MySQL' => '8.0.22',
+            'Percona' => '8.0.22',
+            'Percona Server' => '8.0.22',
+        ],
     ];
 
     public static function supports(object $db, string $feature): bool
