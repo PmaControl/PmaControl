@@ -21,6 +21,8 @@ final class Registry
     public static function checks(): array
     {
         // Lots 1-7 plug their classes in here as their sub-issues land.
-        return [];
+        return [
+            \App\Library\ProxySqlAudit\Checks\Topology\GaleraAsGroupReplication::class, // #899
+        ];
     }
 }
