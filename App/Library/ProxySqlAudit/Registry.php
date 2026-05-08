@@ -45,6 +45,7 @@ final class Registry
             \App\Library\ProxySqlAudit\Checks\Monitor\ServerVersionDrift::class,                  // #919
             \App\Library\ProxySqlAudit\Checks\QueryRules\DestinationHostgroupUndefined::class,    // #920
             \App\Library\ProxySqlAudit\Checks\QueryRules\FlagInOutCycle::class,                   // #921
+            \App\Library\ProxySqlAudit\Checks\Cluster\ProxySqlServersDuplicate::class,            // #922
         ];
     }
 }
