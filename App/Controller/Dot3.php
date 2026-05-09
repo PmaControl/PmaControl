@@ -178,6 +178,16 @@ class Dot3 extends Controller
     static $build_ndb_cluster = array();
 
 /**
+ * Run-level set of cluster keys whose orphan (no-SQL/API) render has
+ * already happened in the current Dot3 generation, so a SQL-less NDB
+ * cluster is rendered exactly once per Dot3 run instead of being
+ * stamped into every per-group output (review #1023 P2 / epic #799).
+ *
+ * @var array<string,bool>
+ */
+    static $build_ndb_cluster_orphan_rendered = array();
+
+/**
  * Stores `$rank_same` for rank same.
  *
  * @var array<int|string,mixed>
@@ -707,15 +717,17 @@ class Dot3 extends Controller
             }
         }
 
-        // Drop empty entries (no SQL/API node attached): they would not be
-        // tied to any group and array_diff() would always succeed, polluting
-        // every per-group render. They are still rendered because of the
-        // empty $cluster_members short-circuit below in buildNdbCluster.
+        // Review #1023 P2: a SQL/API-less NDB cluster (mgmd + data nodes
+        // only) must keep its entry in $tmp_group so the orphan
+        // rendering path in buildNdbCluster() is reachable. The previous
+        // unset() dropped the cluster entirely and the no-SQL render
+        // path was dead code. We now retain empty entries; the
+        // self::$build_ndb_cluster_orphan_rendered set in
+        // buildNdbCluster() ensures an orphan cluster is rendered
+        // exactly once per Dot3 run rather than duplicated across every
+        // per-group page.
         foreach ($tmp_group as $key => $members) {
             $tmp_group[$key] = array_values(array_unique(array_map('intval', $members)));
-            if (empty($tmp_group[$key])) {
-                unset($tmp_group[$key]);
-            }
         }
 
         self::$ndb_cluster = $tmp_group;
@@ -1998,6 +2010,7 @@ class Dot3 extends Controller
         self::$galera = array();
         self::$innodb_cluster = array();
         self::$ndb_cluster = array();
+        self::$build_ndb_cluster_orphan_rendered = array();
         self::$mysqlrouter = array();
 
         $galera = $this->generateMeasuredGroup('galera', $idDot3Run, function () use ($dot3_information) {
@@ -4827,9 +4840,18 @@ class Dot3 extends Controller
         $db = Sgbd::sql(DB_DEFAULT);
 
         foreach (self::$ndb_cluster as $clusterKey => $cluster_members) {
-            // Same gating as buildInnoDBCluster: only render in groups whose
-            // mysql_server set is a superset of the cluster's SQL/API nodes.
-            if (!empty($cluster_members) && !empty(array_diff($cluster_members, $group))) {
+            $isOrphan = empty($cluster_members);
+
+            if (!$isOrphan && !empty(array_diff($cluster_members, $group))) {
+                // Same gating as buildInnoDBCluster: only render in groups
+                // whose mysql_server set is a superset of the cluster's
+                // SQL/API nodes.
+                continue;
+            }
+
+            if ($isOrphan && !empty(self::$build_ndb_cluster_orphan_rendered[(string) $clusterKey])) {
+                // Review #1023 P2: SQL/API-less cluster — render exactly
+                // once per Dot3 run rather than once per group page.
                 continue;
             }
 
@@ -4916,6 +4938,12 @@ class Dot3 extends Controller
                 'sql_members'    => $cluster_members,
                 'config'         => $config,
             );
+
+            if ($isOrphan) {
+                // Orphan cluster successfully rendered for this run; do
+                // not re-emit on the next per-group invocation.
+                self::$build_ndb_cluster_orphan_rendered[(string) $clusterKey] = true;
+            }
         }
     }
 
