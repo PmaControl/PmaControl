@@ -2566,13 +2566,21 @@ class Graphviz
             return (int) reset($sqlMembers);
         }
 
+        // Review #1023 P2: `mysql_server.ip_real` is not a real column —
+        // it is only an in-memory alias produced by Dot3's SELECT
+        // (`a.ip AS ip_real`). The original `OR ip_real = '...'` clause
+        // therefore raised an SQL error on multi-SQL/API NDB clusters
+        // and silently collapsed every node to the first sql_member.
+        // We now resolve against `ip` only (which already covers Dot3's
+        // alias) and let the caller fall back to the first member if
+        // no ip match is found.
         $db = Sgbd::sql(DB_DEFAULT);
         $escaped = method_exists($db, 'sql_real_escape_string')
             ? $db->sql_real_escape_string($ip)
             : addslashes($ip);
         $idsList = implode(',', array_map('intval', $sqlMembers));
         $sql = "SELECT id FROM mysql_server WHERE id IN (" . $idsList . ") "
-            . "AND (ip = '" . $escaped . "' OR ip_real = '" . $escaped . "') LIMIT 1";
+            . "AND ip = '" . $escaped . "' LIMIT 1";
         $res = $db->sql_query($sql);
         if ($res && ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC))) {
             return (int)$row['id'];
