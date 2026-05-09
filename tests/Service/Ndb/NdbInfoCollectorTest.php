@@ -28,7 +28,10 @@ final class NdbInfoCollectorTest extends TestCase
         $this->assertSame([], $r['errors']);
         // 2 memory updates + 2 uptime updates
         $this->assertSame(4, $r['updated']);
-        $this->assertCount(4, $pmac->queries);
+
+        // First 4 queries are the memory + uptime updates; later queries
+        // come from the post-collection NdbAlertEmitter pass (lot 7).
+        $this->assertGreaterThanOrEqual(4, count($pmac->queries));
 
         // Memory aggregation for node 2: 200 + 50 + 2 = 252 MB used / 1344 MB total
         $this->assertStringContainsString(

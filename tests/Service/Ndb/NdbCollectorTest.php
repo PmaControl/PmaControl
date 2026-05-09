@@ -44,14 +44,30 @@ TXT,
         $this->assertSame(4, $r['upserted']);
         $this->assertSame([], $r['errors']);
 
-        // 4 INSERT…ON DUPLICATE KEY UPDATE + 1 cluster version UPDATE.
-        $this->assertCount(5, $db->queries);
+        // First 4 queries: INSERT…ON DUPLICATE for each node row
         foreach (array_slice($db->queries, 0, 4) as $sql) {
             $this->assertStringContainsString('INSERT INTO `ndb_node`', $sql);
             $this->assertStringContainsString('ON DUPLICATE KEY UPDATE', $sql);
             $this->assertStringContainsString('`id_ndb_cluster`, `ndb_node_id`', $sql);
         }
+        // 5th: cluster-level version UPDATE.
         $this->assertStringContainsString("UPDATE `ndb_cluster` SET `ndb_version` = 'ndb-8.4.9' WHERE `id` = 7", $db->queries[4]);
+
+        // Lot 7: alert emitter also fires after UPSERT — a re-read of nodes
+        // and the resolve-stale SELECT must be present.
+        $this->assertContains(
+            "SELECT ndb_node_id, role, hostname, ip, port, node_group, is_primary, status, ndb_version, uptime_sec, memory_used_mb, memory_total_mb, data_memory_used_mb, index_memory_used_mb FROM `ndb_node` WHERE id_ndb_cluster = 7",
+            $db->queries
+        );
+        $foundResolveStale = false;
+        foreach ($db->queries as $q) {
+            if (strpos($q, "FROM `pmc_event_alert`") !== false
+                && strpos($q, "`source` = 'ndb_collector'") !== false) {
+                $foundResolveStale = true;
+                break;
+            }
+        }
+        $this->assertTrue($foundResolveStale, 'alert emitter must scan stale rows after collection');
     }
 
     public function testRejectsCollectionForClusterWithoutId(): void

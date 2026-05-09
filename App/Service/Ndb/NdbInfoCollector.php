@@ -26,7 +26,7 @@ final class NdbInfoCollector
     /**
      * @param object $sqlNodeDb     mysqli wrapper of the SQL/API node (with ndbinfo schema reachable)
      * @param object $pmacontrolDb  mysqli wrapper of pmacontrol's own DB (where ndb_node lives)
-     * @return array{updated:int, errors:list<string>}
+     * @return array{updated:int, errors:list<string>, alerts_opened:int, alerts_resolved:int}
      */
     public function collect(object $sqlNodeDb, object $pmacontrolDb, int $idCluster): array
     {
@@ -98,7 +98,61 @@ final class NdbInfoCollector
             $updated++;
         }
 
-        return ['updated' => $updated, 'errors' => $errors];
+        // Re-evaluate alerts now that memory_* columns have refreshed —
+        // memory pressure / full conditions are computed off these.
+        $alerts = ['opened' => 0, 'resolved' => 0];
+        try {
+            $cluster = self::fetchCluster($pmacontrolDb, $idCluster);
+            if ($cluster !== null) {
+                $nodes = self::fetchNodes($pmacontrolDb, $idCluster);
+                $alerts = (new NdbAlertEmitter())->emit($pmacontrolDb, $cluster, $nodes);
+            }
+        } catch (\Throwable $e) {
+            $errors[] = 'NdbAlertEmitter (post-ndbinfo) failed: ' . $e->getMessage();
+        }
+
+        return [
+            'updated'         => $updated,
+            'errors'          => $errors,
+            'alerts_opened'   => $alerts['opened'],
+            'alerts_resolved' => $alerts['resolved'],
+        ];
+    }
+
+    private static function fetchCluster(object $db, int $idCluster): ?array
+    {
+        $res = $db->sql_query("SELECT id, display_name FROM `ndb_cluster` WHERE id = " . $idCluster);
+        if (!$res) {
+            return null;
+        }
+        if (method_exists($db, 'sql_fetch_array')) {
+            $row = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+            return $row ?: null;
+        }
+        return null;
+    }
+
+    /**
+     * @return list<array<string,mixed>>
+     */
+    private static function fetchNodes(object $db, int $idCluster): array
+    {
+        $res = $db->sql_query(
+            "SELECT ndb_node_id, role, hostname, ip, port, node_group, is_primary, status, "
+            . "ndb_version, uptime_sec, memory_used_mb, memory_total_mb, "
+            . "data_memory_used_mb, index_memory_used_mb "
+            . "FROM `ndb_node` WHERE id_ndb_cluster = " . $idCluster
+        );
+        if (!$res) {
+            return [];
+        }
+        $rows = [];
+        if (method_exists($db, 'sql_fetch_array')) {
+            while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                $rows[] = $row;
+            }
+        }
+        return $rows;
     }
 
     /**

@@ -163130,6 +163130,9 @@ INSERT INTO `dot3_legend` VALUES (53,'NODE_SST','Galera SST','#000000','#000000'
 INSERT INTO `dot3_legend` VALUES (54,'VIP_LINK_ACTIVE','VIP active destination','#FFFFFF','#008000','#008000','solid',16,'REPLICATION','');
 INSERT INTO `dot3_legend` VALUES (55,'VIP_LINK_PREVIOUS','VIP previous destination','#FFFFFF','#008000','#008000','dashed',17,'REPLICATION','');
 INSERT INTO `dot3_legend` VALUES (56,'NODE_GALERA_DISCONNECTED','when a node is disconnected (inconsistent)','#000000','#FFA500','#FFA500','solid',1,'NODE','wsrep_cluster_status=Disconnected\r\n&& wsrep_local_state_comment=Inconsistent');
+INSERT INTO `dot3_legend` VALUES (57,'NDB_CLUSTER_OK','NDB cluster healthy','#ffffff','#1565c0','#1565c0','filled',90,'NDB','');
+INSERT INTO `dot3_legend` VALUES (58,'NDB_CLUSTER_WARN','NDB cluster degraded (data/sql node missing)','#ffffff','#FFA500','#FFA500','filled',91,'NDB','');
+INSERT INTO `dot3_legend` VALUES (59,'NDB_CLUSTER_CRIT','NDB cluster critical (node group lost / no mgmd)','#ffffff','#FF0000','#FF0000','filled',92,'NDB','');
 /*!40000 ALTER TABLE `dot3_legend` ENABLE KEYS */;
 UNLOCK TABLES;
 

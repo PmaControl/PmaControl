@@ -21,6 +21,7 @@ The active integration target is `master`. Create issue branches from an up-to-d
 | Table / column / FK / data-type naming | [docs/database_conventions.md](docs/database_conventions.md) |
 | Querying `ts_*` time-series tables | [docs/time_series_tables.md](docs/time_series_tables.md) |
 | Group Replication / InnoDB cluster; MySQL vs MariaDB replication syntax | [docs/group_replication.md](docs/group_replication.md) |
+| MySQL NDB Cluster — schema, collectors (`ndb_mgm` + `ndbinfo`), dot3 rendering, alerts | [docs/ndb_cluster.md](docs/ndb_cluster.md) |
 | GeoIP country / city lookups | [docs/data_geoip.md](docs/data_geoip.md) |
 | Daemon / worker / System V queue architecture | [docs/worker_architecture.md](docs/worker_architecture.md) |
 | Chart.js 4.5.1 API quirks | [docs/chart_js.md](docs/chart_js.md) |

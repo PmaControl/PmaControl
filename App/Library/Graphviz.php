@@ -2388,6 +2388,290 @@ class Graphviz
         return $return;
     }
 
+    /**
+     * Epic #799 / lot 5 — render NDB clusters as a 3-band subgraph
+     * (mgmd / data per node group / sql) plus the linking edges:
+     *
+     *   - mgmd → data/sql : dashed orange (arbitrate)
+     *   - data ↔ data same NG : solid green (replica)
+     *   - sql/api → data : solid blue (SQL plane)
+     *
+     * SQL/API nodes are referenced by their existing `id_mysql_server`
+     * (already declared by `generateServer`). mgmd and data members get
+     * dedicated graphviz nodes named `ndb_<role>_<cluster>_<node_id>`.
+     */
+    static function generateNdbCluster($all_ndb_cluster)
+    {
+        if (empty($all_ndb_cluster)) {
+            return '';
+        }
+
+        $return = '';
+        $image_server = ROOT . '/App/Webroot/image/dot/';
+
+        foreach ($all_ndb_cluster as $cluster) {
+            $idCluster = (int) ($cluster['id_cluster'] ?? 0);
+            $stateColor = self::getColorByTheme((string)($cluster['config'] ?? 'NDB_CLUSTER_OK'), '#1565c0');
+            $background = self::diluerCouleur($stateColor, 88);
+
+            $return .= self::startCluster('ndb', $cluster);
+
+            $totals = $cluster['totals'] ?? array();
+            $nodeOnline = (int)($totals['data_up'] ?? 0) + (int)($totals['mgmd_up'] ?? 0) + (int)($totals['sql_up'] ?? 0);
+            $nodeTotal  = (int)($totals['data']    ?? 0) + (int)($totals['mgmd']    ?? 0) + (int)($totals['sql']    ?? 0);
+            $version    = trim((string)($cluster['ndb_version'] ?? ''));
+            $replicas   = $cluster['no_of_replicas'] ?? null;
+            $title      = htmlspecialchars((string)($cluster['name'] ?? ('cluster ' . $idCluster)), ENT_QUOTES, 'UTF-8');
+
+            $return .= 'label =<<table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4">
+            <tr><td port="' . Dot3::TARGET . '" bgcolor="#000000">
+            <table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><tr><td>
+            <table BGCOLOR="#f5fbff" BORDER="0" CELLBORDER="0" CELLSPACING="1" CELLPADDING="2">' . PHP_EOL;
+            $return .= '<tr><td PORT="title" colspan="2" bgcolor="#000000">
+            <font color="#FFFFFF"><b>NDB &middot; ' . $title . '</b></font></td></tr>';
+            $return .= '<tr><td bgcolor="#eeeeee" CELLPADDING="0" width="28" rowspan="3" port="from"><IMG SRC="' . $image_server . 'ndb_cluster.svg" /></td>
+            <td bgcolor="lightgrey" width="100" align="left">Nodes available : <b>' . $nodeOnline . '/' . $nodeTotal . '</b></td></tr>';
+            $return .= '<tr><td bgcolor="lightgrey" align="left">'
+                . 'mgmd: <b>' . (int)($totals['mgmd_up'] ?? 0) . '/' . (int)($totals['mgmd'] ?? 0) . '</b> &middot; '
+                . 'data: <b>' . (int)($totals['data_up'] ?? 0) . '/' . (int)($totals['data'] ?? 0) . '</b> &middot; '
+                . 'sql: <b>'  . (int)($totals['sql_up']  ?? 0) . '/' . (int)($totals['sql']  ?? 0) . '</b></td></tr>';
+            $return .= '<tr><td bgcolor="lightgrey" align="left">'
+                . ($version !== '' ? 'version: ' . htmlspecialchars($version, ENT_QUOTES, 'UTF-8') : 'version: n/a')
+                . ($replicas !== null ? ' &middot; replicas: ' . (int)$replicas : '')
+                . '</td></tr>';
+            $return .= '</table></td></tr></table></td></tr></table>>';
+            $return .= 'tooltip = "NDB Cluster : ' . addslashes((string)($cluster['name'] ?? '')) . '";' . PHP_EOL;
+            $return .= 'rank = same;' . PHP_EOL;
+            $return .= 'penwidth = 4;' . PHP_EOL;
+            $return .= 'color = "' . $stateColor . '";' . PHP_EOL;
+            $return .= 'style = filled;' . PHP_EOL;
+            $return .= 'fillcolor = "' . $background . '";' . PHP_EOL;
+            $return .= 'href = "' . LINK . 'NdbCluster/index/' . $idCluster . '";' . PHP_EOL;
+
+            $bands = array(
+                'mgmd' => array('label' => 'Management',  'color' => '#e65100', 'fillcolor' => '#fff3e0'),
+                'data' => array('label' => 'Data nodes',  'color' => '#2e7d32', 'fillcolor' => '#e8f5e9'),
+                'sql'  => array('label' => 'SQL / API',   'color' => '#1565c0', 'fillcolor' => '#e3f2fd'),
+            );
+
+            $mgmd_node_ids = array();
+            $data_node_ids = array();
+
+            foreach ($bands as $role => $style) {
+                $roleNodes = $cluster['nodes'][$role] ?? array();
+                if (empty($roleNodes)) {
+                    continue;
+                }
+
+                $return .= 'subgraph cluster_ndb_' . $idCluster . '_' . $role . ' {' . PHP_EOL;
+                $return .= 'label = "' . $style['label'] . '";' . PHP_EOL;
+                $return .= 'penwidth = 2;' . PHP_EOL;
+                $return .= 'color = "' . $style['color'] . '";' . PHP_EOL;
+                $return .= 'style = "rounded,filled";' . PHP_EOL;
+                $return .= 'fillcolor = "' . $style['fillcolor'] . '";' . PHP_EOL;
+                $return .= 'fontsize = 8;' . PHP_EOL;
+                $return .= 'fontname = "Arial";' . PHP_EOL;
+
+                if ($role === 'sql') {
+                    foreach ($roleNodes as $node) {
+                        $idSrv = self::resolveSqlNodeMysqlServerId($cluster, $node);
+                        if ($idSrv > 0) {
+                            $return .= $idSrv . ';' . PHP_EOL;
+                        }
+                    }
+                    $return .= '}' . PHP_EOL;
+                    continue;
+                }
+
+                foreach ($roleNodes as $node) {
+                    $nodeId = self::ndbNodeGraphvizId($idCluster, $role, (int)$node['ndb_node_id']);
+                    $return .= self::generateNdbNode($nodeId, $role, $node, $image_server);
+                    if ($role === 'mgmd') {
+                        $mgmd_node_ids[] = $nodeId;
+                    } else {
+                        $data_node_ids[$nodeId] = $node;
+                    }
+                }
+
+                $return .= '}' . PHP_EOL;
+            }
+
+            $return .= self::endCluster();
+
+            // Edges (declared at top-level — they cross subgraph boundaries).
+            $sqlIds = array();
+            foreach (($cluster['nodes']['sql'] ?? array()) as $node) {
+                $idSrv = self::resolveSqlNodeMysqlServerId($cluster, $node);
+                if ($idSrv > 0) {
+                    $sqlIds[] = $idSrv;
+                }
+            }
+            foreach ($mgmd_node_ids as $mgmId) {
+                foreach (array_keys($data_node_ids) as $dataId) {
+                    $return .= $mgmId . ' -> ' . $dataId
+                        . ' [color="#fb8c00", style="dashed", arrowhead="none", constraint=false, label="arbitrate", fontsize=7, fontcolor="#bf360c"];' . PHP_EOL;
+                }
+                foreach ($sqlIds as $idSrv) {
+                    $return .= $mgmId . ' -> ' . $idSrv
+                        . ' [color="#fb8c00", style="dashed", arrowhead="none", constraint=false];' . PHP_EOL;
+                }
+            }
+
+            foreach ($sqlIds as $idSrv) {
+                foreach (array_keys($data_node_ids) as $dataId) {
+                    $return .= $idSrv . ' -> ' . $dataId
+                        . ' [color="#1976d2", arrowhead="none", constraint=false];' . PHP_EOL;
+                }
+            }
+
+            $byNg = array();
+            foreach ($data_node_ids as $dataId => $node) {
+                $ng = $node['node_group'] === null ? -1 : (int)$node['node_group'];
+                $byNg[$ng][] = $dataId;
+            }
+            foreach ($byNg as $members) {
+                if (count($members) < 2) {
+                    continue;
+                }
+                $count = count($members);
+                for ($i = 0; $i < $count; $i++) {
+                    for ($j = $i + 1; $j < $count; $j++) {
+                        $return .= $members[$i] . ' -> ' . $members[$j]
+                            . ' [color="#1b5e20", arrowhead="none", constraint=false, label="replica", fontsize=7, fontcolor="#1b5e20"];' . PHP_EOL;
+                    }
+                }
+            }
+        }
+
+        return $return;
+    }
+
+    private static function ndbNodeGraphvizId(int $idCluster, string $role, int $nodeId): string
+    {
+        return 'ndb_' . $role . '_' . $idCluster . '_' . $nodeId;
+    }
+
+    private static function resolveSqlNodeMysqlServerId(array $cluster, array $node): int
+    {
+        $sqlMembers = $cluster['sql_members'] ?? array();
+        if (empty($sqlMembers)) {
+            return 0;
+        }
+        if (count($sqlMembers) === 1) {
+            return (int) reset($sqlMembers);
+        }
+
+        $ip = trim((string)($node['ip'] ?? ''));
+        if ($ip === '') {
+            return (int) reset($sqlMembers);
+        }
+
+        // Review #1023 P2: `mysql_server.ip_real` is not a real column —
+        // it is only an in-memory alias produced by Dot3's SELECT
+        // (`a.ip AS ip_real`). The original `OR ip_real = '...'` clause
+        // therefore raised an SQL error on multi-SQL/API NDB clusters
+        // and silently collapsed every node to the first sql_member.
+        // We now resolve against `ip` only (which already covers Dot3's
+        // alias) and let the caller fall back to the first member if
+        // no ip match is found.
+        $db = Sgbd::sql(DB_DEFAULT);
+        $escaped = method_exists($db, 'sql_real_escape_string')
+            ? $db->sql_real_escape_string($ip)
+            : addslashes($ip);
+        $idsList = implode(',', array_map('intval', $sqlMembers));
+        $sql = "SELECT id FROM mysql_server WHERE id IN (" . $idsList . ") "
+            . "AND ip = '" . $escaped . "' LIMIT 1";
+        $res = $db->sql_query($sql);
+        if ($res && ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC))) {
+            return (int)$row['id'];
+        }
+
+        return (int) reset($sqlMembers);
+    }
+
+    private static function generateNdbNode(string $nodeId, string $role, array $node, string $image_server): string
+    {
+        $iconFile = $role === 'mgmd' ? 'ndb_mgmd.svg' : 'ndb_data.svg';
+        $status = strtoupper((string)($node['status'] ?? 'UNKNOWN'));
+        $statusColor = self::ndbStatusColor($status);
+        $hostname = htmlspecialchars((string)($node['hostname'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $ip = htmlspecialchars((string)($node['ip'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $port = $node['port'] !== null ? (int)$node['port'] : null;
+        $ng = $node['node_group'];
+        $primary = !empty($node['is_primary']) ? ' &middot; *primary' : '';
+        $version = htmlspecialchars((string)($node['ndb_version'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $memUsed = $node['memory_used_mb'] !== null ? (int)$node['memory_used_mb'] : null;
+        $memTotal = $node['memory_total_mb'] !== null ? (int)$node['memory_total_mb'] : null;
+        $uptime = $node['uptime_sec'] !== null ? (int)$node['uptime_sec'] : null;
+
+        $hostLine = $hostname !== '' ? $hostname : ($ip !== '' ? $ip : 'node ' . (int)$node['ndb_node_id']);
+        $endpoint = $ip . ($port ? ':' . $port : '');
+
+        $label = '<<table BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2">'
+            . '<tr>'
+            . '<td rowspan="3"><IMG SRC="' . $image_server . $iconFile . '"/></td>'
+            . '<td align="left"><b>' . $hostLine . '</b></td>'
+            . '</tr>'
+            . '<tr><td align="left"><font point-size="9">' . $endpoint . ' &middot; ' . htmlspecialchars($role, ENT_QUOTES, 'UTF-8') . '</font></td></tr>'
+            . '<tr><td align="left"><font point-size="9" color="' . $statusColor . '">'
+            . 'id ' . (int)$node['ndb_node_id'] . ' &middot; ' . htmlspecialchars($status, ENT_QUOTES, 'UTF-8')
+            . ($ng !== null ? ' &middot; NG ' . (int)$ng : '')
+            . $primary
+            . '</font></td></tr>';
+
+        if ($version !== '' || $memUsed !== null || $uptime !== null) {
+            $extras = array();
+            if ($version !== '') {
+                $extras[] = 'v' . $version;
+            }
+            if ($memUsed !== null && $memTotal !== null && $memTotal > 0) {
+                $extras[] = 'mem ' . $memUsed . '/' . $memTotal . ' MB';
+            }
+            if ($uptime !== null) {
+                $extras[] = 'up ' . self::formatNdbUptime($uptime);
+            }
+            $label .= '<tr><td colspan="2" align="left"><font point-size="8" color="#616161">' . implode(' &middot; ', $extras) . '</font></td></tr>';
+        }
+
+        $label .= '</table>>';
+
+        $tooltip = 'NDB ' . $role . ' ' . (int)$node['ndb_node_id'] . ' (' . $status . ')';
+
+        return $nodeId . ' [shape=box, style="rounded,filled", fillcolor="#ffffff", '
+            . 'color="' . $statusColor . '", penwidth=1.5, '
+            . 'label=' . $label . ', tooltip="' . addslashes($tooltip) . '"];' . PHP_EOL;
+    }
+
+    private static function ndbStatusColor(string $status): string
+    {
+        switch ($status) {
+            case 'STARTED':
+            case 'CONNECTED':
+                return '#2e7d32';
+            case 'STARTING':
+                return '#f9a825';
+            case 'NOT_STARTED':
+            case 'DISCONNECTED':
+                return '#c62828';
+            default:
+                return '#616161';
+        }
+    }
+
+    private static function formatNdbUptime(int $seconds): string
+    {
+        if ($seconds < 60) {
+            return $seconds . 's';
+        }
+        if ($seconds < 3600) {
+            return (int)floor($seconds / 60) . 'm';
+        }
+        if ($seconds < 86400) {
+            return (int)floor($seconds / 3600) . 'h';
+        }
+        return (int)floor($seconds / 86400) . 'd';
+    }
+
 /**
  * Handle `generateGalera`.
  *
