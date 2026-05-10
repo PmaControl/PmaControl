@@ -716,76 +716,155 @@ $(document).ready(function() {
                     </div>
                 </div>
 
+                <?php
+                // Issue #1198 — generic editor wiring shared by the
+                // Durability + Binlog-group-commit tables.
+                $sv_durability_color = [
+                    'ok'      => '#16a34a',
+                    'warn'    => '#d97706',
+                    'risk'    => '#dc2626',
+                    'info'    => '#2563eb',
+                    'unknown' => '#94a3b8',
+                ];
+                $editorSpecs = (array) ($data['replication_variable_whitelist'] ?? []);
+                $rvCsrfField = (string) ($data['slave_replication_variable_set_csrf_field'] ?? '_csrf_token');
+                $rvCsrfToken = (string) ($data['slave_replication_variable_set_csrf_token'] ?? '');
+                $slaveTargetId  = (int) ($data['id_mysql_server'] ?? 0);
+                $masterTargetId = (int) ($data['master_id']      ?? 0);
+                $replicationName = (string) ($data['replication_name'] ?? '');
+
+                // Render an editable cell: badge + (optional) edit button + (hidden) inline picker.
+                $renderEditableCell = function (
+                    string $variable,
+                    string $side,            // 'master' | 'slave'
+                    int    $targetServerId,
+                    string $level,
+                    string $color,
+                    string $label,
+                    string $value,
+                    string $tooltip
+                ) use ($editorSpecs, $rvCsrfField, $rvCsrfToken, $replicationName) {
+                    $spec = $editorSpecs[$variable] ?? null;
+                    // Editable when the variable is whitelisted, the target
+                    // is reachable AND we actually have a value to start from.
+                    $editable = ($spec !== null && $targetServerId > 0 && $level !== 'unknown');
+                    $url = LINK . 'slave/setReplicationVariable/' . $targetServerId . '/'
+                         . htmlspecialchars($replicationName, ENT_QUOTES, 'UTF-8') . '/ajax:true/';
+                    ?>
+                    <span class="sv-durability-badge sv-durability-badge-<?= htmlspecialchars($side, ENT_QUOTES, 'UTF-8') ?> sv-durability-badge-<?= htmlspecialchars($level, ENT_QUOTES, 'UTF-8') ?>"
+                          style="display:inline-block;padding:2px 10px;border-radius:10px;font-weight:700;color:#fff;background:<?= $color ?>;cursor:help"
+                          title="<?= htmlspecialchars($tooltip, ENT_QUOTES, 'UTF-8') ?>"
+                          data-toggle="tooltip"
+                          data-placement="top">
+                        <?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>
+                    </span>
+                    <?php if ($editable): ?>
+                        <button type="button"
+                                class="btn btn-link btn-xs sv-rv-edit"
+                                data-var="<?= htmlspecialchars($variable, ENT_QUOTES, 'UTF-8') ?>"
+                                data-side="<?= htmlspecialchars($side, ENT_QUOTES, 'UTF-8') ?>"
+                                data-current="<?= htmlspecialchars($value, ENT_QUOTES, 'UTF-8') ?>"
+                                data-target-id="<?= (int) $targetServerId ?>"
+                                style="padding:0 2px;color:#64748b;vertical-align:middle"
+                                title="<?= __('Change value') ?>">
+                            <i class="fa fa-pencil"></i>
+                        </button>
+                        <div class="sv-rv-picker" style="display:none;margin-top:6px;text-align:center">
+                            <?php if (($spec['type'] ?? '') === 'enum'): ?>
+                                <select class="sv-rv-picker-select"
+                                        style="padding:2px 4px;border:1px solid #cbd5e1;border-radius:4px;font-size:11px">
+                                    <?php
+                                    $upperVal = strtoupper($value);
+                                    foreach (($spec['values'] ?? []) as $v):
+                                        $sel = ($v === $value || $v === $upperVal) ? ' selected' : '';
+                                    ?>
+                                        <option value="<?= htmlspecialchars($v, ENT_QUOTES, 'UTF-8') ?>"<?= $sel ?>>
+                                            <?= htmlspecialchars($v, ENT_QUOTES, 'UTF-8') ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            <?php else: /* int */ ?>
+                                <input type="number"
+                                       class="sv-rv-picker-input"
+                                       value="<?= htmlspecialchars($value, ENT_QUOTES, 'UTF-8') ?>"
+                                       min="<?= (int) ($spec['min'] ?? 0) ?>"
+                                       max="<?= isset($spec['max']) ? (int) $spec['max'] : '' ?>"
+                                       step="1"
+                                       style="width:80px;padding:2px 4px;border:1px solid #cbd5e1;border-radius:4px;font-size:11px;text-align:center">
+                            <?php endif; ?>
+                            <button type="button"
+                                    class="btn btn-primary btn-xs sv-rv-picker-apply"
+                                    style="margin-left:4px;font-size:11px"
+                                    data-url="<?= $url ?>"
+                                    data-csrf-field="<?= htmlspecialchars($rvCsrfField, ENT_QUOTES, 'UTF-8') ?>"
+                                    data-csrf-token="<?= htmlspecialchars($rvCsrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                                <?= __('Apply') ?>
+                            </button>
+                            <button type="button"
+                                    class="btn btn-default btn-xs sv-rv-picker-cancel"
+                                    style="margin-left:2px;font-size:11px">
+                                <?= __('Cancel') ?>
+                            </button>
+                        </div>
+                    <?php endif;
+                };
+                ?>
+
                 <?php if (!empty($data['durability_rows'])): ?>
                 <div class="sv-action-group sv-durability">
                     <div class="sv-action-group-title">
                         <?= __('Durability & crash safety') ?>
                         <small style="text-transform:none;letter-spacing:0;font-weight:400;color:#94a3b8">
-                            &mdash; <?= __('hover a badge for details') ?>
+                            &mdash; <?= __('master + slave, click ✏ to edit') ?>
                         </small>
                     </div>
                     <table class="sv-durability-table" style="width:100%;border-collapse:collapse;font-size:12px">
+                        <thead>
+                            <tr style="color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.04em">
+                                <th style="text-align:left;padding:4px 8px 6px 0;font-weight:600">&nbsp;</th>
+                                <th style="text-align:center;padding:4px 8px 6px 0;font-weight:600;width:140px"><?= __('Master') ?></th>
+                                <th style="text-align:center;padding:4px 0 6px 0;font-weight:600;width:140px"><?= __('Slave') ?></th>
+                            </tr>
+                        </thead>
                         <tbody>
-                        <?php
-                        $sv_durability_color = [
-                            'ok'      => '#16a34a',
-                            'warn'    => '#d97706',
-                            'risk'    => '#dc2626',
-                            'unknown' => '#94a3b8',
-                        ];
-                        $slaveBinlogRowImageSetCsrfField = (string)($data['slave_binlog_row_image_set_csrf_field'] ?? '_csrf_token');
-                        $slaveBinlogRowImageSetCsrfToken = (string)($data['slave_binlog_row_image_set_csrf_token'] ?? '');
-                        $binlogRowImageValues = (array)($data['binlog_row_image_values'] ?? ['FULL', 'MINIMAL', 'NOBLOB']);
-                        foreach ($data['durability_rows'] as $row):
-                            $color = $sv_durability_color[$row['level']] ?? '#94a3b8';
-                            $isEditable = ($row['name'] === 'binlog_row_image');
+                        <?php foreach ($data['durability_rows'] as $row):
+                            $sColor = $sv_durability_color[$row['level']]            ?? '#94a3b8';
+                            $mColor = $sv_durability_color[$row['master']['level']]   ?? '#94a3b8';
                         ?>
                             <tr data-var="<?= htmlspecialchars($row['name'], ENT_QUOTES, 'UTF-8') ?>"
-                                data-level="<?= htmlspecialchars($row['level'], ENT_QUOTES, 'UTF-8') ?>">
-                                <td style="padding:4px 8px 4px 0;color:#475569;font-family:monospace;white-space:nowrap">
-                                    <?= htmlspecialchars($row['name'], ENT_QUOTES, 'UTF-8') ?>
-                                </td>
-                                <td style="padding:4px 0">
-                                    <span class="sv-durability-badge sv-durability-badge-<?= htmlspecialchars($row['level'], ENT_QUOTES, 'UTF-8') ?>"
-                                          style="display:inline-block;padding:2px 10px;border-radius:10px;font-weight:700;color:#fff;background:<?= $color ?>;cursor:help"
+                                data-level="<?= htmlspecialchars($row['level'], ENT_QUOTES, 'UTF-8') ?>"
+                                data-master-level="<?= htmlspecialchars($row['master']['level'], ENT_QUOTES, 'UTF-8') ?>">
+                                <td style="padding:4px 8px 4px 0;color:#475569;font-family:monospace;white-space:nowrap;vertical-align:middle">
+                                    <span style="cursor:help"
                                           title="<?= htmlspecialchars($row['tooltip'], ENT_QUOTES, 'UTF-8') ?>"
                                           data-toggle="tooltip"
                                           data-placement="left">
-                                        <?= htmlspecialchars($row['label'], ENT_QUOTES, 'UTF-8') ?>
+                                        <?= htmlspecialchars($row['name'], ENT_QUOTES, 'UTF-8') ?>
                                     </span>
-                                    <?php if ($isEditable): ?>
-                                        <button type="button"
-                                                class="btn btn-link btn-xs sv-durability-edit"
-                                                data-var="binlog_row_image"
-                                                data-current="<?= htmlspecialchars($row['value'], ENT_QUOTES, 'UTF-8') ?>"
-                                                style="padding:0 4px;color:#64748b"
-                                                title="<?= __('Change value') ?>">
-                                            <i class="fa fa-pencil"></i>
-                                        </button>
-                                        <span class="sv-durability-picker"
-                                              data-var="binlog_row_image"
-                                              style="display:none;margin-left:6px;vertical-align:middle">
-                                            <select class="sv-durability-picker-select"
-                                                    style="padding:2px 4px;border:1px solid #cbd5e1;border-radius:4px;font-size:11px">
-                                                <?php foreach ($binlogRowImageValues as $v): ?>
-                                                    <option value="<?= htmlspecialchars($v, ENT_QUOTES, 'UTF-8') ?>"<?= ($v === $row['value']) ? ' selected' : '' ?>><?= htmlspecialchars($v, ENT_QUOTES, 'UTF-8') ?></option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                            <button type="button"
-                                                    class="btn btn-primary btn-xs sv-durability-picker-apply"
-                                                    style="margin-left:4px;font-size:11px"
-                                                    data-url="<?= LINK ?>slave/setBinlogRowImage/<?= (int)$data['id_mysql_server'] ?>/<?= htmlspecialchars($data['replication_name'], ENT_QUOTES, 'UTF-8') ?>/ajax:true/"
-                                                    data-csrf-field="<?= htmlspecialchars($slaveBinlogRowImageSetCsrfField, ENT_QUOTES, 'UTF-8') ?>"
-                                                    data-csrf-token="<?= htmlspecialchars($slaveBinlogRowImageSetCsrfToken, ENT_QUOTES, 'UTF-8') ?>">
-                                                <?= __('Apply') ?>
-                                            </button>
-                                            <button type="button"
-                                                    class="btn btn-default btn-xs sv-durability-picker-cancel"
-                                                    style="margin-left:2px;font-size:11px">
-                                                <?= __('Cancel') ?>
-                                            </button>
-                                        </span>
-                                    <?php endif; ?>
+                                </td>
+                                <td style="text-align:center;padding:4px 8px 4px 0;vertical-align:middle;width:140px">
+                                    <?php $renderEditableCell(
+                                        $row['name'],
+                                        'master',
+                                        $masterTargetId,
+                                        $row['master']['level'],
+                                        $mColor,
+                                        $row['master']['label'],
+                                        $row['master']['value'],
+                                        $row['master']['tooltip']
+                                    ); ?>
+                                </td>
+                                <td style="text-align:center;padding:4px 0;vertical-align:middle;width:140px">
+                                    <?php $renderEditableCell(
+                                        $row['name'],
+                                        'slave',
+                                        $slaveTargetId,
+                                        $row['level'],
+                                        $sColor,
+                                        $row['label'],
+                                        $row['value'],
+                                        $row['tooltip']
+                                    ); ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -794,49 +873,96 @@ $(document).ready(function() {
                 </div>
 
                 <script>
-                // Issue #1190 — wire the binlog_row_image picker.
+                // Issue #1198 — generic edit-picker wiring for the
+                // Durability + Binlog group-commit cards. Every cell
+                // with a `.sv-rv-edit` button shows the same inline
+                // editor (select for enum, number for int) and POSTs
+                // to /slave/setReplicationVariable.
                 (function(){
-                    document.querySelectorAll('.sv-durability-edit').forEach(function(btn) {
+                    function closeAllPickers() {
+                        document.querySelectorAll('.sv-rv-picker').forEach(function(p) {
+                            p.style.display = 'none';
+                        });
+                        document.querySelectorAll('.sv-rv-edit').forEach(function(b) {
+                            b.style.display = '';
+                        });
+                    }
+                    document.querySelectorAll('.sv-rv-edit').forEach(function(btn) {
                         btn.addEventListener('click', function(){
-                            var row = btn.closest('tr');
-                            var picker = row.querySelector('.sv-durability-picker');
+                            closeAllPickers();
+                            var cell = btn.closest('td');
+                            var picker = cell ? cell.querySelector('.sv-rv-picker') : null;
                             if (picker) {
-                                picker.style.display = 'inline-block';
+                                picker.style.display = 'block';
                                 btn.style.display = 'none';
+                                var input = picker.querySelector('select, input');
+                                if (input) input.focus();
                             }
                         });
                     });
-                    document.querySelectorAll('.sv-durability-picker-cancel').forEach(function(btn) {
+                    document.querySelectorAll('.sv-rv-picker-cancel').forEach(function(btn) {
                         btn.addEventListener('click', function(){
-                            var picker = btn.closest('.sv-durability-picker');
+                            var picker = btn.closest('.sv-rv-picker');
                             picker.style.display = 'none';
-                            var editBtn = picker.parentElement.querySelector('.sv-durability-edit');
+                            var editBtn = picker.parentElement.querySelector('.sv-rv-edit');
                             if (editBtn) editBtn.style.display = '';
                         });
                     });
-                    document.querySelectorAll('.sv-durability-picker-apply').forEach(function(btn) {
-                        btn.addEventListener('click', function(){
-                            var picker = btn.closest('.sv-durability-picker');
-                            var sel = picker.querySelector('.sv-durability-picker-select');
-                            var newValue = sel.value;
-                            var editBtn = picker.parentElement.querySelector('.sv-durability-edit');
-                            var current = editBtn ? editBtn.getAttribute('data-current') : '';
 
-                            // Double-confirm a downgrade from FULL to anything else: it
-                            // breaks pt-table-checksum and CDC consumers that rely on
-                            // before-images.
-                            if (current === 'FULL' && newValue !== 'FULL') {
-                                if (!confirm(
-                                    'Switching binlog_row_image from FULL → ' + newValue +
-                                    ' shrinks binlogs but breaks tools that need ' +
-                                    'before-images (pt-table-checksum, some CDC ' +
-                                    'consumers). Continue?'
-                                )) {
-                                    return;
-                                }
+                    // Variables for which a downgrade carries a hidden
+                    // cost worth a confirm() — operator may not realise
+                    // they are losing crash-safety / before-images / etc.
+                    var RISKY_DOWNGRADES = {
+                        sync_binlog: function(prev, next) {
+                            return parseInt(prev, 10) >= 1 && parseInt(next, 10) === 0;
+                        },
+                        innodb_flush_log_at_trx_commit: function(prev, next) {
+                            return parseInt(prev, 10) === 1 && parseInt(next, 10) !== 1;
+                        },
+                        binlog_format: function(prev, next) {
+                            return prev.toUpperCase() === 'ROW' && next.toUpperCase() !== 'ROW';
+                        },
+                        binlog_row_image: function(prev, next) {
+                            return prev.toUpperCase() === 'FULL' && next.toUpperCase() !== 'FULL';
+                        },
+                        super_read_only: function(prev, next) {
+                            return /^(?:1|on|true|yes)$/i.test(prev) && /^(?:0|off|false|no)$/i.test(next);
+                        },
+                        relay_log_recovery: function(prev, next) {
+                            return /^(?:1|on|true|yes)$/i.test(prev) && /^(?:0|off|false|no)$/i.test(next);
+                        }
+                    };
+                    var RISKY_NOTES = {
+                        sync_binlog: 'sync_binlog 1 → 0: transactions can be lost on crash (no fsync). ',
+                        innodb_flush_log_at_trx_commit: 'trx_commit 1 → 0/2: up to 1 s of committed transactions can be lost on crash. ',
+                        binlog_format: 'binlog_format ROW → MIXED/STATEMENT: replication may diverge silently on non-deterministic statements. ',
+                        binlog_row_image: 'binlog_row_image FULL → MINIMAL/NOBLOB: breaks pt-table-checksum and CDC consumers that need before-images. ',
+                        super_read_only: 'super_read_only ON → OFF: opens a write window even for SUPER users on a replica. '
+                    };
+
+                    document.querySelectorAll('.sv-rv-picker-apply').forEach(function(btn) {
+                        btn.addEventListener('click', function(){
+                            var picker = btn.closest('.sv-rv-picker');
+                            var cell   = btn.closest('td');
+                            var editBtn = cell ? cell.querySelector('.sv-rv-edit') : null;
+                            var variable = editBtn ? editBtn.getAttribute('data-var') : '';
+                            var current  = editBtn ? editBtn.getAttribute('data-current') : '';
+                            var input = picker.querySelector('select.sv-rv-picker-select, input.sv-rv-picker-input');
+                            if (!input) return;
+                            var newValue = input.value;
+                            if (newValue === '') {
+                                alert('Please enter a value.');
+                                return;
+                            }
+
+                            var checker = RISKY_DOWNGRADES[variable];
+                            if (checker && checker(current, newValue)) {
+                                var note = RISKY_NOTES[variable] || '';
+                                if (!confirm(note + 'Continue with ' + variable + ' = ' + newValue + ' ?')) return;
                             }
 
                             var formData = new FormData();
+                            formData.append('variable', variable);
                             formData.append('value', newValue);
                             formData.append(btn.getAttribute('data-csrf-field'), btn.getAttribute('data-csrf-token'));
                             btn.disabled = true;
@@ -852,25 +978,18 @@ $(document).ready(function() {
                                         btn.textContent = originalApplyLabel;
                                         return;
                                     }
-                                    // Confirm explicitly so the operator sees that
-                                    // SET GLOBAL was actually applied — without this
-                                    // the silent reload made it ambiguous whether the
-                                    // change took effect.
                                     var prev    = (resp.previous || '').toString();
                                     var applied = (resp.applied  || newValue).toString();
                                     btn.innerHTML = '<i class="fa fa-check"></i> ' +
                                         (prev === applied ? 'No change' : (prev + ' → ' + applied));
                                     btn.style.background = '#16a34a';
                                     btn.style.borderColor = '#15803d';
-                                    // Brief pause so the operator reads the badge then
-                                    // reload so the badge + tooltip + level recompute
-                                    // server-side rather than racing JS state.
                                     setTimeout(function() {
                                         window.location.reload();
                                     }, 1100);
                                 })
                                 .catch(function(err) {
-                                    alert('Failed to update binlog_row_image: ' + err);
+                                    alert('Failed to update ' + variable + ': ' + err);
                                     btn.disabled = false;
                                     btn.textContent = originalApplyLabel;
                                 });
@@ -878,6 +997,99 @@ $(document).ready(function() {
                     });
                 })();
                 </script>
+                <?php endif; ?>
+
+                <?php if (!empty($data['group_commit_rows'])): ?>
+                <?php
+                // Issue #1196 — Binlog group-commit (count + usec) for
+                // slave AND master, family-aware. Drift between the two
+                // sides is surfaced because the writer batches per the
+                // master's settings and replicas should align.
+                $sv_gc_color = [
+                    'ok'      => '#16a34a',
+                    'warn'    => '#d97706',
+                    'info'    => '#2563eb',
+                    'unknown' => '#94a3b8',
+                ];
+                ?>
+                <div class="sv-action-group sv-group-commit">
+                    <div class="sv-action-group-title">
+                        <?= __('Binlog group commit') ?>
+                        <small style="text-transform:none;letter-spacing:0;font-weight:400;color:#94a3b8">
+                            &mdash; <?= __('slave + master, family-aware') ?>
+                        </small>
+                    </div>
+                    <table class="sv-group-commit-table" style="width:100%;border-collapse:collapse;font-size:12px">
+                        <thead>
+                            <tr style="color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.04em">
+                                <th style="text-align:left;padding:4px 8px 6px 0;font-weight:600">&nbsp;</th>
+                                <th style="text-align:center;padding:4px 8px 6px 0;font-weight:600;width:140px"><?= __('Master') ?></th>
+                                <th style="text-align:center;padding:4px 0 6px 0;font-weight:600;width:140px"><?= __('Slave') ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($data['group_commit_rows'] as $gc):
+                            $sColor = $sv_gc_color[$gc['slave']['level']]  ?? '#94a3b8';
+                            $mColor = $sv_gc_color[$gc['master']['level']] ?? '#94a3b8';
+                        ?>
+                            <tr data-drift="<?= !empty($gc['drift']) ? '1' : '0' ?>">
+                                <td style="padding:4px 8px 4px 0;color:#475569;vertical-align:middle">
+                                    <span style="cursor:help"
+                                          title="<?= htmlspecialchars($gc['tooltip'], ENT_QUOTES, 'UTF-8') ?>"
+                                          data-toggle="tooltip"
+                                          data-placement="left">
+                                        <?= htmlspecialchars($gc['label'], ENT_QUOTES, 'UTF-8') ?>
+                                    </span>
+                                    <div style="font-family:monospace;font-size:10px;color:#94a3b8;margin-top:2px;line-height:1.2">
+                                        <?php if ($gc['slave']['var'] !== $gc['master']['var'] && $gc['master']['level'] !== 'unknown'): ?>
+                                            <span style="color:#cbd5e1">master:</span>
+                                            <?= htmlspecialchars($gc['master']['var'], ENT_QUOTES, 'UTF-8') ?>
+                                            <br><span style="color:#cbd5e1">slave:</span>
+                                            <?= htmlspecialchars($gc['slave']['var'], ENT_QUOTES, 'UTF-8') ?>
+                                        <?php else: ?>
+                                            <?= htmlspecialchars($gc['slave']['var'], ENT_QUOTES, 'UTF-8') ?>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                                <td style="text-align:center;padding:4px 8px 4px 0;vertical-align:middle;width:140px">
+                                    <?php $renderEditableCell(
+                                        $gc['master']['var'],
+                                        'master',
+                                        $masterTargetId,
+                                        $gc['master']['level'],
+                                        $mColor,
+                                        $gc['master']['label'],
+                                        $gc['master']['value'],
+                                        $gc['master']['var'] . ' = ' . $gc['master']['label']
+                                    ); ?>
+                                </td>
+                                <td style="text-align:center;padding:4px 0;vertical-align:middle;width:140px">
+                                    <?php $renderEditableCell(
+                                        $gc['slave']['var'],
+                                        'slave',
+                                        $slaveTargetId,
+                                        $gc['slave']['level'],
+                                        $sColor,
+                                        $gc['slave']['label'],
+                                        $gc['slave']['value'],
+                                        $gc['slave']['var'] . ' = ' . $gc['slave']['label']
+                                    ); ?>
+                                </td>
+                            </tr>
+                            <?php if (!empty($gc['drift'])): ?>
+                            <tr>
+                                <td colspan="3" style="padding:0 0 6px 0">
+                                    <div style="background:#fffbeb;border-left:3px solid #f59e0b;padding:4px 8px;font-size:11px;color:#78350f;border-radius:0 4px 4px 0">
+                                        <i class="fa fa-exclamation-triangle"></i>
+                                        <?= htmlspecialchars($gc['drift_reason'], ENT_QUOTES, 'UTF-8') ?>
+                                    </div>
+                                </td>
+                            </tr>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
                 <?php endif; ?>
 
             </div>

@@ -41,9 +41,47 @@ class Slave extends Controller
     private const SLAVE_BINLOG_ANALYSIS_START_CSRF_SCOPE = 'slave.binlog_analysis.start';
     private const SLAVE_SETUP_SOURCE_CSRF_SCOPE = 'slave.setup_source';
     private const SLAVE_BINLOG_ROW_IMAGE_SET_CSRF_SCOPE = 'slave.binlog_row_image.set';
+    private const SLAVE_REPLICATION_VARIABLE_SET_CSRF_SCOPE = 'slave.replication_variable.set';
 
     /** Allow-list for `binlog_row_image` (case-normalised on input). */
     private const BINLOG_ROW_IMAGE_VALUES = ['FULL', 'MINIMAL', 'NOBLOB'];
+
+    /**
+     * Issue #1198 — whitelist of replication-related GLOBAL variables
+     * the operator can mutate from /slave/show via the generic
+     * setReplicationVariable action.
+     *
+     * Each entry says how to validate the input + how to render the
+     * SQL literal:
+     *   - `type=enum` + `values=[…]`  → quoted single-quoted literal
+     *   - `type=int`  + `min`/`max`   → bare integer literal
+     *
+     * `relay_log_recovery` is intentionally absent: it can only be
+     * changed at server start (my.cnf + restart). The view tags it
+     * config-only so the operator does not look for an editor that
+     * would not exist.
+     *
+     * @return array<string,array{type:string,values?:array<int,string>,min?:int,max?:int,aliases?:array<int,string>}>
+     */
+    public static function replicationVariableWhitelist(): array
+    {
+        return [
+            'sync_binlog'                              => ['type' => 'int',  'min' => 0, 'max' => 100000],
+            'innodb_flush_log_at_trx_commit'           => ['type' => 'enum', 'values' => ['0', '1', '2']],
+            'binlog_format'                            => ['type' => 'enum', 'values' => ['ROW', 'MIXED', 'STATEMENT']],
+            'binlog_row_image'                         => ['type' => 'enum', 'values' => ['FULL', 'MINIMAL', 'NOBLOB']],
+            'replica_preserve_commit_order'            => ['type' => 'enum', 'values' => ['ON', 'OFF'], 'aliases' => ['slave_preserve_commit_order']],
+            'slave_preserve_commit_order'              => ['type' => 'enum', 'values' => ['ON', 'OFF']],
+            'source_info_repository'                   => ['type' => 'enum', 'values' => ['TABLE', 'FILE'], 'aliases' => ['master_info_repository']],
+            'master_info_repository'                   => ['type' => 'enum', 'values' => ['TABLE', 'FILE']],
+            'relay_log_info_repository'                => ['type' => 'enum', 'values' => ['TABLE', 'FILE']],
+            'super_read_only'                          => ['type' => 'enum', 'values' => ['ON', 'OFF']],
+            'binlog_commit_wait_count'                 => ['type' => 'int',  'min' => 0, 'max' => 100000],
+            'binlog_commit_wait_usec'                  => ['type' => 'int',  'min' => 0, 'max' => 10000000],
+            'binlog_group_commit_sync_no_delay_count'  => ['type' => 'int',  'min' => 0, 'max' => 100000],
+            'binlog_group_commit_sync_delay'           => ['type' => 'int',  'min' => 0, 'max' => 10000000],
+        ];
+    }
 
     private function getReplicationLagVariables(): array
     {
@@ -298,7 +336,13 @@ class Slave extends Controller
      *
      * @return list<array{name:string,value:string,level:string,label:string,tooltip:string}>
      */
-    private static function buildDurabilityRows(int $idMysqlServer, int $parallelThreads): array
+    /**
+     * @return list<array{
+     *   name:string, value:string, level:string, label:string, tooltip:string,
+     *   master: array{value:string, level:string, label:string, tooltip:string}
+     * }>
+     */
+    private static function buildDurabilityRows(int $idMysqlServer, int $parallelThreads, ?int $idMaster = null): array
     {
         $keys = \App\Library\SlaveDurability::variableKeys();
         $extractionKeys = [];
@@ -311,12 +355,99 @@ class Slave extends Controller
             $extractionKeys[] = 'variables::' . $legacy;
         }
 
-        $display = Extraction::display($extractionKeys, [$idMysqlServer]);
-        $values = $display[$idMysqlServer][''] ?? [];
+        $ids = [$idMysqlServer];
+        if ($idMaster !== null && $idMaster > 0 && $idMaster !== $idMysqlServer) {
+            $ids[] = $idMaster;
+        }
+        $display = Extraction::display($extractionKeys, $ids);
 
-        return \App\Library\SlaveDurability::rows(
-            is_array($values) ? $values : [],
+        $slaveValues  = is_array($display[$idMysqlServer][''] ?? null) ? $display[$idMysqlServer][''] : [];
+        $masterValues = ($idMaster !== null && is_array($display[$idMaster][''] ?? null))
+            ? $display[$idMaster]['']
+            : [];
+
+        $slaveRows  = \App\Library\SlaveDurability::rows(
+            $slaveValues,
             ['parallel_threads' => $parallelThreads]
+        );
+        // We do not know the master's parallel_threads cheaply, so pass
+        // 0 — that turns the conditional preserve_commit_order rule
+        // into a plain warning rather than a hard risk on the master
+        // side, which is the right default ("we cannot prove it's a
+        // risk from here").
+        $masterRows = \App\Library\SlaveDurability::rows(
+            $masterValues,
+            ['parallel_threads' => 0]
+        );
+
+        $masterByName = [];
+        foreach ($masterRows as $mr) {
+            $masterByName[$mr['name']] = $mr;
+        }
+
+        $unknownCell = [
+            'value'   => '',
+            'level'   => \App\Library\SlaveDurability::LEVEL_UNKNOWN,
+            'label'   => 'n/a',
+            'tooltip' => 'Master not monitored or value not yet collected from the time-series.',
+        ];
+
+        $paired = [];
+        foreach ($slaveRows as $sr) {
+            $mr = $masterByName[$sr['name']] ?? null;
+            $paired[] = $sr + [
+                'master' => $mr ? [
+                    'value'   => $mr['value'],
+                    'level'   => $mr['level'],
+                    'label'   => $mr['label'],
+                    'tooltip' => $mr['tooltip'],
+                ] : $unknownCell,
+            ];
+        }
+        return $paired;
+    }
+
+    /**
+     * Issue #1196 — build the binlog group-commit rows for the
+     * slave/show *Binlog group commit* card. Reads the relevant
+     * variables for both servers from the existing Extraction
+     * time-series (no extra MySQL connection).
+     *
+     * @return list<array{
+     *   label: string,
+     *   tooltip: string,
+     *   slave: array{var:string, value:string, level:string, label:string},
+     *   master: array{var:string, value:string, level:string, label:string},
+     *   drift: bool,
+     *   drift_reason: string,
+     * }>
+     */
+    private static function buildBinlogGroupCommitRows(
+        int $idSlave,
+        ?int $idMaster,
+        string $slaveFamily,
+        string $masterFamily
+    ): array {
+        $keys = \App\Library\BinlogGroupCommit::variableKeys();
+        $extractionKeys = [];
+        foreach ($keys as $k) {
+            $extractionKeys[] = 'variables::' . $k;
+        }
+
+        $ids = [$idSlave];
+        if ($idMaster !== null && $idMaster > 0 && $idMaster !== $idSlave) {
+            $ids[] = $idMaster;
+        }
+        $display = Extraction::display($extractionKeys, $ids);
+
+        $slaveValues  = $display[$idSlave][''] ?? [];
+        $masterValues = ($idMaster && isset($display[$idMaster][''])) ? $display[$idMaster][''] : [];
+
+        return \App\Library\BinlogGroupCommit::rows(
+            is_array($slaveValues)  ? $slaveValues  : [],
+            is_array($masterValues) ? $masterValues : [],
+            $slaveFamily,
+            $masterFamily
         );
     }
 
@@ -457,6 +588,9 @@ class Slave extends Controller
         $data['slave_binlog_row_image_set_csrf_field']  = Csrf::DEFAULT_FIELD;
         $data['slave_binlog_row_image_set_csrf_token']  = '';
         $data['binlog_row_image_values'] = self::BINLOG_ROW_IMAGE_VALUES;
+        $data['slave_replication_variable_set_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['slave_replication_variable_set_csrf_token'] = '';
+        $data['replication_variable_whitelist'] = self::replicationVariableWhitelist();
 
         if (self::normalizeSetupSourceServerId($idMysqlServer) !== null) {
             $data['slave_setup_source_csrf_field'] = Csrf::DEFAULT_FIELD;
@@ -863,14 +997,10 @@ ctx.strokeStyle="rgba(0,0,0,1)";ctx.lineWidth=1;ctx.stroke();
         $data['parallel_threads'] = $parallelSettings['parallel_threads'];
         $data['parallel_mode'] = $parallelSettings['parallel_mode'];
 
-        // Issue #1185 — render durability + crash-safety variables in the
-        // Actions column so the operator sees sync_binlog,
-        // innodb_flush_log_at_trx_commit, binlog_format, … without an SQL
-        // round-trip. Read-only for now (Phase 1); a setter follows up.
-        $data['durability_rows'] = self::buildDurabilityRows(
-            (int) $id_mysql_server,
-            (int) $data['parallel_threads']
-        );
+        // Issue #1196 — durability_rows is computed later (after master_id
+        // is known) so it can carry both slave and master values. Init
+        // empty here in case any intermediate code reads it.
+        $data['durability_rows'] = [];
 
         $data['server'] = Extraction::display(array("mysql_server::mysql_available"));
 
@@ -1150,6 +1280,27 @@ if (!empty($_GET['mysql_server']['id'])) {
         $data['gtid_compatible']    = $gtidCompat['compatible'];
         $data['gtid_compat_reason'] = $gtidCompat['reason'];
 
+        // Issue #1196 — render the Binlog group-commit pair (count +
+        // usec) for slave AND master, with family-aware variable names
+        // and drift detection. Reuses the family classification from
+        // the GTID compat check so we don't classify twice.
+        $data['group_commit_rows'] = self::buildBinlogGroupCommitRows(
+            (int) $id_mysql_server,
+            $master_id ? (int) $master_id : null,
+            $gtidCompat['slave_family'],
+            $gtidCompat['master_family']
+        );
+
+        // Issue #1196 follow-up — rebuild durability rows now that
+        // master_id is known so each row carries BOTH slave and master
+        // values (master left, slave right in the view per the
+        // operator request).
+        $data['durability_rows'] = self::buildDurabilityRows(
+            (int) $id_mysql_server,
+            (int) $data['parallel_threads'],
+            $master_id ? (int) $master_id : null
+        );
+
         $data['slave_binlog_analysis_start_csrf_field'] = Csrf::DEFAULT_FIELD;
         $data['slave_binlog_analysis_start_csrf_token'] = Csrf::issueToken($_SESSION, self::SLAVE_BINLOG_ANALYSIS_START_CSRF_SCOPE);
         // Issue #1190 — CSRF token for the editable binlog_row_image
@@ -1157,6 +1308,13 @@ if (!empty($_GET['mysql_server']['id'])) {
         $data['slave_binlog_row_image_set_csrf_field'] = Csrf::DEFAULT_FIELD;
         $data['slave_binlog_row_image_set_csrf_token'] = Csrf::issueToken($_SESSION, self::SLAVE_BINLOG_ROW_IMAGE_SET_CSRF_SCOPE);
         $data['binlog_row_image_values'] = self::BINLOG_ROW_IMAGE_VALUES;
+
+        // Issue #1198 — CSRF token + whitelist for the generic
+        // replication-variable setter (master + slave editing on every
+        // dynamic durability/group-commit variable).
+        $data['slave_replication_variable_set_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['slave_replication_variable_set_csrf_token'] = Csrf::issueToken($_SESSION, self::SLAVE_REPLICATION_VARIABLE_SET_CSRF_SCOPE);
+        $data['replication_variable_whitelist'] = self::replicationVariableWhitelist();
         if ($replication_name === '__new__' && self::normalizeSetupSourceServerId($id_mysql_server) !== null) {
             $data['slave_setup_source_csrf_field'] = Csrf::DEFAULT_FIELD;
             $data['slave_setup_source_csrf_token'] = Csrf::issueToken($_SESSION, self::SLAVE_SETUP_SOURCE_CSRF_SCOPE);
@@ -1833,6 +1991,175 @@ var chart = new Chart(ctx, {
             'previous' => $previous,
             'applied'  => $applied,
         ]);
+    }
+
+    /**
+     * Issue #1198 — generic SET GLOBAL setter for the replication
+     * variables surfaced on /slave/show. Scope is gated by the
+     * REPLICATION_VARIABLES whitelist (see replicationVariableWhitelist()).
+     *
+     * POST /slave/setReplicationVariable/<id_mysql_server>/<conn>/
+     * Body: variable=<name>&value=<value> + CSRF token.
+     * Returns JSON `{ok, variable, previous, applied}` or `{error}`.
+     *
+     * The id_mysql_server in the URL is the *target* server — the
+     * picker on the master column posts to the master's id, the
+     * picker on the slave column posts to the slave's id. Both flow
+     * through this single action.
+     */
+    public function setReplicationVariable($param)
+    {
+        $this->layout_name = false;
+        $this->view = false;
+        header('Content-Type: application/json; charset=UTF-8');
+
+        $outcome = self::evaluateSetReplicationVariableRequest($param, $_POST, $_SERVER, $_SESSION);
+        if ($outcome['status'] !== 200) {
+            self::sendSlaveJsonError($outcome['status'], $outcome['body'], $outcome['headers'] ?? []);
+            return;
+        }
+        $request = $outcome['request'];
+
+        try {
+            $db = Mysql::getDbLink((int) $request['id_mysql_server']);
+        } catch (\Throwable $e) {
+            self::sendSlaveJsonError(503, 'Cannot reach target server: ' . $e->getMessage());
+            return;
+        }
+
+        $previous = self::readReplicationVariable($db, $request['variable']);
+
+        // SQL composition is safe: $request['variable'] was matched
+        // against the whitelist; $request['value_sql_literal'] was
+        // assembled from validated values only (enum quoted, int bare).
+        $sql = "SET GLOBAL `" . $request['variable'] . "` = " . $request['value_sql_literal'];
+        try {
+            $db->sql_query($sql);
+        } catch (\Throwable $e) {
+            self::sendSlaveJsonError(500, 'SET GLOBAL failed: ' . $e->getMessage());
+            return;
+        }
+
+        $applied = self::readReplicationVariable($db, $request['variable']) ?? $request['value'];
+
+        echo json_encode([
+            'ok'       => true,
+            'variable' => $request['variable'],
+            'previous' => $previous,
+            'applied'  => $applied,
+        ]);
+    }
+
+    public static function evaluateSetReplicationVariableRequest(array $param, array $post, array $server, array $session): array
+    {
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::SLAVE_REPLICATION_VARIABLE_SET_CSRF_SCOPE)) {
+            return [
+                'status'  => $failure['status'],
+                'body'    => $failure['body'],
+                'headers' => $failure['headers'],
+            ];
+        }
+
+        $request = self::normalizeSetReplicationVariablePayload($param, $post);
+        if ($request === null) {
+            return [
+                'status'  => 400,
+                'body'    => 'Invalid replication-variable setter payload',
+                'headers' => [],
+            ];
+        }
+        return [
+            'status'  => 200,
+            'body'    => '',
+            'headers' => [],
+            'request' => $request,
+        ];
+    }
+
+    /**
+     * Validate + normalise a setter payload against the whitelist.
+     * Returns `null` on any rejection (variable unknown, enum value
+     * not in the allow-list, int out of bounds, missing fields).
+     *
+     * @return array{id_mysql_server:int,variable:string,value:string,value_sql_literal:string}|null
+     */
+    public static function normalizeSetReplicationVariablePayload(array $param, array $post): ?array
+    {
+        if (!isset($param[0]) || !is_scalar($param[0])) {
+            return null;
+        }
+        $idMysqlServer = trim((string) $param[0]);
+        if ($idMysqlServer === '' || !ctype_digit($idMysqlServer) || (int) $idMysqlServer < 1) {
+            return null;
+        }
+
+        if (!array_key_exists('variable', $post) || !is_scalar($post['variable'])) {
+            return null;
+        }
+        $varName = strtolower(trim((string) $post['variable']));
+        $whitelist = self::replicationVariableWhitelist();
+        if (!isset($whitelist[$varName])) {
+            return null;
+        }
+        $spec = $whitelist[$varName];
+
+        if (!array_key_exists('value', $post) || !is_scalar($post['value'])) {
+            return null;
+        }
+        $rawValue = trim((string) $post['value']);
+
+        if (($spec['type'] ?? '') === 'enum') {
+            $upper = strtoupper($rawValue);
+            $values = $spec['values'] ?? [];
+            if (!in_array($upper, $values, true)) {
+                return null;
+            }
+            return [
+                'id_mysql_server'   => (int) $idMysqlServer,
+                'variable'          => $varName,
+                'value'             => $upper,
+                'value_sql_literal' => "'" . $upper . "'",
+            ];
+        }
+
+        if (($spec['type'] ?? '') === 'int') {
+            if ($rawValue === '' || preg_match('/^-?\d+$/', $rawValue) !== 1) {
+                return null;
+            }
+            $intVal = (int) $rawValue;
+            if (isset($spec['min']) && $intVal < $spec['min']) return null;
+            if (isset($spec['max']) && $intVal > $spec['max']) return null;
+            return [
+                'id_mysql_server'   => (int) $idMysqlServer,
+                'variable'          => $varName,
+                'value'             => (string) $intVal,
+                'value_sql_literal' => (string) $intVal,
+            ];
+        }
+
+        return null;
+    }
+
+    /**
+     * Read a global variable. Returns null on silent failure so the
+     * caller can surface a clean JSON error.
+     */
+    private static function readReplicationVariable(object $db, string $varName): ?string
+    {
+        if (!method_exists($db, 'sql_query_silent')) {
+            return null;
+        }
+        // varName comes from the whitelist — safe to interpolate.
+        $sql = "SELECT @@global.`" . $varName . "` AS v";
+        $res = $db->sql_query_silent($sql);
+        if ($res === false) {
+            return null;
+        }
+        $row = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+        if (!$row || !isset($row['v'])) {
+            return null;
+        }
+        return (string) $row['v'];
     }
 
     public static function evaluateSetBinlogRowImageRequest(array $param, array $post, array $server, array $session): array
