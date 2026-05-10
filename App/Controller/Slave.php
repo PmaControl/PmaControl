@@ -321,6 +321,87 @@ class Slave extends Controller
     }
 
     /**
+     * Issue #1194 — coarse MySQL-family detection.
+     *
+     * Inspects `version_comment` (e.g. "MariaDB Server", "Source distribution",
+     * "Percona Server (GPL), Release 28") and falls back on `version`
+     * itself. Returns one of `'mariadb'`, `'mysql'`, `'unknown'`.
+     *
+     * `'mysql'` is a coarse bucket on purpose: Percona Server, Oracle
+     * MySQL and vanilla MySQL share the same GTID format, so they
+     * reinforce each other for replication-compat purposes. MariaDB
+     * has its own GTID format that is incompatible with the MySQL
+     * family.
+     */
+    public static function detectMysqlFamily(string $versionComment, string $version): string
+    {
+        $haystack = strtolower(trim($versionComment . ' ' . $version));
+        $bareVersion = strtolower(trim($version));
+        if ($haystack === '') {
+            return 'unknown';
+        }
+        if (strpos($haystack, 'mariadb') !== false) {
+            return 'mariadb';
+        }
+        if (strpos($haystack, 'percona') !== false
+            || strpos($haystack, 'mysql') !== false
+            || strpos($haystack, 'source distribution') !== false   // Oracle MySQL builds report this
+            || preg_match('/^(?:5\.|8\.)\d/', $bareVersion) === 1) {
+            return 'mysql';
+        }
+        return 'unknown';
+    }
+
+    /**
+     * Issue #1194 — for the GTID action group on /slave/show, decide
+     * whether the Activate button should be greyed out because the
+     * slave and the master live in incompatible MySQL families.
+     *
+     * @return array{compatible:bool,reason:string,slave_family:string,master_family:string}
+     */
+    public static function evaluateGtidActivationCompatibility(
+        string $slaveServerType,
+        ?int $masterId
+    ): array {
+        $slaveFamily = self::detectMysqlFamily($slaveServerType, '');
+        $masterFamily = 'unknown';
+
+        if ($masterId !== null && $masterId > 0) {
+            $display = Extraction::display(
+                ['variables::version_comment', 'variables::version'],
+                [$masterId]
+            );
+            $vals = $display[$masterId][''] ?? [];
+            if (is_array($vals)) {
+                $masterFamily = self::detectMysqlFamily(
+                    (string) ($vals['version_comment'] ?? ''),
+                    (string) ($vals['version'] ?? '')
+                );
+            }
+        }
+
+        $compatible = true;
+        $reason = '';
+        if ($slaveFamily !== 'unknown' && $masterFamily !== 'unknown' && $slaveFamily !== $masterFamily) {
+            $compatible = false;
+            $reason = sprintf(
+                'GTID is incompatible across MySQL families: the slave runs %s and the master runs %s. '
+                . 'Activating GTID would only configure one side correctly and break replication. '
+                . 'Use file+position replication, or migrate one side first.',
+                ucfirst($slaveFamily),
+                ucfirst($masterFamily)
+            );
+        }
+
+        return [
+            'compatible'    => $compatible,
+            'reason'        => $reason,
+            'slave_family'  => $slaveFamily,
+            'master_family' => $masterFamily,
+        ];
+    }
+
+    /**
      * Issue #1192 — fast-path data prep for `/slave/show/<id>/__new__/`.
      *
      * The view's __new__ branch only renders a source-setup form. It
@@ -1057,6 +1138,18 @@ if (!empty($_GET['mysql_server']['id'])) {
         $data['class']    = $this->getClass();
         $data['function'] = __FUNCTION__;
         $data['master_id'] = $master_id ?? 0;
+
+        // Issue #1194 — disable the GTID Activate button when slave
+        // and master sit in incompatible MySQL families (MariaDB ↔
+        // MySQL/Percona). Cross-family GTID activation only configures
+        // one side correctly and breaks replication.
+        $gtidCompat = self::evaluateGtidActivationCompatibility(
+            (string) ($data['server_type'] ?? ''),
+            $master_id ? (int) $master_id : null
+        );
+        $data['gtid_compatible']    = $gtidCompat['compatible'];
+        $data['gtid_compat_reason'] = $gtidCompat['reason'];
+
         $data['slave_binlog_analysis_start_csrf_field'] = Csrf::DEFAULT_FIELD;
         $data['slave_binlog_analysis_start_csrf_token'] = Csrf::issueToken($_SESSION, self::SLAVE_BINLOG_ANALYSIS_START_CSRF_SCOPE);
         // Issue #1190 — CSRF token for the editable binlog_row_image
