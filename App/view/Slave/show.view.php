@@ -896,6 +896,15 @@ $(document).ready(function() {
                 // with a `.sv-rv-edit` button shows the same inline
                 // editor (select for enum, number for int) and POSTs
                 // to /slave/setReplicationVariable.
+                //
+                // Issue #1199 follow-up — defer to DOMContentLoaded so
+                // the listeners attach after every table (including
+                // Binlog group-commit, which is rendered AFTER this
+                // script tag) is in the DOM. Without it, clicks on the
+                // pencil ✏ in the group-commit table did nothing
+                // because querySelectorAll('.sv-rv-edit') ran before
+                // those buttons existed.
+                document.addEventListener('DOMContentLoaded', function() {
                 (function(){
                     function closeAllPickers() {
                         document.querySelectorAll('.sv-rv-picker').forEach(function(p) {
@@ -1014,6 +1023,7 @@ $(document).ready(function() {
                         });
                     });
                 })();
+                });
                 </script>
                 <?php endif; ?>
 

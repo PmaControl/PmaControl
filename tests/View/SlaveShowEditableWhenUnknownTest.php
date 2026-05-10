@@ -59,4 +59,20 @@ final class SlaveShowEditableWhenUnknownTest extends TestCase
         // the first option even when a real value is present.
         $this->assertStringContainsString('htmlspecialchars($effectiveValue', $this->view);
     }
+
+    public function testPickerJsDefersToDomContentLoaded(): void
+    {
+        // The picker JS sits inside the Durability section's PHP if
+        // block, which is rendered BEFORE the Binlog group-commit table.
+        // Without DOMContentLoaded the IIFE runs at parse time —
+        // querySelectorAll('.sv-rv-edit') only sees the durability
+        // buttons; the group-commit buttons exist later in the document
+        // and never get a click listener. Pin the deferral so the bug
+        // cannot reappear in a refactor.
+        $this->assertStringContainsString(
+            "document.addEventListener('DOMContentLoaded', function() {",
+            $this->view,
+            'picker JS must defer to DOMContentLoaded so group-commit buttons get listeners too'
+        );
+    }
 }
