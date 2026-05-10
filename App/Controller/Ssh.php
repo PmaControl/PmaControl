@@ -37,7 +37,9 @@ use \phpseclib3\Net\SSH2;
 class Ssh extends Controller
 {
     const KEY_WORKER_ASSOCIATE = 435665;
-    const NB_WORKER            = 10;
+    const NB_WORKER            = 30;
+    const ASSOCIATE_TCP_TIMEOUT_S = 0.5;
+    const ASSOCIATE_SSH_TIMEOUT_S = 5;
     private const SSH_SAVE_CSRF_SCOPE = 'ssh.save';
     private const SSH_SAVE_REQUIRED_FIELDS = ['name', 'user', 'public_key', 'private_key'];
     private const SSH_SAVE_FIELD_LIMITS = [
@@ -772,6 +774,8 @@ class Ssh extends Controller
             @unlink($lock_file);
         });
 
+        $associate_started_at = microtime(true);
+
         $keys = $this->getSshKeys($id_ssh_key);
 
 
@@ -893,6 +897,17 @@ AND b.id NOT IN (select id from z)";
             $cmd = "kill ".$pid;
             shell_exec($cmd);
         }
+
+        $elapsed = microtime(true) - $associate_started_at;
+        $this->logger->info(sprintf(
+            "Ssh::associate id_ssh_key=%d jobs=%d workers=%d elapsed=%.2fs (TCP timeout=%.1fs SSH timeout=%ds)",
+            $id_ssh_key,
+            $i,
+            self::NB_WORKER,
+            $elapsed,
+            self::ASSOCIATE_TCP_TIMEOUT_S,
+            self::ASSOCIATE_SSH_TIMEOUT_S
+        ));
 
         if (!IS_CLI) {
             header("location: ".LINK.$this->getClass()."/index");
@@ -1090,7 +1105,7 @@ AND b.id NOT IN (select id from z)";
             return;
         }
 
-        $fp = @fsockopen($server['ip'], (int) $server['ssh_port'], $errno, $errstr, 1.0);
+        $fp = @fsockopen($server['ip'], (int) $server['ssh_port'], $errno, $errstr, self::ASSOCIATE_TCP_TIMEOUT_S);
         if ($fp === false) {
             $ret = "Connection to server (".$server['display_name']." ".$ip_port.") : TCP unreachable (".$errno." ".$errstr.")";
             $this->logger->info($ret);
@@ -1100,6 +1115,7 @@ AND b.id NOT IN (select id from z)";
         fclose($fp);
 
         $ssh = new SSH2($server['ip'], $server['ssh_port'], 3);
+        $ssh->setTimeout(self::ASSOCIATE_SSH_TIMEOUT_S);
         //$rsa = new RSA();
 
 
