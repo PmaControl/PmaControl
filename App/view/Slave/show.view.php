@@ -692,6 +692,47 @@ $(document).ready(function() {
                     </div>
                 </div>
 
+                <?php if (!empty($data['durability_rows'])): ?>
+                <div class="sv-action-group sv-durability">
+                    <div class="sv-action-group-title">
+                        <?= __('Durability & crash safety') ?>
+                        <small style="text-transform:none;letter-spacing:0;font-weight:400;color:#94a3b8">
+                            &mdash; <?= __('hover a badge for details') ?>
+                        </small>
+                    </div>
+                    <table class="sv-durability-table" style="width:100%;border-collapse:collapse;font-size:12px">
+                        <tbody>
+                        <?php
+                        $sv_durability_color = [
+                            'ok'      => '#16a34a',
+                            'warn'    => '#d97706',
+                            'risk'    => '#dc2626',
+                            'unknown' => '#94a3b8',
+                        ];
+                        foreach ($data['durability_rows'] as $row):
+                            $color = $sv_durability_color[$row['level']] ?? '#94a3b8';
+                        ?>
+                            <tr data-var="<?= htmlspecialchars($row['name'], ENT_QUOTES, 'UTF-8') ?>"
+                                data-level="<?= htmlspecialchars($row['level'], ENT_QUOTES, 'UTF-8') ?>">
+                                <td style="padding:4px 8px 4px 0;color:#475569;font-family:monospace;white-space:nowrap">
+                                    <?= htmlspecialchars($row['name'], ENT_QUOTES, 'UTF-8') ?>
+                                </td>
+                                <td style="padding:4px 0">
+                                    <span class="sv-durability-badge sv-durability-badge-<?= htmlspecialchars($row['level'], ENT_QUOTES, 'UTF-8') ?>"
+                                          style="display:inline-block;padding:2px 10px;border-radius:10px;font-weight:700;color:#fff;background:<?= $color ?>;cursor:help"
+                                          title="<?= htmlspecialchars($row['tooltip'], ENT_QUOTES, 'UTF-8') ?>"
+                                          data-toggle="tooltip"
+                                          data-placement="left">
+                                        <?= htmlspecialchars($row['label'], ENT_QUOTES, 'UTF-8') ?>
+                                    </span>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <?php endif; ?>
+
             </div>
         </div>
     </div>

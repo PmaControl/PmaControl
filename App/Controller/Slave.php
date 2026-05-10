@@ -287,6 +287,35 @@ class Slave extends Controller
         return self::normalizeParallelReplicationSettings($display[$idMysqlServer][''] ?? []);
     }
 
+    /**
+     * Issue #1185 — pull the durability + crash-safety variables from
+     * the Extraction time-series so the slave/show Actions column can
+     * render them with severity badges and tooltips.
+     *
+     * @return list<array{name:string,value:string,level:string,label:string,tooltip:string}>
+     */
+    private static function buildDurabilityRows(int $idMysqlServer, int $parallelThreads): array
+    {
+        $keys = \App\Library\SlaveDurability::variableKeys();
+        $extractionKeys = [];
+        foreach ($keys as $k) {
+            $extractionKeys[] = 'variables::' . $k;
+        }
+        // Both legacy aliases must be probed too so MySQL 5.7 / MariaDB
+        // values land in the map.
+        foreach (['slave_preserve_commit_order', 'master_info_repository'] as $legacy) {
+            $extractionKeys[] = 'variables::' . $legacy;
+        }
+
+        $display = Extraction::display($extractionKeys, [$idMysqlServer]);
+        $values = $display[$idMysqlServer][''] ?? [];
+
+        return \App\Library\SlaveDurability::rows(
+            is_array($values) ? $values : [],
+            ['parallel_threads' => $parallelThreads]
+        );
+    }
+
     private static function normalizeParallelReplicationSettings(array $values): array
     {
         $threads = 0;
@@ -671,6 +700,15 @@ ctx.strokeStyle="rgba(0,0,0,1)";ctx.lineWidth=1;ctx.stroke();
         $parallelSettings = self::getParallelReplicationSettingsFromTimeSeries((int) $id_mysql_server);
         $data['parallel_threads'] = $parallelSettings['parallel_threads'];
         $data['parallel_mode'] = $parallelSettings['parallel_mode'];
+
+        // Issue #1185 — render durability + crash-safety variables in the
+        // Actions column so the operator sees sync_binlog,
+        // innodb_flush_log_at_trx_commit, binlog_format, … without an SQL
+        // round-trip. Read-only for now (Phase 1); a setter follows up.
+        $data['durability_rows'] = self::buildDurabilityRows(
+            (int) $id_mysql_server,
+            (int) $data['parallel_threads']
+        );
 
         $data['server'] = Extraction::display(array("mysql_server::mysql_available"));
 
