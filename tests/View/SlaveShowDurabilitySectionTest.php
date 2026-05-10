@@ -98,12 +98,15 @@ final class SlaveShowDurabilitySectionTest extends TestCase
         $this->assertLessThan($slaveHeaderPos, $masterHeaderPos,
             'Master header must precede Slave header in the durability table');
 
-        $masterCellPos = strpos($section, 'sv-durability-badge-master');
-        $slaveCellPos  = strpos($section, 'sv-durability-badge-slave');
-        $this->assertNotFalse($masterCellPos);
-        $this->assertNotFalse($slaveCellPos);
-        $this->assertLessThan($slaveCellPos, $masterCellPos,
-            'master <td> must precede slave <td> in the durability table body');
+        // The helper is now generic — the side argument is what
+        // tells it which column to render. Pin the call ordering:
+        // master call must precede slave call inside the row.
+        $masterCallPos = strpos($section, "'master',");
+        $slaveCallPos  = strpos($section, "'slave',");
+        $this->assertNotFalse($masterCallPos, "renderEditableCell('master', …) must exist in durability table");
+        $this->assertNotFalse($slaveCallPos,  "renderEditableCell('slave', …) must exist in durability table");
+        $this->assertLessThan($slaveCallPos, $masterCallPos,
+            'master cell render must precede slave cell render in the durability table body');
     }
 
     public function testDurabilityRowsCarryMasterValuesNotJustSlave(): void
