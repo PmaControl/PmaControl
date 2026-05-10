@@ -146,6 +146,23 @@ final class ProxySqlDeleteLineSecurityTest extends TestCase
         $this->assertNull($outcome['delete']);
     }
 
+    public function testDeleteLineActionNormalizesEmptyRouteParamToArray(): void
+    {
+        // The Glial router emits `$param = ''` (string) when the URL has
+        // no segments after the action — which is exactly the case for
+        // the form action `LINK.'ProxySQL/deleteLine'`. The strict
+        // `array $param` hint on evaluateDeleteLineRequest() then blew
+        // up with a TypeError. Pin the source-level coercion so the
+        // action never forwards a non-array to the evaluator.
+        $controller = file_get_contents(__DIR__ . '/../../App/Controller/ProxySQL.php');
+        $this->assertIsString($controller);
+        $this->assertStringContainsString(
+            'self::evaluateDeleteLineRequest(is_array($param) ? $param : [], $_POST, $_SERVER, $_SESSION, IS_CLI)',
+            $controller,
+            'deleteLine() must coerce $param to array before calling the evaluator'
+        );
+    }
+
     public function testDeleteLineUsesSharedSecurityHelpersAndViewSendsPostForm(): void
     {
         $controller = file_get_contents(__DIR__ . '/../../App/Controller/ProxySQL.php');
