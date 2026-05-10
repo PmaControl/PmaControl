@@ -2290,7 +2290,7 @@ class ProxySQL extends Controller
         $this->view        = false;
         $this->layout_name = false;
 
-        $outcome = self::evaluateDeleteLineRequest($param, $_POST, $_SERVER, $_SESSION, IS_CLI);
+        $outcome = self::evaluateDeleteLineRequest(is_array($param) ? $param : [], $_POST, $_SERVER, $_SESSION, IS_CLI);
         if (!$outcome['allowed']) {
             HttpResponse::sendOutcome($outcome, null);
             return;
