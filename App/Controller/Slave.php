@@ -40,6 +40,10 @@ class Slave extends Controller
     const BACKUP_TEMP = "/backup/";
     private const SLAVE_BINLOG_ANALYSIS_START_CSRF_SCOPE = 'slave.binlog_analysis.start';
     private const SLAVE_SETUP_SOURCE_CSRF_SCOPE = 'slave.setup_source';
+    private const SLAVE_BINLOG_ROW_IMAGE_SET_CSRF_SCOPE = 'slave.binlog_row_image.set';
+
+    /** Allow-list for `binlog_row_image` (case-normalised on input). */
+    private const BINLOG_ROW_IMAGE_VALUES = ['FULL', 'MINIMAL', 'NOBLOB'];
 
     private function getReplicationLagVariables(): array
     {
@@ -978,6 +982,11 @@ if (!empty($_GET['mysql_server']['id'])) {
         $data['master_id'] = $master_id ?? 0;
         $data['slave_binlog_analysis_start_csrf_field'] = Csrf::DEFAULT_FIELD;
         $data['slave_binlog_analysis_start_csrf_token'] = Csrf::issueToken($_SESSION, self::SLAVE_BINLOG_ANALYSIS_START_CSRF_SCOPE);
+        // Issue #1190 — CSRF token for the editable binlog_row_image
+        // picker on the durability card.
+        $data['slave_binlog_row_image_set_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['slave_binlog_row_image_set_csrf_token'] = Csrf::issueToken($_SESSION, self::SLAVE_BINLOG_ROW_IMAGE_SET_CSRF_SCOPE);
+        $data['binlog_row_image_values'] = self::BINLOG_ROW_IMAGE_VALUES;
         if ($replication_name === '__new__' && self::normalizeSetupSourceServerId($id_mysql_server) !== null) {
             $data['slave_setup_source_csrf_field'] = Csrf::DEFAULT_FIELD;
             $data['slave_setup_source_csrf_token'] = Csrf::issueToken($_SESSION, self::SLAVE_SETUP_SOURCE_CSRF_SCOPE);
@@ -1594,6 +1603,152 @@ var chart = new Chart(ctx, {
         }
 
         header('location: '.LINK.'slave/show/'.$id_mysql_server.'/'.$connection_name.'/');
+    }
+
+    /**
+     * Issue #1190 — set `binlog_row_image` from the slave/show
+     * Durability picker.
+     *
+     * POST /slave/setBinlogRowImage/<id_mysql_server>/<connection_name>/
+     * Body: `value=FULL|MINIMAL|NOBLOB` + CSRF token.
+     * Returns JSON `{ ok: true, applied, previous }` or `{ error: '<msg>' }`.
+     */
+    public function setBinlogRowImage($param)
+    {
+        $this->layout_name = false;
+        $this->view = false;
+        header('Content-Type: application/json; charset=UTF-8');
+
+        $outcome = self::evaluateSetBinlogRowImageRequest(
+            $param,
+            $_POST,
+            $_SERVER,
+            $_SESSION
+        );
+        if ($outcome['status'] !== 200) {
+            self::sendSlaveJsonError($outcome['status'], $outcome['body'], $outcome['headers'] ?? []);
+            return;
+        }
+        $request = $outcome['request'];
+
+        try {
+            $db = Mysql::getDbLink((int) $request['id_mysql_server']);
+        } catch (\Throwable $e) {
+            self::sendSlaveJsonError(503, 'Cannot reach target server: ' . $e->getMessage());
+            return;
+        }
+
+        // Read the current value so the response can echo previous → applied.
+        $previous = self::readBinlogRowImage($db);
+        if ($previous === null) {
+            self::sendSlaveJsonError(503, 'Cannot read @@global.binlog_row_image (server unreachable or insufficient privileges)');
+            return;
+        }
+
+        // Apply.
+        $sql = "SET GLOBAL binlog_row_image = '" . $request['value'] . "'";
+        try {
+            $db->sql_query($sql);
+        } catch (\Throwable $e) {
+            self::sendSlaveJsonError(500, 'SET GLOBAL failed: ' . $e->getMessage());
+            return;
+        }
+
+        // Re-read so we report what the server actually has now (catches
+        // weird-cased silently-rejected values etc.).
+        $applied = self::readBinlogRowImage($db) ?? $request['value'];
+
+        echo json_encode([
+            'ok'       => true,
+            'previous' => $previous,
+            'applied'  => $applied,
+        ]);
+    }
+
+    public static function evaluateSetBinlogRowImageRequest(array $param, array $post, array $server, array $session): array
+    {
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::SLAVE_BINLOG_ROW_IMAGE_SET_CSRF_SCOPE)) {
+            return [
+                'status'  => $failure['status'],
+                'body'    => $failure['body'],
+                'headers' => $failure['headers'],
+            ];
+        }
+
+        $request = self::normalizeSetBinlogRowImagePayload($param, $post);
+        if ($request === null) {
+            return [
+                'status'  => 400,
+                'body'    => 'Invalid binlog_row_image setter payload',
+                'headers' => [],
+            ];
+        }
+
+        return [
+            'status'  => 200,
+            'body'    => '',
+            'headers' => [],
+            'request' => $request,
+        ];
+    }
+
+    public static function normalizeSetBinlogRowImagePayload(array $param, array $post): ?array
+    {
+        if (!isset($param[0]) || !is_scalar($param[0])) {
+            return null;
+        }
+        $idMysqlServer = trim((string) $param[0]);
+        if ($idMysqlServer === '' || !ctype_digit($idMysqlServer) || (int) $idMysqlServer < 1) {
+            return null;
+        }
+
+        if (!array_key_exists('value', $post) || !is_scalar($post['value'])) {
+            return null;
+        }
+        $value = strtoupper(trim((string) $post['value']));
+        if (!in_array($value, self::BINLOG_ROW_IMAGE_VALUES, true)) {
+            return null;
+        }
+
+        return [
+            'id_mysql_server' => (int) $idMysqlServer,
+            'value'           => $value,
+        ];
+    }
+
+    /**
+     * Read the current binlog_row_image value.
+     * Returns null when the query fails so the caller can surface a
+     * clean JSON error instead of guessing.
+     */
+    private static function readBinlogRowImage(object $db): ?string
+    {
+        if (!method_exists($db, 'sql_query_silent')) {
+            return null;
+        }
+        $res = $db->sql_query_silent("SELECT @@global.binlog_row_image AS v");
+        if ($res === false) {
+            return null;
+        }
+        $row = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+        if (!$row || !isset($row['v'])) {
+            return null;
+        }
+        $v = strtoupper(trim((string) $row['v']));
+        return $v !== '' ? $v : null;
+    }
+
+    /**
+     * Shared JSON error emitter for slave/* mutating actions.
+     */
+    private static function sendSlaveJsonError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: application/json; charset=UTF-8');
+        echo json_encode(['error' => $message]);
     }
 
 /**
