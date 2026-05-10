@@ -628,9 +628,33 @@ $(document).ready(function() {
                     </a>
                 </div>
 
-                <div class="sv-action-group">
+                <?php
+                // Issue #1194 — when slave & master sit in incompatible
+                // MySQL families (MariaDB ↔ MySQL/Percona), Activate must
+                // be greyed out with an explanatory tooltip so a single
+                // click cannot brick the topology. PmaControl's
+                // activateGtid() emits MariaDB syntax on MariaDB and
+                // MySQL syntax on MySQL — neither side talks to the
+                // other across families.
+                $gtidIncompat       = !($data['gtid_compatible'] ?? true);
+                $gtidIncompatReason = (string) ($data['gtid_compat_reason'] ?? '');
+                ?>
+                <div class="sv-action-group" data-gtid-compat="<?= $gtidIncompat ? 'mixed' : 'ok' ?>">
                     <div class="sv-action-group-title">GTID</div>
-                    <?php if ($gtid_active): ?>
+                    <?php if ($gtidIncompat): ?>
+                        <a class="btn btn-default btn-sm disabled" disabled
+                           title="<?= htmlspecialchars($gtidIncompatReason, ENT_QUOTES, 'UTF-8') ?>"
+                           data-toggle="tooltip" data-placement="top"
+                           style="cursor:not-allowed">
+                            <i class="fa fa-ban" style="color:var(--clr-muted)"></i> <?= __('Activate') ?>
+                        </a>
+                        <a class="btn btn-default btn-sm disabled" disabled
+                           title="<?= htmlspecialchars($gtidIncompatReason, ENT_QUOTES, 'UTF-8') ?>"
+                           data-toggle="tooltip" data-placement="top"
+                           style="cursor:not-allowed">
+                            <i class="fa fa-times"></i> <?= __('Deactivate') ?>
+                        </a>
+                    <?php elseif ($gtid_active): ?>
                         <a class="btn btn-default btn-sm disabled" disabled><i class="fa fa-check"></i> <?= __('Activate') ?></a>
                         <a class="btn btn-default btn-sm" href="<?= LINK ?><?= $data['class'] ?>/deactivateGtid/<?= $data['id_mysql_server'] ?>/<?= $data['replication_name'] ?>/">
                             <i class="fa fa-times" style="color:var(--clr-crit)"></i> <?= __('Deactivate') ?>
