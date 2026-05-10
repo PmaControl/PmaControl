@@ -745,9 +745,27 @@ $(document).ready(function() {
                     string $tooltip
                 ) use ($editorSpecs, $rvCsrfField, $rvCsrfToken, $replicationName) {
                     $spec = $editorSpecs[$variable] ?? null;
-                    // Editable when the variable is whitelisted, the target
-                    // is reachable AND we actually have a value to start from.
-                    $editable = ($spec !== null && $targetServerId > 0 && $level !== 'unknown');
+                    // Issue #1199 — editable as long as the variable is in
+                    // the whitelist AND we know a target server. The
+                    // 'unknown' level (value not yet collected by the
+                    // aspirateur, OR variable absent from the server)
+                    // used to hide the pencil; that left no way to set
+                    // the value from the UI when the user actually
+                    // needed it. We render the picker anyway: enums
+                    // pre-select the first allowed value, ints
+                    // pre-fill with the whitelist's min, and any SQL
+                    // failure surfaces in the JSON error toast.
+                    $editable = ($spec !== null && $targetServerId > 0);
+                    // For pre-fill purposes we feed the picker either
+                    // the live value or, when missing, the safe default.
+                    $effectiveValue = $value;
+                    if ($effectiveValue === '' && $spec !== null) {
+                        if (($spec['type'] ?? '') === 'enum') {
+                            $effectiveValue = (string) (($spec['values'][0]) ?? '');
+                        } elseif (($spec['type'] ?? '') === 'int') {
+                            $effectiveValue = (string) ((int) ($spec['min'] ?? 0));
+                        }
+                    }
                     $url = LINK . 'slave/setReplicationVariable/' . $targetServerId . '/'
                          . htmlspecialchars($replicationName, ENT_QUOTES, 'UTF-8') . '/ajax:true/';
                     ?>
@@ -763,7 +781,7 @@ $(document).ready(function() {
                                 class="btn btn-link btn-xs sv-rv-edit"
                                 data-var="<?= htmlspecialchars($variable, ENT_QUOTES, 'UTF-8') ?>"
                                 data-side="<?= htmlspecialchars($side, ENT_QUOTES, 'UTF-8') ?>"
-                                data-current="<?= htmlspecialchars($value, ENT_QUOTES, 'UTF-8') ?>"
+                                data-current="<?= htmlspecialchars($effectiveValue, ENT_QUOTES, 'UTF-8') ?>"
                                 data-target-id="<?= (int) $targetServerId ?>"
                                 style="padding:0 2px;color:#64748b;vertical-align:middle"
                                 title="<?= __('Change value') ?>">
@@ -774,9 +792,9 @@ $(document).ready(function() {
                                 <select class="sv-rv-picker-select"
                                         style="padding:2px 4px;border:1px solid #cbd5e1;border-radius:4px;font-size:11px">
                                     <?php
-                                    $upperVal = strtoupper($value);
+                                    $upperVal = strtoupper($effectiveValue);
                                     foreach (($spec['values'] ?? []) as $v):
-                                        $sel = ($v === $value || $v === $upperVal) ? ' selected' : '';
+                                        $sel = ($v === $effectiveValue || $v === $upperVal) ? ' selected' : '';
                                     ?>
                                         <option value="<?= htmlspecialchars($v, ENT_QUOTES, 'UTF-8') ?>"<?= $sel ?>>
                                             <?= htmlspecialchars($v, ENT_QUOTES, 'UTF-8') ?>
@@ -786,7 +804,7 @@ $(document).ready(function() {
                             <?php else: /* int */ ?>
                                 <input type="number"
                                        class="sv-rv-picker-input"
-                                       value="<?= htmlspecialchars($value, ENT_QUOTES, 'UTF-8') ?>"
+                                       value="<?= htmlspecialchars($effectiveValue, ENT_QUOTES, 'UTF-8') ?>"
                                        min="<?= (int) ($spec['min'] ?? 0) ?>"
                                        max="<?= isset($spec['max']) ? (int) $spec['max'] : '' ?>"
                                        step="1"
