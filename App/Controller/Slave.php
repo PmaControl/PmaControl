@@ -320,6 +320,69 @@ class Slave extends Controller
         );
     }
 
+    /**
+     * Issue #1192 — fast-path data prep for `/slave/show/<id>/__new__/`.
+     *
+     * The view's __new__ branch only renders a source-setup form. It
+     * needs nothing beyond the available-server picker list and the
+     * setupSource CSRF token. We populate the rest of `$data` with
+     * defaults the view already tolerates (it reads with `?? ''` /
+     * `?? []` guards) so the existing branch keeps rendering without
+     * a single SHOW REPLICA STATUS, time-series Extraction, or live
+     * MySQL connection to the target server.
+     *
+     * @param array<string,mixed> $data  data array passed by reference,
+     *        already pre-populated with id_mysql_server + replication_name.
+     * @param array<string,mixed> $session $_SESSION reference (so the
+     *        helper stays unit-testable without touching globals).
+     */
+    private static function prepareNewReplicationFormData(object $db, array &$data, int $idMysqlServer, array &$session): void
+    {
+        // Defaults the view tolerates — keeps the header / future
+        // partials happy without firing any backend work.
+        $data['slave']            = [];
+        $data['parallel_threads'] = 0;
+        $data['parallel_mode']    = null;
+        $data['durability_rows']  = [];
+        $data['server']           = [];
+        $data['all_connections']  = [];
+        $data['server_type']      = '';
+        $data['server_version']   = '';
+        $data['cpu_count']        = 0;
+        $data['binlog_gap']       = null;
+        $data['sparkline']        = '';
+        $data['mysql_server_specify'] = [];
+        $data['id_slave']         = [$idMysqlServer];
+        $data['master_id']        = 0;
+        $data['db_on_master']     = [];
+
+        // available_servers — local pmacontrol DB SELECT, fast.
+        $sql = "SELECT a.id, a.display_name, a.ip, a.port, b.libelle AS environment
+                FROM mysql_server a
+                INNER JOIN environment b ON a.id_environment = b.id
+                WHERE a.is_deleted = 0 AND a.id != " . $idMysqlServer . "
+                ORDER BY b.libelle, a.display_name";
+        $res = $db->sql_query($sql);
+        $data['available_servers'] = [];
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $data['available_servers'][] = $row;
+        }
+
+        // CSRF tokens — only setupSource is actually used by the form
+        // (the others stay empty so the durability picker / launch
+        // button do not show up but the view renders cleanly).
+        $data['slave_binlog_analysis_start_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['slave_binlog_analysis_start_csrf_token'] = '';
+        $data['slave_binlog_row_image_set_csrf_field']  = Csrf::DEFAULT_FIELD;
+        $data['slave_binlog_row_image_set_csrf_token']  = '';
+        $data['binlog_row_image_values'] = self::BINLOG_ROW_IMAGE_VALUES;
+
+        if (self::normalizeSetupSourceServerId($idMysqlServer) !== null) {
+            $data['slave_setup_source_csrf_field'] = Csrf::DEFAULT_FIELD;
+            $data['slave_setup_source_csrf_token'] = Csrf::issueToken($session, self::SLAVE_SETUP_SOURCE_CSRF_SCOPE);
+        }
+    }
+
     private static function normalizeParallelReplicationSettings(array $values): array
     {
         $threads = 0;
@@ -698,6 +761,20 @@ ctx.strokeStyle="rgba(0,0,0,1)";ctx.lineWidth=1;ctx.stroke();
 
         while ($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $server = $ob;
+        }
+
+        // Issue #1192 — fast path for the "new replication" form. The
+        // /slave/show/<id>/__new__/ page only renders the source-setup
+        // form; it does not need any replica-status / time-series /
+        // live-connection data, and it must NOT emit the 5-second
+        // getLag poll loop. Short-circuit here so the page loads
+        // instantly and the browser stays quiet.
+        if ($replication_name === '__new__') {
+            self::prepareNewReplicationFormData($db, $data, (int) $id_mysql_server, $_SESSION);
+            $data['class']    = $this->getClass();
+            $data['function'] = __FUNCTION__;
+            $this->set('data', $data);
+            return;
         }
 
         $data['slave'] = array();
