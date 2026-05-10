@@ -321,6 +321,29 @@ class Ssh extends Controller
         ];
     }
 
+    public static function isLocalSshTarget(string $ip, int $port): bool
+    {
+        if ($port !== 22) {
+            return false;
+        }
+
+        $ip = trim($ip);
+        if ($ip === '') {
+            return false;
+        }
+        if (strcasecmp($ip, 'localhost') === 0) {
+            return true;
+        }
+        if ($ip === '::1') {
+            return true;
+        }
+        if (str_starts_with($ip, '127.')) {
+            return true;
+        }
+
+        return false;
+    }
+
     private static function buildSshSaveOutcome(int $statusCode, string $message, array $headers = []): array
     {
         return [
@@ -1059,6 +1082,13 @@ AND b.id NOT IN (select id from z)";
         }
 
         $ip_port = $server['ip'].':'.$server['ssh_port'];
+
+        if (self::isLocalSshTarget((string) $server['ip'], (int) $server['ssh_port'])) {
+            $ret = "Connection to server (".$server['display_name']." ".$ip_port.") refused: target points at pmacontrol host's own sshd (loopback ip + ssh_port=22). Configure mysql_server.ssh_port to a dedicated tunnel port forwarding to the target's sshd.";
+            $this->logger->warning($ret);
+            Debug::debug($ip_port, "Refused: target is local sshd — skip");
+            return;
+        }
 
         $fp = @fsockopen($server['ip'], (int) $server['ssh_port'], $errno, $errstr, 1.0);
         if ($fp === false) {
