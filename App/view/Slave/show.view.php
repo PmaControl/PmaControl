@@ -1162,7 +1162,7 @@ document.addEventListener('DOMContentLoaded', function() {
             method: 'POST',
             body: formData
         })
-        .then(function(r) { return r.json(); })
+        .then(svParseJsonResponse)
         .then(function(resp) {
             if (resp.error) {
                 alert(resp.error);
@@ -1176,6 +1176,57 @@ document.addEventListener('DOMContentLoaded', function() {
             resetLaunchBtn();
         });
     });
+
+    // Issue #1187 — when the framework redirects an AJAX call to the
+    // login page (302 → text/html), the previous code blew up with a
+    // cryptic `Unexpected token '<', "<!DOCTYPE"... is not valid JSON`.
+    // Detect the redirect and the wrong content-type up front so the
+    // user sees something actionable instead, with a one-click redirect
+    // to the login page that returns to the current URL after auth.
+    function svParseJsonResponse(r) {
+        // fetch() with default redirect:'follow' lands on /user/connection
+        // for an expired session. Catch both the redirected flag and a
+        // url-ending heuristic for older browsers that don't set it.
+        var landedOnLogin = (r.url || '').indexOf('/user/connection') !== -1;
+        if (r.redirected || r.status === 302 || landedOnLogin) {
+            svPromptSessionExpired();
+            // Reject so the caller's normal "Failed to start" path runs;
+            // svPromptSessionExpired has already navigated, so this
+            // rejection is mostly a safety net.
+            return Promise.reject(new Error(
+                'Session expired — redirecting to the login page…'
+            ));
+        }
+        var ct = (r.headers && r.headers.get) ? (r.headers.get('Content-Type') || '') : '';
+        if (ct.indexOf('application/json') === -1) {
+            return r.text().then(function(body) {
+                var preview = (body || '').substring(0, 80).trim();
+                throw new Error(
+                    'Unexpected non-JSON response (' + r.status + ' ' + (ct || 'no content-type') +
+                    (preview ? ', body starts with: ' + preview : '') + ')'
+                );
+            });
+        }
+        return r.json();
+    }
+
+    var svSessionExpiredHandled = false;
+    function svPromptSessionExpired() {
+        if (svSessionExpiredHandled) return;
+        svSessionExpiredHandled = true;
+        var returnTo = window.location.pathname + window.location.search + window.location.hash;
+        var loginUrl = LINK + 'user/connection/?return_to=' + encodeURIComponent(returnTo);
+        // alert() is intentionally blocking so the user actually reads it
+        // before the page navigates; the title spells out the cause so a
+        // mistaken "ACL omitted on the server" doesn't masquerade as a
+        // session expiry without anyone noticing.
+        alert(
+            'Your PmaControl session has expired (or this action is no longer ' +
+            'authorised). You will be redirected to the login page; once you ' +
+            'sign in again you will be brought back to this page.'
+        );
+        window.location.href = loginUrl;
+    }
 
     // ---- Poll analysis status with live progress ----
     function pollAnalysis(id) {
@@ -1212,7 +1263,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         function poll() {
-            fetch(LINK + 'slave/binlogAnalysisResult/' + id + '/ajax:true/').then(function(r){return r.json()}).then(function(data) {
+            fetch(LINK + 'slave/binlogAnalysisResult/' + id + '/ajax:true/').then(svParseJsonResponse).then(function(data) {
                 if (data.error) {
                     statusBadge.className = 'label label-danger';
                     statusBadge.textContent = 'Error: ' + data.error;
@@ -2118,7 +2169,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ---- Load past analyses ----
     function loadHistory() {
         fetch(LINK + 'slave/binlogAnalysisList/' + serverId + '/ajax:true/?connection_name='
-            + encodeURIComponent(replicationName || '')).then(function(r){return r.json()}).then(function(list) {
+            + encodeURIComponent(replicationName || '')).then(svParseJsonResponse).then(function(list) {
             if (!list || !list.length) {
                 document.getElementById('sv-ba-history').innerHTML = '';
                 return;
@@ -2152,7 +2203,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 var id = btn.getAttribute('data-id');
                 var st = btn.getAttribute('data-status');
                 if (st === 'done') {
-                    fetch(LINK + 'slave/binlogAnalysisResult/' + id + '/ajax:true/').then(function(r){return r.json()}).then(function(data) {
+                    fetch(LINK + 'slave/binlogAnalysisResult/' + id + '/ajax:true/').then(svParseJsonResponse).then(function(data) {
                         if (!data.error) renderResults(data);
                     });
                 } else if (st === 'pending' || st === 'running') {
