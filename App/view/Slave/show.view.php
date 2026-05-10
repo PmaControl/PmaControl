@@ -721,36 +721,60 @@ $(document).ready(function() {
                     <div class="sv-action-group-title">
                         <?= __('Durability & crash safety') ?>
                         <small style="text-transform:none;letter-spacing:0;font-weight:400;color:#94a3b8">
-                            &mdash; <?= __('hover a badge for details') ?>
+                            &mdash; <?= __('master + slave, hover a badge for details') ?>
                         </small>
                     </div>
                     <table class="sv-durability-table" style="width:100%;border-collapse:collapse;font-size:12px">
+                        <thead>
+                            <tr style="color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.04em">
+                                <th style="text-align:left;padding:4px 8px 6px 0;font-weight:600">&nbsp;</th>
+                                <th style="text-align:center;padding:4px 8px 6px 0;font-weight:600;width:90px"><?= __('Master') ?></th>
+                                <th style="text-align:center;padding:4px 0 6px 0;font-weight:600;width:130px"><?= __('Slave') ?></th>
+                            </tr>
+                        </thead>
                         <tbody>
                         <?php
                         $sv_durability_color = [
                             'ok'      => '#16a34a',
                             'warn'    => '#d97706',
                             'risk'    => '#dc2626',
+                            'info'    => '#2563eb',
                             'unknown' => '#94a3b8',
                         ];
                         $slaveBinlogRowImageSetCsrfField = (string)($data['slave_binlog_row_image_set_csrf_field'] ?? '_csrf_token');
                         $slaveBinlogRowImageSetCsrfToken = (string)($data['slave_binlog_row_image_set_csrf_token'] ?? '');
                         $binlogRowImageValues = (array)($data['binlog_row_image_values'] ?? ['FULL', 'MINIMAL', 'NOBLOB']);
                         foreach ($data['durability_rows'] as $row):
-                            $color = $sv_durability_color[$row['level']] ?? '#94a3b8';
+                            $sColor  = $sv_durability_color[$row['level']]            ?? '#94a3b8';
+                            $mColor  = $sv_durability_color[$row['master']['level']]   ?? '#94a3b8';
                             $isEditable = ($row['name'] === 'binlog_row_image');
                         ?>
                             <tr data-var="<?= htmlspecialchars($row['name'], ENT_QUOTES, 'UTF-8') ?>"
-                                data-level="<?= htmlspecialchars($row['level'], ENT_QUOTES, 'UTF-8') ?>">
-                                <td style="padding:4px 8px 4px 0;color:#475569;font-family:monospace;white-space:nowrap">
-                                    <?= htmlspecialchars($row['name'], ENT_QUOTES, 'UTF-8') ?>
-                                </td>
-                                <td style="padding:4px 0">
-                                    <span class="sv-durability-badge sv-durability-badge-<?= htmlspecialchars($row['level'], ENT_QUOTES, 'UTF-8') ?>"
-                                          style="display:inline-block;padding:2px 10px;border-radius:10px;font-weight:700;color:#fff;background:<?= $color ?>;cursor:help"
+                                data-level="<?= htmlspecialchars($row['level'], ENT_QUOTES, 'UTF-8') ?>"
+                                data-master-level="<?= htmlspecialchars($row['master']['level'], ENT_QUOTES, 'UTF-8') ?>">
+                                <td style="padding:4px 8px 4px 0;color:#475569;font-family:monospace;white-space:nowrap;vertical-align:middle">
+                                    <span style="cursor:help"
                                           title="<?= htmlspecialchars($row['tooltip'], ENT_QUOTES, 'UTF-8') ?>"
                                           data-toggle="tooltip"
                                           data-placement="left">
+                                        <?= htmlspecialchars($row['name'], ENT_QUOTES, 'UTF-8') ?>
+                                    </span>
+                                </td>
+                                <td style="text-align:center;padding:4px 8px 4px 0;vertical-align:middle">
+                                    <span class="sv-durability-badge sv-durability-badge-master sv-durability-badge-<?= htmlspecialchars($row['master']['level'], ENT_QUOTES, 'UTF-8') ?>"
+                                          style="display:inline-block;padding:2px 10px;border-radius:10px;font-weight:700;color:#fff;background:<?= $mColor ?>;cursor:help"
+                                          title="<?= htmlspecialchars($row['master']['tooltip'], ENT_QUOTES, 'UTF-8') ?>"
+                                          data-toggle="tooltip"
+                                          data-placement="top">
+                                        <?= htmlspecialchars($row['master']['label'], ENT_QUOTES, 'UTF-8') ?>
+                                    </span>
+                                </td>
+                                <td style="text-align:center;padding:4px 0;vertical-align:middle">
+                                    <span class="sv-durability-badge sv-durability-badge-slave sv-durability-badge-<?= htmlspecialchars($row['level'], ENT_QUOTES, 'UTF-8') ?>"
+                                          style="display:inline-block;padding:2px 10px;border-radius:10px;font-weight:700;color:#fff;background:<?= $sColor ?>;cursor:help"
+                                          title="<?= htmlspecialchars($row['tooltip'], ENT_QUOTES, 'UTF-8') ?>"
+                                          data-toggle="tooltip"
+                                          data-placement="top">
                                         <?= htmlspecialchars($row['label'], ENT_QUOTES, 'UTF-8') ?>
                                     </span>
                                     <?php if ($isEditable): ?>
@@ -759,12 +783,12 @@ $(document).ready(function() {
                                                 data-var="binlog_row_image"
                                                 data-current="<?= htmlspecialchars($row['value'], ENT_QUOTES, 'UTF-8') ?>"
                                                 style="padding:0 4px;color:#64748b"
-                                                title="<?= __('Change value') ?>">
+                                                title="<?= __('Change value (slave only)') ?>">
                                             <i class="fa fa-pencil"></i>
                                         </button>
-                                        <span class="sv-durability-picker"
+                                        <div class="sv-durability-picker"
                                               data-var="binlog_row_image"
-                                              style="display:none;margin-left:6px;vertical-align:middle">
+                                              style="display:none;margin-top:6px">
                                             <select class="sv-durability-picker-select"
                                                     style="padding:2px 4px;border:1px solid #cbd5e1;border-radius:4px;font-size:11px">
                                                 <?php foreach ($binlogRowImageValues as $v): ?>
@@ -784,7 +808,7 @@ $(document).ready(function() {
                                                     style="margin-left:2px;font-size:11px">
                                                 <?= __('Cancel') ?>
                                             </button>
-                                        </span>
+                                        </div>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -904,8 +928,8 @@ $(document).ready(function() {
                         <thead>
                             <tr style="color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.04em">
                                 <th style="text-align:left;padding:4px 8px 6px 0;font-weight:600">&nbsp;</th>
-                                <th style="text-align:center;padding:4px 8px 6px 0;font-weight:600;width:90px"><?= __('Slave') ?></th>
-                                <th style="text-align:center;padding:4px 0 6px 0;font-weight:600;width:90px"><?= __('Master') ?></th>
+                                <th style="text-align:center;padding:4px 8px 6px 0;font-weight:600;width:90px"><?= __('Master') ?></th>
+                                <th style="text-align:center;padding:4px 0 6px 0;font-weight:600;width:90px"><?= __('Slave') ?></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -922,25 +946,28 @@ $(document).ready(function() {
                                         <?= htmlspecialchars($gc['label'], ENT_QUOTES, 'UTF-8') ?>
                                     </span>
                                     <div style="font-family:monospace;font-size:10px;color:#94a3b8;margin-top:2px;line-height:1.2">
-                                        <?= htmlspecialchars($gc['slave']['var'], ENT_QUOTES, 'UTF-8') ?>
                                         <?php if ($gc['slave']['var'] !== $gc['master']['var'] && $gc['master']['level'] !== 'unknown'): ?>
-                                            <br><span style="color:#cbd5e1">/ master:</span>
+                                            <span style="color:#cbd5e1">master:</span>
                                             <?= htmlspecialchars($gc['master']['var'], ENT_QUOTES, 'UTF-8') ?>
+                                            <br><span style="color:#cbd5e1">slave:</span>
+                                            <?= htmlspecialchars($gc['slave']['var'], ENT_QUOTES, 'UTF-8') ?>
+                                        <?php else: ?>
+                                            <?= htmlspecialchars($gc['slave']['var'], ENT_QUOTES, 'UTF-8') ?>
                                         <?php endif; ?>
                                     </div>
                                 </td>
                                 <td style="text-align:center;padding:4px 8px 4px 0">
-                                    <span style="display:inline-block;padding:2px 10px;border-radius:10px;font-weight:700;color:#fff;background:<?= $sColor ?>;cursor:help"
-                                          title="<?= htmlspecialchars($gc['slave']['var'] . ' = ' . $gc['slave']['label'], ENT_QUOTES, 'UTF-8') ?>"
-                                          data-toggle="tooltip">
-                                        <?= htmlspecialchars($gc['slave']['label'], ENT_QUOTES, 'UTF-8') ?>
-                                    </span>
-                                </td>
-                                <td style="text-align:center;padding:4px 0">
                                     <span style="display:inline-block;padding:2px 10px;border-radius:10px;font-weight:700;color:#fff;background:<?= $mColor ?>;cursor:help"
                                           title="<?= htmlspecialchars($gc['master']['var'] . ' = ' . $gc['master']['label'], ENT_QUOTES, 'UTF-8') ?>"
                                           data-toggle="tooltip">
                                         <?= htmlspecialchars($gc['master']['label'], ENT_QUOTES, 'UTF-8') ?>
+                                    </span>
+                                </td>
+                                <td style="text-align:center;padding:4px 0">
+                                    <span style="display:inline-block;padding:2px 10px;border-radius:10px;font-weight:700;color:#fff;background:<?= $sColor ?>;cursor:help"
+                                          title="<?= htmlspecialchars($gc['slave']['var'] . ' = ' . $gc['slave']['label'], ENT_QUOTES, 'UTF-8') ?>"
+                                          data-toggle="tooltip">
+                                        <?= htmlspecialchars($gc['slave']['label'], ENT_QUOTES, 'UTF-8') ?>
                                     </span>
                                 </td>
                             </tr>

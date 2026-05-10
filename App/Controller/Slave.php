@@ -298,7 +298,13 @@ class Slave extends Controller
      *
      * @return list<array{name:string,value:string,level:string,label:string,tooltip:string}>
      */
-    private static function buildDurabilityRows(int $idMysqlServer, int $parallelThreads): array
+    /**
+     * @return list<array{
+     *   name:string, value:string, level:string, label:string, tooltip:string,
+     *   master: array{value:string, level:string, label:string, tooltip:string}
+     * }>
+     */
+    private static function buildDurabilityRows(int $idMysqlServer, int $parallelThreads, ?int $idMaster = null): array
     {
         $keys = \App\Library\SlaveDurability::variableKeys();
         $extractionKeys = [];
@@ -311,13 +317,56 @@ class Slave extends Controller
             $extractionKeys[] = 'variables::' . $legacy;
         }
 
-        $display = Extraction::display($extractionKeys, [$idMysqlServer]);
-        $values = $display[$idMysqlServer][''] ?? [];
+        $ids = [$idMysqlServer];
+        if ($idMaster !== null && $idMaster > 0 && $idMaster !== $idMysqlServer) {
+            $ids[] = $idMaster;
+        }
+        $display = Extraction::display($extractionKeys, $ids);
 
-        return \App\Library\SlaveDurability::rows(
-            is_array($values) ? $values : [],
+        $slaveValues  = is_array($display[$idMysqlServer][''] ?? null) ? $display[$idMysqlServer][''] : [];
+        $masterValues = ($idMaster !== null && is_array($display[$idMaster][''] ?? null))
+            ? $display[$idMaster]['']
+            : [];
+
+        $slaveRows  = \App\Library\SlaveDurability::rows(
+            $slaveValues,
             ['parallel_threads' => $parallelThreads]
         );
+        // We do not know the master's parallel_threads cheaply, so pass
+        // 0 — that turns the conditional preserve_commit_order rule
+        // into a plain warning rather than a hard risk on the master
+        // side, which is the right default ("we cannot prove it's a
+        // risk from here").
+        $masterRows = \App\Library\SlaveDurability::rows(
+            $masterValues,
+            ['parallel_threads' => 0]
+        );
+
+        $masterByName = [];
+        foreach ($masterRows as $mr) {
+            $masterByName[$mr['name']] = $mr;
+        }
+
+        $unknownCell = [
+            'value'   => '',
+            'level'   => \App\Library\SlaveDurability::LEVEL_UNKNOWN,
+            'label'   => 'n/a',
+            'tooltip' => 'Master not monitored or value not yet collected from the time-series.',
+        ];
+
+        $paired = [];
+        foreach ($slaveRows as $sr) {
+            $mr = $masterByName[$sr['name']] ?? null;
+            $paired[] = $sr + [
+                'master' => $mr ? [
+                    'value'   => $mr['value'],
+                    'level'   => $mr['level'],
+                    'label'   => $mr['label'],
+                    'tooltip' => $mr['tooltip'],
+                ] : $unknownCell,
+            ];
+        }
+        return $paired;
     }
 
     /**
@@ -907,14 +956,10 @@ ctx.strokeStyle="rgba(0,0,0,1)";ctx.lineWidth=1;ctx.stroke();
         $data['parallel_threads'] = $parallelSettings['parallel_threads'];
         $data['parallel_mode'] = $parallelSettings['parallel_mode'];
 
-        // Issue #1185 — render durability + crash-safety variables in the
-        // Actions column so the operator sees sync_binlog,
-        // innodb_flush_log_at_trx_commit, binlog_format, … without an SQL
-        // round-trip. Read-only for now (Phase 1); a setter follows up.
-        $data['durability_rows'] = self::buildDurabilityRows(
-            (int) $id_mysql_server,
-            (int) $data['parallel_threads']
-        );
+        // Issue #1196 — durability_rows is computed later (after master_id
+        // is known) so it can carry both slave and master values. Init
+        // empty here in case any intermediate code reads it.
+        $data['durability_rows'] = [];
 
         $data['server'] = Extraction::display(array("mysql_server::mysql_available"));
 
@@ -1203,6 +1248,16 @@ if (!empty($_GET['mysql_server']['id'])) {
             $master_id ? (int) $master_id : null,
             $gtidCompat['slave_family'],
             $gtidCompat['master_family']
+        );
+
+        // Issue #1196 follow-up — rebuild durability rows now that
+        // master_id is known so each row carries BOTH slave and master
+        // values (master left, slave right in the view per the
+        // operator request).
+        $data['durability_rows'] = self::buildDurabilityRows(
+            (int) $id_mysql_server,
+            (int) $data['parallel_threads'],
+            $master_id ? (int) $master_id : null
         );
 
         $data['slave_binlog_analysis_start_csrf_field'] = Csrf::DEFAULT_FIELD;

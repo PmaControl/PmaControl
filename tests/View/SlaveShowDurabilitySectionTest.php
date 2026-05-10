@@ -72,12 +72,70 @@ final class SlaveShowDurabilitySectionTest extends TestCase
     public function testViewIsIdempotentWhenDataMissing(): void
     {
         $view = file_get_contents(__DIR__ . '/../../App/view/Slave/show.view.php');
-        // Without $data['durability_rows'] the section must be skipped
-        // (so the page still renders on legacy rows that predate the
-        // migration of the metric).
         $this->assertMatchesRegularExpression(
             "/<\\?php if \\(!empty\\(\\\$data\\['durability_rows'\\]\\)\\): \\?>/",
             $view
         );
+    }
+
+    public function testDurabilityTableHasMasterLeftSlaveRightLayout(): void
+    {
+        // Issue #1196 follow-up — the operator asked for master on the
+        // LEFT and slave on the RIGHT for every variable. Pin the
+        // column order so a future refactor cannot silently flip them.
+        $view = file_get_contents(__DIR__ . '/../../App/view/Slave/show.view.php');
+
+        $start = strpos($view, 'sv-action-group sv-durability');
+        $this->assertNotFalse($start);
+        $end = strpos($view, '</table>', $start);
+        $this->assertNotFalse($end);
+        $section = substr($view, $start, $end - $start);
+
+        $masterHeaderPos = strpos($section, "<?= __('Master') ?>");
+        $slaveHeaderPos  = strpos($section, "<?= __('Slave') ?>");
+        $this->assertNotFalse($masterHeaderPos);
+        $this->assertNotFalse($slaveHeaderPos);
+        $this->assertLessThan($slaveHeaderPos, $masterHeaderPos,
+            'Master header must precede Slave header in the durability table');
+
+        $masterCellPos = strpos($section, 'sv-durability-badge-master');
+        $slaveCellPos  = strpos($section, 'sv-durability-badge-slave');
+        $this->assertNotFalse($masterCellPos);
+        $this->assertNotFalse($slaveCellPos);
+        $this->assertLessThan($slaveCellPos, $masterCellPos,
+            'master <td> must precede slave <td> in the durability table body');
+    }
+
+    public function testDurabilityRowsCarryMasterValuesNotJustSlave(): void
+    {
+        $view = file_get_contents(__DIR__ . '/../../App/view/Slave/show.view.php');
+        $this->assertStringContainsString('data-master-level=', $view);
+        $this->assertStringContainsString("\$row['master']['label']", $view);
+        $this->assertStringContainsString("\$row['master']['level']", $view);
+        $this->assertStringContainsString("\$row['master']['tooltip']", $view);
+    }
+
+    public function testGroupCommitTableHasMasterLeftSlaveRight(): void
+    {
+        // Same column-order requirement on the binlog group-commit table.
+        $view = file_get_contents(__DIR__ . '/../../App/view/Slave/show.view.php');
+        $start = strpos($view, 'sv-action-group sv-group-commit');
+        $this->assertNotFalse($start);
+        $end = strpos($view, '</table>', $start);
+        $this->assertNotFalse($end);
+        $section = substr($view, $start, $end - $start);
+
+        $masterHeaderPos = strpos($section, "<?= __('Master') ?>");
+        $slaveHeaderPos  = strpos($section, "<?= __('Slave') ?>");
+        $this->assertNotFalse($masterHeaderPos);
+        $this->assertNotFalse($slaveHeaderPos);
+        $this->assertLessThan($slaveHeaderPos, $masterHeaderPos,
+            'group-commit table: Master header must precede Slave header');
+    }
+
+    public function testInfoSeverityColorIsDeclared(): void
+    {
+        $view = file_get_contents(__DIR__ . '/../../App/view/Slave/show.view.php');
+        $this->assertStringContainsString("'info'    => '#2563eb'", $view);
     }
 }
