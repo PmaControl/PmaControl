@@ -113,4 +113,20 @@ final class SlaveShowBinlogRowImagePickerTest extends TestCase
         // mid-edit still routes to /user/connection cleanly.
         $this->assertStringContainsString('.then(svParseJsonResponse)', $this->view);
     }
+
+    public function testSuccessFlowGivesVisibleConfirmationBeforeReload(): void
+    {
+        // Without a visible confirmation the silent reload made it
+        // ambiguous whether the SET GLOBAL had taken effect — assert
+        // the JS now flips the Apply button into a "previous → applied"
+        // green tag and only THEN reloads the page.
+        $this->assertStringContainsString("(prev === applied ? 'No change' : (prev + ' → ' + applied))", $this->view);
+        $this->assertStringContainsString("btn.style.background = '#16a34a'", $this->view);
+        $this->assertStringContainsString('setTimeout(function()', $this->view);
+        $this->assertStringContainsString('window.location.reload()', $this->view);
+        // Loading state too — without it the operator sees no
+        // feedback during the round-trip.
+        $this->assertStringContainsString("fa-spinner fa-spin", $this->view);
+        $this->assertStringContainsString("Saving", $this->view);
+    }
 }

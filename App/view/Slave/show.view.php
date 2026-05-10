@@ -816,24 +816,39 @@ $(document).ready(function() {
                             formData.append('value', newValue);
                             formData.append(btn.getAttribute('data-csrf-field'), btn.getAttribute('data-csrf-token'));
                             btn.disabled = true;
-                            btn.textContent = '…';
+                            var originalApplyLabel = btn.textContent;
+                            btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Saving…';
+
                             fetch(btn.getAttribute('data-url'), { method: 'POST', body: formData })
                                 .then(svParseJsonResponse)
                                 .then(function(resp) {
                                     if (resp.error) {
                                         alert('Error: ' + resp.error);
                                         btn.disabled = false;
-                                        btn.textContent = 'Apply';
+                                        btn.textContent = originalApplyLabel;
                                         return;
                                     }
-                                    // Reload so the badge + tooltip + level recompute
+                                    // Confirm explicitly so the operator sees that
+                                    // SET GLOBAL was actually applied — without this
+                                    // the silent reload made it ambiguous whether the
+                                    // change took effect.
+                                    var prev    = (resp.previous || '').toString();
+                                    var applied = (resp.applied  || newValue).toString();
+                                    btn.innerHTML = '<i class="fa fa-check"></i> ' +
+                                        (prev === applied ? 'No change' : (prev + ' → ' + applied));
+                                    btn.style.background = '#16a34a';
+                                    btn.style.borderColor = '#15803d';
+                                    // Brief pause so the operator reads the badge then
+                                    // reload so the badge + tooltip + level recompute
                                     // server-side rather than racing JS state.
-                                    window.location.reload();
+                                    setTimeout(function() {
+                                        window.location.reload();
+                                    }, 1100);
                                 })
                                 .catch(function(err) {
                                     alert('Failed to update binlog_row_image: ' + err);
                                     btn.disabled = false;
-                                    btn.textContent = 'Apply';
+                                    btn.textContent = originalApplyLabel;
                                 });
                         });
                     });
