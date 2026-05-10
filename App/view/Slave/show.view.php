@@ -880,6 +880,86 @@ $(document).ready(function() {
                 </script>
                 <?php endif; ?>
 
+                <?php if (!empty($data['group_commit_rows'])): ?>
+                <?php
+                // Issue #1196 — Binlog group-commit (count + usec) for
+                // slave AND master, family-aware. Drift between the two
+                // sides is surfaced because the writer batches per the
+                // master's settings and replicas should align.
+                $sv_gc_color = [
+                    'ok'      => '#16a34a',
+                    'warn'    => '#d97706',
+                    'info'    => '#2563eb',
+                    'unknown' => '#94a3b8',
+                ];
+                ?>
+                <div class="sv-action-group sv-group-commit">
+                    <div class="sv-action-group-title">
+                        <?= __('Binlog group commit') ?>
+                        <small style="text-transform:none;letter-spacing:0;font-weight:400;color:#94a3b8">
+                            &mdash; <?= __('slave + master, family-aware') ?>
+                        </small>
+                    </div>
+                    <table class="sv-group-commit-table" style="width:100%;border-collapse:collapse;font-size:12px">
+                        <thead>
+                            <tr style="color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.04em">
+                                <th style="text-align:left;padding:4px 8px 6px 0;font-weight:600">&nbsp;</th>
+                                <th style="text-align:center;padding:4px 8px 6px 0;font-weight:600;width:90px"><?= __('Slave') ?></th>
+                                <th style="text-align:center;padding:4px 0 6px 0;font-weight:600;width:90px"><?= __('Master') ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($data['group_commit_rows'] as $gc):
+                            $sColor = $sv_gc_color[$gc['slave']['level']]  ?? '#94a3b8';
+                            $mColor = $sv_gc_color[$gc['master']['level']] ?? '#94a3b8';
+                        ?>
+                            <tr data-drift="<?= !empty($gc['drift']) ? '1' : '0' ?>">
+                                <td style="padding:4px 8px 4px 0;color:#475569">
+                                    <span style="cursor:help"
+                                          title="<?= htmlspecialchars($gc['tooltip'], ENT_QUOTES, 'UTF-8') ?>"
+                                          data-toggle="tooltip"
+                                          data-placement="left">
+                                        <?= htmlspecialchars($gc['label'], ENT_QUOTES, 'UTF-8') ?>
+                                    </span>
+                                    <div style="font-family:monospace;font-size:10px;color:#94a3b8;margin-top:2px;line-height:1.2">
+                                        <?= htmlspecialchars($gc['slave']['var'], ENT_QUOTES, 'UTF-8') ?>
+                                        <?php if ($gc['slave']['var'] !== $gc['master']['var'] && $gc['master']['level'] !== 'unknown'): ?>
+                                            <br><span style="color:#cbd5e1">/ master:</span>
+                                            <?= htmlspecialchars($gc['master']['var'], ENT_QUOTES, 'UTF-8') ?>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                                <td style="text-align:center;padding:4px 8px 4px 0">
+                                    <span style="display:inline-block;padding:2px 10px;border-radius:10px;font-weight:700;color:#fff;background:<?= $sColor ?>;cursor:help"
+                                          title="<?= htmlspecialchars($gc['slave']['var'] . ' = ' . $gc['slave']['label'], ENT_QUOTES, 'UTF-8') ?>"
+                                          data-toggle="tooltip">
+                                        <?= htmlspecialchars($gc['slave']['label'], ENT_QUOTES, 'UTF-8') ?>
+                                    </span>
+                                </td>
+                                <td style="text-align:center;padding:4px 0">
+                                    <span style="display:inline-block;padding:2px 10px;border-radius:10px;font-weight:700;color:#fff;background:<?= $mColor ?>;cursor:help"
+                                          title="<?= htmlspecialchars($gc['master']['var'] . ' = ' . $gc['master']['label'], ENT_QUOTES, 'UTF-8') ?>"
+                                          data-toggle="tooltip">
+                                        <?= htmlspecialchars($gc['master']['label'], ENT_QUOTES, 'UTF-8') ?>
+                                    </span>
+                                </td>
+                            </tr>
+                            <?php if (!empty($gc['drift'])): ?>
+                            <tr>
+                                <td colspan="3" style="padding:0 0 6px 0">
+                                    <div style="background:#fffbeb;border-left:3px solid #f59e0b;padding:4px 8px;font-size:11px;color:#78350f;border-radius:0 4px 4px 0">
+                                        <i class="fa fa-exclamation-triangle"></i>
+                                        <?= htmlspecialchars($gc['drift_reason'], ENT_QUOTES, 'UTF-8') ?>
+                                    </div>
+                                </td>
+                            </tr>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <?php endif; ?>
+
             </div>
         </div>
     </div>

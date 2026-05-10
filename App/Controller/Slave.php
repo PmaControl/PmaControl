@@ -321,6 +321,50 @@ class Slave extends Controller
     }
 
     /**
+     * Issue #1196 — build the binlog group-commit rows for the
+     * slave/show *Binlog group commit* card. Reads the relevant
+     * variables for both servers from the existing Extraction
+     * time-series (no extra MySQL connection).
+     *
+     * @return list<array{
+     *   label: string,
+     *   tooltip: string,
+     *   slave: array{var:string, value:string, level:string, label:string},
+     *   master: array{var:string, value:string, level:string, label:string},
+     *   drift: bool,
+     *   drift_reason: string,
+     * }>
+     */
+    private static function buildBinlogGroupCommitRows(
+        int $idSlave,
+        ?int $idMaster,
+        string $slaveFamily,
+        string $masterFamily
+    ): array {
+        $keys = \App\Library\BinlogGroupCommit::variableKeys();
+        $extractionKeys = [];
+        foreach ($keys as $k) {
+            $extractionKeys[] = 'variables::' . $k;
+        }
+
+        $ids = [$idSlave];
+        if ($idMaster !== null && $idMaster > 0 && $idMaster !== $idSlave) {
+            $ids[] = $idMaster;
+        }
+        $display = Extraction::display($extractionKeys, $ids);
+
+        $slaveValues  = $display[$idSlave][''] ?? [];
+        $masterValues = ($idMaster && isset($display[$idMaster][''])) ? $display[$idMaster][''] : [];
+
+        return \App\Library\BinlogGroupCommit::rows(
+            is_array($slaveValues)  ? $slaveValues  : [],
+            is_array($masterValues) ? $masterValues : [],
+            $slaveFamily,
+            $masterFamily
+        );
+    }
+
+    /**
      * Issue #1194 — coarse MySQL-family detection.
      *
      * Inspects `version_comment` (e.g. "MariaDB Server", "Source distribution",
@@ -1149,6 +1193,17 @@ if (!empty($_GET['mysql_server']['id'])) {
         );
         $data['gtid_compatible']    = $gtidCompat['compatible'];
         $data['gtid_compat_reason'] = $gtidCompat['reason'];
+
+        // Issue #1196 — render the Binlog group-commit pair (count +
+        // usec) for slave AND master, with family-aware variable names
+        // and drift detection. Reuses the family classification from
+        // the GTID compat check so we don't classify twice.
+        $data['group_commit_rows'] = self::buildBinlogGroupCommitRows(
+            (int) $id_mysql_server,
+            $master_id ? (int) $master_id : null,
+            $gtidCompat['slave_family'],
+            $gtidCompat['master_family']
+        );
 
         $data['slave_binlog_analysis_start_csrf_field'] = Csrf::DEFAULT_FIELD;
         $data['slave_binlog_analysis_start_csrf_token'] = Csrf::issueToken($_SESSION, self::SLAVE_BINLOG_ANALYSIS_START_CSRF_SCOPE);
