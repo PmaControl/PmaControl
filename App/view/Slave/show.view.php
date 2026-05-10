@@ -709,8 +709,12 @@ $(document).ready(function() {
                             'risk'    => '#dc2626',
                             'unknown' => '#94a3b8',
                         ];
+                        $slaveBinlogRowImageSetCsrfField = (string)($data['slave_binlog_row_image_set_csrf_field'] ?? '_csrf_token');
+                        $slaveBinlogRowImageSetCsrfToken = (string)($data['slave_binlog_row_image_set_csrf_token'] ?? '');
+                        $binlogRowImageValues = (array)($data['binlog_row_image_values'] ?? ['FULL', 'MINIMAL', 'NOBLOB']);
                         foreach ($data['durability_rows'] as $row):
                             $color = $sv_durability_color[$row['level']] ?? '#94a3b8';
+                            $isEditable = ($row['name'] === 'binlog_row_image');
                         ?>
                             <tr data-var="<?= htmlspecialchars($row['name'], ENT_QUOTES, 'UTF-8') ?>"
                                 data-level="<?= htmlspecialchars($row['level'], ENT_QUOTES, 'UTF-8') ?>">
@@ -725,12 +729,116 @@ $(document).ready(function() {
                                           data-placement="left">
                                         <?= htmlspecialchars($row['label'], ENT_QUOTES, 'UTF-8') ?>
                                     </span>
+                                    <?php if ($isEditable): ?>
+                                        <button type="button"
+                                                class="btn btn-link btn-xs sv-durability-edit"
+                                                data-var="binlog_row_image"
+                                                data-current="<?= htmlspecialchars($row['value'], ENT_QUOTES, 'UTF-8') ?>"
+                                                style="padding:0 4px;color:#64748b"
+                                                title="<?= __('Change value') ?>">
+                                            <i class="fa fa-pencil"></i>
+                                        </button>
+                                        <span class="sv-durability-picker"
+                                              data-var="binlog_row_image"
+                                              style="display:none;margin-left:6px;vertical-align:middle">
+                                            <select class="sv-durability-picker-select"
+                                                    style="padding:2px 4px;border:1px solid #cbd5e1;border-radius:4px;font-size:11px">
+                                                <?php foreach ($binlogRowImageValues as $v): ?>
+                                                    <option value="<?= htmlspecialchars($v, ENT_QUOTES, 'UTF-8') ?>"<?= ($v === $row['value']) ? ' selected' : '' ?>><?= htmlspecialchars($v, ENT_QUOTES, 'UTF-8') ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                            <button type="button"
+                                                    class="btn btn-primary btn-xs sv-durability-picker-apply"
+                                                    style="margin-left:4px;font-size:11px"
+                                                    data-url="<?= LINK ?>slave/setBinlogRowImage/<?= (int)$data['id_mysql_server'] ?>/<?= htmlspecialchars($data['replication_name'], ENT_QUOTES, 'UTF-8') ?>/ajax:true/"
+                                                    data-csrf-field="<?= htmlspecialchars($slaveBinlogRowImageSetCsrfField, ENT_QUOTES, 'UTF-8') ?>"
+                                                    data-csrf-token="<?= htmlspecialchars($slaveBinlogRowImageSetCsrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                                                <?= __('Apply') ?>
+                                            </button>
+                                            <button type="button"
+                                                    class="btn btn-default btn-xs sv-durability-picker-cancel"
+                                                    style="margin-left:2px;font-size:11px">
+                                                <?= __('Cancel') ?>
+                                            </button>
+                                        </span>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
+
+                <script>
+                // Issue #1190 — wire the binlog_row_image picker.
+                (function(){
+                    document.querySelectorAll('.sv-durability-edit').forEach(function(btn) {
+                        btn.addEventListener('click', function(){
+                            var row = btn.closest('tr');
+                            var picker = row.querySelector('.sv-durability-picker');
+                            if (picker) {
+                                picker.style.display = 'inline-block';
+                                btn.style.display = 'none';
+                            }
+                        });
+                    });
+                    document.querySelectorAll('.sv-durability-picker-cancel').forEach(function(btn) {
+                        btn.addEventListener('click', function(){
+                            var picker = btn.closest('.sv-durability-picker');
+                            picker.style.display = 'none';
+                            var editBtn = picker.parentElement.querySelector('.sv-durability-edit');
+                            if (editBtn) editBtn.style.display = '';
+                        });
+                    });
+                    document.querySelectorAll('.sv-durability-picker-apply').forEach(function(btn) {
+                        btn.addEventListener('click', function(){
+                            var picker = btn.closest('.sv-durability-picker');
+                            var sel = picker.querySelector('.sv-durability-picker-select');
+                            var newValue = sel.value;
+                            var editBtn = picker.parentElement.querySelector('.sv-durability-edit');
+                            var current = editBtn ? editBtn.getAttribute('data-current') : '';
+
+                            // Double-confirm a downgrade from FULL to anything else: it
+                            // breaks pt-table-checksum and CDC consumers that rely on
+                            // before-images.
+                            if (current === 'FULL' && newValue !== 'FULL') {
+                                if (!confirm(
+                                    'Switching binlog_row_image from FULL → ' + newValue +
+                                    ' shrinks binlogs but breaks tools that need ' +
+                                    'before-images (pt-table-checksum, some CDC ' +
+                                    'consumers). Continue?'
+                                )) {
+                                    return;
+                                }
+                            }
+
+                            var formData = new FormData();
+                            formData.append('value', newValue);
+                            formData.append(btn.getAttribute('data-csrf-field'), btn.getAttribute('data-csrf-token'));
+                            btn.disabled = true;
+                            btn.textContent = '…';
+                            fetch(btn.getAttribute('data-url'), { method: 'POST', body: formData })
+                                .then(svParseJsonResponse)
+                                .then(function(resp) {
+                                    if (resp.error) {
+                                        alert('Error: ' + resp.error);
+                                        btn.disabled = false;
+                                        btn.textContent = 'Apply';
+                                        return;
+                                    }
+                                    // Reload so the badge + tooltip + level recompute
+                                    // server-side rather than racing JS state.
+                                    window.location.reload();
+                                })
+                                .catch(function(err) {
+                                    alert('Failed to update binlog_row_image: ' + err);
+                                    btn.disabled = false;
+                                    btn.textContent = 'Apply';
+                                });
+                        });
+                    });
+                })();
+                </script>
                 <?php endif; ?>
 
             </div>
