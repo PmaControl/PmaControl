@@ -492,11 +492,11 @@ $(document).ready(function() {
                     </div>
                     <div class="sv-metric">
                         <div class="sv-metric-label">Binlog read <small>(IO)</small></div>
-                        <div class="sv-metric-value"><code><?= htmlspecialchars($master_log) ?></code> <small>pos <?= $read_pos ?></small></div>
+                        <div class="sv-metric-value"><code id="sv-live-master-log"><?= htmlspecialchars($master_log) ?></code> <small>pos <span id="sv-live-read-pos"><?= $read_pos ?></span></small></div>
                     </div>
                     <div class="sv-metric">
                         <div class="sv-metric-label">Relay exec <small>(SQL)</small></div>
-                        <div class="sv-metric-value"><code><?= htmlspecialchars($relay_log) ?></code> <small>pos <?= $exec_pos ?></small></div>
+                        <div class="sv-metric-value"><code id="sv-live-relay-log"><?= htmlspecialchars($relay_log) ?></code> <small>pos <span id="sv-live-exec-pos"><?= $exec_pos ?></span></small></div>
                     </div>
                     <?php if (!empty($data['binlog_gap'])): ?>
                     <div class="sv-metric full-width">
