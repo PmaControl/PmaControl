@@ -104,7 +104,9 @@ class Home extends Controller {
         // ── 5. Replication summary ──
         $data['replication'] = ['ok' => 0, 'lag' => 0, 'error' => 0, 'stopped' => 0, 'total' => 0];
         $slaveData = Extraction2::display(array("slave::slave_io_running", "slave::slave_sql_running",
-            "slave::seconds_behind_master", "slave::seconds_behind_source", "slave::last_io_error", "slave::last_sql_error"));
+            "slave::seconds_behind_master", "slave::seconds_behind_source",
+            "slave::last_io_error", "slave::last_sql_error",
+            "slave::last_io_errno", "slave::last_sql_errno"));
         foreach ($slaveData as $id => $row) {
             if (!isset($row['@slave'])) continue;
             foreach ($row['@slave'] as $cn => $s) {
@@ -112,6 +114,19 @@ class Home extends Controller {
                 $data['replication'][self::classifyReplicationChannel($s)]++;
             }
         }
+
+        // ── 5b. Replication issues dashboard (#1210) ──
+        $serverNames = [];
+        if (!empty($slaveData)) {
+            $ids = implode(',', array_map('intval', array_keys($slaveData)));
+            if ($ids !== '') {
+                $resN = $db->sql_query("SELECT id, display_name, hostname FROM mysql_server WHERE id IN ($ids)");
+                while ($rowN = $db->sql_fetch_array($resN, MYSQLI_ASSOC)) {
+                    $serverNames[(int)$rowN['id']] = $rowN;
+                }
+            }
+        }
+        $data['replication_issues'] = self::buildReplicationIssues($slaveData, $serverNames);
 
         // ── 6. Daemon status ──
         $data['daemons'] = ['total' => 0, 'running' => 0, 'stopped' => 0, 'error' => 0, 'list' => []];
@@ -277,6 +292,118 @@ class Home extends Controller {
         }
 
         return 'ok';
+    }
+
+    /**
+     * Issue #1210 — finer-grained classification feeding the home
+     * "Replication issues" dashboard. Returns one of:
+     * io_error, sql_error, stopped, lag_critical, lag_warning, ok.
+     * `ok` (lag < 60s, no error) is intentionally excluded from the
+     * issues card (already covered by the KPI ring).
+     */
+    public static function classifyReplicationChannelDetail(array $channel): string
+    {
+        $io  = $channel['replica_io_running']  ?? $channel['slave_io_running']  ?? 'No';
+        $sql = $channel['replica_sql_running'] ?? $channel['slave_sql_running'] ?? 'No';
+        $ioErr  = trim((string) ($channel['last_io_error']  ?? ''));
+        $sqlErr = trim((string) ($channel['last_sql_error'] ?? ''));
+
+        if ($ioErr !== '') {
+            return 'io_error';
+        }
+        if ($sqlErr !== '') {
+            return 'sql_error';
+        }
+        if ($io !== 'Yes' && $sql !== 'Yes') {
+            return 'stopped';
+        }
+        if ($io !== 'Yes' || $sql !== 'Yes') {
+            // half-stopped without recorded error — surface as the
+            // half that's down so the operator sees it.
+            return ($io !== 'Yes') ? 'io_error' : 'sql_error';
+        }
+
+        $lag = self::getReplicationLag($channel);
+        if ($lag !== null) {
+            if ($lag > 300) {
+                return 'lag_critical';
+            }
+            if ($lag > 60) {
+                return 'lag_warning';
+            }
+        }
+
+        return 'ok';
+    }
+
+    /**
+     * Issue #1210 — build the per-bucket list of channels with an
+     * issue. Returns an array keyed by bucket (in display order) with
+     * a list of channel rows enriched with the server's display_name
+     * so the view can render clickable rows without another query.
+     */
+    public static function buildReplicationIssues(array $slaveData, array $serverNames): array
+    {
+        $buckets = [
+            'io_error'     => [],
+            'sql_error'    => [],
+            'stopped'      => [],
+            'lag_critical' => [],
+            'lag_warning'  => [],
+        ];
+
+        foreach ($slaveData as $serverId => $row) {
+            if (!isset($row['@slave']) || !is_array($row['@slave'])) {
+                continue;
+            }
+            $serverId = (int) $serverId;
+            $hostname = (string) ($serverNames[$serverId]['display_name'] ?? $serverNames[$serverId]['hostname'] ?? ('id ' . $serverId));
+
+            foreach ($row['@slave'] as $cn => $channel) {
+                if (!is_array($channel)) {
+                    continue;
+                }
+                $bucket = self::classifyReplicationChannelDetail($channel);
+                if (!isset($buckets[$bucket])) {
+                    continue;
+                }
+
+                $ioErr  = trim((string) ($channel['last_io_error']  ?? ''));
+                $sqlErr = trim((string) ($channel['last_sql_error'] ?? ''));
+                $errnoIo  = (int) ($channel['last_io_errno']  ?? 0);
+                $errnoSql = (int) ($channel['last_sql_errno'] ?? 0);
+                $message = $ioErr !== '' ? $ioErr : $sqlErr;
+
+                $buckets[$bucket][] = [
+                    'server_id'         => $serverId,
+                    'hostname'          => $hostname,
+                    'connection_name'   => (string) $cn,
+                    'errno_io'          => $errnoIo,
+                    'errno_sql'         => $errnoSql,
+                    'last_io_error'     => $ioErr,
+                    'last_sql_error'    => $sqlErr,
+                    'message'           => $message,
+                    'message_signature' => self::normalizeReplicationErrorSignature($message),
+                    'lag'               => self::getReplicationLag($channel),
+                ];
+            }
+        }
+
+        return $buckets;
+    }
+
+    public static function normalizeReplicationErrorSignature(string $message): string
+    {
+        $message = trim($message);
+        if ($message === '') {
+            return '';
+        }
+        // Strip the volatile bits so 30 identical errors collapse into
+        // one signature. Keep enough context to identify the failure.
+        $sig = preg_replace('/\\d+/', 'N', $message);
+        $sig = preg_replace('/\'[^\']*\'/', "'X'", (string) $sig);
+        $sig = preg_replace('/\\s+/', ' ', (string) $sig);
+        return substr((string) $sig, 0, 200);
     }
 
     public static function getReplicationLag(array $channel): ?int

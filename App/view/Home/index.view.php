@@ -258,6 +258,67 @@ $versionColors = ['MariaDB' => '#003545', 'MySQL' => '#e97b00', 'Percona' => '#c
 </div>
 <?php endif; ?>
 
+<?php
+// Issue #1210 — replication issues dashboard, grouped by bucket and
+// deduped by signature so 30 identical errors collapse to one row.
+$replIssues = $data['replication_issues'] ?? [];
+$replIssuesTotal = 0;
+foreach ($replIssues as $bucket => $rows) { $replIssuesTotal += count($rows); }
+$replBucketLabels = [
+    'io_error'     => ['label' => 'IO error',     'icon' => 'fa-bolt',          'color' => '#991b1b', 'bg' => 'linear-gradient(135deg,#7f1d1d,#991b1b)'],
+    'sql_error'    => ['label' => 'SQL error',    'icon' => 'fa-bolt',          'color' => '#991b1b', 'bg' => 'linear-gradient(135deg,#7f1d1d,#991b1b)'],
+    'stopped'      => ['label' => 'Stopped',      'icon' => 'fa-pause-circle',  'color' => '#1e40af', 'bg' => 'linear-gradient(135deg,#1e3a8a,#1e40af)'],
+    'lag_critical' => ['label' => 'Lag critical', 'icon' => 'fa-clock-o',       'color' => '#991b1b', 'bg' => 'linear-gradient(135deg,#7f1d1d,#991b1b)'],
+    'lag_warning'  => ['label' => 'Lag warning',  'icon' => 'fa-clock-o',       'color' => '#92400e', 'bg' => 'linear-gradient(135deg,#92400e,#b45309)'],
+];
+?>
+<?php if ($replIssuesTotal > 0): ?>
+<div class="hm-card" style="margin-bottom:16px;border-left:4px solid #991b1b">
+    <div class="hm-card-head" style="background:linear-gradient(135deg,#7f1d1d,#991b1b)">
+        <span><i class="fa fa-database"></i> <?= __('Replication issues') ?> (<?= $replIssuesTotal ?>)</span>
+    </div>
+    <div class="hm-card-body" style="padding:8px 16px">
+        <?php foreach ($replBucketLabels as $bucket => $meta): ?>
+            <?php $rows = $replIssues[$bucket] ?? []; if (empty($rows)) continue; ?>
+            <?php
+            // Group rows by error signature so identical messages
+            // collapse into one expandable line.
+            $bySig = [];
+            foreach ($rows as $row) {
+                $sig = $row['message_signature'];
+                if (!isset($bySig[$sig])) {
+                    $bySig[$sig] = ['sample' => $row, 'channels' => []];
+                }
+                $bySig[$sig]['channels'][] = $row;
+            }
+            ?>
+            <div style="margin:8px 0;padding:6px 10px;border-left:3px solid <?= $meta['color'] ?>;background:#fef2f2">
+                <div style="font-weight:600;color:<?= $meta['color'] ?>">
+                    <i class="fa <?= $meta['icon'] ?>"></i> <?= htmlspecialchars($meta['label']) ?>
+                    <span style="color:var(--muted);font-weight:400">(<?= count($rows) ?> <?= count($rows) > 1 ? 'channels' : 'channel' ?>)</span>
+                </div>
+                <?php foreach ($bySig as $sig => $group): ?>
+                    <?php $sample = $group['sample']; $channels = $group['channels']; $nGroup = count($channels); ?>
+                    <div style="margin:4px 0 4px 14px;font-size:13px">
+                        <?php if (!empty($sample['message'])): ?>
+                            <div style="color:#7f1d1d;font-family:monospace;font-size:12px;word-break:break-word">
+                                <?= htmlspecialchars(substr($sample['message'], 0, 200)) ?><?= strlen($sample['message']) > 200 ? '…' : '' ?>
+                            </div>
+                        <?php endif; ?>
+                        <div style="color:var(--muted);margin-left:6px">
+                            <?php foreach ($channels as $i => $ch): ?>
+                                <?php if ($i > 0): ?>, <?php endif; ?>
+                                <a href="<?= LINK ?>slave/show/<?= (int) $ch['server_id'] ?>/<?= htmlspecialchars((string) $ch['connection_name']) ?>/" style="color:#1e3a8a"><?= htmlspecialchars($ch['hostname']) ?></a><?php if ($ch['connection_name'] !== ''): ?>:<small><?= htmlspecialchars($ch['connection_name']) ?></small><?php endif; ?><?php if ($bucket === 'lag_critical' || $bucket === 'lag_warning'): ?> <small>(<?= (int) $ch['lag'] ?>s)</small><?php endif; ?>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
+
 <?php if (!empty($data['orphan_refreshes'])): ?>
 <div class="hm-card" style="margin-bottom:16px;border-left:4px solid #f59e0b">
     <div class="hm-card-head" style="background:linear-gradient(135deg,#92400e,#b45309)">
