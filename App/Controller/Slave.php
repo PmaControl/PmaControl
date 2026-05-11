@@ -1577,6 +1577,11 @@ $(document).ready(function() {
             var lagText = svHumanDuration(d.lag);
             var lagCls = svLagClass(d.io, d.sql, d.lag);
             $("#sv-live-lag").attr("class", "sv-lag " + lagCls).text(lagText);
+
+            if (d.master_log !== undefined) $("#sv-live-master-log").text(d.master_log || "");
+            if (d.read_pos   !== undefined) $("#sv-live-read-pos").text(d.read_pos);
+            if (d.relay_log  !== undefined) $("#sv-live-relay-log").text(d.relay_log || "");
+            if (d.exec_pos   !== undefined) $("#sv-live-exec-pos").text(d.exec_pos);
         });
     }, 5000);
 });
@@ -1850,7 +1855,16 @@ var chart = new Chart(ctx, {
         $res = $db->sql_query($sql);
         $server = $db->sql_fetch_array($res, MYSQLI_ASSOC);
 
-        $result = ['io' => null, 'sql' => null, 'lag' => null, 'io_state' => ''];
+        $result = [
+            'io' => null,
+            'sql' => null,
+            'lag' => null,
+            'io_state' => '',
+            'master_log' => '',
+            'read_pos' => '',
+            'relay_log' => '',
+            'exec_pos' => '',
+        ];
 
         $server_data = Extraction::display(array("mysql_server::mysql_available"));
         if (!empty($server_data[$id_mysql_server]['']['mysql_available']) && $server_data[$id_mysql_server]['']['mysql_available'] === "1") {
@@ -1870,10 +1884,14 @@ var chart = new Chart(ctx, {
                 }
             }
 
-            $result['io']       = $slave['Slave_IO_Running']  ?? $slave['Replica_IO_Running']  ?? null;
-            $result['sql']      = $slave['Slave_SQL_Running'] ?? $slave['Replica_SQL_Running'] ?? null;
-            $result['lag']      = $slave['Seconds_Behind_Master'] ?? $slave['Seconds_Behind_Source'] ?? null;
-            $result['io_state'] = $slave['Slave_IO_State'] ?? $slave['Replica_IO_State'] ?? '';
+            $result['io']         = $slave['Slave_IO_Running']  ?? $slave['Replica_IO_Running']  ?? null;
+            $result['sql']        = $slave['Slave_SQL_Running'] ?? $slave['Replica_SQL_Running'] ?? null;
+            $result['lag']        = $slave['Seconds_Behind_Master'] ?? $slave['Seconds_Behind_Source'] ?? null;
+            $result['io_state']   = $slave['Slave_IO_State'] ?? $slave['Replica_IO_State'] ?? '';
+            $result['master_log'] = $slave['Master_Log_File']       ?? $slave['Source_Log_File']       ?? '';
+            $result['read_pos']   = $slave['Read_Master_Log_Pos']   ?? $slave['Read_Source_Log_Pos']   ?? '';
+            $result['relay_log']  = $slave['Relay_Master_Log_File'] ?? $slave['Relay_Source_Log_File'] ?? '';
+            $result['exec_pos']   = $slave['Exec_Master_Log_Pos']   ?? $slave['Exec_Source_Log_Pos']   ?? '';
         }
 
         header('Content-Type: application/json');
