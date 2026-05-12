@@ -1117,6 +1117,29 @@ ctx.strokeStyle="rgba(0,0,0,1)";ctx.lineWidth=1;ctx.stroke();
             return ($s['connection_name'] ?? '') === $replication_name;
         }));
 
+        // Second axis on the lag chart — relay_log_space (queued
+        // relay-log bytes) per timestamp. Same date range / groupbyday
+        // setting as the lag query so the timestamps line up; we then
+        // index by (day) since the page is already filtered to one
+        // (server, channel) above.
+        $relayRows = Extraction::extract(
+            array('slave::relay_log_space'),
+            array($id_mysql_server),
+            array($next_date, $date),
+            true,
+            true
+        ) ?: [];
+        $relayByDay = [];
+        foreach ($relayRows as $r) {
+            if (($r['connection_name'] ?? '') !== $replication_name) continue;
+            if (!isset($r['day'], $r['graph'])) continue;
+            $relayByDay[(string) $r['day']] = (string) $r['graph'];
+        }
+        foreach ($slaves as &$slave) {
+            $slave['graph_relay_log_space'] = $relayByDay[(string) ($slave['day'] ?? '')] ?? '';
+        }
+        unset($slave);
+
         $this->generateGraphSlave($slaves);
 
         foreach ($slaves as $slave) {
@@ -1726,9 +1749,64 @@ $(document).ready(function() {
 
         foreach ($slaves as $slave) {
 
-            $this->di['js']->code_javascript('
+            $relayPayload = (string) ($slave['graph_relay_log_space'] ?? '');
+            $hasRelay = $relayPayload !== '';
 
-Chart.defaults.plugins.legend.display = false;
+            // Extra dataset + right-side GB axis only when the
+            // Aspirateur cache actually has relay_log_space points
+            // for that day. The data is in BYTES (Relay_Log_Space) —
+            // we let Chart.js scale labels via a callback that
+            // formats the tick as MB/GB depending on magnitude.
+            $relayDataset = $hasRelay ? '
+            ,{
+                label: "Relay_Log_Space (queued bytes)",
+                data: ['.$relayPayload.'],
+                borderColor: "#b91c1c",
+                backgroundColor: "rgba(185,28,28,0.06)",
+                fill: false,
+                borderWidth: 1,
+                pointRadius: 0,
+                tension: 0,
+                yAxisID: "y_gb"
+            }' : '';
+
+            $relayScale = $hasRelay ? ',
+            y_gb: {
+                position: "right",
+                min: 0,
+                grid: { drawOnChartArea: false },
+                title: { display: true, text: "Relay log queued (B → MB/GB)" },
+                ticks: {
+                    callback: function (v) {
+                        if (v == null) return "";
+                        var n = Number(v);
+                        if (!isFinite(n)) return "";
+                        if (n >= 1073741824) return (n / 1073741824).toFixed(2) + " GB";
+                        if (n >= 1048576)    return (n / 1048576).toFixed(1)    + " MB";
+                        if (n >= 1024)       return (n / 1024).toFixed(1)       + " KB";
+                        return n + " B";
+                    }
+                }
+            }' : '';
+
+            $tooltipPlugin = $hasRelay ? '
+            tooltip: {
+                callbacks: {
+                    label: function (ctx) {
+                        var v = ctx.parsed && ctx.parsed.y;
+                        if (ctx.dataset && ctx.dataset.yAxisID === "y_gb") {
+                            if (v == null) return ctx.dataset.label + ": —";
+                            if (v >= 1073741824) return ctx.dataset.label + ": " + (v / 1073741824).toFixed(2) + " GB";
+                            if (v >= 1048576)    return ctx.dataset.label + ": " + (v / 1048576).toFixed(1)    + " MB";
+                            if (v >= 1024)       return ctx.dataset.label + ": " + (v / 1024).toFixed(1)       + " KB";
+                            return ctx.dataset.label + ": " + v + " B";
+                        }
+                        return ctx.dataset.label + ": " + (v == null ? "—" : v + " s");
+                    }
+                }
+            },' : '';
+
+            $this->di['js']->code_javascript('
 
 (function() {
 var canvas = document.getElementById("myChart'.$slave['id_mysql_server'].crc32(($slave['connection_name'] ?? '').$slave['day']).'");
@@ -1749,14 +1827,16 @@ var chart = new Chart(ctx, {
                 fill: true,
                 borderWidth: 1,
              pointRadius :1,
-             tension: 0
+             tension: 0,
+             yAxisID: "y"
 
-        }]
+        }'.$relayDataset.']
     },
     options: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
+            legend: { display: '.($hasRelay ? 'true' : 'false').' },'.$tooltipPlugin.'
             title: {
                 display: true,
                 text: "Replication : '.$slave['day'].'",
@@ -1783,11 +1863,12 @@ var chart = new Chart(ctx, {
             },
             y: {
                 min: 0,
+                position: "left",
                 title: {
                     display: true,
                     text: "Second behind source",
                 }
-            }
+            }'.$relayScale.'
         }
     }
 });
