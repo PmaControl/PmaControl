@@ -259,6 +259,20 @@ $candidates = array_values(array_filter($servers, static fn ($s) => (int) $s['is
     var LINK = <?= json_encode(LINK) ?>;
     var pollTimer = null;
 
+    // Every AJAX call from this page MUST set X-Requested-With so
+    // PersistentAuthSession::detectAjax() recognises it as AJAX and
+    // skips the persistent-auth cookie rotation. Without this, every
+    // poll (1 Hz) rotates the remember-me token and a follow-up
+    // navigation lands with a verifier outside the 10 s grace window
+    // → token_mismatch revoke + logout.
+    var AJAX_HEADERS = { 'X-Requested-With': 'XMLHttpRequest' };
+    function bhFetch(url, init) {
+        init = init || {};
+        init.credentials = init.credentials || 'same-origin';
+        init.headers = Object.assign({}, init.headers || {}, AJAX_HEADERS);
+        return fetch(url, init);
+    }
+
     function fmtPill(status) {
         var p = document.getElementById('bh-progress-pill');
         p.className = 'bh-pill ' + status;
@@ -267,7 +281,7 @@ $candidates = array_values(array_filter($servers, static fn ($s) => (int) $s['is
 
     function pollStatus(conversionId) {
         if (pollTimer) clearTimeout(pollTimer);
-        fetch(LINK + 'Blackhole/status/' + conversionId + '/ajax:true/', { credentials: 'same-origin' })
+        bhFetch(LINK + 'Blackhole/status/' + conversionId + '/ajax:true/')
             .then(function (r) { return r.json(); })
             .then(function (d) {
                 if (d.error) { console.error(d.error); return; }
@@ -314,8 +328,8 @@ $candidates = array_values(array_filter($servers, static fn ($s) => (int) $s['is
             fd.append(CSRF_FIELD, CSRF_TOKEN);
             fd.append('dry_run', dry ? '1' : '0');
 
-            fetch(LINK + 'Blackhole/startConvert/' + id + '/ajax:true/', {
-                method: 'POST', credentials: 'same-origin', body: fd,
+            bhFetch(LINK + 'Blackhole/startConvert/' + id + '/ajax:true/', {
+                method: 'POST', body: fd,
             })
                 .then(function (r) { return r.json(); })
                 .then(function (d) {
@@ -355,7 +369,7 @@ $candidates = array_values(array_filter($servers, static fn ($s) => (int) $s['is
         gfStatus.innerHTML = '';
         if (!gfTarget.value) return;
         gfStatus.innerHTML = '<span style="color:#94a3b8">checking…</span>';
-        fetch(LINK + 'Blackhole/probeIdle/' + gfTarget.value + '/ajax:true/', { credentials: 'same-origin' })
+        bhFetch(LINK + 'Blackhole/probeIdle/' + gfTarget.value + '/ajax:true/')
             .then(function (r) { return r.json(); })
             .then(function (d) {
                 if (d.idle === true) {
@@ -388,8 +402,8 @@ $candidates = array_values(array_filter($servers, static fn ($s) => (int) $s['is
         fd.append('dry_run', dry ? '1' : '0');
         if (gfUser.value.trim()) fd.append('replication_user', gfUser.value.trim());
 
-        fetch(LINK + 'Blackhole/startGreenfield/' + targetId + '/' + masterId + '/ajax:true/', {
-            method: 'POST', credentials: 'same-origin', body: fd,
+        bhFetch(LINK + 'Blackhole/startGreenfield/' + targetId + '/' + masterId + '/ajax:true/', {
+            method: 'POST', body: fd,
         })
             .then(function (r) { return r.json(); })
             .then(function (d) {
