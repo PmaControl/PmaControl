@@ -61,9 +61,12 @@ Non-admins see the matrix in read-only mode — both action columns show "SuperA
 | `POST` | `/MysqlServer/installPlugin/<id>/ajax:true/` | SuperAdmin + CSRF (`mysqlserver.plugins.install`); body `plugin=<NAME>`. JSON `{ ok, support, sql }` or `{ error, package? }`. |
 | `POST` | `/MysqlServer/uninstallPlugin/<id>/ajax:true/` | SuperAdmin + CSRF (`mysqlserver.plugins.uninstall`); body `plugin=<NAME>`. JSON `{ ok, sql }` or `{ error }`. Refuses statically-compiled plugins (no `PLUGIN_LIBRARY`). |
 
-Both AJAX endpoints follow PmaControl's two contracts (#1219, #1220):
-- The URL ends in `/ajax:true/` so `Router.php` sets `$_GET['ajax']='true'` and `Bootstrap.php` skips the DEBUG footer that would corrupt the JSON.
-- The fetch sends `X-Requested-With: XMLHttpRequest` so `PersistentAuthSession::detectAjax()` returns true and the persistent-auth cookie does **not** rotate on every call.
+Both AJAX endpoints follow PmaControl's three contracts (#1219, #1220, #1222):
+- The URL ends in `/ajax:true/` so `Router.php` sets `$_GET['ajax']='true'` and `Bootstrap.php:303` skips the DEBUG footer (`<div id="glial-debug-footer">`) that would otherwise be appended to the JSON. Symptom of a forgotten suffix: `Unexpected token '<', "<div" ...` (#1219).
+- The fetch sends `X-Requested-With: XMLHttpRequest` so `PersistentAuthSession::detectAjax()` returns true and the persistent-auth cookie does **not** rotate on every call. Without it, a 1 Hz poll empties the 10 s `PREVIOUS_TOKEN_GRACE_SECONDS` window in seconds and the next navigation = `token_mismatch` revoke + logout (#1220).
+- The action body is wrapped in **`pluginsTabBeginJsonResponse()`** (`ob_start()` + `display_errors=0` + `Content-Type: application/json; charset=UTF-8`) and every echo goes through **`pluginsTabSendJson()`** (`ob_clean()` + `echo json_encode(...)` + `exit;`). Reason: any stray PHP notice / warning / `Debug::debug()` / library noise emitted before our `echo` would surface client-side as e.g. `Unexpected token '<', "<br /> <font" ...` (#1222). The same `bhBeginJsonResponse` / `bhSendJson` pair lives in `App/Controller/Blackhole.php`.
+
+The full contract (`/ajax:true/` + `X-Requested-With` + `ob_start/clean` + `exit;`) is non-negotiable for any new JSON endpoint added to PmaControl. See also [the Glial AJAX JSON memory entry](../README.md) for the rationale + bug history.
 
 ## The catalog (`App/Library/PluginCatalog.php`)
 

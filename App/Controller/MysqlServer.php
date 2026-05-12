@@ -4389,6 +4389,10 @@ class MysqlServer extends Controller
                 'license' => (string)  ($r['plugin_license'] ?? $r['PLUGIN_LICENSE'] ?? ''),
             ];
         }
+        // Alphabetical order, case-insensitive — stable visual order
+        // independent of insertion order in information_schema.
+        ksort($enginesIndex, SORT_NATURAL | SORT_FLAG_CASE);
+        ksort($pluginsIndex, SORT_NATURAL | SORT_FLAG_CASE);
 
         // Permission gate — SuperAdmin (id_group = 4) only.
         $isSuperAdmin = $this->pluginsTabIsSuperAdmin();
@@ -4404,9 +4408,10 @@ class MysqlServer extends Controller
             'plugins_index'    => $pluginsIndex,
             // Only the catalog rows relevant to the detected family —
             // a MariaDB host doesn't show MySQL-only plugins and vice
-            // versa.
+            // versa. Both branches are sorted: engines first, then
+            // plugins, each block alphabetical.
             'catalog'          => $family === 'unknown'
-                ? \App\Library\PluginCatalog::all()
+                ? \App\Library\PluginCatalog::sortEnginesFirstThenPlugins(\App\Library\PluginCatalog::all())
                 : \App\Library\PluginCatalog::forFamily($family),
             'is_super_admin'   => $isSuperAdmin,
             'csrf_field'       => Csrf::DEFAULT_FIELD,
@@ -4428,26 +4433,21 @@ class MysqlServer extends Controller
      */
     public function installPlugin($param)
     {
-        $this->layout_name = false;
-        $this->view = false;
-        header('Content-Type: application/json; charset=UTF-8');
+        $this->pluginsTabBeginJsonResponse();
 
         if (!$this->pluginsTabIsSuperAdmin()) {
-            http_response_code(403);
-            echo json_encode(['error' => 'SuperAdmin only']);
+            $this->pluginsTabSendJson(['error' => 'SuperAdmin only'], 403);
             return;
         }
         if (!Csrf::check($_POST, $_SESSION, 'mysqlserver.plugins.install')) {
-            http_response_code(403);
-            echo json_encode(['error' => 'CSRF token mismatch']);
+            $this->pluginsTabSendJson(['error' => 'CSRF token mismatch'], 403);
             return;
         }
 
         $id_mysql_server = (int) ($param[0] ?? 0);
         $pluginName = strtoupper(trim((string) ($_POST['plugin'] ?? '')));
         if ($id_mysql_server <= 0 || $pluginName === '') {
-            http_response_code(400);
-            echo json_encode(['error' => 'Missing id_mysql_server or plugin']);
+            $this->pluginsTabSendJson(['error' => 'Missing id_mysql_server or plugin'], 400);
             return;
         }
 
@@ -4455,15 +4455,13 @@ class MysqlServer extends Controller
         $res = $db->sql_query("SELECT id, name FROM mysql_server WHERE id = {$id_mysql_server} AND is_deleted = 0");
         $srv = $res ? $db->sql_fetch_array($res, MYSQLI_ASSOC) : null;
         if (!$srv) {
-            http_response_code(404);
-            echo json_encode(['error' => 'Server not found']);
+            $this->pluginsTabSendJson(['error' => 'Server not found'], 404);
             return;
         }
 
         $entry = \App\Library\PluginCatalog::find($pluginName);
         if ($entry === null) {
-            http_response_code(400);
-            echo json_encode(['error' => "Plugin '{$pluginName}' not in catalog"]);
+            $this->pluginsTabSendJson(['error' => "Plugin '{$pluginName}' not in catalog"], 400);
             return;
         }
 
@@ -4474,31 +4472,27 @@ class MysqlServer extends Controller
         $vcomment = (string) ($rowEx['version_comment'] ?? '');
         $family = \App\Library\PluginCatalog::detectFamily($version . ' ' . $vcomment);
         if (!isset($entry[$family])) {
-            http_response_code(400);
-            echo json_encode(['error' => "Cannot determine MariaDB/MySQL family from version='{$version}'"]);
+            $this->pluginsTabSendJson(['error' => "Cannot determine MariaDB/MySQL family from version='{$version}'"], 400);
             return;
         }
         $spec = $entry[$family];
         if (($spec['availability'] ?? '') !== \App\Library\PluginCatalog::AVAILABILITY_CORE) {
             $hint = $spec['install_hint'] ?? ('First run: apt install ' . ($spec['package'] ?? '?') . ' on the target host, then restart the service.');
-            http_response_code(409);
-            echo json_encode([
+            $this->pluginsTabSendJson([
                 'error' => "Plugin '{$pluginName}' is not hot-installable on {$family}: " . $hint,
                 'package' => $spec['package'] ?? '',
-            ]);
+            ], 409);
             return;
         }
         $soname = (string) ($spec['soname'] ?? '');
         if ($soname === '') {
-            http_response_code(400);
-            echo json_encode(['error' => 'Catalog entry has no SONAME']);
+            $this->pluginsTabSendJson(['error' => 'Catalog entry has no SONAME'], 400);
             return;
         }
 
         $link = Sgbd::sql($srv['name']);
         if (!$link) {
-            http_response_code(503);
-            echo json_encode(['error' => 'Cannot connect to target server']);
+            $this->pluginsTabSendJson(['error' => 'Cannot connect to target server'], 503);
             return;
         }
 
@@ -4510,8 +4504,7 @@ class MysqlServer extends Controller
         }
         if (!$ok) {
             $errMsg = method_exists($link, '_error') ? (string) $link->_error() : 'INSTALL failed';
-            http_response_code(500);
-            echo json_encode(['error' => $errMsg]);
+            $this->pluginsTabSendJson(['error' => $errMsg], 500);
             return;
         }
 
@@ -4527,7 +4520,7 @@ class MysqlServer extends Controller
             }
         }
 
-        echo json_encode(['ok' => true, 'support' => $support, 'sql' => $sql]);
+        $this->pluginsTabSendJson(['ok' => true, 'support' => $support, 'sql' => $sql]);
     }
 
     /**
@@ -4539,26 +4532,21 @@ class MysqlServer extends Controller
      */
     public function uninstallPlugin($param)
     {
-        $this->layout_name = false;
-        $this->view = false;
-        header('Content-Type: application/json; charset=UTF-8');
+        $this->pluginsTabBeginJsonResponse();
 
         if (!$this->pluginsTabIsSuperAdmin()) {
-            http_response_code(403);
-            echo json_encode(['error' => 'SuperAdmin only']);
+            $this->pluginsTabSendJson(['error' => 'SuperAdmin only'], 403);
             return;
         }
         if (!Csrf::check($_POST, $_SESSION, 'mysqlserver.plugins.uninstall')) {
-            http_response_code(403);
-            echo json_encode(['error' => 'CSRF token mismatch']);
+            $this->pluginsTabSendJson(['error' => 'CSRF token mismatch'], 403);
             return;
         }
 
         $id_mysql_server = (int) ($param[0] ?? 0);
         $pluginName = strtoupper(trim((string) ($_POST['plugin'] ?? '')));
         if ($id_mysql_server <= 0 || $pluginName === '') {
-            http_response_code(400);
-            echo json_encode(['error' => 'Missing id_mysql_server or plugin']);
+            $this->pluginsTabSendJson(['error' => 'Missing id_mysql_server or plugin'], 400);
             return;
         }
 
@@ -4566,15 +4554,13 @@ class MysqlServer extends Controller
         $res = $db->sql_query("SELECT id, name FROM mysql_server WHERE id = {$id_mysql_server} AND is_deleted = 0");
         $srv = $res ? $db->sql_fetch_array($res, MYSQLI_ASSOC) : null;
         if (!$srv) {
-            http_response_code(404);
-            echo json_encode(['error' => 'Server not found']);
+            $this->pluginsTabSendJson(['error' => 'Server not found'], 404);
             return;
         }
 
         $link = Sgbd::sql($srv['name']);
         if (!$link) {
-            http_response_code(503);
-            echo json_encode(['error' => 'Cannot connect to target server']);
+            $this->pluginsTabSendJson(['error' => 'Cannot connect to target server'], 503);
             return;
         }
 
@@ -4594,9 +4580,8 @@ class MysqlServer extends Controller
             // a different PLUGIN_NAME than their SHOW ENGINES name;
             // try a fallback by SONAME via the catalog if it exists.
             $entry = \App\Library\PluginCatalog::find($pluginName);
-            if (!$entry || empty($entry['mariadb']['soname']) && empty($entry['mysql']['soname'])) {
-                http_response_code(404);
-                echo json_encode(['error' => "Plugin '{$pluginName}' not found in information_schema.PLUGINS"]);
+            if (!$entry || (empty($entry['mariadb']['soname']) && empty($entry['mysql']['soname']))) {
+                $this->pluginsTabSendJson(['error' => "Plugin '{$pluginName}' not found in information_schema.PLUGINS"], 404);
                 return;
             }
             $candidateSonames = array_filter([
@@ -4607,11 +4592,10 @@ class MysqlServer extends Controller
         }
 
         if (empty($info['PLUGIN_LIBRARY'])) {
-            http_response_code(409);
-            echo json_encode([
+            $this->pluginsTabSendJson([
                 'error' => "Plugin '{$pluginName}' is statically compiled (no PLUGIN_LIBRARY) and cannot be uninstalled. "
                          . "Refusing UNINSTALL SONAME — would fail anyway.",
-            ]);
+            ], 409);
             return;
         }
 
@@ -4627,11 +4611,56 @@ class MysqlServer extends Controller
         }
         if (!$ok) {
             $errMsg = method_exists($link, '_error') ? (string) $link->_error() : 'UNINSTALL failed';
-            http_response_code(500);
-            echo json_encode(['error' => $errMsg]);
+            $this->pluginsTabSendJson(['error' => $errMsg], 500);
             return;
         }
-        echo json_encode(['ok' => true, 'sql' => $sql]);
+        $this->pluginsTabSendJson(['ok' => true, 'sql' => $sql]);
+    }
+
+    /**
+     * Begin a JSON response. Starts an output buffer so any stray
+     * notice/warning/debug echo emitted later (by Sgbd, Extraction2,
+     * etc.) is swallowed before we write the JSON body. The buffer
+     * is cleaned right before `echo json_encode(...)` happens in
+     * `pluginsTabSendJson()`.
+     *
+     * This is the same belt-and-braces fix that #1219 documented for
+     * the trailing-debug-footer corruption, except it covers
+     * *leading* output too — any HTML emitted before the JSON would
+     * surface client-side as e.g. `Unexpected token '<', "<br /> <fo"`.
+     */
+    private function pluginsTabBeginJsonResponse(): void
+    {
+        $this->layout_name = false;
+        $this->view = false;
+        // Discard anything Glial already buffered for us; start our
+        // own buffer so we own the output stream until we flush.
+        while (ob_get_level() > 0) { @ob_end_clean(); }
+        ob_start();
+        // Hide PHP error rendering — we don't want display_errors to
+        // surface as HTML inside our JSON response. The errors still
+        // land in error_log so Apache's log keeps the diagnostic.
+        @ini_set('display_errors', '0');
+        header('Content-Type: application/json; charset=UTF-8');
+    }
+
+    /**
+     * Flush a JSON response after dropping any noise that landed in
+     * the output buffer. `exit;` after the echo so framework
+     * post-processing (Controller::display + setLayout) can't append
+     * anything either.
+     */
+    private function pluginsTabSendJson(array $payload, int $status = 200): void
+    {
+        if ($status !== 200) {
+            http_response_code($status);
+        }
+        while (ob_get_level() > 0) { @ob_end_clean(); }
+        echo json_encode($payload);
+        // Don't return — exit so display() / setLayout() never run on
+        // a JSON response. The persistent-auth cookie has already been
+        // touched (if it was going to be), the request is done.
+        exit;
     }
 
     /**

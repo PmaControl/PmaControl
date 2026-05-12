@@ -348,14 +348,40 @@ class PluginCatalog
      * (availability != 'na'). Used by the matrix view to hide MySQL
      * rows on a MariaDB host and vice versa.
      *
+     * Sorted: storage engines first, then plugins, each block sorted
+     * alphabetically by name. Stable visual order on every refresh.
+     *
      * @return array<int, array>
      */
     public static function forFamily(string $family): array
     {
-        return array_values(array_filter(self::all(), static function ($entry) use ($family) {
+        $rows = array_values(array_filter(self::all(), static function ($entry) use ($family) {
             return ($entry[$family]['availability'] ?? self::AVAILABILITY_NA)
                 !== self::AVAILABILITY_NA;
         }));
+        return self::sortEnginesFirstThenPlugins($rows);
+    }
+
+    /**
+     * Sort the given catalog list so that storage engines come first
+     * (alphabetical), then plugins (alphabetical). Used by the matrix
+     * view; exposed publicly so callers that don't filter by family
+     * (the `unknown`-family fallback in MysqlServer::plugins) can get
+     * the same ordering.
+     *
+     * @param array<int, array> $rows
+     * @return array<int, array>
+     */
+    public static function sortEnginesFirstThenPlugins(array $rows): array
+    {
+        usort($rows, static function ($a, $b) {
+            // Engines (kind=engine) sort weight 0; plugins weight 1.
+            $wa = $a['kind'] === self::KIND_ENGINE ? 0 : 1;
+            $wb = $b['kind'] === self::KIND_ENGINE ? 0 : 1;
+            if ($wa !== $wb) return $wa <=> $wb;
+            return strcasecmp((string) $a['name'], (string) $b['name']);
+        });
+        return $rows;
     }
 
     /**

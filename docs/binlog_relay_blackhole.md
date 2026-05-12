@@ -193,7 +193,7 @@ The Active relays card on `/Blackhole/index` exposes a **Re-run** button (next t
 | `GET`   | `/Blackhole/status/<conversion_id>/ajax:true/`            | Poll one conversion row (status + progress JSON) |
 | CLI     | `php App/Webroot/index.php Blackhole runConvertCli <id>`  | Same dispatcher the UI forks in the background |
 
-All AJAX URLs are suffixed with `/ajax:true/` so `Bootstrap.php` skips the DEBUG footer that would otherwise corrupt the JSON.
+All AJAX URLs are suffixed with `/ajax:true/` so `Bootstrap.php` skips the DEBUG footer that would otherwise corrupt the JSON (#1219). The fetch wrapper `bhFetch()` also injects `X-Requested-With: XMLHttpRequest` so the persistent-auth cookie does not rotate on every poll (#1220), and every JSON action wraps its body in `bhBeginJsonResponse()` / `bhSendJson()` to discard any stray PHP notice / warning / debug echo before flushing the response (#1222). Together these three guardrails are the only way to keep `JSON.parse` from breaking on the client.
 
 ## Monitoring after conversion
 

@@ -61,13 +61,10 @@ class Blackhole extends Controller
      */
     public function startConvert($param)
     {
-        $this->layout_name = false;
-        $this->view = false;
-        header('Content-Type: application/json; charset=UTF-8');
+        $this->bhBeginJsonResponse();
 
         if ($failure = CsrfGuard::ensureOrFail($_POST, $_SERVER, $_SESSION, self::START_CSRF_SCOPE)) {
-            http_response_code($failure['status']);
-            echo json_encode(['error' => $failure['body']]);
+            $this->bhSendJson(['error' => $failure['body']], $failure['status']);
             return;
         }
 
@@ -75,21 +72,16 @@ class Blackhole extends Controller
         $dryRun   = !empty($_POST['dry_run']) ? 1 : 0;
 
         if ($serverId <= 0) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Invalid id_mysql_server']);
+            $this->bhSendJson(['error' => 'Invalid id_mysql_server'], 400);
             return;
         }
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        // Guard: refuse if the server is already a relay (idempotency
-        // is handled by the conversion script itself; this check just
-        // saves a roundtrip).
         $res = $db->sql_query("SELECT is_binlog_relay FROM mysql_server WHERE id = {$serverId} AND is_deleted = 0");
         $srv = $res ? $db->sql_fetch_array($res, MYSQLI_ASSOC) : null;
         if (!$srv) {
-            http_response_code(404);
-            echo json_encode(['error' => 'Server not found']);
+            $this->bhSendJson(['error' => 'Server not found'], 404);
             return;
         }
 
@@ -100,7 +92,7 @@ class Blackhole extends Controller
              ORDER BY id DESC LIMIT 1"
         );
         if ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            echo json_encode(['id' => (int) $row['id'], 'status' => $row['status'], 'reused' => true]);
+            $this->bhSendJson(['id' => (int) $row['id'], 'status' => $row['status'], 'reused' => true]);
             return;
         }
 
@@ -116,7 +108,7 @@ class Blackhole extends Controller
         $pid = self::forkConversionRunner($conversionId);
         self::registerJobRow($db, $conversionId, [$conversionId], $pid, $startedBy);
 
-        echo json_encode(['id' => $conversionId, 'status' => 'pending']);
+        $this->bhSendJson(['id' => $conversionId, 'status' => 'pending']);
     }
 
     /**
@@ -125,14 +117,11 @@ class Blackhole extends Controller
      */
     public function status($param)
     {
-        $this->layout_name = false;
-        $this->view = false;
-        header('Content-Type: application/json; charset=UTF-8');
+        $this->bhBeginJsonResponse();
 
         $conversionId = (int) ($param[0] ?? 0);
         if ($conversionId <= 0) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Invalid id']);
+            $this->bhSendJson(['error' => 'Invalid id'], 400);
             return;
         }
 
@@ -145,12 +134,11 @@ class Blackhole extends Controller
         );
         $row = $res ? $db->sql_fetch_array($res, MYSQLI_ASSOC) : null;
         if (!$row) {
-            http_response_code(404);
-            echo json_encode(['error' => 'Conversion not found']);
+            $this->bhSendJson(['error' => 'Conversion not found'], 404);
             return;
         }
 
-        echo json_encode([
+        $this->bhSendJson([
             'id'                      => (int) $row['id'],
             'id_mysql_server'         => (int) $row['id_mysql_server'],
             'id_mysql_server__master' => (int) ($row['id_mysql_server__master'] ?? 0),
@@ -174,13 +162,10 @@ class Blackhole extends Controller
      */
     public function startGreenfield($param)
     {
-        $this->layout_name = false;
-        $this->view = false;
-        header('Content-Type: application/json; charset=UTF-8');
+        $this->bhBeginJsonResponse();
 
         if ($failure = CsrfGuard::ensureOrFail($_POST, $_SERVER, $_SESSION, self::GREENFIELD_CSRF_SCOPE)) {
-            http_response_code($failure['status']);
-            echo json_encode(['error' => $failure['body']]);
+            $this->bhSendJson(['error' => $failure['body']], $failure['status']);
             return;
         }
 
@@ -190,26 +175,23 @@ class Blackhole extends Controller
         $replUser = trim((string) ($_POST['replication_user'] ?? ''));
 
         if ($targetId <= 0 || $masterId <= 0) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Both target_id and master_id are required']);
+            $this->bhSendJson(['error' => 'Both target_id and master_id are required'], 400);
             return;
         }
         if ($targetId === $masterId) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Target and master must be different servers']);
+            $this->bhSendJson(['error' => 'Target and master must be different servers'], 400);
             return;
         }
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        // Refuse on duplicate-in-flight (any conversion for this target).
         $res = $db->sql_query(
             "SELECT id, status FROM blackhole_conversion
              WHERE id_mysql_server = {$targetId} AND status IN ('pending','running')
              ORDER BY id DESC LIMIT 1"
         );
         if ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            echo json_encode(['id' => (int) $row['id'], 'status' => $row['status'], 'reused' => true]);
+            $this->bhSendJson(['id' => (int) $row['id'], 'status' => $row['status'], 'reused' => true]);
             return;
         }
 
@@ -228,7 +210,7 @@ class Blackhole extends Controller
         $pid = self::forkConversionRunner($conversionId);
         self::registerJobRow($db, $conversionId, [$conversionId], $pid, $startedBy);
 
-        echo json_encode(['id' => $conversionId, 'status' => 'pending']);
+        $this->bhSendJson(['id' => $conversionId, 'status' => 'pending']);
     }
 
     /**
@@ -238,21 +220,18 @@ class Blackhole extends Controller
      */
     public function probeIdle($param)
     {
-        $this->layout_name = false;
-        $this->view = false;
-        header('Content-Type: application/json; charset=UTF-8');
+        $this->bhBeginJsonResponse();
 
         $serverId = (int) ($param[0] ?? 0);
         if ($serverId <= 0) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Invalid id']);
+            $this->bhSendJson(['error' => 'Invalid id'], 400);
             return;
         }
         $res = BlackholeRelay::probeIdle($serverId);
         if ($res === true) {
-            echo json_encode(['idle' => true]);
+            $this->bhSendJson(['idle' => true]);
         } else {
-            echo json_encode(['idle' => false, 'reason' => (string) $res]);
+            $this->bhSendJson(['idle' => false, 'reason' => (string) $res]);
         }
     }
 
@@ -373,6 +352,45 @@ class Blackhole extends Controller
     // ------------------------------------------------------------------
     //  Lookups
     // ------------------------------------------------------------------
+
+    /**
+     * Belt-and-braces JSON-response wrapper. Discards every existing
+     * output buffer Glial set up for us and starts a fresh one so any
+     * stray notice / warning / debug echo emitted by Sgbd, Extraction,
+     * or anything else downstream is swallowed before our JSON body
+     * lands on the wire. Pairs with `bhSendJson()` which `ob_clean`s
+     * one last time and `exit;`s.
+     *
+     * Two earlier bugs taught us this is non-negotiable for AJAX
+     * endpoints in Glial:
+     *   - #1219: a trailing `<div id="glial-debug-footer">…` from
+     *     Bootstrap.php corrupted the JSON unless the URL ended in
+     *     `/ajax:true/`.
+     *   - #1222: a leading `<br /> <font…>` from a PHP warning
+     *     surfaced as `Unexpected token '<', "<br /> <fo"...` on the
+     *     plugin Install button. The fix is `display_errors=0`
+     *     server-side + `ob_start/ob_clean` to discard whatever did
+     *     leak through.
+     */
+    private function bhBeginJsonResponse(): void
+    {
+        $this->layout_name = false;
+        $this->view = false;
+        while (ob_get_level() > 0) { @ob_end_clean(); }
+        ob_start();
+        @ini_set('display_errors', '0');
+        header('Content-Type: application/json; charset=UTF-8');
+    }
+
+    private function bhSendJson(array $payload, int $status = 200): void
+    {
+        if ($status !== 200) {
+            http_response_code($status);
+        }
+        while (ob_get_level() > 0) { @ob_end_clean(); }
+        echo json_encode($payload);
+        exit;
+    }
 
     private function loadRecentConversions($db, int $limit): array
     {
