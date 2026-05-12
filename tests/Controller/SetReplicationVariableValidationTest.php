@@ -26,9 +26,12 @@ final class SetReplicationVariableValidationTest extends TestCase
                 ['7'], ['variable' => 'binlog_format', 'value' => 'row'],
                 ['id_mysql_server' => 7, 'variable' => 'binlog_format', 'value' => 'ROW', 'value_sql_literal' => "'ROW'"],
             ],
+            // #1224 — MariaDB rejects `SET GLOBAL innodb_flush_log_at_trx_commit = '2'`
+            // (quoted) with errno 1232. The literal MUST be a bare
+            // integer for numeric-valued enums.
             'enum innodb_flush trx_commit' => [
                 ['1'], ['variable' => 'innodb_flush_log_at_trx_commit', 'value' => '2'],
-                ['id_mysql_server' => 1, 'variable' => 'innodb_flush_log_at_trx_commit', 'value' => '2', 'value_sql_literal' => "'2'"],
+                ['id_mysql_server' => 1, 'variable' => 'innodb_flush_log_at_trx_commit', 'value' => '2', 'value_sql_literal' => '2'],
             ],
             'enum source_info_repository' => [
                 ['5'], ['variable' => 'source_info_repository', 'value' => 'TABLE'],

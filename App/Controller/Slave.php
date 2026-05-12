@@ -2132,11 +2132,25 @@ var chart = new Chart(ctx, {
             if (!in_array($upper, $values, true)) {
                 return null;
             }
+            // For numeric enums (e.g. innodb_flush_log_at_trx_commit
+            // = 0/1/2/3) MariaDB rejects a quoted string with
+            // "Incorrect argument type to variable …" (errno 1232).
+            // Emit a bare integer literal whenever the whole picker
+            // value-set is digit-only — the value is still
+            // whitelist-validated so injection is impossible.
+            $valuesAreNumeric = !empty($values) && array_reduce(
+                $values,
+                static function ($carry, $v) { return $carry && (is_string($v) || is_int($v)) && ctype_digit((string) $v); },
+                true
+            );
+            $literal = $valuesAreNumeric
+                ? (string) (int) $upper
+                : "'" . $upper . "'";
             return [
                 'id_mysql_server'   => (int) $idMysqlServer,
                 'variable'          => $varName,
                 'value'             => $upper,
-                'value_sql_literal' => "'" . $upper . "'",
+                'value_sql_literal' => $literal,
             ];
         }
 
