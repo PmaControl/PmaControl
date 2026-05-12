@@ -219,7 +219,7 @@ $candidates = array_values(array_filter($servers, static fn ($s) => (int) $s['is
 
     function pollStatus(conversionId) {
         if (pollTimer) clearTimeout(pollTimer);
-        fetch(LINK + 'Blackhole/status/' + conversionId + '/', { credentials: 'same-origin' })
+        fetch(LINK + 'Blackhole/status/' + conversionId + '/ajax:true/', { credentials: 'same-origin' })
             .then(function (r) { return r.json(); })
             .then(function (d) {
                 if (d.error) { console.error(d.error); return; }
@@ -266,7 +266,7 @@ $candidates = array_values(array_filter($servers, static fn ($s) => (int) $s['is
             fd.append(CSRF_FIELD, CSRF_TOKEN);
             fd.append('dry_run', dry ? '1' : '0');
 
-            fetch(LINK + 'Blackhole/startConvert/' + id + '/', {
+            fetch(LINK + 'Blackhole/startConvert/' + id + '/ajax:true/', {
                 method: 'POST', credentials: 'same-origin', body: fd,
             })
                 .then(function (r) { return r.json(); })
