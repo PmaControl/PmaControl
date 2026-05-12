@@ -111,7 +111,10 @@ $candidates = array_values(array_filter($servers, static fn ($s) => (int) $s['is
                     <td><strong><?= (int) ($s['downstream_slaves'] ?? 0) ?></strong></td>
                     <td><code><?= htmlspecialchars($s['hostname'] ?: $s['ip']) ?></code></td>
                     <td><span class="bh-pill relay"><?= __('BLACKHOLE relay') ?></span></td>
-                    <td><a href="<?= LINK ?>slave/show/<?= (int) $s['id'] ?>/<?= htmlspecialchars((string) $s['connection_name']) ?>/" class="btn btn-xs btn-default"><?= __('Inspect') ?></a></td>
+                    <td>
+                        <a href="<?= LINK ?>slave/show/<?= (int) $s['id'] ?>/<?= htmlspecialchars((string) $s['connection_name']) ?>/" class="btn btn-xs btn-default"><?= __('Inspect') ?></a>
+                        <button class="bh-btn-convert" data-id="<?= (int) $s['id'] ?>" data-name="<?= htmlspecialchars($s['display_name'] ?: $s['name']) ?>" data-dry="0" title="<?= __('Re-run the conversion (idempotent: BLACKHOLE→BLACKHOLE ALTERs are no-ops, the SHOW VARIABLES guarantee re-asserts sql_log_bin = OFF)') ?>"><?= __('Re-run') ?></button>
+                    </td>
                 </tr>
             <?php endforeach; ?>
         </table>
@@ -221,6 +224,9 @@ $candidates = array_values(array_filter($servers, static fn ($s) => (int) $s['is
 <div class="bh-card">
     <div class="bh-card-head" style="background:linear-gradient(135deg,#374151,#0f172a)">
         <span><?= __('Recent conversions') ?> (<?= count($conversions) ?>)</span>
+        <span style="font-weight:400;font-size:12px;opacity:0.85;margin-left:8px">
+            <?= __('also visible on') ?> <a href="<?= LINK ?>job/index" style="color:#fde68a">/job/index</a> — <?= __('centralized log + restart button') ?>
+        </span>
     </div>
     <div class="bh-card-body">
         <?php if (empty($conversions)): ?>

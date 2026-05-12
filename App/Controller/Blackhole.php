@@ -113,13 +113,8 @@ class Blackhole extends Controller
         );
         $conversionId = (int) $db->sql_insert_id();
 
-        // Background runner: same pattern as Slave::startBinlogAnalysis.
-        $logPath = ROOT . '/tmp/blackhole_conversion_' . $conversionId . '.log';
-        $cmd = 'cd ' . escapeshellarg(ROOT)
-             . ' && php App/Webroot/index.php Blackhole runConvertCli '
-             . (int) $conversionId
-             . ' > ' . escapeshellarg($logPath) . ' 2>&1 &';
-        exec($cmd);
+        $pid = self::forkConversionRunner($conversionId);
+        self::registerJobRow($db, $conversionId, [$conversionId], $pid, $startedBy);
 
         echo json_encode(['id' => $conversionId, 'status' => 'pending']);
     }
@@ -230,12 +225,8 @@ class Blackhole extends Controller
         );
         $conversionId = (int) $db->sql_insert_id();
 
-        $logPath = ROOT . '/tmp/blackhole_conversion_' . $conversionId . '.log';
-        $cmd = 'cd ' . escapeshellarg(ROOT)
-             . ' && php App/Webroot/index.php Blackhole runConvertCli '
-             . (int) $conversionId
-             . ' > ' . escapeshellarg($logPath) . ' 2>&1 &';
-        exec($cmd);
+        $pid = self::forkConversionRunner($conversionId);
+        self::registerJobRow($db, $conversionId, [$conversionId], $pid, $startedBy);
 
         echo json_encode(['id' => $conversionId, 'status' => 'pending']);
     }
@@ -281,12 +272,102 @@ class Blackhole extends Controller
             return;
         }
 
+        // The fork from startConvert/startGreenfield wrote a `job` row
+        // pointing at our pid+log so /job/index can surface us. When
+        // restarted from /job/index, no row exists yet for this pid —
+        // create one so the second run is also visible.
+        self::ensureJobRowForCurrentRun($conversionId);
+
         $relay = new BlackholeRelay($conversionId);
         $ok = $relay->run();
+
+        self::finalizeJobRowForCurrentRun($conversionId, $ok);
 
         if (PHP_SAPI === 'cli') {
             echo $ok ? "OK\n" : "FAILED\n";
         }
+    }
+
+    // ------------------------------------------------------------------
+    //  Job framework integration (#1212 — relauncher + /job/index log)
+    // ------------------------------------------------------------------
+
+    /**
+     * Background-fork the runner, capturing the pid via `echo $!`
+     * (same trick as Slave::runInBackground). Returns 0 if no pid
+     * could be parsed — the conversion still ran, we just couldn't
+     * register a job row.
+     */
+    private static function forkConversionRunner(int $conversionId): int
+    {
+        $logPath = self::logPathForConversion($conversionId);
+        $cmd = 'cd ' . escapeshellarg(ROOT)
+             . ' && nohup php App/Webroot/index.php Blackhole runConvertCli '
+             . (int) $conversionId
+             . ' > ' . escapeshellarg($logPath) . ' 2>&1 & echo $!';
+        return (int) trim((string) shell_exec($cmd));
+    }
+
+    /**
+     * Insert a `job` row so the run shows up on /job/index. We mirror
+     * Job::add()'s shape: `class` is the FQCN the framework expects so
+     * the restart path resolves it via normalizeControllerName().
+     */
+    private static function registerJobRow($db, int $conversionId, array $params, int $pid, string $startedBy): void
+    {
+        if ($pid <= 0) return; // can't track a pid we didn't get
+        $logPath = self::logPathForConversion($conversionId);
+        $uuid = bin2hex(random_bytes(16));
+        $uuid = substr($uuid, 0, 8) . '-' . substr($uuid, 8, 4) . '-' . substr($uuid, 12, 4)
+              . '-' . substr($uuid, 16, 4) . '-' . substr($uuid, 20, 12);
+        $paramJson = $db->sql_real_escape_string(json_encode($params));
+        $logEsc    = $db->sql_real_escape_string($logPath);
+        $uuidEsc   = $db->sql_real_escape_string($uuid);
+        $db->sql_query(
+            "INSERT INTO job (uuid, class, method, param, date_start, pid, log, error, status)
+             VALUES ('{$uuidEsc}', 'App\\\\Controller\\\\Blackhole', 'runConvertCli',
+                     '{$paramJson}', NOW(), {$pid}, '{$logEsc}', '', 'RUNNING')"
+        );
+    }
+
+    /**
+     * Called from runConvertCli() at startup. If the runner was
+     * launched via /job/index restart (i.e. without going through
+     * startConvert / startGreenfield), no `job` row exists yet for
+     * the current pid — register one so /job/index sees this restart.
+     */
+    private static function ensureJobRowForCurrentRun(int $conversionId): void
+    {
+        $pid = (int) getmypid();
+        if ($pid <= 0) return;
+        $db = Sgbd::sql(DB_DEFAULT);
+        $res = $db->sql_query("SELECT id FROM job WHERE pid = {$pid} AND status = 'RUNNING' LIMIT 1");
+        if ($res && $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            return; // already registered (the parent fork inserted it)
+        }
+        self::registerJobRow($db, $conversionId, [$conversionId], $pid, 'cli-restart');
+    }
+
+    /**
+     * Mark the matching `job` row as SUCCESS / ERROR + date_end so
+     * /job/index stops reporting "RUNNING" once we exit.
+     */
+    private static function finalizeJobRowForCurrentRun(int $conversionId, bool $ok): void
+    {
+        $pid = (int) getmypid();
+        if ($pid <= 0) return;
+        $db = Sgbd::sql(DB_DEFAULT);
+        $status = $ok ? 'SUCCESS' : 'ERROR';
+        $db->sql_query(
+            "UPDATE job
+             SET status = '{$status}', date_end = NOW()
+             WHERE pid = {$pid} AND status = 'RUNNING'"
+        );
+    }
+
+    private static function logPathForConversion(int $conversionId): string
+    {
+        return ROOT . '/tmp/log/blackhole_conversion_' . $conversionId . '.log';
     }
 
     // ------------------------------------------------------------------

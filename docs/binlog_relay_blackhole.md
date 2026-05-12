@@ -157,6 +157,16 @@ VALUES
 - `blackhole_conversion.replication_user` (optional override),
 - `menu` row for the Tools → BLACKHOLE entry (idempotent nested-set update).
 
+## Job framework integration (`/job/index`)
+
+Every fork from `startConvert` / `startGreenfield` registers a row in the standard `job` table with `class = 'App\Controller\Blackhole'`, `method = 'runConvertCli'`, the captured pid, and the log path under `tmp/log/blackhole_conversion_<id>.log`. As a result:
+
+- `/job/index` shows the conversion alongside backups and refreshes, with the centralized log viewer (ANSI-converted, password-redacted) and the same `RUNNING → SUCCESS / ERROR / INTERRUPTED` lifecycle (`Job::index()` flips RUNNING to INTERRUPTED when the pid is dead).
+- `Blackhole / runConvertCli` is in `Job::RELAUNCHABLE_COMMANDS` so the **Restart** button on `/job/index` re-runs the same `conversion_id`. Restart from `/job/index` calls `php App/Webroot/index.php Blackhole runConvertCli <conversion_id>` directly (not via `startConvert`); `runConvertCli()` therefore inserts its own `job` row at startup if none exists for the current pid (`ensureJobRowForCurrentRun`) and finalizes it in `finalizeJobRowForCurrentRun` to mark `SUCCESS / ERROR + date_end`.
+- The runner is **idempotent**: re-running on a server already flagged `is_binlog_relay = 1` is safe — `BLACKHOLE → BLACKHOLE` ALTERs are no-ops, the `SHOW VARIABLES LIKE 'sql_log_bin'` guarantee re-asserts `OFF` on every iteration, and the inventory `UPDATE` is a no-op too.
+
+The Active relays card on `/Blackhole/index` exposes a **Re-run** button (next to **Inspect**) that triggers the exact same `startConvert` endpoint — so an operator who needs to retry a partial run can do it from either page.
+
 ## Endpoints
 
 | Method  | Route                                                     | Purpose |
