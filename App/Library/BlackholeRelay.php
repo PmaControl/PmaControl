@@ -423,7 +423,7 @@ class BlackholeRelay
         $this->addStep('change_master_sql', $redacted);
         if (!$dryRun) {
             if (!$link->sql_query_silent($stmt)) {
-                $err = method_exists($link, 'sql_error') ? $link->sql_error() : 'sql_query failed';
+                $err = self::linkErrorMessage($link);
                 throw new \RuntimeException('CHANGE MASTER TO failed: ' . $err);
             }
         }
@@ -504,7 +504,7 @@ class BlackholeRelay
         $this->addStep('no_binlog', 'SET SESSION sql_log_bin = 0 — keep ALTERs out of the relay binlog');
         if (!$dryRun) {
             if (!$link->sql_query_silent('SET SESSION sql_log_bin = 0')) {
-                $err = method_exists($link, 'sql_error') ? $link->sql_error() : 'sql_query failed';
+                $err = self::linkErrorMessage($link);
                 $this->updateLastStep('SET SESSION sql_log_bin = 0 — FAILED: ' . $err
                     . ' (refusing to ALTER without sql_log_bin=0 — downstream slaves would inherit the BLACKHOLE conversion)', 'error');
                 return 0;
@@ -561,7 +561,7 @@ class BlackholeRelay
                 $this->addStep('alter', '[sql_log_bin=OFF] ' . $stmt);
                 if (!$dryRun) {
                     if (!$link->sql_query_silent($stmt)) {
-                        $err = method_exists($link, 'sql_error') ? $link->sql_error() : 'sql_query failed';
+                        $err = self::linkErrorMessage($link);
                         $this->updateLastStep('[sql_log_bin=OFF] ' . $stmt . ' — FAILED: ' . $err, 'error');
                         continue;
                     }
@@ -584,6 +584,33 @@ class BlackholeRelay
             $this->updateLastStep('SET SESSION sql_log_bin = 1' . ($dryRun ? ' (dry-run)' : ' — ok'));
         }
         return $converted;
+    }
+
+    /**
+     * Best-effort extraction of a *string* error from a Glial Sgbd
+     * link. `_error()` exposes the underlying `mysqli_error(...)`
+     * (always a string); `sql_error()` returns the Glial validation
+     * array which stringifies to "Array" — useless in a log line.
+     */
+    private static function linkErrorMessage($link): string
+    {
+        if (method_exists($link, '_error')) {
+            $msg = $link->_error();
+            if (is_string($msg) && $msg !== '') {
+                $errno = method_exists($link, '_error_num') ? (int) $link->_error_num() : 0;
+                return $errno > 0 ? "[errno=$errno] $msg" : $msg;
+            }
+        }
+        if (method_exists($link, 'sql_error')) {
+            $msg = $link->sql_error();
+            if (is_string($msg) && $msg !== '') return $msg;
+            if (is_array($msg) && !empty($msg)) {
+                return trim(implode(' | ', array_map(static function ($v) {
+                    return is_scalar($v) ? (string) $v : json_encode($v);
+                }, $msg)));
+            }
+        }
+        return 'sql_query failed (no driver error available)';
     }
 
     /**
