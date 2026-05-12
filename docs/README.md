@@ -33,6 +33,7 @@ One topic per file. Load only what the current task needs.
 ## Pages
 - [slave_show_page.md](slave_show_page.md) — `/slave/show/<id>/<conn>/` page anatomy, status tiles, live 5 s polling, GTID button logic, parallel-threads slider
 - [home_replication_dashboard.md](home_replication_dashboard.md) — `/Home/index` "Replication issues" card: 5 fine buckets + signature dedup (#1210)
+- [binlog_relay_blackhole.md](binlog_relay_blackhole.md) — `/Blackhole/index` Tools page + CLI: convert a slave into a BLACKHOLE binlog relay (epic #1212)
 
 ## Runtime
 - [logs.md](logs.md) — log files under `tmp/log/`
