@@ -1754,26 +1754,53 @@ $(document).ready(function() {
 
             // Extra dataset + right-side GB axis only when the
             // Aspirateur cache actually has relay_log_space points
-            // for that day. The data is in BYTES (Relay_Log_Space) —
-            // we let Chart.js scale labels via a callback that
-            // formats the tick as MB/GB depending on magnitude.
+            // for that day. The data is in BYTES — we let Chart.js
+            // scale tick labels via a callback that formats as
+            // KB/MB/GB depending on magnitude.
+            //
+            // Per-segment colouring (user request):
+            //   - segment going UP   → red    (relay growing — slave falling behind in bytes)
+            //   - segment going DOWN → green  (relay shrinking — slave catching up in bytes)
+            //   - segment FLAT       → blue with 50% opacity (steady state)
+            // `segment.borderColor` / `segment.backgroundColor`
+            // callbacks return per-segment colours from the slope
+            // between p0 and p1. `fill: "origin"` makes Chart.js fill
+            // the area down to the y_gb scale baseline — combined
+            // with `min: undefined` (auto-fit) on the axis, the
+            // coloured band ends up framed by the data range so the
+            // trend is visible without flooding the chart.
             $relayDataset = $hasRelay ? '
             ,{
                 label: "Relay_Log_Space (queued bytes)",
                 data: ['.$relayPayload.'],
                 borderColor: "#b91c1c",
-                backgroundColor: "rgba(185,28,28,0.06)",
-                fill: false,
+                backgroundColor: "rgba(185,28,28,0.30)",
+                fill: "origin",
                 borderWidth: 1,
                 pointRadius: 0,
                 tension: 0,
-                yAxisID: "y_gb"
+                yAxisID: "y_gb",
+                segment: {
+                    borderColor: function (ctx) {
+                        if (!ctx.p0 || !ctx.p1) return "#3b82f6";
+                        var d = ctx.p1.parsed.y - ctx.p0.parsed.y;
+                        if (d > 0) return "#dc2626";   // up   → red
+                        if (d < 0) return "#16a34a";   // down → green
+                        return "#3b82f6";              // flat → blue
+                    },
+                    backgroundColor: function (ctx) {
+                        if (!ctx.p0 || !ctx.p1) return "rgba(59,130,246,0.50)";
+                        var d = ctx.p1.parsed.y - ctx.p0.parsed.y;
+                        if (d > 0) return "rgba(220,38,38,0.30)";   // red 30%
+                        if (d < 0) return "rgba(22,163,74,0.30)";   // green 30%
+                        return "rgba(59,130,246,0.50)";              // blue 50% — flat steady state
+                    }
+                }
             }' : '';
 
             $relayScale = $hasRelay ? ',
             y_gb: {
                 position: "right",
-                min: 0,
                 grid: { drawOnChartArea: false },
                 title: { display: true, text: "Relay log queued (B → MB/GB)" },
                 ticks: {
