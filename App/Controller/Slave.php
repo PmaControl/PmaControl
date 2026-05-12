@@ -1117,28 +1117,12 @@ ctx.strokeStyle="rgba(0,0,0,1)";ctx.lineWidth=1;ctx.stroke();
             return ($s['connection_name'] ?? '') === $replication_name;
         }));
 
-        // Second axis on the lag chart — relay_log_space (queued
-        // relay-log bytes) per timestamp. Same date range / groupbyday
-        // setting as the lag query so the timestamps line up; we then
-        // index by (day) since the page is already filtered to one
-        // (server, channel) above.
-        $relayRows = Extraction::extract(
-            array('slave::relay_log_space'),
-            array($id_mysql_server),
+        $slaves = $this->enrichSlavesWithRelayLogSpaceGraph(
+            $slaves,
+            (int) $id_mysql_server,
             array($next_date, $date),
-            true,
-            true
-        ) ?: [];
-        $relayByDay = [];
-        foreach ($relayRows as $r) {
-            if (($r['connection_name'] ?? '') !== $replication_name) continue;
-            if (!isset($r['day'], $r['graph'])) continue;
-            $relayByDay[(string) $r['day']] = (string) $r['graph'];
-        }
-        foreach ($slaves as &$slave) {
-            $slave['graph_relay_log_space'] = $relayByDay[(string) ($slave['day'] ?? '')] ?? '';
-        }
-        unset($slave);
+            (string) $replication_name
+        );
 
         $this->generateGraphSlave($slaves);
 
@@ -1748,28 +1732,40 @@ $(document).ready(function() {
         $this->di['js']->addJavascript(array("moment.js", "chart-4.5.1.umd.min.js", "chartjs-adapter-moment.min.js", "hammer.min.js", "chartjs-plugin-zoom.js", "chartjs-chart-treemap.min.js"));
 
         foreach ($slaves as $slave) {
+            $this->di['js']->code_javascript(self::buildLagChartJs($slave));
+        }
+    }
 
-            $relayPayload = (string) ($slave['graph_relay_log_space'] ?? '');
-            $hasRelay = $relayPayload !== '';
+    /**
+     * Pure-PHP helper: emit the Chart.js construction block for a
+     * single per-day lag chart. Shared between
+     * `Slave::generateGraphSlave()` (initial page render via
+     * `code_javascript`) and `App/view/Slave/showGraphDay.view.php`
+     * (AJAX response for the "Load previous day" button) so the two
+     * paths can never drift apart.
+     *
+     * Renders:
+     * - Left axis `y` — `Second behind source` (lag) — same
+     *   navy area we've shown forever.
+     * - Right axis `y_gb` (only when `$slave['graph_relay_log_space']`
+     *   is non-empty) — `Relay_Log_Space` in bytes, with a
+     *   B/KB/MB/GB tick formatter and per-segment colouring:
+     *     up   = red, down = green, flat = blue 50% opacity.
+     *
+     * @param array{
+     *     id_mysql_server:int,
+     *     connection_name?:string,
+     *     day:string,
+     *     graph:string,
+     *     graph_relay_log_space?:string
+     * } $slave
+     */
+    public static function buildLagChartJs(array $slave): string
+    {
+        $relayPayload = (string) ($slave['graph_relay_log_space'] ?? '');
+        $hasRelay = $relayPayload !== '';
 
-            // Extra dataset + right-side GB axis only when the
-            // Aspirateur cache actually has relay_log_space points
-            // for that day. The data is in BYTES — we let Chart.js
-            // scale tick labels via a callback that formats as
-            // KB/MB/GB depending on magnitude.
-            //
-            // Per-segment colouring (user request):
-            //   - segment going UP   → red    (relay growing — slave falling behind in bytes)
-            //   - segment going DOWN → green  (relay shrinking — slave catching up in bytes)
-            //   - segment FLAT       → blue with 50% opacity (steady state)
-            // `segment.borderColor` / `segment.backgroundColor`
-            // callbacks return per-segment colours from the slope
-            // between p0 and p1. `fill: "origin"` makes Chart.js fill
-            // the area down to the y_gb scale baseline — combined
-            // with `min: undefined` (auto-fit) on the axis, the
-            // coloured band ends up framed by the data range so the
-            // trend is visible without flooding the chart.
-            $relayDataset = $hasRelay ? '
+        $relayDataset = $hasRelay ? '
             ,{
                 label: "Relay_Log_Space (queued bytes)",
                 data: ['.$relayPayload.'],
@@ -1784,21 +1780,21 @@ $(document).ready(function() {
                     borderColor: function (ctx) {
                         if (!ctx.p0 || !ctx.p1) return "#3b82f6";
                         var d = ctx.p1.parsed.y - ctx.p0.parsed.y;
-                        if (d > 0) return "#dc2626";   // up   → red
-                        if (d < 0) return "#16a34a";   // down → green
-                        return "#3b82f6";              // flat → blue
+                        if (d > 0) return "#dc2626";
+                        if (d < 0) return "#16a34a";
+                        return "#3b82f6";
                     },
                     backgroundColor: function (ctx) {
                         if (!ctx.p0 || !ctx.p1) return "rgba(59,130,246,0.50)";
                         var d = ctx.p1.parsed.y - ctx.p0.parsed.y;
-                        if (d > 0) return "rgba(220,38,38,0.30)";   // red 30%
-                        if (d < 0) return "rgba(22,163,74,0.30)";   // green 30%
-                        return "rgba(59,130,246,0.50)";              // blue 50% — flat steady state
+                        if (d > 0) return "rgba(220,38,38,0.30)";
+                        if (d < 0) return "rgba(22,163,74,0.30)";
+                        return "rgba(59,130,246,0.50)";
                     }
                 }
             }' : '';
 
-            $relayScale = $hasRelay ? ',
+        $relayScale = $hasRelay ? ',
             y_gb: {
                 position: "right",
                 grid: { drawOnChartArea: false },
@@ -1816,7 +1812,7 @@ $(document).ready(function() {
                 }
             }' : '';
 
-            $tooltipPlugin = $hasRelay ? '
+        $tooltipPlugin = $hasRelay ? '
             tooltip: {
                 callbacks: {
                     label: function (ctx) {
@@ -1833,10 +1829,11 @@ $(document).ready(function() {
                 }
             },' : '';
 
-            $this->di['js']->code_javascript('
+        $canvasId = 'myChart' . $slave['id_mysql_server'] . crc32(($slave['connection_name'] ?? '') . $slave['day']);
 
+        return '
 (function() {
-var canvas = document.getElementById("myChart'.$slave['id_mysql_server'].crc32(($slave['connection_name'] ?? '').$slave['day']).'");
+var canvas = document.getElementById("' . $canvasId . '");
 if (!canvas) return;
 var existing = Chart.getChart(canvas);
 if (existing) existing.destroy();
@@ -1847,8 +1844,8 @@ var chart = new Chart(ctx, {
     type: "line",
     data: {
         datasets: [{
-            label: "'.__('Second behind source').'",
-            data: ['.$slave['graph'].'],
+            label: "' . __('Second behind source') . '",
+            data: [' . $slave['graph'] . '],
                 borderColor: "#16285a",
                 backgroundColor: "rgba(22,40,90,0.3)",
                 fill: true,
@@ -1857,16 +1854,16 @@ var chart = new Chart(ctx, {
              tension: 0,
              yAxisID: "y"
 
-        }'.$relayDataset.']
+        }' . $relayDataset . ']
     },
     options: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-            legend: { display: '.($hasRelay ? 'true' : 'false').' },'.$tooltipPlugin.'
+            legend: { display: ' . ($hasRelay ? 'true' : 'false') . ' },' . $tooltipPlugin . '
             title: {
                 display: true,
-                text: "Replication : '.$slave['day'].'",
+                text: "Replication : ' . $slave['day'] . '",
                 position: "top",
                 padding: 0
             }
@@ -1885,8 +1882,8 @@ var chart = new Chart(ctx, {
                         minute: "HH:mm"
                     }
                 },
-                min: new Date("'.$slave['day'].' 00:00:00"),
-                max: new Date("'.$slave['day'].' 23:59:59"),
+                min: new Date("' . $slave['day'] . ' 00:00:00"),
+                max: new Date("' . $slave['day'] . ' 23:59:59"),
             },
             y: {
                 min: 0,
@@ -1895,15 +1892,54 @@ var chart = new Chart(ctx, {
                     display: true,
                     text: "Second behind source",
                 }
-            }'.$relayScale.'
+            }' . $relayScale . '
         }
     }
 });
 })();
+';
+    }
 
+    /**
+     * Run the parallel `slave::relay_log_space` extraction and stamp
+     * each `$slaves` row with a `graph_relay_log_space` field
+     * carrying the Chart.js-formatted payload for the right-side GB
+     * axis. Same date range / groupbyday flag as the lag query so
+     * the timestamps line up.
+     *
+     * Filters by `$replicationName` so a multi-channel server doesn't
+     * leak the wrong relay queue onto the chart for the active
+     * channel.
+     *
+     * @param array<int,array> $slaves
+     * @param int $serverId
+     * @param array{0:string,1:string} $dateRange  [start, end]
+     * @param string $replicationName
+     * @return array<int,array>
+     */
+    private function enrichSlavesWithRelayLogSpaceGraph(array $slaves, int $serverId, array $dateRange, string $replicationName): array
+    {
+        $relayRows = Extraction::extract(
+            array('slave::relay_log_space'),
+            array($serverId),
+            $dateRange,
+            true,
+            true
+        ) ?: [];
 
-');
+        $relayByDay = [];
+        foreach ($relayRows as $r) {
+            if (($r['connection_name'] ?? '') !== $replicationName) continue;
+            if (!isset($r['day'], $r['graph'])) continue;
+            $relayByDay[(string) $r['day']] = (string) $r['graph'];
         }
+
+        foreach ($slaves as &$slave) {
+            $slave['graph_relay_log_space'] = $relayByDay[(string) ($slave['day'] ?? '')] ?? '';
+        }
+        unset($slave);
+
+        return $slaves;
     }
 
     public function showGraphDay($param)
@@ -1941,6 +1977,18 @@ var chart = new Chart(ctx, {
                 return ($s['connection_name'] ?? '') === $replication_name;
             }));
         }
+
+        // Same dual-axis treatment as the initial show() render: tag
+        // each slave row with the relay_log_space payload so the
+        // shared `Slave::buildLagChartJs()` helper renders the
+        // right-side GB axis on the AJAX-loaded "previous day" chart
+        // too.
+        $slaves = $this->enrichSlavesWithRelayLogSpaceGraph(
+            $slaves,
+            (int) $id_mysql_server,
+            array($date_start, $date_end),
+            (string) $replication_name
+        );
 
         $data['graphs'] = [];
         foreach ($slaves as $slave) {
