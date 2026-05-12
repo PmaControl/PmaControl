@@ -503,30 +503,35 @@ class BinlogAnalyzer
             return $this->findBinlogFilesRemote($binary, $creds, $master, $analysis['time_start'], $analysis['time_end']);
         }
 
-        // Multi-source: query the specific channel, not the default one
-        $slaveStatus = null;
-        $isMariaDBSlave = (stripos($slaveServer['version'] ?? $this->detectVersionFromLink($slaveLink), 'mariadb') !== false);
+        // Detect server family + version once, then pick the right
+        // statement via the canonical helper `Slave::buildShowReplicaStatusSql()`.
+        // No speculative try/catch — the SQL is guaranteed valid for
+        // the detected family.
+        //
+        //   MariaDB any version → SHOW SLAVE STATUS
+        //                         SHOW SLAVE '<conn>' STATUS
+        //   MySQL < 8.0.22      → SHOW SLAVE STATUS [FOR CHANNEL '<conn>']
+        //   MySQL ≥ 8.0.22      → SHOW REPLICA STATUS [FOR CHANNEL '<conn>']
+        $version    = (string) ($slaveServer['version'] ?? $this->detectVersionFromLink($slaveLink));
+        $isMariaDBSlave = stripos($version, 'mariadb') !== false;
+        $serverType = $isMariaDBSlave ? 'MariaDB' : 'MySQL';
 
-        if (!empty($connName)) {
-            if ($isMariaDBSlave) {
-                $res = @$slaveLink->query("SHOW SLAVE '" . $slaveLink->real_escape_string($connName) . "' STATUS");
-            } else {
-                $res = @$slaveLink->query("SHOW REPLICA STATUS FOR CHANNEL '" . $slaveLink->real_escape_string($connName) . "'");
-                if (!$res) $res = @$slaveLink->query("SHOW SLAVE STATUS FOR CHANNEL '" . $slaveLink->real_escape_string($connName) . "'");
-            }
+        $slaveStatus = null;
+
+        if ($connName !== '') {
+            $sql = \App\Controller\Slave::buildShowReplicaStatusSql($serverType, $version, $connName);
+            $res = $slaveLink->query($sql);
             if ($res && $res->num_rows > 0) {
                 $slaveStatus = $res->fetch_assoc();
                 $res->free();
             }
         }
 
-        // Fallback: default channel (single-source or channel query failed)
         if (!$slaveStatus) {
-            $res = @$slaveLink->query("SHOW REPLICA STATUS");
-            if (!$res) $res = @$slaveLink->query("SHOW SLAVE STATUS");
+            $sql = \App\Controller\Slave::buildShowReplicaStatusSql($serverType, $version, null);
+            $res = $slaveLink->query($sql);
             if ($res && $res->num_rows > 0) {
-                // For multi-source, find the row matching our channel
-                if (!empty($connName)) {
+                if ($connName !== '') {
                     while ($row = $res->fetch_assoc()) {
                         $cn = $row['Connection_name'] ?? $row['Channel_Name'] ?? '';
                         if ($cn === $connName) { $slaveStatus = $row; break; }
@@ -1655,14 +1660,16 @@ class BinlogAnalyzer
         return $pid > 0 && @posix_kill($pid, 0);
     }
 
+    /**
+     * Read the server version straight off the mysqli connection
+     * handshake — no SQL query, no error path. Same mechanism
+     * `App/Library/Mysql.php:432` uses to pick a charset for legacy
+     * servers. Returns an empty string only when the link isn't
+     * usable.
+     */
     private function detectVersionFromLink(\mysqli $link): string
     {
-        $res = @$link->query("SELECT @@version AS v");
-        if ($res && $row = $res->fetch_assoc()) {
-            $res->free();
-            return $row['v'] ?? '';
-        }
-        return '';
+        return (string) ($link->server_info ?? '');
     }
 
     private function updateStatus(string $status, ?string $error = null): void
