@@ -996,7 +996,15 @@ $(document).ready(function() {
                             var originalApplyLabel = btn.textContent;
                             btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Saving…';
 
-                            fetch(btn.getAttribute('data-url'), { method: 'POST', body: formData })
+                            // X-Requested-With keeps PersistentAuthSession::detectAjax()
+                            // happy → no per-request rotation of the
+                            // remember-me cookie (#1220).
+                            fetch(btn.getAttribute('data-url'), {
+                                method: 'POST',
+                                body: formData,
+                                credentials: 'same-origin',
+                                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                            })
                                 .then(svParseJsonResponse)
                                 .then(function(resp) {
                                     if (resp.error) {
