@@ -500,8 +500,7 @@ class BlackholeRelay
         // CRITICAL: keep the ALTERs out of this server's binary log.
         // Otherwise log_slave_updates would forward them to every
         // downstream consumer — they'd ENGINE=BLACKHOLE their own
-        // tables, which is a disaster. The session-level flag is
-        // enough; we restore it after the loop for hygiene.
+        // tables, which is a disaster.
         $this->addStep('no_binlog', 'SET SESSION sql_log_bin = 0 — keep ALTERs out of the relay binlog');
         if (!$dryRun) {
             if (!$link->sql_query_silent('SET SESSION sql_log_bin = 0')) {
@@ -513,23 +512,62 @@ class BlackholeRelay
         }
         $this->updateLastStep('SET SESSION sql_log_bin = 0' . ($dryRun ? ' (dry-run)' : ' — ok'));
 
+        // Verify the session really shows sql_log_bin=OFF. This is the
+        // user-visible proof — surfaced in the log so the operator
+        // sees the value before the first ALTER. Fail-closed if the
+        // SET silently didn't take (sql_log_bin is not settable when
+        // gtid_strict_mode + a transaction is open on some MariaDB
+        // builds, for instance).
+        if (!$dryRun) {
+            $current = $this->readSqlLogBin($link);
+            $this->addStep('no_binlog_verify',
+                "SHOW VARIABLES LIKE 'sql_log_bin' → " . ($current ?? 'NULL'));
+            if (strcasecmp((string) $current, 'OFF') !== 0) {
+                $this->updateLastStep(
+                    "SHOW VARIABLES LIKE 'sql_log_bin' returned '" . ($current ?? 'NULL')
+                    . "' — expected 'OFF'. Aborting before any ALTER.",
+                    'error'
+                );
+                return 0;
+            }
+            $this->updateLastStep("SHOW VARIABLES LIKE 'sql_log_bin' → OFF — ok");
+        }
+
         $converted = 0;
         try {
             foreach ($tables as $t) {
+                // Per-ALTER guard: re-check sql_log_bin right before
+                // the statement. Cheap, and gives an iron-clad proof
+                // for every single ALTER in the progress log.
+                if (!$dryRun) {
+                    $current = $this->readSqlLogBin($link);
+                    if (strcasecmp((string) $current, 'OFF') !== 0) {
+                        $this->addStep('no_binlog_drift',
+                            "sql_log_bin drifted to '" . ($current ?? 'NULL')
+                            . "' — aborting BLACKHOLE conversion.");
+                        $this->updateLastStep(
+                            "sql_log_bin drifted to '" . ($current ?? 'NULL')
+                            . "' — aborting BLACKHOLE conversion.",
+                            'error'
+                        );
+                        break;
+                    }
+                }
                 $stmt = sprintf(
                     'ALTER TABLE `%s`.`%s` ENGINE=BLACKHOLE',
                     str_replace('`', '``', $t['schema']),
                     str_replace('`', '``', $t['table'])
                 );
-                $this->addStep('alter', $stmt);
+                $this->addStep('alter', '[sql_log_bin=OFF] ' . $stmt);
                 if (!$dryRun) {
                     if (!$link->sql_query_silent($stmt)) {
                         $err = method_exists($link, 'sql_error') ? $link->sql_error() : 'sql_query failed';
-                        $this->updateLastStep($stmt . ' — FAILED: ' . $err, 'error');
+                        $this->updateLastStep('[sql_log_bin=OFF] ' . $stmt . ' — FAILED: ' . $err, 'error');
                         continue;
                     }
                 }
-                $this->updateLastStep($stmt . ($dryRun ? ' (dry-run)' : ' — ok'));
+                $this->updateLastStep('[sql_log_bin=OFF] ' . $stmt
+                    . ($dryRun ? ' (dry-run)' : ' — ok'));
                 $converted++;
                 if ($converted % 25 === 0) {
                     $this->setTableCounts(count($tables), $converted);
@@ -537,8 +575,8 @@ class BlackholeRelay
             }
         } finally {
             // Restore the default so any future query on this session
-            // behaves normally. (Connections from Sgbd::sql() may be
-            // pooled / reused — leaving sql_log_bin=0 would be wrong.)
+            // behaves normally. (Sgbd::sql() may pool / reuse the
+            // connection — leaving sql_log_bin=0 would be wrong.)
             $this->addStep('no_binlog_restore', 'SET SESSION sql_log_bin = 1 — restore default');
             if (!$dryRun) {
                 $link->sql_query_silent('SET SESSION sql_log_bin = 1');
@@ -546,6 +584,21 @@ class BlackholeRelay
             $this->updateLastStep('SET SESSION sql_log_bin = 1' . ($dryRun ? ' (dry-run)' : ' — ok'));
         }
         return $converted;
+    }
+
+    /**
+     * Returns the current `sql_log_bin` session value as reported by
+     * `SHOW VARIABLES LIKE 'sql_log_bin'`. `null` when the query
+     * fails. Used to prove (and log) that the session is bin-log-off
+     * before every ALTER … ENGINE=BLACKHOLE.
+     */
+    private function readSqlLogBin($link): ?string
+    {
+        $res = $link->sql_query_silent("SHOW VARIABLES LIKE 'sql_log_bin'");
+        if (!$res) return null;
+        $row = $link->sql_fetch_array($res, MYSQLI_ASSOC);
+        if (!$row || !isset($row['Value'])) return null;
+        return (string) $row['Value'];
     }
 
     private function persistRuntimeConfig($link, bool $dryRun): void

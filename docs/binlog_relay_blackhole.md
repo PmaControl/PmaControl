@@ -120,8 +120,18 @@ Both pipelines wrap their DDL with `SET SESSION sql_log_bin = 0` before any `ALT
 - Without `sql_log_bin = 0`, the `ALTER … ENGINE=BLACKHOLE` we run would land in that same binlog. Any slave connecting downstream — now or later — would replay it and convert its own tables to BLACKHOLE. Disaster.
 - Same goes for the `CREATE TABLE … ENGINE=InnoDB` statements injected by the dump-restore phase: they describe the master's schema and must not appear in the relay's downstream stream (the downstream master is the relay's upstream master, which already produced those events at its own positions).
 
-You'll see two extra steps in the progress log around the convert loop:
-`SET SESSION sql_log_bin = 0 — keep ALTERs out of the relay binlog` and the matching `SET SESSION sql_log_bin = 1 — restore default`.
+You'll see the following sequence in the progress log around the convert loop, and the value of `sql_log_bin` is verified — not just set — at every step:
+
+```
+SET SESSION sql_log_bin = 0 — keep ALTERs out of the relay binlog
+SHOW VARIABLES LIKE 'sql_log_bin' → OFF — ok           ← global post-SET proof
+[sql_log_bin=OFF] ALTER TABLE `db1`.`t1` ENGINE=BLACKHOLE — ok   ← per-ALTER re-check
+[sql_log_bin=OFF] ALTER TABLE `db1`.`t2` ENGINE=BLACKHOLE — ok
+…
+SET SESSION sql_log_bin = 1 — restore default
+```
+
+The runner aborts before any ALTER if either the initial `SHOW VARIABLES` returns anything other than `OFF`, or if the value silently drifts between two iterations (some MariaDB builds reject `SET sql_log_bin` inside an open transaction with `gtid_strict_mode=ON`, which we'd otherwise miss).
 
 ## Pipeline A — convert in place (what the script does)
 
