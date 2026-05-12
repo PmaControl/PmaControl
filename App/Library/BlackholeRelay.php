@@ -335,20 +335,140 @@ class BlackholeRelay
     //  keep the SQL in one place.
     // ------------------------------------------------------------------
 
+    /**
+     * List servers usable as a BLACKHOLE relay candidate, with one row
+     * per (server, replication_channel). A server qualifies when it has
+     * at least one channel with a resolvable upstream master, and is
+     * not part of a 2-cycle master ↔ master topology.
+     *
+     * Each row also carries `downstream_slaves` — the number of other
+     * monitored servers replicating *from* this one, computed in a
+     * single pass over the same Extraction2 result.
+     */
     public static function listCandidateServers(): array
     {
         $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT id, name, display_name, ip, hostname, is_binlog_relay
-                FROM mysql_server
-                WHERE is_deleted = 0
-                  AND is_proxy = 0
-                  AND is_vip = 0
-                ORDER BY is_binlog_relay DESC, display_name, name";
-        $res = $db->sql_query($sql);
-        $out = [];
+
+        // Inventory keyed by id for fast lookup of names + flags.
+        $res = $db->sql_query(
+            "SELECT id, name, display_name, ip, hostname, is_binlog_relay
+             FROM mysql_server
+             WHERE is_deleted = 0 AND is_proxy = 0 AND is_vip = 0"
+        );
+        $servers = [];
         while ($r = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            $out[] = $r;
+            $servers[(int) $r['id']] = $r;
         }
+        if (empty($servers)) return [];
+
+        // master_host + master_port per (server, connection_name).
+        // Extraction2 returns ['@slave' => [cn => [field => value, ...]]]
+        $slaveData = \App\Library\Extraction2::display([
+            'slave::master_host', 'slave::master_port',
+        ]);
+
+        // First pass: resolve every (server, cn) → upstream master_id.
+        $upstream = [];        // [server_id][cn] = master_id (or 0)
+        $downstreamCount = []; // [master_id] = count of distinct (slave_id, cn) pairs
+        foreach ($slaveData as $sid => $row) {
+            $sid = (int) $sid;
+            if (!isset($servers[$sid])) continue;
+            if (!isset($row['@slave']) || !is_array($row['@slave'])) continue;
+
+            foreach ($row['@slave'] as $cn => $channel) {
+                if (!is_array($channel)) continue;
+                $host = (string) ($channel['master_host'] ?? '');
+                $port = (int)    ($channel['master_port'] ?? 0);
+                if ($host === '' || $port === 0) continue;
+
+                $masterId = self::resolveServerByHostPort($db, $servers, $host, $port);
+                if ($masterId === 0) continue;
+                $upstream[$sid][(string) $cn] = $masterId;
+                $downstreamCount[$masterId] = ($downstreamCount[$masterId] ?? 0) + 1;
+            }
+        }
+
+        // Second pass: emit one row per (server, cn) where the server is
+        // a replica and is *not* in a master↔master 2-cycle with its
+        // upstream. A server already flagged as relay is always shown
+        // so the operator can inspect it.
+        $out = [];
+        foreach ($servers as $sid => $srv) {
+            $isRelay = (int) $srv['is_binlog_relay'] === 1;
+            $hasChannel = !empty($upstream[$sid]);
+            if (!$isRelay && !$hasChannel) continue;
+
+            $channels = $upstream[$sid] ?? ['' => 0];
+            foreach ($channels as $cn => $masterId) {
+                if ($masterId > 0 && self::isMutualReplica($upstream, $sid, $masterId)) {
+                    continue;
+                }
+                $masterDisplay = $masterId > 0 && isset($servers[$masterId])
+                    ? ($servers[$masterId]['display_name'] ?: $servers[$masterId]['name'])
+                    : '';
+                $out[] = [
+                    'id'                => (int) $srv['id'],
+                    'name'              => (string) $srv['name'],
+                    'display_name'      => (string) $srv['display_name'],
+                    'ip'                => (string) $srv['ip'],
+                    'hostname'          => (string) $srv['hostname'],
+                    'is_binlog_relay'   => (int) $srv['is_binlog_relay'],
+                    'connection_name'   => (string) $cn,
+                    'master_id'         => (int) $masterId,
+                    'master_display'    => $masterDisplay,
+                    'downstream_slaves' => (int) ($downstreamCount[(int) $srv['id']] ?? 0),
+                ];
+            }
+        }
+
+        // Stable order: relays first, then by downstream desc, then by name.
+        usort($out, static function ($a, $b) {
+            if ($a['is_binlog_relay'] !== $b['is_binlog_relay']) {
+                return $b['is_binlog_relay'] <=> $a['is_binlog_relay'];
+            }
+            if ($a['downstream_slaves'] !== $b['downstream_slaves']) {
+                return $b['downstream_slaves'] <=> $a['downstream_slaves'];
+            }
+            return strcasecmp($a['display_name'] ?: $a['name'], $b['display_name'] ?: $b['name']);
+        });
+
         return $out;
+    }
+
+    /**
+     * Best-effort host:port → mysql_server.id resolver. Tries the
+     * canonical Mysql::getIdFromDns helper first, falls back to a
+     * direct SELECT on (ip, port), then a hostname scan.
+     */
+    private static function resolveServerByHostPort($db, array $servers, string $host, int $port): int
+    {
+        if (class_exists(\App\Library\Mysql::class) && method_exists(\App\Library\Mysql::class, 'getIdFromDns')) {
+            $resolved = (int) \App\Library\Mysql::getIdFromDns($host . ':' . $port);
+            if ($resolved > 0) return $resolved;
+        }
+        $h = $db->sql_real_escape_string($host);
+        $sql = "SELECT id FROM mysql_server WHERE ip = '{$h}' AND port = {$port} AND is_deleted = 0 LIMIT 1";
+        $res = $db->sql_query_silent($sql);
+        if ($res && ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC))) {
+            return (int) $row['id'];
+        }
+        foreach ($servers as $s) {
+            if (((string) $s['hostname']) === $host) {
+                // hostname match — port already filtered upstream.
+                return (int) $s['id'];
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * True iff $a replicates from $b AND $b replicates from $a on any
+     * channel — the master ↔ master pattern we want to hide.
+     */
+    private static function isMutualReplica(array $upstream, int $a, int $b): bool
+    {
+        $aMasters = $upstream[$a] ?? [];
+        $bMasters = $upstream[$b] ?? [];
+        return in_array($b, $aMasters, true) && in_array($a, $bMasters, true);
     }
 }

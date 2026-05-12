@@ -12,7 +12,11 @@ use App\Library\Display;
 $servers     = $data['servers'] ?? [];
 $conversions = $data['conversions'] ?? [];
 
-$relays    = array_values(array_filter($servers, static fn ($s) => (int) $s['is_binlog_relay'] === 1));
+// One row per (server, channel) — already filtered server-side to
+// keep only servers that have a master and are NOT in a
+// master↔master 2-cycle. Relays are kept regardless so the
+// operator can see them in the upper card.
+$relays     = array_values(array_filter($servers, static fn ($s) => (int) $s['is_binlog_relay'] === 1));
 $candidates = array_values(array_filter($servers, static fn ($s) => (int) $s['is_binlog_relay'] === 0));
 ?>
 <style>
@@ -90,6 +94,9 @@ $candidates = array_values(array_filter($servers, static fn ($s) => (int) $s['is
         <table class="bh-table">
             <tr>
                 <th><?= __('Server') ?></th>
+                <th><?= __('Channel') ?></th>
+                <th><?= __('Upstream master') ?></th>
+                <th><?= __('Downstream slaves') ?></th>
                 <th><?= __('Hostname') ?></th>
                 <th><?= __('Status') ?></th>
                 <th></th>
@@ -97,9 +104,12 @@ $candidates = array_values(array_filter($servers, static fn ($s) => (int) $s['is
             <?php foreach ($relays as $s): ?>
                 <tr>
                     <td><?= Display::srv((int) $s['id']) ?></td>
+                    <td><code><?= htmlspecialchars($s['connection_name'] !== '' ? $s['connection_name'] : '(default)') ?></code></td>
+                    <td><?= (int) ($s['master_id'] ?? 0) > 0 ? Display::srv((int) $s['master_id']) : '<small style="color:#94a3b8">—</small>' ?></td>
+                    <td><strong><?= (int) ($s['downstream_slaves'] ?? 0) ?></strong></td>
                     <td><code><?= htmlspecialchars($s['hostname'] ?: $s['ip']) ?></code></td>
                     <td><span class="bh-pill relay"><?= __('BLACKHOLE relay') ?></span></td>
-                    <td><a href="<?= LINK ?>slave/show/<?= (int) $s['id'] ?>/" class="btn btn-xs btn-default"><?= __('Inspect') ?></a></td>
+                    <td><a href="<?= LINK ?>slave/show/<?= (int) $s['id'] ?>/<?= htmlspecialchars((string) $s['connection_name']) ?>/" class="btn btn-xs btn-default"><?= __('Inspect') ?></a></td>
                 </tr>
             <?php endforeach; ?>
         </table>
@@ -110,20 +120,33 @@ $candidates = array_values(array_filter($servers, static fn ($s) => (int) $s['is
 <div class="bh-card">
     <div class="bh-card-head">
         <span><?= __('Candidate servers') ?> (<?= count($candidates) ?>)</span>
+        <span style="font-weight:400;font-size:12px;opacity:0.85;margin-left:8px"><?= __('only servers with an upstream master, excluding master↔master pairs') ?></span>
     </div>
     <div class="bh-card-body">
         <?php if (empty($candidates)): ?>
-            <p style="color:#64748b;margin:0"><?= __('No candidate. All non-relay servers are excluded (proxies / VIPs / deleted).') ?></p>
+            <p style="color:#64748b;margin:0"><?= __('No candidate. All non-relay servers either have no master, are proxies / VIPs, or are part of a master↔master pair.') ?></p>
         <?php else: ?>
             <table class="bh-table">
                 <tr>
                     <th><?= __('Server') ?></th>
+                    <th><?= __('Channel') ?></th>
+                    <th><?= __('Upstream master') ?></th>
+                    <th><?= __('Downstream slaves') ?></th>
                     <th><?= __('Hostname / IP') ?></th>
                     <th><?= __('Convert') ?></th>
                 </tr>
                 <?php foreach ($candidates as $s): ?>
                     <tr data-server-id="<?= (int) $s['id'] ?>">
                         <td><?= Display::srv((int) $s['id']) ?></td>
+                        <td><code><?= htmlspecialchars($s['connection_name'] !== '' ? $s['connection_name'] : '(default)') ?></code></td>
+                        <td><?= (int) ($s['master_id'] ?? 0) > 0 ? Display::srv((int) $s['master_id']) : '<small style="color:#94a3b8">—</small>' ?></td>
+                        <td>
+                            <?php $d = (int) ($s['downstream_slaves'] ?? 0); ?>
+                            <strong<?= $d > 0 ? ' style="color:#4c1d95"' : '' ?>><?= $d ?></strong>
+                            <?php if ($d > 0): ?>
+                                <small style="color:#64748b">(<?= __('would benefit from a relay') ?>)</small>
+                            <?php endif; ?>
+                        </td>
                         <td><code><?= htmlspecialchars($s['hostname'] ?: $s['ip']) ?></code></td>
                         <td>
                             <button class="bh-btn-convert" data-id="<?= (int) $s['id'] ?>" data-name="<?= htmlspecialchars($s['display_name'] ?: $s['name']) ?>" data-dry="0"><?= __('Convert to BLACKHOLE') ?></button>
