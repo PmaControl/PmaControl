@@ -114,6 +114,7 @@ $candidates = array_values(array_filter($servers, static fn ($s) => (int) $s['is
                     <td>
                         <a href="<?= LINK ?>slave/show/<?= (int) $s['id'] ?>/<?= htmlspecialchars((string) $s['connection_name']) ?>/" class="btn btn-xs btn-default"><?= __('Inspect') ?></a>
                         <button class="bh-btn-convert" data-id="<?= (int) $s['id'] ?>" data-name="<?= htmlspecialchars($s['display_name'] ?: $s['name']) ?>" data-dry="0" title="<?= __('Re-run the conversion (idempotent: BLACKHOLE→BLACKHOLE ALTERs are no-ops, the SHOW VARIABLES guarantee re-asserts sql_log_bin = OFF)') ?>"><?= __('Re-run') ?></button>
+                        <button class="bh-btn-convert" style="background:#475569" data-id="<?= (int) $s['id'] ?>" data-name="<?= htmlspecialchars($s['display_name'] ?: $s['name']) ?>" data-dry="1" title="<?= __('Walk through the pipeline without mutating anything: SHOW VARIABLES is queried, ALTER statements are only logged.') ?>"><?= __('Dry-run') ?></button>
                     </td>
                 </tr>
             <?php endforeach; ?>
