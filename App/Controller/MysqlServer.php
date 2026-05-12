@@ -4790,9 +4790,12 @@ class MysqlServer extends Controller
                            ) AS x
                        )"
                 );
+                // ts_value_general_json schema is (date, id_ts_variable,
+                // id_mysql_server, value) — no connection_name on the
+                // general radical (it lives only on slave/digest).
                 $db->sql_query(
-                    "INSERT INTO ts_value_general_json (date, id_ts_variable, id_mysql_server, connection_name, value)
-                     VALUES ('{$now}', {$tsId}, {$serverId}, '', '{$valueEsc}')"
+                    "INSERT INTO ts_value_general_json (date, id_ts_variable, id_mysql_server, value)
+                     VALUES ('{$now}', {$tsId}, {$serverId}, '{$valueEsc}')"
                 );
             }
         } catch (\Throwable $e) {

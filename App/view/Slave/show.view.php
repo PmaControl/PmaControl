@@ -996,19 +996,49 @@ $(document).ready(function() {
                             var originalApplyLabel = btn.textContent;
                             btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Saving…';
 
+                            // Hard 30 s safety timeout: if the fetch
+                            // hangs (server-side fatal that escaped
+                            // our shutdown handler, network drop, opcache
+                            // serving stale code, …), the spinner would
+                            // otherwise spin forever. AbortController
+                            // cancels and the outer .catch resets.
+                            var ctl = new AbortController();
+                            var timeoutId = setTimeout(function() {
+                                ctl.abort();
+                            }, 30000);
+
                             // X-Requested-With keeps PersistentAuthSession::detectAjax()
                             // happy → no per-request rotation of the
-                            // remember-me cookie (#1220).
+                            // remember-me cookie (#1220). The Accept
+                            // header makes failure modes more visible
+                            // in the access log and in browser DevTools.
                             fetch(btn.getAttribute('data-url'), {
                                 method: 'POST',
                                 body: formData,
                                 credentials: 'same-origin',
-                                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                                signal: ctl.signal,
+                                headers: {
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                    'Accept': 'application/json'
+                                }
                             })
+                                .then(function (r) {
+                                    // Surface non-200 + body length in
+                                    // the console so a future "spinner
+                                    // never resets" report can be
+                                    // diagnosed from DevTools alone.
+                                    if (window.console) {
+                                        console.log('[setReplicationVariable] HTTP', r.status,
+                                                    'CT=', r.headers && r.headers.get && r.headers.get('Content-Type'));
+                                    }
+                                    return r;
+                                })
                                 .then(svParseJsonResponse)
                                 .then(function(resp) {
+                                    clearTimeout(timeoutId);
                                     if (resp.error) {
-                                        alert('Error: ' + resp.error);
+                                        alert('Error: ' + resp.error
+                                              + (resp.fatal ? '\n\nFatal: ' + resp.fatal + ' @ ' + resp.at : ''));
                                         btn.disabled = false;
                                         btn.textContent = originalApplyLabel;
                                         return;
@@ -1024,7 +1054,12 @@ $(document).ready(function() {
                                     }, 1100);
                                 })
                                 .catch(function(err) {
-                                    alert('Failed to update ' + variable + ': ' + err);
+                                    clearTimeout(timeoutId);
+                                    var msg = (err && err.name === 'AbortError')
+                                        ? 'request timed out after 30 s — see Apache error_log'
+                                        : (err && err.message ? err.message : String(err));
+                                    if (window.console) console.error('[setReplicationVariable]', err);
+                                    alert('Failed to update ' + variable + ': ' + msg);
                                     btn.disabled = false;
                                     btn.textContent = originalApplyLabel;
                                 });
