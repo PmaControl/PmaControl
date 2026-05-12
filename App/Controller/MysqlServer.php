@@ -4347,18 +4347,19 @@ class MysqlServer extends Controller
         ], [$id_mysql_server]);
         $row = is_array($raw) && !empty($raw) ? (reset($raw) ?: []) : [];
 
-        $version = (string) ($row['']['version'] ?? '');
-        if ($version === '') {
-            $version = (string) ($row['variables']['version'] ?? '');
-        }
-        $versionComment = (string) ($row['variables']['version_comment'] ?? $row['']['version_comment'] ?? '');
+        $version = (string) ($row['version'] ?? '');
+        $versionComment = (string) ($row['version_comment'] ?? '');
         $family = \App\Library\PluginCatalog::detectFamily($version . ' ' . $versionComment);
 
-        // Live engines + plugins from the Aspirateur cache. Both come
-        // back as either a JSON string or an already-decoded array
-        // depending on which collector touched the row last.
-        $engineRowsRaw  = $row['information_schema']['engines']  ?? null;
-        $pluginRowsRaw  = $row['information_schema']['plugins']  ?? null;
+        // Live engines + plugins from the Aspirateur cache. Extraction2
+        // stores `radical::metric` values directly under the metric
+        // name on the per-server row (see Extraction2::appendDisplayRow:
+        // `$table[$id][$metricName] = $value`). JSON values are
+        // already decoded by `normalizeDisplayValue`. Some collector
+        // paths leave the value as a JSON string — pluginsTabDecodeRows
+        // handles both shapes.
+        $engineRowsRaw  = $row['engines']  ?? null;
+        $pluginRowsRaw  = $row['plugins']  ?? null;
 
         $engineRows = self::pluginsTabDecodeRows($engineRowsRaw);
         $pluginRows = self::pluginsTabDecodeRows($pluginRowsRaw);
@@ -4401,10 +4402,16 @@ class MysqlServer extends Controller
             'engines_index'    => $enginesIndex,
             'plugins'          => $pluginRows,
             'plugins_index'    => $pluginsIndex,
-            'catalog'          => \App\Library\PluginCatalog::all(),
+            // Only the catalog rows relevant to the detected family —
+            // a MariaDB host doesn't show MySQL-only plugins and vice
+            // versa.
+            'catalog'          => $family === 'unknown'
+                ? \App\Library\PluginCatalog::all()
+                : \App\Library\PluginCatalog::forFamily($family),
             'is_super_admin'   => $isSuperAdmin,
             'csrf_field'       => Csrf::DEFAULT_FIELD,
             'csrf_token'       => Csrf::issueToken($_SESSION, 'mysqlserver.plugins.install'),
+            'csrf_token_unin'  => Csrf::issueToken($_SESSION, 'mysqlserver.plugins.uninstall'),
         ];
 
         $this->title  = __('Plugins') . ' — ' . ($srv['display_name'] ?: $srv['name']);
@@ -4463,8 +4470,8 @@ class MysqlServer extends Controller
         // Re-detect family server-side (don't trust client).
         $raw = Extraction2::display(['version', 'version_comment'], [$id_mysql_server]);
         $rowEx = is_array($raw) && !empty($raw) ? (reset($raw) ?: []) : [];
-        $version = (string) ($rowEx['']['version'] ?? $rowEx['variables']['version'] ?? '');
-        $vcomment = (string) ($rowEx['variables']['version_comment'] ?? $rowEx['']['version_comment'] ?? '');
+        $version = (string) ($rowEx['version'] ?? '');
+        $vcomment = (string) ($rowEx['version_comment'] ?? '');
         $family = \App\Library\PluginCatalog::detectFamily($version . ' ' . $vcomment);
         if (!isset($entry[$family])) {
             http_response_code(400);
@@ -4521,6 +4528,110 @@ class MysqlServer extends Controller
         }
 
         echo json_encode(['ok' => true, 'support' => $support, 'sql' => $sql]);
+    }
+
+    /**
+     * POST /MysqlServer/uninstallPlugin/<id>/ — SuperAdmin only.
+     * Body: plugin=<NAME>. Runs UNINSTALL SONAME on the resolved
+     * library; returns JSON `{ ok, sql, error? }`. Refuses
+     * statically-compiled plugins (PLUGIN_LIBRARY is empty in
+     * information_schema.PLUGINS) since UNINSTALL would fail anyway.
+     */
+    public function uninstallPlugin($param)
+    {
+        $this->layout_name = false;
+        $this->view = false;
+        header('Content-Type: application/json; charset=UTF-8');
+
+        if (!$this->pluginsTabIsSuperAdmin()) {
+            http_response_code(403);
+            echo json_encode(['error' => 'SuperAdmin only']);
+            return;
+        }
+        if (!Csrf::check($_POST, $_SESSION, 'mysqlserver.plugins.uninstall')) {
+            http_response_code(403);
+            echo json_encode(['error' => 'CSRF token mismatch']);
+            return;
+        }
+
+        $id_mysql_server = (int) ($param[0] ?? 0);
+        $pluginName = strtoupper(trim((string) ($_POST['plugin'] ?? '')));
+        if ($id_mysql_server <= 0 || $pluginName === '') {
+            http_response_code(400);
+            echo json_encode(['error' => 'Missing id_mysql_server or plugin']);
+            return;
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $res = $db->sql_query("SELECT id, name FROM mysql_server WHERE id = {$id_mysql_server} AND is_deleted = 0");
+        $srv = $res ? $db->sql_fetch_array($res, MYSQLI_ASSOC) : null;
+        if (!$srv) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Server not found']);
+            return;
+        }
+
+        $link = Sgbd::sql($srv['name']);
+        if (!$link) {
+            http_response_code(503);
+            echo json_encode(['error' => 'Cannot connect to target server']);
+            return;
+        }
+
+        // information_schema.PLUGINS holds the canonical PLUGIN_NAME
+        // (mixed case, e.g. "InnoDB", "ROCKSDB", "Spider") + the
+        // PLUGIN_LIBRARY filename. If PLUGIN_LIBRARY is NULL/empty,
+        // the plugin is statically compiled and UNINSTALL would error
+        // — refuse with a friendly message.
+        $escapedName = $link->sql_real_escape_string($pluginName);
+        $resInfo = $link->sql_query_silent(
+            "SELECT PLUGIN_NAME, PLUGIN_LIBRARY
+             FROM information_schema.PLUGINS
+             WHERE UPPER(PLUGIN_NAME) = '{$escapedName}' LIMIT 1"
+        );
+        if (!$resInfo || !($info = $link->sql_fetch_array($resInfo, MYSQLI_ASSOC))) {
+            // Some engines (BLACKHOLE, ARCHIVE, FEDERATED) live under
+            // a different PLUGIN_NAME than their SHOW ENGINES name;
+            // try a fallback by SONAME via the catalog if it exists.
+            $entry = \App\Library\PluginCatalog::find($pluginName);
+            if (!$entry || empty($entry['mariadb']['soname']) && empty($entry['mysql']['soname'])) {
+                http_response_code(404);
+                echo json_encode(['error' => "Plugin '{$pluginName}' not found in information_schema.PLUGINS"]);
+                return;
+            }
+            $candidateSonames = array_filter([
+                $entry['mariadb']['soname'] ?? '',
+                $entry['mysql']['soname'] ?? '',
+            ]);
+            $info = ['PLUGIN_NAME' => $pluginName, 'PLUGIN_LIBRARY' => $candidateSonames[0] ?? ''];
+        }
+
+        if (empty($info['PLUGIN_LIBRARY'])) {
+            http_response_code(409);
+            echo json_encode([
+                'error' => "Plugin '{$pluginName}' is statically compiled (no PLUGIN_LIBRARY) and cannot be uninstalled. "
+                         . "Refusing UNINSTALL SONAME — would fail anyway.",
+            ]);
+            return;
+        }
+
+        $sql = "UNINSTALL SONAME '" . $link->sql_real_escape_string($info['PLUGIN_LIBRARY']) . "'";
+        $ok = (bool) $link->sql_query_silent($sql);
+        if (!$ok) {
+            // UNINSTALL PLUGIN <name> is the older form; some MariaDB
+            // versions reject UNINSTALL SONAME for plugins that share
+            // a library with others.
+            $sql2 = "UNINSTALL PLUGIN " . $info['PLUGIN_NAME'];
+            $ok = (bool) $link->sql_query_silent($sql2);
+            if ($ok) $sql = $sql2;
+        }
+        if (!$ok) {
+            $errMsg = method_exists($link, '_error') ? (string) $link->_error() : 'UNINSTALL failed';
+            http_response_code(500);
+            echo json_encode(['error' => $errMsg]);
+            return;
+        }
+        echo json_encode(['ok' => true, 'sql' => $sql]);
     }
 
     /**

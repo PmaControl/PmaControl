@@ -140,11 +140,11 @@ function pluginsTabPill(string $value, array $cssById): string {
     </div>
 </div>
 
-<!-- ── Plugin catalog matrix ── -->
+<!-- ── Plugin catalog matrix (filtered to detected family) ── -->
 <div class="pl-card">
     <div class="pl-card-head" style="background:linear-gradient(135deg,#4c1d95,#7e22ce)">
-        <?= __('Plugin catalog (MariaDB / MySQL matrix)') ?>
-        <small style="opacity:0.85;font-weight:400;margin-left:8px">— <?= __('hot-installable rows have an Install button; the others require an OS package + service restart') ?></small>
+        <?= __('Plugin catalog') ?> — <?= htmlspecialchars($familyLabel) ?>
+        <small style="opacity:0.85;font-weight:400;margin-left:8px">— <?= __('only entries available on this server family; Install / Uninstall are split into two columns to avoid mistakes') ?></small>
     </div>
     <div class="pl-card-body">
         <table class="pl-table">
@@ -152,74 +152,96 @@ function pluginsTabPill(string $value, array $cssById): string {
                 <th><?= __('Name') ?></th>
                 <th><?= __('Kind') ?></th>
                 <th><?= __('Description') ?></th>
-                <th>MariaDB</th>
-                <th>MySQL</th>
-                <th><?= __('Status on this server') ?></th>
-                <th><?= __('Action') ?></th>
+                <th><?= __('Package / SONAME') ?></th>
+                <th><?= __('Status') ?></th>
+                <th style="background:#ecfccb"><?= __('Install') ?></th>
+                <th style="background:#fef2f2"><?= __('Uninstall') ?></th>
             </tr>
             <?php foreach ($catalog as $entry):
                 $name = strtoupper($entry['name']);
                 $kind = $entry['kind'];
                 $isEngine = $kind === PluginCatalog::KIND_ENGINE;
-                $installed = $isEngine
-                    ? in_array(($enginesIndex[$name]['support'] ?? 'NO'), ['YES','DEFAULT'], true)
-                    : (isset($pluginsIndex[$name]) && $pluginsIndex[$name]['status'] === 'ACTIVE');
                 $spec = $entry[$family] ?? null;
                 $availability = $spec['availability'] ?? PluginCatalog::AVAILABILITY_NA;
+                $soname = (string) ($spec['soname'] ?? '');
+                $package = (string) ($spec['package'] ?? '');
+                $hint = (string) ($spec['install_hint'] ?? '');
+
+                // Engines are checked against information_schema.engines
+                // (the live SHOW ENGINES table); plugins are checked
+                // against information_schema.plugins. Either one is
+                // enough to count the row as installed.
+                $installed = false;
+                $library = '';
+                if ($isEngine && in_array(($enginesIndex[$name]['support'] ?? 'NO'), ['YES','DEFAULT'], true)) {
+                    $installed = true;
+                    // Engine row also has a matching info_schema.plugins
+                    // row; pull PLUGIN_LIBRARY from there to know if
+                    // it's static-compiled.
+                    $library = (string) ($pluginsIndex[$name]['library'] ?? '');
+                }
+                if (!$installed && isset($pluginsIndex[$name]) && $pluginsIndex[$name]['status'] === 'ACTIVE') {
+                    $installed = true;
+                    $library = (string) ($pluginsIndex[$name]['library'] ?? '');
+                }
+                // Static-compiled plugin = PLUGIN_LIBRARY is empty.
+                // UNINSTALL SONAME would fail; we hide the button.
+                $isStaticCompiled = $installed && $library === '';
+
                 $rowClass = 'pl-row-na';
                 if ($installed) $rowClass = 'pl-row-installed';
                 elseif ($availability === PluginCatalog::AVAILABILITY_CORE) $rowClass = 'pl-row-missing-hot';
                 elseif ($availability === PluginCatalog::AVAILABILITY_PACKAGE) $rowClass = 'pl-row-missing-pkg';
 
-                $renderColumn = function (array $entry, string $col) {
-                    $spec = $entry[$col] ?? null;
-                    if (!$spec || ($spec['availability'] ?? '') === PluginCatalog::AVAILABILITY_NA) {
-                        return '<span style="color:#cbd5e1">—</span>'
-                            . (!empty($spec['install_hint']) ? '<br><small style="color:#94a3b8">' . htmlspecialchars($spec['install_hint']) . '</small>' : '');
-                    }
-                    $hot = $spec['availability'] === PluginCatalog::AVAILABILITY_CORE;
-                    $tag = $hot
-                        ? '<span style="background:#16a34a;color:#fff;padding:1px 6px;border-radius:3px;font-size:10px">hot</span>'
-                        : '<span style="background:#ea580c;color:#fff;padding:1px 6px;border-radius:3px;font-size:10px">apt + restart</span>';
-                    $body = $tag
-                        . ' <span class="pl-soname">' . htmlspecialchars($spec['soname']) . '</span>';
-                    if (!empty($spec['package'])) {
-                        $body .= '<br><span class="pl-pkg">' . htmlspecialchars($spec['package']) . '</span>';
-                    }
-                    if (!empty($spec['install_hint'])) {
-                        $body .= '<br><small style="color:#94a3b8">' . htmlspecialchars($spec['install_hint']) . '</small>';
-                    }
-                    return $body;
-                };
+                $hot = $availability === PluginCatalog::AVAILABILITY_CORE;
+                $packageBadge = $hot
+                    ? '<span style="background:#16a34a;color:#fff;padding:1px 6px;border-radius:3px;font-size:10px">hot</span>'
+                    : '<span style="background:#ea580c;color:#fff;padding:1px 6px;border-radius:3px;font-size:10px">apt + restart</span>';
             ?>
                 <tr class="<?= $rowClass ?>">
                     <td><strong><?= htmlspecialchars($name) ?></strong></td>
                     <td><small style="color:#64748b"><?= htmlspecialchars($kind) ?></small></td>
                     <td><small><?= htmlspecialchars($entry['description']) ?></small></td>
-                    <td><?= $renderColumn($entry, 'mariadb') ?></td>
-                    <td><?= $renderColumn($entry, 'mysql') ?></td>
                     <td>
-                        <?php if ($installed): ?>
-                            <span style="background:#16a34a;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px"><?= __('installed') ?></span>
-                        <?php elseif ($availability === PluginCatalog::AVAILABILITY_CORE): ?>
-                            <span style="background:#facc15;color:#1f2937;padding:2px 8px;border-radius:10px;font-size:11px"><?= __('not loaded — hot install possible') ?></span>
-                        <?php elseif ($availability === PluginCatalog::AVAILABILITY_PACKAGE): ?>
-                            <span style="background:#ea580c;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px"><?= __('package + restart required') ?></span>
-                        <?php else: ?>
-                            <span style="background:#cbd5e1;color:#1f2937;padding:2px 8px;border-radius:10px;font-size:11px"><?= __('n/a') ?></span>
-                        <?php endif; ?>
+                        <?= $packageBadge ?>
+                        <?php if ($soname !== ''): ?> <span class="pl-soname"><?= htmlspecialchars($soname) ?></span><?php endif; ?>
+                        <?php if ($package !== ''): ?><br><span class="pl-pkg"><?= htmlspecialchars($package) ?></span><?php endif; ?>
+                        <?php if ($hint !== ''): ?><br><small style="color:#94a3b8"><?= htmlspecialchars($hint) ?></small><?php endif; ?>
                     </td>
                     <td>
+                        <?php if ($installed && $isStaticCompiled): ?>
+                            <span style="background:#1e40af;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px"><?= __('built-in') ?></span>
+                        <?php elseif ($installed): ?>
+                            <span style="background:#16a34a;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px"><?= __('installed') ?></span>
+                        <?php elseif ($hot): ?>
+                            <span style="background:#facc15;color:#1f2937;padding:2px 8px;border-radius:10px;font-size:11px"><?= __('not loaded — hot install') ?></span>
+                        <?php else: ?>
+                            <span style="background:#ea580c;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px"><?= __('package required') ?></span>
+                        <?php endif; ?>
+                    </td>
+                    <!-- Install column (left) -->
+                    <td style="background:#f7fee7">
                         <?php if ($installed): ?>
                             <small style="color:#94a3b8">—</small>
-                        <?php elseif ($availability === PluginCatalog::AVAILABILITY_CORE && $isAdmin): ?>
-                            <button class="pl-btn" data-plugin="<?= htmlspecialchars($name) ?>" data-soname="<?= htmlspecialchars($spec['soname']) ?>"><?= __('Install') ?></button>
-                        <?php elseif ($availability === PluginCatalog::AVAILABILITY_CORE && !$isAdmin): ?>
+                        <?php elseif (!$isAdmin): ?>
                             <small style="color:#94a3b8"><?= __('SuperAdmin only') ?></small>
-                        <?php elseif ($availability === PluginCatalog::AVAILABILITY_PACKAGE && $isAdmin): ?>
-                            <small style="color:#475569">SSH <code><?= htmlspecialchars('apt install ' . ($spec['package'] ?? '')) ?></code></small>
+                        <?php elseif ($hot): ?>
+                            <button class="pl-btn pl-btn-install" data-plugin="<?= htmlspecialchars($name) ?>" data-soname="<?= htmlspecialchars($soname) ?>" style="background:#15803d"><?= __('Install') ?></button>
                         <?php else: ?>
+                            <button class="pl-btn pl-btn-install" data-plugin="<?= htmlspecialchars($name) ?>" data-soname="<?= htmlspecialchars($soname) ?>" data-needs-package="<?= htmlspecialchars($package) ?>" style="background:#a16207" title="<?= __('Will fail until you run apt install on the host first') ?>"><?= __('Install (try)') ?></button>
+                            <br><small style="color:#475569">apt: <code><?= htmlspecialchars($package) ?></code></small>
+                        <?php endif; ?>
+                    </td>
+                    <!-- Uninstall column (right) -->
+                    <td style="background:#fef2f2">
+                        <?php if (!$installed): ?>
                             <small style="color:#94a3b8">—</small>
+                        <?php elseif ($isStaticCompiled): ?>
+                            <small style="color:#94a3b8" title="<?= __('Statically compiled — UNINSTALL SONAME would fail (no PLUGIN_LIBRARY)') ?>"><?= __('built-in') ?></small>
+                        <?php elseif (!$isAdmin): ?>
+                            <small style="color:#94a3b8"><?= __('SuperAdmin only') ?></small>
+                        <?php else: ?>
+                            <button class="pl-btn pl-btn-uninstall" data-plugin="<?= htmlspecialchars($name) ?>" data-soname="<?= htmlspecialchars($soname) ?>" data-library="<?= htmlspecialchars($library) ?>" style="background:#b91c1c"><?= __('Uninstall') ?></button>
                         <?php endif; ?>
                     </td>
                 </tr>
@@ -227,8 +249,9 @@ function pluginsTabPill(string $value, array $cssById): string {
         </table>
         <p style="font-size:11px;color:#64748b;margin-top:10px;border-top:1px dashed #e2e8f0;padding-top:8px">
             <?= __('Legend:') ?>
-            <span style="background:#16a34a;color:#fff;padding:1px 6px;border-radius:3px;font-size:10px">hot</span> <?= __('= INSTALL SONAME suffices, no restart.') ?>
-            <span style="background:#ea580c;color:#fff;padding:1px 6px;border-radius:3px;font-size:10px">apt + restart</span> <?= __('= install the package on the host first, then restart the service before INSTALL SONAME.') ?>
+            <span style="background:#16a34a;color:#fff;padding:1px 6px;border-radius:3px;font-size:10px">hot</span> = INSTALL SONAME suffices, no restart.
+            <span style="background:#ea580c;color:#fff;padding:1px 6px;border-radius:3px;font-size:10px">apt + restart</span> = install the package on the host first, restart the service, then INSTALL SONAME.
+            <span style="background:#1e40af;color:#fff;padding:1px 6px;border-radius:3px;font-size:10px">built-in</span> = statically compiled into the server binary; cannot be UNINSTALLed.
         </p>
     </div>
 </div>
@@ -241,40 +264,61 @@ function pluginsTabPill(string $value, array $cssById): string {
     var SERVER_ID  = <?= (int) ($srv['id'] ?? 0) ?>;
     var LINK = <?= json_encode(LINK) ?>;
 
-    document.querySelectorAll('.pl-btn[data-plugin]').forEach(function (btn) {
+    var CSRF_TOKEN_UNIN = <?= json_encode($data['csrf_token_unin'] ?? '') ?>;
+
+    function pluginAjax(action, plugin, btn, originalLabel) {
+        var endpoint = action === 'install' ? 'installPlugin' : 'uninstallPlugin';
+        var token    = action === 'install' ? CSRF_TOKEN : CSRF_TOKEN_UNIN;
+        btn.disabled = true;
+        btn.textContent = '...';
+
+        var fd = new FormData();
+        fd.append(CSRF_FIELD, token);
+        fd.append('plugin', plugin);
+
+        fetch(LINK + 'MysqlServer/' + endpoint + '/' + SERVER_ID + '/ajax:true/', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: fd,
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (d.error) {
+                    alert((action === 'install' ? 'Install' : 'Uninstall') + ' failed: ' + d.error);
+                    btn.disabled = false;
+                    btn.textContent = originalLabel;
+                } else {
+                    alert('Plugin "' + plugin + '" ' + (action === 'install' ? ('installed (Support=' + (d.support || 'unknown') + ')') : 'uninstalled') + '. Reloading…');
+                    window.location.reload();
+                }
+            })
+            .catch(function (e) {
+                alert('Network error: ' + e.message);
+                btn.disabled = false;
+                btn.textContent = originalLabel;
+            });
+    }
+
+    document.querySelectorAll('.pl-btn-install').forEach(function (btn) {
         btn.addEventListener('click', function () {
             var plugin = btn.getAttribute('data-plugin');
             var soname = btn.getAttribute('data-soname');
-            if (!confirm('Install plugin "' + plugin + '" via INSTALL SONAME \'' + soname + '\' on this server?')) return;
-            btn.disabled = true;
-            btn.textContent = '...';
+            var pkg    = btn.getAttribute('data-needs-package') || '';
+            var msg = pkg
+                ? 'INSTALL SONAME \'' + soname + '\' for "' + plugin + '"?\n\nThis plugin normally requires `apt install ' + pkg + '` on the host first. The query will fail with "can\'t open shared library" if the package is missing.'
+                : 'Install plugin "' + plugin + '" via INSTALL SONAME \'' + soname + '\' on this server?';
+            if (!confirm(msg)) return;
+            pluginAjax('install', plugin, btn, btn.textContent);
+        });
+    });
 
-            var fd = new FormData();
-            fd.append(CSRF_FIELD, CSRF_TOKEN);
-            fd.append('plugin', plugin);
-
-            fetch(LINK + 'MysqlServer/installPlugin/' + SERVER_ID + '/ajax:true/', {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                body: fd,
-            })
-                .then(function (r) { return r.json(); })
-                .then(function (d) {
-                    if (d.error) {
-                        alert('Install failed: ' + d.error);
-                        btn.disabled = false;
-                        btn.textContent = 'Install';
-                    } else {
-                        alert('Plugin "' + plugin + '" installed (Support=' + (d.support || 'unknown') + '). Reloading…');
-                        window.location.reload();
-                    }
-                })
-                .catch(function (e) {
-                    alert('Network error: ' + e.message);
-                    btn.disabled = false;
-                    btn.textContent = 'Install';
-                });
+    document.querySelectorAll('.pl-btn-uninstall').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var plugin = btn.getAttribute('data-plugin');
+            var library = btn.getAttribute('data-library') || btn.getAttribute('data-soname') || '';
+            if (!confirm('UNINSTALL plugin "' + plugin + '" (library=' + library + ') on this server?\n\nThis disables the plugin live; tables that use the engine will become inaccessible until it is re-installed.')) return;
+            pluginAjax('uninstall', plugin, btn, btn.textContent);
         });
     });
 })();
