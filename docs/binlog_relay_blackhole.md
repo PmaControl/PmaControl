@@ -112,6 +112,17 @@ VALUES
 -- then: php App/Webroot/index.php Blackhole runConvertCli <inserted_id>
 ```
 
+## `sql_log_bin = 0` — non-negotiable for every DDL on the relay
+
+Both pipelines wrap their DDL with `SET SESSION sql_log_bin = 0` before any `ALTER TABLE … ENGINE=BLACKHOLE` (and the greenfield `mysql` client uses `--init-command='SET sql_log_bin=0'` for the `mysqldump | mysql` restore). Reason:
+
+- The relay runs with `log_slave_updates = ON` so the events it receives from its master are forwarded into its own binlog for downstream consumers.
+- Without `sql_log_bin = 0`, the `ALTER … ENGINE=BLACKHOLE` we run would land in that same binlog. Any slave connecting downstream — now or later — would replay it and convert its own tables to BLACKHOLE. Disaster.
+- Same goes for the `CREATE TABLE … ENGINE=InnoDB` statements injected by the dump-restore phase: they describe the master's schema and must not appear in the relay's downstream stream (the downstream master is the relay's upstream master, which already produced those events at its own positions).
+
+You'll see two extra steps in the progress log around the convert loop:
+`SET SESSION sql_log_bin = 0 — keep ALTERs out of the relay binlog` and the matching `SET SESSION sql_log_bin = 1 — restore default`.
+
 ## Pipeline A — convert in place (what the script does)
 
 1. Load conversion row + target server.

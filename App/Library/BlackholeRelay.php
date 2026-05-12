@@ -354,6 +354,11 @@ class BlackholeRelay
 
         $errFile = tempnam(sys_get_temp_dir(), 'bh_err_');
         try {
+            // --init-command on the receiving `mysql` client disables
+            // binary logging for the import session — the CREATE TABLE
+            // statements from the master must NOT land in the relay's
+            // own binlog, otherwise any downstream slave connecting
+            // later would receive them as if they were master DDL.
             $cmd = sprintf(
                 "mysqldump --defaults-extra-file=%s "
                 . "--no-data --routines --triggers --events "
@@ -361,7 +366,7 @@ class BlackholeRelay
                 . "--ignore-database=mysql --ignore-database=sys "
                 . "--ignore-database=performance_schema --ignore-database=information_schema "
                 . "2>%s "
-                . "| mysql --defaults-extra-file=%s 2>>%s",
+                . "| mysql --defaults-extra-file=%s --init-command='SET sql_log_bin=0' 2>>%s",
                 escapeshellarg($masterDef),
                 escapeshellarg($errFile),
                 escapeshellarg($targetDef),
@@ -492,26 +497,53 @@ class BlackholeRelay
 
     private function convertTables($link, array $tables, bool $dryRun): int
     {
+        // CRITICAL: keep the ALTERs out of this server's binary log.
+        // Otherwise log_slave_updates would forward them to every
+        // downstream consumer — they'd ENGINE=BLACKHOLE their own
+        // tables, which is a disaster. The session-level flag is
+        // enough; we restore it after the loop for hygiene.
+        $this->addStep('no_binlog', 'SET SESSION sql_log_bin = 0 — keep ALTERs out of the relay binlog');
+        if (!$dryRun) {
+            if (!$link->sql_query_silent('SET SESSION sql_log_bin = 0')) {
+                $err = method_exists($link, 'sql_error') ? $link->sql_error() : 'sql_query failed';
+                $this->updateLastStep('SET SESSION sql_log_bin = 0 — FAILED: ' . $err
+                    . ' (refusing to ALTER without sql_log_bin=0 — downstream slaves would inherit the BLACKHOLE conversion)', 'error');
+                return 0;
+            }
+        }
+        $this->updateLastStep('SET SESSION sql_log_bin = 0' . ($dryRun ? ' (dry-run)' : ' — ok'));
+
         $converted = 0;
-        foreach ($tables as $t) {
-            $stmt = sprintf(
-                'ALTER TABLE `%s`.`%s` ENGINE=BLACKHOLE',
-                str_replace('`', '``', $t['schema']),
-                str_replace('`', '``', $t['table'])
-            );
-            $this->addStep('alter', $stmt);
-            if (!$dryRun) {
-                if (!$link->sql_query_silent($stmt)) {
-                    $err = method_exists($link, 'sql_error') ? $link->sql_error() : 'sql_query failed';
-                    $this->updateLastStep($stmt . ' — FAILED: ' . $err, 'error');
-                    continue;
+        try {
+            foreach ($tables as $t) {
+                $stmt = sprintf(
+                    'ALTER TABLE `%s`.`%s` ENGINE=BLACKHOLE',
+                    str_replace('`', '``', $t['schema']),
+                    str_replace('`', '``', $t['table'])
+                );
+                $this->addStep('alter', $stmt);
+                if (!$dryRun) {
+                    if (!$link->sql_query_silent($stmt)) {
+                        $err = method_exists($link, 'sql_error') ? $link->sql_error() : 'sql_query failed';
+                        $this->updateLastStep($stmt . ' — FAILED: ' . $err, 'error');
+                        continue;
+                    }
+                }
+                $this->updateLastStep($stmt . ($dryRun ? ' (dry-run)' : ' — ok'));
+                $converted++;
+                if ($converted % 25 === 0) {
+                    $this->setTableCounts(count($tables), $converted);
                 }
             }
-            $this->updateLastStep($stmt . ($dryRun ? ' (dry-run)' : ' — ok'));
-            $converted++;
-            if ($converted % 25 === 0) {
-                $this->setTableCounts(count($tables), $converted);
+        } finally {
+            // Restore the default so any future query on this session
+            // behaves normally. (Connections from Sgbd::sql() may be
+            // pooled / reused — leaving sql_log_bin=0 would be wrong.)
+            $this->addStep('no_binlog_restore', 'SET SESSION sql_log_bin = 1 — restore default');
+            if (!$dryRun) {
+                $link->sql_query_silent('SET SESSION sql_log_bin = 1');
             }
+            $this->updateLastStep('SET SESSION sql_log_bin = 1' . ($dryRun ? ' (dry-run)' : ' — ok'));
         }
         return $converted;
     }
