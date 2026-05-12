@@ -30,6 +30,10 @@ One topic per file. Load only what the current task needs.
 - [chart_js.md](chart_js.md) — Chart.js 4.5.1 v4 API quirks
 - [extraction.md](extraction.md) — `App\Library\Extraction` time-series helper
 
+## Pages
+- [slave_show_page.md](slave_show_page.md) — `/slave/show/<id>/<conn>/` page anatomy, status tiles, live 5 s polling, GTID button logic, parallel-threads slider
+- [home_replication_dashboard.md](home_replication_dashboard.md) — `/Home/index` "Replication issues" card: 5 fine buckets + signature dedup (#1210)
+
 ## Runtime
 - [logs.md](logs.md) — log files under `tmp/log/`
 - [tips.md](tips.md) — small gotchas (grep -a on binlog, stale browser cache, …)

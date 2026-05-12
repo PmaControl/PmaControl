@@ -129,6 +129,8 @@ When both threads are stopped simultaneously, it is treated as a deliberate main
 - **SSL tile** with green dot (Yes + cipher), red dot with pulse halo (No), or amber text (Ignored). SSL detection is compatible with MySQL 8.4+ (`Source_SSL_Allowed`, `Source_SSL_Cipher`) and older versions (`Master_SSL_Allowed`, `Master_SSL_Cipher`).
 - **Red error banner** at the bottom if `Last_SQL_Error`, `Last_IO_Error`, or `Last_Error` is non-empty. Multiple errors are shown separately with **IO:** / **SQL:** prefixes.
 
+**Live refresh (5s):** a `setInterval` polls `/slave/getLag/<id>/<conn>/ajax:true/` every 5 seconds and updates IO/SQL dots, the lag pill, and the Binlog read (`master_log` + `read_pos`) and Relay exec (`relay_log` + `exec_pos`) positions in place — no full page reload. The endpoint resolves both `Master_*` and `Source_*` field names so MariaDB and MySQL 8 share the same JSON shape (#1207).
+
 #### Right: Actions
 
 Grouped by function:

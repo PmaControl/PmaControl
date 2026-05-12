@@ -27,6 +27,8 @@ The active integration target is `master`. Create issue branches from an up-to-d
 | Chart.js 4.5.1 API quirks | [docs/chart_js.md](docs/chart_js.md) |
 | `App\Library\Extraction` time-series helper | [docs/extraction.md](docs/extraction.md) |
 | ProxySQL configuration audit (`/ProxySQL/audit/<id>/`, framework, adding a check) | [docs/proxysql_audit.md](docs/proxysql_audit.md) |
+| `/slave/show/<id>/<conn>/` page anatomy, status tiles, live 5 s polling, GTID logic | [docs/slave_show_page.md](docs/slave_show_page.md) |
+| `/Home/index` Replication issues card — buckets + signature dedup (#1210) | [docs/home_replication_dashboard.md](docs/home_replication_dashboard.md) |
 | Runtime log file locations | [docs/logs.md](docs/logs.md) |
 | Small gotchas (`grep -a` on binlog, stale browser cache, worker hot-reload, …) | [docs/tips.md](docs/tips.md) |
 
