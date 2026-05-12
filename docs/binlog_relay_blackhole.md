@@ -56,6 +56,21 @@ php App/Webroot/index.php Blackhole runConvertCli <conversion_id>
 | `convert`    | Target is **already** a replicating slave you want to repurpose | `runConvert($row)` |
 | `greenfield` | Target is a **fresh empty** node; you only know its future master | `runGreenfield($row)` |
 
+## BLACKHOLE engine availability — preflight before any ALTER
+
+The runner refuses to touch a target where the BLACKHOLE engine is not loaded — otherwise every `ALTER … ENGINE=BLACKHOLE` returns `errno 1286 — Unknown storage engine 'BLACKHOLE'` and 2000+ identical failures pile up in the progress log.
+
+The preflight runs right after the "target is a replica" check (Pipeline A) and right before the convert loop (Pipeline B). It reuses the data Aspirateur already collects, so the happy path adds **zero round-trips to the target**:
+
+1. **Aspirateur cache first.** Pull `information_schema::engines` for this `id_mysql_server` via `Extraction2::display(['information_schema::engines'], [$id])` (same source `MysqlServer::extractSupportedEngines` already consumes — see `App/Controller/MysqlServer.php` around the `2059` column list). If the row reports `Support IN ('YES', 'DEFAULT')` → ok, proceed.
+2. **Live `SHOW ENGINES` fallback.** Only triggered when the cache is empty (server just added, Aspirateur hasn't run yet) or the cached value is `NO`/`DISABLED`/missing. Same parsing.
+3. If still unavailable → `INSTALL SONAME 'ha_blackhole'` (modern MariaDB + MySQL form), fall back to `INSTALL PLUGIN blackhole SONAME 'ha_blackhole.so'` (older MySQL).
+4. Re-issue `SHOW ENGINES` after the install. If `Support` is still not `YES`/`DEFAULT`, abort with a remediation message:
+   - Debian / Ubuntu MariaDB: `apt install mariadb-plugin-blackhole`,
+   - MySQL: enable `plugin-load-add=ha_blackhole.so` in `my.cnf` and restart, or run `INSTALL PLUGIN` once with appropriate privileges.
+
+The preflight emits explicit progress steps so the operator sees which path was taken (`Aspirateur cache → BLACKHOLE support = 'YES' — ok (no live query needed)` on the happy path; `Aspirateur cache empty for server #N — falling back to live SHOW ENGINES` otherwise).
+
 ## `sql_log_bin = 0` — non-negotiable for every relay-side DDL
 
 The relay runs with `log_slave_updates = ON`. Any DDL we execute locally would land in **the relay's own binlog** and be replayed by every downstream slave (now or later). For a BLACKHOLE conversion, that would propagate the `ALTER … ENGINE=BLACKHOLE` to every downstream — disaster.

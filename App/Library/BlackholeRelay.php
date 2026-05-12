@@ -97,6 +97,8 @@ class BlackholeRelay
         }
         $this->updateLastStep('Target is a replica — ok');
 
+        $this->ensureBlackholeEngineAvailable($link, $dryRun, $serverId);
+
         $this->addStep('stop_slave', 'Stopping replication on all channels...');
         $this->stopAllReplication($link, $dryRun);
         $this->updateLastStep('Replication stopped' . ($dryRun ? ' (dry-run: skipped)' : ''));
@@ -194,6 +196,9 @@ class BlackholeRelay
             }
             $this->updateLastStep('Schema replicated (' . $dumpResult['stderr_tail'] . ')');
         }
+
+        // ── Make sure the BLACKHOLE engine is loaded on the target ───
+        $this->ensureBlackholeEngineAvailable($tgt, $dryRun, $serverId);
 
         // ── Enumerate + convert all just-copied tables to BLACKHOLE ──
         $this->addStep('discover', 'Enumerating freshly-created tables on target...');
@@ -327,6 +332,167 @@ class BlackholeRelay
         $row = $link->sql_fetch_array($res, MYSQLI_ASSOC);
         if (!$row || empty($row['File'])) return null;
         return ['File' => (string) $row['File'], 'Position' => (int) $row['Position']];
+    }
+
+    /**
+     * Hard pre-condition: the BLACKHOLE engine must be loaded on the
+     * target. Without this every ALTER fails with ER_UNKNOWN_STORAGE_
+     * ENGINE (errno 1286) — the cause of the 2000+ identical "Unknown
+     * storage engine" errors observed before this guard existed.
+     *
+     * The guard runs BEFORE the SET sql_log_bin / SHOW VARIABLES /
+     * ALTER loop so we never start a doomed conversion. If the engine
+     * is missing we attempt `INSTALL SONAME 'ha_blackhole'` (covers
+     * both MariaDB and MySQL builds that ship the plugin), then re-
+     * check. If still unavailable, abort with the human-readable
+     * remediation steps.
+     */
+    private function ensureBlackholeEngineAvailable($link, bool $dryRun, ?int $serverId = null): void
+    {
+        // Aspirateur already collects `information_schema::engines`
+        // for every supervised server (see MysqlServer::extractSupportedEngines
+        // and the column list around App/Controller/MysqlServer.php:2059).
+        // Hit that cache first — it avoids an extra round-trip to the
+        // target on the happy path.
+        if ($serverId !== null) {
+            $this->addStep('engine_probe', "Aspirateur cache (Extraction2 'information_schema::engines') — looking for BLACKHOLE on server #{$serverId}...");
+            $cached = self::cachedEngineSupport($serverId, 'BLACKHOLE');
+            if (in_array($cached, ['YES', 'DEFAULT'], true)) {
+                $this->updateLastStep("Aspirateur cache → BLACKHOLE support = '{$cached}' — ok (no live query needed)");
+                return;
+            }
+            if ($cached === null) {
+                $this->updateLastStep("Aspirateur cache empty for server #{$serverId} — falling back to live SHOW ENGINES");
+            } else {
+                $this->updateLastStep("Aspirateur cache → BLACKHOLE support = '{$cached}' — falling back to live check + INSTALL");
+            }
+        }
+
+        $this->addStep('engine_probe_live', "SHOW ENGINES (live) — verifying BLACKHOLE is loaded on the target...");
+        $support = $this->blackholeEngineSupport($link);
+        if (in_array($support, ['YES', 'DEFAULT'], true)) {
+            $this->updateLastStep("BLACKHOLE engine support = '{$support}' — ok");
+            return;
+        }
+
+        if ($support === null) {
+            $this->updateLastStep("SHOW ENGINES failed (cannot determine BLACKHOLE availability) — aborting", 'error');
+            throw new \RuntimeException(
+                "Cannot read SHOW ENGINES on the target — refusing to ALTER without proof "
+                . "the BLACKHOLE engine is loaded."
+            );
+        }
+
+        // Support reported as 'NO' (plugin compiled-in but disabled),
+        // or BLACKHOLE not in the list at all → try to load it.
+        $this->updateLastStep("BLACKHOLE engine support = '{$support}' — attempting INSTALL SONAME 'ha_blackhole'");
+        $this->addStep('engine_install', "INSTALL SONAME 'ha_blackhole'");
+        $installed = false;
+        if (!$dryRun) {
+            // INSTALL SONAME is the modern (MariaDB + MySQL) form;
+            // INSTALL PLUGIN works on older MySQL builds.
+            foreach ([
+                "INSTALL SONAME 'ha_blackhole'",
+                "INSTALL PLUGIN blackhole SONAME 'ha_blackhole.so'",
+            ] as $stmt) {
+                if ($link->sql_query_silent($stmt)) { $installed = true; break; }
+            }
+        }
+        if ($dryRun) {
+            $this->updateLastStep("Skipped (dry-run) — would have run INSTALL SONAME 'ha_blackhole'");
+            return;
+        }
+        if (!$installed) {
+            $err = self::linkErrorMessage($link);
+            $this->updateLastStep("INSTALL SONAME 'ha_blackhole' — FAILED: {$err}", 'error');
+            throw new \RuntimeException(
+                "BLACKHOLE engine is not loaded on the target and the runtime install failed: {$err}. "
+                . "Remediation: install the plugin package on the target host (Debian/Ubuntu: "
+                . "`apt install mariadb-plugin-blackhole` or equivalent for MySQL) and re-run the conversion. "
+                . "On a stripped-down build you may need to enable the plugin in my.cnf "
+                . "(`plugin-load-add=ha_blackhole.so`)."
+            );
+        }
+        $this->updateLastStep("INSTALL SONAME 'ha_blackhole' — ok");
+
+        // Re-verify — `INSTALL` returning success without actually
+        // exposing the engine is rare but documented on partial
+        // builds; fail-closed if SHOW ENGINES still doesn't see it.
+        $support = $this->blackholeEngineSupport($link);
+        if (!in_array($support, ['YES', 'DEFAULT'], true)) {
+            $this->addStep('engine_reverify',
+                "SHOW ENGINES again → support = '" . ($support ?? 'NULL') . "'");
+            $this->updateLastStep(
+                "BLACKHOLE engine still unavailable after INSTALL — aborting before any ALTER.",
+                'error'
+            );
+            throw new \RuntimeException(
+                "INSTALL SONAME succeeded but BLACKHOLE still not exposed by SHOW ENGINES. "
+                . "Inspect the target's plugin directory and error log."
+            );
+        }
+        $this->addStep('engine_reverify',
+            "SHOW ENGINES again → support = '{$support}' — ok, proceeding with ALTER loop");
+        $this->updateLastStep("BLACKHOLE engine support = '{$support}' — ok");
+    }
+
+    /**
+     * Returns the value of the `Support` column for ENGINE='BLACKHOLE'
+     * in `SHOW ENGINES` ('YES', 'NO', 'DEFAULT', 'DISABLED'), or
+     * `null` when the row isn't present at all (engine not compiled
+     * in) or when the query fails.
+     */
+    private function blackholeEngineSupport($link): ?string
+    {
+        $res = $link->sql_query_silent('SHOW ENGINES');
+        if (!$res) return null;
+        while ($row = $link->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            if (strcasecmp((string) ($row['Engine'] ?? ''), 'BLACKHOLE') === 0) {
+                return strtoupper((string) ($row['Support'] ?? 'NO'));
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Same return contract as `blackholeEngineSupport()`, but reads
+     * from the Aspirateur-collected `information_schema::engines`
+     * blob via `Extraction2::display(['information_schema::engines'])`
+     * — no round-trip to the target. Returns `null` when the cache
+     * has no row for this server (Aspirateur hasn't run yet, or the
+     * server was just added).
+     */
+    private static function cachedEngineSupport(int $serverId, string $engineName): ?string
+    {
+        try {
+            $blob = \App\Library\Extraction2::display(
+                ['information_schema::engines'],
+                [$serverId]
+            );
+        } catch (\Throwable $e) {
+            return null;
+        }
+
+        // Extraction2 returns a per-server-id map; the engines payload
+        // sits at $blob[$serverId]['information_schema']['engines'].
+        // We accept both the JSON-string form (raw extraction value)
+        // and the already-decoded array form, since either appears
+        // depending on which collector touched the row last.
+        $value = $blob[$serverId]['information_schema']['engines'] ?? null;
+        if ($value === null) return null;
+
+        $rows = is_array($value) ? $value : (json_decode((string) $value, true) ?: []);
+        if (!is_array($rows)) return null;
+
+        $needle = strtoupper($engineName);
+        foreach ($rows as $row) {
+            if (!is_array($row)) continue;
+            $engine = strtoupper((string) ($row['engine'] ?? $row['ENGINE'] ?? ''));
+            if ($engine !== $needle) continue;
+            $support = strtoupper((string) ($row['support'] ?? $row['SUPPORT'] ?? ''));
+            return $support !== '' ? $support : 'NO';
+        }
+        return null;
     }
 
     /**
