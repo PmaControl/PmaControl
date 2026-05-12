@@ -1033,7 +1033,34 @@ $(document).ready(function() {
                                     }
                                     return r;
                                 })
-                                .then(svParseJsonResponse)
+                                .then(function (r) {
+                                    // svParseJsonResponse is declared
+                                    // inside the OTHER script tag's
+                                    // DOMContentLoaded closure (line 1511);
+                                    // it's not on `window` until that
+                                    // handler has fired. Inline a
+                                    // minimal parser that mirrors the
+                                    // contract — content-type check,
+                                    // redirect handling, JSON.parse —
+                                    // so the picker is independent of
+                                    // load order.
+                                    if (window.svParseJsonResponse) {
+                                        return window.svParseJsonResponse(r);
+                                    }
+                                    var landedOnLogin = (r.url || '').indexOf('/user/connection') !== -1;
+                                    if (r.redirected || r.status === 302 || landedOnLogin) {
+                                        if (window.svPromptSessionExpired) window.svPromptSessionExpired();
+                                        return Promise.reject(new Error('Session expired'));
+                                    }
+                                    var ct = (r.headers && r.headers.get) ? (r.headers.get('Content-Type') || '') : '';
+                                    if (ct.indexOf('application/json') === -1) {
+                                        return r.text().then(function(body) {
+                                            throw new Error('Unexpected non-JSON response (' + r.status + ' ' + (ct || 'no content-type') + ')'
+                                                + (body ? ', body starts with: ' + body.substring(0, 80).trim() : ''));
+                                        });
+                                    }
+                                    return r.json();
+                                })
                                 .then(function(resp) {
                                     clearTimeout(timeoutId);
                                     if (resp.error) {
@@ -1654,6 +1681,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Detect the redirect and the wrong content-type up front so the
     // user sees something actionable instead, with a one-click redirect
     // to the login page that returns to the current URL after auth.
+    // #1224 — also expose on window so the picker IIFE in the
+    // upstream <script> block (line 893) can use it. Without the
+    // assignment, this function is captured by the DOMContentLoaded
+    // closure and the picker click handler in another script tag
+    // sees `Uncaught ReferenceError: svParseJsonResponse is not defined`,
+    // which left the spinner spinning forever.
+    window.svParseJsonResponse = svParseJsonResponse;
+    window.svPromptSessionExpired = function () { svPromptSessionExpired(); };
     function svParseJsonResponse(r) {
         // fetch() with default redirect:'follow' lands on /user/connection
         // for an expired session. Catch both the redirected flag and a
