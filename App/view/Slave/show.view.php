@@ -1941,36 +1941,64 @@ document.addEventListener('DOMContentLoaded', function() {
             ? Math.round((secondsWithSingleTxn / secondsCount) * 1000) / 10
             : 0;
 
-        // Pass 2: per-file table breakdown → DML totals + top tables + db count
-        var ranges = d.binlog_file_ranges || [];
-        var tableMerge = {};
+        // Pass 2: per-table DML breakdown.
+        //
+        // The analyzer only stores DML counts at file-granularity
+        // (no per-second per-table). A naive per-file aggregation —
+        // "include the file fully if it overlaps the window" — was
+        // attributing the file's WHOLE DML to a 1-second zoom, even
+        // when the volume chart for that second showed nothing.
+        // The previous attempt to weight by per-file volume ratio
+        // mis-fired because `volume_per_second` is sparse (only
+        // seconds with activity get an entry), so `bytesBetween()`
+        // for a file's full range often equalled the same value
+        // for a small overlap inside it → ratio ≈ 1.
+        //
+        // Switch to a single GLOBAL volume ratio that maps 1:1 to
+        // what the user sees on the volume chart:
+        //
+        //     ratio = sizeBytes (bytes in window, from pass 1)
+        //           / total_size_bytes (analysis total)
+        //
+        // Apply to the global DML totals + the global top_tables list
+        // emitted by the backend. Properties:
+        //   - 0-byte zoom → ratio = 0 → every counter zero ✓
+        //   - full window → ratio = 1 → identical to unzoomed ✓
+        //   - linear in between, matches the volume chart exactly.
+        //
+        // Trade-off: loses per-file granularity (a zoom on a file
+        // that only writes table A still shows table B if table B
+        // is in the global top_tables). The previous per-file
+        // approach was already an approximation and an over-eager
+        // one — this simpler model is at least predictable.
+        var totalBytesAnalysis = parseInt(d.total_size_bytes) || 0;
+        var ratio = totalBytesAnalysis > 0 ? (sizeBytes / totalBytesAnalysis) : 0;
+        if (!isFinite(ratio) || ratio < 0) ratio = 0;
+        if (ratio > 1) ratio = 1;
+
+        var inserts = Math.round((parseInt(d.total_inserts) || 0) * ratio);
+        var updates = Math.round((parseInt(d.total_updates) || 0) * ratio);
+        var deletes = Math.round((parseInt(d.total_deletes) || 0) * ratio);
+
+        var topTables = (d.top_tables || []).map(function(t) {
+            return {
+                table:   t.table,
+                inserts: Math.round((parseInt(t.inserts) || 0) * ratio),
+                updates: Math.round((parseInt(t.updates) || 0) * ratio),
+                deletes: Math.round((parseInt(t.deletes) || 0) * ratio)
+            };
+        }).filter(function(r) { return (r.inserts + r.updates + r.deletes) > 0; })
+          .sort(function(a, b) {
+              return (b.inserts + b.updates + b.deletes) - (a.inserts + a.updates + a.deletes);
+          });
+
+        // Distinct database count derived from the (already-filtered)
+        // top tables — matches what the panel displays.
         var dbSet = {};
-        var inserts = 0, updates = 0, deletes = 0;
-        ranges.forEach(function(fr) {
-            var fStart = parseTimelineTs(fr.start);
-            var fEnd = parseTimelineTs(fr.end);
-            if (fStart === null || fEnd === null) return;
-            if (fEnd < xMin || fStart > xMax) return; // no overlap
-            (fr.tables || []).forEach(function(t) {
-                var ti = parseInt(t.inserts) || 0;
-                var tu = parseInt(t.updates) || 0;
-                var td = parseInt(t.deletes) || 0;
-                inserts += ti; updates += tu; deletes += td;
-                if (!tableMerge[t.table]) {
-                    tableMerge[t.table] = { table: t.table, inserts: 0, updates: 0, deletes: 0 };
-                }
-                tableMerge[t.table].inserts += ti;
-                tableMerge[t.table].updates += tu;
-                tableMerge[t.table].deletes += td;
-                var m = String(t.table || '').match(/^`([^`]+)`\./);
-                if (m) dbSet[m[1]] = true;
-            });
+        topTables.forEach(function(r) {
+            var m = String(r.table || '').match(/^`([^`]+)`\./);
+            if (m) dbSet[m[1]] = true;
         });
-        var topTables = Object.keys(tableMerge).map(function(k) { return tableMerge[k]; })
-            .filter(function(r) { return (r.inserts + r.updates + r.deletes) > 0; })
-            .sort(function(a, b) {
-                return (b.inserts + b.updates + b.deletes) - (a.inserts + a.updates + a.deletes);
-            });
 
         function fmtTs(ms) {
             var dt = new Date(ms);
