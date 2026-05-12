@@ -64,7 +64,11 @@ Non-admins see the matrix in read-only mode — both action columns show "SuperA
 Both AJAX endpoints follow PmaControl's three contracts (#1219, #1220, #1222):
 - The URL ends in `/ajax:true/` so `Router.php` sets `$_GET['ajax']='true'` and `Bootstrap.php:303` skips the DEBUG footer (`<div id="glial-debug-footer">`) that would otherwise be appended to the JSON. Symptom of a forgotten suffix: `Unexpected token '<', "<div" ...` (#1219).
 - The fetch sends `X-Requested-With: XMLHttpRequest` so `PersistentAuthSession::detectAjax()` returns true and the persistent-auth cookie does **not** rotate on every call. Without it, a 1 Hz poll empties the 10 s `PREVIOUS_TOKEN_GRACE_SECONDS` window in seconds and the next navigation = `token_mismatch` revoke + logout (#1220).
-- The action body is wrapped in **`pluginsTabBeginJsonResponse()`** (`ob_start()` + `display_errors=0` + `Content-Type: application/json; charset=UTF-8`) and every echo goes through **`pluginsTabSendJson()`** (`ob_clean()` + `echo json_encode(...)` + `exit;`). Reason: any stray PHP notice / warning / `Debug::debug()` / library noise emitted before our `echo` would surface client-side as e.g. `Unexpected token '<', "<br /> <font" ...` (#1222). The same `bhBeginJsonResponse` / `bhSendJson` pair lives in `App/Controller/Blackhole.php`.
+- The action body is wrapped in **`pluginsTabBeginJsonResponse()`** (`ob_start()` + `display_errors=0` + `Content-Type: application/json; charset=UTF-8` + a `register_shutdown_function` that catches fatals and emits a JSON error rather than an empty body) and every echo goes through **`pluginsTabSendJson()`** (`ob_clean()` + `echo json_encode(...)` + `exit;`). Reasons:
+  - any stray PHP notice / warning / `Debug::debug()` / library noise emitted before our `echo` would surface client-side as e.g. `Unexpected token '<', "<br /> <font" ...` (#1222),
+  - a fatal between `ob_start()` and our echo would otherwise silently produce empty body → `Unexpected end of JSON input` with zero hint (#1223). The shutdown handler emits `{ "error": "server-side fatal …", "fatal": "<msg>", "at": "<file:line>" }` instead. Apache `error_log` keeps the full stack trace.
+
+  The same `bhBeginJsonResponse` / `bhSendJson` pair lives in `App/Controller/Blackhole.php`.
 
 The full contract (`/ajax:true/` + `X-Requested-With` + `ob_start/clean` + `exit;`) is non-negotiable for any new JSON endpoint added to PmaControl. See also [the Glial AJAX JSON memory entry](../README.md) for the rationale + bug history.
 

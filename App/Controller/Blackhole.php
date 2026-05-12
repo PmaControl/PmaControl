@@ -380,6 +380,23 @@ class Blackhole extends Controller
         ob_start();
         @ini_set('display_errors', '0');
         header('Content-Type: application/json; charset=UTF-8');
+        // Shutdown handler: if a fatal kills the action between here
+        // and bhSendJson(), emit a deterministic JSON error so the
+        // client sees something actionable instead of "Unexpected
+        // end of JSON input" with zero hint.
+        register_shutdown_function(static function () {
+            $err = error_get_last();
+            if (!$err) return;
+            if (!in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR], true)) return;
+            if (headers_sent()) {
+                while (ob_get_level() > 0) { @ob_end_clean(); }
+                echo json_encode([
+                    'error' => 'Server-side fatal during JSON response — see Apache error_log',
+                    'fatal' => $err['message'],
+                    'at'    => basename((string) $err['file']) . ':' . $err['line'],
+                ]);
+            }
+        });
     }
 
     private function bhSendJson(array $payload, int $status = 200): void

@@ -16,6 +16,7 @@ use \App\Library\Debug;
 use \App\Library\System;
 use App\Library\Extraction2;
 use Glial\Security\Csrf;
+use App\Library\Security\CsrfGuard;
 
 // ALTER TABLE mysql_server ADD SYSTEM VERSIONING PARTITION BY SYSTEM_TIME;
 /*
@@ -4439,8 +4440,8 @@ class MysqlServer extends Controller
             $this->pluginsTabSendJson(['error' => 'SuperAdmin only'], 403);
             return;
         }
-        if (!Csrf::check($_POST, $_SESSION, 'mysqlserver.plugins.install')) {
-            $this->pluginsTabSendJson(['error' => 'CSRF token mismatch'], 403);
+        if ($failure = CsrfGuard::ensureOrFail($_POST, $_SERVER, $_SESSION, 'mysqlserver.plugins.install')) {
+            $this->pluginsTabSendJson(['error' => $failure['body']], $failure['status']);
             return;
         }
 
@@ -4538,8 +4539,8 @@ class MysqlServer extends Controller
             $this->pluginsTabSendJson(['error' => 'SuperAdmin only'], 403);
             return;
         }
-        if (!Csrf::check($_POST, $_SESSION, 'mysqlserver.plugins.uninstall')) {
-            $this->pluginsTabSendJson(['error' => 'CSRF token mismatch'], 403);
+        if ($failure = CsrfGuard::ensureOrFail($_POST, $_SERVER, $_SESSION, 'mysqlserver.plugins.uninstall')) {
+            $this->pluginsTabSendJson(['error' => $failure['body']], $failure['status']);
             return;
         }
 
@@ -4642,6 +4643,24 @@ class MysqlServer extends Controller
         // land in error_log so Apache's log keeps the diagnostic.
         @ini_set('display_errors', '0');
         header('Content-Type: application/json; charset=UTF-8');
+        // Shutdown handler: if a fatal kills the request between here
+        // and pluginsTabSendJson(), the client would otherwise see
+        // "Unexpected end of JSON input" with zero hint. Emit a
+        // deterministic JSON error pointing at error_log instead.
+        register_shutdown_function(static function () {
+            $err = error_get_last();
+            if (!$err) return;
+            if (!in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR], true)) return;
+            // If the action already flushed, nothing to do.
+            if (headers_sent()) {
+                while (ob_get_level() > 0) { @ob_end_clean(); }
+                echo json_encode([
+                    'error' => 'Server-side fatal during JSON response — see Apache error_log',
+                    'fatal' => $err['message'],
+                    'at'    => basename((string) $err['file']) . ':' . $err['line'],
+                ]);
+            }
+        });
     }
 
     /**
