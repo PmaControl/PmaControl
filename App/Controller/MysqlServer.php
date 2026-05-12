@@ -4312,6 +4312,252 @@ class MysqlServer extends Controller
 
     }
 
+    /**
+     * GET /MysqlServer/plugins/<id>/<name>/ — server plugins + storage
+     * engines tab. Reads `information_schema::engines` and
+     * `information_schema::plugins` from the Aspirateur cache (no
+     * round-trip to the target on the happy path) and renders them
+     * against `App\Library\PluginCatalog` so the operator can see
+     * which catalog plugins are loaded vs hot-installable vs need an
+     * apt package install.
+     *
+     * SuperAdmin (`user_main.id_group = 4`) can install hot plugins
+     * via the matrix. Other roles see the matrix in read-only mode.
+     */
+    public function plugins($param)
+    {
+        $id_mysql_server = (int) ($param[0] ?? 0);
+        if ($id_mysql_server <= 0) {
+            throw new \Exception("Usage: /MysqlServer/plugins/{id_mysql_server}/{name?}/");
+        }
+        $_GET['mysql_server']['id'] = $id_mysql_server;
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        // Server inventory (display name + version for the matrix header)
+        $srv = null;
+        $res = $db->sql_query("SELECT id, name, display_name, hostname, ip, port FROM mysql_server WHERE id = {$id_mysql_server} AND is_deleted = 0");
+        if ($res) $srv = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+        if (!$srv) throw new \Exception("mysql_server #{$id_mysql_server} not found");
+
+        $raw = Extraction2::display([
+            'version', 'version_comment',
+            'information_schema::engines', 'information_schema::plugins',
+            'mysql_server::mysql_available',
+        ], [$id_mysql_server]);
+        $row = is_array($raw) && !empty($raw) ? (reset($raw) ?: []) : [];
+
+        $version = (string) ($row['']['version'] ?? '');
+        if ($version === '') {
+            $version = (string) ($row['variables']['version'] ?? '');
+        }
+        $versionComment = (string) ($row['variables']['version_comment'] ?? $row['']['version_comment'] ?? '');
+        $family = \App\Library\PluginCatalog::detectFamily($version . ' ' . $versionComment);
+
+        // Live engines + plugins from the Aspirateur cache. Both come
+        // back as either a JSON string or an already-decoded array
+        // depending on which collector touched the row last.
+        $engineRowsRaw  = $row['information_schema']['engines']  ?? null;
+        $pluginRowsRaw  = $row['information_schema']['plugins']  ?? null;
+
+        $engineRows = self::pluginsTabDecodeRows($engineRowsRaw);
+        $pluginRows = self::pluginsTabDecodeRows($pluginRowsRaw);
+
+        // Index by uppercase name for easy lookup against the catalog.
+        $enginesIndex = [];
+        foreach ($engineRows as $r) {
+            $name = strtoupper((string) ($r['engine'] ?? $r['ENGINE'] ?? ''));
+            if ($name === '') continue;
+            $enginesIndex[$name] = [
+                'support' => strtoupper((string) ($r['support'] ?? $r['SUPPORT'] ?? '')),
+                'comment' => (string) ($r['comment'] ?? $r['COMMENT'] ?? ''),
+                'transactions' => strtoupper((string) ($r['transactions'] ?? $r['TRANSACTIONS'] ?? '')),
+                'xa' => strtoupper((string) ($r['xa'] ?? $r['XA'] ?? '')),
+                'savepoints' => strtoupper((string) ($r['savepoints'] ?? $r['SAVEPOINTS'] ?? '')),
+            ];
+        }
+        $pluginsIndex = [];
+        foreach ($pluginRows as $r) {
+            $name = strtoupper((string) ($r['plugin_name'] ?? $r['PLUGIN_NAME'] ?? ''));
+            if ($name === '') continue;
+            $pluginsIndex[$name] = [
+                'status'  => strtoupper((string) ($r['plugin_status']  ?? $r['PLUGIN_STATUS']  ?? '')),
+                'type'    => strtoupper((string) ($r['plugin_type']    ?? $r['PLUGIN_TYPE']    ?? '')),
+                'library' => (string)  ($r['plugin_library'] ?? $r['PLUGIN_LIBRARY'] ?? ''),
+                'version' => (string)  ($r['plugin_version'] ?? $r['PLUGIN_VERSION'] ?? ''),
+                'license' => (string)  ($r['plugin_license'] ?? $r['PLUGIN_LICENSE'] ?? ''),
+            ];
+        }
+
+        // Permission gate — SuperAdmin (id_group = 4) only.
+        $isSuperAdmin = $this->pluginsTabIsSuperAdmin();
+
+        $data = [
+            'server'           => $srv,
+            'version'          => $version,
+            'version_comment'  => $versionComment,
+            'family'           => $family,
+            'engines'          => $engineRows,
+            'engines_index'    => $enginesIndex,
+            'plugins'          => $pluginRows,
+            'plugins_index'    => $pluginsIndex,
+            'catalog'          => \App\Library\PluginCatalog::all(),
+            'is_super_admin'   => $isSuperAdmin,
+            'csrf_field'       => Csrf::DEFAULT_FIELD,
+            'csrf_token'       => Csrf::issueToken($_SESSION, 'mysqlserver.plugins.install'),
+        ];
+
+        $this->title  = __('Plugins') . ' — ' . ($srv['display_name'] ?: $srv['name']);
+        $this->ariane = $srv['display_name'] ?: $srv['name'];
+        $this->set('data', $data);
+        $this->set('id_mysql_server', $id_mysql_server);
+    }
+
+    /**
+     * POST /MysqlServer/installPlugin/<id>/ — SuperAdmin only.
+     * Body: plugin=<NAME>. Resolves to the catalog row's `soname` for
+     * the detected family and runs INSTALL SONAME on the target.
+     * Returns JSON `{ ok, support, error? }`.
+     */
+    public function installPlugin($param)
+    {
+        $this->layout_name = false;
+        $this->view = false;
+        header('Content-Type: application/json; charset=UTF-8');
+
+        if (!$this->pluginsTabIsSuperAdmin()) {
+            http_response_code(403);
+            echo json_encode(['error' => 'SuperAdmin only']);
+            return;
+        }
+        if (!Csrf::check($_POST, $_SESSION, 'mysqlserver.plugins.install')) {
+            http_response_code(403);
+            echo json_encode(['error' => 'CSRF token mismatch']);
+            return;
+        }
+
+        $id_mysql_server = (int) ($param[0] ?? 0);
+        $pluginName = strtoupper(trim((string) ($_POST['plugin'] ?? '')));
+        if ($id_mysql_server <= 0 || $pluginName === '') {
+            http_response_code(400);
+            echo json_encode(['error' => 'Missing id_mysql_server or plugin']);
+            return;
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $res = $db->sql_query("SELECT id, name FROM mysql_server WHERE id = {$id_mysql_server} AND is_deleted = 0");
+        $srv = $res ? $db->sql_fetch_array($res, MYSQLI_ASSOC) : null;
+        if (!$srv) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Server not found']);
+            return;
+        }
+
+        $entry = \App\Library\PluginCatalog::find($pluginName);
+        if ($entry === null) {
+            http_response_code(400);
+            echo json_encode(['error' => "Plugin '{$pluginName}' not in catalog"]);
+            return;
+        }
+
+        // Re-detect family server-side (don't trust client).
+        $raw = Extraction2::display(['version', 'version_comment'], [$id_mysql_server]);
+        $rowEx = is_array($raw) && !empty($raw) ? (reset($raw) ?: []) : [];
+        $version = (string) ($rowEx['']['version'] ?? $rowEx['variables']['version'] ?? '');
+        $vcomment = (string) ($rowEx['variables']['version_comment'] ?? $rowEx['']['version_comment'] ?? '');
+        $family = \App\Library\PluginCatalog::detectFamily($version . ' ' . $vcomment);
+        if (!isset($entry[$family])) {
+            http_response_code(400);
+            echo json_encode(['error' => "Cannot determine MariaDB/MySQL family from version='{$version}'"]);
+            return;
+        }
+        $spec = $entry[$family];
+        if (($spec['availability'] ?? '') !== \App\Library\PluginCatalog::AVAILABILITY_CORE) {
+            $hint = $spec['install_hint'] ?? ('First run: apt install ' . ($spec['package'] ?? '?') . ' on the target host, then restart the service.');
+            http_response_code(409);
+            echo json_encode([
+                'error' => "Plugin '{$pluginName}' is not hot-installable on {$family}: " . $hint,
+                'package' => $spec['package'] ?? '',
+            ]);
+            return;
+        }
+        $soname = (string) ($spec['soname'] ?? '');
+        if ($soname === '') {
+            http_response_code(400);
+            echo json_encode(['error' => 'Catalog entry has no SONAME']);
+            return;
+        }
+
+        $link = Sgbd::sql($srv['name']);
+        if (!$link) {
+            http_response_code(503);
+            echo json_encode(['error' => 'Cannot connect to target server']);
+            return;
+        }
+
+        $sql = "INSTALL SONAME '" . $link->sql_real_escape_string($soname) . "'";
+        $ok = (bool) $link->sql_query_silent($sql);
+        if (!$ok) {
+            $sql2 = "INSTALL PLUGIN " . $pluginName . " SONAME '" . $link->sql_real_escape_string($soname . '.so') . "'";
+            $ok = (bool) $link->sql_query_silent($sql2);
+        }
+        if (!$ok) {
+            $errMsg = method_exists($link, '_error') ? (string) $link->_error() : 'INSTALL failed';
+            http_response_code(500);
+            echo json_encode(['error' => $errMsg]);
+            return;
+        }
+
+        // Re-read the engines/plugins to confirm.
+        $support = '';
+        $r2 = $link->sql_query_silent("SHOW ENGINES");
+        if ($r2) {
+            while ($row = $link->sql_fetch_array($r2, MYSQLI_ASSOC)) {
+                if (strcasecmp((string) ($row['Engine'] ?? ''), $pluginName) === 0) {
+                    $support = strtoupper((string) ($row['Support'] ?? ''));
+                    break;
+                }
+            }
+        }
+
+        echo json_encode(['ok' => true, 'support' => $support, 'sql' => $sql]);
+    }
+
+    /**
+     * Helper — accept either a JSON-string or already-decoded array
+     * from Extraction2 and return a list of rows.
+     *
+     * @return list<array>
+     */
+    private static function pluginsTabDecodeRows($value): array
+    {
+        if (is_array($value)) return $value;
+        if (is_string($value) && $value !== '') {
+            $decoded = json_decode($value, true);
+            if (is_array($decoded)) return $decoded;
+        }
+        return [];
+    }
+
+    /**
+     * Returns true when the current authenticated user is in the
+     * `Super administrator` group (user_main.id_group = 4).
+     */
+    private function pluginsTabIsSuperAdmin(): bool
+    {
+        try {
+            $user = $this->di['auth']->getUser();
+        } catch (\Throwable $e) {
+            return false;
+        }
+        if (!$user || empty($user->id)) return false;
+        $db = Sgbd::sql(DB_DEFAULT);
+        $userId = (int) $user->id;
+        $res = $db->sql_query("SELECT id_group FROM user_main WHERE id = {$userId} LIMIT 1");
+        $row = $res ? $db->sql_fetch_array($res, MYSQLI_ASSOC) : null;
+        return $row && (int) $row['id_group'] === 4;
+    }
+
     public function runDetail($param)
     {
         $id_mysql_server = (int) ($param[0] ?? 0);
