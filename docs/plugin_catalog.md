@@ -141,6 +141,18 @@ Adding a new plugin to the catalog is a four-line append in `PluginCatalog::all(
 | group_replication | — | core |
 | clone | — | core |
 
+## /job/index integration
+
+Every successful or failed `installPlugin` / `uninstallPlugin` call writes a row in the standard `job` table (`class = 'App\Controller\MysqlServer'`, `method = 'installPlugin' | 'uninstallPlugin'`, `param = json([id_mysql_server, plugin_name])`, `pid`, `log = tmp/log/MysqlServer-<action>-<id>-<rand>.log`, `date_start = date_end = NOW()`, `status = SUCCESS | ERROR`). The log file carries the timestamp, the operator login, the SQL that ran, and the result / error message.
+
+This is **synchronous** (unlike the BLACKHOLE conversion which is forked + tracked async). A plugin install is a single SQL statement that returns in milliseconds — no polling needed. The benefit is purely the audit trail in `/job/index`. Restart from `/job/index` is **not** wired (`MysqlServer/installPlugin` is not in `Job::RELAUNCHABLE_COMMANDS`) — re-running an install through the matrix button is the supported retry path.
+
+## Aspirateur cache refresh after install / uninstall
+
+Aspirateur snapshots `information_schema::engines` and `information_schema::plugins` on a schedule. A successful install on the page therefore wouldn't show up until the next collector run — the matrix would keep saying "not installed" even though the plugin is loaded.
+
+`pluginsTabRefreshEngineCache($link, $serverId)` runs immediately after a successful install / uninstall: it re-fetches both tables live from the target, replaces the latest row in `ts_value_general_json` for `id_ts_variable = 5227 / 4479`, so `window.location.reload()` after the action sees the new state.
+
 ## ACL cache
 
 Adding the `plugins`, `installPlugin`, or `uninstallPlugin` action triggered an ACL re-discovery — `tmp/acl/acl.ser` was removed after the corresponding commits. Any further new public method on `App\Controller\MysqlServer` requires the same step.

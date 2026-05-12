@@ -4505,6 +4505,7 @@ class MysqlServer extends Controller
         }
         if (!$ok) {
             $errMsg = method_exists($link, '_error') ? (string) $link->_error() : 'INSTALL failed';
+            $this->pluginsTabRegisterJobRow('installPlugin', $id_mysql_server, $pluginName, $sql, false, $errMsg);
             $this->pluginsTabSendJson(['error' => $errMsg], 500);
             return;
         }
@@ -4521,6 +4522,10 @@ class MysqlServer extends Controller
             }
         }
 
+        $this->pluginsTabRegisterJobRow('installPlugin', $id_mysql_server, $pluginName, $sql, true);
+        // Invalidate the stale Aspirateur cache so the page reload
+        // sees the new state instead of yesterday's snapshot.
+        $this->pluginsTabRefreshEngineCache($link, $id_mysql_server);
         $this->pluginsTabSendJson(['ok' => true, 'support' => $support, 'sql' => $sql]);
     }
 
@@ -4612,9 +4617,12 @@ class MysqlServer extends Controller
         }
         if (!$ok) {
             $errMsg = method_exists($link, '_error') ? (string) $link->_error() : 'UNINSTALL failed';
+            $this->pluginsTabRegisterJobRow('uninstallPlugin', $id_mysql_server, $pluginName, $sql, false, $errMsg);
             $this->pluginsTabSendJson(['error' => $errMsg], 500);
             return;
         }
+        $this->pluginsTabRegisterJobRow('uninstallPlugin', $id_mysql_server, $pluginName, $sql, true);
+        $this->pluginsTabRefreshEngineCache($link, $id_mysql_server);
         $this->pluginsTabSendJson(['ok' => true, 'sql' => $sql]);
     }
 
@@ -4680,6 +4688,116 @@ class MysqlServer extends Controller
         // a JSON response. The persistent-auth cookie has already been
         // touched (if it was going to be), the request is done.
         exit;
+    }
+
+    /**
+     * Record a plugin install / uninstall in the standard `job` table
+     * so /job/index lists it next to the Backup / Database / Blackhole
+     * runs. Writes a tiny log file with the SQL + result so the
+     * /job/index log viewer (`Mydumper::ParseLog`) has something to
+     * render.
+     *
+     * Sync action — we don't fork; the row goes in with its final
+     * `status = SUCCESS / ERROR` immediately and `date_end = NOW()`.
+     */
+    private function pluginsTabRegisterJobRow(string $action, int $serverId, string $pluginName, string $sql, bool $ok, string $errMsg = ''): void
+    {
+        try {
+            $db = Sgbd::sql(DB_DEFAULT);
+            $logDir = ROOT . '/tmp/log';
+            if (!is_dir($logDir)) @mkdir($logDir, 0755, true);
+            $logPath = $logDir . '/MysqlServer-' . $action . '-' . $serverId . '-' . substr(uniqid('', true), -10) . '.log';
+
+            $startedBy = (string) ($_SESSION['login'] ?? 'cli');
+            $now = date('Y-m-d H:i:s');
+            $body = "[{$now}] {$action} server={$serverId} plugin={$pluginName} by={$startedBy}" . PHP_EOL
+                  . "sql: " . $sql . PHP_EOL
+                  . "result: " . ($ok ? 'SUCCESS' : 'ERROR') . PHP_EOL;
+            if (!$ok && $errMsg !== '') {
+                $body .= "error: " . $errMsg . PHP_EOL;
+            }
+            @file_put_contents($logPath, $body);
+
+            $uuid = bin2hex(random_bytes(16));
+            $uuid = substr($uuid, 0, 8) . '-' . substr($uuid, 8, 4) . '-' . substr($uuid, 12, 4)
+                  . '-' . substr($uuid, 16, 4) . '-' . substr($uuid, 20, 12);
+            $param = json_encode([$serverId, $pluginName]);
+
+            $uuidEsc    = $db->sql_real_escape_string($uuid);
+            $paramEsc   = $db->sql_real_escape_string($param);
+            $logEsc     = $db->sql_real_escape_string($logPath);
+            $errEsc     = $db->sql_real_escape_string($errMsg);
+            $methodEsc  = $db->sql_real_escape_string($action);
+            $status     = $ok ? 'SUCCESS' : 'ERROR';
+
+            $db->sql_query(
+                "INSERT INTO job (uuid, class, method, param, date_start, date_end, pid, log, error, status)
+                 VALUES ('{$uuidEsc}', 'App\\\\Controller\\\\MysqlServer', '{$methodEsc}',
+                         '{$paramEsc}', NOW(), NOW(), " . (int) getmypid() . ",
+                         '{$logEsc}', '{$errEsc}', '{$status}')"
+            );
+        } catch (\Throwable $e) {
+            // Job-row writing is best-effort — don't let an audit
+            // failure kill the actual response. Log to error_log so
+            // the regression is still visible.
+            error_log('[PmaControl] pluginsTabRegisterJobRow failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Re-fetch SHOW ENGINES + information_schema.PLUGINS from the
+     * target right after install/uninstall and overwrite the latest
+     * row in `ts_value_general_json` for the matching ts_variable
+     * ids (5227 = engines, 4479 = plugins). Without this the matrix
+     * keeps showing yesterday's Aspirateur snapshot until the next
+     * collector run.
+     *
+     * Best-effort. Failure is logged, never thrown.
+     */
+    private function pluginsTabRefreshEngineCache($link, int $serverId): void
+    {
+        try {
+            $db = Sgbd::sql(DB_DEFAULT);
+            $now = date('Y-m-d H:i:s');
+
+            foreach ([
+                ['sql' => 'SELECT * FROM information_schema.ENGINES', 'ts_id' => 5227],
+                ['sql' => 'SELECT * FROM information_schema.PLUGINS ORDER BY PLUGIN_TYPE, PLUGIN_NAME', 'ts_id' => 4479],
+            ] as $job) {
+                $res = $link->sql_query_silent($job['sql']);
+                if (!$res) continue;
+                $rows = [];
+                while ($row = $link->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                    $rows[] = $row;
+                }
+                $value = json_encode($rows);
+                $valueEsc = $db->sql_real_escape_string((string) $value);
+                $tsId = (int) $job['ts_id'];
+
+                // REPLACE-style update: delete the latest row for this
+                // (server, variable), then insert a fresh one stamped
+                // with NOW(). The table is partitioned by date, so a
+                // direct UPDATE is fragile.
+                $db->sql_query(
+                    "DELETE FROM ts_value_general_json
+                     WHERE id_mysql_server = {$serverId}
+                       AND id_ts_variable = {$tsId}
+                       AND date = (
+                           SELECT * FROM (
+                               SELECT MAX(date) FROM ts_value_general_json
+                               WHERE id_mysql_server = {$serverId}
+                                 AND id_ts_variable = {$tsId}
+                           ) AS x
+                       )"
+                );
+                $db->sql_query(
+                    "INSERT INTO ts_value_general_json (date, id_ts_variable, id_mysql_server, connection_name, value)
+                     VALUES ('{$now}', {$tsId}, {$serverId}, '', '{$valueEsc}')"
+                );
+            }
+        } catch (\Throwable $e) {
+            error_log('[PmaControl] pluginsTabRefreshEngineCache failed: ' . $e->getMessage());
+        }
     }
 
     /**
