@@ -33,7 +33,11 @@ final class BlackholeControllerExistsTest extends TestCase
      */
     public function testExposedActionsArePublic(): void
     {
-        $expected = ['index', 'startConvert', 'status', 'runConvertCli'];
+        $expected = [
+            'index', 'status', 'runConvertCli',
+            'startConvert',              // pipeline A — convert in place
+            'startGreenfield', 'probeIdle', // pipeline B — provision from scratch
+        ];
         foreach ($expected as $method) {
             $ref = new ReflectionMethod(\App\Controller\Blackhole::class, $method);
             self::assertTrue($ref->isPublic(), "{$method}() must be public");

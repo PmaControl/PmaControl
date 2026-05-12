@@ -9,8 +9,10 @@
 
 use App\Library\Display;
 
-$servers     = $data['servers'] ?? [];
-$conversions = $data['conversions'] ?? [];
+$servers           = $data['servers'] ?? [];
+$idleTargets       = $data['idle_targets'] ?? [];
+$masterCandidates  = $data['master_candidates'] ?? [];
+$conversions       = $data['conversions'] ?? [];
 
 // One row per (server, channel) — already filtered server-side to
 // keep only servers that have a master and are NOT in a
@@ -159,6 +161,52 @@ $candidates = array_values(array_filter($servers, static fn ($s) => (int) $s['is
     </div>
 </div>
 
+<div class="bh-card">
+    <div class="bh-card-head" style="background:linear-gradient(135deg,#0c4a6e,#4c1d95)">
+        <span><i class="fa fa-plus-circle"></i> <?= __('Create new BLACKHOLE relay from scratch') ?></span>
+        <span style="font-weight:400;font-size:12px;opacity:0.85;margin-left:8px"><?= __('schema-only dump from master → restore → BLACKHOLE → CHANGE MASTER TO → START SLAVE') ?></span>
+    </div>
+    <div class="bh-card-body">
+        <p style="color:#475569;margin:6px 0 10px;font-size:13px">
+            <?= __('Pick an empty target server and an upstream master. The pipeline refuses if the target has any non-system tables or any non-monitoring sessions. mysqldump runs schema-only (the relay never stores rows). Replication restarts from the master\'s current binlog position.') ?>
+        </p>
+        <table class="bh-table" style="margin-bottom:8px">
+            <tr>
+                <td style="width:25%"><label><strong><?= __('Target (empty server)') ?></strong></label></td>
+                <td>
+                    <select id="bh-gf-target" style="min-width:320px;padding:4px 6px">
+                        <option value=""><?= __('— select an empty server —') ?></option>
+                        <?php foreach ($idleTargets as $s): ?>
+                            <option value="<?= (int) $s['id'] ?>"><?= htmlspecialchars(($s['display_name'] ?: $s['name']) . ' (' . ($s['hostname'] ?: $s['ip']) . ':' . (int) $s['port'] . ')') ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <span id="bh-gf-target-status" style="margin-left:10px;font-size:12px"></span>
+                </td>
+            </tr>
+            <tr>
+                <td><label><strong><?= __('Upstream master') ?></strong></label></td>
+                <td>
+                    <select id="bh-gf-master" style="min-width:320px;padding:4px 6px">
+                        <option value=""><?= __('— select a master —') ?></option>
+                        <?php foreach ($masterCandidates as $s): ?>
+                            <option value="<?= (int) $s['id'] ?>"><?= htmlspecialchars(($s['display_name'] ?: $s['name']) . ' (' . ($s['hostname'] ?: $s['ip']) . ':' . (int) $s['port'] . ')') ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td><label><?= __('Replication user (optional)') ?></label></td>
+                <td>
+                    <input id="bh-gf-repl-user" type="text" placeholder="<?= __('defaults to the master\'s mysql_server.login') ?>" style="min-width:320px;padding:4px 6px">
+                    <small style="display:block;color:#94a3b8;margin-top:4px"><?= __('Must already exist on the master with REPLICATION SLAVE. Password is reused from the master\'s mysql_server entry.') ?></small>
+                </td>
+            </tr>
+        </table>
+        <button id="bh-gf-start" class="bh-btn-gf" disabled style="background:#4c1d95;color:#fff;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;opacity:0.5"><?= __('Provision relay') ?></button>
+        <button id="bh-gf-dry" class="bh-btn-gf" disabled style="background:#475569;color:#fff;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;opacity:0.5"><?= __('Dry-run') ?></button>
+    </div>
+</div>
+
 <div id="bh-progress-card" class="bh-card" style="display:none">
     <div class="bh-card-head" style="background:linear-gradient(135deg,#1e293b,#4c1d95)">
         <span id="bh-progress-title"><?= __('Conversion in progress') ?></span>
@@ -284,5 +332,73 @@ $candidates = array_values(array_filter($servers, static fn ($s) => (int) $s['is
             pollStatus(a.getAttribute('data-id'));
         });
     });
+
+    // ---- Greenfield form ----
+    var GF_TOKEN  = <?= json_encode($data['greenfield_token']) ?>;
+    var gfTarget  = document.getElementById('bh-gf-target');
+    var gfMaster  = document.getElementById('bh-gf-master');
+    var gfUser    = document.getElementById('bh-gf-repl-user');
+    var gfStart   = document.getElementById('bh-gf-start');
+    var gfDry     = document.getElementById('bh-gf-dry');
+    var gfStatus  = document.getElementById('bh-gf-target-status');
+
+    function refreshGfButtons() {
+        var ok = gfTarget.value && gfMaster.value && gfTarget.value !== gfMaster.value;
+        [gfStart, gfDry].forEach(function (b) {
+            b.disabled = !ok;
+            b.style.opacity = ok ? '1' : '0.5';
+            b.style.cursor  = ok ? 'pointer' : 'not-allowed';
+        });
+    }
+    gfTarget.addEventListener('change', function () {
+        refreshGfButtons();
+        gfStatus.innerHTML = '';
+        if (!gfTarget.value) return;
+        gfStatus.innerHTML = '<span style="color:#94a3b8">checking…</span>';
+        fetch(LINK + 'Blackhole/probeIdle/' + gfTarget.value + '/ajax:true/', { credentials: 'same-origin' })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (d.idle === true) {
+                    gfStatus.innerHTML = '<span style="color:#16a34a">✓ idle — ok to provision</span>';
+                } else {
+                    gfStatus.innerHTML = '<span style="color:#dc2626">✗ ' + (d.reason || d.error || 'not idle').replace(/[<>&]/g, function (c) { return ({'<':'&lt;','>':'&gt;','&':'&amp;'})[c]; }) + '</span>';
+                }
+            })
+            .catch(function (e) {
+                gfStatus.innerHTML = '<span style="color:#dc2626">probe failed: ' + e.message + '</span>';
+            });
+    });
+    gfMaster.addEventListener('change', refreshGfButtons);
+
+    function startGreenfield(dry) {
+        var targetId = gfTarget.value;
+        var masterId = gfMaster.value;
+        var targetTxt = gfTarget.options[gfTarget.selectedIndex].textContent;
+        var masterTxt = gfMaster.options[gfMaster.selectedIndex].textContent;
+        var msg = dry
+            ? 'Dry-run greenfield provisioning of "' + targetTxt + '" replicating from "' + masterTxt + '"? Nothing will be mutated.'
+            : 'Provision a fresh BLACKHOLE relay on "' + targetTxt + '" replicating from "' + masterTxt + '"?\n\n'
+              + 'This will: 1) verify the target is idle, 2) mysqldump --no-data --master-data=2 the master schema into the target, '
+              + '3) ALTER every table to ENGINE=BLACKHOLE, 4) CHANGE MASTER TO + START SLAVE.\n\n'
+              + 'The target\'s previous schema (if any) will be overwritten.';
+        if (!confirm(msg)) return;
+
+        var fd = new FormData();
+        fd.append(CSRF_FIELD, GF_TOKEN);
+        fd.append('dry_run', dry ? '1' : '0');
+        if (gfUser.value.trim()) fd.append('replication_user', gfUser.value.trim());
+
+        fetch(LINK + 'Blackhole/startGreenfield/' + targetId + '/' + masterId + '/ajax:true/', {
+            method: 'POST', credentials: 'same-origin', body: fd,
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (d.error) { alert('Error: ' + d.error); return; }
+                pollStatus(d.id);
+            })
+            .catch(function (e) { alert('Network error: ' + e.message); });
+    }
+    gfStart.addEventListener('click', function () { if (!gfStart.disabled) startGreenfield(false); });
+    gfDry.addEventListener('click',   function () { if (!gfDry.disabled)   startGreenfield(true);  });
 })();
 </script>

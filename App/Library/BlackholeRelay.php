@@ -48,84 +48,399 @@ class BlackholeRelay
             if (!$row) {
                 throw new \RuntimeException("blackhole_conversion #{$this->conversionId} not found");
             }
-            $serverId = (int) $row['id_mysql_server'];
-            $dryRun   = (int) $row['dry_run'] === 1;
-            $server   = $this->loadServer($serverId);
-            if (!$server) {
-                throw new \RuntimeException("mysql_server #{$serverId} not found or deleted");
-            }
-            $this->updateLastStep(
-                "Conversion #{$this->conversionId} for " . ($server['display_name'] ?: $server['name'])
-                . ($dryRun ? ' (DRY-RUN)' : '')
-            );
+            $mode = ((string) ($row['provision_mode'] ?? 'convert')) === 'greenfield'
+                ? 'greenfield' : 'convert';
+            $this->updateLastStep("Conversion #{$this->conversionId} — mode=$mode"
+                . ((int) $row['dry_run'] === 1 ? ' (DRY-RUN)' : ''));
 
-            // Connect to the target server using the same connection
-            // alias PmaControl already uses for SHOW SLAVE STATUS etc.
-            $this->addStep('connect', "Connecting to target via Sgbd::sql('{$server['name']}')...");
-            $link = Sgbd::sql($server['name']);
-            if (!$link) {
-                throw new \RuntimeException("Unable to open Sgbd connection {$server['name']}");
-            }
-            $this->updateLastStep('Connected');
+            $ok = $mode === 'greenfield'
+                ? $this->runGreenfield($row)
+                : $this->runConvert($row);
 
-            // Refuse if the target isn't already a replica: a BLACKHOLE
-            // node only makes sense as a downstream relay.
-            $this->addStep('guard', 'Checking pre-conditions (target must be a replica)...');
-            if (!$this->targetIsReplica($link)) {
-                throw new \RuntimeException(
-                    'Target has no configured replication channel — refusing. '
-                    . 'A BLACKHOLE relay must be a downstream slave; configure '
-                    . 'CHANGE MASTER first then re-run the conversion.'
-                );
-            }
-            $this->updateLastStep('Target is a replica — ok');
-
-            // ── STOP SLAVE on every configured channel ────────────────
-            $this->addStep('stop_slave', 'Stopping replication on all channels...');
-            $this->stopAllReplication($link, $dryRun);
-            $this->updateLastStep('Replication stopped' . ($dryRun ? ' (dry-run: skipped)' : ''));
-
-            // ── Enumerate convertible tables ──────────────────────────
-            $this->addStep('discover', 'Enumerating non-system tables...');
-            $tables = $this->discoverTables($link);
-            $this->setTableCounts(count($tables), 0);
-            $this->updateLastStep('Found ' . count($tables) . ' candidate tables');
-
-            // ── Convert each table ────────────────────────────────────
-            $this->addStep('convert', 'Converting tables to ENGINE=BLACKHOLE...');
-            $converted = $this->convertTables($link, $tables, $dryRun);
-            $this->setTableCounts(count($tables), $converted);
-            $this->updateLastStep("Converted {$converted}/" . count($tables) . ' tables'
-                . ($dryRun ? ' (dry-run: ALTER statements only logged)' : ''));
-
-            // ── Persist runtime variables on the target ───────────────
-            $this->addStep('persist', 'Setting runtime variables (default engine, binlog_format, read_only)...');
-            $this->persistRuntimeConfig($link, $dryRun);
-            $this->updateLastStep('Runtime config applied' . ($dryRun ? ' (dry-run)' : ''));
-
-            // ── Mark inventory ────────────────────────────────────────
-            $this->addStep('flag', 'Marking mysql_server.is_binlog_relay = 1...');
-            if (!$dryRun) {
-                $this->db->sql_query(
-                    "UPDATE mysql_server SET is_binlog_relay = 1 WHERE id = {$serverId}"
-                );
-            }
-            $this->updateLastStep('Inventory updated' . ($dryRun ? ' (dry-run)' : ''));
-
-            // ── Restart replication ───────────────────────────────────
-            $this->addStep('start_slave', 'Restarting replication...');
-            $this->startAllReplication($link, $dryRun);
-            $this->updateLastStep('Replication restarted' . ($dryRun ? ' (dry-run)' : ''));
-
-            $this->updateStatus('done');
-            return true;
-
+            $this->updateStatus($ok ? 'done' : 'failed');
+            return $ok;
         } catch (\Throwable $e) {
             $this->updateLastStep('ERROR: ' . $e->getMessage(), 'error');
             $this->setError($e->getMessage());
             $this->updateStatus('failed');
             return false;
         }
+    }
+
+    // ------------------------------------------------------------------
+    //  Pipeline A — convert an already-replicating slave in place
+    // ------------------------------------------------------------------
+
+    private function runConvert(array $row): bool
+    {
+        $serverId = (int) $row['id_mysql_server'];
+        $dryRun   = (int) $row['dry_run'] === 1;
+        $server   = $this->loadServer($serverId);
+        if (!$server) {
+            throw new \RuntimeException("mysql_server #{$serverId} not found or deleted");
+        }
+
+        $this->addStep('connect', "Connecting to target via Sgbd::sql('{$server['name']}')...");
+        $link = Sgbd::sql($server['name']);
+        if (!$link) {
+            throw new \RuntimeException("Unable to open Sgbd connection {$server['name']}");
+        }
+        $this->updateLastStep('Connected');
+
+        $this->addStep('guard', 'Checking pre-conditions (target must be a replica)...');
+        if (!$this->targetIsReplica($link)) {
+            throw new \RuntimeException(
+                'Target has no configured replication channel — refusing. '
+                . 'For a fresh node, use the "Create new relay from scratch" '
+                . 'form (greenfield mode) instead.'
+            );
+        }
+        $this->updateLastStep('Target is a replica — ok');
+
+        $this->addStep('stop_slave', 'Stopping replication on all channels...');
+        $this->stopAllReplication($link, $dryRun);
+        $this->updateLastStep('Replication stopped' . ($dryRun ? ' (dry-run: skipped)' : ''));
+
+        $this->addStep('discover', 'Enumerating non-system tables...');
+        $tables = $this->discoverTables($link);
+        $this->setTableCounts(count($tables), 0);
+        $this->updateLastStep('Found ' . count($tables) . ' candidate tables');
+
+        $this->addStep('convert', 'Converting tables to ENGINE=BLACKHOLE...');
+        $converted = $this->convertTables($link, $tables, $dryRun);
+        $this->setTableCounts(count($tables), $converted);
+        $this->updateLastStep("Converted {$converted}/" . count($tables) . ' tables'
+            . ($dryRun ? ' (dry-run: ALTER statements only logged)' : ''));
+
+        $this->addStep('persist', 'Setting runtime variables (default engine, binlog_format, read_only)...');
+        $this->persistRuntimeConfig($link, $dryRun);
+        $this->updateLastStep('Runtime config applied' . ($dryRun ? ' (dry-run)' : ''));
+
+        $this->addStep('flag', 'Marking mysql_server.is_binlog_relay = 1...');
+        if (!$dryRun) {
+            $this->db->sql_query(
+                "UPDATE mysql_server SET is_binlog_relay = 1 WHERE id = {$serverId}"
+            );
+        }
+        $this->updateLastStep('Inventory updated' . ($dryRun ? ' (dry-run)' : ''));
+
+        $this->addStep('start_slave', 'Restarting replication...');
+        $this->startAllReplication($link, $dryRun);
+        $this->updateLastStep('Replication restarted' . ($dryRun ? ' (dry-run)' : ''));
+
+        return true;
+    }
+
+    // ------------------------------------------------------------------
+    //  Pipeline B — provision a relay from scratch (greenfield)
+    // ------------------------------------------------------------------
+
+    private function runGreenfield(array $row): bool
+    {
+        $serverId = (int) $row['id_mysql_server'];
+        $masterId = (int) $row['id_mysql_server__master'];
+        $dryRun   = (int) $row['dry_run'] === 1;
+
+        $server = $this->loadServer($serverId);
+        $master = $masterId > 0 ? $this->loadServer($masterId) : null;
+        if (!$server) {
+            throw new \RuntimeException("Target mysql_server #{$serverId} not found");
+        }
+        if (!$master) {
+            throw new \RuntimeException("Master mysql_server #{$masterId} not found");
+        }
+
+        $targetLabel = $server['display_name'] ?: $server['name'];
+        $masterLabel = $master['display_name'] ?: $master['name'];
+
+        $this->addStep('connect_target', "Connecting to target via Sgbd::sql('{$server['name']}')...");
+        $tgt = Sgbd::sql($server['name']);
+        if (!$tgt) {
+            throw new \RuntimeException("Unable to open Sgbd connection {$server['name']}");
+        }
+        $this->updateLastStep('Connected to target ' . $targetLabel);
+
+        $this->addStep('connect_master', "Connecting to master via Sgbd::sql('{$master['name']}')...");
+        $src = Sgbd::sql($master['name']);
+        if (!$src) {
+            throw new \RuntimeException("Unable to open Sgbd connection {$master['name']}");
+        }
+        $this->updateLastStep('Connected to master ' . $masterLabel);
+
+        // ── Activity guard on target ─────────────────────────────────
+        $this->addStep('guard_idle', 'Asserting target is idle (no user databases / no non-monitoring sessions)...');
+        $idle = $this->assertTargetIsIdle($tgt);
+        if ($idle !== true) {
+            throw new \RuntimeException("Target is not idle: {$idle}");
+        }
+        $this->updateLastStep('Target is idle — ok');
+
+        // ── Master must have binlog ──────────────────────────────────
+        $this->addStep('guard_master', 'Verifying master has binary logging enabled...');
+        $masterStatus = $this->fetchMasterStatus($src);
+        if ($masterStatus === null) {
+            throw new \RuntimeException('Master has no binary log (SHOW MASTER STATUS empty). Enable log_bin first.');
+        }
+        $this->updateLastStep("Master at {$masterStatus['File']}:{$masterStatus['Position']}");
+
+        // ── Dump schema from master, restore on target ───────────────
+        $this->addStep('dump_restore', "Dumping schema from {$masterLabel} and piping into {$targetLabel}...");
+        if ($dryRun) {
+            $this->updateLastStep('Skipped (dry-run): would mysqldump --no-data --master-data=2 …');
+        } else {
+            $dumpResult = $this->dumpAndRestoreSchema($master, $server);
+            if (!$dumpResult['ok']) {
+                throw new \RuntimeException('mysqldump|mysql failed: ' . $dumpResult['error']);
+            }
+            $this->updateLastStep('Schema replicated (' . $dumpResult['stderr_tail'] . ')');
+        }
+
+        // ── Enumerate + convert all just-copied tables to BLACKHOLE ──
+        $this->addStep('discover', 'Enumerating freshly-created tables on target...');
+        $tables = $this->discoverTables($tgt);
+        $this->setTableCounts(count($tables), 0);
+        $this->updateLastStep('Found ' . count($tables) . ' tables to convert');
+
+        $this->addStep('convert', 'Converting every table to ENGINE=BLACKHOLE...');
+        $converted = $this->convertTables($tgt, $tables, $dryRun);
+        $this->setTableCounts(count($tables), $converted);
+        $this->updateLastStep("Converted {$converted}/" . count($tables) . ' tables'
+            . ($dryRun ? ' (dry-run)' : ''));
+
+        // ── Wire replication ─────────────────────────────────────────
+        $replicationUser = (string) ($row['replication_user'] ?? '');
+        if ($replicationUser === '') {
+            $replicationUser = (string) $master['login']; // fallback
+        }
+        $this->addStep('change_master', "Pointing target at {$master['ip']}:{$master['port']} (user=" . $replicationUser . ')...');
+        $this->configureReplication(
+            $tgt,
+            $master,
+            $masterStatus,
+            $replicationUser,
+            $this->decryptServerPassword($master),
+            $dryRun
+        );
+        $this->updateLastStep('CHANGE MASTER TO issued' . ($dryRun ? ' (dry-run)' : ''));
+
+        // ── Apply runtime config + mark inventory ────────────────────
+        $this->addStep('persist', 'Setting runtime variables (default engine, binlog_format, read_only)...');
+        $this->persistRuntimeConfig($tgt, $dryRun);
+        $this->updateLastStep('Runtime config applied' . ($dryRun ? ' (dry-run)' : ''));
+
+        $this->addStep('flag', 'Marking mysql_server.is_binlog_relay = 1...');
+        if (!$dryRun) {
+            $this->db->sql_query(
+                "UPDATE mysql_server SET is_binlog_relay = 1 WHERE id = {$serverId}"
+            );
+        }
+        $this->updateLastStep('Inventory updated' . ($dryRun ? ' (dry-run)' : ''));
+
+        $this->addStep('start_slave', 'Starting replication...');
+        $this->startAllReplication($tgt, $dryRun);
+        $this->updateLastStep('Replication started' . ($dryRun ? ' (dry-run)' : ''));
+
+        return true;
+    }
+
+    // ------------------------------------------------------------------
+    //  Greenfield helpers
+    // ------------------------------------------------------------------
+
+    /**
+     * Returns `true` if the target server has only system schemas and
+     * no non-monitoring sessions. Otherwise returns a human description
+     * of what blocks the provisioning.
+     *
+     * @return true|string
+     */
+    private function assertTargetIsIdle($link)
+    {
+        // 1. user databases
+        $excluded = "'" . implode("','", self::SYSTEM_SCHEMAS) . "'";
+        $res = $link->sql_query(
+            "SELECT GROUP_CONCAT(DISTINCT table_schema) AS schemas, COUNT(*) AS n
+             FROM information_schema.tables
+             WHERE table_schema NOT IN ({$excluded})"
+        );
+        $row = $link->sql_fetch_array($res, MYSQLI_ASSOC);
+        $tableCount = (int) ($row['n'] ?? 0);
+        if ($tableCount > 0) {
+            $schemas = (string) ($row['schemas'] ?? '');
+            return "target already has {$tableCount} non-system tables in schema(s) [{$schemas}]";
+        }
+
+        // 2. active non-monitoring sessions
+        $res = $link->sql_query(
+            "SELECT user, host, command, state, info
+             FROM information_schema.processlist
+             WHERE command NOT IN ('Daemon', 'Sleep', 'Binlog Dump')
+               AND user NOT IN ('system user', 'event_scheduler')
+               AND id <> CONNECTION_ID()"
+        );
+        $offending = [];
+        $monitoringUsers = $this->monitoringUserAllowlist($link);
+        while ($r = $link->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            if (in_array((string) $r['user'], $monitoringUsers, true)) continue;
+            $offending[] = $r['user'] . '@' . preg_replace('/:\d+$/', '', (string) $r['host'])
+                . ' [' . $r['command'] . '/' . ($r['state'] ?: '-') . ']';
+        }
+        if (!empty($offending)) {
+            return 'active non-monitoring sessions: ' . implode('; ', array_slice($offending, 0, 5));
+        }
+
+        return true;
+    }
+
+    /**
+     * Sessions opened by the PmaControl monitoring user are tolerated
+     * by `assertTargetIsIdle()`. The allowlist also includes 'root' on
+     * loopback because the operator may have a maintenance shell open.
+     *
+     * @return list<string>
+     */
+    private function monitoringUserAllowlist($link): array
+    {
+        // The login pmacontrol uses to monitor this server lives on
+        // mysql_server.login. Pull every distinct login currently set
+        // on supervised servers (typically one or two distinct values).
+        $res = $this->db->sql_query(
+            "SELECT DISTINCT login FROM mysql_server WHERE is_deleted = 0 AND login <> ''"
+        );
+        $out = ['root', 'mariadb.session', 'mysql.session'];
+        while ($r = $this->db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $out[] = (string) $r['login'];
+        }
+        return array_values(array_unique($out));
+    }
+
+    /**
+     * SHOW MASTER STATUS on the master. Returns null when binary
+     * logging is disabled.
+     *
+     * @return array{File:string,Position:int}|null
+     */
+    private function fetchMasterStatus($link): ?array
+    {
+        $res = $link->sql_query_silent('SHOW MASTER STATUS');
+        if (!$res) return null;
+        $row = $link->sql_fetch_array($res, MYSQLI_ASSOC);
+        if (!$row || empty($row['File'])) return null;
+        return ['File' => (string) $row['File'], 'Position' => (int) $row['Position']];
+    }
+
+    /**
+     * Pipe `mysqldump --no-data --routines --triggers --events
+     * --master-data=2 --single-transaction` from the master into a
+     * `mysql` client targeting the new relay. Schema-only because the
+     * relay only needs table definitions (BLACKHOLE drops every row
+     * anyway). Replication will fill the binlog from `--master-data=2`'s
+     * recorded position onwards.
+     *
+     * @return array{ok:bool,error:string,stderr_tail:string}
+     */
+    private function dumpAndRestoreSchema(array $master, array $target): array
+    {
+        $masterPwd = $this->decryptServerPassword($master);
+        $targetPwd = $this->decryptServerPassword($target);
+
+        // Defcred files avoid leaking passwords on the command line.
+        $masterDef = tempnam(sys_get_temp_dir(), 'bh_m_');
+        $targetDef = tempnam(sys_get_temp_dir(), 'bh_t_');
+        file_put_contents($masterDef, "[client]\nuser={$master['login']}\npassword=\"" . addcslashes($masterPwd, '"\\') . "\"\nhost={$master['ip']}\nport={$master['port']}\n");
+        file_put_contents($targetDef, "[client]\nuser={$target['login']}\npassword=\"" . addcslashes($targetPwd, '"\\') . "\"\nhost={$target['ip']}\nport={$target['port']}\n");
+        chmod($masterDef, 0600);
+        chmod($targetDef, 0600);
+
+        $errFile = tempnam(sys_get_temp_dir(), 'bh_err_');
+        try {
+            $cmd = sprintf(
+                "mysqldump --defaults-extra-file=%s "
+                . "--no-data --routines --triggers --events "
+                . "--single-transaction --master-data=2 --all-databases "
+                . "--ignore-database=mysql --ignore-database=sys "
+                . "--ignore-database=performance_schema --ignore-database=information_schema "
+                . "2>%s "
+                . "| mysql --defaults-extra-file=%s 2>>%s",
+                escapeshellarg($masterDef),
+                escapeshellarg($errFile),
+                escapeshellarg($targetDef),
+                escapeshellarg($errFile)
+            );
+            $ret = null;
+            $out = [];
+            exec($cmd . '; echo __RC=$?', $out, $ret);
+            $rc = 0;
+            foreach ($out as $line) {
+                if (preg_match('/^__RC=(\d+)$/', $line, $m)) {
+                    $rc = (int) $m[1];
+                }
+            }
+            $stderr = is_readable($errFile) ? (string) file_get_contents($errFile) : '';
+            $tail = substr(trim($stderr), -400);
+            if ($rc !== 0) {
+                return ['ok' => false, 'error' => "exit=$rc; " . $tail, 'stderr_tail' => $tail];
+            }
+            return ['ok' => true, 'error' => '', 'stderr_tail' => $tail !== '' ? $tail : 'no stderr'];
+        } finally {
+            @unlink($masterDef);
+            @unlink($targetDef);
+            @unlink($errFile);
+        }
+    }
+
+    /**
+     * Issue CHANGE MASTER TO + the matching grants prerequisite on the
+     * target. `master_use_gtid=slave_pos` would be cleaner but requires
+     * the master to be on GTID; fall back to MASTER_LOG_FILE/POS which
+     * works on every supported version.
+     *
+     * @param array{File:string,Position:int} $pos
+     */
+    private function configureReplication($link, array $master, array $pos, string $user, string $password, bool $dryRun): void
+    {
+        $stmt = sprintf(
+            "CHANGE MASTER TO "
+            . "MASTER_HOST='%s', MASTER_PORT=%d, "
+            . "MASTER_USER='%s', MASTER_PASSWORD='%s', "
+            . "MASTER_LOG_FILE='%s', MASTER_LOG_POS=%d, "
+            . "MASTER_CONNECT_RETRY=10",
+            addcslashes((string) $master['ip'], "'\\"),
+            (int) $master['port'],
+            addcslashes($user, "'\\"),
+            addcslashes($password, "'\\"),
+            addcslashes((string) $pos['File'], "'\\"),
+            (int) $pos['Position']
+        );
+        // Log a redacted version so the password never lands in the
+        // progress JSON.
+        $redacted = preg_replace("/MASTER_PASSWORD='[^']*'/", "MASTER_PASSWORD='********'", $stmt);
+        $this->addStep('change_master_sql', $redacted);
+        if (!$dryRun) {
+            if (!$link->sql_query_silent($stmt)) {
+                $err = method_exists($link, 'sql_error') ? $link->sql_error() : 'sql_query failed';
+                throw new \RuntimeException('CHANGE MASTER TO failed: ' . $err);
+            }
+        }
+        $this->updateLastStep($redacted . ($dryRun ? ' (dry-run)' : ' — ok'));
+    }
+
+    /**
+     * Decrypt mysql_server.passwd if marked is_password_crypted=1.
+     * Falls back to the raw string otherwise.
+     */
+    private function decryptServerPassword(array $server): string
+    {
+        $raw = (string) ($server['passwd'] ?? '');
+        if ((int) ($server['is_password_crypted'] ?? 0) !== 1) {
+            return $raw;
+        }
+        if (class_exists(\App\Library\Chiffrement::class)
+            && method_exists(\App\Library\Chiffrement::class, 'decrypt')
+        ) {
+            return (string) \App\Library\Chiffrement::decrypt($raw);
+        }
+        return $raw;
     }
 
     // ------------------------------------------------------------------
@@ -323,7 +638,8 @@ class BlackholeRelay
     private function loadServer(int $id): ?array
     {
         $res = $this->db->sql_query(
-            "SELECT id, name, display_name, ip, is_binlog_relay
+            "SELECT id, name, display_name, ip, hostname, port,
+                    login, passwd, is_password_crypted, is_binlog_relay
              FROM mysql_server WHERE id = {$id} AND is_deleted = 0"
         );
         $row = $res ? $this->db->sql_fetch_array($res, MYSQLI_ASSOC) : null;
@@ -470,5 +786,72 @@ class BlackholeRelay
         $aMasters = $upstream[$a] ?? [];
         $bMasters = $upstream[$b] ?? [];
         return in_array($b, $aMasters, true) && in_array($a, $bMasters, true);
+    }
+
+    // ------------------------------------------------------------------
+    //  Greenfield UI helpers
+    // ------------------------------------------------------------------
+
+    /**
+     * Supervised servers eligible to be provisioned as a fresh
+     * BLACKHOLE relay (not already a relay, not a proxy/VIP). The
+     * actual idleness check runs at conversion time; this list is the
+     * raw inventory the dropdown shows.
+     */
+    public static function listIdleTargets(): array
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+        $res = $db->sql_query(
+            "SELECT id, name, display_name, hostname, ip, port
+             FROM mysql_server
+             WHERE is_deleted = 0 AND is_proxy = 0 AND is_vip = 0
+               AND is_monitored = 1 AND is_binlog_relay = 0
+             ORDER BY display_name, name"
+        );
+        $out = [];
+        while ($r = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $out[] = $r;
+        }
+        return $out;
+    }
+
+    /**
+     * One-shot idleness probe used by the AJAX preflight endpoint so
+     * the UI can warn before launching the pipeline. Returns the same
+     * tri-state as the private `assertTargetIsIdle()`.
+     *
+     * @return true|string
+     */
+    public static function probeIdle(int $serverId)
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+        $res = $db->sql_query("SELECT name FROM mysql_server WHERE id = {$serverId} AND is_deleted = 0");
+        $row = $res ? $db->sql_fetch_array($res, MYSQLI_ASSOC) : null;
+        if (!$row) return 'server not found';
+        $link = Sgbd::sql($row['name']);
+        if (!$link) return 'unreachable';
+        $self = new self(0);
+        return $self->assertTargetIsIdle($link);
+    }
+
+    /**
+     * Servers that can act as the upstream master for a fresh relay:
+     * any monitored MySQL/MariaDB server that is not itself a relay.
+     */
+    public static function listMasterCandidates(): array
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+        $res = $db->sql_query(
+            "SELECT id, name, display_name, hostname, ip, port
+             FROM mysql_server
+             WHERE is_deleted = 0 AND is_proxy = 0 AND is_vip = 0
+               AND is_monitored = 1 AND is_binlog_relay = 0
+             ORDER BY display_name, name"
+        );
+        $out = [];
+        while ($r = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $out[] = $r;
+        }
+        return $out;
     }
 }

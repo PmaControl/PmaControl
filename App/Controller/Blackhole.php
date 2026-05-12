@@ -24,7 +24,8 @@ use App\Library\BlackholeRelay;
 
 class Blackhole extends Controller
 {
-    private const START_CSRF_SCOPE = 'blackhole.convert.start';
+    private const START_CSRF_SCOPE      = 'blackhole.convert.start';
+    private const GREENFIELD_CSRF_SCOPE = 'blackhole.greenfield.start';
 
     public function before($param)
     {
@@ -42,10 +43,13 @@ class Blackhole extends Controller
         $db = Sgbd::sql(DB_DEFAULT);
 
         $data = [];
-        $data['servers']   = BlackholeRelay::listCandidateServers();
-        $data['conversions'] = $this->loadRecentConversions($db, 25);
-        $data['csrf_field'] = Csrf::DEFAULT_FIELD;
-        $data['csrf_token'] = Csrf::issueToken($_SESSION, self::START_CSRF_SCOPE);
+        $data['servers']            = BlackholeRelay::listCandidateServers();
+        $data['idle_targets']       = BlackholeRelay::listIdleTargets();
+        $data['master_candidates']  = BlackholeRelay::listMasterCandidates();
+        $data['conversions']        = $this->loadRecentConversions($db, 25);
+        $data['csrf_field']         = Csrf::DEFAULT_FIELD;
+        $data['csrf_token']         = Csrf::issueToken($_SESSION, self::START_CSRF_SCOPE);
+        $data['greenfield_token']   = Csrf::issueToken($_SESSION, self::GREENFIELD_CSRF_SCOPE);
 
         $this->set('data', $data);
     }
@@ -152,18 +156,113 @@ class Blackhole extends Controller
         }
 
         echo json_encode([
-            'id'               => (int) $row['id'],
-            'id_mysql_server'  => (int) $row['id_mysql_server'],
-            'server_name'      => $row['display_name'] ?: $row['server_name'],
-            'status'           => $row['status'],
-            'dry_run'          => (int) $row['dry_run'] === 1,
-            'tables_total'     => (int) $row['tables_total'],
-            'tables_converted' => (int) $row['tables_converted'],
-            'progress'         => json_decode($row['progress'] ?: '[]', true),
-            'error_message'    => $row['error_message'],
-            'created_at'       => $row['created_at'],
-            'completed_at'     => $row['completed_at'],
+            'id'                      => (int) $row['id'],
+            'id_mysql_server'         => (int) $row['id_mysql_server'],
+            'id_mysql_server__master' => (int) ($row['id_mysql_server__master'] ?? 0),
+            'server_name'             => $row['display_name'] ?: $row['server_name'],
+            'status'                  => $row['status'],
+            'provision_mode'          => (string) ($row['provision_mode'] ?? 'convert'),
+            'dry_run'                 => (int) $row['dry_run'] === 1,
+            'tables_total'            => (int) $row['tables_total'],
+            'tables_converted'        => (int) $row['tables_converted'],
+            'progress'                => json_decode($row['progress'] ?: '[]', true),
+            'error_message'           => $row['error_message'],
+            'created_at'              => $row['created_at'],
+            'completed_at'            => $row['completed_at'],
         ]);
+    }
+
+    /**
+     * POST /Blackhole/startGreenfield/<id_target>/<id_master>/ — AJAX.
+     * Creates a greenfield `blackhole_conversion` row and kicks off
+     * the background CLI runner. Returns JSON `{ id, status }`.
+     */
+    public function startGreenfield($param)
+    {
+        $this->layout_name = false;
+        $this->view = false;
+        header('Content-Type: application/json; charset=UTF-8');
+
+        if ($failure = CsrfGuard::ensureOrFail($_POST, $_SERVER, $_SESSION, self::GREENFIELD_CSRF_SCOPE)) {
+            http_response_code($failure['status']);
+            echo json_encode(['error' => $failure['body']]);
+            return;
+        }
+
+        $targetId = (int) ($param[0] ?? ($_POST['target_id'] ?? 0));
+        $masterId = (int) ($param[1] ?? ($_POST['master_id'] ?? 0));
+        $dryRun   = !empty($_POST['dry_run']) ? 1 : 0;
+        $replUser = trim((string) ($_POST['replication_user'] ?? ''));
+
+        if ($targetId <= 0 || $masterId <= 0) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Both target_id and master_id are required']);
+            return;
+        }
+        if ($targetId === $masterId) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Target and master must be different servers']);
+            return;
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        // Refuse on duplicate-in-flight (any conversion for this target).
+        $res = $db->sql_query(
+            "SELECT id, status FROM blackhole_conversion
+             WHERE id_mysql_server = {$targetId} AND status IN ('pending','running')
+             ORDER BY id DESC LIMIT 1"
+        );
+        if ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            echo json_encode(['id' => (int) $row['id'], 'status' => $row['status'], 'reused' => true]);
+            return;
+        }
+
+        $startedBy = $db->sql_real_escape_string((string) ($_SESSION['login'] ?? 'cli'));
+        $replEsc   = $db->sql_real_escape_string($replUser);
+        $db->sql_query(
+            "INSERT INTO blackhole_conversion
+                (id_mysql_server, id_mysql_server__master, replication_user,
+                 status, dry_run, provision_mode, started_by, progress, error_message, created_at)
+             VALUES
+                ({$targetId}, {$masterId}, '{$replEsc}',
+                 'pending', {$dryRun}, 'greenfield', '{$startedBy}', '[]', '', NOW())"
+        );
+        $conversionId = (int) $db->sql_insert_id();
+
+        $logPath = ROOT . '/tmp/blackhole_conversion_' . $conversionId . '.log';
+        $cmd = 'cd ' . escapeshellarg(ROOT)
+             . ' && php App/Webroot/index.php Blackhole runConvertCli '
+             . (int) $conversionId
+             . ' > ' . escapeshellarg($logPath) . ' 2>&1 &';
+        exec($cmd);
+
+        echo json_encode(['id' => $conversionId, 'status' => 'pending']);
+    }
+
+    /**
+     * GET /Blackhole/probeIdle/<id_mysql_server>/ — AJAX. Returns
+     * `{ idle: true }` or `{ idle: false, reason: "..." }`. Used by the
+     * greenfield UI to warn before committing.
+     */
+    public function probeIdle($param)
+    {
+        $this->layout_name = false;
+        $this->view = false;
+        header('Content-Type: application/json; charset=UTF-8');
+
+        $serverId = (int) ($param[0] ?? 0);
+        if ($serverId <= 0) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Invalid id']);
+            return;
+        }
+        $res = BlackholeRelay::probeIdle($serverId);
+        if ($res === true) {
+            echo json_encode(['idle' => true]);
+        } else {
+            echo json_encode(['idle' => false, 'reason' => (string) $res]);
+        }
     }
 
     /**

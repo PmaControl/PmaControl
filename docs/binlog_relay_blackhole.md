@@ -59,30 +59,60 @@ WHERE table_type = 'BASE TABLE'
 
 ## How to run
 
-### UI
+There are **two pipelines**, both routed through the same CLI runner.
 
-Tools → **BLACKHOLE** (`/Blackhole/index/`). Pick a candidate server, click **Convert to BLACKHOLE** (or **Dry-run** to only emit the `ALTER` statements). Progress streams to the page every second.
+### Pipeline A — convert an existing slave in place
+
+Use this when the target is already a configured slave (CHANGE MASTER done, replication running) and you want to repurpose it.
+
+- UI: Tools → **BLACKHOLE** → *Candidate servers* → **Convert to BLACKHOLE** (or **Dry-run**).
+- The pipeline refuses if the target has no configured replication channel.
+
+### Pipeline B — provision a relay from scratch (greenfield)
+
+Use this when the target is a fresh empty node and you only know its future master.
+
+- UI: Tools → **BLACKHOLE** → *Create new BLACKHOLE relay from scratch* → pick target + master.
+- Refuses if the target has any non-system table or any non-monitoring session (live preflight via `/Blackhole/probeIdle/<id>/`).
+- `mysqldump --no-data --routines --triggers --events --single-transaction --master-data=2 --all-databases` on the master, piped into `mysql` on the target. Schema only — BLACKHOLE drops the rows anyway, and the binlog stream from `--master-data=2`'s recorded position replays the rest.
+- `ALTER TABLE … ENGINE=BLACKHOLE` on every non-system table.
+- `CHANGE MASTER TO MASTER_HOST=…, MASTER_LOG_FILE=…, MASTER_LOG_POS=…` using that position.
+- `SET GLOBAL default_storage_engine='BLACKHOLE'`, `binlog_format='ROW'`, `read_only=ON`, `super_read_only=ON`.
+- `UPDATE mysql_server SET is_binlog_relay = 1`.
+- `START SLAVE`.
+
+The replication user defaults to the master's `mysql_server.login`; override via the UI input. The password is the one PmaControl already stores (and decrypts) for the master.
 
 ### CLI
 
 The UI button forks the same runner. From a shell:
 
 ```bash
-# Dry-run on a candidate (writes nothing; only logs the ALTER statements)
 php App/Webroot/index.php Blackhole runConvertCli <conversion_id>
 ```
 
-The conversion row must already exist (`blackhole_conversion`); the UI does that for you. To craft one by hand:
+The conversion row must already exist (`blackhole_conversion`); the UI inserts it for you. To craft one by hand for pipeline A:
 
 ```sql
 INSERT INTO blackhole_conversion
-    (id_mysql_server, status, dry_run, started_by, progress, error_message, created_at)
+    (id_mysql_server, status, dry_run, provision_mode, started_by, progress, error_message, created_at)
 VALUES
-    (<id>, 'pending', 1, 'cli', '[]', '', NOW());
--- then run the runConvertCli with the inserted id
+    (<id>, 'pending', 1, 'convert', 'cli', '[]', '', NOW());
 ```
 
-## Pipeline (what the script does)
+For pipeline B (greenfield):
+
+```sql
+INSERT INTO blackhole_conversion
+    (id_mysql_server, id_mysql_server__master, replication_user,
+     status, dry_run, provision_mode, started_by, progress, error_message, created_at)
+VALUES
+    (<target_id>, <master_id>, 'repl',
+     'pending', 1, 'greenfield', 'cli', '[]', '', NOW());
+-- then: php App/Webroot/index.php Blackhole runConvertCli <inserted_id>
+```
+
+## Pipeline A — convert in place (what the script does)
 
 1. Load conversion row + target server.
 2. Open a `Sgbd::sql($server['name'])` connection (same alias used by SHOW SLAVE STATUS).
