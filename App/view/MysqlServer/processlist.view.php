@@ -187,9 +187,12 @@ if (!$hasOfflineServer) {
 $metadataEnabled = !empty($data['metadata_lock_enabled']);
 $metadataRows = $data['metadata_lock_info'] ?? [];
 if ($metadataEnabled) {
+    $metadataRefreshedAt = date('H:i:s');
+    $metadataRowCount = is_array($metadataRows) ? count($metadataRows) : 0;
     echo '<div class="panel panel-primary" style="margin:10px 10px 0 10px">';
-    echo '<div class="panel-heading">';
-    echo '<h3 class="panel-title">Metadata Lock Info</h3>';
+    echo '<div class="panel-heading" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">';
+    echo '<h3 class="panel-title" style="margin:0;">Metadata Lock Info <span class="badge" style="background:#fff;color:#337ab7;margin-left:6px;">'.$metadataRowCount.'</span></h3>';
+    echo '<small style="color:#fff; font-weight:normal; opacity:.85;">'.__("Refreshed at").' '.$metadataRefreshedAt.'</small>';
     echo '</div>';
     echo '<div class="panel-body" style="padding:0; overflow:auto">';
 

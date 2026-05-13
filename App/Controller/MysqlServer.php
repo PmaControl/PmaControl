@@ -127,6 +127,45 @@ class MysqlServer extends Controller
         return ServerCapabilities::supports($db, 'performance_schema_processlist_modern');
     }
 
+    private static function processlistDiscoveryCachePath(int $id_mysql_server): string
+    {
+        return TMP . 'cache/processlist_discovery/' . $id_mysql_server . '.json';
+    }
+
+    private static function readProcesslistDiscoveryCache(int $id_mysql_server, int $ttlSeconds = 3600): ?array
+    {
+        $path = self::processlistDiscoveryCachePath($id_mysql_server);
+        if (!is_file($path)) {
+            return null;
+        }
+        $age = time() - filemtime($path);
+        if ($age > $ttlSeconds) {
+            return null;
+        }
+        $raw = @file_get_contents($path);
+        if ($raw === false || $raw === '') {
+            return null;
+        }
+        $decoded = json_decode($raw, true);
+        if (!is_array($decoded)) {
+            return null;
+        }
+        return $decoded;
+    }
+
+    private static function writeProcesslistDiscoveryCache(int $id_mysql_server, array $payload): void
+    {
+        $path = self::processlistDiscoveryCachePath($id_mysql_server);
+        $dir = dirname($path);
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0775, true);
+        }
+        $tmpPath = $path . '.' . getmypid() . '.tmp';
+        if (@file_put_contents($tmpPath, json_encode($payload), LOCK_EX) !== false) {
+            @rename($tmpPath, $path);
+        }
+    }
+
 /**
  * Retrieve mysql server state through `getProcesslistConnectionMetrics`.
  *
@@ -469,29 +508,69 @@ class MysqlServer extends Controller
             $connectionSnapshot['max_used_connections'] += (int)$metrics['max_used_connections'];
             $connectionSnapshot['max_connections'] += (int)$metrics['max_connections'];
 
-            $has_innodb_trx = $this->informationSchemaTableExists($db, 'information_schema', 'innodb_trx', $id_mysql_server);
-            $has_perf_threads = $this->informationSchemaTableExists($db, 'performance_schema', 'threads', $id_mysql_server);
-            $has_info_processlist = $this->informationSchemaTableExists($db, 'information_schema', 'processlist', $id_mysql_server);
+            // Discovery cache: AJAX runs every ~1s and the schema/version
+            // facts (information_schema tables present, server fork/version,
+            // metadata_lock plugin) don't change request-to-request. On a
+            // remote server reached through an SSH tunnel, each discovery
+            // query costs 50-200 ms — caching lets AJAX skip ~5 round-trips.
+            // F5 always rebuilds the cache so plugin install/uninstall is
+            // picked up within at most 1 hour anyway, and immediately on
+            // any manual reload.
+            $discovery = null;
+            if ($isAjax) {
+                $discovery = self::readProcesslistDiscoveryCache((int) $id_mysql_server);
+            }
 
-            $metadataLockEnabled = false;
-            if ($checkMetadataLockPlugin) {
-                $metadataLockEnabled = $this->hasMetadataLockInfoPlugin($db);
-                if ($metadataLockEnabled) {
-                    $metadataLockServers[] = $id_mysql_server;
-                }
+            if (is_array($discovery)) {
+                $has_innodb_trx       = (bool) ($discovery['has_innodb_trx'] ?? false);
+                $has_perf_threads     = (bool) ($discovery['has_perf_threads'] ?? false);
+                $has_info_processlist = (bool) ($discovery['has_info_processlist'] ?? false);
+                $useShowFull          = (bool) ($discovery['use_show_full'] ?? false);
+                $usePerfSchema        = (bool) ($discovery['use_perf_schema'] ?? false);
+                $cachedMdlPlugin      = (bool) ($discovery['has_metadata_lock_plugin'] ?? false);
+
+                $metadataLockEnabled = $cachedMdlPlugin
+                    && in_array($id_mysql_server, $metadataLockServerIds, true);
             } else {
-                $metadataLockEnabled = in_array($id_mysql_server, $metadataLockServerIds, true);
+                $has_innodb_trx       = $this->informationSchemaTableExists($db, 'information_schema', 'innodb_trx', $id_mysql_server);
+                $has_perf_threads     = $this->informationSchemaTableExists($db, 'performance_schema', 'threads', $id_mysql_server);
+                $has_info_processlist = $this->informationSchemaTableExists($db, 'information_schema', 'processlist', $id_mysql_server);
+
+                $useShowFull = ServerCapabilities::supports($db, 'percona_processlist_56')
+                    && ! ServerCapabilities::supports($db, 'percona_processlist_57');
+                $usePerfSchema = !$useShowFull
+                    && self::shouldUsePerfSchemaProcesslist($db, $has_perf_threads);
+
+                $cachedMdlPlugin = $this->hasMetadataLockInfoPlugin($db);
+
+                if ($checkMetadataLockPlugin) {
+                    $metadataLockEnabled = $cachedMdlPlugin;
+                    if ($metadataLockEnabled) {
+                        $metadataLockServers[] = $id_mysql_server;
+                    }
+                } else {
+                    // Cache miss on AJAX: trust the URL hint as fallback.
+                    $metadataLockEnabled = $cachedMdlPlugin
+                        && in_array($id_mysql_server, $metadataLockServerIds, true);
+                }
+
+                self::writeProcesslistDiscoveryCache((int) $id_mysql_server, [
+                    'ts'                       => time(),
+                    'has_innodb_trx'           => $has_innodb_trx,
+                    'has_perf_threads'         => $has_perf_threads,
+                    'has_info_processlist'     => $has_info_processlist,
+                    'use_show_full'            => $useShowFull,
+                    'use_perf_schema'          => $usePerfSchema,
+                    'has_metadata_lock_plugin' => $cachedMdlPlugin,
+                ]);
             }
 
             try {
-                if (
-                    ServerCapabilities::supports($db, 'percona_processlist_56')
-                    && ! ServerCapabilities::supports($db, 'percona_processlist_57')
-                )
+                if ($useShowFull)
                 {
                     $sql = "SHOW FULL PROCESSLIST";
                 }
-                else if (self::shouldUsePerfSchemaProcesslist($db, $has_perf_threads))
+                else if ($usePerfSchema)
                 {
                     if ($has_innodb_trx) {
                         $sql = "SELECT /* pmacontrol-processlist */
