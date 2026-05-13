@@ -173,6 +173,13 @@ class Home extends Controller {
             // Never break /home for a disk-scan failure.
         }
 
+        // ── 9b. MaxScale offline (issue #1226) ──
+        // A MaxScale is considered offline when its admin REST endpoint either
+        // can't be reached (maxscale_available = 0) or replies with no service
+        // data (maxscale_service_available = 0). We surface both on Home so a
+        // freeze on the Architecture graph isn't silent.
+        $data['maxscale_offline'] = self::buildMaxScaleOfflineCard($db);
+
         // ── 10. Stuck binlog analyses ──
         $data['stuck_analyses'] = [];
         $sql = "SELECT ba.id, ba.id_mysql_server, ba.created_at, ba.time_start, ba.time_end,
@@ -517,6 +524,78 @@ class Home extends Controller {
                 $card['worst_id']   = (int) ($row['id_proxysql_server'] ?? 0);
                 $card['worst_name'] = (string) ($row['display_name']    ?? '');
             }
+        }
+
+        return $card;
+    }
+
+    /**
+     * MaxScale offline summary for /Home/index (issue #1226).
+     *
+     * A MaxScale is `is_maxscale = '1'` in the collected variables. Two
+     * failure modes are folded together:
+     *  - admin endpoint unreachable (maxscale_available = 0)
+     *  - admin reachable but REST returns no service data
+     *    (maxscale_service_available = 0)
+     *
+     * @return array{servers: list<array{id:int,display_name:string,ip:string,port:string,reason:string}>}
+     */
+    public static function buildMaxScaleOfflineCard($db): array
+    {
+        $card = ['servers' => []];
+
+        try {
+            $rows = Extraction2::display(array(
+                'is_maxscale',
+                'maxscale_server::maxscale_available',
+                'maxscale_service_server::maxscale_service_available',
+                'maxscale_server::maxscale_error',
+            ));
+        } catch (\Throwable $e) {
+            return $card;
+        }
+
+        $offline = [];
+        foreach ($rows as $id => $row) {
+            if ((string)($row['is_maxscale'] ?? '') !== '1') {
+                continue;
+            }
+
+            $maxscaleAvailable = $row['maxscale_available'] ?? null;
+            $serviceAvailable  = $row['maxscale_service_available'] ?? null;
+            $isOffline = ((string)$maxscaleAvailable === '0')
+                || ((string)$serviceAvailable === '0');
+            if (!$isOffline) {
+                continue;
+            }
+
+            $reason = (string)$maxscaleAvailable === '0'
+                ? __('MaxScale admin endpoint unreachable')
+                : __('MaxScale REST returned no service data');
+
+            $offline[(int)$id] = [
+                'reason' => $reason,
+                'error'  => (string)($row['maxscale_error'] ?? ''),
+            ];
+        }
+
+        if (empty($offline)) {
+            return $card;
+        }
+
+        $ids = implode(',', array_map('intval', array_keys($offline)));
+        $sql = "SELECT id, display_name, ip, port FROM mysql_server WHERE id IN ($ids)";
+        $res = $db->sql_query($sql);
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $id = (int)$row['id'];
+            $card['servers'][] = [
+                'id'           => $id,
+                'display_name' => (string)($row['display_name'] ?? ''),
+                'ip'           => (string)($row['ip'] ?? ''),
+                'port'         => (string)($row['port'] ?? ''),
+                'reason'       => $offline[$id]['reason'] ?? '',
+                'error'        => $offline[$id]['error']  ?? '',
+            ];
         }
 
         return $card;

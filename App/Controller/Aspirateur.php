@@ -3536,6 +3536,24 @@ GROUP BY C.ID, C.INFO;";
         }
     }
 
+    /**
+     * Detect "MaxScale REST replied 200 but has nothing useful to say" — the
+     * JSON:API envelope is present but `data` is missing or an empty array.
+     * Used to decide whether to keep the last known good time-series row
+     * (preserve topology) or to record the new payload.
+     */
+    public static function isMaxScalePayloadEmpty($array): bool
+    {
+        if (!is_array($array)) {
+            return true;
+        }
+        if (!array_key_exists('data', $array)) {
+            return false;
+        }
+        $data = $array['data'];
+        return is_array($data) && count($data) === 0;
+    }
+
     private function isKnownMaxScaleReadWriteSplitEndpoint(int $id_mysql_server, string $host, int $port): bool
     {
         try {
@@ -6134,13 +6152,25 @@ GROUP BY C.ID, C.INFO;";
 
                 Debug::debug(MaxScale::removeArraysDeeperThan( $array, 3));
 
-                $data = array();
-                $data['maxscale']['maxscale_'.$service] = json_encode($array);
+                // Mirror the MySQL-offline contract: if the REST call succeeds
+                // but the payload has no data (empty service config, listener
+                // not exposed, tunnel pointing nowhere), do NOT overwrite the
+                // time-series with an empty JSON. Keep the last known good
+                // values so Dot3 can still render the topology, and surface
+                // the failure through maxscale_service_available = 0.
+                // See issue #1226.
+                if (self::isMaxScalePayloadEmpty($array)) {
+                    $error_msg = "[PMACONTROL-2010] MaxScale '$service' returned no data — preserving last known good";
+                    $this->logger->warning($error_msg . " id_maxscale_server:$id_maxscale_server");
+                } else {
+                    $data = array();
+                    $data['maxscale']['maxscale_'.$service] = json_encode($array);
 
-                foreach($id_mysql_servers as $id_mysql_server) {
-                    $this->exportData($id_mysql_server, "maxscale_".$service, $data);
+                    foreach($id_mysql_servers as $id_mysql_server) {
+                        $this->exportData($id_mysql_server, "maxscale_".$service, $data);
+                    }
                 }
-                
+
             }
             catch (\Throwable $e) {
 

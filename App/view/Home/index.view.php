@@ -232,6 +232,33 @@ $versionColors = ['MariaDB' => '#003545', 'MySQL' => '#e97b00', 'Percona' => '#c
 <!-- ════════════════════════════════════════
      ROW 2: ALERTS (if any servers down)
      ════════════════════════════════════════ -->
+<?php
+// Issue #1226 — MaxScale offline banner. Surfaces every MaxScale node
+// whose admin REST is unreachable OR replies with no service data
+// (Dot3 keeps the previous topology + renders the node red in the graph,
+// so this is the only place where the freeze becomes visible at a glance).
+$maxOffline = $data['maxscale_offline']['servers'] ?? [];
+?>
+<?php if (!empty($maxOffline)): ?>
+<div class="hm-card" style="margin-bottom:16px;border-left:4px solid #b45309">
+    <div class="hm-card-head" style="background:linear-gradient(135deg,#7c2d12,#b45309)">
+        <span><i class="fa fa-plug"></i> <?= __('MaxScale offline') ?> (<?= count($maxOffline) ?>)</span>
+    </div>
+    <div class="hm-card-body" style="padding:8px 16px">
+        <?php foreach ($maxOffline as $srv): ?>
+        <div class="hm-alert">
+            <i class="fa fa-times-circle" style="color:#b45309"></i>
+            <span class="hm-alert-name">
+                <a href="<?= LINK ?>MysqlServer/main/<?= (int)$srv['id'] ?>/pmacontrol" style="color:#7c2d12"><?= htmlspecialchars($srv['display_name']) ?></a>
+            </span>
+            <span style="color:#94a3b8"><?= htmlspecialchars($srv['ip']) ?>:<?= htmlspecialchars($srv['port']) ?></span>
+            <span class="hm-alert-msg"><?= htmlspecialchars($srv['reason']) ?><?= !empty($srv['error']) ? ' — '.htmlspecialchars($srv['error']) : '' ?></span>
+        </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
+
 <?php if (!empty($data['unavailable_servers'])): ?>
 <div class="hm-card" style="margin-bottom:16px;border-left:4px solid var(--crit)">
     <div class="hm-card-head" style="background:linear-gradient(135deg,#7f1d1d,#991b1b)">
