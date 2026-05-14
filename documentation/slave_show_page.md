@@ -93,7 +93,7 @@ Each variable is resolved with a `??` fallback chain so both MariaDB and MySQL n
 
 **Visual indicators:**
 
-All status dots are rendered via `Display::statusDot(string $state)` (`App/Library/Display.php`), which accepts `'ok'` (green), `'fail'` (red + pulse halo), or `'info'` (blue, no pulse).
+All status dots are rendered via `Display::statusDot(string $state)` (`App/Library/Display.php`), which accepts `'ok'` (green), `'fail'` (red + box-shadow pulse), or `'info'` (blue, no pulse). The pulse uses the `status-dot-pulse` keyframes: `--size` controls both the dot size and shadow spread, `--startColor` is the dot/current shadow color, and `--endColor` is the transparent fade-out color.
 
 **IO / SQL thread dot logic:**
 
@@ -126,7 +126,7 @@ When both threads are stopped simultaneously, it is treated as a deliberate main
   4. `eta = current.y / rate` — seconds until lag reaches 0.
   5. Display both relative duration (`~3h25`) and absolute date/time (`~2026-04-10 19:45`).
 
-- **SSL tile** with green dot (Yes + cipher), red dot with pulse halo (No), or amber text (Ignored). SSL detection is compatible with MySQL 8.4+ (`Source_SSL_Allowed`, `Source_SSL_Cipher`) and older versions (`Master_SSL_Allowed`, `Master_SSL_Cipher`).
+- **SSL tile** with green dot (Yes + cipher), red dot with box-shadow pulse (No), or amber text (Ignored). SSL detection is compatible with MySQL 8.4+ (`Source_SSL_Allowed`, `Source_SSL_Cipher`) and older versions (`Master_SSL_Allowed`, `Master_SSL_Cipher`).
 - **Red error banner** at the bottom if `Last_SQL_Error`, `Last_IO_Error`, or `Last_Error` is non-empty. Multiple errors are shown separately with **IO:** / **SQL:** prefixes.
 
 #### Right: Actions

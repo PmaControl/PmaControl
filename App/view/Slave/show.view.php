@@ -106,26 +106,29 @@ elseif ((int)$seconds_behind > 0) $health = 'behind';
 .sv-metric.full-width { flex: 1 1 100%; border-right: none; }
 
 /* status dot */
-.sv-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
-.sv-dot.ok   { background: var(--clr-ok); box-shadow: 0 0 6px rgba(16,185,129,.4); }
-.sv-dot.fail { background: var(--clr-crit); box-shadow: 0 0 6px rgba(239,68,68,.4); }
-.sv-dot.info { background: #3b82f6; box-shadow: 0 0 6px rgba(59,130,246,.4); }
-
-/* pulsing halo — ring that expands and fades out */
-.sv-dot.halo { position: relative; }
-.sv-dot.halo::after {
-    content: "";
-    position: absolute;
-    top: 50%; left: 50%;
-    width: 100%; height: 100%;
+.sv-dot {
+    --size: 10px;
+    --startColor: var(--clr-muted);
+    --endColor: rgba(148,163,184,0);
+    display: inline-block;
+    width: var(--size);
+    height: var(--size);
     border-radius: 50%;
-    border: 4px solid var(--clr-crit);
-    transform: translate(-50%, -50%);
-    animation: sv-halo-ring 2s ease-out infinite;
+    margin-right: 6px;
+    vertical-align: middle;
+    transition: all .2s;
+    background-color: var(--startColor);
 }
-@keyframes sv-halo-ring {
-    0%   { width: 100%; height: 100%; opacity: 1; }
-    100% { width: 300%; height: 300%; opacity: 0; }
+.sv-dot.ok   { --startColor: var(--clr-ok);   --endColor: rgba(16,185,129,0); box-shadow: 0 0 6px rgba(16,185,129,.4); }
+.sv-dot.fail { --startColor: var(--clr-crit); --endColor: rgba(239,68,68,0); box-shadow: 0 0 6px rgba(239,68,68,.4); }
+.sv-dot.info { --startColor: #3b82f6;         --endColor: rgba(59,130,246,0); box-shadow: 0 0 6px rgba(59,130,246,.4); }
+
+/* pulsing status dot */
+.sv-dot.halo { animation: status-dot-pulse 1.5s infinite; }
+@keyframes status-dot-pulse {
+    from { box-shadow: 0 0 0 0 var(--startColor); }
+    70%  { box-shadow: 0 0 0 var(--size) var(--endColor); }
+    to   { box-shadow: 0 0 0 0 var(--endColor); }
 }
 
 /* lag badge */
