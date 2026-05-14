@@ -1257,47 +1257,118 @@ class Dot3 extends Controller
 
             $maxscale = MaxScale::rewriteJson($server);
 
-
+            $resolvedBackends = array();
             if (count($maxscale) != 0)
             {
-                
-
                 $maxscale = self::resolveMaxScaleConnection($maxscale,  $maxcale_ip_port);
 
-                if (empty($maxscale[$maxcale_ip_port]['servers']))
-                {
-                    //Debug::debug(maxScale::removeArraysDeeperThan($maxscale,3), "MAXSCALE");
-                    //Debug::debug(maxScale::removeArraysDeeperThan($server,2), "SERVER");
-                    //Debug::debug($maxscale, "maxscale");
-                    //Debug::debug($maxcale_ip_port, "IP REAL");
+                if (!empty($maxscale[$maxcale_ip_port]['servers'])) {
+                    $resolvedBackends = $maxscale[$maxcale_ip_port]['servers'];
+                }
+            }
 
-                    throw new Exception(
-                    "[PMACONTROL-4001] No 'servers' section found for listener '$maxcale_ip_port' in the MaxScale response. "
-                    . "This usually indicates an incomplete service configuration or an inconsistency in the data returned by the REST API."
+            // MaxScale offline path: REST returned no usable servers section
+            // (config vide, listener pas exposé, tunnel cassé, …). We do not
+            // throw any more — that used to abort the whole Dot3::run() and
+            // freeze Architecture/index. Same contract as MySQL offline: keep
+            // the last known topology and surface the node in red on the graph.
+            // See issue #1226.
+            if (empty($resolvedBackends)) {
+                if (isset($this->logger)) {
+                    $this->logger->warning(
+                        "[PMACONTROL-4001] MaxScale listener '$maxcale_ip_port' returned no servers — treating MaxScale id_mysql_server=$id_mysql_server as offline"
                     );
                 }
 
-                foreach($maxscale[$maxcale_ip_port]['servers'] as $server => $srv) {
+                $information['servers'][$id_mysql_server]['maxscale_offline'] = true;
+                $resolvedBackends = self::findLastKnownMaxScaleBackends((int) $id_mysql_server, $maxcale_ip_port);
+            }
 
-                    if (!empty($information['mapping'][$server]))
-                    {
-                        $tmp_group[$id_mysql_server][] = $information['mapping'][$server];
-                    }
-                    else{
-                        // insert to alias
+            foreach($resolvedBackends as $server => $srv) {
 
-                        $elems = explode(":", $server);
+                if (!empty($information['mapping'][$server]))
+                {
+                    $tmp_group[$id_mysql_server][] = $information['mapping'][$server];
+                }
+                elseif (empty($information['servers'][$id_mysql_server]['maxscale_offline'])) {
+                    // Live MaxScale exposed a backend we don't know yet —
+                    // register it as an alias. Skipped on the offline path
+                    // because the "known backends" come from a past snapshot
+                    // and the alias entries are already there.
+                    $elems = explode(":", $server);
 
-                        $db = Sgbd::sql(DB_DEFAULT);
+                    $db = Sgbd::sql(DB_DEFAULT);
 
-                        $sql = " INSERT INTO alias_dns (id_mysql_server, dns, port) VALUES (NULL, '".$elems[0]."', ".$elems[1].")";
-                        $db->sql_query($sql);
-                    }
+                    $sql = " INSERT INTO alias_dns (id_mysql_server, dns, port) VALUES (NULL, '".$elems[0]."', ".$elems[1].")";
+                    $db->sql_query($sql);
                 }
             }
         }
 
         return $tmp_group;
+    }
+
+    /**
+     * Look back through dot3_information snapshots to find the last one where
+     * the given MaxScale id_mysql_server had a non-empty `servers` resolution
+     * for the same listener. Returns the same shape as
+     * $maxscale[$listener]['servers'] (ip:port => attributes) or an empty
+     * array if nothing usable is found.
+     *
+     * Why: when the live MaxScale curl returns no data we want the graph to
+     * stay visible with its previous backends rendered in red, not vanish.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private static function findLastKnownMaxScaleBackends(int $id_mysql_server, string $listener_ip_port): array
+    {
+        if ($id_mysql_server <= 0) {
+            return array();
+        }
+
+        try {
+            $db = Sgbd::sql(DB_DEFAULT);
+        } catch (\Throwable $e) {
+            return array();
+        }
+
+        $sql = "SELECT id, information FROM dot3_information
+                WHERE id < " . ((int) (self::$id_dot3_information ?: PHP_INT_MAX)) . "
+                ORDER BY id DESC LIMIT 20";
+
+        $res = $db->sql_query($sql);
+        if (!$res) {
+            return array();
+        }
+
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $raw = $row['information'] ?? '';
+            if (!is_string($raw) || $raw === '' || $raw === 'null') {
+                continue;
+            }
+
+            $decoded = json_decode($raw, true);
+            if (!is_array($decoded)) {
+                continue;
+            }
+
+            $previousServer = $decoded['servers'][$id_mysql_server] ?? null;
+            if (!is_array($previousServer)) {
+                continue;
+            }
+
+            $previousMaxscale = MaxScale::rewriteJson($previousServer);
+            if (empty($previousMaxscale)) {
+                continue;
+            }
+
+            $previousMaxscale = self::resolveMaxScaleConnection($previousMaxscale, $listener_ip_port);
+            if (!empty($previousMaxscale[$listener_ip_port]['servers'])) {
+                return $previousMaxscale[$listener_ip_port]['servers'];
+            }
+        }
+
+        return array();
     }
 
 
@@ -4177,31 +4248,67 @@ class Dot3 extends Controller
  * @since 5.0
  * @version 1.0
  */
-    private static function getInformation($id_dot3_information = '')
+    private static function getInformation($id_dot3_information = '', bool $skipEmpty = false)
     {
         //Debug::debug($id_dot3_information, "id_dot3_information");
-        
+
         if (! empty(self::$information[$id_dot3_information])){
             return self::$information[$id_dot3_information];
         }
-        
+
         $db = Sgbd::sql(DB_DEFAULT);
+
+        // When asked for "the latest" with skipEmpty, walk back until we find
+        // a row with non-empty information. Matches the MySQL-offline contract:
+        // a degraded snapshot shouldn't overwrite the last known good topology
+        // used as a reference. See issue #1226.
+        if (empty($id_dot3_information) && $skipEmpty) {
+            $sql = "SELECT id, information FROM `dot3_information`
+                    WHERE information IS NOT NULL AND information <> '' AND information <> 'null'
+                    ORDER BY id DESC LIMIT 50";
+            $res = $db->sql_query($sql);
+            if ($res) {
+                while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                    $decoded = json_decode($row['information'] ?? '', true);
+                    if (!is_array($decoded) || empty($decoded['servers'])) {
+                        continue;
+                    }
+                    return self::loadInformationRow((int) $row['id'], $db);
+                }
+            }
+            return array();
+        }
 
         if (empty($id_dot3_information)) {
             $id_dot3_information = "SELECT max(`id`) FROM `dot3_information`";
         }
 
         $sql = "SELECT * FROM `dot3_information` where `id` in (".$id_dot3_information.");";
-        
+
         //Debug::sql($sql);
         $res = $db->sql_query($sql);
         while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
 
             $arr['information'] = json_decode($arr['information'], true);
             self::$information[$arr['id']] = $arr;
-            return $arr; 
+            return $arr;
         }
 
+        return array();
+    }
+
+    private static function loadInformationRow(int $id, $db): array
+    {
+        $sql = "SELECT * FROM `dot3_information` WHERE id = " . $id;
+        $res = $db->sql_query($sql);
+        if (!$res) {
+            return array();
+        }
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $arr['information'] = json_decode($arr['information'], true);
+            self::$information[$arr['id']] = $arr;
+            return $arr;
+        }
         return array();
     }
 
