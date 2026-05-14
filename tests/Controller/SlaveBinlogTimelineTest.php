@@ -37,8 +37,14 @@ final class SlaveBinlogTimelineTest extends TestCase
 
     public function testZoomFilteredTreemapsReuseBinlogRangeParser(): void
     {
-        $this->assertStringContainsString('var fStart = parseTimelineTs(fr.start);', $this->view);
-        $this->assertStringContainsString('var fEnd = parseTimelineTs(fr.end);', $this->view);
+        // #1225: renderBinlogTimeline normalises each range once via
+        // parseTimelineTs and caches the result as startMs/endMs on the
+        // range object. Zoom-window aggregation no longer re-parses
+        // per-range — it uses a global volume ratio (sizeBytes /
+        // total_size_bytes) — so the only call sites left are this
+        // normalisation pass.
+        $this->assertStringContainsString('var startMs = parseTimelineTs(fr.start);', $this->view);
+        $this->assertStringContainsString('var endMs = parseTimelineTs(fr.end);', $this->view);
     }
 
     public function testTimelineReadsBinlogAnalyzerPayloadFieldNames(): void
