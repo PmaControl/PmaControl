@@ -1117,6 +1117,13 @@ ctx.strokeStyle="rgba(0,0,0,1)";ctx.lineWidth=1;ctx.stroke();
             return ($s['connection_name'] ?? '') === $replication_name;
         }));
 
+        $slaves = $this->enrichSlavesWithRelayLogSpaceGraph(
+            $slaves,
+            (int) $id_mysql_server,
+            array($next_date, $date),
+            (string) $replication_name
+        );
+
         $this->generateGraphSlave($slaves);
 
         foreach ($slaves as $slave) {
@@ -1725,13 +1732,108 @@ $(document).ready(function() {
         $this->di['js']->addJavascript(array("moment.js", "chart-4.5.1.umd.min.js", "chartjs-adapter-moment.min.js", "hammer.min.js", "chartjs-plugin-zoom.js", "chartjs-chart-treemap.min.js"));
 
         foreach ($slaves as $slave) {
+            $this->di['js']->code_javascript(self::buildLagChartJs($slave));
+        }
+    }
 
-            $this->di['js']->code_javascript('
+    /**
+     * Pure-PHP helper: emit the Chart.js construction block for a
+     * single per-day lag chart. Shared between
+     * `Slave::generateGraphSlave()` (initial page render via
+     * `code_javascript`) and `App/view/Slave/showGraphDay.view.php`
+     * (AJAX response for the "Load previous day" button) so the two
+     * paths can never drift apart.
+     *
+     * Renders:
+     * - Left axis `y` — `Second behind source` (lag) — same
+     *   navy area we've shown forever.
+     * - Right axis `y_gb` (only when `$slave['graph_relay_log_space']`
+     *   is non-empty) — `Relay_Log_Space` in bytes, with a
+     *   B/KB/MB/GB tick formatter and per-segment colouring:
+     *     up   = red, down = green, flat = blue 50% opacity.
+     *
+     * @param array{
+     *     id_mysql_server:int,
+     *     connection_name?:string,
+     *     day:string,
+     *     graph:string,
+     *     graph_relay_log_space?:string
+     * } $slave
+     */
+    public static function buildLagChartJs(array $slave): string
+    {
+        $relayPayload = (string) ($slave['graph_relay_log_space'] ?? '');
+        $hasRelay = $relayPayload !== '';
 
-Chart.defaults.plugins.legend.display = false;
+        $relayDataset = $hasRelay ? '
+            ,{
+                label: "Relay_Log_Space (queued bytes)",
+                data: ['.$relayPayload.'],
+                borderColor: "#b91c1c",
+                backgroundColor: "rgba(185,28,28,0.30)",
+                fill: "origin",
+                borderWidth: 1,
+                pointRadius: 0,
+                tension: 0,
+                yAxisID: "y_gb",
+                segment: {
+                    borderColor: function (ctx) {
+                        if (!ctx.p0 || !ctx.p1) return "#3b82f6";
+                        var d = ctx.p1.parsed.y - ctx.p0.parsed.y;
+                        if (d > 0) return "#dc2626";
+                        if (d < 0) return "#16a34a";
+                        return "#3b82f6";
+                    },
+                    backgroundColor: function (ctx) {
+                        if (!ctx.p0 || !ctx.p1) return "rgba(59,130,246,0.50)";
+                        var d = ctx.p1.parsed.y - ctx.p0.parsed.y;
+                        if (d > 0) return "rgba(220,38,38,0.30)";
+                        if (d < 0) return "rgba(22,163,74,0.30)";
+                        return "rgba(59,130,246,0.50)";
+                    }
+                }
+            }' : '';
 
+        $relayScale = $hasRelay ? ',
+            y_gb: {
+                position: "right",
+                grid: { drawOnChartArea: false },
+                title: { display: true, text: "Relay log queued (B → MB/GB)" },
+                ticks: {
+                    callback: function (v) {
+                        if (v == null) return "";
+                        var n = Number(v);
+                        if (!isFinite(n)) return "";
+                        if (n >= 1073741824) return (n / 1073741824).toFixed(2) + " GB";
+                        if (n >= 1048576)    return (n / 1048576).toFixed(1)    + " MB";
+                        if (n >= 1024)       return (n / 1024).toFixed(1)       + " KB";
+                        return n + " B";
+                    }
+                }
+            }' : '';
+
+        $tooltipPlugin = $hasRelay ? '
+            tooltip: {
+                callbacks: {
+                    label: function (ctx) {
+                        var v = ctx.parsed && ctx.parsed.y;
+                        if (ctx.dataset && ctx.dataset.yAxisID === "y_gb") {
+                            if (v == null) return ctx.dataset.label + ": —";
+                            if (v >= 1073741824) return ctx.dataset.label + ": " + (v / 1073741824).toFixed(2) + " GB";
+                            if (v >= 1048576)    return ctx.dataset.label + ": " + (v / 1048576).toFixed(1)    + " MB";
+                            if (v >= 1024)       return ctx.dataset.label + ": " + (v / 1024).toFixed(1)       + " KB";
+                            return ctx.dataset.label + ": " + v + " B";
+                        }
+                        return ctx.dataset.label + ": " + (v == null ? "—" : v + " s");
+                    }
+                }
+            },' : '';
+
+        $canvasId = 'myChart' . $slave['id_mysql_server'] . crc32(($slave['connection_name'] ?? '') . $slave['day']);
+
+        return '
 (function() {
-var canvas = document.getElementById("myChart'.$slave['id_mysql_server'].crc32(($slave['connection_name'] ?? '').$slave['day']).'");
+var canvas = document.getElementById("' . $canvasId . '");
 if (!canvas) return;
 var existing = Chart.getChart(canvas);
 if (existing) existing.destroy();
@@ -1742,24 +1844,26 @@ var chart = new Chart(ctx, {
     type: "line",
     data: {
         datasets: [{
-            label: "'.__('Second behind source').'",
-            data: ['.$slave['graph'].'],
+            label: "' . __('Second behind source') . '",
+            data: [' . $slave['graph'] . '],
                 borderColor: "#16285a",
                 backgroundColor: "rgba(22,40,90,0.3)",
                 fill: true,
                 borderWidth: 1,
              pointRadius :1,
-             tension: 0
+             tension: 0,
+             yAxisID: "y"
 
-        }]
+        }' . $relayDataset . ']
     },
     options: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
+            legend: { display: ' . ($hasRelay ? 'true' : 'false') . ' },' . $tooltipPlugin . '
             title: {
                 display: true,
-                text: "Replication : '.$slave['day'].'",
+                text: "Replication : ' . $slave['day'] . '",
                 position: "top",
                 padding: 0
             }
@@ -1778,24 +1882,64 @@ var chart = new Chart(ctx, {
                         minute: "HH:mm"
                     }
                 },
-                min: new Date("'.$slave['day'].' 00:00:00"),
-                max: new Date("'.$slave['day'].' 23:59:59"),
+                min: new Date("' . $slave['day'] . ' 00:00:00"),
+                max: new Date("' . $slave['day'] . ' 23:59:59"),
             },
             y: {
                 min: 0,
+                position: "left",
                 title: {
                     display: true,
                     text: "Second behind source",
                 }
-            }
+            }' . $relayScale . '
         }
     }
 });
 })();
+';
+    }
 
+    /**
+     * Run the parallel `slave::relay_log_space` extraction and stamp
+     * each `$slaves` row with a `graph_relay_log_space` field
+     * carrying the Chart.js-formatted payload for the right-side GB
+     * axis. Same date range / groupbyday flag as the lag query so
+     * the timestamps line up.
+     *
+     * Filters by `$replicationName` so a multi-channel server doesn't
+     * leak the wrong relay queue onto the chart for the active
+     * channel.
+     *
+     * @param array<int,array> $slaves
+     * @param int $serverId
+     * @param array{0:string,1:string} $dateRange  [start, end]
+     * @param string $replicationName
+     * @return array<int,array>
+     */
+    private function enrichSlavesWithRelayLogSpaceGraph(array $slaves, int $serverId, array $dateRange, string $replicationName): array
+    {
+        $relayRows = Extraction::extract(
+            array('slave::relay_log_space'),
+            array($serverId),
+            $dateRange,
+            true,
+            true
+        ) ?: [];
 
-');
+        $relayByDay = [];
+        foreach ($relayRows as $r) {
+            if (($r['connection_name'] ?? '') !== $replicationName) continue;
+            if (!isset($r['day'], $r['graph'])) continue;
+            $relayByDay[(string) $r['day']] = (string) $r['graph'];
         }
+
+        foreach ($slaves as &$slave) {
+            $slave['graph_relay_log_space'] = $relayByDay[(string) ($slave['day'] ?? '')] ?? '';
+        }
+        unset($slave);
+
+        return $slaves;
     }
 
     public function showGraphDay($param)
@@ -1833,6 +1977,18 @@ var chart = new Chart(ctx, {
                 return ($s['connection_name'] ?? '') === $replication_name;
             }));
         }
+
+        // Same dual-axis treatment as the initial show() render: tag
+        // each slave row with the relay_log_space payload so the
+        // shared `Slave::buildLagChartJs()` helper renders the
+        // right-side GB axis on the AJAX-loaded "previous day" chart
+        // too.
+        $slaves = $this->enrichSlavesWithRelayLogSpaceGraph(
+            $slaves,
+            (int) $id_mysql_server,
+            array($date_start, $date_end),
+            (string) $replication_name
+        );
 
         $data['graphs'] = [];
         foreach ($slaves as $slave) {
@@ -2027,13 +2183,11 @@ var chart = new Chart(ctx, {
      */
     public function setReplicationVariable($param)
     {
-        $this->layout_name = false;
-        $this->view = false;
-        header('Content-Type: application/json; charset=UTF-8');
+        $this->slaveBeginJsonResponse();
 
         $outcome = self::evaluateSetReplicationVariableRequest($param, $_POST, $_SERVER, $_SESSION);
         if ($outcome['status'] !== 200) {
-            self::sendSlaveJsonError($outcome['status'], $outcome['body'], $outcome['headers'] ?? []);
+            $this->slaveSendJson(['error' => $outcome['body']], $outcome['status']);
             return;
         }
         $request = $outcome['request'];
@@ -2041,7 +2195,7 @@ var chart = new Chart(ctx, {
         try {
             $db = Mysql::getDbLink((int) $request['id_mysql_server']);
         } catch (\Throwable $e) {
-            self::sendSlaveJsonError(503, 'Cannot reach target server: ' . $e->getMessage());
+            $this->slaveSendJson(['error' => 'Cannot reach target server: ' . $e->getMessage()], 503);
             return;
         }
 
@@ -2049,23 +2203,65 @@ var chart = new Chart(ctx, {
 
         // SQL composition is safe: $request['variable'] was matched
         // against the whitelist; $request['value_sql_literal'] was
-        // assembled from validated values only (enum quoted, int bare).
+        // assembled from validated values only (enum quoted, int bare,
+        // numeric-enum bare — see #1224).
         $sql = "SET GLOBAL `" . $request['variable'] . "` = " . $request['value_sql_literal'];
         try {
             $db->sql_query($sql);
         } catch (\Throwable $e) {
-            self::sendSlaveJsonError(500, 'SET GLOBAL failed: ' . $e->getMessage());
+            $this->slaveSendJson(['error' => 'SET GLOBAL failed: ' . $e->getMessage(), 'sql' => $sql], 500);
             return;
         }
 
         $applied = self::readReplicationVariable($db, $request['variable']) ?? $request['value'];
 
-        echo json_encode([
+        $this->slaveSendJson([
             'ok'       => true,
             'variable' => $request['variable'],
             'previous' => $previous,
             'applied'  => $applied,
+            'sql'      => $sql,
         ]);
+    }
+
+    /**
+     * #1219/#1222/#1223 hardening for the slave/show JSON endpoints
+     * — same belt-and-braces pattern documented in
+     * `feedback_glial_ajax_json.md` (memory): discard whatever Glial
+     * already buffered, start our own buffer, kill `display_errors`,
+     * and register a shutdown handler so a fatal between here and
+     * `slaveSendJson()` produces a deterministic JSON error rather
+     * than an empty body / "Unexpected end of JSON input" client-side.
+     */
+    private function slaveBeginJsonResponse(): void
+    {
+        $this->layout_name = false;
+        $this->view = false;
+        while (ob_get_level() > 0) { @ob_end_clean(); }
+        ob_start();
+        @ini_set('display_errors', '0');
+        header('Content-Type: application/json; charset=UTF-8');
+        register_shutdown_function(static function () {
+            $err = error_get_last();
+            if (!$err) return;
+            if (!in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR], true)) return;
+            if (headers_sent()) {
+                while (ob_get_level() > 0) { @ob_end_clean(); }
+                echo json_encode([
+                    'error' => 'Server-side fatal during JSON response — see Apache error_log',
+                    'fatal' => $err['message'],
+                    'at'    => basename((string) $err['file']) . ':' . $err['line'],
+                ]);
+            }
+        });
+    }
+
+    private function slaveSendJson(array $payload, int $status = 200): void
+    {
+        if ($status !== 200) http_response_code($status);
+        while (ob_get_level() > 0) { @ob_end_clean(); }
+        echo json_encode($payload);
+        exit;
     }
 
     public static function evaluateSetReplicationVariableRequest(array $param, array $post, array $server, array $session): array
@@ -2132,11 +2328,25 @@ var chart = new Chart(ctx, {
             if (!in_array($upper, $values, true)) {
                 return null;
             }
+            // For numeric enums (e.g. innodb_flush_log_at_trx_commit
+            // = 0/1/2/3) MariaDB rejects a quoted string with
+            // "Incorrect argument type to variable …" (errno 1232).
+            // Emit a bare integer literal whenever the whole picker
+            // value-set is digit-only — the value is still
+            // whitelist-validated so injection is impossible.
+            $valuesAreNumeric = !empty($values) && array_reduce(
+                $values,
+                static function ($carry, $v) { return $carry && (is_string($v) || is_int($v)) && ctype_digit((string) $v); },
+                true
+            );
+            $literal = $valuesAreNumeric
+                ? (string) (int) $upper
+                : "'" . $upper . "'";
             return [
                 'id_mysql_server'   => (int) $idMysqlServer,
                 'variable'          => $varName,
                 'value'             => $upper,
-                'value_sql_literal' => "'" . $upper . "'",
+                'value_sql_literal' => $literal,
             ];
         }
 

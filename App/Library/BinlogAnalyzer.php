@@ -340,11 +340,35 @@ class BinlogAnalyzer
                 ['total_rows' => $totalRows]
             );
 
-            // Enrich file ranges with per-file DML data and store
+            // Enrich file ranges with per-file DML data and proper
+            // time boundaries.
+            //
+            // `probeLocalBinlogTimestamp` reads the first / last
+            // timestamp event by sampling the head + tail of the file.
+            // On servers that rotate the binlog frequently (every
+            // 1–3 min on the bong-* hosts), the only timestamp the
+            // probe sees on most files is the FORMAT_DESCRIPTION_EVENT
+            // = file creation = rotation moment, so `start === end`
+            // even though the file actually carries minutes of DML.
+            // Result: zooming into the volume chart on a window that
+            // doesn't straddle a rotation excluded every overlapping
+            // file from the table-breakdown aggregation, leaving
+            // "Top Tables = 0" / "No table breakdown for this window"
+            // even on a window densely covered by data.
+            //
+            // Two-step normalisation:
+            //   1. Stamp a real `end` = `start` of the next file in
+            //      the chronologically-ordered list. The last file's
+            //      `end` falls back to the analysis `time_end`.
+            //   2. Tag the original probe values under `probe_start`
+            //      / `probe_end` so the future debug session has the
+            //      raw signal too.
             foreach ($fileRanges as &$fr) {
                 $fr['tables'] = $dmlStats['dml_per_file'][$fr['name']] ?? [];
             }
             unset($fr);
+            $analysisRow = $this->getAnalysis() ?: [];
+            $fileRanges = self::normaliseFileRangeBoundaries($fileRanges, (string) ($analysisRow['time_end'] ?? ''));
             $this->db->sql_query("UPDATE binlog_analysis SET binlog_file_ranges = '"
                 . $this->db->sql_real_escape_string(json_encode($fileRanges))
                 . "' WHERE id = " . $this->analysisId);
@@ -503,30 +527,35 @@ class BinlogAnalyzer
             return $this->findBinlogFilesRemote($binary, $creds, $master, $analysis['time_start'], $analysis['time_end']);
         }
 
-        // Multi-source: query the specific channel, not the default one
-        $slaveStatus = null;
-        $isMariaDBSlave = (stripos($slaveServer['version'] ?? $this->detectVersionFromLink($slaveLink), 'mariadb') !== false);
+        // Detect server family + version once, then pick the right
+        // statement via the canonical helper `Slave::buildShowReplicaStatusSql()`.
+        // No speculative try/catch — the SQL is guaranteed valid for
+        // the detected family.
+        //
+        //   MariaDB any version → SHOW SLAVE STATUS
+        //                         SHOW SLAVE '<conn>' STATUS
+        //   MySQL < 8.0.22      → SHOW SLAVE STATUS [FOR CHANNEL '<conn>']
+        //   MySQL ≥ 8.0.22      → SHOW REPLICA STATUS [FOR CHANNEL '<conn>']
+        $version    = (string) ($slaveServer['version'] ?? $this->detectVersionFromLink($slaveLink));
+        $isMariaDBSlave = stripos($version, 'mariadb') !== false;
+        $serverType = $isMariaDBSlave ? 'MariaDB' : 'MySQL';
 
-        if (!empty($connName)) {
-            if ($isMariaDBSlave) {
-                $res = @$slaveLink->query("SHOW SLAVE '" . $slaveLink->real_escape_string($connName) . "' STATUS");
-            } else {
-                $res = @$slaveLink->query("SHOW REPLICA STATUS FOR CHANNEL '" . $slaveLink->real_escape_string($connName) . "'");
-                if (!$res) $res = @$slaveLink->query("SHOW SLAVE STATUS FOR CHANNEL '" . $slaveLink->real_escape_string($connName) . "'");
-            }
+        $slaveStatus = null;
+
+        if ($connName !== '') {
+            $sql = \App\Controller\Slave::buildShowReplicaStatusSql($serverType, $version, $connName);
+            $res = $slaveLink->query($sql);
             if ($res && $res->num_rows > 0) {
                 $slaveStatus = $res->fetch_assoc();
                 $res->free();
             }
         }
 
-        // Fallback: default channel (single-source or channel query failed)
         if (!$slaveStatus) {
-            $res = @$slaveLink->query("SHOW REPLICA STATUS");
-            if (!$res) $res = @$slaveLink->query("SHOW SLAVE STATUS");
+            $sql = \App\Controller\Slave::buildShowReplicaStatusSql($serverType, $version, null);
+            $res = $slaveLink->query($sql);
             if ($res && $res->num_rows > 0) {
-                // For multi-source, find the row matching our channel
-                if (!empty($connName)) {
+                if ($connName !== '') {
                     while ($row = $res->fetch_assoc()) {
                         $cn = $row['Connection_name'] ?? $row['Channel_Name'] ?? '';
                         if ($cn === $connName) { $slaveStatus = $row; break; }
@@ -1655,14 +1684,68 @@ class BinlogAnalyzer
         return $pid > 0 && @posix_kill($pid, 0);
     }
 
+    /**
+     * Read the server version straight off the mysqli connection
+     * handshake — no SQL query, no error path. Same mechanism
+     * `App/Library/Mysql.php:432` uses to pick a charset for legacy
+     * servers. Returns an empty string only when the link isn't
+     * usable.
+     */
     private function detectVersionFromLink(\mysqli $link): string
     {
-        $res = @$link->query("SELECT @@version AS v");
-        if ($res && $row = $res->fetch_assoc()) {
-            $res->free();
-            return $row['v'] ?? '';
+        return (string) ($link->server_info ?? '');
+    }
+
+    /**
+     * Stamp every file range with a usable end timestamp:
+     *   - sort by `start` (ascending),
+     *   - for file i, set `end` = `start` of file i+1,
+     *   - for the last file, fall back to the analysis `$timeEnd`.
+     *
+     * The original probe values are preserved under
+     * `probe_start` / `probe_end` so an operator debugging a wonky
+     * window in DevTools can still see what mysqlbinlog reported.
+     *
+     * Invariant: every file range emitted has `start < end`. The
+     * client-side aggregator can therefore filter via
+     * `if (fEnd < xMin || fStart > xMax) skip` without losing files
+     * whose probe markers happened to land outside the zoom window.
+     *
+     * @param array<int,array<string,mixed>> $fileRanges
+     * @return array<int,array<string,mixed>>
+     */
+    public static function normaliseFileRangeBoundaries(array $fileRanges, string $timeEnd): array
+    {
+        if (empty($fileRanges)) return $fileRanges;
+
+        $tsOf = static function ($ts): int {
+            if (!$ts) return PHP_INT_MAX;
+            $u = strtotime((string) $ts);
+            return $u === false ? PHP_INT_MAX : $u;
+        };
+
+        usort($fileRanges, static function ($a, $b) use ($tsOf) {
+            return $tsOf($a['start'] ?? null) <=> $tsOf($b['start'] ?? null);
+        });
+
+        $count = count($fileRanges);
+        for ($i = 0; $i < $count; $i++) {
+            $fileRanges[$i]['probe_start'] = $fileRanges[$i]['start'] ?? null;
+            $fileRanges[$i]['probe_end']   = $fileRanges[$i]['end']   ?? null;
+
+            if ($i + 1 < $count && !empty($fileRanges[$i + 1]['start'])) {
+                $fileRanges[$i]['end'] = $fileRanges[$i + 1]['start'];
+            } elseif ($timeEnd !== '') {
+                // Last file: use the analysis end so it covers
+                // everything up to the user-requested cap.
+                $fileRanges[$i]['end'] = $timeEnd;
+            }
+            // Keep `start` as-is — that's the file's creation /
+            // rotation timestamp, which is the earliest event the
+            // file can possibly contain.
         }
-        return '';
+
+        return $fileRanges;
     }
 
     private function updateStatus(string $status, ?string $error = null): void

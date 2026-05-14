@@ -16,6 +16,7 @@ use \App\Library\Debug;
 use \App\Library\System;
 use App\Library\Extraction2;
 use Glial\Security\Csrf;
+use App\Library\Security\CsrfGuard;
 
 // ALTER TABLE mysql_server ADD SYSTEM VERSIONING PARTITION BY SYSTEM_TIME;
 /*
@@ -124,6 +125,45 @@ class MysqlServer extends Controller
         }
 
         return ServerCapabilities::supports($db, 'performance_schema_processlist_modern');
+    }
+
+    private static function processlistDiscoveryCachePath(int $id_mysql_server): string
+    {
+        return TMP . 'cache/processlist_discovery/' . $id_mysql_server . '.json';
+    }
+
+    private static function readProcesslistDiscoveryCache(int $id_mysql_server, int $ttlSeconds = 3600): ?array
+    {
+        $path = self::processlistDiscoveryCachePath($id_mysql_server);
+        if (!is_file($path)) {
+            return null;
+        }
+        $age = time() - filemtime($path);
+        if ($age > $ttlSeconds) {
+            return null;
+        }
+        $raw = @file_get_contents($path);
+        if ($raw === false || $raw === '') {
+            return null;
+        }
+        $decoded = json_decode($raw, true);
+        if (!is_array($decoded)) {
+            return null;
+        }
+        return $decoded;
+    }
+
+    private static function writeProcesslistDiscoveryCache(int $id_mysql_server, array $payload): void
+    {
+        $path = self::processlistDiscoveryCachePath($id_mysql_server);
+        $dir = dirname($path);
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0775, true);
+        }
+        $tmpPath = $path . '.' . getmypid() . '.tmp';
+        if (@file_put_contents($tmpPath, json_encode($payload), LOCK_EX) !== false) {
+            @rename($tmpPath, $path);
+        }
     }
 
 /**
@@ -468,29 +508,69 @@ class MysqlServer extends Controller
             $connectionSnapshot['max_used_connections'] += (int)$metrics['max_used_connections'];
             $connectionSnapshot['max_connections'] += (int)$metrics['max_connections'];
 
-            $has_innodb_trx = $this->informationSchemaTableExists($db, 'information_schema', 'innodb_trx', $id_mysql_server);
-            $has_perf_threads = $this->informationSchemaTableExists($db, 'performance_schema', 'threads', $id_mysql_server);
-            $has_info_processlist = $this->informationSchemaTableExists($db, 'information_schema', 'processlist', $id_mysql_server);
+            // Discovery cache: AJAX runs every ~1s and the schema/version
+            // facts (information_schema tables present, server fork/version,
+            // metadata_lock plugin) don't change request-to-request. On a
+            // remote server reached through an SSH tunnel, each discovery
+            // query costs 50-200 ms — caching lets AJAX skip ~5 round-trips.
+            // F5 always rebuilds the cache so plugin install/uninstall is
+            // picked up within at most 1 hour anyway, and immediately on
+            // any manual reload.
+            $discovery = null;
+            if ($isAjax) {
+                $discovery = self::readProcesslistDiscoveryCache((int) $id_mysql_server);
+            }
 
-            $metadataLockEnabled = false;
-            if ($checkMetadataLockPlugin) {
-                $metadataLockEnabled = $this->hasMetadataLockInfoPlugin($db);
-                if ($metadataLockEnabled) {
-                    $metadataLockServers[] = $id_mysql_server;
-                }
+            if (is_array($discovery)) {
+                $has_innodb_trx       = (bool) ($discovery['has_innodb_trx'] ?? false);
+                $has_perf_threads     = (bool) ($discovery['has_perf_threads'] ?? false);
+                $has_info_processlist = (bool) ($discovery['has_info_processlist'] ?? false);
+                $useShowFull          = (bool) ($discovery['use_show_full'] ?? false);
+                $usePerfSchema        = (bool) ($discovery['use_perf_schema'] ?? false);
+                $cachedMdlPlugin      = (bool) ($discovery['has_metadata_lock_plugin'] ?? false);
+
+                $metadataLockEnabled = $cachedMdlPlugin
+                    && in_array($id_mysql_server, $metadataLockServerIds, true);
             } else {
-                $metadataLockEnabled = in_array($id_mysql_server, $metadataLockServerIds, true);
+                $has_innodb_trx       = $this->informationSchemaTableExists($db, 'information_schema', 'innodb_trx', $id_mysql_server);
+                $has_perf_threads     = $this->informationSchemaTableExists($db, 'performance_schema', 'threads', $id_mysql_server);
+                $has_info_processlist = $this->informationSchemaTableExists($db, 'information_schema', 'processlist', $id_mysql_server);
+
+                $useShowFull = ServerCapabilities::supports($db, 'percona_processlist_56')
+                    && ! ServerCapabilities::supports($db, 'percona_processlist_57');
+                $usePerfSchema = !$useShowFull
+                    && self::shouldUsePerfSchemaProcesslist($db, $has_perf_threads);
+
+                $cachedMdlPlugin = $this->hasMetadataLockInfoPlugin($db);
+
+                if ($checkMetadataLockPlugin) {
+                    $metadataLockEnabled = $cachedMdlPlugin;
+                    if ($metadataLockEnabled) {
+                        $metadataLockServers[] = $id_mysql_server;
+                    }
+                } else {
+                    // Cache miss on AJAX: trust the URL hint as fallback.
+                    $metadataLockEnabled = $cachedMdlPlugin
+                        && in_array($id_mysql_server, $metadataLockServerIds, true);
+                }
+
+                self::writeProcesslistDiscoveryCache((int) $id_mysql_server, [
+                    'ts'                       => time(),
+                    'has_innodb_trx'           => $has_innodb_trx,
+                    'has_perf_threads'         => $has_perf_threads,
+                    'has_info_processlist'     => $has_info_processlist,
+                    'use_show_full'            => $useShowFull,
+                    'use_perf_schema'          => $usePerfSchema,
+                    'has_metadata_lock_plugin' => $cachedMdlPlugin,
+                ]);
             }
 
             try {
-                if (
-                    ServerCapabilities::supports($db, 'percona_processlist_56')
-                    && ! ServerCapabilities::supports($db, 'percona_processlist_57')
-                )
+                if ($useShowFull)
                 {
                     $sql = "SHOW FULL PROCESSLIST";
                 }
-                else if (self::shouldUsePerfSchemaProcesslist($db, $has_perf_threads))
+                else if ($usePerfSchema)
                 {
                     if ($has_innodb_trx) {
                         $sql = "SELECT /* pmacontrol-processlist */
@@ -4310,6 +4390,531 @@ class MysqlServer extends Controller
         $this->set('id_mysql_server', $id_mysql_server);
 
 
+    }
+
+    /**
+     * GET /MysqlServer/plugins/<id>/<name>/ — server plugins + storage
+     * engines tab. Reads `information_schema::engines` and
+     * `information_schema::plugins` from the Aspirateur cache (no
+     * round-trip to the target on the happy path) and renders them
+     * against `App\Library\PluginCatalog` so the operator can see
+     * which catalog plugins are loaded vs hot-installable vs need an
+     * apt package install.
+     *
+     * SuperAdmin (`user_main.id_group = 4`) can install hot plugins
+     * via the matrix. Other roles see the matrix in read-only mode.
+     */
+    public function plugins($param)
+    {
+        $id_mysql_server = (int) ($param[0] ?? 0);
+        if ($id_mysql_server <= 0) {
+            throw new \Exception("Usage: /MysqlServer/plugins/{id_mysql_server}/{name?}/");
+        }
+        $_GET['mysql_server']['id'] = $id_mysql_server;
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        // Server inventory (display name + version for the matrix header)
+        $srv = null;
+        $res = $db->sql_query("SELECT id, name, display_name, hostname, ip, port FROM mysql_server WHERE id = {$id_mysql_server} AND is_deleted = 0");
+        if ($res) $srv = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+        if (!$srv) throw new \Exception("mysql_server #{$id_mysql_server} not found");
+
+        $raw = Extraction2::display([
+            'version', 'version_comment',
+            'information_schema::engines', 'information_schema::plugins',
+            'mysql_server::mysql_available',
+        ], [$id_mysql_server]);
+        $row = is_array($raw) && !empty($raw) ? (reset($raw) ?: []) : [];
+
+        $version = (string) ($row['version'] ?? '');
+        $versionComment = (string) ($row['version_comment'] ?? '');
+        $family = \App\Library\PluginCatalog::detectFamily($version . ' ' . $versionComment);
+
+        // Live engines + plugins from the Aspirateur cache. Extraction2
+        // stores `radical::metric` values directly under the metric
+        // name on the per-server row (see Extraction2::appendDisplayRow:
+        // `$table[$id][$metricName] = $value`). JSON values are
+        // already decoded by `normalizeDisplayValue`. Some collector
+        // paths leave the value as a JSON string — pluginsTabDecodeRows
+        // handles both shapes.
+        $engineRowsRaw  = $row['engines']  ?? null;
+        $pluginRowsRaw  = $row['plugins']  ?? null;
+
+        $engineRows = self::pluginsTabDecodeRows($engineRowsRaw);
+        $pluginRows = self::pluginsTabDecodeRows($pluginRowsRaw);
+
+        // Index by uppercase name for easy lookup against the catalog.
+        $enginesIndex = [];
+        foreach ($engineRows as $r) {
+            $name = strtoupper((string) ($r['engine'] ?? $r['ENGINE'] ?? ''));
+            if ($name === '') continue;
+            $enginesIndex[$name] = [
+                'support' => strtoupper((string) ($r['support'] ?? $r['SUPPORT'] ?? '')),
+                'comment' => (string) ($r['comment'] ?? $r['COMMENT'] ?? ''),
+                'transactions' => strtoupper((string) ($r['transactions'] ?? $r['TRANSACTIONS'] ?? '')),
+                'xa' => strtoupper((string) ($r['xa'] ?? $r['XA'] ?? '')),
+                'savepoints' => strtoupper((string) ($r['savepoints'] ?? $r['SAVEPOINTS'] ?? '')),
+            ];
+        }
+        $pluginsIndex = [];
+        foreach ($pluginRows as $r) {
+            $name = strtoupper((string) ($r['plugin_name'] ?? $r['PLUGIN_NAME'] ?? ''));
+            if ($name === '') continue;
+            $pluginsIndex[$name] = [
+                'status'  => strtoupper((string) ($r['plugin_status']  ?? $r['PLUGIN_STATUS']  ?? '')),
+                'type'    => strtoupper((string) ($r['plugin_type']    ?? $r['PLUGIN_TYPE']    ?? '')),
+                'library' => (string)  ($r['plugin_library'] ?? $r['PLUGIN_LIBRARY'] ?? ''),
+                'version' => (string)  ($r['plugin_version'] ?? $r['PLUGIN_VERSION'] ?? ''),
+                'license' => (string)  ($r['plugin_license'] ?? $r['PLUGIN_LICENSE'] ?? ''),
+            ];
+        }
+        // Alphabetical order, case-insensitive — stable visual order
+        // independent of insertion order in information_schema.
+        ksort($enginesIndex, SORT_NATURAL | SORT_FLAG_CASE);
+        ksort($pluginsIndex, SORT_NATURAL | SORT_FLAG_CASE);
+
+        // Permission gate — SuperAdmin (id_group = 4) only.
+        $isSuperAdmin = $this->pluginsTabIsSuperAdmin();
+
+        $data = [
+            'server'           => $srv,
+            'version'          => $version,
+            'version_comment'  => $versionComment,
+            'family'           => $family,
+            'engines'          => $engineRows,
+            'engines_index'    => $enginesIndex,
+            'plugins'          => $pluginRows,
+            'plugins_index'    => $pluginsIndex,
+            // Only the catalog rows relevant to the detected family —
+            // a MariaDB host doesn't show MySQL-only plugins and vice
+            // versa. Both branches are sorted: engines first, then
+            // plugins, each block alphabetical.
+            'catalog'          => $family === 'unknown'
+                ? \App\Library\PluginCatalog::sortEnginesFirstThenPlugins(\App\Library\PluginCatalog::all())
+                : \App\Library\PluginCatalog::forFamily($family),
+            'is_super_admin'   => $isSuperAdmin,
+            'csrf_field'       => Csrf::DEFAULT_FIELD,
+            'csrf_token'       => Csrf::issueToken($_SESSION, 'mysqlserver.plugins.install'),
+            'csrf_token_unin'  => Csrf::issueToken($_SESSION, 'mysqlserver.plugins.uninstall'),
+        ];
+
+        $this->title  = __('Plugins') . ' — ' . ($srv['display_name'] ?: $srv['name']);
+        $this->ariane = $srv['display_name'] ?: $srv['name'];
+        $this->set('data', $data);
+        $this->set('id_mysql_server', $id_mysql_server);
+    }
+
+    /**
+     * POST /MysqlServer/installPlugin/<id>/ — SuperAdmin only.
+     * Body: plugin=<NAME>. Resolves to the catalog row's `soname` for
+     * the detected family and runs INSTALL SONAME on the target.
+     * Returns JSON `{ ok, support, error? }`.
+     */
+    public function installPlugin($param)
+    {
+        $this->pluginsTabBeginJsonResponse();
+
+        if (!$this->pluginsTabIsSuperAdmin()) {
+            $this->pluginsTabSendJson(['error' => 'SuperAdmin only'], 403);
+            return;
+        }
+        if ($failure = CsrfGuard::ensureOrFail($_POST, $_SERVER, $_SESSION, 'mysqlserver.plugins.install')) {
+            $this->pluginsTabSendJson(['error' => $failure['body']], $failure['status']);
+            return;
+        }
+
+        $id_mysql_server = (int) ($param[0] ?? 0);
+        $pluginName = strtoupper(trim((string) ($_POST['plugin'] ?? '')));
+        if ($id_mysql_server <= 0 || $pluginName === '') {
+            $this->pluginsTabSendJson(['error' => 'Missing id_mysql_server or plugin'], 400);
+            return;
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $res = $db->sql_query("SELECT id, name FROM mysql_server WHERE id = {$id_mysql_server} AND is_deleted = 0");
+        $srv = $res ? $db->sql_fetch_array($res, MYSQLI_ASSOC) : null;
+        if (!$srv) {
+            $this->pluginsTabSendJson(['error' => 'Server not found'], 404);
+            return;
+        }
+
+        $entry = \App\Library\PluginCatalog::find($pluginName);
+        if ($entry === null) {
+            $this->pluginsTabSendJson(['error' => "Plugin '{$pluginName}' not in catalog"], 400);
+            return;
+        }
+
+        // Re-detect family server-side (don't trust client).
+        $raw = Extraction2::display(['version', 'version_comment'], [$id_mysql_server]);
+        $rowEx = is_array($raw) && !empty($raw) ? (reset($raw) ?: []) : [];
+        $version = (string) ($rowEx['version'] ?? '');
+        $vcomment = (string) ($rowEx['version_comment'] ?? '');
+        $family = \App\Library\PluginCatalog::detectFamily($version . ' ' . $vcomment);
+        if (!isset($entry[$family])) {
+            $this->pluginsTabSendJson(['error' => "Cannot determine MariaDB/MySQL family from version='{$version}'"], 400);
+            return;
+        }
+        $spec = $entry[$family];
+        if (($spec['availability'] ?? '') !== \App\Library\PluginCatalog::AVAILABILITY_CORE) {
+            $hint = $spec['install_hint'] ?? ('First run: apt install ' . ($spec['package'] ?? '?') . ' on the target host, then restart the service.');
+            $this->pluginsTabSendJson([
+                'error' => "Plugin '{$pluginName}' is not hot-installable on {$family}: " . $hint,
+                'package' => $spec['package'] ?? '',
+            ], 409);
+            return;
+        }
+        $soname = (string) ($spec['soname'] ?? '');
+        if ($soname === '') {
+            $this->pluginsTabSendJson(['error' => 'Catalog entry has no SONAME'], 400);
+            return;
+        }
+
+        $link = Sgbd::sql($srv['name']);
+        if (!$link) {
+            $this->pluginsTabSendJson(['error' => 'Cannot connect to target server'], 503);
+            return;
+        }
+
+        $sql = "INSTALL SONAME '" . $link->sql_real_escape_string($soname) . "'";
+        $ok = (bool) $link->sql_query_silent($sql);
+        if (!$ok) {
+            $sql2 = "INSTALL PLUGIN " . $pluginName . " SONAME '" . $link->sql_real_escape_string($soname . '.so') . "'";
+            $ok = (bool) $link->sql_query_silent($sql2);
+        }
+        if (!$ok) {
+            $errMsg = method_exists($link, '_error') ? (string) $link->_error() : 'INSTALL failed';
+            $this->pluginsTabRegisterJobRow('installPlugin', $id_mysql_server, $pluginName, $sql, false, $errMsg);
+            $this->pluginsTabSendJson(['error' => $errMsg], 500);
+            return;
+        }
+
+        // Re-read the engines/plugins to confirm.
+        $support = '';
+        $r2 = $link->sql_query_silent("SHOW ENGINES");
+        if ($r2) {
+            while ($row = $link->sql_fetch_array($r2, MYSQLI_ASSOC)) {
+                if (strcasecmp((string) ($row['Engine'] ?? ''), $pluginName) === 0) {
+                    $support = strtoupper((string) ($row['Support'] ?? ''));
+                    break;
+                }
+            }
+        }
+
+        $this->pluginsTabRegisterJobRow('installPlugin', $id_mysql_server, $pluginName, $sql, true);
+        // Invalidate the stale Aspirateur cache so the page reload
+        // sees the new state instead of yesterday's snapshot.
+        $this->pluginsTabRefreshEngineCache($link, $id_mysql_server);
+        $this->pluginsTabSendJson(['ok' => true, 'support' => $support, 'sql' => $sql]);
+    }
+
+    /**
+     * POST /MysqlServer/uninstallPlugin/<id>/ — SuperAdmin only.
+     * Body: plugin=<NAME>. Runs UNINSTALL SONAME on the resolved
+     * library; returns JSON `{ ok, sql, error? }`. Refuses
+     * statically-compiled plugins (PLUGIN_LIBRARY is empty in
+     * information_schema.PLUGINS) since UNINSTALL would fail anyway.
+     */
+    public function uninstallPlugin($param)
+    {
+        $this->pluginsTabBeginJsonResponse();
+
+        if (!$this->pluginsTabIsSuperAdmin()) {
+            $this->pluginsTabSendJson(['error' => 'SuperAdmin only'], 403);
+            return;
+        }
+        if ($failure = CsrfGuard::ensureOrFail($_POST, $_SERVER, $_SESSION, 'mysqlserver.plugins.uninstall')) {
+            $this->pluginsTabSendJson(['error' => $failure['body']], $failure['status']);
+            return;
+        }
+
+        $id_mysql_server = (int) ($param[0] ?? 0);
+        $pluginName = strtoupper(trim((string) ($_POST['plugin'] ?? '')));
+        if ($id_mysql_server <= 0 || $pluginName === '') {
+            $this->pluginsTabSendJson(['error' => 'Missing id_mysql_server or plugin'], 400);
+            return;
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $res = $db->sql_query("SELECT id, name FROM mysql_server WHERE id = {$id_mysql_server} AND is_deleted = 0");
+        $srv = $res ? $db->sql_fetch_array($res, MYSQLI_ASSOC) : null;
+        if (!$srv) {
+            $this->pluginsTabSendJson(['error' => 'Server not found'], 404);
+            return;
+        }
+
+        $link = Sgbd::sql($srv['name']);
+        if (!$link) {
+            $this->pluginsTabSendJson(['error' => 'Cannot connect to target server'], 503);
+            return;
+        }
+
+        // information_schema.PLUGINS holds the canonical PLUGIN_NAME
+        // (mixed case, e.g. "InnoDB", "ROCKSDB", "Spider") + the
+        // PLUGIN_LIBRARY filename. If PLUGIN_LIBRARY is NULL/empty,
+        // the plugin is statically compiled and UNINSTALL would error
+        // — refuse with a friendly message.
+        $escapedName = $link->sql_real_escape_string($pluginName);
+        $resInfo = $link->sql_query_silent(
+            "SELECT PLUGIN_NAME, PLUGIN_LIBRARY
+             FROM information_schema.PLUGINS
+             WHERE UPPER(PLUGIN_NAME) = '{$escapedName}' LIMIT 1"
+        );
+        if (!$resInfo || !($info = $link->sql_fetch_array($resInfo, MYSQLI_ASSOC))) {
+            // Some engines (BLACKHOLE, ARCHIVE, FEDERATED) live under
+            // a different PLUGIN_NAME than their SHOW ENGINES name;
+            // try a fallback by SONAME via the catalog if it exists.
+            $entry = \App\Library\PluginCatalog::find($pluginName);
+            if (!$entry || (empty($entry['mariadb']['soname']) && empty($entry['mysql']['soname']))) {
+                $this->pluginsTabSendJson(['error' => "Plugin '{$pluginName}' not found in information_schema.PLUGINS"], 404);
+                return;
+            }
+            $candidateSonames = array_filter([
+                $entry['mariadb']['soname'] ?? '',
+                $entry['mysql']['soname'] ?? '',
+            ]);
+            $info = ['PLUGIN_NAME' => $pluginName, 'PLUGIN_LIBRARY' => $candidateSonames[0] ?? ''];
+        }
+
+        if (empty($info['PLUGIN_LIBRARY'])) {
+            $this->pluginsTabSendJson([
+                'error' => "Plugin '{$pluginName}' is statically compiled (no PLUGIN_LIBRARY) and cannot be uninstalled. "
+                         . "Refusing UNINSTALL SONAME — would fail anyway.",
+            ], 409);
+            return;
+        }
+
+        $sql = "UNINSTALL SONAME '" . $link->sql_real_escape_string($info['PLUGIN_LIBRARY']) . "'";
+        $ok = (bool) $link->sql_query_silent($sql);
+        if (!$ok) {
+            // UNINSTALL PLUGIN <name> is the older form; some MariaDB
+            // versions reject UNINSTALL SONAME for plugins that share
+            // a library with others.
+            $sql2 = "UNINSTALL PLUGIN " . $info['PLUGIN_NAME'];
+            $ok = (bool) $link->sql_query_silent($sql2);
+            if ($ok) $sql = $sql2;
+        }
+        if (!$ok) {
+            $errMsg = method_exists($link, '_error') ? (string) $link->_error() : 'UNINSTALL failed';
+            $this->pluginsTabRegisterJobRow('uninstallPlugin', $id_mysql_server, $pluginName, $sql, false, $errMsg);
+            $this->pluginsTabSendJson(['error' => $errMsg], 500);
+            return;
+        }
+        $this->pluginsTabRegisterJobRow('uninstallPlugin', $id_mysql_server, $pluginName, $sql, true);
+        $this->pluginsTabRefreshEngineCache($link, $id_mysql_server);
+        $this->pluginsTabSendJson(['ok' => true, 'sql' => $sql]);
+    }
+
+    /**
+     * Begin a JSON response. Starts an output buffer so any stray
+     * notice/warning/debug echo emitted later (by Sgbd, Extraction2,
+     * etc.) is swallowed before we write the JSON body. The buffer
+     * is cleaned right before `echo json_encode(...)` happens in
+     * `pluginsTabSendJson()`.
+     *
+     * This is the same belt-and-braces fix that #1219 documented for
+     * the trailing-debug-footer corruption, except it covers
+     * *leading* output too — any HTML emitted before the JSON would
+     * surface client-side as e.g. `Unexpected token '<', "<br /> <fo"`.
+     */
+    private function pluginsTabBeginJsonResponse(): void
+    {
+        $this->layout_name = false;
+        $this->view = false;
+        // Discard anything Glial already buffered for us; start our
+        // own buffer so we own the output stream until we flush.
+        while (ob_get_level() > 0) { @ob_end_clean(); }
+        ob_start();
+        // Hide PHP error rendering — we don't want display_errors to
+        // surface as HTML inside our JSON response. The errors still
+        // land in error_log so Apache's log keeps the diagnostic.
+        @ini_set('display_errors', '0');
+        header('Content-Type: application/json; charset=UTF-8');
+        // Shutdown handler: if a fatal kills the request between here
+        // and pluginsTabSendJson(), the client would otherwise see
+        // "Unexpected end of JSON input" with zero hint. Emit a
+        // deterministic JSON error pointing at error_log instead.
+        register_shutdown_function(static function () {
+            $err = error_get_last();
+            if (!$err) return;
+            if (!in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR], true)) return;
+            // If the action already flushed, nothing to do.
+            if (headers_sent()) {
+                while (ob_get_level() > 0) { @ob_end_clean(); }
+                echo json_encode([
+                    'error' => 'Server-side fatal during JSON response — see Apache error_log',
+                    'fatal' => $err['message'],
+                    'at'    => basename((string) $err['file']) . ':' . $err['line'],
+                ]);
+            }
+        });
+    }
+
+    /**
+     * Flush a JSON response after dropping any noise that landed in
+     * the output buffer. `exit;` after the echo so framework
+     * post-processing (Controller::display + setLayout) can't append
+     * anything either.
+     */
+    private function pluginsTabSendJson(array $payload, int $status = 200): void
+    {
+        if ($status !== 200) {
+            http_response_code($status);
+        }
+        while (ob_get_level() > 0) { @ob_end_clean(); }
+        echo json_encode($payload);
+        // Don't return — exit so display() / setLayout() never run on
+        // a JSON response. The persistent-auth cookie has already been
+        // touched (if it was going to be), the request is done.
+        exit;
+    }
+
+    /**
+     * Record a plugin install / uninstall in the standard `job` table
+     * so /job/index lists it next to the Backup / Database / Blackhole
+     * runs. Writes a tiny log file with the SQL + result so the
+     * /job/index log viewer (`Mydumper::ParseLog`) has something to
+     * render.
+     *
+     * Sync action — we don't fork; the row goes in with its final
+     * `status = SUCCESS / ERROR` immediately and `date_end = NOW()`.
+     */
+    private function pluginsTabRegisterJobRow(string $action, int $serverId, string $pluginName, string $sql, bool $ok, string $errMsg = ''): void
+    {
+        try {
+            $db = Sgbd::sql(DB_DEFAULT);
+            $logDir = ROOT . '/tmp/log';
+            if (!is_dir($logDir)) @mkdir($logDir, 0755, true);
+            $logPath = $logDir . '/MysqlServer-' . $action . '-' . $serverId . '-' . substr(uniqid('', true), -10) . '.log';
+
+            $startedBy = (string) ($_SESSION['login'] ?? 'cli');
+            $now = date('Y-m-d H:i:s');
+            $body = "[{$now}] {$action} server={$serverId} plugin={$pluginName} by={$startedBy}" . PHP_EOL
+                  . "sql: " . $sql . PHP_EOL
+                  . "result: " . ($ok ? 'SUCCESS' : 'ERROR') . PHP_EOL;
+            if (!$ok && $errMsg !== '') {
+                $body .= "error: " . $errMsg . PHP_EOL;
+            }
+            @file_put_contents($logPath, $body);
+
+            $uuid = bin2hex(random_bytes(16));
+            $uuid = substr($uuid, 0, 8) . '-' . substr($uuid, 8, 4) . '-' . substr($uuid, 12, 4)
+                  . '-' . substr($uuid, 16, 4) . '-' . substr($uuid, 20, 12);
+            $param = json_encode([$serverId, $pluginName]);
+
+            $uuidEsc    = $db->sql_real_escape_string($uuid);
+            $paramEsc   = $db->sql_real_escape_string($param);
+            $logEsc     = $db->sql_real_escape_string($logPath);
+            $errEsc     = $db->sql_real_escape_string($errMsg);
+            $methodEsc  = $db->sql_real_escape_string($action);
+            $status     = $ok ? 'SUCCESS' : 'ERROR';
+
+            $db->sql_query(
+                "INSERT INTO job (uuid, class, method, param, date_start, date_end, pid, log, error, status)
+                 VALUES ('{$uuidEsc}', 'App\\\\Controller\\\\MysqlServer', '{$methodEsc}',
+                         '{$paramEsc}', NOW(), NOW(), " . (int) getmypid() . ",
+                         '{$logEsc}', '{$errEsc}', '{$status}')"
+            );
+        } catch (\Throwable $e) {
+            // Job-row writing is best-effort — don't let an audit
+            // failure kill the actual response. Log to error_log so
+            // the regression is still visible.
+            error_log('[PmaControl] pluginsTabRegisterJobRow failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Re-fetch SHOW ENGINES + information_schema.PLUGINS from the
+     * target right after install/uninstall and overwrite the latest
+     * row in `ts_value_general_json` for the matching ts_variable
+     * ids (5227 = engines, 4479 = plugins). Without this the matrix
+     * keeps showing yesterday's Aspirateur snapshot until the next
+     * collector run.
+     *
+     * Best-effort. Failure is logged, never thrown.
+     */
+    private function pluginsTabRefreshEngineCache($link, int $serverId): void
+    {
+        try {
+            $db = Sgbd::sql(DB_DEFAULT);
+            $now = date('Y-m-d H:i:s');
+
+            foreach ([
+                ['sql' => 'SELECT * FROM information_schema.ENGINES', 'ts_id' => 5227],
+                ['sql' => 'SELECT * FROM information_schema.PLUGINS ORDER BY PLUGIN_TYPE, PLUGIN_NAME', 'ts_id' => 4479],
+            ] as $job) {
+                $res = $link->sql_query_silent($job['sql']);
+                if (!$res) continue;
+                $rows = [];
+                while ($row = $link->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                    $rows[] = $row;
+                }
+                $value = json_encode($rows);
+                $valueEsc = $db->sql_real_escape_string((string) $value);
+                $tsId = (int) $job['ts_id'];
+
+                // REPLACE-style update: delete the latest row for this
+                // (server, variable), then insert a fresh one stamped
+                // with NOW(). The table is partitioned by date, so a
+                // direct UPDATE is fragile.
+                $db->sql_query(
+                    "DELETE FROM ts_value_general_json
+                     WHERE id_mysql_server = {$serverId}
+                       AND id_ts_variable = {$tsId}
+                       AND date = (
+                           SELECT * FROM (
+                               SELECT MAX(date) FROM ts_value_general_json
+                               WHERE id_mysql_server = {$serverId}
+                                 AND id_ts_variable = {$tsId}
+                           ) AS x
+                       )"
+                );
+                // ts_value_general_json schema is (date, id_ts_variable,
+                // id_mysql_server, value) — no connection_name on the
+                // general radical (it lives only on slave/digest).
+                $db->sql_query(
+                    "INSERT INTO ts_value_general_json (date, id_ts_variable, id_mysql_server, value)
+                     VALUES ('{$now}', {$tsId}, {$serverId}, '{$valueEsc}')"
+                );
+            }
+        } catch (\Throwable $e) {
+            error_log('[PmaControl] pluginsTabRefreshEngineCache failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Helper — accept either a JSON-string or already-decoded array
+     * from Extraction2 and return a list of rows.
+     *
+     * @return list<array>
+     */
+    private static function pluginsTabDecodeRows($value): array
+    {
+        if (is_array($value)) return $value;
+        if (is_string($value) && $value !== '') {
+            $decoded = json_decode($value, true);
+            if (is_array($decoded)) return $decoded;
+        }
+        return [];
+    }
+
+    /**
+     * Returns true when the current authenticated user is in the
+     * `Super administrator` group (user_main.id_group = 4).
+     */
+    private function pluginsTabIsSuperAdmin(): bool
+    {
+        try {
+            $user = $this->di['auth']->getUser();
+        } catch (\Throwable $e) {
+            return false;
+        }
+        if (!$user || empty($user->id)) return false;
+        $db = Sgbd::sql(DB_DEFAULT);
+        $userId = (int) $user->id;
+        $res = $db->sql_query("SELECT id_group FROM user_main WHERE id = {$userId} LIMIT 1");
+        $row = $res ? $db->sql_fetch_array($res, MYSQLI_ASSOC) : null;
+        return $row && (int) $row['id_group'] === 4;
     }
 
     public function runDetail($param)

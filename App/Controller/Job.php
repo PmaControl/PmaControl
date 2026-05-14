@@ -36,6 +36,11 @@ class Job extends Controller {
     private const RELAUNCHABLE_COMMANDS = [
         'Backup' => ['runBackup'],
         'Database' => ['addRefresh'],
+        // #1212 — BLACKHOLE relay conversion (Pipeline A or B); restart
+        // re-runs the same conversion_id and is idempotent (BLACKHOLE
+        // → BLACKHOLE ALTERs are no-ops, the SHOW VARIABLES guarantee
+        // re-asserts sql_log_bin = OFF on every iteration).
+        'Blackhole' => ['runConvertCli'],
     ];
 
 /**

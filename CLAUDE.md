@@ -29,6 +29,7 @@ The active integration target is `master`. Create issue branches from an up-to-d
 | ProxySQL configuration audit (`/ProxySQL/audit/<id>/`, framework, adding a check) | [docs/proxysql_audit.md](docs/proxysql_audit.md) |
 | `/slave/show/<id>/<conn>/` page anatomy, status tiles, live 5 s polling, GTID logic | [docs/slave_show_page.md](docs/slave_show_page.md) |
 | `/Home/index` Replication issues card — buckets + signature dedup (#1210) | [docs/home_replication_dashboard.md](docs/home_replication_dashboard.md) |
+| Convert a slave into a BLACKHOLE binlog relay (UI + CLI), pipeline, pitfalls (#1212 epic) | [docs/binlog_relay_blackhole.md](docs/binlog_relay_blackhole.md) |
 | Runtime log file locations | [docs/logs.md](docs/logs.md) |
 | Small gotchas (`grep -a` on binlog, stale browser cache, worker hot-reload, …) | [docs/tips.md](docs/tips.md) |
 

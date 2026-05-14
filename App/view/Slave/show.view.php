@@ -996,11 +996,76 @@ $(document).ready(function() {
                             var originalApplyLabel = btn.textContent;
                             btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Saving…';
 
-                            fetch(btn.getAttribute('data-url'), { method: 'POST', body: formData })
-                                .then(svParseJsonResponse)
+                            // Hard 30 s safety timeout: if the fetch
+                            // hangs (server-side fatal that escaped
+                            // our shutdown handler, network drop, opcache
+                            // serving stale code, …), the spinner would
+                            // otherwise spin forever. AbortController
+                            // cancels and the outer .catch resets.
+                            var ctl = new AbortController();
+                            var timeoutId = setTimeout(function() {
+                                ctl.abort();
+                            }, 30000);
+
+                            // X-Requested-With keeps PersistentAuthSession::detectAjax()
+                            // happy → no per-request rotation of the
+                            // remember-me cookie (#1220). The Accept
+                            // header makes failure modes more visible
+                            // in the access log and in browser DevTools.
+                            fetch(btn.getAttribute('data-url'), {
+                                method: 'POST',
+                                body: formData,
+                                credentials: 'same-origin',
+                                signal: ctl.signal,
+                                headers: {
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                    'Accept': 'application/json'
+                                }
+                            })
+                                .then(function (r) {
+                                    // Surface non-200 + body length in
+                                    // the console so a future "spinner
+                                    // never resets" report can be
+                                    // diagnosed from DevTools alone.
+                                    if (window.console) {
+                                        console.log('[setReplicationVariable] HTTP', r.status,
+                                                    'CT=', r.headers && r.headers.get && r.headers.get('Content-Type'));
+                                    }
+                                    return r;
+                                })
+                                .then(function (r) {
+                                    // svParseJsonResponse is declared
+                                    // inside the OTHER script tag's
+                                    // DOMContentLoaded closure (line 1511);
+                                    // it's not on `window` until that
+                                    // handler has fired. Inline a
+                                    // minimal parser that mirrors the
+                                    // contract — content-type check,
+                                    // redirect handling, JSON.parse —
+                                    // so the picker is independent of
+                                    // load order.
+                                    if (window.svParseJsonResponse) {
+                                        return window.svParseJsonResponse(r);
+                                    }
+                                    var landedOnLogin = (r.url || '').indexOf('/user/connection') !== -1;
+                                    if (r.redirected || r.status === 302 || landedOnLogin) {
+                                        if (window.svPromptSessionExpired) window.svPromptSessionExpired();
+                                        return Promise.reject(new Error('Session expired'));
+                                    }
+                                    var ct = (r.headers && r.headers.get) ? (r.headers.get('Content-Type') || '') : '';
+                                    if (ct.indexOf('application/json') === -1) {
+                                        return r.text().then(function(body) {
+                                            throw new Error('Unexpected non-JSON response (' + r.status + ' ' + (ct || 'no content-type') + ')'
+                                                + (body ? ', body starts with: ' + body.substring(0, 80).trim() : ''));
+                                        });
+                                    }
+                                    return r.json();
+                                })
                                 .then(function(resp) {
+                                    clearTimeout(timeoutId);
                                     if (resp.error) {
-                                        alert('Error: ' + resp.error);
+                                        alert('Error: ' + resp.error
+                                              + (resp.fatal ? '\n\nFatal: ' + resp.fatal + ' @ ' + resp.at : ''));
                                         btn.disabled = false;
                                         btn.textContent = originalApplyLabel;
                                         return;
@@ -1016,7 +1081,12 @@ $(document).ready(function() {
                                     }, 1100);
                                 })
                                 .catch(function(err) {
-                                    alert('Failed to update ' + variable + ': ' + err);
+                                    clearTimeout(timeoutId);
+                                    var msg = (err && err.name === 'AbortError')
+                                        ? 'request timed out after 30 s — see Apache error_log'
+                                        : (err && err.message ? err.message : String(err));
+                                    if (window.console) console.error('[setReplicationVariable]', err);
+                                    alert('Failed to update ' + variable + ': ' + msg);
                                     btn.disabled = false;
                                     btn.textContent = originalApplyLabel;
                                 });
@@ -1611,6 +1681,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Detect the redirect and the wrong content-type up front so the
     // user sees something actionable instead, with a one-click redirect
     // to the login page that returns to the current URL after auth.
+    // #1224 — also expose on window so the picker IIFE in the
+    // upstream <script> block (line 893) can use it. Without the
+    // assignment, this function is captured by the DOMContentLoaded
+    // closure and the picker click handler in another script tag
+    // sees `Uncaught ReferenceError: svParseJsonResponse is not defined`,
+    // which left the spinner spinning forever.
+    window.svParseJsonResponse = svParseJsonResponse;
+    window.svPromptSessionExpired = function () { svPromptSessionExpired(); };
     function svParseJsonResponse(r) {
         // fetch() with default redirect:'follow' lands on /user/connection
         // for an expired session. Catch both the redirected flag and a
@@ -1863,36 +1941,64 @@ document.addEventListener('DOMContentLoaded', function() {
             ? Math.round((secondsWithSingleTxn / secondsCount) * 1000) / 10
             : 0;
 
-        // Pass 2: per-file table breakdown → DML totals + top tables + db count
-        var ranges = d.binlog_file_ranges || [];
-        var tableMerge = {};
+        // Pass 2: per-table DML breakdown.
+        //
+        // The analyzer only stores DML counts at file-granularity
+        // (no per-second per-table). A naive per-file aggregation —
+        // "include the file fully if it overlaps the window" — was
+        // attributing the file's WHOLE DML to a 1-second zoom, even
+        // when the volume chart for that second showed nothing.
+        // The previous attempt to weight by per-file volume ratio
+        // mis-fired because `volume_per_second` is sparse (only
+        // seconds with activity get an entry), so `bytesBetween()`
+        // for a file's full range often equalled the same value
+        // for a small overlap inside it → ratio ≈ 1.
+        //
+        // Switch to a single GLOBAL volume ratio that maps 1:1 to
+        // what the user sees on the volume chart:
+        //
+        //     ratio = sizeBytes (bytes in window, from pass 1)
+        //           / total_size_bytes (analysis total)
+        //
+        // Apply to the global DML totals + the global top_tables list
+        // emitted by the backend. Properties:
+        //   - 0-byte zoom → ratio = 0 → every counter zero ✓
+        //   - full window → ratio = 1 → identical to unzoomed ✓
+        //   - linear in between, matches the volume chart exactly.
+        //
+        // Trade-off: loses per-file granularity (a zoom on a file
+        // that only writes table A still shows table B if table B
+        // is in the global top_tables). The previous per-file
+        // approach was already an approximation and an over-eager
+        // one — this simpler model is at least predictable.
+        var totalBytesAnalysis = parseInt(d.total_size_bytes) || 0;
+        var ratio = totalBytesAnalysis > 0 ? (sizeBytes / totalBytesAnalysis) : 0;
+        if (!isFinite(ratio) || ratio < 0) ratio = 0;
+        if (ratio > 1) ratio = 1;
+
+        var inserts = Math.round((parseInt(d.total_inserts) || 0) * ratio);
+        var updates = Math.round((parseInt(d.total_updates) || 0) * ratio);
+        var deletes = Math.round((parseInt(d.total_deletes) || 0) * ratio);
+
+        var topTables = (d.top_tables || []).map(function(t) {
+            return {
+                table:   t.table,
+                inserts: Math.round((parseInt(t.inserts) || 0) * ratio),
+                updates: Math.round((parseInt(t.updates) || 0) * ratio),
+                deletes: Math.round((parseInt(t.deletes) || 0) * ratio)
+            };
+        }).filter(function(r) { return (r.inserts + r.updates + r.deletes) > 0; })
+          .sort(function(a, b) {
+              return (b.inserts + b.updates + b.deletes) - (a.inserts + a.updates + a.deletes);
+          });
+
+        // Distinct database count derived from the (already-filtered)
+        // top tables — matches what the panel displays.
         var dbSet = {};
-        var inserts = 0, updates = 0, deletes = 0;
-        ranges.forEach(function(fr) {
-            var fStart = parseTimelineTs(fr.start);
-            var fEnd = parseTimelineTs(fr.end);
-            if (fStart === null || fEnd === null) return;
-            if (fEnd < xMin || fStart > xMax) return; // no overlap
-            (fr.tables || []).forEach(function(t) {
-                var ti = parseInt(t.inserts) || 0;
-                var tu = parseInt(t.updates) || 0;
-                var td = parseInt(t.deletes) || 0;
-                inserts += ti; updates += tu; deletes += td;
-                if (!tableMerge[t.table]) {
-                    tableMerge[t.table] = { table: t.table, inserts: 0, updates: 0, deletes: 0 };
-                }
-                tableMerge[t.table].inserts += ti;
-                tableMerge[t.table].updates += tu;
-                tableMerge[t.table].deletes += td;
-                var m = String(t.table || '').match(/^`([^`]+)`\./);
-                if (m) dbSet[m[1]] = true;
-            });
+        topTables.forEach(function(r) {
+            var m = String(r.table || '').match(/^`([^`]+)`\./);
+            if (m) dbSet[m[1]] = true;
         });
-        var topTables = Object.keys(tableMerge).map(function(k) { return tableMerge[k]; })
-            .filter(function(r) { return (r.inserts + r.updates + r.deletes) > 0; })
-            .sort(function(a, b) {
-                return (b.inserts + b.updates + b.deletes) - (a.inserts + a.updates + a.deletes);
-            });
 
         function fmtTs(ms) {
             var dt = new Date(ms);
