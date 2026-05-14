@@ -286,17 +286,29 @@ if (empty($_GET['ajax'])):
 .sm-empty { text-align: center; padding: 40px; color: var(--sm-muted); }
 
 /* status dot (reuse from Display) */
-.sv-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
-.sv-dot.ok   { background: var(--sm-ok); box-shadow: 0 0 6px rgba(16,185,129,.4); }
-.sv-dot.fail { background: var(--sm-crit); box-shadow: 0 0 6px rgba(239,68,68,.4); }
-.sv-dot.info { background: var(--sm-info); box-shadow: 0 0 6px rgba(59,130,246,.4); }
-.sv-dot.warn { background: var(--sm-warn); box-shadow: 0 0 6px rgba(245,158,11,.4); }
-.sv-dot.halo { position: relative; }
-.sv-dot.halo::after { content: ""; position: absolute; top: 50%; left: 50%; width: 100%; height: 100%;
-                       border-radius: 50%; border: 3px solid var(--sm-crit);
-                       transform: translate(-50%,-50%); animation: sm-halo 2s ease-out infinite; }
-.sv-dot.warn.halo::after { border-color: var(--sm-warn); }
-@keyframes sm-halo { 0% { width:100%;height:100%;opacity:1; } 100% { width:280%;height:280%;opacity:0; } }
+.sv-dot {
+    --size: 10px;
+    --startColor: var(--sm-muted);
+    --endColor: rgba(100,116,139,0);
+    display: inline-block;
+    width: var(--size);
+    height: var(--size);
+    border-radius: 50%;
+    margin-right: 4px;
+    vertical-align: middle;
+    transition: all .2s;
+    background-color: var(--startColor);
+}
+.sv-dot.ok   { --startColor: var(--sm-ok);   --endColor: rgba(16,185,129,0); box-shadow: 0 0 6px rgba(16,185,129,.4); }
+.sv-dot.fail { --startColor: var(--sm-crit); --endColor: rgba(239,68,68,0); box-shadow: 0 0 6px rgba(239,68,68,.4); }
+.sv-dot.info { --startColor: var(--sm-info); --endColor: rgba(59,130,246,0); box-shadow: 0 0 6px rgba(59,130,246,.4); }
+.sv-dot.warn { --startColor: var(--sm-warn); --endColor: rgba(245,158,11,0); box-shadow: 0 0 6px rgba(245,158,11,.4); }
+.sv-dot.halo { animation: status-dot-pulse 1.5s infinite; }
+@keyframes status-dot-pulse {
+    from { box-shadow: 0 0 0 0 var(--startColor); }
+    70%  { box-shadow: 0 0 0 var(--size) var(--endColor); }
+    to   { box-shadow: 0 0 0 0 var(--endColor); }
+}
 </style>
 
 <?php

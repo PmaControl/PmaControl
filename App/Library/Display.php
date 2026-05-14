@@ -40,7 +40,7 @@ class Display
     /**
      * Render a status dot.
      *
-     * @param string $state 'ok' = green, 'fail' = red with pulse halo, 'info' = blue (no pulse)
+     * @param string $state 'ok' = green, 'fail' = red with box-shadow pulse, 'info' = blue (no pulse)
      * @return string HTML span
      */
     public static function statusDot(string $state): string

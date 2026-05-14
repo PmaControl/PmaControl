@@ -45,4 +45,12 @@ final class ServerMainDensityTest extends TestCase
         self::assertStringContainsString('method="post"', $this->source);
         self::assertStringContainsString('workerKillCsrfToken', $this->source);
     }
+
+    public function testStatusDotPulseUsesBoxShadowVariables(): void
+    {
+        self::assertStringContainsString('.sv-dot.halo { animation: status-dot-pulse 1.5s infinite; }', $this->source);
+        self::assertStringContainsString('@keyframes status-dot-pulse', $this->source);
+        self::assertStringContainsString('70%  { box-shadow: 0 0 0 var(--size) var(--endColor); }', $this->source);
+        self::assertStringNotContainsString('.sv-dot.halo::after', $this->source);
+    }
 }
