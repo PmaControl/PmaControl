@@ -678,6 +678,58 @@ class BlackholeRelay
         }
         $this->updateLastStep('SET SESSION sql_log_bin = 0' . ($dryRun ? ' (dry-run)' : ' — ok'));
 
+        // BLACKHOLE doesn't enforce foreign keys. Converting a parent or
+        // child table while FK checks are on makes InnoDB reject the
+        // ALTER (errno 1217 / 1452): converting a parent would orphan
+        // child rows; converting a child first leaves dangling refs the
+        // parent's FK index can't validate. Disable for the conversion
+        // window — session-scoped, restored alongside sql_log_bin in
+        // the finally below.
+        $this->addStep('fk_off', 'SET SESSION foreign_key_checks = 0 — BLACKHOLE ignores FKs anyway');
+        if (!$dryRun) {
+            if (!$link->sql_query_silent('SET SESSION foreign_key_checks = 0')) {
+                $err = self::linkErrorMessage($link);
+                $this->updateLastStep('SET SESSION foreign_key_checks = 0 — FAILED: ' . $err, 'error');
+                return 0;
+            }
+        }
+        $this->updateLastStep('SET SESSION foreign_key_checks = 0' . ($dryRun ? ' (dry-run)' : ' — ok'));
+
+        // foreign_key_checks=0 doesn't help with ALTER ENGINE=BLACKHOLE.
+        // MariaDB/MySQL still raises errno 1217 because converting a
+        // table to BLACKHOLE empties its rows, and InnoDB's referential
+        // metadata refuses the conversion as long as any FK references
+        // the table. The plugin doesn't enforce FKs anyway, so drop
+        // every FK on every candidate table before the ALTER loop. We
+        // don't re-add them — that's the whole point of going to
+        // BLACKHOLE.
+        $fks = $this->discoverForeignKeys($link, $tables);
+        if (!empty($fks)) {
+            $this->addStep('fk_drop', 'Dropping ' . count($fks) . ' foreign-key constraint(s) before ENGINE=BLACKHOLE (1217 guard)');
+            foreach ($fks as $fk) {
+                $stmt = sprintf(
+                    'ALTER TABLE `%s`.`%s` DROP FOREIGN KEY `%s`',
+                    str_replace('`', '``', $fk['schema']),
+                    str_replace('`', '``', $fk['table']),
+                    str_replace('`', '``', $fk['name'])
+                );
+                $this->addStep('fk_drop_one', '[sql_log_bin=OFF] ' . $stmt);
+                if (!$dryRun) {
+                    if (!$link->sql_query_silent($stmt)) {
+                        $err = self::linkErrorMessage($link);
+                        $this->updateLastStep('[sql_log_bin=OFF] ' . $stmt . ' — FAILED: ' . $err, 'error');
+                        // Non-fatal: a follow-up ALTER will surface the error too.
+                        continue;
+                    }
+                }
+                $this->updateLastStep('[sql_log_bin=OFF] ' . $stmt . ($dryRun ? ' (dry-run)' : ' — ok'));
+            }
+            $this->updateLastStep('Dropped ' . count($fks) . ' FK(s)' . ($dryRun ? ' (dry-run)' : ''));
+        } else {
+            $this->addStep('fk_drop', 'No foreign-key constraints on candidate tables — nothing to drop');
+            $this->updateLastStep('No foreign-key constraints on candidate tables — nothing to drop');
+        }
+
         // Verify the session really shows sql_log_bin=OFF. This is the
         // user-visible proof — surfaced in the log so the operator
         // sees the value before the first ALTER. Fail-closed if the
@@ -740,16 +792,46 @@ class BlackholeRelay
                 }
             }
         } finally {
-            // Restore the default so any future query on this session
+            // Restore the defaults so any future query on this session
             // behaves normally. (Sgbd::sql() may pool / reuse the
-            // connection — leaving sql_log_bin=0 would be wrong.)
-            $this->addStep('no_binlog_restore', 'SET SESSION sql_log_bin = 1 — restore default');
+            // connection — leaving sql_log_bin=0 or fk_checks=0 would
+            // be wrong.)
+            $this->addStep('no_binlog_restore', 'SET SESSION sql_log_bin = 1, foreign_key_checks = 1 — restore defaults');
             if (!$dryRun) {
                 $link->sql_query_silent('SET SESSION sql_log_bin = 1');
+                $link->sql_query_silent('SET SESSION foreign_key_checks = 1');
             }
             $this->updateLastStep('SET SESSION sql_log_bin = 1' . ($dryRun ? ' (dry-run)' : ' — ok'));
         }
         return $converted;
+    }
+
+    /**
+     * Returns the list of foreign-key constraints declared on the
+     * candidate tables, as `[ ['schema'=>..,'table'=>..,'name'=>..], ... ]`.
+     * Used to DROP them before ENGINE=BLACKHOLE so MariaDB doesn't
+     * raise errno 1217. Empty list when there are no FKs (e.g. all
+     * MyISAM, all already BLACKHOLE).
+     */
+    private function discoverForeignKeys($link, array $tables): array
+    {
+        if (empty($tables)) return [];
+        $pairs = [];
+        foreach ($tables as $t) {
+            $pairs[] = "('" . str_replace("'", "''", $t['schema']) . "','"
+                          . str_replace("'", "''", $t['table'])  . "')";
+        }
+        $sql = "SELECT CONSTRAINT_SCHEMA AS s, TABLE_NAME AS t, CONSTRAINT_NAME AS n
+                FROM information_schema.TABLE_CONSTRAINTS
+                WHERE CONSTRAINT_TYPE = 'FOREIGN KEY'
+                  AND (CONSTRAINT_SCHEMA, TABLE_NAME) IN (" . implode(',', $pairs) . ")";
+        $res = $link->sql_query_silent($sql);
+        if (!$res) return [];
+        $out = [];
+        while ($row = $link->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $out[] = ['schema' => $row['s'], 'table' => $row['t'], 'name' => $row['n']];
+        }
+        return $out;
     }
 
     /**
