@@ -217,13 +217,25 @@ class BlackholeRelay
         if ($replicationUser === '') {
             $replicationUser = (string) $master['login']; // fallback
         }
+        // Replication password: dedicated column overrides master's stored
+        // pw. Empty → use master's pw (the legacy MVP behavior, which
+        // requires the replication user to share the master pw — a real
+        // limitation surfaced during multi-host testing).
+        $replicationPassword = '';
+        $storedReplPw = (string) ($row['replication_password'] ?? '');
+        if ($storedReplPw !== '') {
+            $replicationPassword = \Glial\Security\Crypt\Crypt::decrypt($storedReplPw);
+        }
+        if ($replicationPassword === '') {
+            $replicationPassword = $this->decryptServerPassword($master);
+        }
         $this->addStep('change_master', "Pointing target at {$master['ip']}:{$master['port']} (user=" . $replicationUser . ')...');
         $this->configureReplication(
             $tgt,
             $master,
             $masterStatus,
             $replicationUser,
-            $this->decryptServerPassword($master),
+            $replicationPassword,
             $dryRun
         );
         $this->updateLastStep('CHANGE MASTER TO issued' . ($dryRun ? ' (dry-run)' : ''));
@@ -263,8 +275,11 @@ class BlackholeRelay
     {
         // 1. user databases
         $excluded = "'" . implode("','", self::SYSTEM_SCHEMAS) . "'";
+        // `schemas` and `n` are reserved words in newer MariaDB (11.x+) when
+        // used as bare column aliases — backtick-quote both so the parser
+        // doesn't choke. Also rename in the read path below.
         $res = $link->sql_query(
-            "SELECT GROUP_CONCAT(DISTINCT table_schema) AS schemas, COUNT(*) AS n
+            "SELECT GROUP_CONCAT(DISTINCT table_schema) AS `schemas`, COUNT(*) AS `n`
              FROM information_schema.tables
              WHERE table_schema NOT IN ({$excluded})"
         );
@@ -804,6 +819,99 @@ class BlackholeRelay
             $this->updateLastStep('SET SESSION sql_log_bin = 1' . ($dryRun ? ' (dry-run)' : ' — ok'));
         }
         return $converted;
+    }
+
+    /**
+     * One-shot sweep: scan the target for every BASE TABLE in a
+     * user schema that is *not* BLACKHOLE, drop its incoming FKs,
+     * then ALTER ... ENGINE=BLACKHOLE. Used to recover after a DDL
+     * with an explicit ENGINE=InnoDB (or similar) replicated from
+     * the master — the SQL thread applies it verbatim, so the
+     * relay temporarily stores rows. Running this sweep restores
+     * the BLACKHOLE-only invariant.
+     *
+     * Returns ['converted'=>N, 'skipped'=>N, 'errors'=>[ {table,error}, ... ]]
+     * for the calling controller to surface to the operator.
+     */
+    public static function sweepRelay(int $serverId): array
+    {
+        $db  = Sgbd::sql(DB_DEFAULT);
+        $res = $db->sql_query("SELECT name, ip FROM mysql_server WHERE id = " . (int) $serverId . " AND is_deleted = 0");
+        $row = $res ? $db->sql_fetch_array($res, MYSQLI_ASSOC) : null;
+        if (!$row) {
+            return ['converted' => 0, 'skipped' => 0, 'errors' => [['table' => '', 'error' => "mysql_server #{$serverId} not found"]]];
+        }
+        $link = Sgbd::sql($row['name']);
+        if (!$link) {
+            return ['converted' => 0, 'skipped' => 0, 'errors' => [['table' => '', 'error' => "cannot open Sgbd link for {$row['name']}"]]];
+        }
+
+        // Same session guards as the conversion pipeline: keep ALTERs
+        // out of the relay binlog and bypass FK enforcement.
+        if (!$link->sql_query_silent('SET SESSION sql_log_bin = 0')) {
+            return ['converted' => 0, 'skipped' => 0, 'errors' => [['table' => '', 'error' => 'SET sql_log_bin=0 failed: ' . self::linkErrorMessage($link)]]];
+        }
+        $link->sql_query_silent('SET SESSION foreign_key_checks = 0');
+
+        $errors = [];
+        $converted = 0;
+        $skipped = 0;
+        try {
+            $excluded = "'" . implode("','", self::SYSTEM_SCHEMAS) . "'";
+            $sql = "SELECT table_schema, table_name, engine
+                    FROM information_schema.tables
+                    WHERE table_type = 'BASE TABLE'
+                      AND table_schema NOT IN ({$excluded})
+                      AND COALESCE(engine, '') <> 'BLACKHOLE'";
+            $res = $link->sql_query_silent($sql);
+            $candidates = [];
+            if ($res) {
+                while ($r = $link->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                    $candidates[] = ['schema' => (string) $r['table_schema'], 'table' => (string) $r['table_name']];
+                }
+            }
+            if (empty($candidates)) {
+                return ['converted' => 0, 'skipped' => 0, 'errors' => []];
+            }
+
+            // Drop FKs on candidates first (1217 guard, same as convertTables).
+            $pairs = [];
+            foreach ($candidates as $t) {
+                $pairs[] = "('" . str_replace("'", "''", $t['schema']) . "','"
+                              . str_replace("'", "''", $t['table'])  . "')";
+            }
+            $sql2 = "SELECT CONSTRAINT_SCHEMA s, TABLE_NAME t, CONSTRAINT_NAME n
+                     FROM information_schema.TABLE_CONSTRAINTS
+                     WHERE CONSTRAINT_TYPE = 'FOREIGN KEY'
+                       AND (CONSTRAINT_SCHEMA, TABLE_NAME) IN (" . implode(',', $pairs) . ")";
+            $rfk = $link->sql_query_silent($sql2);
+            if ($rfk) {
+                while ($f = $link->sql_fetch_array($rfk, MYSQLI_ASSOC)) {
+                    $stmt = sprintf('ALTER TABLE `%s`.`%s` DROP FOREIGN KEY `%s`',
+                        str_replace('`', '``', $f['s']),
+                        str_replace('`', '``', $f['t']),
+                        str_replace('`', '``', $f['n']));
+                    $link->sql_query_silent($stmt); // best-effort; surfaced via per-ALTER failures below if it bites
+                }
+            }
+
+            foreach ($candidates as $t) {
+                $stmt = sprintf('ALTER TABLE `%s`.`%s` ENGINE=BLACKHOLE',
+                    str_replace('`', '``', $t['schema']),
+                    str_replace('`', '``', $t['table']));
+                if (!$link->sql_query_silent($stmt)) {
+                    $errors[] = ['table' => "`{$t['schema']}`.`{$t['table']}`", 'error' => self::linkErrorMessage($link)];
+                    $skipped++;
+                    continue;
+                }
+                $converted++;
+            }
+        } finally {
+            $link->sql_query_silent('SET SESSION sql_log_bin = 1');
+            $link->sql_query_silent('SET SESSION foreign_key_checks = 1');
+        }
+
+        return ['converted' => $converted, 'skipped' => $skipped, 'errors' => $errors];
     }
 
     /**

@@ -26,6 +26,7 @@ class Blackhole extends Controller
 {
     private const START_CSRF_SCOPE      = 'blackhole.convert.start';
     private const GREENFIELD_CSRF_SCOPE = 'blackhole.greenfield.start';
+    private const SWEEP_CSRF_SCOPE      = 'blackhole.sweep';
 
     public function before($param)
     {
@@ -50,8 +51,40 @@ class Blackhole extends Controller
         $data['csrf_field']         = Csrf::DEFAULT_FIELD;
         $data['csrf_token']         = Csrf::issueToken($_SESSION, self::START_CSRF_SCOPE);
         $data['greenfield_token']   = Csrf::issueToken($_SESSION, self::GREENFIELD_CSRF_SCOPE);
+        $data['sweep_token']        = Csrf::issueToken($_SESSION, self::SWEEP_CSRF_SCOPE);
 
         $this->set('data', $data);
+    }
+
+    /**
+     * POST /Blackhole/sweepEngines/<id_mysql_server>/ — AJAX. ALTERs every
+     * non-BLACKHOLE base table on the relay back to BLACKHOLE. Required
+     * after the master replicates a DDL with an explicit ENGINE=InnoDB
+     * (or similar): the slave SQL thread applies it verbatim because the
+     * master-side sql_mode (NO_ENGINE_SUBSTITUTION) is binlogged per
+     * event, so neither `default_storage_engine` nor `enforce_storage_engine`
+     * on the relay can override it at apply time. The sweep is the
+     * one-shot recovery — it drops FKs first (1217 guard) then runs the
+     * ALTERs under sql_log_bin=0 so downstream consumers don't see the
+     * conversion churn. Returns JSON `{ converted, skipped, errors }`.
+     */
+    public function sweepEngines($param)
+    {
+        $this->bhBeginJsonResponse();
+
+        if ($failure = CsrfGuard::ensureOrFail($_POST, $_SERVER, $_SESSION, self::SWEEP_CSRF_SCOPE)) {
+            $this->bhSendJson(['error' => $failure['body']], $failure['status']);
+            return;
+        }
+
+        $serverId = (int) ($param[0] ?? 0);
+        if ($serverId <= 0) {
+            $this->bhSendJson(['error' => 'Invalid id_mysql_server'], 400);
+            return;
+        }
+
+        $result = BlackholeRelay::sweepRelay($serverId);
+        $this->bhSendJson($result + ['ok' => empty($result['errors'])]);
     }
 
     /**
@@ -173,6 +206,7 @@ class Blackhole extends Controller
         $masterId = (int) ($param[1] ?? ($_POST['master_id'] ?? 0));
         $dryRun   = !empty($_POST['dry_run']) ? 1 : 0;
         $replUser = trim((string) ($_POST['replication_user'] ?? ''));
+        $replPass = (string) ($_POST['replication_password'] ?? '');
 
         if ($targetId <= 0 || $masterId <= 0) {
             $this->bhSendJson(['error' => 'Both target_id and master_id are required'], 400);
@@ -197,12 +231,21 @@ class Blackhole extends Controller
 
         $startedBy = $db->sql_real_escape_string((string) ($_SESSION['login'] ?? 'cli'));
         $replEsc   = $db->sql_real_escape_string($replUser);
+        // Encrypt the replication password the same way mysql_server.passwd
+        // is stored, so it never lands in the DB or progress JSON plaintext.
+        // Empty input → empty column → BlackholeRelay falls back to the
+        // master's stored password (legacy behavior).
+        $replPassStored = '';
+        if ($replPass !== '') {
+            $replPassStored = \Glial\Security\Crypt\Crypt::encrypt($replPass);
+        }
+        $replPassEsc = $db->sql_real_escape_string($replPassStored);
         $db->sql_query(
             "INSERT INTO blackhole_conversion
-                (id_mysql_server, id_mysql_server__master, replication_user,
+                (id_mysql_server, id_mysql_server__master, replication_user, replication_password,
                  status, dry_run, provision_mode, started_by, progress, error_message, created_at)
              VALUES
-                ({$targetId}, {$masterId}, '{$replEsc}',
+                ({$targetId}, {$masterId}, '{$replEsc}', '{$replPassEsc}',
                  'pending', {$dryRun}, 'greenfield', '{$startedBy}', '[]', '', NOW())"
         );
         $conversionId = (int) $db->sql_insert_id();
