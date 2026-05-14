@@ -17,15 +17,26 @@ final class PersistentAuthSession
     public const DEFAULT_TTL_SECONDS = 1209600;
     public const DEFAULT_ABSOLUTE_TTL_SECONDS = 2592000;
     public const MAX_ACTIVE_SESSIONS_PER_USER = 10;
-    // Issue #773: how long the previous verifier stays valid after a rotation.
-    // Window must cover any in-flight parallel request that read the row
-    // before the rotation committed; 10 s comfortably covers AJAX bursts and
-    // slow workers without weakening token-theft detection.
-    public const PREVIOUS_TOKEN_GRACE_SECONDS = 10;
-    // Issue #773: minimum interval between two rotations. AJAX bursts and
-    // dashboard auto-refresh would otherwise burn through one rotation per
-    // request; with the cooldown only the first request in a burst rotates.
-    public const ROTATE_COOLDOWN_SECONDS = 30;
+    // Issue #773 / #1233 follow-up: window during which the previous verifier
+    // stays valid after a rotation. Must cover any in-flight parallel request
+    // that read the row before the rotation committed, *and* the very common
+    // pattern where a user is idle on /home/index for a few minutes (no AJAX
+    // poll, cooldown elapses), then clicks a navigation link from a tab whose
+    // Set-Cookie hadn't yet propagated through the browser cookie jar (the
+    // canonical token_mismatch reproducer in real-world traces). 5 minutes
+    // covers that without weakening token-theft detection in any meaningful
+    // way — a stolen verifier still becomes invalid as soon as ANY legit
+    // request rotates again.
+    public const PREVIOUS_TOKEN_GRACE_SECONDS = 300;
+    // Issue #773 / #1233 follow-up: minimum interval between two rotations.
+    // AJAX bursts already keep date_last_used fresh, so rotation never fires
+    // on busy sessions anyway. Make the cooldown long enough that an idle
+    // tab returning to focus after a coffee break doesn't trigger a rotation
+    // whose Set-Cookie can race a follow-up click — the same scenario that
+    // shipped users to /AuthSession/tokenMismatch repeatedly in May 2026.
+    // 1 hour matches roughly the median desk-away duration and keeps the
+    // rotation rate at "occasional refresh" rather than "every interaction".
+    public const ROTATE_COOLDOWN_SECONDS = 3600;
 
     private const SELECTOR_BYTES = 16;
     private const VERIFIER_BYTES = 32;
