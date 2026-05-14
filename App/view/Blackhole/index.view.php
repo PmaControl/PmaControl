@@ -105,9 +105,9 @@ $candidates = array_values(array_filter($servers, static fn ($s) => (int) $s['is
             </tr>
             <?php foreach ($relays as $s): ?>
                 <tr>
-                    <td><?= Display::srv((int) $s['id']) ?></td>
+                    <td><?= Display::srv((int) $s['id'], true, LINK.'MysqlServer/main/'.(int) $s['id'].'/pmacontrol/') ?></td>
                     <td><code><?= htmlspecialchars($s['connection_name'] !== '' ? $s['connection_name'] : '(default)') ?></code></td>
-                    <td><?= (int) ($s['master_id'] ?? 0) > 0 ? Display::srv((int) $s['master_id']) : '<small style="color:#94a3b8">—</small>' ?></td>
+                    <td><?= (int) ($s['master_id'] ?? 0) > 0 ? Display::srv((int) $s['master_id'], true, LINK.'MysqlServer/main/'.(int) $s['master_id'].'/pmacontrol/') : '<small style="color:#94a3b8">—</small>' ?></td>
                     <td><strong><?= (int) ($s['downstream_slaves'] ?? 0) ?></strong></td>
                     <td><code><?= htmlspecialchars($s['hostname'] ?: $s['ip']) ?></code></td>
                     <td><span class="bh-pill relay"><?= __('BLACKHOLE relay') ?></span></td>
@@ -115,6 +115,7 @@ $candidates = array_values(array_filter($servers, static fn ($s) => (int) $s['is
                         <a href="<?= LINK ?>slave/show/<?= (int) $s['id'] ?>/<?= htmlspecialchars((string) $s['connection_name']) ?>/" class="btn btn-xs btn-default"><?= __('Inspect') ?></a>
                         <button class="bh-btn-convert" data-id="<?= (int) $s['id'] ?>" data-name="<?= htmlspecialchars($s['display_name'] ?: $s['name']) ?>" data-dry="0" title="<?= __('Re-run the conversion (idempotent: BLACKHOLE→BLACKHOLE ALTERs are no-ops, the SHOW VARIABLES guarantee re-asserts sql_log_bin = OFF)') ?>"><?= __('Re-run') ?></button>
                         <button class="bh-btn-convert" style="background:#475569" data-id="<?= (int) $s['id'] ?>" data-name="<?= htmlspecialchars($s['display_name'] ?: $s['name']) ?>" data-dry="1" title="<?= __('Walk through the pipeline without mutating anything: SHOW VARIABLES is queried, ALTER statements are only logged.') ?>"><?= __('Dry-run') ?></button>
+                        <button class="bh-btn-sweep" style="background:#b45309" data-id="<?= (int) $s['id'] ?>" data-name="<?= htmlspecialchars($s['display_name'] ?: $s['name']) ?>" title="<?= __('Find any non-BLACKHOLE base table (e.g. created via a master DDL with explicit ENGINE=InnoDB) and ALTER it back to BLACKHOLE. Drops incoming FKs first.') ?>"><?= __('Force BLACKHOLE') ?></button>
                     </td>
                 </tr>
             <?php endforeach; ?>
@@ -143,9 +144,9 @@ $candidates = array_values(array_filter($servers, static fn ($s) => (int) $s['is
                 </tr>
                 <?php foreach ($candidates as $s): ?>
                     <tr data-server-id="<?= (int) $s['id'] ?>">
-                        <td><?= Display::srv((int) $s['id']) ?></td>
+                        <td><?= Display::srv((int) $s['id'], true, LINK.'MysqlServer/main/'.(int) $s['id'].'/pmacontrol/') ?></td>
                         <td><code><?= htmlspecialchars($s['connection_name'] !== '' ? $s['connection_name'] : '(default)') ?></code></td>
-                        <td><?= (int) ($s['master_id'] ?? 0) > 0 ? Display::srv((int) $s['master_id']) : '<small style="color:#94a3b8">—</small>' ?></td>
+                        <td><?= (int) ($s['master_id'] ?? 0) > 0 ? Display::srv((int) $s['master_id'], true, LINK.'MysqlServer/main/'.(int) $s['master_id'].'/pmacontrol/') : '<small style="color:#94a3b8">—</small>' ?></td>
                         <td>
                             <?php $d = (int) ($s['downstream_slaves'] ?? 0); ?>
                             <strong<?= $d > 0 ? ' style="color:#4c1d95"' : '' ?>><?= $d ?></strong>
@@ -202,7 +203,14 @@ $candidates = array_values(array_filter($servers, static fn ($s) => (int) $s['is
                 <td><label><?= __('Replication user (optional)') ?></label></td>
                 <td>
                     <input id="bh-gf-repl-user" type="text" placeholder="<?= __('defaults to the master\'s mysql_server.login') ?>" style="min-width:320px;padding:4px 6px">
-                    <small style="display:block;color:#94a3b8;margin-top:4px"><?= __('Must already exist on the master with REPLICATION SLAVE. Password is reused from the master\'s mysql_server entry.') ?></small>
+                    <small style="display:block;color:#94a3b8;margin-top:4px"><?= __('Must already exist on the master with REPLICATION SLAVE.') ?></small>
+                </td>
+            </tr>
+            <tr>
+                <td><label><?= __('Replication password (optional)') ?></label></td>
+                <td>
+                    <input id="bh-gf-repl-pass" type="password" placeholder="<?= __('leave empty to reuse the master\'s mysql_server password') ?>" autocomplete="new-password" style="min-width:320px;padding:4px 6px">
+                    <small style="display:block;color:#94a3b8;margin-top:4px"><?= __('Stored encrypted alongside the conversion row. Only used for CHANGE MASTER TO on the target.') ?></small>
                 </td>
             </tr>
         </table>
@@ -354,11 +362,40 @@ $candidates = array_values(array_filter($servers, static fn ($s) => (int) $s['is
         });
     });
 
+    // ---- Force BLACKHOLE sweep (recover from DDL with explicit ENGINE=InnoDB) ----
+    var SWEEP_TOKEN = <?= json_encode($data['sweep_token']) ?>;
+    document.querySelectorAll('.bh-btn-sweep').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var id = btn.getAttribute('data-id');
+            var name = btn.getAttribute('data-name');
+            if (!confirm('Force-sweep "' + name + '" — ALTER every non-BLACKHOLE base table back to ENGINE=BLACKHOLE? Drops incoming FKs first, runs under sql_log_bin=0 (so downstream slaves don\'t see the churn).')) return;
+
+            var fd = new FormData();
+            fd.append(CSRF_FIELD, SWEEP_TOKEN);
+
+            bhFetch(LINK + 'Blackhole/sweepEngines/' + id + '/ajax:true/', {
+                method: 'POST', body: fd,
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    if (d.error) { alert('Sweep failed: ' + d.error); return; }
+                    var lines = ['Converted: ' + (d.converted || 0), 'Skipped: ' + (d.skipped || 0)];
+                    if (d.errors && d.errors.length) {
+                        lines.push('Errors:');
+                        d.errors.forEach(function (e) { lines.push('  ' + (e.table || '?') + ' — ' + e.error); });
+                    }
+                    alert(lines.join('\n'));
+                })
+                .catch(function (e) { alert('Network error: ' + e.message); });
+        });
+    });
+
     // ---- Greenfield form ----
     var GF_TOKEN  = <?= json_encode($data['greenfield_token']) ?>;
     var gfTarget  = document.getElementById('bh-gf-target');
     var gfMaster  = document.getElementById('bh-gf-master');
     var gfUser    = document.getElementById('bh-gf-repl-user');
+    var gfPass    = document.getElementById('bh-gf-repl-pass');
     var gfStart   = document.getElementById('bh-gf-start');
     var gfDry     = document.getElementById('bh-gf-dry');
     var gfStatus  = document.getElementById('bh-gf-target-status');
@@ -408,6 +445,7 @@ $candidates = array_values(array_filter($servers, static fn ($s) => (int) $s['is
         fd.append(CSRF_FIELD, GF_TOKEN);
         fd.append('dry_run', dry ? '1' : '0');
         if (gfUser.value.trim()) fd.append('replication_user', gfUser.value.trim());
+        if (gfPass.value !== '')   fd.append('replication_password', gfPass.value);
 
         bhFetch(LINK + 'Blackhole/startGreenfield/' + targetId + '/' + masterId + '/ajax:true/', {
             method: 'POST', body: fd,
