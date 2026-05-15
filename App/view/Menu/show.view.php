@@ -6,6 +6,14 @@ $escape = static function ($value): string {
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 };
 
+$isSettingsMenuItem = static function (array $item): bool {
+    if (($item['code'] ?? '') === 'settings') {
+        return true;
+    }
+
+    return (string) ($item['parent_id'] ?? '') === '92' && ($item['title'] ?? '') === 'Settings';
+};
+
 $renderLanguageMenu = static function (array $languageMenu, callable $escape): void {
     if (empty($languageMenu['items'])) {
         return;
@@ -33,7 +41,9 @@ $renderLanguageMenu = static function (array $languageMenu, callable $escape): v
         $shortCode = $language['short_code'] ?? strtoupper((string) $language['code']);
 
         echo '<li class="'.$active.'" role="presentation"><a class="pmacontrol-language-item" role="menuitem" tabindex="-1" href="'.$escape($language['url']).'" aria-label="'.$escape($language['label']).'">';
-        echo '<span class="pmacontrol-language-emoji" aria-hidden="true">'.$escape($flag).'</span>';
+        if ($flag !== '') {
+            echo '<span class="pmacontrol-language-emoji" aria-hidden="true">'.$escape($flag).'</span>';
+        }
         echo '<span class="pmacontrol-language-code">'.$escape($shortCode).'</span>';
         echo '<span class="pmacontrol-language-name">'.$escape($language['label']).'</span>';
         echo '</a></li>'."\n";
@@ -128,7 +138,7 @@ $renderLanguageMenu = static function (array $languageMenu, callable $escape): v
                             echo '</a>
                                 <ul class="dropdown-menu" role="menu" aria-labelledby="drop'.$i.'">';
 
-                            if ($data['position'] === "top" && (string) $item['parent_id'] === "92" && $item['title'] === "Settings") {
+                            if ($data['position'] === "top" && $isSettingsMenuItem($item)) {
                                 $renderLanguageMenu($data['language_menu'] ?? [], $escape);
                             }
 

@@ -3,13 +3,14 @@
 declare(strict_types=1);
 
 use App\Controller\Menu;
+use App\Library\LanguageMenuBuilder;
 use PHPUnit\Framework\TestCase;
 
 final class MenuLanguageMenuTest extends TestCase
 {
     public function testLanguageMenuKeepsCurrentRouteAndQueryString(): void
     {
-        $menu = Menu::buildLanguageMenu(
+        $menu = LanguageMenuBuilder::build(
             'fr/home/index',
             'glial_path=fr/home/index&client=12&filter=slow',
             'fr',
@@ -35,7 +36,7 @@ final class MenuLanguageMenuTest extends TestCase
 
     public function testLanguageMenuSupportsMultiPartLanguagePrefixes(): void
     {
-        $menu = Menu::buildLanguageMenu(
+        $menu = LanguageMenuBuilder::build(
             'zh-cn/slave/show/17/channel:primary',
             'glial_path=zh-cn/slave/show/17/channel:primary',
             'zh-cn',
@@ -55,7 +56,7 @@ final class MenuLanguageMenuTest extends TestCase
 
     public function testLanguageMenuKeepsOnlyRequestedLanguagesInAlphabeticalOrder(): void
     {
-        $menu = Menu::buildLanguageMenu(
+        $menu = LanguageMenuBuilder::build(
             'fr/home/index',
             '',
             'fr',
@@ -74,5 +75,28 @@ final class MenuLanguageMenuTest extends TestCase
         $this->assertSame(['ar', 'zh-cn', 'en', 'fr', 'pl', 'ru'], array_column($menu['items'], 'code'));
         $this->assertSame(['🇸🇦', '🇨🇳', '🇬🇧', '🇫🇷', '🇵🇱', '🇷🇺'], array_column($menu['items'], 'flag'));
         $this->assertSame(['AR', 'ZH', 'EN', 'FR', 'PL', 'RU'], array_column($menu['items'], 'short_code'));
+    }
+
+    public function testLanguageMenuBuilderIsNotPublicControllerAction(): void
+    {
+        $this->assertFalse(method_exists(Menu::class, 'buildLanguageMenu'));
+    }
+
+    public function testLanguageMenuEncodesUnsafeRouteSegments(): void
+    {
+        $menu = LanguageMenuBuilder::build(
+            'fr/foo?bar/a b/c#d/channel:primary',
+            'glial_path=fr/foo%3Fbar/a%20b/c%23d/channel:primary&client=12',
+            'fr',
+            'fr,en',
+            '/pmacontrol/',
+            [
+                'fr' => 'French',
+                'en' => 'English',
+            ]
+        );
+
+        $itemsByCode = array_column($menu['items'], null, 'code');
+        $this->assertSame('/pmacontrol/en/foo%3Fbar/a%20b/c%23d/channel:primary?client=12', $itemsByCode['en']['url']);
     }
 }
