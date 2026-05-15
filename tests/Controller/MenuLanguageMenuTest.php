@@ -26,10 +26,11 @@ final class MenuLanguageMenuTest extends TestCase
         $this->assertSame('French', $menu['current_label']);
         $this->assertSame('🇫🇷', $menu['current_flag']);
         $this->assertSame('FR', $menu['current_short_code']);
-        $this->assertSame('/pmacontrol/en/home/index?client=12&filter=slow', $menu['items'][1]['url']);
-        $this->assertSame('/pmacontrol/ar/home/index?client=12&filter=slow', $menu['items'][2]['url']);
-        $this->assertTrue($menu['items'][0]['active']);
-        $this->assertFalse($menu['items'][1]['active']);
+        $itemsByCode = array_column($menu['items'], null, 'code');
+        $this->assertSame('/pmacontrol/en/home/index?client=12&filter=slow', $itemsByCode['en']['url']);
+        $this->assertSame('/pmacontrol/ar/home/index?client=12&filter=slow', $itemsByCode['ar']['url']);
+        $this->assertTrue($itemsByCode['fr']['active']);
+        $this->assertFalse($itemsByCode['en']['active']);
     }
 
     public function testLanguageMenuSupportsMultiPartLanguagePrefixes(): void
@@ -46,12 +47,13 @@ final class MenuLanguageMenuTest extends TestCase
             ]
         );
 
-        $this->assertSame('/pmacontrol/fr/slave/show/17/channel:primary', $menu['items'][0]['url']);
-        $this->assertSame('/pmacontrol/zh-cn/slave/show/17/channel:primary', $menu['items'][1]['url']);
-        $this->assertTrue($menu['items'][1]['active']);
+        $itemsByCode = array_column($menu['items'], null, 'code');
+        $this->assertSame('/pmacontrol/fr/slave/show/17/channel:primary', $itemsByCode['fr']['url']);
+        $this->assertSame('/pmacontrol/zh-cn/slave/show/17/channel:primary', $itemsByCode['zh-cn']['url']);
+        $this->assertTrue($itemsByCode['zh-cn']['active']);
     }
 
-    public function testLanguageMenuKeepsOnlyRequestedLanguagesInConfiguredOrder(): void
+    public function testLanguageMenuKeepsOnlyRequestedLanguagesInAlphabeticalOrder(): void
     {
         $menu = Menu::buildLanguageMenu(
             'fr/home/index',
@@ -69,8 +71,8 @@ final class MenuLanguageMenuTest extends TestCase
             ]
         );
 
-        $this->assertSame(['ar', 'ru', 'pl', 'fr', 'en', 'zh-cn'], array_column($menu['items'], 'code'));
-        $this->assertSame(['🇸🇦', '🇷🇺', '🇵🇱', '🇫🇷', '🇬🇧', '🇨🇳'], array_column($menu['items'], 'flag'));
-        $this->assertSame(['AR', 'RU', 'PL', 'FR', 'EN', 'ZH'], array_column($menu['items'], 'short_code'));
+        $this->assertSame(['ar', 'zh-cn', 'en', 'fr', 'pl', 'ru'], array_column($menu['items'], 'code'));
+        $this->assertSame(['🇸🇦', '🇨🇳', '🇬🇧', '🇫🇷', '🇵🇱', '🇷🇺'], array_column($menu['items'], 'flag'));
+        $this->assertSame(['AR', 'ZH', 'EN', 'FR', 'PL', 'RU'], array_column($menu['items'], 'short_code'));
     }
 }

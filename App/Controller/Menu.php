@@ -148,6 +148,8 @@ WHERE b.active = 1 and b.parent_id is not null and a.id='" . $id_menu . "' GROUP
             ];
         }
 
+        self::sortLanguageMenuItems($items, $currentLanguage);
+
         return [
             'current'            => $currentLanguage,
             'current_label'      => $currentLabel,
@@ -155,6 +157,68 @@ WHERE b.active = 1 and b.parent_id is not null and a.id='" . $id_menu . "' GROUP
             'current_short_code' => $currentShortCode,
             'items'              => $items,
         ];
+    }
+
+/**
+ * Sort language entries alphabetically by their rendered label.
+ *
+ * @param array<int,array{code:string,label:string,flag:string,short_code:string,url:string,active:bool}> $items Menu entries.
+ * @param string $currentLanguage Current language code used as collation locale.
+ * @return void
+ */
+    private static function sortLanguageMenuItems(array &$items, string $currentLanguage): void
+    {
+        $collator = null;
+        if (class_exists('\\Collator')) {
+            $collator = new \Collator(self::getLanguageSortLocale($currentLanguage));
+        }
+
+        usort($items, static function (array $left, array $right) use ($collator): int {
+            return self::compareLanguageLabels((string) $left['label'], (string) $right['label'], $collator);
+        });
+    }
+
+/**
+ * Compare language labels with locale-aware collation when available.
+ *
+ * @param string $left Left label.
+ * @param string $right Right label.
+ * @param mixed $collator Optional \Collator instance.
+ * @return int Sort comparison result.
+ */
+    private static function compareLanguageLabels(string $left, string $right, $collator = null): int
+    {
+        if ($collator instanceof \Collator) {
+            $comparison = $collator->compare($left, $right);
+            if ($comparison !== false && $comparison !== 0) {
+                return $comparison <=> 0;
+            }
+        }
+
+        $normalizedLeft  = function_exists('mb_strtolower') ? mb_strtolower($left, 'UTF-8') : strtolower($left);
+        $normalizedRight = function_exists('mb_strtolower') ? mb_strtolower($right, 'UTF-8') : strtolower($right);
+
+        return $normalizedLeft <=> $normalizedRight;
+    }
+
+/**
+ * Return the locale used to sort language labels.
+ *
+ * @param string $language Language code.
+ * @return string ICU locale.
+ */
+    private static function getLanguageSortLocale(string $language): string
+    {
+        $locales = [
+            'ar'    => 'ar_SA',
+            'ru'    => 'ru_RU',
+            'pl'    => 'pl_PL',
+            'fr'    => 'fr_FR',
+            'en'    => 'en_GB',
+            'zh-cn' => 'zh_CN',
+        ];
+
+        return isset($locales[$language]) ? $locales[$language] : str_replace('-', '_', $language);
     }
 
 /**
