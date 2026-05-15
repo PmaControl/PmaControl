@@ -39,6 +39,7 @@ final class MenuLanguageMenuPlacementTest extends TestCase
                 'items' => [
                     ['code' => 'fr', 'label' => 'French', 'flag' => '🇫🇷', 'short_code' => 'FR', 'url' => '/pmacontrol/fr/home/index', 'active' => true],
                     ['code' => 'en', 'label' => 'English', 'flag' => '🇬🇧', 'short_code' => 'EN', 'url' => '/pmacontrol/en/home/index', 'active' => false],
+                    ['code' => 'de', 'label' => 'German', 'flag' => '', 'short_code' => 'DE', 'url' => '/pmacontrol/de/home/index', 'active' => false],
                 ],
             ],
             'menu' => [
@@ -49,7 +50,8 @@ final class MenuLanguageMenuPlacementTest extends TestCase
                     'bd' => 6,
                     'dropdown' => 121,
                     'icon' => '<span class="glyphicon glyphicon-cog"></span>',
-                    'title' => 'Settings',
+                    'title' => 'Réglages',
+                    'code' => 'settings',
                     'url' => '',
                 ],
                 [
@@ -107,5 +109,7 @@ final class MenuLanguageMenuPlacementTest extends TestCase
         $this->assertStringNotContainsString('id="drop-language"', $html);
         $this->assertStringContainsString('<span class="pmacontrol-language-emoji" aria-hidden="true">🇫🇷</span>', $html);
         $this->assertStringContainsString('<span class="pmacontrol-language-code">EN</span>', $html);
+        $this->assertStringContainsString('<span class="pmacontrol-language-code">DE</span>', $html);
+        $this->assertStringNotContainsString('<span class="pmacontrol-language-emoji" aria-hidden="true"></span>', $html);
     }
 }
