@@ -3,7 +3,7 @@
 
 if (! defined('LANGUAGE_AVAILABLE'))
 {
-    define("LANGUAGE_AVAILABLE", "cs,da,de,en,es,fi,fr,it,ja,nl,pl,pt,ru,uk,zh-cn");
+    define("LANGUAGE_AVAILABLE", "ar,ru,pl,fr,en,zh-cn");
 }
 
 if (! defined('LANGUAGE_ACTIVE'))
@@ -15,4 +15,3 @@ if (! defined('GOOGLE_API_KEY'))
 {
     define("GOOGLE_API_KEY", 'sfghSFHGFSGHSFHG');
 }
-
