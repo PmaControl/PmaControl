@@ -11,6 +11,7 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use \Glial\Synapse\FactoryController;
 use \Glial\Sgbd\Sgbd;
+use \Glial\I18n\I18n;
 
 
 /**
@@ -80,8 +81,156 @@ WHERE b.active = 1 and b.parent_id is not null and a.id='" . $id_menu . "' GROUP
         }
 
         $data['selectedmenu'] = $this->getSelectedLevelOneMenu($id_menu);
+        $currentLanguage = I18n::Get();
+        if (!is_string($currentLanguage) || $currentLanguage === '') {
+            $currentLanguage = isset($_GET['lg']) ? (string) $_GET['lg'] : '';
+        }
+
+        $data['language_menu'] = self::buildLanguageMenu(
+            isset($_GET['glial_path']) ? (string) $_GET['glial_path'] : '',
+            isset($_SERVER['QUERY_STRING']) ? (string) $_SERVER['QUERY_STRING'] : '',
+            $currentLanguage,
+            LANGUAGE_AVAILABLE,
+            WWW_ROOT,
+            I18n::$languagesUTF8
+        );
 
         $this->set('data', $data);
+    }
+
+/**
+ * Build language switcher entries for the current route.
+ *
+ * @param string $glialPath Current routed path, including the language prefix.
+ * @param string $queryString Original query string.
+ * @param string $currentLanguage Current language code.
+ * @param string $availableLanguages Comma-separated language list.
+ * @param string $wwwRoot Application root URL.
+ * @param array<string,string> $languageLabels Language labels indexed by code.
+ * @return array{current:string,current_label:string,current_flag:string,current_short_code:string,items:array<int,array{code:string,label:string,flag:string,short_code:string,url:string,active:bool}>}
+ */
+    public static function buildLanguageMenu(
+        string $glialPath,
+        string $queryString,
+        string $currentLanguage,
+        string $availableLanguages,
+        string $wwwRoot,
+        array $languageLabels = []
+    ): array {
+        $route     = self::getLanguageSwitchRoute($glialPath);
+        $query     = self::getLanguageSwitchQueryString($queryString);
+        $root      = rtrim($wwwRoot, '/').'/';
+        $languages = array_values(array_filter(array_map('trim', explode(',', $availableLanguages)), static fn (string $language): bool => $language !== ''));
+
+        $items            = [];
+        $currentLabel     = $currentLanguage;
+        $currentFlag      = self::getLanguageFlag($currentLanguage);
+        $currentShortCode = self::getLanguageShortCode($currentLanguage);
+
+        foreach ($languages as $language) {
+            $label     = isset($languageLabels[$language]) ? $languageLabels[$language] : $language;
+            $flag      = self::getLanguageFlag($language);
+            $shortCode = self::getLanguageShortCode($language);
+
+            if ($language === $currentLanguage) {
+                $currentLabel     = $label;
+                $currentFlag      = $flag;
+                $currentShortCode = $shortCode;
+            }
+
+            $items[] = [
+                'code'       => $language,
+                'label'      => $label,
+                'flag'       => $flag,
+                'short_code' => $shortCode,
+                'url'        => $root.rawurlencode($language).'/'.$route.($query !== '' ? '?'.$query : ''),
+                'active'     => $language === $currentLanguage,
+            ];
+        }
+
+        return [
+            'current'            => $currentLanguage,
+            'current_label'      => $currentLabel,
+            'current_flag'       => $currentFlag,
+            'current_short_code' => $currentShortCode,
+            'items'              => $items,
+        ];
+    }
+
+/**
+ * Return the flag glyph used by the public language selector.
+ *
+ * @param string $language Language code.
+ * @return string Flag glyph or an empty string when no flag is mapped.
+ */
+    private static function getLanguageFlag(string $language): string
+    {
+        $flags = [
+            'ar'    => '🇸🇦',
+            'ru'    => '🇷🇺',
+            'pl'    => '🇵🇱',
+            'fr'    => '🇫🇷',
+            'en'    => '🇬🇧',
+            'zh-cn' => '🇨🇳',
+        ];
+
+        return isset($flags[$language]) ? $flags[$language] : '';
+    }
+
+/**
+ * Return the short display code used next to the flag.
+ *
+ * @param string $language Language code.
+ * @return string Uppercase language code shortened for display.
+ */
+    private static function getLanguageShortCode(string $language): string
+    {
+        $shortCodes = [
+            'zh-cn' => 'ZH',
+        ];
+
+        return isset($shortCodes[$language]) ? $shortCodes[$language] : strtoupper($language);
+    }
+
+/**
+ * Keep the current route and only remove the language prefix.
+ *
+ * @param string $glialPath Current routed path.
+ * @return string Route without language prefix.
+ */
+    private static function getLanguageSwitchRoute(string $glialPath): string
+    {
+        $parts = array_values(array_filter(explode('/', trim($glialPath, '/')), static fn (string $part): bool => $part !== ''));
+
+        if ($parts !== []) {
+            array_shift($parts);
+        }
+
+        $route = implode('/', $parts);
+        if ($route === '') {
+            return defined('ROUTE_DEFAULT') ? trim(ROUTE_DEFAULT, '/') : 'home/index';
+        }
+
+        return $route;
+    }
+
+/**
+ * Keep public query-string parameters and drop the internal rewritten path.
+ *
+ * @param string $queryString Original query string.
+ * @return string Query string safe to append to language links.
+ */
+    private static function getLanguageSwitchQueryString(string $queryString): string
+    {
+        if ($queryString === '') {
+            return '';
+        }
+
+        $query = [];
+        parse_str($queryString, $query);
+        unset($query['glial_path']);
+
+        return http_build_query($query);
     }
 
 /**
@@ -119,4 +268,3 @@ WHERE b.active = 1 and b.parent_id is not null and a.id='" . $id_menu . "' GROUP
         }
     }
 }
-
