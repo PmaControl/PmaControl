@@ -38,6 +38,7 @@ use \Glial\Synapse\Javascript;
 use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
+use App\Library\Audit\RequestAuditCollector;
 use App\Library\Security\CookieSecurity;
 use App\Library\Security\PersistentAuthSession;
 use App\Library\Security\RouteExposurePolicy;
@@ -47,6 +48,14 @@ $TIME_START = microtime(true);
 
 
 require ROOT.DS.'vendor/autoload.php';
+
+// Audit module #1235: stamp every HTTP request with a request_uid the
+// moment it lands, so controllers, sub-process launchers and client-side
+// JS can correlate against the same id. Shutdown handler writes one
+// NDJSON row to tmp/audit/requests/ — never touches the DB on hot path.
+if (!IS_CLI) {
+    RequestAuditCollector::begin($TIME_START);
+}
 
 if (!IS_CLI) {
     $cookieTrustedProxies = CookieSecurity::trustedProxies();
@@ -235,6 +244,34 @@ if (IS_CLI) {
     $_SYSTEM['controller'] = \Glial\Utility\Inflector::camelize($url['controller']);
     $_SYSTEM['action']     = $url['action'];
     $_SYSTEM['param']      = $url['param'];
+
+    // Audit #1235: route is now known — stamp it on the collector so the
+    // spooled row reflects the resolved controller/action and the role
+    // class of the logged-in user. Skipping for CLI.
+    if (!IS_CLI) {
+        $audit_role_class = '';
+        if (isset($_SITE['id_group'])) {
+            switch ((int) $_SITE['id_group']) {
+                case 4: $audit_role_class = 'SuperAdmin'; break;
+                case 3: $audit_role_class = 'Administrator'; break;
+                case 2: $audit_role_class = 'Member'; break;
+                case 1: $audit_role_class = 'Visitor'; break;
+            }
+        }
+        RequestAuditCollector::stampRoute($_SYSTEM['controller'], $_SYSTEM['action'], $audit_role_class !== '' ? $audit_role_class : null);
+        if (isset($_SITE['IdUser']) && (int) $_SITE['IdUser'] > 0) {
+            RequestAuditCollector::stampUser((int) $_SITE['IdUser']);
+        }
+        // Surface the request_uid for client-side JS (clientMetrics.js) and
+        // any controller that needs to echo it.
+        $audit_uid = RequestAuditCollector::requestUid();
+        if ($audit_uid !== null) {
+            if (!headers_sent()) {
+                header('X-Pma-Audit-Id: ' . $audit_uid);
+            }
+        }
+        unset($audit_role_class, $audit_uid);
+    }
 
     $routeExposureDenialReason = RouteExposurePolicy::denialReason($_SYSTEM['controller'], $_SYSTEM['action']);
     if ($routeExposureDenialReason !== null) {

@@ -121,6 +121,20 @@ echo "<title>".strip_tags($GLIALE_TITLE)." - ".SITE_NAME." ".SITE_VERSION."</tit
     });
 })();
 </script>
+<?php
+// Audit module #1235 — inject the request_uid for clientMetrics.js to
+// correlate its POST against the request_log row. Auth::getAccess()
+// returns the user's id_group (≥ 2 = Member or higher); 1 = Visitor
+// (unauthenticated, login page) → skipped.
+$audit_uid_for_js = \App\Library\Audit\RequestAuditCollector::requestUid();
+if ($audit_uid_for_js !== null && isset($data['auth']) && (int) $data['auth'] !== 1):
+?>
+<script>
+window.PMA_AUDIT_UID = "<?= htmlspecialchars($audit_uid_for_js) ?>";
+</script>
+<meta name="pma-audit-uid" content="<?= htmlspecialchars($audit_uid_for_js) ?>">
+<script src="<?= WWW_ROOT ?>js/Audit/clientMetrics.js" defer></script>
+<?php endif; ?>
 </head>
 <body>
 

@@ -617,13 +617,24 @@ final class PersistentAuthSession
 
     private static function logRevoke(string $selector, string $reason, array $server): void
     {
+        $remote = (string) ($server['REMOTE_ADDR'] ?? '');
+        $ua     = (string) ($server['HTTP_USER_AGENT'] ?? '');
         error_log(sprintf(
             'PersistentAuthSession: revoking selector=%s… reason=%s remote=%s ua=%s',
             substr($selector, 0, 8),
             $reason,
-            (string) ($server['REMOTE_ADDR'] ?? ''),
-            substr((string) ($server['HTTP_USER_AGENT'] ?? ''), 0, 32)
+            $remote,
+            substr($ua, 0, 32)
         ));
+        // Audit module #1235: spool the revoke into auth_event for the
+        // SuperAdmin audit timeline. Best-effort, never blocks the auth path.
+        if (class_exists(\App\Library\Audit\AuthEventCollector::class)) {
+            try {
+                \App\Library\Audit\AuthEventCollector::logPersistentRevoke($reason, $selector, $remote, $ua !== '' ? $ua : null);
+            } catch (\Throwable $e) {
+                // Already swallowed inside the collector; this catch is belt-and-braces.
+            }
+        }
     }
 
     private static function logRotationLostRace(string $selector, array $server): void
