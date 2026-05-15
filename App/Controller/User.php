@@ -1538,6 +1538,12 @@ GROUP BY d.id";
                 if (!empty($id_user)) {
                     $this->log($id_user, true);
                 }
+                // Audit #1235
+                \App\Library\Audit\AuthEventCollector::logLoginSuccess(
+                    (int) $id_user,
+                    (string) ($_SERVER['REMOTE_ADDR'] ?? ''),
+                    (string) ($_SERVER['HTTP_USER_AGENT'] ?? '')
+                );
 
                 $title = I18n::getTranslation(__("Login successful !"));
                 $msg = I18n::getTranslation(__("Congratulations, you have successfully logged in."));
@@ -1552,6 +1558,13 @@ GROUP BY d.id";
                 if (!empty($id_user)) {
                     $this->log($id_user, false);
                 }
+                // Audit #1235
+                \App\Library\Audit\AuthEventCollector::logLoginFail(
+                    !empty($id_user) ? (int) $id_user : null,
+                    (string) ($_SERVER['REMOTE_ADDR'] ?? ''),
+                    (string) ($_SERVER['HTTP_USER_AGENT'] ?? ''),
+                    'auth.authenticate returned false'
+                );
 
 
                 $msg = I18n::getTranslation(__("Your login information was incorrect. Please try again."));
@@ -1633,9 +1646,18 @@ GROUP BY d.id";
  * @version 1.0
  */
     function logout() {
+        // Audit #1235 — capture the user id *before* the auth library wipes
+        // the session, so the auth_event row has it.
+        $audit_uid = isset($_SITE['IdUser']) && (int) $_SITE['IdUser'] > 0 ? (int) $_SITE['IdUser'] : null;
         PersistentAuthSession::revokeCurrent(Sgbd::sql(DB_DEFAULT), $_COOKIE, $_SERVER);
         $this->di['auth']->logout();
         SessionFixationGuard::regenerateActiveSession();
+
+        \App\Library\Audit\AuthEventCollector::logLogout(
+            $audit_uid,
+            (string) ($_SERVER['REMOTE_ADDR'] ?? ''),
+            (string) ($_SERVER['HTTP_USER_AGENT'] ?? '')
+        );
 
         header("Location: " . LINK . "user/connection/");
         exit;
