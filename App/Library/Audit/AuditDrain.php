@@ -311,7 +311,7 @@ final class AuditDrain
                     cwv_inp_rating = COALESCE(VALUES(cwv_inp_rating), cwv_inp_rating)",
                 $this->q($r['request_uid'] ?? ''),
                 $this->q($r['date'] ?? null),
-                $r['id_user_main'] !== null ? (int) ($r['id_user_main'] ?? 0) : 'NULL',
+                (isset($r['id_user_main']) && $r['id_user_main'] !== null) ? (int) $r['id_user_main'] : 'NULL',
                 $this->q($r['route_controller'] ?? null),
                 $this->q($r['route_action'] ?? null),
                 $this->q($r['user_role_class'] ?? null),
