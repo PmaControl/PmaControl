@@ -981,6 +981,16 @@ class MysqlServer extends Controller
             LIMIT 1";
         $resServer = $db->sql_query($sqlServer);
         $server = $db->sql_fetch_array($resServer, MYSQLI_ASSOC) ?: [];
+
+        // (#1257) Build the chart.day.json / chart.hour.json / chart.minute.json
+        // cache for every log type we're about to render. Without this, days
+        // whose .part.* files were never visited would render as a zero bucket
+        // even when the raw events are sitting on disk. Idempotent: each call
+        // skips a day whose cache is newer than its source files.
+        foreach (array_keys($tabs) as $logTypeForCache) {
+            $this->ensureMysqlLogsChartCaches($id_mysql_server, $logTypeForCache);
+        }
+
         [$counts, $summaryByType, $sourcesByType] = $this->loadMysqlLogsCacheSummary($id_mysql_server, array_keys($tabs));
 
         $summary = $summaryByType[$currentType] ?? [
@@ -1025,10 +1035,42 @@ class MysqlServer extends Controller
             throw new \Exception("Usage: /mysqlserver/replication/{id_mysql_server}");
         }
 
+        $idMysqlServer = (int)$param[0];
+        $requestedReplicationName = (string)($param[1] ?? '');
+        $cachedReplication = Extraction2::display([
+            'slave::slave_io_running',
+            'slave::replica_io_running',
+        ], [$idMysqlServer]);
+
         $this->title = '<i class="fa fa-sitemap"></i> '.__("Replication");
 
         $this->set('param', $param);
-        $this->set('id_mysql_server', (int)$param[0]);
+        $this->set('id_mysql_server', $idMysqlServer);
+        $this->set(
+            'replication_name',
+            self::resolveReplicationEmbeddedChannel($idMysqlServer, $requestedReplicationName, $cachedReplication)
+        );
+    }
+
+    /**
+     * Pick the channel embedded by `/MysqlServer/replication/<id>/`.
+     * If the server has no cached slave channel, open the "new source"
+     * form directly so non-slaves land on the `+` tab.
+     *
+     * @param array<int,array<string,mixed>> $cachedReplication
+     */
+    private static function resolveReplicationEmbeddedChannel(int $idMysqlServer, string $requestedReplicationName, array $cachedReplication): string
+    {
+        if ($requestedReplicationName !== '') {
+            return $requestedReplicationName;
+        }
+
+        $channels = $cachedReplication[$idMysqlServer]['@slave'] ?? [];
+        if (is_array($channels) && count($channels) > 0) {
+            return '';
+        }
+
+        return '__new__';
     }
 
     public function logsChartData($param)
@@ -1222,8 +1264,12 @@ class MysqlServer extends Controller
 
         $baseDir = DATA . 'logs/' . $idMysqlServer . '/' . MysqlLogCollector::getStorageDirectoryName($logType);
 
-        $today = new \DateTimeImmutable('today');
-        $dayStart = $today->sub(new \DateInterval('P29D'));
+        // Anchor the 30-day window on the most recent day-dir actually
+        // present on disk rather than on `today`. Without this, a server
+        // whose data is more than a month old (silent collector, no
+        // recent events) renders an empty chart. (#1260)
+        $anchor = $this->latestMysqlLogDayAnchor($baseDir) ?? new \DateTimeImmutable('today');
+        $dayStart = $anchor->sub(new \DateInterval('P29D'));
         $dayBuckets = [];
 
         for ($i = 0; $i < 30; $i++) {
@@ -1312,6 +1358,37 @@ class MysqlServer extends Controller
         return [$counts, $summaryByType, $sourcesByType];
     }
 
+    /**
+     * Return the most recent `YYYY-MM-DD` day-dir present under
+     * `$baseDir` as a `DateTimeImmutable` set to that day (00:00:00),
+     * or null if none exists. Used to anchor the 30-day window of
+     * /MysqlServer/logs/<id>/ on the latest data day instead of
+     * `today`, so an old / inactive collector still shows its tail.
+     * (#1260)
+     */
+    private function latestMysqlLogDayAnchor(string $baseDir): ?\DateTimeImmutable
+    {
+        $dayDirs = glob($baseDir . '/*', GLOB_ONLYDIR) ?: [];
+        $latest = null;
+        foreach ($dayDirs as $dayDir) {
+            $dayKey = basename($dayDir);
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $dayKey)) {
+                continue;
+            }
+            if ($latest === null || strcmp($dayKey, $latest) > 0) {
+                $latest = $dayKey;
+            }
+        }
+        if ($latest === null) {
+            return null;
+        }
+        try {
+            return new \DateTimeImmutable($latest . ' 00:00:00');
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
     private function findMysqlLogsRemoteSourceName(string $baseDir): string
     {
         $dayDirs = glob($baseDir . '/*', GLOB_ONLYDIR) ?: [];
@@ -1362,10 +1439,31 @@ class MysqlServer extends Controller
             return $result;
         }
 
-        $window = $this->getMysqlLogWindowBounds($scope, $key);
+        $window = $this->getMysqlLogWindowBounds($scope, $key, $baseDir);
         $lineRange = $this->getMysqlLogLineRange($baseDir, $scope, $key);
         $latestLines = [];
         $lineIndex = -1;
+
+        // (#1261) slow_query never went through the generic
+        // `.parsed.json` pipeline — the per-entry parser doesn't
+        // understand `# Time:` headers and the `.parsed.json` itself is
+        // hundreds of megabytes (skipped by the safety guard). Stream
+        // the `.part.*` files directly, grouping lines by `# Time:`
+        // and capping at 1000 most-recent matches within the window.
+        if ($logType === MysqlLogCollector::LOG_TYPE_SLOW_QUERY) {
+            $latestLines = $this->streamSlowQueryLinesInWindow(
+                $partFiles,
+                $window['start'],
+                $window['end'],
+                1000
+            );
+            $result['total_rows'] = count($latestLines);
+            $result['total_pages'] = max(1, (int)ceil($result['total_rows'] / $pageSize));
+            $result['page'] = min($page, $result['total_pages']);
+            $offset = max(0, ($result['page'] - 1) * $pageSize);
+            $result['lines'] = array_slice($latestLines, $offset, $pageSize);
+            return $result;
+        }
 
         foreach ($partFiles as $partFile) {
             $events = $this->loadParsedMysqlLogPartEvents($partFile, $idMysqlServer, $logType);
@@ -1470,13 +1568,16 @@ class MysqlServer extends Controller
     /**
      * @return array{start: int|null, end: int|null}
      */
-    private function getMysqlLogWindowBounds(string $scope, string $key): array
+    private function getMysqlLogWindowBounds(string $scope, string $key, ?string $baseDir = null): array
     {
         if ($scope === 'month') {
-            $today = new \DateTimeImmutable('today');
+            // Anchor on the most recent day-dir on disk so an inactive
+            // collector still shows its last 30 days of data. (#1260)
+            $anchor = $baseDir !== null ? $this->latestMysqlLogDayAnchor($baseDir) : null;
+            $anchor = $anchor ?? new \DateTimeImmutable('today');
             return [
-                'start' => $today->sub(new \DateInterval('P29D'))->setTime(0, 0, 0)->getTimestamp(),
-                'end' => $today->setTime(23, 59, 59)->getTimestamp(),
+                'start' => $anchor->sub(new \DateInterval('P29D'))->setTime(0, 0, 0)->getTimestamp(),
+                'end' => $anchor->setTime(23, 59, 59)->getTimestamp(),
             ];
         }
 
@@ -1632,7 +1733,14 @@ class MysqlServer extends Controller
         sort($partFiles, SORT_STRING);
         $lineIndex = -1;
         foreach ($partFiles as $partFile) {
-            $events = $this->loadParsedMysqlLogPartEvents($partFile, $idMysqlServer, $logType);
+            // (#1259) Use the lightweight chart-events loader instead of
+            // loading the full `.parsed.json` (which can be hundreds of
+            // megabytes for slow_query days — json_decode then asks for
+            // 1+ GB of PHP heap and crashes the page with 134 MB limit).
+            // The lightweight loader either reads a small `.chart.json`
+            // sidecar or streams the `.part.*` line by line, keeping
+            // only event_time + level.
+            $events = $this->loadMysqlLogPartChartEvents($partFile, $logType);
 
             foreach ($events as $event) {
                 $lineIndex++;
@@ -1667,17 +1775,22 @@ class MysqlServer extends Controller
             }
         }
 
-        self::writeJsonFileAtomically($dayDir . '/chart.day.json', [
+        // Chart cache files are best-effort: missing them just costs a
+        // recompute on the next page load. When the day directory is
+        // owned by another user (legacy `data/logs/` dirs), the write
+        // is silently skipped instead of triggering a `tempnam` notice
+        // on every page load. (#1259 follow-up)
+        self::tryWriteJsonCache($dayDir . '/chart.day.json', [
             'date' => $dayKey,
             'counts' => $dayCounts,
         ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
 
-        self::writeJsonFileAtomically($dayDir . '/chart.hour.json', [
+        self::tryWriteJsonCache($dayDir . '/chart.hour.json', [
             'date' => $dayKey,
             'hours' => $hourCounts,
         ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
 
-        self::writeJsonFileAtomically($dayDir . '/chart.minute.json', [
+        self::tryWriteJsonCache($dayDir . '/chart.minute.json', [
             'date' => $dayKey,
             'hours' => $minuteCounts,
         ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
@@ -1730,6 +1843,16 @@ class MysqlServer extends Controller
     /**
      * @return array<int,array<string,mixed>>
      */
+    /**
+     * Cap on the size of `.parsed.json` we're willing to load whole.
+     * Above this, both `loadParsedMysqlLogPartEvents` and the chart-
+     * cache builder switch to the streaming `.chart.json` sidecar
+     * (event_time + level only). 64 MB is roughly 200-500 k entries
+     * worth of slow-query rows; the line viewer paginates at 100 lines
+     * per page so it never needs that many in memory anyway. (#1259)
+     */
+    private const PARSED_JSON_MAX_BYTES = 64 * 1024 * 1024;
+
     private function loadParsedMysqlLogPartEvents(string $partFile, int $idMysqlServer, string $logType): array
     {
         [$metaPath, $meta] = $this->getMysqlLogPartMeta($partFile);
@@ -1740,6 +1863,14 @@ class MysqlServer extends Controller
         );
 
         if (file_exists($parsedPath) && (int)@filemtime($parsedPath) >= $sourceMtime) {
+            // Guard against the 408 MB-`.parsed.json` crash that #1259
+            // surfaced on slow_query days: json_decode of a file that
+            // big asks for ~1 GB of PHP heap, which exceeds the
+            // default 128 MB memory_limit. Skip rather than fault.
+            $size = (int)@filesize($parsedPath);
+            if ($size > self::PARSED_JSON_MAX_BYTES) {
+                return [];
+            }
             $decoded = json_decode((string)file_get_contents($parsedPath), true);
             return is_array($decoded) ? $decoded : [];
         }
@@ -1761,6 +1892,282 @@ class MysqlServer extends Controller
         self::writeJsonFileAtomically($parsedPath, $events, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
 
         return $events;
+    }
+
+    /**
+     * (#1259) Lightweight events for the chart cache builder. Each
+     * event carries only what `buildMysqlLogsChartCachesForDay` needs:
+     * `event_time` + `level`. Two orders of magnitude smaller than the
+     * full `.parsed.json` (one slow_query day for server 1 measured
+     * 408 MB; the corresponding chart sidecar is ~5 MB).
+     *
+     * Lookup order:
+     *  1. `.chart.json` sidecar fresher than the part file → load it
+     *  2. `.parsed.json` exists and ≤ PARSED_JSON_MAX_BYTES → project
+     *     down to {event_time, level}, persist the chart sidecar, return
+     *  3. Otherwise stream the `.part.*` file with fopen/fgets, peel
+     *     just the header line of each entry, extract event_time and
+     *     level, persist the sidecar, return
+     *
+     * Path 3 is O(1) memory regardless of part size.
+     *
+     * @return list<array{event_time:?string,level:?string}>
+     */
+    private function loadMysqlLogPartChartEvents(string $partFile, string $logType): array
+    {
+        [$metaPath] = $this->getMysqlLogPartMeta($partFile);
+        $chartPath = dirname($partFile) . '/.' . basename($partFile) . '.chart.json';
+        $sourceMtime = max(
+            (int)@filemtime($partFile),
+            file_exists($metaPath) ? (int)@filemtime($metaPath) : 0
+        );
+
+        if (file_exists($chartPath) && (int)@filemtime($chartPath) >= $sourceMtime) {
+            $decoded = json_decode((string)file_get_contents($chartPath), true);
+            if (is_array($decoded)) return $decoded;
+        }
+
+        $parsedPath = dirname($partFile) . '/.' . basename($partFile) . '.parsed.json';
+        $events = [];
+
+        // Path 2 — re-project an already-built `.parsed.json` if it
+        // fits in memory. Avoids re-parsing for small days.
+        if (file_exists($parsedPath)
+            && (int)@filemtime($parsedPath) >= $sourceMtime
+            && (int)@filesize($parsedPath) <= self::PARSED_JSON_MAX_BYTES
+        ) {
+            $decoded = json_decode((string)file_get_contents($parsedPath), true);
+            if (is_array($decoded)) {
+                foreach ($decoded as $e) {
+                    $events[] = [
+                        'event_time' => $e['event_time'] ?? null,
+                        'level'      => $e['level'] ?? null,
+                    ];
+                }
+                self::tryWriteJsonCache($chartPath, $events);
+                return $events;
+            }
+        }
+
+        // Path 3 — stream the part file. Each "entry" starts on a header
+        // line (for error_log: YYYY-MM-DD HH:MM:SS; for slow_query: a
+        // `# Time:` line; everything else: one line = one entry).
+        $handle = @fopen($partFile, 'rb');
+        if (!is_resource($handle)) {
+            return [];
+        }
+        try {
+            $errorHeader = '/^\d{4}-\d{2}-\d{2}\s+\d{1,2}:\d{2}:\d{2}/';
+            while (($line = fgets($handle)) !== false) {
+                $trimmed = rtrim($line, "\r\n");
+                if ($trimmed === '') continue;
+
+                if ($logType === MysqlLogCollector::LOG_TYPE_SLOW_QUERY) {
+                    // Slow-log headers like `# Time: 260320  1:24:37`
+                    if (preg_match('/^#\s*Time:\s*(\d{6})\s+(\d{1,2}:\d{2}:\d{2})/', $trimmed, $m)) {
+                        $yy  = substr($m[1], 0, 2);
+                        $mm  = substr($m[1], 2, 2);
+                        $dd  = substr($m[1], 4, 2);
+                        $ts  = sprintf('20%s-%s-%s %s', $yy, $mm, $dd, $m[2]);
+                        $events[] = ['event_time' => $ts, 'level' => 'NOTE'];
+                    } elseif (preg_match('/^#\s*Time:\s*(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})/', $trimmed, $m)) {
+                        // MySQL 5.7+ slow-log ISO format
+                        $events[] = ['event_time' => str_replace('T', ' ', $m[1]), 'level' => 'NOTE'];
+                    }
+                    // Skip non-header lines silently — they belong to the
+                    // ongoing query body.
+                    continue;
+                }
+
+                if ($logType === MysqlLogCollector::LOG_TYPE_ERROR
+                    || $logType === MysqlLogCollector::LOG_TYPE_SQL_ERROR) {
+                    if (!preg_match($errorHeader, $trimmed)) {
+                        // continuation of multi-line entry — ignore for chart
+                        continue;
+                    }
+                    $parsed = MysqlLogCollector::parseMysqlLogEntry($trimmed);
+                    $events[] = [
+                        'event_time' => $parsed['event_time'] ?? null,
+                        'level'      => $parsed['level']      ?? null,
+                    ];
+                    continue;
+                }
+
+                // general_log: one row per line; only first 32 chars
+                // can carry a timestamp prefix.
+                $parsed = MysqlLogCollector::parseMysqlLogEntry($trimmed);
+                $events[] = [
+                    'event_time' => $parsed['event_time'] ?? null,
+                    'level'      => $parsed['level']      ?? null,
+                ];
+            }
+        } finally {
+            @fclose($handle);
+        }
+
+        self::tryWriteJsonCache($chartPath, $events);
+        return $events;
+    }
+
+    /**
+     * (#1261) Stream every `# Time:`-headed entry from a slow-query
+     * `.part.*` chunk file, materialise the rows the line viewer needs
+     * (event_time + user/host + SQL text + the standard
+     * `# Query_time:` metrics), and return at most `$maxEntries` rows
+     * sorted by `event_time` descending.
+     *
+     * Memory is bounded: at most `2 * maxEntries` entries are kept in
+     * the accumulator before the periodic trim. With maxEntries=1000
+     * and ~50 KB per entry, peak is ~100 MB — well under the default
+     * 128 MB memory_limit, vs. the 408 MB+ we'd allocate for a single
+     * `.parsed.json` decode.
+     *
+     * @param  list<string> $partFiles
+     * @return list<array<string,mixed>>
+     */
+    private function streamSlowQueryLinesInWindow(
+        array $partFiles,
+        ?int $windowStart,
+        ?int $windowEnd,
+        int $maxEntries
+    ): array {
+        $accumulator = [];
+        $emit = function (array $entry) use ($windowStart, $windowEnd, &$accumulator, $maxEntries): void {
+            if (empty($entry['event_time'])) return;
+            $ts = strtotime($entry['event_time']);
+            if ($ts === false) return;
+            if ($windowStart !== null && $ts < $windowStart) return;
+            if ($windowEnd   !== null && $ts > $windowEnd)   return;
+            $accumulator[] = $entry;
+            if (count($accumulator) >= ($maxEntries * 2)) {
+                usort($accumulator, static fn($a, $b) => strcmp((string)$b['event_time'], (string)$a['event_time']));
+                $accumulator = array_slice($accumulator, 0, $maxEntries);
+            }
+        };
+
+        foreach ($partFiles as $partFile) {
+            [$metaPath, $meta] = $this->getMysqlLogPartMeta($partFile);
+            $sourceName = (string)($meta['source_name'] ?? '');
+
+            $handle = @fopen($partFile, 'rb');
+            if (!is_resource($handle)) continue;
+
+            $current = null;
+            try {
+                while (($line = fgets($handle)) !== false) {
+                    $trimmed = rtrim($line, "\r\n");
+                    if ($trimmed === '') continue;
+
+                    // `# Time: 260320  1:24:37` (legacy YYMMDD) or
+                    // `# Time: 2026-03-20T01:24:37` (5.7+ ISO).
+                    if (preg_match('/^#\s*Time:\s*(\d{6})\s+(\d{1,2}:\d{2}:\d{2})/', $trimmed, $m)) {
+                        if ($current !== null) $emit($current);
+                        $yy = substr($m[1], 0, 2);
+                        $mm = substr($m[1], 2, 2);
+                        $dd = substr($m[1], 4, 2);
+                        $current = [
+                            'event_time'   => sprintf('20%s-%s-%s %s', $yy, $mm, $dd, $m[2]),
+                            'source_kind'  => 'file',
+                            'log_path'     => $sourceName,
+                            'user_name'    => null,
+                            'host_name'    => null,
+                            'db_name'      => '',
+                            'process_name' => null,
+                            'level'        => 'NOTE',
+                            'error_code'   => null,
+                            'message'      => '',
+                            'raw_line'     => $trimmed . "\n",
+                        ];
+                        continue;
+                    }
+                    if (preg_match('/^#\s*Time:\s*(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})/', $trimmed, $m)) {
+                        if ($current !== null) $emit($current);
+                        $current = [
+                            'event_time'   => str_replace('T', ' ', $m[1]),
+                            'source_kind'  => 'file',
+                            'log_path'     => $sourceName,
+                            'user_name'    => null,
+                            'host_name'    => null,
+                            'db_name'      => '',
+                            'process_name' => null,
+                            'level'        => 'NOTE',
+                            'error_code'   => null,
+                            'message'      => '',
+                            'raw_line'     => $trimmed . "\n",
+                        ];
+                        continue;
+                    }
+
+                    // We may see entries before the first `# Time:` (a
+                    // header / partial entry split across part files);
+                    // skip them — the next part file's first `# Time:`
+                    // will re-anchor.
+                    if ($current === null) continue;
+
+                    $current['raw_line'] .= $line;
+
+                    // `# User@Host: alice[alice] @ localhost []`
+                    if (preg_match('/^#\s*User@Host:\s*([^\[]+)\[([^\]]*)\]\s*@\s*([^\[]+)\[([^\]]*)\]/', $trimmed, $m)) {
+                        $current['user_name'] = trim($m[1]);
+                        $current['host_name'] = trim($m[3]);
+                        continue;
+                    }
+                    // `# Thread_id: 1234` or `# Id: 1234`
+                    if (preg_match('/^#\s*(?:Thread_id|Id):\s*(\d+)/', $trimmed, $m)) {
+                        $current['process_name'] = 'thread ' . $m[1];
+                        continue;
+                    }
+                    // `# Query_time: 1.234567  Lock_time: 0.000123 Rows_sent: 1  Rows_examined: 1`
+                    if (preg_match('/^#\s*Query_time:\s*([\d.]+)\s+Lock_time:\s*([\d.]+)(?:\s+Rows_sent:\s*(\d+))?(?:\s+Rows_examined:\s*(\d+))?/', $trimmed, $m)) {
+                        $current['error_code'] = sprintf('q=%ss lk=%ss r=%s/%s',
+                            $m[1], $m[2], $m[3] ?? '?', $m[4] ?? '?');
+                        continue;
+                    }
+                    // Skip session SETs that MariaDB sprinkles between
+                    // entries (`use db;`, `SET timestamp=…;`).
+                    if (preg_match('/^(use\s+`?[^;]+`?\s*;|SET\s+timestamp=\d+\s*;)$/i', $trimmed)) {
+                        continue;
+                    }
+                    // Anything else is part of the SQL statement.
+                    if ($trimmed[0] !== '#') {
+                        $current['message'] .= ($current['message'] === '' ? '' : "\n") . $trimmed;
+                    }
+                }
+                if ($current !== null) {
+                    $emit($current);
+                }
+            } finally {
+                @fclose($handle);
+            }
+        }
+
+        usort($accumulator, static fn($a, $b) => strcmp((string)$b['event_time'], (string)$a['event_time']));
+        return array_slice($accumulator, 0, $maxEntries);
+    }
+
+    /**
+     * Best-effort persistence of every `data/logs/` cache file
+     * (`chart.{day,hour,minute}.json`, `.chart.json` sidecar). All of
+     * them are pure derivations of the on-disk `.part.*` files: losing
+     * one just means the next page load recomputes it. When the day
+     * directory is owned by another user — legacy dirs from before
+     * www-data took over — `tempnam` falls back to `/tmp` and the
+     * cross-filesystem `rename` fails. That used to surface as a PHP
+     * Notice + ERROR log line on every page load. Pre-check
+     * `is_writable()` and swallow the failure so the page renders
+     * cleanly.
+     */
+    private static function tryWriteJsonCache(string $path, array $payload, int $jsonFlags = JSON_UNESCAPED_SLASHES): void
+    {
+        $dir = dirname($path);
+        if (!@is_writable($dir)) {
+            return;
+        }
+        try {
+            self::writeJsonFileAtomically($path, $payload, $jsonFlags);
+        } catch (\Throwable $e) {
+            // Intentionally silent — see method docblock.
+        }
     }
 
     public static function writeJsonFileAtomically(string $path, $payload, int $jsonFlags = 0): void
