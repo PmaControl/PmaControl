@@ -39,6 +39,24 @@ final class SlaveDetectMysqlFamilyTest extends TestCase
     #[DataProvider('familyCases')]
     public function testDetectMysqlFamily(string $versionComment, string $version, string $expected): void
     {
-        $this->assertSame($expected, Slave::detectMysqlFamily($versionComment, $version));
+        // detectMysqlFamily is intentionally private — it is not an
+        // HTTP action and exposing it as a public method on the
+        // controller would auto-route it as /slave/detectMysqlFamily.
+        // Reach through Reflection to pin the contract.
+        $method = new ReflectionMethod(Slave::class, 'detectMysqlFamily');
+        $this->assertSame($expected, $method->invoke(null, $versionComment, $version));
+    }
+
+    public function testDetectMysqlFamilyIsNotRoutable(): void
+    {
+        // Glial routes any public method on a Controller as
+        // /<controller>/<method>/. The GTID family helpers are
+        // implementation details — they must stay private so they do
+        // not leak as web endpoints.
+        $method = new ReflectionMethod(Slave::class, 'detectMysqlFamily');
+        $this->assertTrue($method->isPrivate(), 'detectMysqlFamily must be private to stay off the web route surface');
+
+        $method = new ReflectionMethod(Slave::class, 'evaluateGtidActivationCompatibility');
+        $this->assertTrue($method->isPrivate(), 'evaluateGtidActivationCompatibility must be private to stay off the web route surface');
     }
 }

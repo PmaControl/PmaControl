@@ -7,6 +7,22 @@ use PHPUnit\Framework\TestCase;
 /**
  * Issue #1194 — pin the view contract for the GTID action group when
  * slave & master are in incompatible MySQL families.
+ *
+ * Smoke-test coverage map (PR #1209 follow-up). The PR body's manual
+ * test plan delegates each operator-visible behaviour to one of the
+ * methods below, so a phpunit-only run gives full regression coverage
+ * for cross-family GTID guard. The mapping is intentional — if you
+ * rename or remove a method here, update the PR body checklist too.
+ *
+ *   PR body item 1 (Activate disabled + tooltip)         → testViewGreysActivateOnMixedTopology
+ *   PR body item 2 (Deactivate live in mid-state)        → testViewKeepsDeactivateLiveWhenMixedAndGtidActive
+ *   PR body item 3 (server-side guard on activateGtid)   → testActivateGtidActionEnforcesCompatibilityServerSide
+ *   PR body item 4 (no regression on compatible pair)    → testCompatibleBranchKeepsExistingActivateLink
+ *
+ * Sibling test file: tests/Controller/SlaveDetectMysqlFamilyTest.php
+ * pins the helpers as non-routable (private static) — guards the
+ * "controller helpers don't leak as /slave/<helper>/ endpoints"
+ * concern raised in the review (claude HIGH #3, codex P2 #3).
  */
 final class SlaveShowGtidMixedTopologyTest extends TestCase
 {
@@ -25,30 +41,55 @@ final class SlaveShowGtidMixedTopologyTest extends TestCase
 
     public function testControllerComputesGtidCompatibilityFlag(): void
     {
-        $this->assertStringContainsString(
-            "self::evaluateGtidActivationCompatibility(",
+        // Loose regex matching so cs-fixer alignment changes do not
+        // break the contract test.
+        $this->assertMatchesRegularExpression(
+            '/self::evaluateGtidActivationCompatibility\s*\(/',
             $this->controller,
             'Slave::show must call the compat helper'
         );
-        $this->assertStringContainsString(
-            "\$data['gtid_compatible']    = \$gtidCompat['compatible'];",
+        $this->assertMatchesRegularExpression(
+            '/\$data\[\s*\'gtid_compatible\'\s*\]\s*=\s*\$gtidCompat\[\s*\'compatible\'\s*\]/',
             $this->controller,
             'Slave::show must hand the flag to the view'
         );
-        $this->assertStringContainsString(
-            "\$data['gtid_compat_reason'] = \$gtidCompat['reason'];",
+        $this->assertMatchesRegularExpression(
+            '/\$data\[\s*\'gtid_compat_reason\'\s*\]\s*=\s*\$gtidCompat\[\s*\'reason\'\s*\]/',
             $this->controller,
             'Slave::show must hand the reason to the view'
         );
     }
 
-    public function testViewGreysActivateAndDeactivateOnMixedTopology(): void
+    public function testActivateGtidActionEnforcesCompatibilityServerSide(): void
     {
-        // Both Activate and Deactivate must be disabled in the mixed
-        // branch — leaving Deactivate live would let the operator
-        // partially break replication on the other half.
-        $this->assertStringContainsString('$gtidIncompat       = !($data[\'gtid_compatible\'] ?? true);', $this->view);
-        $this->assertStringContainsString('$gtidIncompatReason = (string) ($data[\'gtid_compat_reason\'] ?? \'\');', $this->view);
+        // The UI grey-out is purely cosmetic (`disabled` on an <a> is
+        // a no-op per HTML spec) — the protective check has to live
+        // in the action itself or a bookmarked URL bypasses it.
+        $this->assertMatchesRegularExpression(
+            '/public function activateGtid\(.*?\$gtidCompat\s*=\s*self::evaluateGtidActivationCompatibility\(/s',
+            $this->controller,
+            'activateGtid() must call evaluateGtidActivationCompatibility() before mutating'
+        );
+        $this->assertMatchesRegularExpression(
+            '/activateGtid\(.*?\$gtidCompat\[\s*\'compatible\'\s*\]\s*===\s*false/s',
+            $this->controller,
+            'activateGtid() must refuse cross-family activation before any STOP/CHANGE'
+        );
+    }
+
+    public function testViewGreysActivateOnMixedTopology(): void
+    {
+        // The Activate button is always disabled in the mixed branch,
+        // regardless of $gtid_active — activating GTID across families
+        // is what the patch is trying to prevent.
+        $this->assertMatchesRegularExpression(
+            '/\$gtidIncompat\s*=\s*!\(\s*\$data\[\s*\'gtid_compatible\'\s*\]/',
+            $this->view
+        );
+        $this->assertMatchesRegularExpression(
+            '/\$gtidIncompatReason\s*=\s*\(string\)\s*\(\s*\$data\[\s*\'gtid_compat_reason\'\s*\]/',
+            $this->view
+        );
         $this->assertStringContainsString('data-gtid-compat="<?= $gtidIncompat ? \'mixed\' : \'ok\' ?>"', $this->view);
         $this->assertStringContainsString('cursor:not-allowed', $this->view);
         $this->assertStringContainsString('fa-ban', $this->view);
@@ -59,6 +100,23 @@ final class SlaveShowGtidMixedTopologyTest extends TestCase
             $this->view
         );
         $this->assertStringContainsString('data-toggle="tooltip"', $this->view);
+        // Keyboard a11y: disabled <a> must not stay focusable.
+        $this->assertStringContainsString('aria-disabled="true"', $this->view);
+        $this->assertStringContainsString('tabindex="-1"', $this->view);
+    }
+
+    public function testViewKeepsDeactivateLiveWhenMixedAndGtidActive(): void
+    {
+        // When the topology is already half-configured for GTID
+        // (gtid_active = true on the slave) the operator MUST keep a
+        // working Deactivate link to recover — otherwise they are
+        // trapped in the broken state with no UI path back to
+        // file+position replication.
+        $this->assertMatchesRegularExpression(
+            '/if\s*\(\s*\$gtidIncompat\s*\).*?if\s*\(\s*\$gtid_active\s*\).*?\/deactivateGtid\//s',
+            $this->view,
+            'Deactivate link must be live in the mixed branch when $gtid_active is true'
+        );
     }
 
     public function testCompatibleBranchKeepsExistingActivateLink(): void
