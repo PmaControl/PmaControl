@@ -124,6 +124,66 @@ final class SlaveTest extends TestCase
         );
     }
 
+    public function testBuildReplicationConnectionTabsFromCachedMetricsShape(): void
+    {
+        $method = new ReflectionMethod(Slave::class, 'buildReplicationConnectionTabs');
+
+        $tabs = $method->invoke(null, [
+            '' => [
+                'slave_io_running' => 'Yes',
+                'slave_sql_running' => 'Yes',
+                'seconds_behind_master' => '0',
+            ],
+            'analytics' => [
+                'replica_io_running' => 'Yes',
+                'replica_sql_running' => 'Yes',
+                'seconds_behind_source' => '75',
+            ],
+            'broken' => [
+                'slave_io_running' => 'No',
+                'slave_sql_running' => 'Yes',
+                'last_io_error' => 'network timeout',
+            ],
+        ]);
+
+        $this->assertSame(
+            [
+                ['name' => '', 'health' => 'ok', 'lag' => '0'],
+                ['name' => 'analytics', 'health' => 'warning', 'lag' => '75'],
+                ['name' => 'broken', 'health' => 'critical', 'lag' => null],
+            ],
+            $tabs
+        );
+    }
+
+    public function testBuildReplicationConnectionTabsFromLiveRowsShape(): void
+    {
+        $method = new ReflectionMethod(Slave::class, 'buildReplicationConnectionTabs');
+
+        $tabs = $method->invoke(null, [
+            [
+                'Connection_name' => 'live_a',
+                'Slave_IO_Running' => 'Yes',
+                'Slave_SQL_Running' => 'Yes',
+                'Seconds_Behind_Master' => '4',
+            ],
+            [
+                'Channel_Name' => 'live_b',
+                'Replica_IO_Running' => 'No',
+                'Replica_SQL_Running' => 'No',
+                'Seconds_Behind_Source' => 'NULL',
+            ],
+        ]);
+
+        $this->assertSame(
+            [
+                ['name' => 'live_a', 'health' => 'behind', 'lag' => '4'],
+                ['name' => 'live_b', 'health' => 'stopped', 'lag' => 'NULL'],
+            ],
+            $tabs
+        );
+    }
+
     public function testSlaveViewGuardsMissingParallelMode(): void
     {
         $view = (string) file_get_contents(dirname(__DIR__, 2) . '/App/view/Slave/show.view.php');
