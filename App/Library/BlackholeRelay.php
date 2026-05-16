@@ -661,12 +661,24 @@ class BlackholeRelay
     }
 
     /**
-     * @return list<array{schema:string,table:string,engine:string}>
+     * Threshold above which we DROP + CREATE TABLE … ENGINE=BLACKHOLE
+     * instead of `ALTER TABLE … ENGINE=BLACKHOLE`. ALTER rebuilds the
+     * whole tablespace (full copy of data + index pages) — minutes per
+     * GB of InnoDB. DROP + CREATE is O(ms) regardless of size and the
+     * relay never stores rows anyway, so we lose nothing. Below the
+     * threshold ALTER is fine (and atomic, less risk if anything goes
+     * wrong mid-way).
+     */
+    private const DROP_AND_RECREATE_BYTES = 100 * 1024 * 1024; // 100 MiB
+
+    /**
+     * @return list<array{schema:string,table:string,engine:string,size_bytes:int}>
      */
     private function discoverTables($link): array
     {
         $excluded = "'" . implode("','", self::SYSTEM_SCHEMAS) . "'";
-        $sql = "SELECT table_schema, table_name, engine
+        $sql = "SELECT table_schema, table_name, engine,
+                       COALESCE(data_length, 0) + COALESCE(index_length, 0) AS size_bytes
                 FROM information_schema.tables
                 WHERE table_type = 'BASE TABLE'
                   AND table_schema NOT IN ({$excluded})
@@ -676,9 +688,10 @@ class BlackholeRelay
         $out = [];
         while ($r = $link->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $out[] = [
-                'schema' => (string) $r['table_schema'],
-                'table'  => (string) $r['table_name'],
-                'engine' => (string) ($r['engine'] ?? ''),
+                'schema'     => (string) $r['table_schema'],
+                'table'      => (string) $r['table_name'],
+                'engine'     => (string) ($r['engine'] ?? ''),
+                'size_bytes' => (int)    ($r['size_bytes'] ?? 0),
             ];
         }
         return $out;
@@ -794,21 +807,21 @@ class BlackholeRelay
                         break;
                     }
                 }
-                $stmt = sprintf(
-                    'ALTER TABLE `%s`.`%s` ENGINE=BLACKHOLE',
-                    str_replace('`', '``', $t['schema']),
-                    str_replace('`', '``', $t['table'])
-                );
-                $this->addStep('alter', '[sql_log_bin=OFF] ' . $stmt);
+                $strategy = ((int) ($t['size_bytes'] ?? 0)) >= self::DROP_AND_RECREATE_BYTES
+                    ? 'DROP+CREATE' : 'ALTER';
+                $label = sprintf('[sql_log_bin=OFF] %s `%s`.`%s` → ENGINE=BLACKHOLE (%s, %s)',
+                    $strategy === 'DROP+CREATE' ? 'DROP + CREATE' : 'ALTER',
+                    $t['schema'], $t['table'], $strategy,
+                    self::humanBytes((int) ($t['size_bytes'] ?? 0)));
+                $this->addStep('alter', $label);
                 if (!$dryRun) {
-                    if (!$link->sql_query_silent($stmt)) {
+                    if (!self::convertOneTableToBlackhole($link, $t)) {
                         $err = self::linkErrorMessage($link);
-                        $this->updateLastStep('[sql_log_bin=OFF] ' . $stmt . ' — FAILED: ' . $err, 'error');
+                        $this->updateLastStep($label . ' — FAILED: ' . $err, 'error');
                         continue;
                     }
                 }
-                $this->updateLastStep('[sql_log_bin=OFF] ' . $stmt
-                    . ($dryRun ? ' (dry-run)' : ' — ok'));
+                $this->updateLastStep($label . ($dryRun ? ' (dry-run)' : ' — ok'));
                 $converted++;
                 if ($converted % 25 === 0) {
                     $this->setTableCounts(count($tables), $converted);
@@ -852,6 +865,70 @@ class BlackholeRelay
         if ($n < 1)  return 1;
         if ($n > 32) return 32;
         return $n;
+    }
+
+    /**
+     * Convert one table to BLACKHOLE.
+     *
+     * For tables above DROP_AND_RECREATE_BYTES we DROP + recreate the
+     * table with ENGINE=BLACKHOLE substituted in the original
+     * CREATE TABLE statement, which is O(ms) regardless of size.
+     * Smaller tables use `ALTER ENGINE=BLACKHOLE` (atomic, cheap on
+     * small data sets, and safer if anything throws mid-statement).
+     *
+     * Caller MUST already have set `sql_log_bin = 0` and
+     * `foreign_key_checks = 0` on `$link`, and replication MUST be
+     * stopped — DROP TABLE on a binlog-relay with an active SQL
+     * thread races against incoming replicated DDL/DML.
+     *
+     * Returns true if the table is now ENGINE=BLACKHOLE, false on any
+     * error (caller logs).
+     */
+    public static function convertOneTableToBlackhole($link, array $t): bool
+    {
+        $bigEnough = ((int) ($t['size_bytes'] ?? 0)) >= self::DROP_AND_RECREATE_BYTES;
+        if (!$bigEnough) {
+            $stmt = sprintf('ALTER TABLE `%s`.`%s` ENGINE=BLACKHOLE',
+                str_replace('`', '``', $t['schema']),
+                str_replace('`', '``', $t['table']));
+            return (bool) $link->sql_query_silent($stmt);
+        }
+
+        // 1) Capture CREATE TABLE so we keep every column / index / option.
+        $sql = sprintf('SHOW CREATE TABLE `%s`.`%s`',
+            str_replace('`', '``', $t['schema']),
+            str_replace('`', '``', $t['table']));
+        $res = $link->sql_query_silent($sql);
+        if (!$res) return false;
+        $row = $link->sql_fetch_array($res, MYSQLI_ASSOC);
+        if (!$row || empty($row['Create Table'])) return false;
+        $createStmt = (string) $row['Create Table'];
+
+        // 2) Force ENGINE=BLACKHOLE. SHOW CREATE always emits an
+        //    ENGINE=… clause; replace it case-insensitively. Also strip
+        //    AUTO_INCREMENT=… and ROW_FORMAT clauses that don't apply
+        //    to BLACKHOLE and would cause warnings.
+        $createStmt = preg_replace('/\bENGINE\s*=\s*\w+/i', 'ENGINE=BLACKHOLE', $createStmt, 1);
+        $createStmt = preg_replace('/\bAUTO_INCREMENT\s*=\s*\d+\s*/i', '', $createStmt);
+        $createStmt = preg_replace('/\bROW_FORMAT\s*=\s*\w+\s*/i', '', $createStmt);
+
+        // 3) Switch to the right schema so the CREATE TABLE statement's
+        //    bare table name lands in the right database.
+        $useStmt = sprintf('USE `%s`', str_replace('`', '``', $t['schema']));
+        if (!$link->sql_query_silent($useStmt)) return false;
+
+        // 4) DROP + CREATE under the caller's session guards.
+        $drop = sprintf('DROP TABLE IF EXISTS `%s`.`%s`',
+            str_replace('`', '``', $t['schema']),
+            str_replace('`', '``', $t['table']));
+        if (!$link->sql_query_silent($drop)) return false;
+
+        if (!$link->sql_query_silent($createStmt)) {
+            // Best-effort recovery attempt: if CREATE fails the table
+            // is gone — surface false so caller logs the error.
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -1002,10 +1079,7 @@ class BlackholeRelay
                 if (strcasecmp((string) $current, 'OFF') !== 0) {
                     break;
                 }
-                $stmt = sprintf('ALTER TABLE `%s`.`%s` ENGINE=BLACKHOLE',
-                    str_replace('`', '``', $t['schema']),
-                    str_replace('`', '``', $t['table']));
-                if (!$link->sql_query_silent($stmt)) {
+                if (!self::convertOneTableToBlackhole($link, $t)) {
                     continue;
                 }
                 $converted++;
@@ -1084,6 +1158,16 @@ class BlackholeRelay
         return @is_dir('/proc/' . $pid);
     }
 
+    private static function humanBytes(int $n): string
+    {
+        if ($n <= 0) return '0B';
+        $units = ['B','KiB','MiB','GiB','TiB'];
+        $i = 0;
+        $v = (float) $n;
+        while ($v >= 1024 && $i < count($units) - 1) { $v /= 1024; $i++; }
+        return sprintf($v >= 100 ? '%.0f%s' : '%.1f%s', $v, $units[$i]);
+    }
+
     /**
      * One-shot sweep: scan the target for every BASE TABLE in a
      * user schema that is *not* BLACKHOLE, drop its incoming FKs,
@@ -1116,12 +1200,21 @@ class BlackholeRelay
         }
         $link->sql_query_silent('SET SESSION foreign_key_checks = 0');
 
+        // STOP every replication channel for the duration of the sweep.
+        // We're going to DROP TABLE on big candidates; if the SQL thread
+        // is racing in with replicated DML on the same row, the DROP
+        // either deadlocks or executes against a moving target. Restart
+        // replication in the finally so the relay resumes.
+        $link->sql_query_silent('STOP ALL SLAVES');
+        $link->sql_query_silent('STOP SLAVE');
+
         $errors = [];
         $converted = 0;
         $skipped = 0;
         try {
             $excluded = "'" . implode("','", self::SYSTEM_SCHEMAS) . "'";
-            $sql = "SELECT table_schema, table_name, engine
+            $sql = "SELECT table_schema, table_name, engine,
+                           COALESCE(data_length, 0) + COALESCE(index_length, 0) AS size_bytes
                     FROM information_schema.tables
                     WHERE table_type = 'BASE TABLE'
                       AND table_schema NOT IN ({$excluded})
@@ -1130,7 +1223,11 @@ class BlackholeRelay
             $candidates = [];
             if ($res) {
                 while ($r = $link->sql_fetch_array($res, MYSQLI_ASSOC)) {
-                    $candidates[] = ['schema' => (string) $r['table_schema'], 'table' => (string) $r['table_name']];
+                    $candidates[] = [
+                        'schema'     => (string) $r['table_schema'],
+                        'table'      => (string) $r['table_name'],
+                        'size_bytes' => (int)    ($r['size_bytes'] ?? 0),
+                    ];
                 }
             }
             if (empty($candidates)) {
@@ -1159,10 +1256,7 @@ class BlackholeRelay
             }
 
             foreach ($candidates as $t) {
-                $stmt = sprintf('ALTER TABLE `%s`.`%s` ENGINE=BLACKHOLE',
-                    str_replace('`', '``', $t['schema']),
-                    str_replace('`', '``', $t['table']));
-                if (!$link->sql_query_silent($stmt)) {
+                if (!self::convertOneTableToBlackhole($link, $t)) {
                     $errors[] = ['table' => "`{$t['schema']}`.`{$t['table']}`", 'error' => self::linkErrorMessage($link)];
                     $skipped++;
                     continue;
@@ -1170,6 +1264,10 @@ class BlackholeRelay
                 $converted++;
             }
         } finally {
+            // Resume replication FIRST so the relay is not left frozen
+            // even if a SET SESSION restore fails.
+            $link->sql_query_silent('START ALL SLAVES');
+            $link->sql_query_silent('START SLAVE');
             $link->sql_query_silent('SET SESSION sql_log_bin = 1');
             $link->sql_query_silent('SET SESSION foreign_key_checks = 1');
         }
