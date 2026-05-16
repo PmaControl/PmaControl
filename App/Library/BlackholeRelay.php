@@ -108,8 +108,10 @@ class BlackholeRelay
         $this->setTableCounts(count($tables), 0);
         $this->updateLastStep('Found ' . count($tables) . ' candidate tables');
 
-        $this->addStep('convert', 'Converting tables to ENGINE=BLACKHOLE...');
-        $converted = $this->convertTables($link, $tables, $dryRun);
+        $parallelism = $this->clampedParallelism((int) ($row['parallelism'] ?? 1));
+        $this->addStep('convert', 'Converting tables to ENGINE=BLACKHOLE'
+            . ($parallelism > 1 ? " (parallelism={$parallelism})" : '') . '...');
+        $converted = $this->convertTablesDispatch($server, $link, $tables, $dryRun, $parallelism);
         $this->setTableCounts(count($tables), $converted);
         $this->updateLastStep("Converted {$converted}/" . count($tables) . ' tables'
             . ($dryRun ? ' (dry-run: ALTER statements only logged)' : ''));
@@ -129,6 +131,8 @@ class BlackholeRelay
         $this->addStep('start_slave', 'Restarting replication...');
         $this->startAllReplication($link, $dryRun);
         $this->updateLastStep('Replication restarted' . ($dryRun ? ' (dry-run)' : ''));
+
+        $this->finalizeBlackholeCount($link, $dryRun);
 
         return true;
     }
@@ -206,8 +210,10 @@ class BlackholeRelay
         $this->setTableCounts(count($tables), 0);
         $this->updateLastStep('Found ' . count($tables) . ' tables to convert');
 
-        $this->addStep('convert', 'Converting every table to ENGINE=BLACKHOLE...');
-        $converted = $this->convertTables($tgt, $tables, $dryRun);
+        $parallelism = $this->clampedParallelism((int) ($row['parallelism'] ?? 1));
+        $this->addStep('convert', 'Converting every table to ENGINE=BLACKHOLE'
+            . ($parallelism > 1 ? " (parallelism={$parallelism})" : '') . '...');
+        $converted = $this->convertTablesDispatch($server, $tgt, $tables, $dryRun, $parallelism);
         $this->setTableCounts(count($tables), $converted);
         $this->updateLastStep("Converted {$converted}/" . count($tables) . ' tables'
             . ($dryRun ? ' (dry-run)' : ''));
@@ -256,6 +262,8 @@ class BlackholeRelay
         $this->addStep('start_slave', 'Starting replication...');
         $this->startAllReplication($tgt, $dryRun);
         $this->updateLastStep('Replication started' . ($dryRun ? ' (dry-run)' : ''));
+
+        $this->finalizeBlackholeCount($tgt, $dryRun);
 
         return true;
     }
@@ -669,12 +677,24 @@ class BlackholeRelay
     }
 
     /**
-     * @return list<array{schema:string,table:string,engine:string}>
+     * Threshold above which we DROP + CREATE TABLE … ENGINE=BLACKHOLE
+     * instead of `ALTER TABLE … ENGINE=BLACKHOLE`. ALTER rebuilds the
+     * whole tablespace (full copy of data + index pages) — minutes per
+     * GB of InnoDB. DROP + CREATE is O(ms) regardless of size and the
+     * relay never stores rows anyway, so we lose nothing. Below the
+     * threshold ALTER is fine (and atomic, less risk if anything goes
+     * wrong mid-way).
+     */
+    private const DROP_AND_RECREATE_BYTES = 100 * 1024 * 1024; // 100 MiB
+
+    /**
+     * @return list<array{schema:string,table:string,engine:string,size_bytes:int}>
      */
     private function discoverTables($link): array
     {
         $excluded = "'" . implode("','", self::SYSTEM_SCHEMAS) . "'";
-        $sql = "SELECT table_schema, table_name, engine
+        $sql = "SELECT table_schema, table_name, engine,
+                       COALESCE(data_length, 0) + COALESCE(index_length, 0) AS size_bytes
                 FROM information_schema.tables
                 WHERE table_type = 'BASE TABLE'
                   AND table_schema NOT IN ({$excluded})
@@ -684,9 +704,10 @@ class BlackholeRelay
         $out = [];
         while ($r = $link->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $out[] = [
-                'schema' => (string) $r['table_schema'],
-                'table'  => (string) $r['table_name'],
-                'engine' => (string) ($r['engine'] ?? ''),
+                'schema'     => (string) $r['table_schema'],
+                'table'      => (string) $r['table_name'],
+                'engine'     => (string) ($r['engine'] ?? ''),
+                'size_bytes' => (int)    ($r['size_bytes'] ?? 0),
             ];
         }
         return $out;
@@ -802,21 +823,21 @@ class BlackholeRelay
                         break;
                     }
                 }
-                $stmt = sprintf(
-                    'ALTER TABLE `%s`.`%s` ENGINE=BLACKHOLE',
-                    str_replace('`', '``', $t['schema']),
-                    str_replace('`', '``', $t['table'])
-                );
-                $this->addStep('alter', '[sql_log_bin=OFF] ' . $stmt);
+                $strategy = ((int) ($t['size_bytes'] ?? 0)) >= self::DROP_AND_RECREATE_BYTES
+                    ? 'DROP+CREATE' : 'ALTER';
+                $label = sprintf('[sql_log_bin=OFF] %s `%s`.`%s` → ENGINE=BLACKHOLE (%s, %s)',
+                    $strategy === 'DROP+CREATE' ? 'DROP + CREATE' : 'ALTER',
+                    $t['schema'], $t['table'], $strategy,
+                    self::humanBytes((int) ($t['size_bytes'] ?? 0)));
+                $this->addStep('alter', $label);
                 if (!$dryRun) {
-                    if (!$link->sql_query_silent($stmt)) {
+                    if (!self::convertOneTableToBlackhole($link, $t)) {
                         $err = self::linkErrorMessage($link);
-                        $this->updateLastStep('[sql_log_bin=OFF] ' . $stmt . ' — FAILED: ' . $err, 'error');
+                        $this->updateLastStep($label . ' — FAILED: ' . $err, 'error');
                         continue;
                     }
                 }
-                $this->updateLastStep('[sql_log_bin=OFF] ' . $stmt
-                    . ($dryRun ? ' (dry-run)' : ' — ok'));
+                $this->updateLastStep($label . ($dryRun ? ' (dry-run)' : ' — ok'));
                 $converted++;
                 if ($converted % 25 === 0) {
                     $this->setTableCounts(count($tables), $converted);
@@ -835,6 +856,332 @@ class BlackholeRelay
             $this->updateLastStep('SET SESSION sql_log_bin = 1' . ($dryRun ? ' (dry-run)' : ' — ok'));
         }
         return $converted;
+    }
+
+    // ------------------------------------------------------------------
+    //  Parallel ALTER dispatch (Issue #1250)
+    //
+    //  When parallelism>1 we spawn N child PHP processes (one per CPU by
+    //  default) instead of looping in a single connection. Each child
+    //  opens its own Sgbd link, applies SET SESSION sql_log_bin=0 +
+    //  foreign_key_checks=0, then ALTERs its assigned slice of tables.
+    //  Slices are striped round-robin (worker i handles indices i, i+N,
+    //  i+2N, …) so a hot schema with a handful of huge tables doesn't
+    //  pile up on a single worker.
+    //
+    //  The parent still owns FK discovery + DROP (must complete before
+    //  any worker starts, or InnoDB will reject the ENGINE=BLACKHOLE
+    //  with errno 1217). The parent also restores `sql_log_bin=1` on
+    //  its own connection at the end of the serial preamble, even
+    //  though workers manage their own.
+    // ------------------------------------------------------------------
+
+    private function clampedParallelism(int $n): int
+    {
+        if ($n < 1)  return 1;
+        if ($n > 32) return 32;
+        return $n;
+    }
+
+    /**
+     * Convert one table to BLACKHOLE.
+     *
+     * For tables above DROP_AND_RECREATE_BYTES we DROP + recreate the
+     * table with ENGINE=BLACKHOLE substituted in the original
+     * CREATE TABLE statement, which is O(ms) regardless of size.
+     * Smaller tables use `ALTER ENGINE=BLACKHOLE` (atomic, cheap on
+     * small data sets, and safer if anything throws mid-statement).
+     *
+     * Caller MUST already have set `sql_log_bin = 0` and
+     * `foreign_key_checks = 0` on `$link`, and replication MUST be
+     * stopped — DROP TABLE on a binlog-relay with an active SQL
+     * thread races against incoming replicated DDL/DML.
+     *
+     * Returns true if the table is now ENGINE=BLACKHOLE, false on any
+     * error (caller logs).
+     */
+    public static function convertOneTableToBlackhole($link, array $t): bool
+    {
+        $bigEnough = ((int) ($t['size_bytes'] ?? 0)) >= self::DROP_AND_RECREATE_BYTES;
+        if (!$bigEnough) {
+            $stmt = sprintf('ALTER TABLE `%s`.`%s` ENGINE=BLACKHOLE',
+                str_replace('`', '``', $t['schema']),
+                str_replace('`', '``', $t['table']));
+            return (bool) $link->sql_query_silent($stmt);
+        }
+
+        // 1) Capture CREATE TABLE so we keep every column / index / option.
+        $sql = sprintf('SHOW CREATE TABLE `%s`.`%s`',
+            str_replace('`', '``', $t['schema']),
+            str_replace('`', '``', $t['table']));
+        $res = $link->sql_query_silent($sql);
+        if (!$res) return false;
+        $row = $link->sql_fetch_array($res, MYSQLI_ASSOC);
+        if (!$row || empty($row['Create Table'])) return false;
+        $createStmt = (string) $row['Create Table'];
+
+        // 2) Force ENGINE=BLACKHOLE. SHOW CREATE always emits an
+        //    ENGINE=… clause; replace it case-insensitively. Also strip
+        //    AUTO_INCREMENT=… and ROW_FORMAT clauses that don't apply
+        //    to BLACKHOLE and would cause warnings.
+        $createStmt = preg_replace('/\bENGINE\s*=\s*\w+/i', 'ENGINE=BLACKHOLE', $createStmt, 1);
+        $createStmt = preg_replace('/\bAUTO_INCREMENT\s*=\s*\d+\s*/i', '', $createStmt);
+        $createStmt = preg_replace('/\bROW_FORMAT\s*=\s*\w+\s*/i', '', $createStmt);
+
+        // 3) Switch to the right schema so the CREATE TABLE statement's
+        //    bare table name lands in the right database.
+        $useStmt = sprintf('USE `%s`', str_replace('`', '``', $t['schema']));
+        if (!$link->sql_query_silent($useStmt)) return false;
+
+        // 4) DROP + CREATE under the caller's session guards.
+        $drop = sprintf('DROP TABLE IF EXISTS `%s`.`%s`',
+            str_replace('`', '``', $t['schema']),
+            str_replace('`', '``', $t['table']));
+        if (!$link->sql_query_silent($drop)) return false;
+
+        if (!$link->sql_query_silent($createStmt)) {
+            // Best-effort recovery attempt: if CREATE fails the table
+            // is gone — surface false so caller logs the error.
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Top-level dispatch: serial or parallel ALTER loop depending on the
+     * conversion row's `parallelism` column. The serial path is the
+     * unchanged single-connection loop; the parallel path forks worker
+     * subprocesses and reaps their exit codes.
+     */
+    private function convertTablesDispatch(array $server, $link, array $tables, bool $dryRun, int $parallelism): int
+    {
+        if ($parallelism <= 1 || count($tables) <= 1 || $dryRun) {
+            return $this->convertTables($link, $tables, $dryRun);
+        }
+        return $this->convertTablesParallel($server, $link, $tables, $parallelism);
+    }
+
+    /**
+     * Parallel ALTER loop. Parent does the serial preamble (sql_log_bin
+     * guard + FK drop), spawns `$parallelism` workers, waits, sums
+     * results. Each worker is a fresh `php Blackhole runConvertWorker`
+     * subprocess so it gets its own mysqli handle (forking the existing
+     * one would share file descriptors → corruption).
+     */
+    private function convertTablesParallel(array $server, $link, array $tables, int $parallelism): int
+    {
+        // 1) Parent does the same preamble as the serial path. After
+        //    this returns we DROP FKs on the parent connection so
+        //    workers see a clean slate.
+        $this->addStep('par_preamble', 'Preamble (sql_log_bin=0, FK drop) on parent connection — workers='. $parallelism);
+        if (!$link->sql_query_silent('SET SESSION sql_log_bin = 0')) {
+            $this->updateLastStep('SET SESSION sql_log_bin = 0 — FAILED: ' . self::linkErrorMessage($link), 'error');
+            return 0;
+        }
+        $link->sql_query_silent('SET SESSION foreign_key_checks = 0');
+        $fks = $this->discoverForeignKeys($link, $tables);
+        foreach ($fks as $fk) {
+            $stmt = sprintf('ALTER TABLE `%s`.`%s` DROP FOREIGN KEY `%s`',
+                str_replace('`', '``', $fk['schema']),
+                str_replace('`', '``', $fk['table']),
+                str_replace('`', '``', $fk['name']));
+            $link->sql_query_silent($stmt); // best-effort, identical to serial path
+        }
+        $this->updateLastStep('Preamble done — dropped ' . count($fks) . ' FK(s)');
+
+        // 2) Workers read their slice from a working file so we don't
+        //    have to pass thousands of names on the argv.
+        $tablesPath = ROOT . '/tmp/blackhole_conv_' . $this->conversionId . '_tables.json';
+        @file_put_contents($tablesPath, json_encode($tables));
+
+        // 3) Spawn workers. Each child writes its log to its own file
+        //    so failures are diagnosable post-mortem.
+        $this->addStep('par_spawn', "Spawning {$parallelism} worker process(es)…");
+        $procs = [];
+        for ($i = 0; $i < $parallelism; $i++) {
+            $logPath = ROOT . '/tmp/log/blackhole_conv_' . $this->conversionId . '_w' . $i . '.log';
+            $cmd = 'cd ' . escapeshellarg(ROOT)
+                 . ' && nohup php App/Webroot/index.php Blackhole runConvertWorker '
+                 . $this->conversionId . ' ' . $i . ' ' . $parallelism
+                 . ' > ' . escapeshellarg($logPath) . ' 2>&1 & echo $!';
+            $pid = (int) trim((string) shell_exec($cmd));
+            $procs[$i] = ['pid' => $pid, 'log' => $logPath];
+        }
+        $this->updateLastStep('Workers spawned: ' . implode(',', array_column($procs, 'pid')));
+
+        // 4) Wait for all workers. We poll /proc/<pid>/cmdline rather
+        //    than pcntl_waitpid — those are detached background
+        //    processes, not children of this php process.
+        $remaining = $procs;
+        $startedAt = time();
+        $timeoutAt = $startedAt + 6 * 3600; // 6h hard cap (large schemas)
+        while (!empty($remaining)) {
+            usleep(500000);
+            foreach ($remaining as $i => $info) {
+                if (self::pidStillAlive((int) $info['pid']) === false) {
+                    unset($remaining[$i]);
+                }
+            }
+            if (time() > $timeoutAt) {
+                $this->addStep('par_timeout', 'Worker timeout (>6h) — abandoning poll, surfacing partial results');
+                $this->updateLastStep('Worker timeout (>6h)', 'error');
+                break;
+            }
+        }
+
+        // 5) Aggregate `tables_converted`. Workers updated the row
+        //    atomically via UPDATE … SET tables_converted = tables_converted + 1,
+        //    so we just read it back.
+        $res = $this->db->sql_query("SELECT tables_converted FROM blackhole_conversion WHERE id = " . $this->conversionId);
+        $row = $res ? $this->db->sql_fetch_array($res, MYSQLI_ASSOC) : null;
+        $converted = $row ? (int) $row['tables_converted'] : 0;
+
+        $this->addStep('par_done', "All workers exited — total tables_converted={$converted}");
+        $this->updateLastStep("Workers done — tables_converted={$converted}");
+
+        // 6) Restore parent session vars.
+        $link->sql_query_silent('SET SESSION sql_log_bin = 1');
+        $link->sql_query_silent('SET SESSION foreign_key_checks = 1');
+
+        @unlink($tablesPath);
+
+        return $converted;
+    }
+
+    /**
+     * Worker entrypoint. Called from Blackhole::runConvertWorker via
+     * `php Blackhole runConvertWorker <conv_id> <worker_idx> <total>`.
+     * Reads the table list dumped by the parent, picks the indices it
+     * owns (round-robin), opens a fresh Sgbd link, applies the session
+     * guards, ALTERs each table, and increments `tables_converted`
+     * atomically.
+     */
+    public function runWorkerSlice(int $workerIdx, int $totalWorkers): int
+    {
+        $row = $this->loadConversion();
+        if (!$row) return 0;
+        $server = $this->loadServer((int) $row['id_mysql_server']);
+        if (!$server) return 0;
+
+        $tablesPath = ROOT . '/tmp/blackhole_conv_' . $this->conversionId . '_tables.json';
+        $raw = @file_get_contents($tablesPath);
+        if ($raw === false) return 0;
+        $tables = json_decode($raw, true);
+        if (!is_array($tables)) return 0;
+
+        // Round-robin slice.
+        $mySlice = [];
+        foreach ($tables as $idx => $t) {
+            if ($idx % $totalWorkers === $workerIdx) $mySlice[] = $t;
+        }
+        if (empty($mySlice)) return 0;
+
+        $link = Sgbd::sql($server['name']);
+        if (!$link) return 0;
+
+        if (!$link->sql_query_silent('SET SESSION sql_log_bin = 0')) {
+            return 0; // refuse to run without the guarantee
+        }
+        $link->sql_query_silent('SET SESSION foreign_key_checks = 0');
+
+        // Per-statement verify mirrors the serial path. We don't append
+        // to the JSON progress column from workers (last-writer-wins
+        // would silently lose updates); the parent surfaces an
+        // aggregate step instead.
+        $converted = 0;
+        try {
+            foreach ($mySlice as $t) {
+                $current = $this->readSqlLogBin($link);
+                if (strcasecmp((string) $current, 'OFF') !== 0) {
+                    break;
+                }
+                if (!self::convertOneTableToBlackhole($link, $t)) {
+                    continue;
+                }
+                $converted++;
+                // The app-DB connection has been idle the entire ALTER
+                // (which can take minutes on a large InnoDB rebuild),
+                // so it may have been reaped by the server's
+                // wait_timeout. Force a fresh handle via Sgbd::sql()
+                // — Glial's pool gives us a healthy one — before the
+                // counter UPDATE so workers don't bail out with
+                // "MySQL server has gone away". (#1250 follow-up:
+                // crashed 4/8 workers on the 2004-table sweep before
+                // this guard.)
+                $this->db = Sgbd::sql(DB_DEFAULT);
+                if (!$this->db->sql_query_silent(
+                    "UPDATE blackhole_conversion
+                     SET tables_converted = tables_converted + 1
+                     WHERE id = " . $this->conversionId
+                )) {
+                    // Last resort: reopen explicitly and retry once.
+                    $this->db = Sgbd::sql(DB_DEFAULT);
+                    $this->db->sql_query_silent(
+                        "UPDATE blackhole_conversion
+                         SET tables_converted = tables_converted + 1
+                         WHERE id = " . $this->conversionId
+                    );
+                }
+            }
+        } finally {
+            $link->sql_query_silent('SET SESSION sql_log_bin = 1');
+            $link->sql_query_silent('SET SESSION foreign_key_checks = 1');
+        }
+        return $converted;
+    }
+
+    // ------------------------------------------------------------------
+    //  End-of-run BLACKHOLE table count (Issue #1250)
+    // ------------------------------------------------------------------
+
+    /**
+     * Re-count tables actually sitting on ENGINE=BLACKHOLE after the
+     * conversion completes and persist in `tables_blackhole_after`.
+     * The discrepancy with `tables_converted` is the operator-visible
+     * "did anything slip through?" check (DDL replicated mid-conversion,
+     * a table created with explicit ENGINE=InnoDB, …).
+     */
+    private function finalizeBlackholeCount($link, bool $dryRun): void
+    {
+        if ($dryRun) return;
+        $this->addStep('count_blackhole', 'Counting tables now on ENGINE=BLACKHOLE…');
+        $n = self::countBlackholeTables($link);
+        $this->db->sql_query(
+            "UPDATE blackhole_conversion
+             SET tables_blackhole_after = " . (int) $n . "
+             WHERE id = " . $this->conversionId
+        );
+        $this->updateLastStep("ENGINE=BLACKHOLE tables on target: {$n}");
+    }
+
+    public static function countBlackholeTables($link): int
+    {
+        $excluded = "'" . implode("','", self::SYSTEM_SCHEMAS) . "'";
+        $sql = "SELECT COUNT(*) AS n
+                FROM information_schema.tables
+                WHERE table_type = 'BASE TABLE'
+                  AND table_schema NOT IN ({$excluded})
+                  AND engine = 'BLACKHOLE'";
+        $res = $link->sql_query_silent($sql);
+        if (!$res) return 0;
+        $row = $link->sql_fetch_array($res, MYSQLI_ASSOC);
+        return (int) ($row['n'] ?? 0);
+    }
+
+    private static function pidStillAlive(int $pid): bool
+    {
+        if ($pid <= 0) return false;
+        return @is_dir('/proc/' . $pid);
+    }
+
+    private static function humanBytes(int $n): string
+    {
+        if ($n <= 0) return '0B';
+        $units = ['B','KiB','MiB','GiB','TiB'];
+        $i = 0;
+        $v = (float) $n;
+        while ($v >= 1024 && $i < count($units) - 1) { $v /= 1024; $i++; }
+        return sprintf($v >= 100 ? '%.0f%s' : '%.1f%s', $v, $units[$i]);
     }
 
     /**
@@ -869,12 +1216,21 @@ class BlackholeRelay
         }
         $link->sql_query_silent('SET SESSION foreign_key_checks = 0');
 
+        // STOP every replication channel for the duration of the sweep.
+        // We're going to DROP TABLE on big candidates; if the SQL thread
+        // is racing in with replicated DML on the same row, the DROP
+        // either deadlocks or executes against a moving target. Restart
+        // replication in the finally so the relay resumes.
+        $link->sql_query_silent('STOP ALL SLAVES');
+        $link->sql_query_silent('STOP SLAVE');
+
         $errors = [];
         $converted = 0;
         $skipped = 0;
         try {
             $excluded = "'" . implode("','", self::SYSTEM_SCHEMAS) . "'";
-            $sql = "SELECT table_schema, table_name, engine
+            $sql = "SELECT table_schema, table_name, engine,
+                           COALESCE(data_length, 0) + COALESCE(index_length, 0) AS size_bytes
                     FROM information_schema.tables
                     WHERE table_type = 'BASE TABLE'
                       AND table_schema NOT IN ({$excluded})
@@ -883,7 +1239,11 @@ class BlackholeRelay
             $candidates = [];
             if ($res) {
                 while ($r = $link->sql_fetch_array($res, MYSQLI_ASSOC)) {
-                    $candidates[] = ['schema' => (string) $r['table_schema'], 'table' => (string) $r['table_name']];
+                    $candidates[] = [
+                        'schema'     => (string) $r['table_schema'],
+                        'table'      => (string) $r['table_name'],
+                        'size_bytes' => (int)    ($r['size_bytes'] ?? 0),
+                    ];
                 }
             }
             if (empty($candidates)) {
@@ -912,10 +1272,7 @@ class BlackholeRelay
             }
 
             foreach ($candidates as $t) {
-                $stmt = sprintf('ALTER TABLE `%s`.`%s` ENGINE=BLACKHOLE',
-                    str_replace('`', '``', $t['schema']),
-                    str_replace('`', '``', $t['table']));
-                if (!$link->sql_query_silent($stmt)) {
+                if (!self::convertOneTableToBlackhole($link, $t)) {
                     $errors[] = ['table' => "`{$t['schema']}`.`{$t['table']}`", 'error' => self::linkErrorMessage($link)];
                     $skipped++;
                     continue;
@@ -923,6 +1280,10 @@ class BlackholeRelay
                 $converted++;
             }
         } finally {
+            // Resume replication FIRST so the relay is not left frozen
+            // even if a SET SESSION restore fails.
+            $link->sql_query_silent('START ALL SLAVES');
+            $link->sql_query_silent('START SLAVE');
             $link->sql_query_silent('SET SESSION sql_log_bin = 1');
             $link->sql_query_silent('SET SESSION foreign_key_checks = 1');
         }

@@ -42,6 +42,26 @@ $candidates = array_values(array_filter($servers, static fn ($s) => (int) $s['is
 .bh-pill.done    { background: #16a34a; }
 .bh-pill.failed  { background: #dc2626; }
 .bh-pill.relay   { background: #4c1d95; }
+.bh-pill.rolledback { background: #b45309; }
+.bh-live { display:inline-block; padding:1px 6px; border-radius:3px;
+    font-size:11px; font-family:monospace; }
+.bh-live.alive    { background: #dcfce7; color: #166534; }
+.bh-live.dead     { background: #fee2e2; color: #b91c1c; }
+.bh-live.mismatch { background: #fef3c7; color: #92400e; }
+.bh-live.unknown  { background: #f1f5f9; color: #475569; }
+.bh-btn-kill {
+    background: #dc2626; color:#fff; border:none; padding:2px 8px;
+    border-radius:3px; cursor:pointer; font-size:11px;
+}
+.bh-btn-kill:hover { background:#b91c1c; }
+.bh-btn-mark-failed {
+    background: #475569; color:#fff; border:none; padding:2px 8px;
+    border-radius:3px; cursor:pointer; font-size:11px;
+}
+.bh-parallelism-input {
+    width:48px; padding:2px 4px; font-size:12px; text-align:center;
+    border:1px solid #cbd5e1; border-radius:3px;
+}
 .bh-progress {
     background: #0f172a; color: #e2e8f0; font-family: monospace;
     font-size: 12px; padding: 10px; border-radius: 4px;
@@ -156,6 +176,7 @@ $candidates = array_values(array_filter($servers, static fn ($s) => (int) $s['is
                         </td>
                         <td><code><?= htmlspecialchars($s['hostname'] ?: $s['ip']) ?></code></td>
                         <td>
+                            <input type="number" min="1" max="32" class="bh-parallelism-input" value="<?= (int) $data['default_parallelism'] ?>" title="<?= __('Parallel ALTER workers — defaults to nproc') ?>">
                             <button class="bh-btn-convert" data-id="<?= (int) $s['id'] ?>" data-name="<?= htmlspecialchars($s['display_name'] ?: $s['name']) ?>" data-dry="0"><?= __('Convert to BLACKHOLE') ?></button>
                             <button class="bh-btn-convert" style="background:#475569" data-id="<?= (int) $s['id'] ?>" data-name="<?= htmlspecialchars($s['display_name'] ?: $s['name']) ?>" data-dry="1"><?= __('Dry-run') ?></button>
                         </td>
@@ -213,6 +234,13 @@ $candidates = array_values(array_filter($servers, static fn ($s) => (int) $s['is
                     <small style="display:block;color:#94a3b8;margin-top:4px"><?= __('Stored encrypted alongside the conversion row. Only used for CHANGE MASTER TO on the target.') ?></small>
                 </td>
             </tr>
+            <tr>
+                <td><label><?= __('Parallel ALTER workers') ?></label></td>
+                <td>
+                    <input id="bh-gf-parallelism" type="number" min="1" max="32" value="<?= (int) $data['default_parallelism'] ?>" class="bh-parallelism-input">
+                    <small style="display:block;color:#94a3b8;margin-top:4px"><?= __('Defaults to the host\'s CPU count. Each worker opens its own connection and processes a round-robin slice of the table list.') ?></small>
+                </td>
+            </tr>
         </table>
         <button id="bh-gf-start" class="bh-btn-gf" disabled style="background:#4c1d95;color:#fff;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;opacity:0.5"><?= __('Provision relay') ?></button>
         <button id="bh-gf-dry" class="bh-btn-gf" disabled style="background:#475569;color:#fff;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;opacity:0.5"><?= __('Dry-run') ?></button>
@@ -246,20 +274,56 @@ $candidates = array_values(array_filter($servers, static fn ($s) => (int) $s['is
                     <th>#</th>
                     <th><?= __('Server') ?></th>
                     <th><?= __('Status') ?></th>
+                    <th><?= __('PID') ?></th>
+                    <th><?= __('Workers') ?></th>
                     <th><?= __('Tables') ?></th>
+                    <th><?= __('BLACKHOLE') ?></th>
                     <th><?= __('Started') ?></th>
                     <th><?= __('Completed') ?></th>
                     <th></th>
                 </tr>
-                <?php foreach ($conversions as $c): ?>
-                    <tr>
+                <?php foreach ($conversions as $c):
+                    $live = $c['liveness'] ?? ['state' => 'unknown', 'pid' => 0, 'cmdline' => null, 'matches' => false];
+                    $isLive = ($live['state'] === 'alive');
+                    $isOrphan = in_array($c['status'], ['pending','running'], true) && !$isLive;
+                    $cmdTitle = $live['cmdline'] ? ' title="' . htmlspecialchars($live['cmdline'], ENT_QUOTES) . '"' : '';
+                ?>
+                    <tr data-conversion-id="<?= (int) $c['id'] ?>">
                         <td>#<?= (int) $c['id'] ?></td>
                         <td><?= htmlspecialchars($c['display_name'] ?: $c['server_name'] ?: ('id ' . (int) $c['id_mysql_server'])) ?><?= ((int) $c['dry_run'] === 1) ? ' <small style="color:#64748b">(dry-run)</small>' : '' ?></td>
                         <td><span class="bh-pill <?= htmlspecialchars($c['status']) ?>"><?= htmlspecialchars($c['status']) ?></span></td>
+                        <td>
+                            <?php if ((int) $c['pid'] > 0): ?>
+                                <code><?= (int) $c['pid'] ?></code>
+                                <?php if (in_array($c['status'], ['pending','running'], true)): ?>
+                                    <span class="bh-live <?= htmlspecialchars($live['state']) ?>"<?= $cmdTitle ?>>
+                                        <?= $live['state'] === 'alive' ? '✓ alive' : ($live['state'] === 'mismatch' ? '⚠ pid reused' : '✗ ' . htmlspecialchars($live['state'])) ?>
+                                    </span>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <small style="color:#94a3b8">—</small>
+                            <?php endif; ?>
+                        </td>
+                        <td style="text-align:center"><?= (int) ($c['parallelism'] ?? 1) ?></td>
                         <td><?= (int) $c['tables_converted'] ?> / <?= (int) $c['tables_total'] ?></td>
+                        <td>
+                            <?php $bh = (int) ($c['tables_blackhole_after'] ?? 0); ?>
+                            <?php if ($c['status'] === 'done' && $bh > 0): ?>
+                                <strong style="color:#16a34a"><?= $bh ?></strong>
+                            <?php else: ?>
+                                <small style="color:#94a3b8">—</small>
+                            <?php endif; ?>
+                        </td>
                         <td><?= htmlspecialchars($c['created_at']) ?></td>
                         <td><?= htmlspecialchars($c['completed_at'] ?: '—') ?></td>
-                        <td><a href="#" class="bh-show-log" data-id="<?= (int) $c['id'] ?>"><?= __('Log') ?></a></td>
+                        <td>
+                            <a href="#" class="bh-show-log" data-id="<?= (int) $c['id'] ?>"><?= __('Log') ?></a>
+                            <?php if ($isLive): ?>
+                                <button class="bh-btn-kill" data-id="<?= (int) $c['id'] ?>" data-pid="<?= (int) $c['pid'] ?>" title="<?= __('SIGTERM, escalate to SIGKILL after 3s if needed') ?>"><?= __('Kill') ?></button>
+                            <?php elseif ($isOrphan): ?>
+                                <button class="bh-btn-mark-failed" data-id="<?= (int) $c['id'] ?>" title="<?= __('Runner is gone — flip the row to failed so the UI stops showing running') ?>"><?= __('Mark failed') ?></button>
+                            <?php endif; ?>
+                        </td>
                     </tr>
                 <?php endforeach; ?>
             </table>
@@ -332,16 +396,21 @@ $candidates = array_values(array_filter($servers, static fn ($s) => (int) $s['is
             var id = btn.getAttribute('data-id');
             var name = btn.getAttribute('data-name');
             var dry = btn.getAttribute('data-dry') === '1';
+            // The parallelism <input> sits in the same <td> as the button.
+            var parInput = btn.closest('td') ? btn.closest('td').querySelector('.bh-parallelism-input') : null;
+            var parallelism = parInput ? Math.max(1, Math.min(32, parseInt(parInput.value, 10) || 1)) : 1;
             var msg = dry
                 ? 'Dry-run BLACKHOLE conversion on "' + name + '"? No table will actually be altered.'
                 : 'Convert "' + name + '" to a BLACKHOLE binlog relay?\n\n'
-                  + 'This will STOP SLAVE, ALTER every non-system table to ENGINE=BLACKHOLE, '
+                  + 'This will STOP SLAVE, ALTER every non-system table to ENGINE=BLACKHOLE '
+                  + (parallelism > 1 ? '(parallelism=' + parallelism + ' workers), ' : ', ')
                   + 'set read_only=ON, then START SLAVE. The action is logged but data tables become empty engines.';
             if (!confirm(msg)) return;
 
             var fd = new FormData();
             fd.append(CSRF_FIELD, CSRF_TOKEN);
             fd.append('dry_run', dry ? '1' : '0');
+            fd.append('parallelism', String(parallelism));
 
             bhFetch(LINK + 'Blackhole/startConvert/' + id + '/ajax:true/', {
                 method: 'POST', body: fd,
@@ -350,6 +419,48 @@ $candidates = array_values(array_filter($servers, static fn ($s) => (int) $s['is
                 .then(function (d) {
                     if (d.error) { alert('Error: ' + d.error); return; }
                     pollStatus(d.id);
+                })
+                .catch(function (e) { alert('Network error: ' + e.message); });
+        });
+    });
+
+    // ---- Kill running conversion (SIGTERM, escalate to SIGKILL after 3 s) ----
+    var KILL_TOKEN = <?= json_encode($data['kill_token']) ?>;
+    document.querySelectorAll('.bh-btn-kill').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var id  = btn.getAttribute('data-id');
+            var pid = btn.getAttribute('data-pid');
+            if (!confirm('Kill conversion #' + id + ' (pid ' + pid + ')?\n\n'
+                + 'Sends SIGTERM first; if the runner is still alive after 3 s it escalates to SIGKILL. '
+                + 'The row is flipped to failed and the operator should run a Force-BLACKHOLE sweep before resuming traffic.')) return;
+            var fd = new FormData();
+            fd.append(CSRF_FIELD, KILL_TOKEN);
+            bhFetch(LINK + 'Blackhole/kill/' + id + '/ajax:true/', { method: 'POST', body: fd })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    if (d.error) { alert('Kill failed: ' + d.error); return; }
+                    alert(d.escalated ? 'Killed (SIGKILL escalation)' : 'Killed (SIGTERM)');
+                    window.location.reload();
+                })
+                .catch(function (e) { alert('Network error: ' + e.message); });
+        });
+    });
+
+    // ---- Mark orphaned 'running' row as failed (no live process) ----
+    var MARK_FAILED_TOKEN = <?= json_encode($data['mark_failed_token']) ?>;
+    document.querySelectorAll('.bh-btn-mark-failed').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var id = btn.getAttribute('data-id');
+            if (!confirm('Mark conversion #' + id + ' as failed?\n\n'
+                + 'The runner pid is no longer running (or the cmdline doesn\'t match this conversion). '
+                + 'This only flips the DB row — it does not roll back any ALTER already done on the target.')) return;
+            var fd = new FormData();
+            fd.append(CSRF_FIELD, MARK_FAILED_TOKEN);
+            bhFetch(LINK + 'Blackhole/markFailed/' + id + '/ajax:true/', { method: 'POST', body: fd })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    if (d.error) { alert('Cannot mark failed: ' + d.error); return; }
+                    window.location.reload();
                 })
                 .catch(function (e) { alert('Network error: ' + e.message); });
         });
@@ -444,6 +555,9 @@ $candidates = array_values(array_filter($servers, static fn ($s) => (int) $s['is
         var fd = new FormData();
         fd.append(CSRF_FIELD, GF_TOKEN);
         fd.append('dry_run', dry ? '1' : '0');
+        var gfParInput = document.getElementById('bh-gf-parallelism');
+        var gfPar = gfParInput ? Math.max(1, Math.min(32, parseInt(gfParInput.value, 10) || 1)) : 1;
+        fd.append('parallelism', String(gfPar));
         if (gfUser.value.trim()) fd.append('replication_user', gfUser.value.trim());
         if (gfPass.value !== '')   fd.append('replication_password', gfPass.value);
 
