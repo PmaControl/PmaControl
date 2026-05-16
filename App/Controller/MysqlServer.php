@@ -1264,37 +1264,85 @@ class MysqlServer extends Controller
 
         $baseDir = DATA . 'logs/' . $idMysqlServer . '/' . MysqlLogCollector::getStorageDirectoryName($logType);
 
-        // Anchor the 30-day window on the most recent day-dir actually
-        // present on disk rather than on `today`. Without this, a server
-        // whose data is more than a month old (silent collector, no
-        // recent events) renders an empty chart. (#1260)
-        $anchor = $this->latestMysqlLogDayAnchor($baseDir) ?? new \DateTimeImmutable('today');
-        $dayStart = $anchor->sub(new \DateInterval('P29D'));
-        $dayBuckets = [];
+        // (#1264) Show the full retained history, not a hard-coded 30
+        // days. Pick the bucketing granularity from the actual span:
+        //
+        //   span ≤ 90  d → daily buckets   (chart click → hour drill-down)
+        //   span ≤ 730 d → weekly buckets  (sum 7 days into one bar)
+        //   span > 730 d → monthly buckets (sum a calendar month)
+        //
+        // 90 daily bars is the readability ceiling for Chart.js without
+        // overlap. Above that we trade resolution for legibility.
+        $first = $this->earliestMysqlLogDayAnchor($baseDir);
+        $last  = $this->latestMysqlLogDayAnchor($baseDir);
 
-        for ($i = 0; $i < 30; $i++) {
-            $dayKey = $dayStart->modify('+' . $i . ' day')->format('Y-m-d');
-            $dayBuckets[$dayKey] = ['ERROR' => 0, 'WARNING' => 0, 'NOTE' => 0];
+        if ($first === null || $last === null) {
+            // No data on disk → render an empty 30-day frame ending today.
+            $today = new \DateTimeImmutable('today');
+            $first = $today->sub(new \DateInterval('P29D'));
+            $last  = $today;
         }
 
-        foreach (array_keys($dayBuckets) as $dayKey) {
-            $dayDir = $baseDir . '/' . $dayKey;
-            $dayCache = $this->readMysqlLogsChartCache($dayDir . '/chart.day.json');
+        $spanDays = (int) $first->diff($last)->days + 1;
+        $granularity = self::chartGranularityForSpan($spanDays);
+
+        $payload['granularity'] = $granularity;
+        $payload['span_days']   = $spanDays;
+        $payload['first_day']   = $first->format('Y-m-d');
+        $payload['last_day']    = $last->format('Y-m-d');
+
+        // Iterate day-by-day and accumulate into the chosen buckets.
+        $buckets = [];
+        $cursor = $first;
+        while ($cursor <= $last) {
+            $dayKey = $cursor->format('Y-m-d');
+            $bucketKey = match ($granularity) {
+                'week'  => self::isoWeekBucketKey($cursor),
+                'month' => $cursor->format('Y-m'),
+                default => $dayKey,
+            };
+            if (!isset($buckets[$bucketKey])) {
+                $buckets[$bucketKey] = ['ERROR' => 0, 'WARNING' => 0, 'NOTE' => 0];
+            }
+            $dayCache = $this->readMysqlLogsChartCache($baseDir . '/' . $dayKey . '/chart.day.json');
             if (!empty($dayCache['counts']) && is_array($dayCache['counts'])) {
                 foreach (['ERROR', 'WARNING', 'NOTE'] as $levelName) {
-                    $dayBuckets[$dayKey][$levelName] = (int)($dayCache['counts'][$levelName] ?? 0);
+                    $buckets[$bucketKey][$levelName] += (int)($dayCache['counts'][$levelName] ?? 0);
                 }
             }
+            $cursor = $cursor->modify('+1 day');
         }
 
-        foreach ($dayBuckets as $dayKey => $levels) {
-            $payload['day']['labels'][] = $dayKey;
-            $payload['day']['datasets']['ERROR'][] = $levels['ERROR'];
+        foreach ($buckets as $bucketKey => $levels) {
+            $payload['day']['labels'][] = $bucketKey;
+            $payload['day']['datasets']['ERROR'][]   = $levels['ERROR'];
             $payload['day']['datasets']['WARNING'][] = $levels['WARNING'];
-            $payload['day']['datasets']['NOTE'][] = $levels['NOTE'];
+            $payload['day']['datasets']['NOTE'][]    = $levels['NOTE'];
         }
 
         return $payload;
+    }
+
+    /**
+     * Bucket granularity picker for the /MysqlServer/logs/ chart.
+     * (#1264) — 90 daily bars is the legibility ceiling for Chart.js;
+     * 2 years is the cut-off where weekly bars become as crowded as
+     * daily was at 3 months.
+     */
+    private static function chartGranularityForSpan(int $spanDays): string
+    {
+        if ($spanDays <= 90)  return 'day';
+        if ($spanDays <= 730) return 'week';
+        return 'month';
+    }
+
+    /**
+     * ISO-week bucket label `YYYY-Www` (e.g. 2026-W11) — same key for
+     * every day in the week. (#1264)
+     */
+    private static function isoWeekBucketKey(\DateTimeImmutable $d): string
+    {
+        return $d->format('o-\WW'); // ISO year + week (note: `o` not `Y` near year boundaries)
     }
 
     /**
@@ -1368,22 +1416,40 @@ class MysqlServer extends Controller
      */
     private function latestMysqlLogDayAnchor(string $baseDir): ?\DateTimeImmutable
     {
+        return $this->extremeMysqlLogDayAnchor($baseDir, true);
+    }
+
+    /**
+     * Companion of `latestMysqlLogDayAnchor` — returns the OLDEST
+     * `YYYY-MM-DD` day-dir present under `$baseDir`. Used by the
+     * adaptive chart to compute the full span. (#1264)
+     */
+    private function earliestMysqlLogDayAnchor(string $baseDir): ?\DateTimeImmutable
+    {
+        return $this->extremeMysqlLogDayAnchor($baseDir, false);
+    }
+
+    private function extremeMysqlLogDayAnchor(string $baseDir, bool $pickLatest): ?\DateTimeImmutable
+    {
         $dayDirs = glob($baseDir . '/*', GLOB_ONLYDIR) ?: [];
-        $latest = null;
+        $pick = null;
         foreach ($dayDirs as $dayDir) {
             $dayKey = basename($dayDir);
             if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $dayKey)) {
                 continue;
             }
-            if ($latest === null || strcmp($dayKey, $latest) > 0) {
-                $latest = $dayKey;
+            if ($pick === null
+                || ($pickLatest  && strcmp($dayKey, $pick) > 0)
+                || (!$pickLatest && strcmp($dayKey, $pick) < 0)
+            ) {
+                $pick = $dayKey;
             }
         }
-        if ($latest === null) {
+        if ($pick === null) {
             return null;
         }
         try {
-            return new \DateTimeImmutable($latest . ' 00:00:00');
+            return new \DateTimeImmutable($pick . ' 00:00:00');
         } catch (\Throwable $e) {
             return null;
         }
@@ -1571,13 +1637,18 @@ class MysqlServer extends Controller
     private function getMysqlLogWindowBounds(string $scope, string $key, ?string $baseDir = null): array
     {
         if ($scope === 'month') {
-            // Anchor on the most recent day-dir on disk so an inactive
-            // collector still shows its last 30 days of data. (#1260)
-            $anchor = $baseDir !== null ? $this->latestMysqlLogDayAnchor($baseDir) : null;
-            $anchor = $anchor ?? new \DateTimeImmutable('today');
+            // (#1264) Cover the full retained span on disk, not a 30-day
+            // sliding window. Falls back to today − 29d when no data.
+            $first = $baseDir !== null ? $this->earliestMysqlLogDayAnchor($baseDir) : null;
+            $last  = $baseDir !== null ? $this->latestMysqlLogDayAnchor($baseDir)   : null;
+            if ($first === null || $last === null) {
+                $today = new \DateTimeImmutable('today');
+                $first = $today->sub(new \DateInterval('P29D'));
+                $last  = $today;
+            }
             return [
-                'start' => $anchor->sub(new \DateInterval('P29D'))->setTime(0, 0, 0)->getTimestamp(),
-                'end' => $anchor->setTime(23, 59, 59)->getTimestamp(),
+                'start' => $first->setTime(0, 0, 0)->getTimestamp(),
+                'end'   => $last->setTime(23, 59, 59)->getTimestamp(),
             ];
         }
 
