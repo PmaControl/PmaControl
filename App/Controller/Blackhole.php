@@ -334,6 +334,36 @@ class Blackhole extends Controller
     }
 
     /**
+     * CLI: `php App/Webroot/index.php Blackhole sweepCli <id_mysql_server>`.
+     * Same code path as the "Force BLACKHOLE" button on /Blackhole/index,
+     * just without the HTTP/CSRF wrapper. Useful when a parallel
+     * convert run partially failed and the operator wants to reconcile
+     * straggler tables in one connection.
+     */
+    public function sweepCli($param)
+    {
+        $this->layout_name = false;
+        $this->view = false;
+        if (PHP_SAPI !== 'cli') {
+            http_response_code(404);
+            return;
+        }
+        $serverId = (int) ($param[0] ?? 0);
+        if ($serverId <= 0) {
+            fwrite(STDERR, "usage: sweepCli <id_mysql_server>\n");
+            return;
+        }
+        $res = BlackholeRelay::sweepRelay($serverId);
+        echo "Sweep on mysql_server #{$serverId}\n";
+        echo "  converted: " . (int) $res['converted'] . "\n";
+        echo "  skipped:   " . (int) $res['skipped']   . "\n";
+        echo "  errors:    " . count($res['errors'])  . "\n";
+        foreach (array_slice($res['errors'], 0, 10) as $e) {
+            echo "    - " . ($e['table'] ?? '?') . " => " . ($e['error'] ?? '?') . "\n";
+        }
+    }
+
+    /**
      * CLI: `php App/Webroot/index.php Blackhole runConvertCli <id>`.
      * Loaded by the background fork from startConvert() and also
      * usable standalone from a shell.

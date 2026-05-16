@@ -1009,11 +1009,29 @@ class BlackholeRelay
                     continue;
                 }
                 $converted++;
-                $this->db->sql_query(
+                // The app-DB connection has been idle the entire ALTER
+                // (which can take minutes on a large InnoDB rebuild),
+                // so it may have been reaped by the server's
+                // wait_timeout. Force a fresh handle via Sgbd::sql()
+                // — Glial's pool gives us a healthy one — before the
+                // counter UPDATE so workers don't bail out with
+                // "MySQL server has gone away". (#1250 follow-up:
+                // crashed 4/8 workers on the 2004-table sweep before
+                // this guard.)
+                $this->db = Sgbd::sql(DB_DEFAULT);
+                if (!$this->db->sql_query_silent(
                     "UPDATE blackhole_conversion
                      SET tables_converted = tables_converted + 1
                      WHERE id = " . $this->conversionId
-                );
+                )) {
+                    // Last resort: reopen explicitly and retry once.
+                    $this->db = Sgbd::sql(DB_DEFAULT);
+                    $this->db->sql_query_silent(
+                        "UPDATE blackhole_conversion
+                         SET tables_converted = tables_converted + 1
+                         WHERE id = " . $this->conversionId
+                    );
+                }
             }
         } finally {
             $link->sql_query_silent('SET SESSION sql_log_bin = 1');
