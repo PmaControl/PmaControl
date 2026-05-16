@@ -1264,8 +1264,12 @@ class MysqlServer extends Controller
 
         $baseDir = DATA . 'logs/' . $idMysqlServer . '/' . MysqlLogCollector::getStorageDirectoryName($logType);
 
-        $today = new \DateTimeImmutable('today');
-        $dayStart = $today->sub(new \DateInterval('P29D'));
+        // Anchor the 30-day window on the most recent day-dir actually
+        // present on disk rather than on `today`. Without this, a server
+        // whose data is more than a month old (silent collector, no
+        // recent events) renders an empty chart. (#1260)
+        $anchor = $this->latestMysqlLogDayAnchor($baseDir) ?? new \DateTimeImmutable('today');
+        $dayStart = $anchor->sub(new \DateInterval('P29D'));
         $dayBuckets = [];
 
         for ($i = 0; $i < 30; $i++) {
@@ -1354,6 +1358,37 @@ class MysqlServer extends Controller
         return [$counts, $summaryByType, $sourcesByType];
     }
 
+    /**
+     * Return the most recent `YYYY-MM-DD` day-dir present under
+     * `$baseDir` as a `DateTimeImmutable` set to that day (00:00:00),
+     * or null if none exists. Used to anchor the 30-day window of
+     * /MysqlServer/logs/<id>/ on the latest data day instead of
+     * `today`, so an old / inactive collector still shows its tail.
+     * (#1260)
+     */
+    private function latestMysqlLogDayAnchor(string $baseDir): ?\DateTimeImmutable
+    {
+        $dayDirs = glob($baseDir . '/*', GLOB_ONLYDIR) ?: [];
+        $latest = null;
+        foreach ($dayDirs as $dayDir) {
+            $dayKey = basename($dayDir);
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $dayKey)) {
+                continue;
+            }
+            if ($latest === null || strcmp($dayKey, $latest) > 0) {
+                $latest = $dayKey;
+            }
+        }
+        if ($latest === null) {
+            return null;
+        }
+        try {
+            return new \DateTimeImmutable($latest . ' 00:00:00');
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
     private function findMysqlLogsRemoteSourceName(string $baseDir): string
     {
         $dayDirs = glob($baseDir . '/*', GLOB_ONLYDIR) ?: [];
@@ -1404,7 +1439,7 @@ class MysqlServer extends Controller
             return $result;
         }
 
-        $window = $this->getMysqlLogWindowBounds($scope, $key);
+        $window = $this->getMysqlLogWindowBounds($scope, $key, $baseDir);
         $lineRange = $this->getMysqlLogLineRange($baseDir, $scope, $key);
         $latestLines = [];
         $lineIndex = -1;
@@ -1512,13 +1547,16 @@ class MysqlServer extends Controller
     /**
      * @return array{start: int|null, end: int|null}
      */
-    private function getMysqlLogWindowBounds(string $scope, string $key): array
+    private function getMysqlLogWindowBounds(string $scope, string $key, ?string $baseDir = null): array
     {
         if ($scope === 'month') {
-            $today = new \DateTimeImmutable('today');
+            // Anchor on the most recent day-dir on disk so an inactive
+            // collector still shows its last 30 days of data. (#1260)
+            $anchor = $baseDir !== null ? $this->latestMysqlLogDayAnchor($baseDir) : null;
+            $anchor = $anchor ?? new \DateTimeImmutable('today');
             return [
-                'start' => $today->sub(new \DateInterval('P29D'))->setTime(0, 0, 0)->getTimestamp(),
-                'end' => $today->setTime(23, 59, 59)->getTimestamp(),
+                'start' => $anchor->sub(new \DateInterval('P29D'))->setTime(0, 0, 0)->getTimestamp(),
+                'end' => $anchor->setTime(23, 59, 59)->getTimestamp(),
             ];
         }
 
