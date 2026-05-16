@@ -3048,11 +3048,7 @@ var chart = new Chart(ctx, {
         $old_master = getDbLink($id_mysql_server__old_master);
         $new_master = getDbLink($id_mysql_server__new_master);
 
-        if (ServerCapabilities::supports($new_master, 'show_binary_log_status')) {
-            $sql = "SHOW BINARY LOG STATUS";
-        } else {
-            $sql = "SHOW MASTER STATUS";
-        }
+        $sql = ServerCapabilities::masterStatusSql($new_master);
         Debug::debug($sql);
         $res = $new_master->sql_query($sql);
 

@@ -586,16 +586,26 @@ class BinlogAnalyzer
         $masterLink = new \mysqli($creds['host'], $creds['user'], $creds['password'], '', $creds['port']);
         $masterCurrentNum = $currentNum;
         if (!$masterLink->connect_error) {
-            // SHOW MASTER STATUS removed in MySQL 8.4, try BINARY LOG STATUS first
-            $mRes = null;
-            try { $mRes = $masterLink->query("SHOW BINARY LOG STATUS"); } catch (\Throwable $e) {}
-            if (!$mRes) {
-                try { $mRes = $masterLink->query("SHOW MASTER STATUS"); } catch (\Throwable $e) {}
+            // Version-gated SQL choice (project convention: no try-and-
+            // fall-back probes — see docs/database_conventions.md). This
+            // call site uses a raw mysqli (not a Sgbd link) so we resolve
+            // the version inline and ask the centralised helper.
+            $version = '';
+            $versionComment = '';
+            if ($vRes = @$masterLink->query("SELECT @@version, @@version_comment")) {
+                if ($vRow = $vRes->fetch_row()) {
+                    $version = (string) ($vRow[0] ?? '');
+                    $versionComment = (string) ($vRow[1] ?? '');
+                }
+                $vRes->free();
             }
-            if ($mRes && $mRow = $mRes->fetch_assoc()) {
-                $masterFile = $mRow['File'] ?? '';
-                if (preg_match('/\.(\d+)$/', $masterFile, $mm)) {
-                    $masterCurrentNum = (int) $mm[1];
+            $sql = \App\Library\ServerCapabilities::masterStatusSqlForVersion($version, $versionComment);
+            if ($mRes = @$masterLink->query($sql)) {
+                if ($mRow = $mRes->fetch_assoc()) {
+                    $masterFile = $mRow['File'] ?? '';
+                    if (preg_match('/\.(\d+)$/', $masterFile, $mm)) {
+                        $masterCurrentNum = (int) $mm[1];
+                    }
                 }
                 $mRes->free();
             }

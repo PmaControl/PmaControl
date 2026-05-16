@@ -77,3 +77,73 @@ FK constraint naming: `fk_{child_table}__{parent_table}[__{role}]`
 - Default engine: `InnoDB` (or `RocksDB` for append-heavy tables like logs)
 - Default charset: `utf8mb4 COLLATE utf8mb4_general_ci`
 - IP columns: `latin1` or `latin1_bin` for binary comparison
+
+## Version-gated SQL — no try-and-fall-back
+
+When MySQL/MariaDB/Percona versions diverge on a statement, the canonical example being:
+
+- `SHOW MASTER STATUS` (MariaDB, MySQL ≤ 8.3, Percona ≤ 8.3)
+- `SHOW BINARY LOG STATUS` (MySQL ≥ 8.4, Percona ≥ 8.4)
+
+**Always pick the right SQL up front via `App\Library\ServerCapabilities::supports()`.** Never write a try-and-fall-back probe that sends one statement, swallows the parser error and retries with the other.
+
+### Why no fall-back
+
+A probe-first pattern hides real parser failures — every call against the "wrong" version side errors first, the slow / error log gets noisy, and the code signals it doesn't know what server it's talking to. The fix is cheap (one extra capability check) and the version table is already maintained in `App/Library/ServerCapabilities.php`.
+
+### Pattern to follow
+
+For any call site that has an Sgbd link in hand, ask the central helper:
+
+```php
+$sql = ServerCapabilities::masterStatusSql($link);
+$res = $link->sql_query($sql);
+```
+
+For callers that already have the version strings on hand (typically inside `Aspirateur`, where the Aspirateur snapshot already carries `version` + `version_comment`), use the version-string sibling:
+
+```php
+$sql = ServerCapabilities::masterStatusSqlForVersion($version, $versionComment);
+```
+
+Both wrap the same `show_binary_log_status` matrix entry. The project has **one** source of truth for the MySQL/MariaDB-version → SQL mapping — adding a new family / version threshold is a single edit in `ServerCapabilities::MATRIX`.
+
+**Do not inline the gate at the call site** (i.e. do not write `if (ServerCapabilities::supports($link, 'show_binary_log_status')) { $sql = 'SHOW BINARY LOG STATUS'; } else { $sql = 'SHOW MASTER STATUS'; }`). That works but duplicates intent: a new server family added to the matrix would have to be reflected at N call sites. Use the helper.
+
+### Anti-pattern (do not write)
+
+```php
+// BAD — try the new statement, fall back on parser error.
+$res = $link->sql_query_silent('SHOW BINARY LOG STATUS');
+if (!$res) {
+    $res = $link->sql_query_silent('SHOW MASTER STATUS');
+}
+```
+
+### Migrated call sites
+
+- `App/Controller/Aspirateur.php` — `getMasterStatusCommand()` delegates to `ServerCapabilities::masterStatusSqlForVersion()`.
+- `App/Controller/Demo.php:418` — `ServerCapabilities::masterStatusSql($db_master)`.
+- `App/Controller/Slave.php:2927` — `ServerCapabilities::masterStatusSql($new_master)`.
+- `App/Library/BlackholeRelay.php::fetchMasterStatus()` — `ServerCapabilities::masterStatusSql($link)`.
+- `App/Library/BinlogAnalyzer.php` — version resolved inline (raw `\mysqli`, not Sgbd link) then `ServerCapabilities::masterStatusSqlForVersion()`.
+
+Anti-pattern enforced in `tests/Library/Audit/BlackholeRelayMasterStatusFallbackTest` (source-level regex pin).
+
+### Adding a new capability
+
+Edit the `MATRIX` constant in `App/Library/ServerCapabilities.php`:
+
+```php
+'<feature_key>' => [
+    'MySQL' => 'X.Y',
+    'Percona' => 'X.Y',
+    'MariaDB' => 'X.Y',   // omit a family if it never supports the feature
+],
+```
+
+Then call `ServerCapabilities::supports($link, '<feature_key>')` at the call site.
+
+### Existing capabilities
+
+The matrix already covers: `show_binary_log_status`, `show_replica_status_syntax`, `mysql8_processlist_trx_columns`, `select_max_execution_time_hint`, `information_schema_max_statement_time`, `mariadb_skip_replication_variable`, `performance_schema_processlist_modern`, etc. See the source for the full list.
