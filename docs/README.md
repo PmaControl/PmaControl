@@ -37,7 +37,8 @@ One topic per file. Load only what the current task needs.
 - [plugin_catalog.md](plugin_catalog.md) — `/MysqlServer/plugins/<id>/` tab: live engines + plugins from Aspirateur, family-filtered catalog, SuperAdmin Install / Uninstall SONAME
 
 ## Runtime
-- [logs.md](logs.md) — log files under `tmp/log/`
+- [logs.md](logs.md) — application log files under `tmp/log/`
+- [mysql_logs_import.md](mysql_logs_import.md) — `/MysqlServer/logs/<id>/` pipeline: SSH tail → `data/logs/` chunks → `IntegrateLog` → `ssh_log_mysql_*` tables → UI
 - [tips.md](tips.md) — small gotchas (grep -a on binlog, stale browser cache, …)
 
 ## Installation
