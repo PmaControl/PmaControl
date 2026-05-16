@@ -1720,7 +1720,7 @@ background-position: 0 0,0 25px,25px -25px,-25px 0;
 }
 
 /* Issue #1248 — cap the server-list selectpicker rendered by
- * Common::getSelectServerAvailable() at 200px so long display_name (ip)
+ * Common::getSelectServerAvailable() at 300px so long display_name (ip)
  * strings don't stretch the widget across the page. Targets the
  * bootstrap-select wrapper (the visible button group), with :has() as
  * the primary selector and a class-mirror fallback in case bootstrap-
@@ -1728,12 +1728,12 @@ background-position: 0 0,0 25px,25px -25px,-25px 0;
  */
 .bootstrap-select:has(> select.selectpicker--server),
 .bootstrap-select.selectpicker--server {
-    max-width: 200px;
+    max-width: 300px;
 }
 
 .bootstrap-select:has(> select.selectpicker--server) > .btn,
 .bootstrap-select.selectpicker--server > .btn {
-    max-width: 200px;
+    max-width: 300px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
