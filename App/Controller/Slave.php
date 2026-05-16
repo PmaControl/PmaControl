@@ -536,12 +536,12 @@ class Slave extends Controller
      * Issue #1192 — fast-path data prep for `/slave/show/<id>/__new__/`.
      *
      * The view's __new__ branch only renders a source-setup form. It
-     * needs nothing beyond the available-server picker list and the
-     * setupSource CSRF token. We populate the rest of `$data` with
-     * defaults the view already tolerates (it reads with `?? ''` /
-     * `?? []` guards) so the existing branch keeps rendering without
-     * a single SHOW REPLICA STATUS, time-series Extraction, or live
-     * MySQL connection to the target server.
+     * needs only local PmaControl data: cached replication-channel tabs,
+     * the available-server picker list and the setupSource CSRF token.
+     * We populate the rest of `$data` with defaults the view already
+     * tolerates (it reads with `?? ''` / `?? []` guards) so the existing
+     * branch keeps rendering without a single SHOW REPLICA STATUS or
+     * live MySQL connection to the target server.
      *
      * @param array<string,mixed> $data  data array passed by reference,
      *        already pre-populated with id_mysql_server + replication_name.
@@ -551,13 +551,13 @@ class Slave extends Controller
     private static function prepareNewReplicationFormData(object $db, array &$data, int $idMysqlServer, array &$session): void
     {
         // Defaults the view tolerates — keeps the header / future
-        // partials happy without firing any backend work.
+        // partials happy without firing target-server work.
         $data['slave']            = [];
         $data['parallel_threads'] = 0;
         $data['parallel_mode']    = null;
         $data['durability_rows']  = [];
         $data['server']           = [];
-        $data['all_connections']  = [];
+        $data['all_connections']  = self::buildReplicationConnectionTabsFromCachedMetrics((int) $idMysqlServer);
         $data['server_type']      = '';
         $data['server_version']   = '';
         $data['cpu_count']        = 0;
@@ -596,6 +596,134 @@ class Slave extends Controller
             $data['slave_setup_source_csrf_field'] = Csrf::DEFAULT_FIELD;
             $data['slave_setup_source_csrf_token'] = Csrf::issueToken($session, self::SLAVE_SETUP_SOURCE_CSRF_SCOPE);
         }
+    }
+
+    /**
+     * Build the source-tab strip from cached PmaControl metrics. This keeps
+     * `/slave/show/<id>/__new__/` fast and independent from target-server
+     * availability while preserving the operator's channel navigation.
+     *
+     * @return list<array{name:string,health:string,lag:mixed}>
+     */
+    private static function buildReplicationConnectionTabsFromCachedMetrics(int $idMysqlServer): array
+    {
+        $cached = Extraction2::display([
+            'slave::slave_io_running',
+            'slave::slave_sql_running',
+            'slave::replica_io_running',
+            'slave::replica_sql_running',
+            'slave::seconds_behind_master',
+            'slave::seconds_behind_source',
+            'slave::last_io_error',
+            'slave::last_sql_error',
+            'slave::last_error',
+        ], [$idMysqlServer]);
+
+        $channels = $cached[$idMysqlServer]['@slave'] ?? [];
+        if (!is_array($channels)) {
+            return [];
+        }
+
+        return self::buildReplicationConnectionTabs($channels);
+    }
+
+    /**
+     * @param array<int|string,array<string,mixed>> $channels Rows from either
+     *        SHOW SLAVE/REPLICA STATUS or cached Extraction2 @slave metrics.
+     * @return list<array{name:string,health:string,lag:mixed}>
+     */
+    private static function buildReplicationConnectionTabs(array $channels): array
+    {
+        $tabs = [];
+
+        foreach ($channels as $key => $channel) {
+            if (!is_array($channel)) {
+                continue;
+            }
+
+            $name = self::firstReplicationFieldValue($channel, ['Connection_name', 'Channel_Name', 'connection_name']);
+            if ($name === null && is_string($key)) {
+                $name = $key;
+            }
+
+            $lag = self::replicationTabLag($channel);
+            $tabs[] = [
+                'name'   => (string) ($name ?? ''),
+                'health' => self::replicationTabHealth($channel, $lag),
+                'lag'    => $lag,
+            ];
+        }
+
+        return $tabs;
+    }
+
+    /**
+     * @param array<string,mixed> $channel
+     * @param list<string> $keys
+     */
+    private static function firstReplicationFieldValue(array $channel, array $keys)
+    {
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $channel)) {
+                return $channel[$key];
+            }
+        }
+
+        return null;
+    }
+
+    /** @param array<string,mixed> $channel */
+    private static function replicationTabLag(array $channel)
+    {
+        foreach (['seconds_behind_source', 'Seconds_Behind_Source', 'seconds_behind_master', 'Seconds_Behind_Master'] as $key) {
+            if (!array_key_exists($key, $channel)) {
+                continue;
+            }
+
+            $value = trim((string) $channel[$key]);
+            if ($value !== '') {
+                return $value;
+            }
+        }
+
+        return null;
+    }
+
+    /** @param array<string,mixed> $channel */
+    private static function replicationTabHasError(array $channel): bool
+    {
+        foreach (['last_sql_error', 'Last_SQL_Error', 'last_io_error', 'Last_IO_Error', 'last_error', 'Last_Error'] as $key) {
+            if (array_key_exists($key, $channel) && trim((string) $channel[$key]) !== '') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** @param array<string,mixed> $channel */
+    private static function replicationTabHealth(array $channel, $lag): string
+    {
+        $io = self::firstReplicationFieldValue($channel, ['replica_io_running', 'Replica_IO_Running', 'slave_io_running', 'Slave_IO_Running']) ?? 'No';
+        $sql = self::firstReplicationFieldValue($channel, ['replica_sql_running', 'Replica_SQL_Running', 'slave_sql_running', 'Slave_SQL_Running']) ?? 'No';
+
+        if ($io !== 'Yes' && $sql !== 'Yes') {
+            return 'stopped';
+        }
+        if ($io !== 'Yes' || $sql !== 'Yes' || self::replicationTabHasError($channel)) {
+            return 'critical';
+        }
+        if ($lag === null || $lag === 'NULL') {
+            return 'critical';
+        }
+        if ((int) $lag > 60) {
+            return 'warning';
+        }
+        if ((int) $lag > 0) {
+            return 'behind';
+        }
+
+        return 'ok';
     }
 
     private static function normalizeParallelReplicationSettings(array $values): array
@@ -1013,21 +1141,7 @@ ctx.strokeStyle="rgba(0,0,0,1)";ctx.lineWidth=1;ctx.stroke();
             // `isSlave()` (which picks REPLICA on Percona 5.6) — #830.
             $slaves = self::fetchReplicaStatusRows($link_slave);
 
-            $data['all_connections'] = [];
-            foreach ($slaves as $s) {
-                $cn = $s['Connection_name'] ?? $s['Channel_Name'] ?? '';
-                $io = $s['Slave_IO_Running'] ?? $s['Replica_IO_Running'] ?? 'No';
-                $sql_r = $s['Slave_SQL_Running'] ?? $s['Replica_SQL_Running'] ?? 'No';
-                $lag = $s['Seconds_Behind_Master'] ?? $s['Seconds_Behind_Source'] ?? null;
-                $err = !empty($s['Last_SQL_Error'] ?? '') || !empty($s['Last_IO_Error'] ?? '');
-                $h = 'ok';
-                if ($io !== 'Yes' && $sql_r !== 'Yes') $h = 'stopped';
-                elseif ($io !== 'Yes' || $sql_r !== 'Yes' || $err) $h = 'critical';
-                elseif ($lag === null || $lag === 'NULL') $h = 'critical';
-                elseif ((int)$lag > 60) $h = 'warning';
-                elseif ((int)$lag > 0) $h = 'behind';
-                $data['all_connections'][] = ['name' => $cn, 'health' => $h, 'lag' => $lag];
-            }
+            $data['all_connections'] = self::buildReplicationConnectionTabs($slaves);
 
             $data['server_type'] = $link_slave->getServerType();
             $data['server_version'] = $link_slave->getVersion();

@@ -5,12 +5,12 @@ declare(strict_types=1);
 use PHPUnit\Framework\TestCase;
 
 /**
- * Issue #1192 — pin the fast-path that bypasses replica-status /
- * time-series / live MySQL queries when the operator visits
- * `/slave/show/<id>/__new__/`. Without it the page does a SHOW
- * REPLICA STATUS, several Extraction passes, and emits a 5-second
- * `slave/getLag/<id>/__new__/` poll loop — all wasted work since the
- * view's __new__ branch only renders a source-setup form.
+ * Issue #1192 — pin the fast-path that bypasses live replica-status /
+ * heavy page prep when the operator visits `/slave/show/<id>/__new__/`.
+ * Without it the page does a SHOW REPLICA STATUS, several full
+ * Extraction passes, and emits a 5-second `slave/getLag/<id>/__new__/`
+ * poll loop. The fast-path may still read cached local metrics for the
+ * source-tab strip.
  */
 final class SlaveShowNewFastPathTest extends TestCase
 {
@@ -49,7 +49,7 @@ final class SlaveShowNewFastPathTest extends TestCase
         );
     }
 
-    public function testHelperOnlyRunsTheLocalAvailableServersSelect(): void
+    public function testHelperOnlyRunsLocalCachedLookups(): void
     {
         $start = strpos($this->code, 'function prepareNewReplicationFormData');
         $this->assertNotFalse($start);
@@ -57,11 +57,15 @@ final class SlaveShowNewFastPathTest extends TestCase
         $this->assertNotFalse($end);
         $body = substr($this->code, $start, $end - $start);
 
-        // The only SQL the helper is allowed to run: the local
-        // mysql_server SELECT to populate the picker.
+        // The helper may read local cached channel metrics and the local
+        // mysql_server list; it must not connect to the target server.
+        $this->assertStringContainsString(
+            "\$data['all_connections']  = self::buildReplicationConnectionTabsFromCachedMetrics((int) \$idMysqlServer);",
+            $body
+        );
         $this->assertStringContainsString('SELECT a.id, a.display_name, a.ip, a.port, b.libelle AS environment', $body);
 
-        // Must not call any of the heavy code paths.
+        // Must not call any of the heavy or live target-server code paths.
         foreach ([
             'getParallelReplicationSettingsFromTimeSeries',
             'buildDurabilityRows',
@@ -94,7 +98,7 @@ final class SlaveShowNewFastPathTest extends TestCase
             "\$data['parallel_threads'] = 0;",
             "\$data['parallel_mode']    = null;",
             "\$data['durability_rows']  = [];",
-            "\$data['all_connections']  = [];",
+            "\$data['all_connections']  = self::buildReplicationConnectionTabsFromCachedMetrics((int) \$idMysqlServer);",
             "\$data['server_type']      = '';",
             "\$data['server_version']   = '';",
             "\$data['available_servers'] = [];",
