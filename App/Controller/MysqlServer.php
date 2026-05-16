@@ -981,6 +981,16 @@ class MysqlServer extends Controller
             LIMIT 1";
         $resServer = $db->sql_query($sqlServer);
         $server = $db->sql_fetch_array($resServer, MYSQLI_ASSOC) ?: [];
+
+        // (#1257) Build the chart.day.json / chart.hour.json / chart.minute.json
+        // cache for every log type we're about to render. Without this, days
+        // whose .part.* files were never visited would render as a zero bucket
+        // even when the raw events are sitting on disk. Idempotent: each call
+        // skips a day whose cache is newer than its source files.
+        foreach (array_keys($tabs) as $logTypeForCache) {
+            $this->ensureMysqlLogsChartCaches($id_mysql_server, $logTypeForCache);
+        }
+
         [$counts, $summaryByType, $sourcesByType] = $this->loadMysqlLogsCacheSummary($id_mysql_server, array_keys($tabs));
 
         $summary = $summaryByType[$currentType] ?? [
@@ -1025,10 +1035,42 @@ class MysqlServer extends Controller
             throw new \Exception("Usage: /mysqlserver/replication/{id_mysql_server}");
         }
 
+        $idMysqlServer = (int)$param[0];
+        $requestedReplicationName = (string)($param[1] ?? '');
+        $cachedReplication = Extraction2::display([
+            'slave::slave_io_running',
+            'slave::replica_io_running',
+        ], [$idMysqlServer]);
+
         $this->title = '<i class="fa fa-sitemap"></i> '.__("Replication");
 
         $this->set('param', $param);
-        $this->set('id_mysql_server', (int)$param[0]);
+        $this->set('id_mysql_server', $idMysqlServer);
+        $this->set(
+            'replication_name',
+            self::resolveReplicationEmbeddedChannel($idMysqlServer, $requestedReplicationName, $cachedReplication)
+        );
+    }
+
+    /**
+     * Pick the channel embedded by `/MysqlServer/replication/<id>/`.
+     * If the server has no cached slave channel, open the "new source"
+     * form directly so non-slaves land on the `+` tab.
+     *
+     * @param array<int,array<string,mixed>> $cachedReplication
+     */
+    private static function resolveReplicationEmbeddedChannel(int $idMysqlServer, string $requestedReplicationName, array $cachedReplication): string
+    {
+        if ($requestedReplicationName !== '') {
+            return $requestedReplicationName;
+        }
+
+        $channels = $cachedReplication[$idMysqlServer]['@slave'] ?? [];
+        if (is_array($channels) && count($channels) > 0) {
+            return '';
+        }
+
+        return '__new__';
     }
 
     public function logsChartData($param)
