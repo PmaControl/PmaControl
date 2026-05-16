@@ -35,6 +35,45 @@ $af = $data['auth_failures'];
 </div>
 
 <div class="al-card">
+  <div class="al-card-head"><?= __('Activity histogram — last 24 h') ?></div>
+  <div class="al-card-body">
+    <div style="position:relative;height:140px"><canvas id="al-hist-hits"></canvas></div>
+    <div style="position:relative;height:90px;margin-top:8px"><canvas id="al-hist-auth"></canvas></div>
+  </div>
+</div>
+<script src="<?= JS ?>chart-4.5.1.umd.min.js"></script>
+<script>
+(function () {
+  if (!window.Chart) return;
+  var labels = <?= json_encode(array_map(static fn($b) => substr($b['ts'], 11, 5), $data['hits_per_hour'])) ?>;
+  var human  = <?= json_encode(array_map(static fn($b) => $b['human'], $data['hits_per_hour'])) ?>;
+  var robot  = <?= json_encode(array_map(static fn($b) => $b['robot'], $data['hits_per_hour'])) ?>;
+  var ok     = <?= json_encode(array_map(static fn($b) => $b['ok'], $data['auth_per_hour'])) ?>;
+  var ko     = <?= json_encode(array_map(static fn($b) => $b['ko'], $data['auth_per_hour'])) ?>;
+  new Chart(document.getElementById('al-hist-hits'), {
+    type: 'bar',
+    data: { labels: labels, datasets: [
+      { label: 'Human hits', data: human, backgroundColor: '#4c1d95' },
+      { label: 'Robot hits', data: robot, backgroundColor: '#b45309' }
+    ]},
+    options: { responsive: true, maintainAspectRatio: false,
+      scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } },
+      plugins: { legend: { position: 'top', align: 'end' } } }
+  });
+  new Chart(document.getElementById('al-hist-auth'), {
+    type: 'bar',
+    data: { labels: labels, datasets: [
+      { label: 'login_success', data: ok, backgroundColor: '#15803d' },
+      { label: 'auth failures', data: ko, backgroundColor: '#b91c1c' }
+    ]},
+    options: { responsive: true, maintainAspectRatio: false,
+      scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } },
+      plugins: { legend: { position: 'top', align: 'end' } } }
+  });
+})();
+</script>
+
+<div class="al-card">
   <div class="al-card-head"><?= __('Top users (24 h)') ?></div>
   <div class="al-card-body">
     <table class="al-table">

@@ -56,7 +56,45 @@ final class AuditDrain
         $summary['auth_events']     = $this->drainAuthEvents();
         $summary['client_metrics']  = $this->drainClientMetrics();
         $summary['subprocess']      = $this->drainSubprocess();
+        $summary['apache_backfill'] = $this->backfillApache();
         return $summary;
+    }
+
+    /**
+     * Apache access-log backfill (post-MVP #1). Walks the configured
+     * log paths, resumes from `audit_apache_cursor`, INSERTs missing
+     * static-asset rows into `request_log`. Configurable via the
+     * `configuration/audit.config.php` `apache_logs` array; defaults
+     * to the standard Debian/Ubuntu access.log when present.
+     */
+    private function backfillApache(): int
+    {
+        $cfgFile = (defined('CONFIG') ? \constant('CONFIG') : '/srv/www/pmacontrol/configuration/') . 'audit.config.php';
+        $paths = [];
+        if (is_readable($cfgFile)) {
+            $cfg = @include $cfgFile;
+            if (is_array($cfg) && isset($cfg['apache_logs']) && is_array($cfg['apache_logs'])) {
+                $paths = $cfg['apache_logs'];
+            }
+        }
+        if ($paths === []) {
+            $defaults = ['/var/log/apache2/access.log'];
+            foreach ($defaults as $p) {
+                if (is_readable($p)) {
+                    $paths[] = $p;
+                }
+            }
+        }
+        if ($paths === []) {
+            return 0;
+        }
+        $ingest = new AccessLogIngest();
+        $total = 0;
+        foreach ($paths as $p) {
+            $res = $ingest->ingestFile($p);
+            $total += (int) ($res['ingested'] ?? 0);
+        }
+        return $total;
     }
 
     private function drainRequests(): int
@@ -147,12 +185,15 @@ final class AuditDrain
 
         $values = [];
         foreach ($rows as $r) {
+            [$geoCountry, $geoCity] = GeoIpResolver::resolve((string) ($r['ip'] ?? ''));
             $values[] = sprintf(
-                "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                 $this->q($r['request_uid'] ?? ''),
                 $this->q($r['date'] ?? null),
                 $r['id_user_main'] !== null ? (int) $r['id_user_main'] : 'NULL',
                 $this->q($r['ip'] ?? ''),
+                $this->q($geoCountry),
+                $this->q($geoCity),
                 $this->q($r['method'] ?? 'GET'),
                 $this->q($r['uri'] ?? ''),
                 isset($r['status']) && $r['status'] !== null ? (int) $r['status'] : 'NULL',
@@ -167,7 +208,7 @@ final class AuditDrain
             );
         }
         $sql = "INSERT IGNORE INTO request_log "
-             . "(request_uid, date, id_user_main, ip, method, uri, status, bytes_sent, referer, "
+             . "(request_uid, date, id_user_main, ip, geo_country_iso, geo_city, method, uri, status, bytes_sent, referer, "
              . " user_agent_hash, duration_us, php_ms, controller, action, user_role_class) VALUES "
              . implode(',', $values);
         $this->db->sql_query($sql);
@@ -225,31 +266,92 @@ final class AuditDrain
     private function insertAuthEvents(array $rows): int
     {
         if ($rows === []) return 0;
-        $values = [];
         $allowed = ['login_success','login_fail','logout','token_mismatch','fingerprint_mismatch',
                     'expired','unknown_selector','csrf_reject','rate_limit','password_change'];
+
+        // Hash chain (#1235 post-MVP #7): fetch the latest row's self_hash
+        // and chain new inserts onto it. Each row's self_hash =
+        // sha256(prev_hash || canonical_event_fields). One INSERT per row so
+        // we keep the chain monotonic; throughput penalty is negligible
+        // (auth events are orders of magnitude rarer than request_log).
+        $prevHash = $this->latestAuthEventSelfHash();
+        $inserted = 0;
         foreach ($rows as $r) {
             $event = (string) ($r['event_type'] ?? 'login_fail');
             if (!in_array($event, $allowed, true)) {
                 continue;
             }
-            $values[] = sprintf(
-                "(%s, %s, %s, %s, %s, %s, %s, %s)",
-                $this->q($r['request_uid'] ?? null),
-                $this->q($r['date'] ?? null),
-                $r['id_user_main'] !== null ? (int) $r['id_user_main'] : 'NULL',
-                $this->q($r['ip'] ?? ''),
-                $this->q($r['user_agent_hash'] ?? null),
-                $this->q($event),
-                $this->q($r['selector_prefix'] ?? null),
-                $this->q($r['detail'] ?? null)
+            $row = [
+                'request_uid'     => $r['request_uid']     ?? null,
+                'date'            => $r['date']            ?? null,
+                'id_user_main'    => $r['id_user_main']    ?? null,
+                'ip'              => $r['ip']              ?? '',
+                'user_agent_hash' => $r['user_agent_hash'] ?? null,
+                'event_type'      => $event,
+                'selector_prefix' => $r['selector_prefix'] ?? null,
+                'detail'          => $r['detail']          ?? null,
+            ];
+            $selfHash = self::computeAuthEventHash($row, $prevHash);
+            $sql = sprintf(
+                "INSERT INTO auth_event (request_uid, date, id_user_main, ip, user_agent_hash, "
+              . " event_type, selector_prefix, detail, prev_hash, self_hash) VALUES "
+              . "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                $this->q($row['request_uid']),
+                $this->q($row['date']),
+                $row['id_user_main'] !== null ? (int) $row['id_user_main'] : 'NULL',
+                $this->q($row['ip']),
+                $this->q($row['user_agent_hash']),
+                $this->q($row['event_type']),
+                $this->q($row['selector_prefix']),
+                $this->q($row['detail']),
+                $this->q($prevHash),
+                $this->q($selfHash)
             );
+            $this->db->sql_query($sql);
+            $prevHash = $selfHash;
+            $inserted++;
         }
-        if ($values === []) return 0;
-        $sql = "INSERT INTO auth_event (request_uid, date, id_user_main, ip, user_agent_hash, "
-             . " event_type, selector_prefix, detail) VALUES " . implode(',', $values);
-        $this->db->sql_query($sql);
-        return count($values);
+        return $inserted;
+    }
+
+    /**
+     * Latest `self_hash` in `auth_event` so the next insert can chain.
+     * Returns `null` when the table is empty (genesis row).
+     */
+    private function latestAuthEventSelfHash(): ?string
+    {
+        $res = $this->db->sql_query("SELECT self_hash FROM auth_event WHERE self_hash IS NOT NULL ORDER BY id DESC LIMIT 1");
+        if (!$res) return null;
+        $row = $this->db->sql_fetch_array($res, MYSQLI_ASSOC);
+        if (!$row) return null;
+        return $row['self_hash'] !== '' ? (string) $row['self_hash'] : null;
+    }
+
+    /**
+     * Canonical hash of the event payload + previous hash.
+     *
+     * Layout: prev || \x1f || event_type || \x1f || date || \x1f || ip || \x1f
+     *       || id_user_main || \x1f || request_uid || \x1f || ua_hash
+     *       || \x1f || selector_prefix || \x1f || detail
+     *
+     * \x1f is the ASCII Unit Separator — keeps fields unambiguous without
+     * escaping. The detail field can carry arbitrary text but no \x1f
+     * (operators and the framework don't emit it).
+     */
+    public static function computeAuthEventHash(array $row, ?string $prevHash): string
+    {
+        $parts = [
+            (string) ($prevHash ?? ''),
+            (string) ($row['event_type'] ?? ''),
+            (string) ($row['date'] ?? ''),
+            (string) ($row['ip'] ?? ''),
+            $row['id_user_main'] !== null ? (string) (int) $row['id_user_main'] : '',
+            (string) ($row['request_uid'] ?? ''),
+            (string) ($row['user_agent_hash'] ?? ''),
+            (string) ($row['selector_prefix'] ?? ''),
+            (string) ($row['detail'] ?? ''),
+        ];
+        return hash('sha256', implode("\x1f", $parts));
     }
 
     private function insertClientMetrics(array $rows): int

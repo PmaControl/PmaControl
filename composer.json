@@ -2,8 +2,9 @@
     "name": "glial/pmacontrol",
     "license": "GPL-3.0",
     "description": "A monitoring and administration tools to manage farm of MySQL server",
-    "authors": [{
-            "name": "Aurélien LEQUOY",
+    "authors": [
+        {
+            "name": "Aur\u00e9lien LEQUOY",
             "email": "pmacontrol@68koncept.com",
             "homepage": "http://pmacontrol.68koncept.com",
             "role": "Expert MySQL / MariaDB"
@@ -24,18 +25,19 @@
         "esysteme/mysql-sys": "1.6.*",
         "ninsuo/php-shared-memory": "*",
         "geerlingguy/ping": "*",
-	"ramsey/uuid":"^4.7",
+        "ramsey/uuid": "^4.7",
         "jfcherng/php-diff": "^6.2",
         "phpmyadmin/sql-parser": "^5.1",
         "phpseclib/phpseclib": "~3.0",
         "geoip2/geoip2": "^3.2",
-        "doctrine/sql-formatter": "^1.5"
+        "doctrine/sql-formatter": "^1.5",
+        "matomo/device-detector": "^6.5"
     },
     "autoload": {
         "psr-4": {
-		"App\\": "App/",
-		"Glial\\": "Glial/"
-		},
+            "App\\": "App/",
+            "Glial\\": "Glial/"
+        },
         "files": [
             "App/Library/SqlFormatterCompat.php",
             "App/Library/LdapEncodingCompat.php"

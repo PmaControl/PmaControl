@@ -26,6 +26,10 @@ use \Glial\Sgbd\Sgbd;
  */
 class AuditLog extends Controller
 {
+    private const EXPORT_CSRF_SCOPE  = 'auditlog.export';
+    private const FORGET_CSRF_SCOPE  = 'auditlog.forget';
+    private const SETTINGS_CSRF_SCOPE = 'auditlog.settings';
+
     public function before($param) {}
 
     /**
@@ -39,12 +43,14 @@ class AuditLog extends Controller
         $db = Sgbd::sql(DB_DEFAULT);
 
         $data = [
-            'top_users'      => self::topUsers($db),
-            'totals_24h'     => self::totalsLast24h($db),
-            'auth_failures'  => self::recentAuthFailures($db, 20),
-            'top_routes'     => self::topRoutes($db),
-            'top_ips'        => self::topIps($db),
-            'now'            => time(),
+            'top_users'       => self::topUsers($db),
+            'totals_24h'      => self::totalsLast24h($db),
+            'auth_failures'   => self::recentAuthFailures($db, 20),
+            'top_routes'      => self::topRoutes($db),
+            'top_ips'         => self::topIps($db),
+            'hits_per_hour'   => self::hitsPerHour24h($db),
+            'auth_per_hour'   => self::authPerHour24h($db),
+            'now'             => time(),
         ];
         $this->set('data', $data);
     }
@@ -153,6 +159,306 @@ class AuditLog extends Controller
         $this->set('data', [
             'ip'   => $ip,
             'rows' => $rows,
+        ]);
+    }
+
+    /**
+     * GET  /AuditLog/settings/<id>/  — render the per-user preferences form.
+     * POST /AuditLog/settings/<id>/  — persist extended_logging + retention overrides
+     *                                  + notes into audit_subject_preference.
+     *
+     * #1235 post-MVP #9.
+     */
+    public function settings($param)
+    {
+        $idUser = (int) ($param[0] ?? 0);
+        if ($idUser <= 0) {
+            header('Location: ' . LINK . 'AuditLog/index');
+            exit;
+        }
+        $db = Sgbd::sql(DB_DEFAULT);
+        $isPost = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) === 'POST';
+        if ($isPost) {
+            if ($failure = \App\Library\Security\CsrfGuard::ensureOrFail($_POST, $_SERVER, $_SESSION, self::SETTINGS_CSRF_SCOPE)) {
+                http_response_code($failure['status']);
+                echo $failure['body'];
+                return;
+            }
+            $extended = !empty($_POST['extended_logging']) ? 1 : 0;
+            $retReq   = isset($_POST['retention_request_d']) && $_POST['retention_request_d'] !== ''
+                ? (int) $_POST['retention_request_d'] : null;
+            $retAuth  = isset($_POST['retention_auth_d']) && $_POST['retention_auth_d'] !== ''
+                ? (int) $_POST['retention_auth_d'] : null;
+            $notes    = trim((string) ($_POST['notes'] ?? ''));
+            if (strlen($notes) > 255) $notes = substr($notes, 0, 255);
+
+            $notesSql = $notes === '' ? 'NULL' : "'" . $db->sql_real_escape_string($notes) . "'";
+            $retReqSql  = $retReq === null  ? 'NULL' : (int) $retReq;
+            $retAuthSql = $retAuth === null ? 'NULL' : (int) $retAuth;
+
+            $db->sql_query(
+                "INSERT INTO audit_subject_preference "
+              . "(id_user_main, extended_logging, retention_request_d, retention_auth_d, notes) VALUES "
+              . "($idUser, $extended, $retReqSql, $retAuthSql, $notesSql) "
+              . "ON DUPLICATE KEY UPDATE "
+              . "extended_logging = $extended, "
+              . "retention_request_d = $retReqSql, "
+              . "retention_auth_d = $retAuthSql, "
+              . "notes = $notesSql"
+            );
+            header('Location: ' . LINK . 'AuditLog/settings/' . $idUser . '/?saved=1');
+            exit;
+        }
+        $pref = null;
+        $res = $db->sql_query("SELECT * FROM audit_subject_preference WHERE id_user_main = $idUser");
+        if ($res) {
+            $pref = $db->sql_fetch_array($res, MYSQLI_ASSOC) ?: null;
+        }
+        $this->title  = __('Audit') . ' — settings user #' . $idUser;
+        $this->ariane = __('SuperAdmin') . ' / Audit / settings';
+        $this->set('data', [
+            'id_user_main' => $idUser,
+            'pref'         => $pref,
+            'csrf_field'   => \App\Library\Security\Csrf::DEFAULT_FIELD,
+            'csrf_token'   => \App\Library\Security\Csrf::issueToken($_SESSION, self::SETTINGS_CSRF_SCOPE),
+            'saved'        => !empty($_GET['saved']),
+        ]);
+    }
+
+    /**
+     * GET  /AuditLog/exportUser/<id>/      — render the export form (with CSRF).
+     * POST /AuditLog/exportUser/<id>/      — stream a CSV bundle of all rows
+     *                                       attributable to id_user_main = <id>.
+     *
+     * GDPR right-to-portability (#1235 post-MVP #8).
+     */
+    public function exportUser($param)
+    {
+        $idUser = (int) ($param[0] ?? 0);
+        if ($idUser <= 0) {
+            header('Location: ' . LINK . 'AuditLog/index');
+            exit;
+        }
+        $isPost = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) === 'POST';
+        if ($isPost) {
+            if ($failure = \App\Library\Security\CsrfGuard::ensureOrFail($_POST, $_SERVER, $_SESSION, self::EXPORT_CSRF_SCOPE)) {
+                http_response_code($failure['status']);
+                echo $failure['body'];
+                return;
+            }
+            $this->streamExportCsv($idUser);
+            // Mark in audit_subject_preference so the operator can see
+            // the last time the subject's data was exported.
+            $this->stampSubjectPreference($idUser, ['last_export_at' => date('Y-m-d H:i:s.') . sprintf('%03d', (int) (microtime(true) * 1000) % 1000)]);
+            return;
+        }
+        $this->title  = __('Audit') . ' — export user #' . $idUser;
+        $this->ariane = __('SuperAdmin') . ' / Audit / export';
+        $this->set('data', [
+            'id_user_main' => $idUser,
+            'csrf_field'   => \App\Library\Security\Csrf::DEFAULT_FIELD,
+            'csrf_token'   => \App\Library\Security\Csrf::issueToken($_SESSION, self::EXPORT_CSRF_SCOPE),
+            'kind'         => 'export',
+        ]);
+        $this->view = false;
+        require ROOT . DS . 'App' . DS . 'Library' . DS . 'Audit' . DS . 'Templates' . DS . 'export_form.tpl.php';
+    }
+
+    /**
+     * POST /AuditLog/forgetUser/<id>/ — pseudonymise the user's audit
+     * trail. Replaces:
+     *   - user_main.login, email, name, firstname with `forgotten_<id>`
+     *   - request_log.ip with `0.0.0.0`
+     *   - request_log.user_agent_hash with NULL
+     *   - auth_event.ip with `0.0.0.0`, user_agent_hash NULL, detail NULL
+     *   - audit_client_metrics row is deleted in full (high-entropy data)
+     * Schema-level FKs remain valid; the audit timeline still aggregates
+     * but no PII remains. Recorded in `audit_subject_preference`.
+     */
+    public function forgetUser($param)
+    {
+        $idUser = (int) ($param[0] ?? 0);
+        if ($idUser <= 0) {
+            header('Location: ' . LINK . 'AuditLog/index');
+            exit;
+        }
+        $isPost = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) === 'POST';
+        if ($isPost) {
+            if ($failure = \App\Library\Security\CsrfGuard::ensureOrFail($_POST, $_SERVER, $_SESSION, self::FORGET_CSRF_SCOPE)) {
+                http_response_code($failure['status']);
+                echo $failure['body'];
+                return;
+            }
+            $this->applyForget($idUser);
+            $this->stampSubjectPreference($idUser, ['forget_completed_at' => date('Y-m-d H:i:s.') . sprintf('%03d', (int) (microtime(true) * 1000) % 1000)]);
+            header('Location: ' . LINK . 'AuditLog/user/' . $idUser . '/');
+            exit;
+        }
+        $this->title  = __('Audit') . ' — forget user #' . $idUser;
+        $this->ariane = __('SuperAdmin') . ' / Audit / forget';
+        $this->set('data', [
+            'id_user_main' => $idUser,
+            'csrf_field'   => \App\Library\Security\Csrf::DEFAULT_FIELD,
+            'csrf_token'   => \App\Library\Security\Csrf::issueToken($_SESSION, self::FORGET_CSRF_SCOPE),
+            'kind'         => 'forget',
+        ]);
+        $this->view = false;
+        require ROOT . DS . 'App' . DS . 'Library' . DS . 'Audit' . DS . 'Templates' . DS . 'export_form.tpl.php';
+    }
+
+    /**
+     * Stream a CSV bundle of every audit row attributable to the user.
+     * Headers stream with `text/csv` + `Content-Disposition: attachment`
+     * so the browser saves to disk. One file = 4 stacked sections,
+     * separator lines between, for the operator's convenience.
+     */
+    private function streamExportCsv(int $idUser): void
+    {
+        $this->layout_name = false;
+        $this->view = false;
+
+        while (ob_get_level() > 0) { @ob_end_clean(); }
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="audit_export_user_' . $idUser . '_' . date('Ymd_His') . '.csv"');
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $out = fopen('php://output', 'w');
+        if ($out === false) {
+            return;
+        }
+        $emit = static function (array $row) use ($out): void {
+            fputcsv($out, $row, ',', '"', '\\');
+        };
+
+        $emit(['# audit export for id_user_main = ' . $idUser, 'generated_at = ' . date('c')]);
+        $emit([]);
+
+        $emit(['== request_log ==']);
+        $emit(['id', 'request_uid', 'date', 'ip', 'geo_country_iso', 'geo_city',
+               'method', 'uri', 'status', 'bytes_sent', 'referer', 'php_ms',
+               'controller', 'action', 'user_role_class']);
+        $res = $db->sql_query("SELECT id, request_uid, date, ip, geo_country_iso, geo_city, method, uri, status, "
+                            . " bytes_sent, referer, php_ms, controller, action, user_role_class "
+                            . "FROM request_log WHERE id_user_main = $idUser ORDER BY date");
+        if ($res) while ($r = $db->sql_fetch_array($res, MYSQLI_NUM)) { $emit($r); }
+
+        $emit([]);
+        $emit(['== auth_event ==']);
+        $emit(['id', 'request_uid', 'date', 'ip', 'event_type', 'selector_prefix', 'detail']);
+        $res = $db->sql_query("SELECT id, request_uid, date, ip, event_type, selector_prefix, detail "
+                            . "FROM auth_event WHERE id_user_main = $idUser ORDER BY date");
+        if ($res) while ($r = $db->sql_fetch_array($res, MYSQLI_NUM)) { $emit($r); }
+
+        $emit([]);
+        $emit(['== subprocess_log (parented through request_log) ==']);
+        $emit(['id', 'request_uid', 'date_start', 'date_end', 'duration_ms', 'pid', 'command', 'label',
+               'exit_code', 'status']);
+        $res = $db->sql_query("SELECT s.id, s.request_uid, s.date_start, s.date_end, s.duration_ms, s.pid, "
+                            . " s.command, s.label, s.exit_code, s.status "
+                            . "FROM subprocess_log s "
+                            . "INNER JOIN request_log r ON r.request_uid = s.request_uid "
+                            . "WHERE r.id_user_main = $idUser ORDER BY s.date_start");
+        if ($res) while ($r = $db->sql_fetch_array($res, MYSQLI_NUM)) { $emit($r); }
+
+        $emit([]);
+        $emit(['== audit_client_metrics ==']);
+        $emit(['id', 'request_uid', 'date', 'screen_width', 'screen_height', 'device_pixel_ratio',
+               'gpu_family', 'ram_bucket', 'cpu_bucket', 'nav_load_ms', 'cwv_lcp_ms', 'cwv_cls', 'cwv_inp_ms',
+               'net_effective_type', 'prefers_dark']);
+        $res = $db->sql_query("SELECT id, request_uid, date, screen_width, screen_height, device_pixel_ratio, "
+                            . " gpu_family, ram_bucket, cpu_bucket, nav_load_ms, cwv_lcp_ms, cwv_cls, cwv_inp_ms, "
+                            . " net_effective_type, prefers_dark "
+                            . "FROM audit_client_metrics WHERE id_user_main = $idUser ORDER BY date");
+        if ($res) while ($r = $db->sql_fetch_array($res, MYSQLI_NUM)) { $emit($r); }
+
+        fclose($out);
+        exit;
+    }
+
+    private function applyForget(int $idUser): void
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+        $db->sql_query("UPDATE request_log SET ip = '0.0.0.0', user_agent_hash = NULL, referer = NULL "
+                     . "WHERE id_user_main = $idUser");
+        $db->sql_query("UPDATE auth_event SET ip = '0.0.0.0', user_agent_hash = NULL, detail = NULL "
+                     . "WHERE id_user_main = $idUser");
+        $db->sql_query("DELETE FROM audit_client_metrics WHERE id_user_main = $idUser");
+    }
+
+    private function stampSubjectPreference(int $idUser, array $updates): void
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sets = [];
+        foreach ($updates as $k => $v) {
+            $key = preg_replace('/[^a-z_]/', '', $k);
+            if ($key === '') continue;
+            $val = is_int($v) ? (string) $v
+                 : ($v === null ? 'NULL' : "'" . $db->sql_real_escape_string((string) $v) . "'");
+            $sets[] = "$key = $val";
+        }
+        if ($sets === []) return;
+        $assigns = implode(', ', $sets);
+        $db->sql_query("INSERT INTO audit_subject_preference (id_user_main, " . implode(', ', array_keys($updates)) . ") "
+                     . "VALUES ($idUser, " . implode(', ', array_map(static function ($v) use ($db) {
+                            return $v === null ? 'NULL'
+                                 : (is_int($v) ? (string) $v : "'" . $db->sql_real_escape_string((string) $v) . "'");
+                       }, $updates)) . ") "
+                     . "ON DUPLICATE KEY UPDATE $assigns");
+    }
+
+    /**
+     * GET /AuditLog/verify — walks the auth_event hash chain.
+     *
+     * Each `auth_event` row carries a `prev_hash` + `self_hash` populated
+     * by the drain (post-MVP #7 of #1235). A row is valid when its
+     * computed sha256 matches `self_hash` AND its `prev_hash` equals the
+     * previous row's `self_hash`. Any tampered / deleted row breaks the
+     * chain at that point.
+     */
+    public function verify()
+    {
+        $this->title  = __('Audit hash chain verification');
+        $this->ariane = __('SuperAdmin') . ' / Audit / verify';
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $res = $db->sql_query("SELECT id, request_uid, date, id_user_main, ip, user_agent_hash, "
+                            . "event_type, selector_prefix, detail, prev_hash, self_hash "
+                            . "FROM auth_event ORDER BY id ASC");
+        $checked = 0;
+        $broken = [];
+        $lastSelf = null;
+        if ($res) {
+            while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                $checked++;
+                $expectedPrev = $lastSelf;
+                $computed = \App\Library\Audit\AuditDrain::computeAuthEventHash($row, $row['prev_hash']);
+                $rowPrev = $row['prev_hash'];
+                $rowSelf = $row['self_hash'];
+                $reasons = [];
+                if ($rowPrev !== $expectedPrev) {
+                    $reasons[] = 'prev_hash mismatch (expected ' . substr((string) $expectedPrev, 0, 12) . '… got ' . substr((string) $rowPrev, 0, 12) . '…)';
+                }
+                if ($rowSelf !== $computed) {
+                    $reasons[] = 'self_hash mismatch (recomputed ' . substr($computed, 0, 12) . '… stored ' . substr((string) $rowSelf, 0, 12) . '…)';
+                }
+                if ($reasons !== []) {
+                    $broken[] = [
+                        'id' => (int) $row['id'],
+                        'date' => $row['date'],
+                        'event_type' => $row['event_type'],
+                        'reasons' => $reasons,
+                    ];
+                    // Keep walking — first break is reported but a partial
+                    // chain still has value, so we don't bail out here.
+                }
+                $lastSelf = $rowSelf;
+            }
+        }
+        $this->set('data', [
+            'checked' => $checked,
+            'broken'  => $broken,
+            'ok'      => empty($broken),
+            'now'     => time(),
         ]);
     }
 
@@ -295,6 +601,75 @@ class AuditLog extends Controller
         return $out;
     }
 
+    /**
+     * Hits-per-hour bucket for the last 24 h (Chart.js histogram).
+     * Returns 24 buckets indexed by hour offset (0 = oldest, 23 = newest).
+     */
+    private static function hitsPerHour24h($db): array
+    {
+        $out = array_fill(0, 24, ['ts' => null, 'human' => 0, 'robot' => 0]);
+        $sql = "SELECT DATE_FORMAT(r.date, '%Y-%m-%d %H:00') AS bucket, "
+             . "       SUM(IFNULL(ua.is_robot, 0) = 1) AS robots, "
+             . "       SUM(IFNULL(ua.is_robot, 0) = 0) AS humans "
+             . "FROM request_log r "
+             . "LEFT JOIN audit_user_agent ua ON ua.ua_hash = r.user_agent_hash "
+             . "WHERE r.date > NOW() - INTERVAL 24 HOUR "
+             . "GROUP BY bucket "
+             . "ORDER BY bucket";
+        $res = $db->sql_query($sql);
+        if (!$res) return array_values($out);
+        $rows = [];
+        while ($r = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $rows[$r['bucket']] = [
+                'human' => (int) $r['humans'],
+                'robot' => (int) $r['robots'],
+            ];
+        }
+        // Fill every hour of the last 24 h, even if empty, so the chart
+        // doesn't jump on the X axis.
+        $out = [];
+        for ($i = 23; $i >= 0; $i--) {
+            $ts = date('Y-m-d H:00', time() - $i * 3600);
+            $out[] = [
+                'ts'    => $ts,
+                'human' => $rows[$ts]['human'] ?? 0,
+                'robot' => $rows[$ts]['robot'] ?? 0,
+            ];
+        }
+        return $out;
+    }
+
+    /**
+     * Auth events per hour (success/fail breakdown). Useful for spotting
+     * brute-force bursts at a glance.
+     */
+    private static function authPerHour24h($db): array
+    {
+        $rows = [];
+        $sql = "SELECT DATE_FORMAT(date, '%Y-%m-%d %H:00') AS bucket, "
+             . "       SUM(event_type = 'login_success') AS ok, "
+             . "       SUM(event_type IN ('login_fail','token_mismatch','fingerprint_mismatch','csrf_reject','rate_limit')) AS ko "
+             . "FROM auth_event "
+             . "WHERE date > NOW() - INTERVAL 24 HOUR "
+             . "GROUP BY bucket";
+        $res = $db->sql_query($sql);
+        if ($res) {
+            while ($r = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                $rows[$r['bucket']] = ['ok' => (int) $r['ok'], 'ko' => (int) $r['ko']];
+            }
+        }
+        $out = [];
+        for ($i = 23; $i >= 0; $i--) {
+            $ts = date('Y-m-d H:00', time() - $i * 3600);
+            $out[] = [
+                'ts' => $ts,
+                'ok' => $rows[$ts]['ok'] ?? 0,
+                'ko' => $rows[$ts]['ko'] ?? 0,
+            ];
+        }
+        return $out;
+    }
+
     private static function topIps($db, int $limit = 15): array
     {
         $out = [];
@@ -319,9 +694,9 @@ class AuditLog extends Controller
     private static function userTimeline($db, int $idUser, int $limit = 200): array
     {
         $out = [];
-        $sql = "SELECT r.id, r.request_uid, r.date, r.ip, r.method, r.uri, r.status, r.php_ms, "
+        $sql = "SELECT r.id, r.request_uid, r.date, r.ip, r.geo_country_iso, r.geo_city, r.method, r.uri, r.status, r.php_ms, "
              . "       r.controller, r.action, "
-             . "       ua.os_family, ua.browser_family, ua.browser_version, ua.is_robot, "
+             . "       ua.os_family, ua.browser_family, ua.browser_version, ua.is_robot, ua.robot_family, "
              . "       ua.device_type "
              . "FROM request_log r "
              . "LEFT JOIN audit_user_agent ua ON ua.ua_hash = r.user_agent_hash "

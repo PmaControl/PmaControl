@@ -1,4 +1,5 @@
 <?php
+use App\Library\Audit\UaIcon;
 $u  = $data['user_row'];
 $tl = $data['timeline'];
 $t  = $data['totals'];
@@ -26,6 +27,7 @@ $id = $data['id_user_main'];
 .al-pill.status-5 { background:#b91c1c; }
 .al-pill.robot { background:#92400e; }
 .al-uri { font-family:monospace;color:#475569;word-break:break-all;max-width:600px;display:inline-block; }
+.audit-ua-icon { font-size:14px;margin-right:4px; }
 </style>
 
 <div class="al-card">
@@ -56,6 +58,7 @@ $id = $data['id_user_main'];
         <th><?= __('Date') ?></th>
         <th>Δ</th>
         <th><?= __('IP') ?></th>
+        <th><?= __('Geo') ?></th>
         <th><?= __('Method') ?></th>
         <th><?= __('URI') ?></th>
         <th><?= __('Status') ?></th>
@@ -72,6 +75,7 @@ $id = $data['id_user_main'];
         <td><?= htmlspecialchars((string) $r['date']) ?></td>
         <td><small style="color:#94a3b8"><?= $r['delta_s'] !== null ? '+' . (int) $r['delta_s'] . 's' : '' ?></small></td>
         <td><a href="<?= LINK ?>AuditLog/ip/<?= htmlspecialchars((string) $r['ip']) ?>/"><code><?= htmlspecialchars((string) $r['ip']) ?></code></a></td>
+        <td><small><?php if (!empty($r['geo_country_iso'])): ?><?= htmlspecialchars((string) $r['geo_country_iso']) ?><?php if (!empty($r['geo_city'])): ?> · <?= htmlspecialchars((string) $r['geo_city']) ?><?php endif; ?><?php else: ?>—<?php endif; ?></small></td>
         <td><span class="al-pill <?= $methodClass ?>"><?= htmlspecialchars((string) ($r['method'] ?? '')) ?></span></td>
         <td><span class="al-uri"><?= htmlspecialchars((string) $r['uri']) ?></span></td>
         <td>
@@ -80,10 +84,10 @@ $id = $data['id_user_main'];
 <?php endif; ?>
         </td>
         <td style="text-align:right"><?= isset($r['php_ms']) ? (int) $r['php_ms'] : '—' ?></td>
-        <td><small><?= htmlspecialchars((string) ($r['browser_family'] ?? '—')) ?> <?= htmlspecialchars((string) ($r['browser_version'] ?? '')) ?></small></td>
-        <td><small><?= htmlspecialchars((string) ($r['os_family'] ?? '—')) ?>
+        <td><small><?= UaIcon::browserIcon($r['browser_family'] ?? null) ?><?= htmlspecialchars((string) ($r['browser_family'] ?? '—')) ?> <?= htmlspecialchars((string) ($r['browser_version'] ?? '')) ?></small></td>
+        <td><small><?= UaIcon::osIcon($r['os_family'] ?? null) ?><?= htmlspecialchars((string) ($r['os_family'] ?? '—')) ?>
 <?php if (!empty($r['is_robot'])): ?>
-            <span class="al-pill robot">robot</span>
+            <?= UaIcon::robotIcon($r['robot_family'] ?? null) ?>
 <?php endif; ?>
         </small></td>
         <td><a href="<?= LINK ?>AuditLog/correlation/<?= htmlspecialchars((string) $r['request_uid']) ?>/" title="<?= htmlspecialchars((string) $r['request_uid']) ?>"><i class="fa fa-link"></i></a></td>
