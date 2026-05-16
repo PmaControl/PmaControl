@@ -1716,17 +1716,22 @@ class MysqlServer extends Controller
             }
         }
 
-        self::writeJsonFileAtomically($dayDir . '/chart.day.json', [
+        // Chart cache files are best-effort: missing them just costs a
+        // recompute on the next page load. When the day directory is
+        // owned by another user (legacy `data/logs/` dirs), the write
+        // is silently skipped instead of triggering a `tempnam` notice
+        // on every page load. (#1259 follow-up)
+        self::tryWriteJsonCache($dayDir . '/chart.day.json', [
             'date' => $dayKey,
             'counts' => $dayCounts,
         ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
 
-        self::writeJsonFileAtomically($dayDir . '/chart.hour.json', [
+        self::tryWriteJsonCache($dayDir . '/chart.hour.json', [
             'date' => $dayKey,
             'hours' => $hourCounts,
         ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
 
-        self::writeJsonFileAtomically($dayDir . '/chart.minute.json', [
+        self::tryWriteJsonCache($dayDir . '/chart.minute.json', [
             'date' => $dayKey,
             'hours' => $minuteCounts,
         ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
@@ -1880,7 +1885,7 @@ class MysqlServer extends Controller
                         'level'      => $e['level'] ?? null,
                     ];
                 }
-                self::tryWriteChartSidecar($chartPath, $events);
+                self::tryWriteJsonCache($chartPath, $events);
                 return $events;
             }
         }
@@ -1941,33 +1946,30 @@ class MysqlServer extends Controller
             @fclose($handle);
         }
 
-        self::tryWriteChartSidecar($chartPath, $events);
+        self::tryWriteJsonCache($chartPath, $events);
         return $events;
     }
 
     /**
-     * Best-effort persistence of the `.chart.json` sidecar produced by
-     * `loadMysqlLogPartChartEvents`. The sidecar is purely an
-     * optimisation — when the day directory is owned by another user
-     * (legacy `data/logs/` dirs created before www-data took over),
-     * `tempnam` falls back to `/tmp` and the cross-filesystem `rename`
-     * fails. That used to surface as a PHP notice + ERROR log line on
-     * every page load. Swallow the failure so the page still renders;
-     * the streaming path just gets re-run on the next visit.
+     * Best-effort persistence of every `data/logs/` cache file
+     * (`chart.{day,hour,minute}.json`, `.chart.json` sidecar). All of
+     * them are pure derivations of the on-disk `.part.*` files: losing
+     * one just means the next page load recomputes it. When the day
+     * directory is owned by another user — legacy dirs from before
+     * www-data took over — `tempnam` falls back to `/tmp` and the
+     * cross-filesystem `rename` fails. That used to surface as a PHP
+     * Notice + ERROR log line on every page load. Pre-check
+     * `is_writable()` and swallow the failure so the page renders
+     * cleanly.
      */
-    private static function tryWriteChartSidecar(string $chartPath, array $events): void
+    private static function tryWriteJsonCache(string $path, array $payload, int $jsonFlags = JSON_UNESCAPED_SLASHES): void
     {
-        $dir = dirname($chartPath);
-        // Pre-check writability so we don't trigger the `tempnam()`
-        // PHP Notice ("file created in the system's temporary
-        // directory") on legacy dirs owned by another user. The notice
-        // is what surfaced to the user before this guard; failing
-        // silently here keeps the page log clean.
+        $dir = dirname($path);
         if (!@is_writable($dir)) {
             return;
         }
         try {
-            self::writeJsonFileAtomically($chartPath, $events, JSON_UNESCAPED_SLASHES);
+            self::writeJsonFileAtomically($path, $payload, $jsonFlags);
         } catch (\Throwable $e) {
             // Intentionally silent — see method docblock.
         }
