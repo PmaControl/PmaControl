@@ -2123,80 +2123,91 @@ class MysqlServer extends Controller
             $handle = @fopen($partFile, 'rb');
             if (!is_resource($handle)) continue;
 
+            // MariaDB's slow log emits `# Time:` once per second; every
+            // subsequent query within that second starts directly at
+            // `# User@Host:`. We therefore track the most recently seen
+            // timestamp in `$lastTime` and start a new entry on EITHER
+            // `# Time:` OR `# User@Host:`. (#1265 follow-up)
             $current = null;
+            $lastTime = null;
+            $blankFactory = function () use ($sourceName, &$lastTime): array {
+                return [
+                    'event_time'   => $lastTime,
+                    'source_kind'  => 'file',
+                    'log_path'     => $sourceName,
+                    'user_name'    => null,
+                    'host_name'    => null,
+                    'db_name'      => '',
+                    'process_name' => null,
+                    'level'        => 'NOTE',
+                    'error_code'   => null,
+                    'message'      => '',
+                    'raw_line'     => '',
+                ];
+            };
+
             try {
                 while (($line = fgets($handle)) !== false) {
                     $trimmed = rtrim($line, "\r\n");
                     if ($trimmed === '') continue;
 
-                    // `# Time: 260320  1:24:37` (legacy YYMMDD) or
-                    // `# Time: 2026-03-20T01:24:37` (5.7+ ISO).
+                    // `# Time: 260320  1:24:37` (legacy YYMMDD).
                     if (preg_match('/^#\s*Time:\s*(\d{6})\s+(\d{1,2}:\d{2}:\d{2})/', $trimmed, $m)) {
-                        if ($current !== null) $emit($current);
                         $yy = substr($m[1], 0, 2);
                         $mm = substr($m[1], 2, 2);
                         $dd = substr($m[1], 4, 2);
-                        $current = [
-                            'event_time'   => sprintf('20%s-%s-%s %s', $yy, $mm, $dd, $m[2]),
-                            'source_kind'  => 'file',
-                            'log_path'     => $sourceName,
-                            'user_name'    => null,
-                            'host_name'    => null,
-                            'db_name'      => '',
-                            'process_name' => null,
-                            'level'        => 'NOTE',
-                            'error_code'   => null,
-                            'message'      => '',
-                            'raw_line'     => $trimmed . "\n",
-                        ];
+                        $lastTime = sprintf('20%s-%s-%s %s', $yy, $mm, $dd, $m[2]);
+                        // Time-only lines don't bound an entry; the
+                        // boundary is the next `# User@Host:`.
                         continue;
                     }
+                    // `# Time: 2026-03-20T01:24:37` (MySQL 5.7+ ISO).
                     if (preg_match('/^#\s*Time:\s*(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})/', $trimmed, $m)) {
-                        if ($current !== null) $emit($current);
-                        $current = [
-                            'event_time'   => str_replace('T', ' ', $m[1]),
-                            'source_kind'  => 'file',
-                            'log_path'     => $sourceName,
-                            'user_name'    => null,
-                            'host_name'    => null,
-                            'db_name'      => '',
-                            'process_name' => null,
-                            'level'        => 'NOTE',
-                            'error_code'   => null,
-                            'message'      => '',
-                            'raw_line'     => $trimmed . "\n",
-                        ];
+                        $lastTime = str_replace('T', ' ', $m[1]);
                         continue;
                     }
 
-                    // We may see entries before the first `# Time:` (a
-                    // header / partial entry split across part files);
-                    // skip them — the next part file's first `# Time:`
-                    // will re-anchor.
+                    // `# User@Host:` is the canonical entry boundary in
+                    // MariaDB's slow log — every query starts with it.
+                    if (preg_match('/^#\s*User@Host:\s*([^\[]+)\[([^\]]*)\]\s*@\s*([^\[]*)\[([^\]]*)\]/', $trimmed, $m)) {
+                        if ($current !== null) $emit($current);
+                        $current = $blankFactory();
+                        $current['user_name'] = trim($m[1]);
+                        $current['host_name'] = trim($m[3]);
+                        $current['raw_line'] .= $line;
+                        continue;
+                    }
+
+                    // We may see entries before the first boundary
+                    // (a header / partial entry split across part files);
+                    // skip them — the next `# User@Host:` re-anchors.
                     if ($current === null) continue;
 
                     $current['raw_line'] .= $line;
 
-                    // `# User@Host: alice[alice] @ localhost []`
-                    if (preg_match('/^#\s*User@Host:\s*([^\[]+)\[([^\]]*)\]\s*@\s*([^\[]+)\[([^\]]*)\]/', $trimmed, $m)) {
-                        $current['user_name'] = trim($m[1]);
-                        $current['host_name'] = trim($m[3]);
-                        continue;
-                    }
-                    // `# Thread_id: 1234` or `# Id: 1234`
+                    // `# Thread_id: 1234` (MariaDB) or `# Id: 1234` (MySQL)
                     if (preg_match('/^#\s*(?:Thread_id|Id):\s*(\d+)/', $trimmed, $m)) {
                         $current['process_name'] = 'thread ' . $m[1];
+                        // `Schema: foo` on the same line → db_name
+                        if (preg_match('/\bSchema:\s*(\S+)/', $trimmed, $m2)) {
+                            $current['db_name'] = $m2[1];
+                        }
                         continue;
                     }
-                    // `# Query_time: 1.234567  Lock_time: 0.000123 Rows_sent: 1  Rows_examined: 1`
+                    // `# Query_time: 1.234  Lock_time: 0.0001  Rows_sent: 1  Rows_examined: 1`
                     if (preg_match('/^#\s*Query_time:\s*([\d.]+)\s+Lock_time:\s*([\d.]+)(?:\s+Rows_sent:\s*(\d+))?(?:\s+Rows_examined:\s*(\d+))?/', $trimmed, $m)) {
                         $current['error_code'] = sprintf('q=%ss lk=%ss r=%s/%s',
                             $m[1], $m[2], $m[3] ?? '?', $m[4] ?? '?');
                         continue;
                     }
-                    // Skip session SETs that MariaDB sprinkles between
-                    // entries (`use db;`, `SET timestamp=…;`).
-                    if (preg_match('/^(use\s+`?[^;]+`?\s*;|SET\s+timestamp=\d+\s*;)$/i', $trimmed)) {
+                    // Pick up `SET timestamp=...` to refine event_time
+                    // when `# Time:` only carries second-resolution.
+                    if (preg_match('/^SET\s+timestamp=(\d+)/i', $trimmed, $m)) {
+                        $current['event_time'] = date('Y-m-d H:i:s', (int)$m[1]);
+                        continue;
+                    }
+                    // Skip noise that MariaDB sprinkles between entries.
+                    if (preg_match('/^(use\s+`?[^;]+`?\s*;)$/i', $trimmed)) {
                         continue;
                     }
                     // Anything else is part of the SQL statement.
