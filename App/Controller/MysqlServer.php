@@ -1444,6 +1444,27 @@ class MysqlServer extends Controller
         $latestLines = [];
         $lineIndex = -1;
 
+        // (#1261) slow_query never went through the generic
+        // `.parsed.json` pipeline — the per-entry parser doesn't
+        // understand `# Time:` headers and the `.parsed.json` itself is
+        // hundreds of megabytes (skipped by the safety guard). Stream
+        // the `.part.*` files directly, grouping lines by `# Time:`
+        // and capping at 1000 most-recent matches within the window.
+        if ($logType === MysqlLogCollector::LOG_TYPE_SLOW_QUERY) {
+            $latestLines = $this->streamSlowQueryLinesInWindow(
+                $partFiles,
+                $window['start'],
+                $window['end'],
+                1000
+            );
+            $result['total_rows'] = count($latestLines);
+            $result['total_pages'] = max(1, (int)ceil($result['total_rows'] / $pageSize));
+            $result['page'] = min($page, $result['total_pages']);
+            $offset = max(0, ($result['page'] - 1) * $pageSize);
+            $result['lines'] = array_slice($latestLines, $offset, $pageSize);
+            return $result;
+        }
+
         foreach ($partFiles as $partFile) {
             $events = $this->loadParsedMysqlLogPartEvents($partFile, $idMysqlServer, $logType);
 
@@ -1986,6 +2007,142 @@ class MysqlServer extends Controller
 
         self::tryWriteJsonCache($chartPath, $events);
         return $events;
+    }
+
+    /**
+     * (#1261) Stream every `# Time:`-headed entry from a slow-query
+     * `.part.*` chunk file, materialise the rows the line viewer needs
+     * (event_time + user/host + SQL text + the standard
+     * `# Query_time:` metrics), and return at most `$maxEntries` rows
+     * sorted by `event_time` descending.
+     *
+     * Memory is bounded: at most `2 * maxEntries` entries are kept in
+     * the accumulator before the periodic trim. With maxEntries=1000
+     * and ~50 KB per entry, peak is ~100 MB — well under the default
+     * 128 MB memory_limit, vs. the 408 MB+ we'd allocate for a single
+     * `.parsed.json` decode.
+     *
+     * @param  list<string> $partFiles
+     * @return list<array<string,mixed>>
+     */
+    private function streamSlowQueryLinesInWindow(
+        array $partFiles,
+        ?int $windowStart,
+        ?int $windowEnd,
+        int $maxEntries
+    ): array {
+        $accumulator = [];
+        $emit = function (array $entry) use ($windowStart, $windowEnd, &$accumulator, $maxEntries): void {
+            if (empty($entry['event_time'])) return;
+            $ts = strtotime($entry['event_time']);
+            if ($ts === false) return;
+            if ($windowStart !== null && $ts < $windowStart) return;
+            if ($windowEnd   !== null && $ts > $windowEnd)   return;
+            $accumulator[] = $entry;
+            if (count($accumulator) >= ($maxEntries * 2)) {
+                usort($accumulator, static fn($a, $b) => strcmp((string)$b['event_time'], (string)$a['event_time']));
+                $accumulator = array_slice($accumulator, 0, $maxEntries);
+            }
+        };
+
+        foreach ($partFiles as $partFile) {
+            [$metaPath, $meta] = $this->getMysqlLogPartMeta($partFile);
+            $sourceName = (string)($meta['source_name'] ?? '');
+
+            $handle = @fopen($partFile, 'rb');
+            if (!is_resource($handle)) continue;
+
+            $current = null;
+            try {
+                while (($line = fgets($handle)) !== false) {
+                    $trimmed = rtrim($line, "\r\n");
+                    if ($trimmed === '') continue;
+
+                    // `# Time: 260320  1:24:37` (legacy YYMMDD) or
+                    // `# Time: 2026-03-20T01:24:37` (5.7+ ISO).
+                    if (preg_match('/^#\s*Time:\s*(\d{6})\s+(\d{1,2}:\d{2}:\d{2})/', $trimmed, $m)) {
+                        if ($current !== null) $emit($current);
+                        $yy = substr($m[1], 0, 2);
+                        $mm = substr($m[1], 2, 2);
+                        $dd = substr($m[1], 4, 2);
+                        $current = [
+                            'event_time'   => sprintf('20%s-%s-%s %s', $yy, $mm, $dd, $m[2]),
+                            'source_kind'  => 'file',
+                            'log_path'     => $sourceName,
+                            'user_name'    => null,
+                            'host_name'    => null,
+                            'db_name'      => '',
+                            'process_name' => null,
+                            'level'        => 'NOTE',
+                            'error_code'   => null,
+                            'message'      => '',
+                            'raw_line'     => $trimmed . "\n",
+                        ];
+                        continue;
+                    }
+                    if (preg_match('/^#\s*Time:\s*(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})/', $trimmed, $m)) {
+                        if ($current !== null) $emit($current);
+                        $current = [
+                            'event_time'   => str_replace('T', ' ', $m[1]),
+                            'source_kind'  => 'file',
+                            'log_path'     => $sourceName,
+                            'user_name'    => null,
+                            'host_name'    => null,
+                            'db_name'      => '',
+                            'process_name' => null,
+                            'level'        => 'NOTE',
+                            'error_code'   => null,
+                            'message'      => '',
+                            'raw_line'     => $trimmed . "\n",
+                        ];
+                        continue;
+                    }
+
+                    // We may see entries before the first `# Time:` (a
+                    // header / partial entry split across part files);
+                    // skip them — the next part file's first `# Time:`
+                    // will re-anchor.
+                    if ($current === null) continue;
+
+                    $current['raw_line'] .= $line;
+
+                    // `# User@Host: alice[alice] @ localhost []`
+                    if (preg_match('/^#\s*User@Host:\s*([^\[]+)\[([^\]]*)\]\s*@\s*([^\[]+)\[([^\]]*)\]/', $trimmed, $m)) {
+                        $current['user_name'] = trim($m[1]);
+                        $current['host_name'] = trim($m[3]);
+                        continue;
+                    }
+                    // `# Thread_id: 1234` or `# Id: 1234`
+                    if (preg_match('/^#\s*(?:Thread_id|Id):\s*(\d+)/', $trimmed, $m)) {
+                        $current['process_name'] = 'thread ' . $m[1];
+                        continue;
+                    }
+                    // `# Query_time: 1.234567  Lock_time: 0.000123 Rows_sent: 1  Rows_examined: 1`
+                    if (preg_match('/^#\s*Query_time:\s*([\d.]+)\s+Lock_time:\s*([\d.]+)(?:\s+Rows_sent:\s*(\d+))?(?:\s+Rows_examined:\s*(\d+))?/', $trimmed, $m)) {
+                        $current['error_code'] = sprintf('q=%ss lk=%ss r=%s/%s',
+                            $m[1], $m[2], $m[3] ?? '?', $m[4] ?? '?');
+                        continue;
+                    }
+                    // Skip session SETs that MariaDB sprinkles between
+                    // entries (`use db;`, `SET timestamp=…;`).
+                    if (preg_match('/^(use\s+`?[^;]+`?\s*;|SET\s+timestamp=\d+\s*;)$/i', $trimmed)) {
+                        continue;
+                    }
+                    // Anything else is part of the SQL statement.
+                    if ($trimmed[0] !== '#') {
+                        $current['message'] .= ($current['message'] === '' ? '' : "\n") . $trimmed;
+                    }
+                }
+                if ($current !== null) {
+                    $emit($current);
+                }
+            } finally {
+                @fclose($handle);
+            }
+        }
+
+        usort($accumulator, static fn($a, $b) => strcmp((string)$b['event_time'], (string)$a['event_time']));
+        return array_slice($accumulator, 0, $maxEntries);
     }
 
     /**
