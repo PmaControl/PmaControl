@@ -1674,7 +1674,14 @@ class MysqlServer extends Controller
         sort($partFiles, SORT_STRING);
         $lineIndex = -1;
         foreach ($partFiles as $partFile) {
-            $events = $this->loadParsedMysqlLogPartEvents($partFile, $idMysqlServer, $logType);
+            // (#1259) Use the lightweight chart-events loader instead of
+            // loading the full `.parsed.json` (which can be hundreds of
+            // megabytes for slow_query days — json_decode then asks for
+            // 1+ GB of PHP heap and crashes the page with 134 MB limit).
+            // The lightweight loader either reads a small `.chart.json`
+            // sidecar or streams the `.part.*` line by line, keeping
+            // only event_time + level.
+            $events = $this->loadMysqlLogPartChartEvents($partFile, $logType);
 
             foreach ($events as $event) {
                 $lineIndex++;
@@ -1772,6 +1779,16 @@ class MysqlServer extends Controller
     /**
      * @return array<int,array<string,mixed>>
      */
+    /**
+     * Cap on the size of `.parsed.json` we're willing to load whole.
+     * Above this, both `loadParsedMysqlLogPartEvents` and the chart-
+     * cache builder switch to the streaming `.chart.json` sidecar
+     * (event_time + level only). 64 MB is roughly 200-500 k entries
+     * worth of slow-query rows; the line viewer paginates at 100 lines
+     * per page so it never needs that many in memory anyway. (#1259)
+     */
+    private const PARSED_JSON_MAX_BYTES = 64 * 1024 * 1024;
+
     private function loadParsedMysqlLogPartEvents(string $partFile, int $idMysqlServer, string $logType): array
     {
         [$metaPath, $meta] = $this->getMysqlLogPartMeta($partFile);
@@ -1782,6 +1799,14 @@ class MysqlServer extends Controller
         );
 
         if (file_exists($parsedPath) && (int)@filemtime($parsedPath) >= $sourceMtime) {
+            // Guard against the 408 MB-`.parsed.json` crash that #1259
+            // surfaced on slow_query days: json_decode of a file that
+            // big asks for ~1 GB of PHP heap, which exceeds the
+            // default 128 MB memory_limit. Skip rather than fault.
+            $size = (int)@filesize($parsedPath);
+            if ($size > self::PARSED_JSON_MAX_BYTES) {
+                return [];
+            }
             $decoded = json_decode((string)file_get_contents($parsedPath), true);
             return is_array($decoded) ? $decoded : [];
         }
@@ -1802,6 +1827,121 @@ class MysqlServer extends Controller
 
         self::writeJsonFileAtomically($parsedPath, $events, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
 
+        return $events;
+    }
+
+    /**
+     * (#1259) Lightweight events for the chart cache builder. Each
+     * event carries only what `buildMysqlLogsChartCachesForDay` needs:
+     * `event_time` + `level`. Two orders of magnitude smaller than the
+     * full `.parsed.json` (one slow_query day for server 1 measured
+     * 408 MB; the corresponding chart sidecar is ~5 MB).
+     *
+     * Lookup order:
+     *  1. `.chart.json` sidecar fresher than the part file → load it
+     *  2. `.parsed.json` exists and ≤ PARSED_JSON_MAX_BYTES → project
+     *     down to {event_time, level}, persist the chart sidecar, return
+     *  3. Otherwise stream the `.part.*` file with fopen/fgets, peel
+     *     just the header line of each entry, extract event_time and
+     *     level, persist the sidecar, return
+     *
+     * Path 3 is O(1) memory regardless of part size.
+     *
+     * @return list<array{event_time:?string,level:?string}>
+     */
+    private function loadMysqlLogPartChartEvents(string $partFile, string $logType): array
+    {
+        [$metaPath] = $this->getMysqlLogPartMeta($partFile);
+        $chartPath = dirname($partFile) . '/.' . basename($partFile) . '.chart.json';
+        $sourceMtime = max(
+            (int)@filemtime($partFile),
+            file_exists($metaPath) ? (int)@filemtime($metaPath) : 0
+        );
+
+        if (file_exists($chartPath) && (int)@filemtime($chartPath) >= $sourceMtime) {
+            $decoded = json_decode((string)file_get_contents($chartPath), true);
+            if (is_array($decoded)) return $decoded;
+        }
+
+        $parsedPath = dirname($partFile) . '/.' . basename($partFile) . '.parsed.json';
+        $events = [];
+
+        // Path 2 — re-project an already-built `.parsed.json` if it
+        // fits in memory. Avoids re-parsing for small days.
+        if (file_exists($parsedPath)
+            && (int)@filemtime($parsedPath) >= $sourceMtime
+            && (int)@filesize($parsedPath) <= self::PARSED_JSON_MAX_BYTES
+        ) {
+            $decoded = json_decode((string)file_get_contents($parsedPath), true);
+            if (is_array($decoded)) {
+                foreach ($decoded as $e) {
+                    $events[] = [
+                        'event_time' => $e['event_time'] ?? null,
+                        'level'      => $e['level'] ?? null,
+                    ];
+                }
+                self::writeJsonFileAtomically($chartPath, $events, JSON_UNESCAPED_SLASHES);
+                return $events;
+            }
+        }
+
+        // Path 3 — stream the part file. Each "entry" starts on a header
+        // line (for error_log: YYYY-MM-DD HH:MM:SS; for slow_query: a
+        // `# Time:` line; everything else: one line = one entry).
+        $handle = @fopen($partFile, 'rb');
+        if (!is_resource($handle)) {
+            return [];
+        }
+        try {
+            $errorHeader = '/^\d{4}-\d{2}-\d{2}\s+\d{1,2}:\d{2}:\d{2}/';
+            while (($line = fgets($handle)) !== false) {
+                $trimmed = rtrim($line, "\r\n");
+                if ($trimmed === '') continue;
+
+                if ($logType === MysqlLogCollector::LOG_TYPE_SLOW_QUERY) {
+                    // Slow-log headers like `# Time: 260320  1:24:37`
+                    if (preg_match('/^#\s*Time:\s*(\d{6})\s+(\d{1,2}:\d{2}:\d{2})/', $trimmed, $m)) {
+                        $yy  = substr($m[1], 0, 2);
+                        $mm  = substr($m[1], 2, 2);
+                        $dd  = substr($m[1], 4, 2);
+                        $ts  = sprintf('20%s-%s-%s %s', $yy, $mm, $dd, $m[2]);
+                        $events[] = ['event_time' => $ts, 'level' => 'NOTE'];
+                    } elseif (preg_match('/^#\s*Time:\s*(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})/', $trimmed, $m)) {
+                        // MySQL 5.7+ slow-log ISO format
+                        $events[] = ['event_time' => str_replace('T', ' ', $m[1]), 'level' => 'NOTE'];
+                    }
+                    // Skip non-header lines silently — they belong to the
+                    // ongoing query body.
+                    continue;
+                }
+
+                if ($logType === MysqlLogCollector::LOG_TYPE_ERROR
+                    || $logType === MysqlLogCollector::LOG_TYPE_SQL_ERROR) {
+                    if (!preg_match($errorHeader, $trimmed)) {
+                        // continuation of multi-line entry — ignore for chart
+                        continue;
+                    }
+                    $parsed = MysqlLogCollector::parseMysqlLogEntry($trimmed);
+                    $events[] = [
+                        'event_time' => $parsed['event_time'] ?? null,
+                        'level'      => $parsed['level']      ?? null,
+                    ];
+                    continue;
+                }
+
+                // general_log: one row per line; only first 32 chars
+                // can carry a timestamp prefix.
+                $parsed = MysqlLogCollector::parseMysqlLogEntry($trimmed);
+                $events[] = [
+                    'event_time' => $parsed['event_time'] ?? null,
+                    'level'      => $parsed['level']      ?? null,
+                ];
+            }
+        } finally {
+            @fclose($handle);
+        }
+
+        self::writeJsonFileAtomically($chartPath, $events, JSON_UNESCAPED_SLASHES);
         return $events;
     }
 
