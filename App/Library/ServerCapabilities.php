@@ -75,4 +75,42 @@ final class ServerCapabilities
 
         return (bool) $db->checkVersion(self::MATRIX[$feature]);
     }
+
+    /**
+     * Returns the correct master-binary-log-status statement for the
+     * connection. MySQL 8.4 removed `SHOW MASTER STATUS` in favour of
+     * `SHOW BINARY LOG STATUS`. Centralised here so every caller goes
+     * through the same `show_binary_log_status` capability matrix
+     * entry — no try-and-fall-back probes, no duplicated `if (…) $sql
+     * = '…';` blocks. See docs/database_conventions.md § "Version-
+     * gated SQL".
+     *
+     * Returned shape is identical for both statements:
+     * `(File, Position, Binlog_Do_DB, Binlog_Ignore_DB, Executed_Gtid_Set)`.
+     */
+    public static function masterStatusSql(object $db): string
+    {
+        return self::supports($db, 'show_binary_log_status')
+            ? 'SHOW BINARY LOG STATUS'
+            : 'SHOW MASTER STATUS';
+    }
+
+    /**
+     * Same as `masterStatusSql()` but for callers that already have the
+     * version strings on hand and don't want to re-resolve them through
+     * `checkVersion()`. Used by `Aspirateur` where the version is
+     * already known from the Aspirateur snapshot. Returns `null` when
+     * the server family doesn't support `SHOW MASTER STATUS` at all
+     * (e.g. SingleStore — handled by the caller).
+     */
+    public static function masterStatusSqlForVersion(
+        string $version,
+        string $versionComment = ''
+    ): string {
+        $isMariaDB = \App\Library\MysqlVersion::isMariaDb($version, $versionComment);
+        if (!$isMariaDB && \App\Library\MysqlVersion::atLeast($version, '8.4.0')) {
+            return 'SHOW BINARY LOG STATUS';
+        }
+        return 'SHOW MASTER STATUS';
+    }
 }

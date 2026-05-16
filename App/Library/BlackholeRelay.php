@@ -335,14 +335,30 @@ class BlackholeRelay
     }
 
     /**
-     * SHOW MASTER STATUS on the master. Returns null when binary
+     * Master binary-log status on the master. Returns null when binary
      * logging is disabled.
+     *
+     * MySQL 8.4 removed `SHOW MASTER STATUS` in favour of
+     * `SHOW BINARY LOG STATUS`. The greenfield pipeline of #1212
+     * silently failed against MySQL 8.4 primaries before this fix —
+     * `sql_query_silent('SHOW MASTER STATUS')` returned false on the
+     * parser error and the guard reported "Master has no binary log".
+     *
+     * Pick the right SQL up front via `ServerCapabilities::supports()`
+     * — never probe with a try-and-fall-back, because that always
+     * sends the wrong statement first on one of the two version axes
+     * and pollutes the slow / error log on every call. Same shape
+     * `(File, Position)` is returned by both statements.
+     *
+     * See docs/database_conventions.md § "Version-gated SQL" for the
+     * project convention this follows.
      *
      * @return array{File:string,Position:int}|null
      */
     private function fetchMasterStatus($link): ?array
     {
-        $res = $link->sql_query_silent('SHOW MASTER STATUS');
+        $sql = \App\Library\ServerCapabilities::masterStatusSql($link);
+        $res = $link->sql_query_silent($sql);
         if (!$res) return null;
         $row = $link->sql_fetch_array($res, MYSQLI_ASSOC);
         if (!$row || empty($row['File'])) return null;

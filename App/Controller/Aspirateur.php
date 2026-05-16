@@ -4426,12 +4426,10 @@ GROUP BY C.ID, C.INFO;";
             return null;
         }
 
-        $isMariaDB = MysqlVersion::isMariaDb($version, $versionComment);
-        if (!$isMariaDB && MysqlVersion::atLeast($version, '8.4.0')) {
-            return "SHOW BINARY LOG STATUS";
-        }
-
-        return "SHOW MASTER STATUS";
+        // Delegate the MySQL/MariaDB-version → SQL mapping to the
+        // central helper so every caller in the project goes through
+        // one matrix entry (#1246, docs/database_conventions.md).
+        return \App\Library\ServerCapabilities::masterStatusSqlForVersion($version, $versionComment);
     }
 
     private function getGroupReplicationStatusFromConnection(

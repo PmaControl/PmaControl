@@ -415,11 +415,7 @@ class Demo extends Controller {
         $db_master = Sgbd::sql($mysql_server[$id_mysql_server__master]['name']);
         $db_slave = Sgbd::sql($mysql_server[$id_mysql_server__slave]['name']);
 
-        if (ServerCapabilities::supports($db_master, 'show_binary_log_status')) {
-            $res = $db_master->sql_query("SHOW BINARY LOG STATUS");
-        } else {
-            $res = $db_master->sql_query("SHOW MASTER STATUS");
-        }
+        $res = $db_master->sql_query(ServerCapabilities::masterStatusSql($db_master));
         while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)){
             Debug::debug($arr);
             $FILE = $arr['File'];
