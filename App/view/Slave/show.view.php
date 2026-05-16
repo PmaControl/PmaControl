@@ -645,18 +645,26 @@ $(document).ready(function() {
                 <div class="sv-action-group" data-gtid-compat="<?= $gtidIncompat ? 'mixed' : 'ok' ?>">
                     <div class="sv-action-group-title">GTID</div>
                     <?php if ($gtidIncompat): ?>
-                        <a class="btn btn-default btn-sm disabled" disabled
+                        <a class="btn btn-default btn-sm disabled" disabled aria-disabled="true" tabindex="-1"
                            title="<?= htmlspecialchars($gtidIncompatReason, ENT_QUOTES, 'UTF-8') ?>"
                            data-toggle="tooltip" data-placement="top"
                            style="cursor:not-allowed">
                             <i class="fa fa-ban" style="color:var(--clr-muted)"></i> <?= __('Activate') ?>
                         </a>
-                        <a class="btn btn-default btn-sm disabled" disabled
-                           title="<?= htmlspecialchars($gtidIncompatReason, ENT_QUOTES, 'UTF-8') ?>"
-                           data-toggle="tooltip" data-placement="top"
-                           style="cursor:not-allowed">
-                            <i class="fa fa-times"></i> <?= __('Deactivate') ?>
-                        </a>
+                        <?php if ($gtid_active): ?>
+                            <a class="btn btn-default btn-sm" href="<?= LINK ?><?= $data['class'] ?>/deactivateGtid/<?= $data['id_mysql_server'] ?>/<?= $data['replication_name'] ?>/"
+                               title="<?= __('Topology is half-configured for GTID — Deactivate is left live so the operator can revert to file+position replication.') ?>"
+                               data-toggle="tooltip" data-placement="top">
+                                <i class="fa fa-times" style="color:var(--clr-crit)"></i> <?= __('Deactivate') ?>
+                            </a>
+                        <?php else: ?>
+                            <a class="btn btn-default btn-sm disabled" disabled aria-disabled="true" tabindex="-1"
+                               title="<?= htmlspecialchars($gtidIncompatReason, ENT_QUOTES, 'UTF-8') ?>"
+                               data-toggle="tooltip" data-placement="top"
+                               style="cursor:not-allowed">
+                                <i class="fa fa-times"></i> <?= __('Deactivate') ?>
+                            </a>
+                        <?php endif; ?>
                     <?php elseif ($gtid_active): ?>
                         <a class="btn btn-default btn-sm disabled" disabled><i class="fa fa-check"></i> <?= __('Activate') ?></a>
                         <a class="btn btn-default btn-sm" href="<?= LINK ?><?= $data['class'] ?>/deactivateGtid/<?= $data['id_mysql_server'] ?>/<?= $data['replication_name'] ?>/">

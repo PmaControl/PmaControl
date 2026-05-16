@@ -464,7 +464,7 @@ class Slave extends Controller
      * has its own GTID format that is incompatible with the MySQL
      * family.
      */
-    public static function detectMysqlFamily(string $versionComment, string $version): string
+    private static function detectMysqlFamily(string $versionComment, string $version): string
     {
         $haystack = strtolower(trim($versionComment . ' ' . $version));
         $bareVersion = strtolower(trim($version));
@@ -490,24 +490,34 @@ class Slave extends Controller
      *
      * @return array{compatible:bool,reason:string,slave_family:string,master_family:string}
      */
-    public static function evaluateGtidActivationCompatibility(
+    private static function evaluateGtidActivationCompatibility(
         string $slaveServerType,
         ?int $masterId
     ): array {
         $slaveFamily = self::detectMysqlFamily($slaveServerType, '');
         $masterFamily = 'unknown';
 
+        // Wrap the time-series lookup in try/catch — an unreachable
+        // master, stale credentials or a missing variables row must
+        // not break /slave/show. Fall back to 'unknown' (treated as
+        // "compatible" / fail-open here, but the activateGtid action
+        // applies the same check live with the real DB handles so
+        // the actual mutation still refuses cross-family on confirm).
         if ($masterId !== null && $masterId > 0) {
-            $display = Extraction::display(
-                ['variables::version_comment', 'variables::version'],
-                [$masterId]
-            );
-            $vals = $display[$masterId][''] ?? [];
-            if (is_array($vals)) {
-                $masterFamily = self::detectMysqlFamily(
-                    (string) ($vals['version_comment'] ?? ''),
-                    (string) ($vals['version'] ?? '')
+            try {
+                $display = Extraction::display(
+                    ['variables::version_comment', 'variables::version'],
+                    [$masterId]
                 );
+                $vals = $display[$masterId][''] ?? [];
+                if (is_array($vals)) {
+                    $masterFamily = self::detectMysqlFamily(
+                        (string) ($vals['version_comment'] ?? ''),
+                        (string) ($vals['version'] ?? '')
+                    );
+                }
+            } catch (\Throwable $e) {
+                $masterFamily = 'unknown';
             }
         }
 
@@ -3214,6 +3224,23 @@ var chart = new Chart(ctx, {
         $db = Mysql::getDbLink($id_mysql_server);
         $isMariaDB = (stripos($db->getServerType(), 'mariadb') !== false);
         $useReplica = self::usesReplicaSyntax($db);
+
+        // Issue #1194 follow-up — server-side guard mirroring the UI
+        // grey-out. The disabled <a> in the view is purely cosmetic;
+        // a bookmark, browser history entry or copy-pasted URL would
+        // otherwise still bypass the check and brick replication.
+        // Refuse the cross-family transition here, before any STOP /
+        // CHANGE is sent.
+        $id_master_compat = Mysql::getMaster($id_mysql_server, $connection_name);
+        $gtidCompat = self::evaluateGtidActivationCompatibility(
+            (string) $db->getServerType(),
+            !empty($id_master_compat) ? (int) $id_master_compat : null
+        );
+        if ($gtidCompat['compatible'] === false) {
+            set_flash("error", __("Error"), $gtidCompat['reason']);
+            header('location: '.LINK.'slave/show/'.$id_mysql_server.'/'.$connection_name.'/');
+            return;
+        }
 
         try {
             if ($isMariaDB) {
