@@ -24,9 +24,19 @@ use App\Library\BlackholeRelay;
 
 class Blackhole extends Controller
 {
-    private const START_CSRF_SCOPE      = 'blackhole.convert.start';
-    private const GREENFIELD_CSRF_SCOPE = 'blackhole.greenfield.start';
-    private const SWEEP_CSRF_SCOPE      = 'blackhole.sweep';
+    private const START_CSRF_SCOPE       = 'blackhole.convert.start';
+    private const GREENFIELD_CSRF_SCOPE  = 'blackhole.greenfield.start';
+    private const SWEEP_CSRF_SCOPE       = 'blackhole.sweep';
+    private const KILL_CSRF_SCOPE        = 'blackhole.kill';
+    private const MARK_FAILED_CSRF_SCOPE = 'blackhole.mark_failed';
+
+    /**
+     * SIGTERM grace window before escalating to SIGKILL (in seconds).
+     * Conversions are I/O-bound on ALTER statements, so we give the
+     * runner a few seconds to unwind its finally-block (restore
+     * sql_log_bin=1) before forcing it down.
+     */
+    private const KILL_GRACE_SECONDS = 3;
 
     public function before($param)
     {
@@ -52,6 +62,9 @@ class Blackhole extends Controller
         $data['csrf_token']         = Csrf::issueToken($_SESSION, self::START_CSRF_SCOPE);
         $data['greenfield_token']   = Csrf::issueToken($_SESSION, self::GREENFIELD_CSRF_SCOPE);
         $data['sweep_token']        = Csrf::issueToken($_SESSION, self::SWEEP_CSRF_SCOPE);
+        $data['kill_token']         = Csrf::issueToken($_SESSION, self::KILL_CSRF_SCOPE);
+        $data['mark_failed_token']  = Csrf::issueToken($_SESSION, self::MARK_FAILED_CSRF_SCOPE);
+        $data['default_parallelism'] = self::defaultParallelism();
 
         $this->set('data', $data);
     }
@@ -130,18 +143,20 @@ class Blackhole extends Controller
         }
 
         $startedBy = $db->sql_real_escape_string((string) ($_SESSION['login'] ?? 'cli'));
+        $parallelism = self::clampParallelism((int) ($_POST['parallelism'] ?? self::defaultParallelism()));
         $db->sql_query(
             "INSERT INTO blackhole_conversion
-                (id_mysql_server, status, dry_run, started_by, progress, error_message, created_at)
+                (id_mysql_server, status, dry_run, started_by, parallelism, progress, error_message, created_at)
              VALUES
-                ({$serverId}, 'pending', {$dryRun}, '{$startedBy}', '[]', '', NOW())"
+                ({$serverId}, 'pending', {$dryRun}, '{$startedBy}', {$parallelism}, '[]', '', NOW())"
         );
         $conversionId = (int) $db->sql_insert_id();
 
         $pid = self::forkConversionRunner($conversionId);
+        self::persistRunnerPid($db, $conversionId, $pid);
         self::registerJobRow($db, $conversionId, [$conversionId], $pid, $startedBy);
 
-        $this->bhSendJson(['id' => $conversionId, 'status' => 'pending']);
+        $this->bhSendJson(['id' => $conversionId, 'status' => 'pending', 'pid' => $pid, 'parallelism' => $parallelism]);
     }
 
     /**
@@ -240,20 +255,22 @@ class Blackhole extends Controller
             $replPassStored = \Glial\Security\Crypt\Crypt::encrypt($replPass);
         }
         $replPassEsc = $db->sql_real_escape_string($replPassStored);
+        $parallelism = self::clampParallelism((int) ($_POST['parallelism'] ?? self::defaultParallelism()));
         $db->sql_query(
             "INSERT INTO blackhole_conversion
                 (id_mysql_server, id_mysql_server__master, replication_user, replication_password,
-                 status, dry_run, provision_mode, started_by, progress, error_message, created_at)
+                 status, dry_run, provision_mode, started_by, parallelism, progress, error_message, created_at)
              VALUES
                 ({$targetId}, {$masterId}, '{$replEsc}', '{$replPassEsc}',
-                 'pending', {$dryRun}, 'greenfield', '{$startedBy}', '[]', '', NOW())"
+                 'pending', {$dryRun}, 'greenfield', '{$startedBy}', {$parallelism}, '[]', '', NOW())"
         );
         $conversionId = (int) $db->sql_insert_id();
 
         $pid = self::forkConversionRunner($conversionId);
+        self::persistRunnerPid($db, $conversionId, $pid);
         self::registerJobRow($db, $conversionId, [$conversionId], $pid, $startedBy);
 
-        $this->bhSendJson(['id' => $conversionId, 'status' => 'pending']);
+        $this->bhSendJson(['id' => $conversionId, 'status' => 'pending', 'pid' => $pid, 'parallelism' => $parallelism]);
     }
 
     /**
@@ -279,6 +296,44 @@ class Blackhole extends Controller
     }
 
     /**
+     * CLI: `php App/Webroot/index.php Blackhole runConvertWorker <conv_id> <worker_idx> <total>`.
+     * Spawned by BlackholeRelay::convertTablesParallel(). Reads the
+     * shared tables list, processes its round-robin slice, exits.
+     * Not exposed over HTTP — it skips CSRF and writes directly to
+     * blackhole_conversion rows.
+     */
+    public function runConvertWorker($param)
+    {
+        $this->layout_name = false;
+        $this->view = false;
+
+        // CLI-only: it bumps tables_converted unauthenticated. The
+        // parent dispatch always invokes us through `php
+        // App/Webroot/index.php`, so PHP_SAPI is 'cli' for any real
+        // caller. Over HTTP we 404 to keep the surface minimal.
+        if (PHP_SAPI !== 'cli') {
+            http_response_code(404);
+            return;
+        }
+
+        $conversionId = (int) ($param[0] ?? 0);
+        $workerIdx    = (int) ($param[1] ?? 0);
+        $totalWorkers = (int) ($param[2] ?? 1);
+
+        if ($conversionId <= 0 || $totalWorkers <= 0 || $workerIdx < 0 || $workerIdx >= $totalWorkers) {
+            fwrite(STDERR, "usage: runConvertWorker <conversion_id> <worker_idx> <total_workers>\n");
+            return;
+        }
+
+        $relay = new BlackholeRelay($conversionId);
+        $n = $relay->runWorkerSlice($workerIdx, $totalWorkers);
+
+        if (PHP_SAPI === 'cli') {
+            echo "worker {$workerIdx}/{$totalWorkers} converted={$n}\n";
+        }
+    }
+
+    /**
      * CLI: `php App/Webroot/index.php Blackhole runConvertCli <id>`.
      * Loaded by the background fork from startConvert() and also
      * usable standalone from a shell.
@@ -299,6 +354,12 @@ class Blackhole extends Controller
         // restarted from /job/index, no row exists yet for this pid —
         // create one so the second run is also visible.
         self::ensureJobRowForCurrentRun($conversionId);
+
+        // Mirror our pid onto the conversion row too. The fork stamped
+        // it from the parent webserver process; if we got here via a
+        // /job/index restart the column would otherwise stay stale and
+        // the liveness check on /Blackhole/index would lie.
+        self::persistRunnerPid(Sgbd::sql(DB_DEFAULT), $conversionId, (int) getmypid());
 
         $relay = new BlackholeRelay($conversionId);
         $ok = $relay->run();
@@ -455,7 +516,8 @@ class Blackhole extends Controller
     private function loadRecentConversions($db, int $limit): array
     {
         $sql = "SELECT bc.id, bc.id_mysql_server, bc.status, bc.dry_run,
-                       bc.tables_total, bc.tables_converted,
+                       bc.tables_total, bc.tables_converted, bc.tables_blackhole_after,
+                       bc.parallelism, bc.pid, bc.pid_started_at,
                        bc.error_message, bc.created_at, bc.completed_at,
                        ms.display_name, ms.name AS server_name
                 FROM blackhole_conversion bc
@@ -465,8 +527,247 @@ class Blackhole extends Controller
         $res = $db->sql_query($sql);
         $out = [];
         while ($r = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $r['liveness'] = self::pidLiveness((int) ($r['pid'] ?? 0), (int) $r['id']);
             $out[] = $r;
         }
         return $out;
+    }
+
+    // ------------------------------------------------------------------
+    //  PID liveness + Kill / Mark-failed (Issue #1250)
+    // ------------------------------------------------------------------
+
+    /**
+     * Default worker count for the parallel ALTER loop. Reads `nproc`
+     * once per request; clamps to [1,32]. Operators can override by
+     * passing `parallelism` in the start POST.
+     */
+    private static function defaultParallelism(): int
+    {
+        static $cached = null;
+        if ($cached !== null) return $cached;
+        $n = (int) @shell_exec('nproc 2>/dev/null');
+        if ($n <= 0) {
+            $n = (int) @ini_get('precision') > 0 ? 1 : 1; // fallback when shell_exec is disabled
+        }
+        return $cached = self::clampParallelism($n);
+    }
+
+    private static function clampParallelism(int $n): int
+    {
+        if ($n < 1)  return 1;
+        if ($n > 32) return 32;
+        return $n;
+    }
+
+    /**
+     * Stamp the conversion row with the runner pid (and wall-clock
+     * start). Idempotent: running it from both the forking webserver
+     * and the runner itself just overwrites with the same value.
+     */
+    private static function persistRunnerPid($db, int $conversionId, int $pid): void
+    {
+        if ($pid <= 0) return;
+        $db->sql_query(
+            "UPDATE blackhole_conversion
+             SET pid = {$pid}, pid_started_at = NOW()
+             WHERE id = " . (int) $conversionId
+        );
+    }
+
+    /**
+     * Returns a structured liveness verdict for `(pid, conversionId)`:
+     *   ['state' => 'alive'|'dead'|'mismatch'|'unknown',
+     *    'pid'   => int,
+     *    'cmdline' => string|null,
+     *    'matches' => bool]
+     *
+     * `state = 'mismatch'` means the pid is alive but `/proc/<pid>/cmdline`
+     * doesn't carry our `Blackhole runConvertCli <id>` marker — Linux
+     * recycled the pid. Treated like 'dead' for status purposes, but
+     * Kill refuses (we'd murder an unrelated process).
+     */
+    private static function pidLiveness(int $pid, int $conversionId): array
+    {
+        if ($pid <= 0) {
+            return ['state' => 'unknown', 'pid' => 0, 'cmdline' => null, 'matches' => false];
+        }
+        $cmdline = self::readProcCmdline($pid);
+        if ($cmdline === null) {
+            return ['state' => 'dead', 'pid' => $pid, 'cmdline' => null, 'matches' => false];
+        }
+        $matches = self::cmdlineMatchesRunner($cmdline, $conversionId);
+        if (!$matches) {
+            return ['state' => 'mismatch', 'pid' => $pid, 'cmdline' => $cmdline, 'matches' => false];
+        }
+        return ['state' => 'alive', 'pid' => $pid, 'cmdline' => $cmdline, 'matches' => true];
+    }
+
+    private static function readProcCmdline(int $pid): ?string
+    {
+        $path = '/proc/' . (int) $pid . '/cmdline';
+        if (!@is_readable($path)) return null;
+        $raw = @file_get_contents($path);
+        if ($raw === false || $raw === '') return null;
+        // /proc cmdline arg separator is NUL; flatten for grep/display.
+        return trim(str_replace("\0", ' ', $raw));
+    }
+
+    private static function cmdlineMatchesRunner(string $cmdline, int $conversionId): bool
+    {
+        // Two acceptable shapes:
+        //   php App/Webroot/index.php Blackhole runConvertCli <id>
+        //   php-fpm: idle  (only when restarted via /job/index — handled by job class match)
+        // The first is the canonical fork. Be strict about the id so a
+        // recycled pid running a *different* Blackhole conversion can
+        // still be detected.
+        if (strpos($cmdline, 'Blackhole') === false) return false;
+        if (strpos($cmdline, 'runConvertCli') === false) return false;
+        // Require the conversion id as a standalone token at end of line
+        // or followed by whitespace, never as a substring of a longer
+        // number (id=12 vs id=120).
+        return (bool) preg_match('/\bBlackhole\s+runConvertCli\s+' . (int) $conversionId . '\b/', $cmdline);
+    }
+
+    /**
+     * POST /Blackhole/kill/<conversion_id>/ — AJAX. Send SIGTERM, wait
+     * KILL_GRACE_SECONDS, escalate to SIGKILL if still alive. Refuses
+     * when the cmdline check doesn't match (recycled pid guard).
+     * Returns JSON `{ ok: true, escalated: bool }` on success.
+     */
+    public function kill($param)
+    {
+        $this->bhBeginJsonResponse();
+
+        if ($failure = CsrfGuard::ensureOrFail($_POST, $_SERVER, $_SESSION, self::KILL_CSRF_SCOPE)) {
+            $this->bhSendJson(['error' => $failure['body']], $failure['status']);
+            return;
+        }
+
+        $conversionId = (int) ($param[0] ?? 0);
+        if ($conversionId <= 0) {
+            $this->bhSendJson(['error' => 'Invalid id'], 400);
+            return;
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $res = $db->sql_query("SELECT id, status, pid FROM blackhole_conversion WHERE id = {$conversionId}");
+        $row = $res ? $db->sql_fetch_array($res, MYSQLI_ASSOC) : null;
+        if (!$row) {
+            $this->bhSendJson(['error' => 'Conversion not found'], 404);
+            return;
+        }
+        if (!in_array($row['status'], ['pending', 'running'], true)) {
+            $this->bhSendJson(['error' => 'Conversion is not running (status=' . $row['status'] . ')'], 409);
+            return;
+        }
+
+        $pid = (int) $row['pid'];
+        $liveness = self::pidLiveness($pid, $conversionId);
+        if ($liveness['state'] !== 'alive') {
+            $this->bhSendJson([
+                'error'    => 'Refusing to kill — cmdline check failed (state=' . $liveness['state'] . ')',
+                'liveness' => $liveness,
+            ], 409);
+            return;
+        }
+
+        if (!function_exists('posix_kill')) {
+            $this->bhSendJson(['error' => 'posix extension unavailable on this host'], 500);
+            return;
+        }
+
+        @posix_kill($pid, defined('SIGTERM') ? SIGTERM : 15);
+        $escalated = false;
+        $deadline = time() + self::KILL_GRACE_SECONDS;
+        while (time() < $deadline) {
+            usleep(200000); // 200 ms
+            if (self::readProcCmdline($pid) === null) break;
+        }
+        if (self::readProcCmdline($pid) !== null) {
+            @posix_kill($pid, defined('SIGKILL') ? SIGKILL : 9);
+            $escalated = true;
+            // brief settle so the next status poll sees the dead pid
+            usleep(300000);
+        }
+
+        // Flip the conversion row so the UI stops showing "running"
+        // forever. The runner's finally() may have restored sql_log_bin
+        // already, but we can't tell from here — operator should
+        // re-run a Force-BLACKHOLE sweep before resuming traffic.
+        $db->sql_query(
+            "UPDATE blackhole_conversion
+             SET status = 'failed',
+                 completed_at = NOW(),
+                 error_message = " . ($escalated
+                    ? "CONCAT('killed (SIGKILL) by ', '" . $db->sql_real_escape_string((string) ($_SESSION['login'] ?? '?')) . "')"
+                    : "CONCAT('killed (SIGTERM) by ', '" . $db->sql_real_escape_string((string) ($_SESSION['login'] ?? '?')) . "')") . "
+             WHERE id = " . (int) $conversionId
+        );
+        // Match the parallel job row too so /job/index agrees.
+        $db->sql_query(
+            "UPDATE job SET status = 'ERROR', date_end = NOW()
+             WHERE pid = {$pid} AND status = 'RUNNING'"
+        );
+
+        $this->bhSendJson(['ok' => true, 'escalated' => $escalated, 'liveness' => $liveness]);
+    }
+
+    /**
+     * POST /Blackhole/markFailed/<conversion_id>/ — AJAX. Cleanup for
+     * an orphaned 'running' row whose pid is gone (or whose cmdline
+     * doesn't match). Refuses if the runner is still actually alive
+     * and matches — the operator must Kill it first.
+     */
+    public function markFailed($param)
+    {
+        $this->bhBeginJsonResponse();
+
+        if ($failure = CsrfGuard::ensureOrFail($_POST, $_SERVER, $_SESSION, self::MARK_FAILED_CSRF_SCOPE)) {
+            $this->bhSendJson(['error' => $failure['body']], $failure['status']);
+            return;
+        }
+
+        $conversionId = (int) ($param[0] ?? 0);
+        if ($conversionId <= 0) {
+            $this->bhSendJson(['error' => 'Invalid id'], 400);
+            return;
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $res = $db->sql_query("SELECT id, status, pid FROM blackhole_conversion WHERE id = {$conversionId}");
+        $row = $res ? $db->sql_fetch_array($res, MYSQLI_ASSOC) : null;
+        if (!$row) {
+            $this->bhSendJson(['error' => 'Conversion not found'], 404);
+            return;
+        }
+        if (!in_array($row['status'], ['pending', 'running'], true)) {
+            $this->bhSendJson(['error' => 'Conversion already terminal (status=' . $row['status'] . ')'], 409);
+            return;
+        }
+
+        $pid = (int) $row['pid'];
+        $liveness = self::pidLiveness($pid, $conversionId);
+        if ($liveness['state'] === 'alive') {
+            $this->bhSendJson([
+                'error'    => 'Runner is still alive — Kill it first instead of marking failed',
+                'liveness' => $liveness,
+            ], 409);
+            return;
+        }
+
+        $reason = $db->sql_real_escape_string('runner died: ' . $liveness['state']
+            . ($liveness['pid'] ? ' (pid ' . $liveness['pid'] . ')' : '')
+            . ' — marked failed by ' . (string) ($_SESSION['login'] ?? '?'));
+        $db->sql_query(
+            "UPDATE blackhole_conversion
+             SET status = 'failed', completed_at = NOW(), error_message = '{$reason}'
+             WHERE id = " . (int) $conversionId
+        );
+        if ($pid > 0) {
+            $db->sql_query("UPDATE job SET status = 'ERROR', date_end = NOW() WHERE pid = {$pid} AND status = 'RUNNING'");
+        }
+
+        $this->bhSendJson(['ok' => true, 'liveness' => $liveness]);
     }
 }
