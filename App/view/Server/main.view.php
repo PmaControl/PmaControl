@@ -175,17 +175,34 @@ if (empty($_GET['ajax'])):
 .sm-row-off td.sm-status::after { background: var(--sm-info); }
 .sm-row-proc td.sm-status::after { background: var(--sm-warn); }
 
-/* subtle row tints */
+/* subtle row tints — status row + adjacent .sm-detail-row hover as a pair
+   so the visual block stays coherent whether the operator's cursor is on
+   the status row or on the metadata-lock / kill-worker sub-row below. */
 .sm-row-err td { background: #fef2f2; }
-.sm-row-err:hover td { background: #fee2e2 !important; }
+.sm-row-err:hover td,
+.sm-row-err:has(+ .sm-detail-row:hover) td,
+.sm-row-err:hover + .sm-detail-row td,
+.sm-row-err + .sm-detail-row:hover td { background: #fee2e2 !important; }
 .sm-row-warn td { background: #fffbeb; }
-.sm-row-warn:hover td { background: #fef3c7 !important; }
+.sm-row-warn:hover td,
+.sm-row-warn:has(+ .sm-detail-row:hover) td,
+.sm-row-warn:hover + .sm-detail-row td,
+.sm-row-warn + .sm-detail-row:hover td { background: #fef3c7 !important; }
 .sm-row-ack td { background: #f0fdf4; }
-.sm-row-ack:hover td { background: #dcfce7 !important; }
+.sm-row-ack:hover td,
+.sm-row-ack:has(+ .sm-detail-row:hover) td,
+.sm-row-ack:hover + .sm-detail-row td,
+.sm-row-ack + .sm-detail-row:hover td { background: #dcfce7 !important; }
 .sm-row-off td { background: #eff6ff; }
-.sm-row-off:hover td { background: #dbeafe !important; }
+.sm-row-off:hover td,
+.sm-row-off:has(+ .sm-detail-row:hover) td,
+.sm-row-off:hover + .sm-detail-row td,
+.sm-row-off + .sm-detail-row:hover td { background: #dbeafe !important; }
 .sm-row-proc td { background: #fff7ed; }
-.sm-row-proc:hover td { background: #ffedd5 !important; }
+.sm-row-proc:hover td,
+.sm-row-proc:has(+ .sm-detail-row:hover) td,
+.sm-row-proc:hover + .sm-detail-row td,
+.sm-row-proc + .sm-detail-row:hover td { background: #ffedd5 !important; }
 
 /* hidden rows for search filter */
 .sm-hidden { display: none !important; }
