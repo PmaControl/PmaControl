@@ -243,7 +243,10 @@ foreach ($data['slave'] as $slaves) {
         echo '<td  class="'.$class.'">';
 
         if (!empty($slave['last_io_error'])) {
-            echo '<a href="#" data-toggle="tooltip" data-placement="right" title="'.$slave['last_io_error'].'">'.$slave['last_io_errno'].'</a>';
+            // Escape — error messages contain `"`, `<`, etc. that would
+            // otherwise terminate the title attribute early and leak the
+            // tail of the SQL into raw HTML, displacing the errno number.
+            echo '<a href="#" data-toggle="tooltip" data-placement="right" title="'.htmlspecialchars((string) $slave['last_io_error'], ENT_QUOTES, 'UTF-8').'">'.htmlspecialchars((string) $slave['last_io_errno']).'</a>';
         }
         echo '</td>'."\n";
 
@@ -254,7 +257,7 @@ foreach ($data['slave'] as $slaves) {
         echo '<td  class="'.$class.'">';
 
         if (!empty($slave['last_sql_error'])) {
-            echo '<a href="#" data-toggle="tooltip" data-placement="right" title="'.$slave['last_sql_error'].'">'.$slave['last_sql_errno'].'</a>';
+            echo '<a href="#" data-toggle="tooltip" data-placement="right" title="'.htmlspecialchars((string) $slave['last_sql_error'], ENT_QUOTES, 'UTF-8').'">'.htmlspecialchars((string) $slave['last_sql_errno']).'</a>';
         }
         echo '</td>'."\n";
 
