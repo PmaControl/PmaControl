@@ -45,11 +45,12 @@ $summary = $drain->run();
 $elapsed = round((microtime(true) - $start) * 1000);
 
 echo sprintf(
-    "[audit_drain] %s — %d requests, %d auth_events, %d client_metrics, %d subprocess (%d ms)\n",
+    "[audit_drain] %s — %d requests, %d auth_events, %d client_metrics, %d subprocess, %d apache_backfill (%d ms)\n",
     date('c'),
     $summary['requests'],
     $summary['auth_events'],
     $summary['client_metrics'],
     $summary['subprocess'],
+    $summary['apache_backfill'] ?? 0,
     $elapsed
 );
