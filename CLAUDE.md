@@ -31,6 +31,7 @@ The active integration target is `master`. Create issue branches from an up-to-d
 | `/Home/index` Replication issues card — buckets + signature dedup (#1210) | [docs/home_replication_dashboard.md](docs/home_replication_dashboard.md) |
 | Convert a slave into a BLACKHOLE binlog relay (UI + CLI), pipeline, pitfalls (#1212 epic) | [docs/binlog_relay_blackhole.md](docs/binlog_relay_blackhole.md) |
 | Runtime log file locations | [docs/logs.md](docs/logs.md) |
+| Auto-import of MySQL/MariaDB error / slow / general / OOM logs from monitored servers (`/MysqlServer/logs/<id>/`, daemon_main #37 + #38) | [docs/mysql_logs_import.md](docs/mysql_logs_import.md) |
 | Small gotchas (`grep -a` on binlog, stale browser cache, worker hot-reload, …) | [docs/tips.md](docs/tips.md) |
 
 Full topic index: [docs/README.md](docs/README.md).
