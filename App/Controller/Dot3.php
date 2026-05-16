@@ -5309,8 +5309,11 @@ class Dot3 extends Controller
                     if ($id_mysql_server == $id_master) {
                         continue;
                     }
-                    
-                    $tmp = self::$config['REPLICATION_OK'];
+
+                    // ProxySQL cluster links are not MySQL replication —
+                    // render them red (PROXYSQL_LINK) so they don't blend
+                    // in with healthy primary→replica edges.
+                    $tmp = self::$config['PROXYSQL_LINK'];
                     
                     //TO DO understand why only with proySQL it's generate a warning :  'Warning: Arrow type "117 -> 116" unknown - ignoring'
                     $tmp['tooltip'] = "$id_master -> $id_mysql_server";  
