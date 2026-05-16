@@ -79,6 +79,20 @@ $candidates = array_values(array_filter($servers, static fn ($s) => (int) $s['is
 .bh-icon {
     width: 18px; height: 18px; vertical-align: -4px;
 }
+/* "% migrated" mini progress bar — Active BLACKHOLE relays card (#1252) */
+.bh-mini-bar {
+    display: inline-block; vertical-align: middle;
+    width: 90px; height: 8px; background: #fee2e2;
+    border-radius: 4px; overflow: hidden; margin-right: 6px;
+}
+.bh-mini-bar > span {
+    display: block; height: 100%; background: #16a34a;
+    transition: width 0.3s ease;
+}
+.bh-mini-bar.partial > span { background: #f59e0b; }
+.bh-mini-bar.low     > span { background: #dc2626; }
+.bh-pct-label { font-family: monospace; font-size: 11px; color: #334155; }
+.bh-pct-na    { color: #94a3b8; font-size: 11px; font-style: italic; }
 </style>
 
 <div class="bh-card">
@@ -120,16 +134,29 @@ $candidates = array_values(array_filter($servers, static fn ($s) => (int) $s['is
                 <th><?= __('Upstream master') ?></th>
                 <th><?= __('Downstream slaves') ?></th>
                 <th><?= __('Hostname') ?></th>
+                <th><?= __('Migrated') ?></th>
                 <th><?= __('Status') ?></th>
                 <th></th>
             </tr>
-            <?php foreach ($relays as $s): ?>
+            <?php foreach ($relays as $s):
+                $sp = $s['engine_spread'] ?? null;
+            ?>
                 <tr>
                     <td><?= Display::srv((int) $s['id'], true, LINK.'MysqlServer/main/'.(int) $s['id'].'/pmacontrol/') ?></td>
                     <td><code><?= htmlspecialchars($s['connection_name'] !== '' ? $s['connection_name'] : '(default)') ?></code></td>
                     <td><?= (int) ($s['master_id'] ?? 0) > 0 ? Display::srv((int) $s['master_id'], true, LINK.'MysqlServer/main/'.(int) $s['master_id'].'/pmacontrol/') : '<small style="color:#94a3b8">—</small>' ?></td>
                     <td><strong><?= (int) ($s['downstream_slaves'] ?? 0) ?></strong></td>
                     <td><code><?= htmlspecialchars($s['hostname'] ?: $s['ip']) ?></code></td>
+                    <td>
+                        <?php if (is_array($sp) && !empty($sp['reachable'])):
+                            $pct = (int) $sp['pct'];
+                            $cls = $pct >= 100 ? '' : ($pct >= 50 ? 'partial' : 'low'); ?>
+                            <span class="bh-mini-bar <?= $cls ?>" title="<?= (int) $sp['blackhole'] ?> / <?= (int) $sp['total'] ?> base tables on ENGINE=BLACKHOLE"><span style="width:<?= $pct ?>%"></span></span>
+                            <span class="bh-pct-label"><?= $pct ?>% (<?= (int) $sp['blackhole'] ?>/<?= (int) $sp['total'] ?>)</span>
+                        <?php else: ?>
+                            <span class="bh-pct-na" title="<?= htmlspecialchars($sp['error'] ?? 'unreachable') ?>">—</span>
+                        <?php endif; ?>
+                    </td>
                     <td><span class="bh-pill relay"><?= __('BLACKHOLE relay') ?></span></td>
                     <td>
                         <a href="<?= LINK ?>slave/show/<?= (int) $s['id'] ?>/<?= htmlspecialchars((string) $s['connection_name']) ?>/" class="btn btn-xs btn-default"><?= __('Inspect') ?></a>

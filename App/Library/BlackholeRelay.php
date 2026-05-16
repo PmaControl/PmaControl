@@ -1638,6 +1638,57 @@ class BlackholeRelay
     // ------------------------------------------------------------------
 
     /**
+     * Engine spread on a supervised server: `BLACKHOLE / total base
+     * tables` (excluding system schemas), with a derived percentage.
+     * Used by /Blackhole/index to render a progress bar on the Active
+     * BLACKHOLE relays card (#1252).
+     *
+     * Returns:
+     *   ['reachable' => true,  'blackhole' => int, 'total' => int, 'pct' => int]
+     *   ['reachable' => false, 'blackhole' => 0,   'total' => 0,   'pct' => 0, 'error' => string]
+     *
+     * Failures (server down, auth issue) are swallowed and reported via
+     * `reachable=false` so the page never breaks because of one dead
+     * relay.
+     */
+    public static function relayEngineSpread(int $serverId): array
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+        $res = $db->sql_query(
+            "SELECT name FROM mysql_server WHERE id = " . (int) $serverId . " AND is_deleted = 0"
+        );
+        $row = $res ? $db->sql_fetch_array($res, MYSQLI_ASSOC) : null;
+        if (!$row) {
+            return ['reachable' => false, 'blackhole' => 0, 'total' => 0, 'pct' => 0, 'error' => 'server not found'];
+        }
+        try {
+            $link = @Sgbd::sql($row['name']);
+        } catch (\Throwable $e) {
+            return ['reachable' => false, 'blackhole' => 0, 'total' => 0, 'pct' => 0, 'error' => $e->getMessage()];
+        }
+        if (!$link) {
+            return ['reachable' => false, 'blackhole' => 0, 'total' => 0, 'pct' => 0, 'error' => 'cannot open Sgbd link'];
+        }
+
+        $excluded = "'" . implode("','", self::SYSTEM_SCHEMAS) . "'";
+        $sql = "SELECT
+                    SUM(engine = 'BLACKHOLE')                            AS blackhole,
+                    COUNT(*)                                             AS total
+                FROM information_schema.tables
+                WHERE table_type = 'BASE TABLE'
+                  AND table_schema NOT IN ({$excluded})";
+        $r = @$link->sql_query_silent($sql);
+        if (!$r) {
+            return ['reachable' => false, 'blackhole' => 0, 'total' => 0, 'pct' => 0, 'error' => 'count query failed'];
+        }
+        $row = $link->sql_fetch_array($r, MYSQLI_ASSOC);
+        $bh    = (int) ($row['blackhole'] ?? 0);
+        $total = (int) ($row['total'] ?? 0);
+        $pct   = $total > 0 ? (int) floor($bh * 100 / $total) : 0;
+        return ['reachable' => true, 'blackhole' => $bh, 'total' => $total, 'pct' => $pct];
+    }
+
+    /**
      * Supervised servers eligible to be provisioned as a fresh
      * BLACKHOLE relay (not already a relay, not a proxy/VIP). The
      * actual idleness check runs at conversion time; this list is the
