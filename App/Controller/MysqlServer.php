@@ -1880,7 +1880,7 @@ class MysqlServer extends Controller
                         'level'      => $e['level'] ?? null,
                     ];
                 }
-                self::writeJsonFileAtomically($chartPath, $events, JSON_UNESCAPED_SLASHES);
+                self::tryWriteChartSidecar($chartPath, $events);
                 return $events;
             }
         }
@@ -1941,8 +1941,36 @@ class MysqlServer extends Controller
             @fclose($handle);
         }
 
-        self::writeJsonFileAtomically($chartPath, $events, JSON_UNESCAPED_SLASHES);
+        self::tryWriteChartSidecar($chartPath, $events);
         return $events;
+    }
+
+    /**
+     * Best-effort persistence of the `.chart.json` sidecar produced by
+     * `loadMysqlLogPartChartEvents`. The sidecar is purely an
+     * optimisation — when the day directory is owned by another user
+     * (legacy `data/logs/` dirs created before www-data took over),
+     * `tempnam` falls back to `/tmp` and the cross-filesystem `rename`
+     * fails. That used to surface as a PHP notice + ERROR log line on
+     * every page load. Swallow the failure so the page still renders;
+     * the streaming path just gets re-run on the next visit.
+     */
+    private static function tryWriteChartSidecar(string $chartPath, array $events): void
+    {
+        $dir = dirname($chartPath);
+        // Pre-check writability so we don't trigger the `tempnam()`
+        // PHP Notice ("file created in the system's temporary
+        // directory") on legacy dirs owned by another user. The notice
+        // is what surfaced to the user before this guard; failing
+        // silently here keeps the page log clean.
+        if (!@is_writable($dir)) {
+            return;
+        }
+        try {
+            self::writeJsonFileAtomically($chartPath, $events, JSON_UNESCAPED_SLASHES);
+        } catch (\Throwable $e) {
+            // Intentionally silent — see method docblock.
+        }
     }
 
     public static function writeJsonFileAtomically(string $path, $payload, int $jsonFlags = 0): void
