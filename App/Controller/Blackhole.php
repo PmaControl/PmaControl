@@ -45,6 +45,23 @@ class Blackhole extends Controller
 
         $data = [];
         $data['servers']            = BlackholeRelay::listCandidateServers();
+        // Enrich existing relays with their engine spread so the card
+        // can render a "% migrated" column (#1252). One extra query per
+        // relay against information_schema.tables — cheap (≤3 relays
+        // today) and individually wrapped so a dead relay doesn't break
+        // the page.
+        $seenRelay = [];
+        foreach ($data['servers'] as &$srvRow) {
+            if ((int) ($srvRow['is_binlog_relay'] ?? 0) !== 1) continue;
+            $sid = (int) $srvRow['id'];
+            if (isset($seenRelay[$sid])) {
+                $srvRow['engine_spread'] = $seenRelay[$sid];
+                continue;
+            }
+            $seenRelay[$sid] = BlackholeRelay::relayEngineSpread($sid);
+            $srvRow['engine_spread'] = $seenRelay[$sid];
+        }
+        unset($srvRow);
         $data['idle_targets']       = BlackholeRelay::listIdleTargets();
         $data['master_candidates']  = BlackholeRelay::listMasterCandidates();
         $data['conversions']        = $this->loadRecentConversions($db, 25);
