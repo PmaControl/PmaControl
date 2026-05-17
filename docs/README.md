@@ -39,6 +39,7 @@ One topic per file. Load only what the current task needs.
 ## Runtime
 - [logs.md](logs.md) — application log files under `tmp/log/`
 - [mysql_logs_import.md](mysql_logs_import.md) — `/MysqlServer/logs/<id>/` pipeline: SSH tail → `data/logs/` chunks → `IntegrateLog` → `ssh_log_mysql_*` tables → UI
+- [binlog_analyzer_mdev_39640.md](binlog_analyzer_mdev_39640.md) — `/slave/show/<id>/` BinlogAnalyzer workaround for upstream MDEV-39640 (`mariadb-binlog --stop-datetime` broken on relay binlogs)
 - [tips.md](tips.md) — small gotchas (grep -a on binlog, stale browser cache, …)
 
 ## Installation

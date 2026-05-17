@@ -975,8 +975,29 @@ class BinlogAnalyzer
         if ($verbose) {
             $cmd .= " -v --base64-output=DECODE-ROWS";
         }
+        // (#1273) Workaround for upstream MariaDB bug MDEV-39640:
+        // `mariadb-binlog --stop-datetime` truncates the output to the
+        // 3 file-header events on a closed binlog produced by a
+        // secondary with `log_slave_updates=ON` (relay re-emit). The
+        // trailing `Binlog_checkpoint` event of such files is dated at
+        // the rotation time, not at the transactional data time, and
+        // tripping the stop heuristic from that event causes early exit.
+        //
+        // Reproduced on bundled mariadb-binlog 10.11.16 (BuildID
+        // dfa3536b…) and 11.8.7 (BuildID acd49e16…); distinct from the
+        // already-fixed MDEV-35528 (multi-file scan).
+        //
+        // Until MDEV-39640 is fixed upstream and the bundled binary is
+        // upgraded:
+        //   - keep `--start-datetime` (works correctly and skips lots
+        //     of bytes upfront)
+        //   - drop `--stop-datetime`
+        //   - filter by header timestamp in PHP via
+        //     `mysqlbinlogLineMatchesWindow()` at parse time.
+        //
+        // TODO(#1273 / MDEV-39640): restore `--stop-datetime` here once
+        // every supported mariadb-binlog version contains the fix.
         $cmd .= " --start-datetime=" . escapeshellarg($analysis['time_start']);
-        $cmd .= " --stop-datetime=" . escapeshellarg($analysis['time_end']);
 
         // Add only binlog files (exclude .meta.json or other non-binlog files)
         $files = glob($this->tmpDir . '/*');
@@ -987,6 +1008,35 @@ class BinlogAnalyzer
         }
 
         return $cmd;
+    }
+
+    /**
+     * (#1273 / MDEV-39640) PHP-side substitute for the broken
+     * `mariadb-binlog --stop-datetime` flag. Test whether a mysqlbinlog
+     * event-header line falls in the configured `[startTs, endTs]`
+     * window. The header format is `#YYMMDD HH:MM:SS server id …`.
+     *
+     * Returns true when `$line` is not a header (so callers can pass
+     * non-header / continuation lines through without losing context);
+     * returns false only when a parsed header timestamp falls outside
+     * the window.
+     *
+     * TODO(MDEV-39640): once the upstream fix ships in every supported
+     * mariadb-binlog version, the helper becomes unused — callers can
+     * delegate back to `--stop-datetime`. Keep the regex test though;
+     * it doubles as a guard against future regressions.
+     */
+    public static function mysqlbinlogLineMatchesWindow(string $line, int $startTs, int $endTs): bool
+    {
+        if (!preg_match('/^#(\d{2})(\d{2})(\d{2})\s+(\d{1,2}):(\d{2}):(\d{2})\s/', $line, $m)) {
+            return true;
+        }
+        $ts = strtotime(sprintf('20%s-%s-%s %02d:%s:%s',
+            $m[1], $m[2], $m[3], (int)$m[4], $m[5], $m[6]));
+        if ($ts === false) {
+            return true;
+        }
+        return $ts >= $startTs && $ts <= $endTs;
     }
 
     // ------------------------------------------------------------------
@@ -1084,47 +1134,83 @@ class BinlogAnalyzer
     {
         $cmd = $this->buildBinlogCmd(false);
 
-        // Extract: timestamp, event type, end_log_pos for each event
-        // MariaDB binlog format: #260414  0:01:25 server id 123  end_log_pos 12345  Query/Xid/...
-        $cmdParse = $cmd . " 2>/dev/null | grep -aoP '^#\\d{6}\\s+\\d+:\\d+:\\d+\\s+server id\\s+\\d+\\s+end_log_pos\\s+\\d+.*?(Query|Xid|GTID)'"
-                  . " | grep -aoP '(end_log_pos\\s+\\d+|Query|Xid|GTID)'";
+        // (#1273) Two related fixes here:
+        //
+        //  - MDEV-39640 workaround: `--stop-datetime` truncates the
+        //    output to 3 header events on a relay binlog produced with
+        //    `log_slave_updates=ON`. `buildBinlogCmd()` no longer
+        //    passes it; apply the stop filter in PHP via
+        //    `mysqlbinlogLineMatchesWindow()` below.
+        //  - BLACKHOLE-relay fix: the previous counter used `Xid`
+        //    (InnoDB commit) as the transaction boundary; a relay where
+        //    every table is `ENGINE=BLACKHOLE` (cf. #1212) never emits
+        //    `Xid` even when 50k+ GTID transactions land in the
+        //    binlog, so the count came back as zero. Count one
+        //    transaction per `GTID` event instead; InnoDB masters
+        //    still get the right number because every GTID matches an
+        //    Xid 1:1.
+        //
+        // Extract: timestamp, event type, end_log_pos — one line per
+        // matching event. The grep narrows the output to the few event
+        // types we care about so we don't pipe gigabytes through PHP.
+        $cmdParse = $cmd . " 2>/dev/null | grep -aE '^#[0-9]{6}\\s+[0-9]+:[0-9]+:[0-9]+\\s+server id\\s+[0-9]+\\s+end_log_pos\\s+[0-9]+.*(Query|Xid|GTID)'";
 
         $output = shell_exec($cmdParse . " 2>/dev/null") ?: '';
 
+        $analysis = $this->getAnalysis();
+        $startTs  = (int) strtotime((string) ($analysis['time_start'] ?? '@0'));
+        $endTs    = (int) strtotime((string) ($analysis['time_end']   ?? '@' . PHP_INT_MAX));
+        if ($endTs <= 0) $endTs = PHP_INT_MAX;
+
         $txnCount = 0;
+        $xidCount = 0;
         $txnSizes = [];
         $beginPos = null;
+        $currentPos = null;
 
-        foreach (explode("\n", trim($output)) as $line) {
-            $line = trim($line);
-            if (preg_match('/end_log_pos\s+(\d+)/', $line, $m)) {
-                $currentPos = (int) $m[1];
-            } elseif ($line === 'Xid') {
-                // Xid = InnoDB transaction commit
+        foreach (explode("\n", $output) as $line) {
+            if (!self::mysqlbinlogLineMatchesWindow($line, $startTs, $endTs)) {
+                continue;
+            }
+            if (!preg_match('/end_log_pos\s+(\d+)\s+\S+\s+\S+\s+(.+)$/', $line, $m)) {
+                continue;
+            }
+            $currentPos = (int) $m[1];
+            $eventTail  = $m[2];
+
+            // `GTID` event marks the beginning of a new transaction
+            // group. This is the storage-engine-agnostic boundary —
+            // present whether the relay is InnoDB, BLACKHOLE or MyISAM.
+            if (strpos($eventTail, 'GTID') === 0) {
                 $txnCount++;
-                if ($beginPos !== null && isset($currentPos)) {
-                    $size = $currentPos - $beginPos;
-                    if ($size > 0) $txnSizes[] = $size;
+                if ($beginPos !== null && $currentPos > $beginPos) {
+                    $txnSizes[] = $currentPos - $beginPos;
+                }
+                $beginPos = $currentPos;
+                continue;
+            }
+            // `Xid` = InnoDB commit. Tracked separately for diagnostics;
+            // when only Xid is available (older relays without GTID), it
+            // serves as the fallback below.
+            if (strpos($eventTail, 'Xid') === 0) {
+                $xidCount++;
+                if ($txnCount === 0 && $beginPos !== null && $currentPos > $beginPos) {
+                    $txnSizes[] = $currentPos - $beginPos;
                 }
                 $beginPos = null;
-            } elseif ($line === 'Query') {
-                // Could be BEGIN or COMMIT
-                // We track position; BEGIN sets the start, COMMIT is tracked via Xid
-                if ($beginPos === null && isset($currentPos)) {
-                    $beginPos = $currentPos;
-                }
-            } elseif ($line === 'GTID') {
-                // MariaDB GTID event marks the start of a new transaction group
-                if (isset($currentPos)) {
-                    $beginPos = $currentPos;
-                }
+                continue;
+            }
+            // `Query` = BEGIN/COMMIT/DDL. Only used to bracket non-GTID
+            // streams (legacy 5.x or pre-GTID MariaDB binlogs).
+            if (strpos($eventTail, 'Query') === 0 && $beginPos === null) {
+                $beginPos = $currentPos;
             }
         }
 
-        // Fallback: if the above didn't work well, just count Xid events directly
-        if ($txnCount === 0) {
-            $cmdXid = $cmd . " 2>/dev/null | grep -ac 'Xid'";
-            $txnCount = (int) trim(shell_exec($cmdXid . " 2>/dev/null") ?: '0');
+        // Fallback for streams that have neither GTID nor Query
+        // boundaries (very rare): trust the Xid counter.
+        if ($txnCount === 0 && $xidCount > 0) {
+            $txnCount = $xidCount;
         }
 
         $totalSize = array_sum($txnSizes);
