@@ -1895,18 +1895,13 @@ $(document).ready(function() {
         $relayPayload = (string) ($slave['graph_relay_log_space'] ?? '');
         $hasRelay = $relayPayload !== '';
 
+        // (#1277) Old label was "Relay_Log_Space (queued bytes)" which
+        // operators read as "bytes still to apply". Relay_Log_Space is
+        // actually the on-disk size of relay log files (does not drop
+        // when the SQL thread catches up). The "Relay gap" tile is the
+        // right metric for pending bytes. The new label reflects that.
         $relayDataset = $hasRelay ? '
             ,{
-                /* (#1277) "queued bytes" was misleading — operators
-                 * read it as "bytes still to apply" and got confused
-                 * when the value stayed non-zero while the Relay gap
-                 * tile showed "same file" (= 0 bytes pending).
-                 *
-                 * `Relay_Log_Space` is in fact the total disk size of
-                 * every relay log file still on disk — it doesn't drop
-                 * when the SQL thread catches up, only when a relay
-                 * log rotation purges an old file. Use a clearer label
-                 * + the standard MariaDB / MySQL variable name. */
                 label: "Relay_Log_Space (relay log files on disk)",
                 data: ['.$relayPayload.'],
                 borderColor: "#b91c1c",
