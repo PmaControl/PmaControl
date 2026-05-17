@@ -1873,11 +1873,16 @@ $(document).ready(function() {
      *   navy area we've shown forever.
      * - Right axis `y_gb` — two distinct constant-colour datasets
      *   (#1277):
-     *     • `graph_relay_log_space` → Relay_Log_Space (on-disk
-     *       relay log files size). Indigo `#6366f1`.
+     *     • `graph_relay_log_space` → "Relay log still to apply",
+     *       computed as `relay_log_space − relay_log_pos` per
+     *       sample. Exact byte count of relay log left after the
+     *       SQL thread's current position when only one relay log
+     *       file is retained (default with relay_log_purge=ON);
+     *       conservative upper bound in multi-file scenarios.
+     *       Indigo `#6366f1`.
      *     • `graph_replication_lag` → Read_Master_Log_Pos −
-     *       Exec_Master_Log_Pos per sample (= actual lag in bytes).
-     *       Amber `#f59e0b`.
+     *       Exec_Master_Log_Pos per sample (= actual lag in bytes
+     *       on the master's binlog). Amber `#f59e0b`.
      *   Either series shows independently; both are shown together
      *   when populated. No per-segment up/down colouring — operator
      *   asked for plain constant colours.
@@ -1902,13 +1907,14 @@ $(document).ready(function() {
         // are bytes on the same Y_GB axis so the operator can read
         // them against each other.
         //
-        //   Relay_Log_Space (on-disk relay files) → indigo  #6366f1
-        //   Replication lag (Read − Exec bytes)   → amber   #f59e0b
+        //   Relay log still to apply (= relay_log_space − relay_log_pos)
+        //                                          → indigo  #6366f1
+        //   Replication lag (Read − Exec bytes)    → amber   #f59e0b
         //
         // The dataset block is empty when neither series carries data.
         $relayDataset = $relayPayload !== '' ? '
             ,{
-                label: "Relay_Log_Space (relay log files on disk)",
+                label: "Relay log still to apply (bytes)",
                 data: ['.$relayPayload.'],
                 borderColor: "#6366f1",
                 backgroundColor: "rgba(99,102,241,0.18)",
@@ -2080,19 +2086,69 @@ var chart = new Chart(ctx, {
         // two flat-coloured datasets (no more per-segment up/down
         // colouring — see relayDataset / lagDataset blocks).
 
-        // ── Series 1: Relay_Log_Space (legacy on-disk size) ──────────
-        $relayRows = Extraction::extract(
-            array('slave::relay_log_space'),
-            array($serverId),
-            $dateRange,
-            true,
-            true
-        ) ?: [];
+        // ── Series 1: relay log bytes still to apply ─────────────────
+        // = `relay_log_space − relay_log_pos`. The relay log files
+        // on disk (`relay_log_space`) minus the SQL thread's current
+        // position in the active relay log file (`relay_log_pos`).
+        //
+        // Single-file case (default with relay_log_purge=ON): exact —
+        // every byte after relay_log_pos in the only retained relay
+        // log file. Multi-file case: conservative upper bound, since
+        // relay_log_space may temporarily count older files that the
+        // SQL thread already cleared but that haven't been purged yet.
+        //
+        // The previous "Relay_Log_Space raw" plot was misleading —
+        // it stayed flat while the SQL thread was perfectly caught up,
+        // because purge only fires on rotation. Operator wanted "size
+        // of relay log left to process", which is this delta.
         $relayByDay = [];
-        foreach ($relayRows as $r) {
-            if (($r['connection_name'] ?? '') !== $replicationName) continue;
-            if (!isset($r['day'], $r['graph'])) continue;
-            $relayByDay[(string) $r['day']] = (string) $r['graph'];
+        $db = Sgbd::sql(DB_DEFAULT);
+        $relayVarRes = $db->sql_query(
+            "SELECT name, id FROM ts_variable
+             WHERE radical='slave' AND name IN ('relay_log_space','relay_log_pos')"
+        );
+        $relayVarId = [];
+        while ($vr = $db->sql_fetch_array($relayVarRes, MYSQLI_ASSOC)) {
+            $relayVarId[$vr['name']] = (int) $vr['id'];
+        }
+        if (isset($relayVarId['relay_log_space'], $relayVarId['relay_log_pos'])) {
+            $dateMinR = $db->sql_real_escape_string((string) $dateRange[0]);
+            $dateMaxR = $db->sql_real_escape_string((string) $dateRange[1]);
+            $cnSafeR  = $db->sql_real_escape_string($replicationName);
+            $serverIdR = (int) $serverId;
+            $db->sql_query("SET SESSION group_concat_max_len = 100000000");
+            $sqlRelay = "
+                WITH relay AS (
+                    SELECT sp.date AS d, sp.connection_name AS cn,
+                           GREATEST(0,
+                               CAST(sp.value AS SIGNED) - CAST(po.value AS SIGNED)
+                           ) AS remaining
+                    FROM ts_value_slave_int sp
+                    JOIN ts_value_slave_int po
+                      ON po.id_mysql_server = sp.id_mysql_server
+                     AND po.connection_name = sp.connection_name
+                     AND po.date            = sp.date
+                     AND po.id_ts_variable  = " . $relayVarId['relay_log_pos'] . "
+                    WHERE sp.id_mysql_server = {$serverIdR}
+                      AND sp.id_ts_variable  = " . $relayVarId['relay_log_space'] . "
+                      AND sp.connection_name = '{$cnSafeR}'
+                      AND sp.date BETWEEN '{$dateMinR}' AND '{$dateMaxR}'
+                )
+                SELECT DATE(d) AS day, cn AS connection_name,
+                       GROUP_CONCAT(
+                           CONCAT('{x:new Date(\\'', DATE_FORMAT(d, '%Y-%m-%dT%H:%i:%s'), '\\'),y:', remaining, '}')
+                           ORDER BY d ASC
+                       ) AS graph
+                FROM relay GROUP BY day, cn
+            ";
+            $resR = $db->sql_query_silent($sqlRelay);
+            if ($resR) {
+                while ($r = $db->sql_fetch_array($resR, MYSQLI_ASSOC)) {
+                    if (($r['connection_name'] ?? '') !== $replicationName) continue;
+                    if (!isset($r['day'], $r['graph'])) continue;
+                    $relayByDay[(string) $r['day']] = (string) $r['graph'];
+                }
+            }
         }
 
         // ── Series 2: replication lag (Read − Exec) per sample ──────
