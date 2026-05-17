@@ -2117,12 +2117,24 @@ var chart = new Chart(ctx, {
             $cnSafeR  = $db->sql_real_escape_string($replicationName);
             $serverIdR = (int) $serverId;
             $db->sql_query("SET SESSION group_concat_max_len = 100000000");
+            // The raw `relay_log_space − relay_log_pos` carries a few
+            // hundred bytes of irreducible format overhead at the tail
+            // of each relay log file (4-byte magic + Format_description
+            // event ≈ 245 B + optional Gtid_list ≈ 50 B + Rotate ≈ 30 B
+            // = up to ~330 B). On an idle slave this shows as 300-500 B
+            // even though the "Relay gap" tile reads 0. Anything under
+            // 4 KB is treated as caught-up noise; real lag is always
+            // much larger than that. Above 4 KB the value is reported
+            // verbatim. (#1277)
+            $relayClampBytes = 4096;
             $sqlRelay = "
                 WITH relay AS (
                     SELECT sp.date AS d, sp.connection_name AS cn,
-                           GREATEST(0,
-                               CAST(sp.value AS SIGNED) - CAST(po.value AS SIGNED)
-                           ) AS remaining
+                           CASE
+                               WHEN CAST(sp.value AS SIGNED) - CAST(po.value AS SIGNED) < {$relayClampBytes}
+                                   THEN 0
+                               ELSE CAST(sp.value AS SIGNED) - CAST(po.value AS SIGNED)
+                           END AS remaining
                     FROM ts_value_slave_int sp
                     JOIN ts_value_slave_int po
                       ON po.id_mysql_server = sp.id_mysql_server
