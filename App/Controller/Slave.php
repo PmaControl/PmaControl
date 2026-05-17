@@ -1946,6 +1946,13 @@ $(document).ready(function() {
                 position: "right",
                 grid: { drawOnChartArea: false },
                 title: { display: true, text: "Bytes (B → MB/GB)" },
+                // (#1277) Pin the right axis to 0 so the indigo /
+                // amber curves sit on the same baseline as the lag
+                // axis on the left. Without this, Chart.js auto-fits
+                // a tiny window around a flat near-zero value and the
+                // curves look like they hover mid-chart.
+                beginAtZero: true,
+                min: 0,
                 ticks: {
                     callback: function (v) {
                         if (v == null) return "";
