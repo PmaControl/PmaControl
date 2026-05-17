@@ -54,4 +54,24 @@ final class MysqlVersion
     {
         return !$isSingleStore && self::atLeast($version, '5.6.0');
     }
+
+    /**
+     * Return the `major.minor` token of a server version string, or
+     * empty string when none can be extracted. Used by the binary
+     * resolver to map a server version to its mysqlbinlog binary.
+     * (#1268)
+     *
+     * Examples (Debian/Ubuntu version banners):
+     *   '10.11.16-MariaDB-deb12-log'              → '10.11'
+     *   '11.8.6-MariaDB-0+deb13u1 from Debian-log'→ '11.8'
+     *   '8.0.44-0ubuntu0.22.04.1'                 → '8.0'
+     *   ''                                        → ''
+     */
+    public static function majorMinor(?string $version): string
+    {
+        if (!preg_match('/^(\d+\.\d+)/', (string) $version, $m)) {
+            return '';
+        }
+        return $m[1];
+    }
 }
