@@ -1876,6 +1876,12 @@ $(document).ready(function() {
      *   B/KB/MB/GB tick formatter and per-segment colouring:
      *     up   = red, down = green, flat = blue 50% opacity.
      *
+     *   IMPORTANT (#1277): `Relay_Log_Space` is the on-disk size of
+     *   every relay log file the slave still holds; it does NOT drop
+     *   when the SQL thread catches up. It drops only on relay log
+     *   rotation + purge. The "Relay gap" tile is the right metric
+     *   for pending bytes (Read_Master_Log_Pos - Exec_Master_Log_Pos).
+     *
      * @param array{
      *     id_mysql_server:int,
      *     connection_name?:string,
@@ -1891,7 +1897,17 @@ $(document).ready(function() {
 
         $relayDataset = $hasRelay ? '
             ,{
-                label: "Relay_Log_Space (queued bytes)",
+                /* (#1277) "queued bytes" was misleading — operators
+                 * read it as "bytes still to apply" and got confused
+                 * when the value stayed non-zero while the Relay gap
+                 * tile showed "same file" (= 0 bytes pending).
+                 *
+                 * `Relay_Log_Space` is in fact the total disk size of
+                 * every relay log file still on disk — it doesn't drop
+                 * when the SQL thread catches up, only when a relay
+                 * log rotation purges an old file. Use a clearer label
+                 * + the standard MariaDB / MySQL variable name. */
+                label: "Relay_Log_Space (relay log files on disk)",
                 data: ['.$relayPayload.'],
                 borderColor: "#b91c1c",
                 backgroundColor: "rgba(185,28,28,0.30)",
@@ -1922,7 +1938,7 @@ $(document).ready(function() {
             y_gb: {
                 position: "right",
                 grid: { drawOnChartArea: false },
-                title: { display: true, text: "Relay log queued (B → MB/GB)" },
+                title: { display: true, text: "Relay log files on disk (B → MB/GB)" },
                 ticks: {
                     callback: function (v) {
                         if (v == null) return "";
