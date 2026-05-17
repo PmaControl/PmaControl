@@ -1871,10 +1871,14 @@ $(document).ready(function() {
      * Renders:
      * - Left axis `y` — `Second behind source` (lag) — same
      *   navy area we've shown forever.
-     * - Right axis `y_gb` (only when `$slave['graph_relay_log_space']`
-     *   is non-empty) — `Relay_Log_Space` in bytes, with a
-     *   B/KB/MB/GB tick formatter and per-segment colouring:
-     *     up   = red, down = green, flat = blue 50% opacity.
+     * - Right axis `y_gb` — single dataset `graph_relay_log_space`
+     *   plotting "Relay log still to apply", computed as
+     *   `relay_log_space − relay_log_pos` per sample, clamped to 0
+     *   below 4 KB to filter the relay-log file's irreducible format
+     *   overhead. Exact byte count after the SQL thread's position
+     *   when only one relay log file is retained (default with
+     *   relay_log_purge=ON); conservative upper bound otherwise.
+     *   Indigo `#6366f1`. (#1277)
      *
      * @param array{
      *     id_mysql_server:int,
@@ -1887,42 +1891,43 @@ $(document).ready(function() {
     public static function buildLagChartJs(array $slave): string
     {
         $relayPayload = (string) ($slave['graph_relay_log_space'] ?? '');
-        $hasRelay = $relayPayload !== '';
+        $hasRelay     = $relayPayload !== '';
 
-        $relayDataset = $hasRelay ? '
+        // (#1277) Single right-axis dataset, indigo flat colour, no
+        // per-segment up/down colouring. Plots "Relay log still to
+        // apply" = `relay_log_space − relay_log_pos` per sample
+        // (clamped to 0 below 4 KB to filter the relay-log file
+        // format overhead).
+        $relayDataset = $relayPayload !== '' ? '
             ,{
-                label: "Relay_Log_Space (queued bytes)",
+                label: "Relay log still to apply (bytes)",
                 data: ['.$relayPayload.'],
-                borderColor: "#b91c1c",
-                backgroundColor: "rgba(185,28,28,0.30)",
+                borderColor: "#6366f1",
+                backgroundColor: "rgba(99,102,241,0.18)",
                 fill: "origin",
                 borderWidth: 1,
                 pointRadius: 0,
                 tension: 0,
-                yAxisID: "y_gb",
-                segment: {
-                    borderColor: function (ctx) {
-                        if (!ctx.p0 || !ctx.p1) return "#3b82f6";
-                        var d = ctx.p1.parsed.y - ctx.p0.parsed.y;
-                        if (d > 0) return "#dc2626";
-                        if (d < 0) return "#16a34a";
-                        return "#3b82f6";
-                    },
-                    backgroundColor: function (ctx) {
-                        if (!ctx.p0 || !ctx.p1) return "rgba(59,130,246,0.50)";
-                        var d = ctx.p1.parsed.y - ctx.p0.parsed.y;
-                        if (d > 0) return "rgba(220,38,38,0.30)";
-                        if (d < 0) return "rgba(22,163,74,0.30)";
-                        return "rgba(59,130,246,0.50)";
-                    }
-                }
+                yAxisID: "y_gb"
             }' : '';
+
+        // (#1277) Operator asked to drop the second "Replication lag
+        // (Read − Exec, bytes)" curve — the live tile already
+        // displays that number and the second curve was redundant.
+        // The amber dataset is intentionally NOT appended.
 
         $relayScale = $hasRelay ? ',
             y_gb: {
                 position: "right",
                 grid: { drawOnChartArea: false },
-                title: { display: true, text: "Relay log queued (B → MB/GB)" },
+                title: { display: true, text: "Bytes (B → MB/GB)" },
+                // (#1277) Pin the right axis to 0 so the indigo /
+                // amber curves sit on the same baseline as the lag
+                // axis on the left. Without this, Chart.js auto-fits
+                // a tiny window around a flat near-zero value and the
+                // curves look like they hover mid-chart.
+                beginAtZero: true,
+                min: 0,
                 ticks: {
                     callback: function (v) {
                         if (v == null) return "";
@@ -2043,23 +2048,109 @@ var chart = new Chart(ctx, {
      */
     private function enrichSlavesWithRelayLogSpaceGraph(array $slaves, int $serverId, array $dateRange, string $replicationName): array
     {
-        $relayRows = Extraction::extract(
-            array('slave::relay_log_space'),
-            array($serverId),
-            $dateRange,
-            true,
-            true
-        ) ?: [];
+        // (#1277) Two right-axis time-series, both bytes, distinct
+        // meanings. Operator asked to see both at once so the chart
+        // can tell a catch-up apart from a relay-log retention drop.
+        //
+        //   graph_relay_log_space      → Relay_Log_Space (on-disk size
+        //                                 of every relay log file the
+        //                                 slave still holds; flat
+        //                                 between rotations, drops on
+        //                                 purge).
+        //   graph_replication_lag      → Read_Master_Log_Pos
+        //                                 − Exec_Master_Log_Pos
+        //                                 per sample (= actual
+        //                                 replication lag in bytes;
+        //                                 rises when IO outruns SQL,
+        //                                 drops when SQL catches up).
+        //
+        // Both keys are populated here so `buildLagChartJs()` can emit
+        // two flat-coloured datasets (no more per-segment up/down
+        // colouring — see relayDataset / lagDataset blocks).
 
+        // ── Series 1: relay log bytes still to apply ─────────────────
+        // = `relay_log_space − relay_log_pos`. The relay log files
+        // on disk (`relay_log_space`) minus the SQL thread's current
+        // position in the active relay log file (`relay_log_pos`).
+        //
+        // Single-file case (default with relay_log_purge=ON): exact —
+        // every byte after relay_log_pos in the only retained relay
+        // log file. Multi-file case: conservative upper bound, since
+        // relay_log_space may temporarily count older files that the
+        // SQL thread already cleared but that haven't been purged yet.
+        //
+        // The previous "Relay_Log_Space raw" plot was misleading —
+        // it stayed flat while the SQL thread was perfectly caught up,
+        // because purge only fires on rotation. Operator wanted "size
+        // of relay log left to process", which is this delta.
         $relayByDay = [];
-        foreach ($relayRows as $r) {
-            if (($r['connection_name'] ?? '') !== $replicationName) continue;
-            if (!isset($r['day'], $r['graph'])) continue;
-            $relayByDay[(string) $r['day']] = (string) $r['graph'];
+        $db = Sgbd::sql(DB_DEFAULT);
+        $relayVarRes = $db->sql_query(
+            "SELECT name, id FROM ts_variable
+             WHERE radical='slave' AND name IN ('relay_log_space','relay_log_pos')"
+        );
+        $relayVarId = [];
+        while ($vr = $db->sql_fetch_array($relayVarRes, MYSQLI_ASSOC)) {
+            $relayVarId[$vr['name']] = (int) $vr['id'];
+        }
+        if (isset($relayVarId['relay_log_space'], $relayVarId['relay_log_pos'])) {
+            $dateMinR = $db->sql_real_escape_string((string) $dateRange[0]);
+            $dateMaxR = $db->sql_real_escape_string((string) $dateRange[1]);
+            $cnSafeR  = $db->sql_real_escape_string($replicationName);
+            $serverIdR = (int) $serverId;
+            $db->sql_query("SET SESSION group_concat_max_len = 100000000");
+            // The raw `relay_log_space − relay_log_pos` carries a few
+            // hundred bytes of irreducible format overhead at the tail
+            // of each relay log file (4-byte magic + Format_description
+            // event ≈ 245 B + optional Gtid_list ≈ 50 B + Rotate ≈ 30 B
+            // = up to ~330 B). On an idle slave this shows as 300-500 B
+            // even though the "Relay gap" tile reads 0. Anything under
+            // 4 KB is treated as caught-up noise; real lag is always
+            // much larger than that. Above 4 KB the value is reported
+            // verbatim. (#1277)
+            $relayClampBytes = 4096;
+            $sqlRelay = "
+                WITH relay AS (
+                    SELECT sp.date AS d, sp.connection_name AS cn,
+                           CASE
+                               WHEN CAST(sp.value AS SIGNED) - CAST(po.value AS SIGNED) < {$relayClampBytes}
+                                   THEN 0
+                               ELSE CAST(sp.value AS SIGNED) - CAST(po.value AS SIGNED)
+                           END AS remaining
+                    FROM ts_value_slave_int sp
+                    JOIN ts_value_slave_int po
+                      ON po.id_mysql_server = sp.id_mysql_server
+                     AND po.connection_name = sp.connection_name
+                     AND po.date            = sp.date
+                     AND po.id_ts_variable  = " . $relayVarId['relay_log_pos'] . "
+                    WHERE sp.id_mysql_server = {$serverIdR}
+                      AND sp.id_ts_variable  = " . $relayVarId['relay_log_space'] . "
+                      AND sp.connection_name = '{$cnSafeR}'
+                      AND sp.date BETWEEN '{$dateMinR}' AND '{$dateMaxR}'
+                )
+                SELECT DATE(d) AS day, cn AS connection_name,
+                       GROUP_CONCAT(
+                           CONCAT('{x:new Date(\\'', DATE_FORMAT(d, '%Y-%m-%dT%H:%i:%s'), '\\'),y:', remaining, '}')
+                           ORDER BY d ASC
+                       ) AS graph
+                FROM relay GROUP BY day, cn
+            ";
+            $resR = $db->sql_query_silent($sqlRelay);
+            if ($resR) {
+                while ($r = $db->sql_fetch_array($resR, MYSQLI_ASSOC)) {
+                    if (($r['connection_name'] ?? '') !== $replicationName) continue;
+                    if (!isset($r['day'], $r['graph'])) continue;
+                    $relayByDay[(string) $r['day']] = (string) $r['graph'];
+                }
+            }
         }
 
+        // (#1277) Series 2 (Replication lag Read − Exec) was removed —
+        // the live tile already shows that number, the operator asked
+        // to drop the redundant curve.
         foreach ($slaves as &$slave) {
-            $slave['graph_relay_log_space'] = $relayByDay[(string) ($slave['day'] ?? '')] ?? '';
+            $dayKey = (string) ($slave['day'] ?? '');
+            $slave['graph_relay_log_space'] = $relayByDay[$dayKey] ?? '';
         }
         unset($slave);
 
