@@ -161,4 +161,46 @@ final class MysqlVersionTest extends TestCase
 
         $this->assertSame([], $errors);
     }
+
+    /**
+     * (#1268) Debian 13 / MariaDB 11.8 banner caused mysqlbinlog 3.5
+     * to bail with "unrecognized MariaDB version". Verify our own
+     * parser extracts numeric + isMariaDb correctly so the binary
+     * resolver can route the request to a version-specific binary.
+     */
+    public function testNumericHandlesMariaDb11Debian13Banner(): void
+    {
+        $this->assertSame('11.8.6', MysqlVersion::numeric('11.8.6-MariaDB-0+deb13u1 from Debian-log'));
+    }
+
+    public function testIsMariaDbDetectsDebian13Banner(): void
+    {
+        $this->assertTrue(MysqlVersion::isMariaDb('11.8.6-MariaDB-0+deb13u1 from Debian-log'));
+        $this->assertTrue(MysqlVersion::isMariaDb('10.11.16-MariaDB-deb12-log'));
+    }
+
+    /**
+     * @return array<string,array{0:?string,1:string}>
+     */
+    public static function majorMinorProvider(): array
+    {
+        return [
+            'null'                 => [null, ''],
+            'empty'                => ['', ''],
+            'mariadb 10.11 deb12'  => ['10.11.16-MariaDB-deb12-log', '10.11'],
+            'mariadb 11.8 deb13'   => ['11.8.6-MariaDB-0+deb13u1 from Debian-log', '11.8'],
+            'mysql 8.0 log'        => ['8.0.44-log', '8.0'],
+            'mysql 8.4'            => ['8.4.0', '8.4'],
+            'percona 8.0.36-28'    => ['8.0.36-28', '8.0'],
+            'mysql 5.6.51-log'     => ['5.6.51-log', '5.6'],
+            'leading whitespace'   => ['  8.0.44-log', ''],
+            'no number'            => ['invalid', ''],
+        ];
+    }
+
+    #[DataProvider('majorMinorProvider')]
+    public function testMajorMinor(?string $version, string $expected): void
+    {
+        $this->assertSame($expected, MysqlVersion::majorMinor($version));
+    }
 }

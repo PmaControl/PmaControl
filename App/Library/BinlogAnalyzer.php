@@ -828,11 +828,22 @@ class BinlogAnalyzer
             }
         }
 
+        // (#1268) DO NOT unlink the fetch log before checking for
+        // success — the file holds mysqlbinlog's stderr, which is the
+        // only diagnostic when the binary fails (auth denied, binlog
+        // purged, network error). Read it first, then unlink.
+        $output = @file_get_contents($logFile) ?: '';
         @unlink($logFile);
 
         if (!file_exists($localPath) || filesize($localPath) < 4) {
-            $output = '';
-            throw new \Exception("Failed to fetch $binlogName via --read-from-remote-server: " . substr($output, 0, 300));
+            $tail = trim($output);
+            if ($tail === '') {
+                $tail = '(empty stderr; check pid lifetime + tmp permissions)';
+            }
+            throw new \Exception(
+                "Failed to fetch $binlogName via --read-from-remote-server: "
+                . substr($tail, 0, 1000)
+            );
         }
     }
 
@@ -900,55 +911,36 @@ class BinlogAnalyzer
     private function resolveMysqlbinlogBinary(string $version): string
     {
         $dir = self::getBinlogDir();
-        $vLower = strtolower($version);
+        $available = array_values(array_filter(glob($dir . 'mysqlbinlog-*') ?: [], static function ($p) {
+            return is_file($p) && @filesize($p) > 1024;
+        }));
 
-        if (strpos($vLower, 'mariadb') !== false) {
-            $bin = $dir . 'mysqlbinlog-mariadb';
-            if (file_exists($bin) && filesize($bin) > 1024) return $bin;
-            // Fallback: system-installed mariadb-binlog (common on ARM64)
+        // Pure-logic picker — testable, no I/O beyond the glob above.
+        // Supports version-specific MariaDB binaries (e.g.
+        // `mysqlbinlog-mariadb-11.8`) introduced in #1268 to fix the
+        // mysqlbinlog 3.5 / MariaDB 11.8 "unrecognized version" bug.
+        $picked = MysqlbinlogBinaryResolver::pick($version, $available);
+        if ($picked !== null) {
+            return $picked;
+        }
+
+        // MariaDB: try the system-installed binary as a last resort.
+        if (MysqlVersion::isMariaDb($version)) {
             foreach (['/usr/bin/mariadb-binlog', '/usr/bin/mysqlbinlog'] as $sysBin) {
                 if (is_executable($sysBin)) return $sysBin;
             }
-            throw new \Exception("mysqlbinlog binary for MariaDB not found at $bin — install mariadb-client or copy mariadb-binlog to $bin");
         }
 
-        // MySQL Oracle: extract major.minor  "8.0.44" → "8.0"
-        if (preg_match('/^(\d+\.\d+)/', $version, $m)) {
-            $majorMinor = $m[1];
-
-            // Exact match first
-            $bin = $dir . 'mysqlbinlog-' . $majorMinor;
-            if (file_exists($bin)) return $bin;
-
-            // Fallback: try closest compatible version
-            $available = glob($dir . 'mysqlbinlog-*');
-            $candidates = [];
-            foreach ($available as $path) {
-                $name = basename($path);
-                if (preg_match('/mysqlbinlog-(\d+\.\d+)/', $name, $vm)) {
-                    $candidates[$vm[1]] = $path;
-                }
-            }
-
-            // Pick highest version that is >= requested
-            ksort($candidates, SORT_NATURAL);
-            foreach ($candidates as $ver => $path) {
-                if (MysqlVersion::atLeast($ver, $majorMinor)) {
-                    return $path;
-                }
-            }
-
-            // Last resort: pick the highest available
-            if (!empty($candidates)) {
-                return end($candidates);
-            }
-        }
-
-        // Ultimate fallback
+        // Ultimate fallback for MySQL Oracle: 8.4 binary when nothing
+        // else fits — it still beats failing the whole analysis.
         $fallback = $dir . 'mysqlbinlog-8.4';
         if (file_exists($fallback)) return $fallback;
 
-        throw new \Exception("No suitable mysqlbinlog binary found in $dir for version $version (arch: " . php_uname('m') . ")");
+        throw new \Exception(
+            'No suitable mysqlbinlog binary found in ' . $dir
+            . ' for version ' . $version . ' (arch: ' . php_uname('m') . ') — '
+            . MysqlbinlogBinaryResolver::suggestForVersion($version)
+        );
     }
 
     private function ensureBinary(string $binary): void
