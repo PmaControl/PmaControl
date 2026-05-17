@@ -1871,47 +1871,33 @@ $(document).ready(function() {
      * Renders:
      * - Left axis `y` — `Second behind source` (lag) — same
      *   navy area we've shown forever.
-     * - Right axis `y_gb` — two distinct constant-colour datasets
-     *   (#1277):
-     *     • `graph_relay_log_space` → "Relay log still to apply",
-     *       computed as `relay_log_space − relay_log_pos` per
-     *       sample. Exact byte count of relay log left after the
-     *       SQL thread's current position when only one relay log
-     *       file is retained (default with relay_log_purge=ON);
-     *       conservative upper bound in multi-file scenarios.
-     *       Indigo `#6366f1`.
-     *     • `graph_replication_lag` → Read_Master_Log_Pos −
-     *       Exec_Master_Log_Pos per sample (= actual lag in bytes
-     *       on the master's binlog). Amber `#f59e0b`.
-     *   Either series shows independently; both are shown together
-     *   when populated. No per-segment up/down colouring — operator
-     *   asked for plain constant colours.
+     * - Right axis `y_gb` — single dataset `graph_relay_log_space`
+     *   plotting "Relay log still to apply", computed as
+     *   `relay_log_space − relay_log_pos` per sample, clamped to 0
+     *   below 4 KB to filter the relay-log file's irreducible format
+     *   overhead. Exact byte count after the SQL thread's position
+     *   when only one relay log file is retained (default with
+     *   relay_log_purge=ON); conservative upper bound otherwise.
+     *   Indigo `#6366f1`. (#1277)
      *
      * @param array{
      *     id_mysql_server:int,
      *     connection_name?:string,
      *     day:string,
      *     graph:string,
-     *     graph_relay_log_space?:string,
-     *     graph_replication_lag?:string
+     *     graph_relay_log_space?:string
      * } $slave
      */
     public static function buildLagChartJs(array $slave): string
     {
         $relayPayload = (string) ($slave['graph_relay_log_space'] ?? '');
-        $lagPayload   = (string) ($slave['graph_replication_lag']  ?? '');
-        $hasRelay     = $relayPayload !== '' || $lagPayload !== '';
+        $hasRelay     = $relayPayload !== '';
 
-        // (#1277) Two right-axis datasets, each a constant flat colour
-        // (operator dropped the up/down per-segment colouring). Both
-        // are bytes on the same Y_GB axis so the operator can read
-        // them against each other.
-        //
-        //   Relay log still to apply (= relay_log_space − relay_log_pos)
-        //                                          → indigo  #6366f1
-        //   Replication lag (Read − Exec bytes)    → amber   #f59e0b
-        //
-        // The dataset block is empty when neither series carries data.
+        // (#1277) Single right-axis dataset, indigo flat colour, no
+        // per-segment up/down colouring. Plots "Relay log still to
+        // apply" = `relay_log_space − relay_log_pos` per sample
+        // (clamped to 0 below 4 KB to filter the relay-log file
+        // format overhead).
         $relayDataset = $relayPayload !== '' ? '
             ,{
                 label: "Relay log still to apply (bytes)",
@@ -1925,21 +1911,10 @@ $(document).ready(function() {
                 yAxisID: "y_gb"
             }' : '';
 
-        $lagDataset = $lagPayload !== '' ? '
-            ,{
-                label: "Replication lag (Read − Exec, bytes)",
-                data: ['.$lagPayload.'],
-                borderColor: "#f59e0b",
-                backgroundColor: "rgba(245,158,11,0.22)",
-                fill: "origin",
-                borderWidth: 1,
-                pointRadius: 0,
-                tension: 0,
-                yAxisID: "y_gb"
-            }' : '';
-
-        // Concatenate so the existing chart spec just appends them.
-        $relayDataset .= $lagDataset;
+        // (#1277) Operator asked to drop the second "Replication lag
+        // (Read − Exec, bytes)" curve — the live tile already
+        // displays that number and the second curve was redundant.
+        // The amber dataset is intentionally NOT appended.
 
         $relayScale = $hasRelay ? ',
             y_gb: {
@@ -2170,60 +2145,12 @@ var chart = new Chart(ctx, {
             }
         }
 
-        // ── Series 2: replication lag (Read − Exec) per sample ──────
-        $db = Sgbd::sql(DB_DEFAULT);
-        $serverIdSafe = (int) $serverId;
-        $dateMin = $db->sql_real_escape_string((string) $dateRange[0]);
-        $dateMax = $db->sql_real_escape_string((string) $dateRange[1]);
-        $cnSafe  = $db->sql_real_escape_string($replicationName);
-        $lagByDay = [];
-
-        $varRes = $db->sql_query(
-            "SELECT name, id FROM ts_variable
-             WHERE radical='slave' AND name IN ('read_master_log_pos','exec_master_log_pos')"
-        );
-        $varId = [];
-        while ($vr = $db->sql_fetch_array($varRes, MYSQLI_ASSOC)) {
-            $varId[$vr['name']] = (int) $vr['id'];
-        }
-        if (isset($varId['read_master_log_pos'], $varId['exec_master_log_pos'])) {
-            $db->sql_query("SET SESSION group_concat_max_len = 100000000");
-            $sql = "
-                WITH lag AS (
-                    SELECT rd.date AS d, rd.connection_name AS cn,
-                           GREATEST(0, CAST(rd.value AS SIGNED) - CAST(ex.value AS SIGNED)) AS gap
-                    FROM ts_value_slave_int rd
-                    JOIN ts_value_slave_int ex
-                      ON ex.id_mysql_server = rd.id_mysql_server
-                     AND ex.connection_name = rd.connection_name
-                     AND ex.date            = rd.date
-                     AND ex.id_ts_variable  = " . $varId['exec_master_log_pos'] . "
-                    WHERE rd.id_mysql_server = {$serverIdSafe}
-                      AND rd.id_ts_variable  = " . $varId['read_master_log_pos'] . "
-                      AND rd.connection_name = '{$cnSafe}'
-                      AND rd.date BETWEEN '{$dateMin}' AND '{$dateMax}'
-                )
-                SELECT DATE(d) AS day, cn AS connection_name,
-                       GROUP_CONCAT(
-                           CONCAT('{x:new Date(\\'', DATE_FORMAT(d, '%Y-%m-%dT%H:%i:%s'), '\\'),y:', gap, '}')
-                           ORDER BY d ASC
-                       ) AS graph
-                FROM lag GROUP BY day, cn
-            ";
-            $res = $db->sql_query_silent($sql);
-            if ($res) {
-                while ($r = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-                    if (($r['connection_name'] ?? '') !== $replicationName) continue;
-                    if (!isset($r['day'], $r['graph'])) continue;
-                    $lagByDay[(string) $r['day']] = (string) $r['graph'];
-                }
-            }
-        }
-
+        // (#1277) Series 2 (Replication lag Read − Exec) was removed —
+        // the live tile already shows that number, the operator asked
+        // to drop the redundant curve.
         foreach ($slaves as &$slave) {
             $dayKey = (string) ($slave['day'] ?? '');
-            $slave['graph_relay_log_space']  = $relayByDay[$dayKey] ?? '';
-            $slave['graph_replication_lag']  = $lagByDay[$dayKey]   ?? '';
+            $slave['graph_relay_log_space'] = $relayByDay[$dayKey] ?? '';
         }
         unset($slave);
 
