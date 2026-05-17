@@ -1779,8 +1779,21 @@ document.addEventListener('DOMContentLoaded', function() {
             progressLog.scrollTop = progressLog.scrollHeight;
         }
 
+        // (#1275) The poller used to die silently on any rejection
+        // (network glitch, non-JSON response, session blip while the
+        // binlogAnalysisResult endpoint is joining the lag/threads
+        // time-series). One missed poll => no further setTimeout was
+        // scheduled => UI frozen on the last rendered step forever
+        // even though the analysis row has long since reached `done`.
+        // Now: every failure restarts the poll loop with a backoff,
+        // and after `maxConsecutiveFailures` consecutive failures we
+        // surface a clear "polling lost — refresh to view results"
+        // badge instead of looping forever.
+        var consecutiveFailures = 0;
+        var maxConsecutiveFailures = 6;       // ≈ 60 s of unreachable
         function poll() {
             fetch(LINK + 'slave/binlogAnalysisResult/' + id + '/ajax:true/').then(svParseJsonResponse).then(function(data) {
+                consecutiveFailures = 0;
                 if (data.error) {
                     statusBadge.className = 'label label-danger';
                     statusBadge.textContent = 'Error: ' + data.error;
@@ -1809,6 +1822,29 @@ document.addEventListener('DOMContentLoaded', function() {
                     statusBadge.textContent = 'Error';
                     resetLaunchBtn();
                 }
+            }).catch(function (err) {
+                consecutiveFailures++;
+                if (consecutiveFailures >= maxConsecutiveFailures) {
+                    statusBadge.className = 'label label-danger';
+                    statusBadge.textContent = 'Polling lost — refresh to view results';
+                    if (typeof console !== 'undefined' && console.warn) {
+                        console.warn('[binlog-analysis] polling abandoned after ' +
+                            consecutiveFailures + ' failures:', err && err.message);
+                    }
+                    resetLaunchBtn();
+                    return;
+                }
+                // Exponential-ish backoff capped at 10 s. Worst case the
+                // user sees a brief "Polling retry…" badge then catches
+                // up on the next successful poll.
+                var delay = Math.min(10000, 2000 * consecutiveFailures);
+                statusBadge.className = 'label label-warning';
+                statusBadge.textContent = 'Polling retry ' + consecutiveFailures + '/' + maxConsecutiveFailures + '…';
+                if (typeof console !== 'undefined' && console.warn) {
+                    console.warn('[binlog-analysis] poll failed (' +
+                        consecutiveFailures + '/' + maxConsecutiveFailures + '):', err && err.message);
+                }
+                pollTimer = setTimeout(poll, delay);
             });
         }
         poll();
