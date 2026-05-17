@@ -1872,15 +1872,14 @@ $(document).ready(function() {
      * - Left axis `y` — `Second behind source` (lag) — same
      *   navy area we've shown forever.
      * - Right axis `y_gb` (only when `$slave['graph_relay_log_space']`
-     *   is non-empty) — `Relay_Log_Space` in bytes, with a
-     *   B/KB/MB/GB tick formatter and per-segment colouring:
-     *     up   = red, down = green, flat = blue 50% opacity.
-     *
-     *   IMPORTANT (#1277): `Relay_Log_Space` is the on-disk size of
-     *   every relay log file the slave still holds; it does NOT drop
-     *   when the SQL thread catches up. It drops only on relay log
-     *   rotation + purge. The "Relay gap" tile is the right metric
-     *   for pending bytes (Read_Master_Log_Pos - Exec_Master_Log_Pos).
+     *   is non-empty) — replication lag in bytes (Read_Master_Log_Pos
+     *   − Exec_Master_Log_Pos sampled per timestamp; see
+     *   `enrichSlavesWithRelayLogSpaceGraph`). B/KB/MB/GB tick
+     *   formatter and per-segment colouring: up = red (falling
+     *   behind), down = green (catching up), flat = blue 50% opacity.
+     *   The PHP field name is kept as `graph_relay_log_space` for
+     *   backwards-compat with the AJAX showGraphDay payload — only
+     *   the meaning and the user-visible label changed (#1277).
      *
      * @param array{
      *     id_mysql_server:int,
@@ -1895,14 +1894,18 @@ $(document).ready(function() {
         $relayPayload = (string) ($slave['graph_relay_log_space'] ?? '');
         $hasRelay = $relayPayload !== '';
 
-        // (#1277) Old label was "Relay_Log_Space (queued bytes)" which
-        // operators read as "bytes still to apply". Relay_Log_Space is
-        // actually the on-disk size of relay log files (does not drop
-        // when the SQL thread catches up). The "Relay gap" tile is the
-        // right metric for pending bytes. The new label reflects that.
+        // (#1277) The graph used to plot Relay_Log_Space — i.e. the
+        // on-disk size of relay log files, which does NOT drop when
+        // the SQL thread catches up. Operator wanted to see whether
+        // replication is "catching up or falling behind", so the
+        // payload is now the actual lag in bytes
+        // (Read_Master_Log_Pos − Exec_Master_Log_Pos) computed in
+        // `enrichSlavesWithRelayLogSpaceGraph`. The field name on the
+        // PHP side stays `graph_relay_log_space` to avoid touching
+        // every caller; only the user-visible label and meaning change.
         $relayDataset = $hasRelay ? '
             ,{
-                label: "Relay_Log_Space (relay log files on disk)",
+                label: "Replication lag (Read − Exec, bytes)",
                 data: ['.$relayPayload.'],
                 borderColor: "#b91c1c",
                 backgroundColor: "rgba(185,28,28,0.30)",
@@ -1933,7 +1936,7 @@ $(document).ready(function() {
             y_gb: {
                 position: "right",
                 grid: { drawOnChartArea: false },
-                title: { display: true, text: "Relay log files on disk (B → MB/GB)" },
+                title: { display: true, text: "Replication lag (B → MB/GB)" },
                 ticks: {
                     callback: function (v) {
                         if (v == null) return "";
@@ -2054,19 +2057,71 @@ var chart = new Chart(ctx, {
      */
     private function enrichSlavesWithRelayLogSpaceGraph(array $slaves, int $serverId, array $dateRange, string $replicationName): array
     {
-        $relayRows = Extraction::extract(
-            array('slave::relay_log_space'),
-            array($serverId),
-            $dateRange,
-            true,
-            true
-        ) ?: [];
+        // (#1277 follow-up) Replaces the former `slave::relay_log_space`
+        // payload (= on-disk relay log size, doesn't reflect catch-up)
+        // with the actual replication lag in bytes:
+        //   `read_master_log_pos - exec_master_log_pos`
+        // sampled at the same timestamp. Same-file assumption: when
+        // master_log_file ≠ relay_master_log_file we clamp the
+        // negative diff to NULL (rare; the live tile still reports
+        // the cross-file gap accurately). The operator wanted
+        // "see if we are catching up or falling behind" — this
+        // series rises when IO outruns SQL and drops when SQL
+        // catches up.
+        $db = Sgbd::sql(DB_DEFAULT);
+        $serverIdSafe = (int) $serverId;
+        $dateMin = $db->sql_real_escape_string((string) $dateRange[0]);
+        $dateMax = $db->sql_real_escape_string((string) $dateRange[1]);
+        $cnSafe  = $db->sql_real_escape_string($replicationName);
 
+        $varRes = $db->sql_query(
+            "SELECT name, id FROM ts_variable
+             WHERE radical='slave' AND name IN ('read_master_log_pos','exec_master_log_pos')"
+        );
+        $varId = [];
+        while ($vr = $db->sql_fetch_array($varRes, MYSQLI_ASSOC)) {
+            $varId[$vr['name']] = (int) $vr['id'];
+        }
+        if (!isset($varId['read_master_log_pos'], $varId['exec_master_log_pos'])) {
+            foreach ($slaves as &$slave) { $slave['graph_relay_log_space'] = ''; }
+            unset($slave);
+            return $slaves;
+        }
+
+        $sql = "
+            SET SESSION group_concat_max_len = 100000000;
+            WITH lag AS (
+                SELECT rd.date AS d, rd.connection_name AS cn,
+                       GREATEST(0, CAST(rd.value AS SIGNED) - CAST(ex.value AS SIGNED)) AS gap
+                FROM ts_value_slave_int rd
+                JOIN ts_value_slave_int ex
+                  ON ex.id_mysql_server = rd.id_mysql_server
+                 AND ex.connection_name = rd.connection_name
+                 AND ex.date            = rd.date
+                 AND ex.id_ts_variable  = " . $varId['exec_master_log_pos'] . "
+                WHERE rd.id_mysql_server = {$serverIdSafe}
+                  AND rd.id_ts_variable  = " . $varId['read_master_log_pos'] . "
+                  AND rd.connection_name = '{$cnSafe}'
+                  AND rd.date BETWEEN '{$dateMin}' AND '{$dateMax}'
+            )
+            SELECT DATE(d) AS day, cn AS connection_name,
+                   GROUP_CONCAT(
+                       CONCAT('{x:new Date(\\'', DATE_FORMAT(d, '%Y-%m-%dT%H:%i:%s'), '\\'),y:', gap, '}')
+                       ORDER BY d ASC
+                   ) AS graph
+            FROM lag GROUP BY day, cn;
+        ";
+
+        // Multi-statement: handle session var + the SELECT
+        $db->sql_query("SET SESSION group_concat_max_len = 100000000");
+        $res = $db->sql_query_silent(preg_replace('/^\s*SET\s+SESSION[^;]+;/', '', $sql));
         $relayByDay = [];
-        foreach ($relayRows as $r) {
-            if (($r['connection_name'] ?? '') !== $replicationName) continue;
-            if (!isset($r['day'], $r['graph'])) continue;
-            $relayByDay[(string) $r['day']] = (string) $r['graph'];
+        if ($res) {
+            while ($r = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                if (($r['connection_name'] ?? '') !== $replicationName) continue;
+                if (!isset($r['day'], $r['graph'])) continue;
+                $relayByDay[(string) $r['day']] = (string) $r['graph'];
+            }
         }
 
         foreach ($slaves as &$slave) {
