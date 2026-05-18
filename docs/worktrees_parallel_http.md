@@ -1,0 +1,173 @@
+# Parallel HTTP serving for git worktrees
+
+Goal: let several feature branches run side-by-side on the same host as live
+PmaControl, each reachable from a browser at its own URL, so a reviewer can
+flip between the production tree and an in-flight branch without rebasing or
+re-deploying.
+
+The live deployment stays at:
+
+```
+http://10.68.68.111/pmacontrol/
+```
+
+Every secondary worktree is served at either of these equivalent forms (the
+AliasMatch accepts the `worktrees/` segment as optional so the URL mirrors the
+filesystem path when copied verbatim):
+
+```
+http://10.68.68.111/pmacontrol-reviews/<commit-hash>/
+http://10.68.68.111/pmacontrol-reviews/worktrees/<commit-hash>/
+```
+
+`<commit-hash>` is the full or short (≥ 6 chars) SHA-1 of the worktree's
+`HEAD` commit. Example, after `git commit` lands `150e1a07…` on the branch:
+
+```
+http://10.68.68.111/pmacontrol-reviews/150e1a07b1be5e888810798917f06145ea888962/en/slave/index/
+http://10.68.68.111/pmacontrol-reviews/worktrees/150e1a07b1be5e888810798917f06145ea888962/en/slave/index/
+http://10.68.68.111/pmacontrol-reviews/150e1a07/en/slave/index/
+```
+
+Login at `/en/user/connection`; session cookies are shared (`/var/lib/php/sessions/`)
+so logging into the production webroot is enough to reach the worktree URLs.
+
+## Filesystem layout
+
+```
+/srv/www/pmacontrol/                              ← live, served at /pmacontrol/
+/srv/www/pmacontrol-reviews/                      ← www-data:www-data 0755
+└── worktrees/                                    ← www-data:www-data 0755
+    └── <commit-hash>/                            ← git worktree on a feature branch
+        ├── App/  …                               ← real working copy
+        ├── configuration/                        ← per-file symlinks into prod, except…
+        │   └── webroot.config.php                ← LOCAL override (see below)
+        ├── tmp/
+        │   ├── acl/                              ← LOCAL (worktree-private ACL cache)
+        │   ├── cache/                            ← LOCAL (incl. slave-index cache)
+        │   ├── log/                              ← LOCAL (PHP/Glial logs)
+        │   ├── database  → /srv/www/pmacontrol/tmp/database
+        │   ├── keys      → /srv/www/pmacontrol/tmp/keys
+        │   ├── translations → /srv/www/pmacontrol/tmp/translations
+        │   ├── dot       → /srv/www/pmacontrol/tmp/dot
+        │   ├── img       → /srv/www/pmacontrol/tmp/img
+        │   └── md5       → /srv/www/pmacontrol/tmp/md5
+        └── vendor → /srv/www/pmacontrol/vendor
+```
+
+Why not `/srv/www/pmacontrol-ai-reviews/worktrees/`: that tree is owned and
+re-`chmod 0700`'d every tick by `/usr/local/sbin/pmacontrol-master-review-watch.sh`
+and `/usr/local/sbin/pmacontrol-review-consensus-watch.sh`. `www-data` can't
+traverse it, so Apache 403s within seconds of any manual chmod.
+
+## Per-worktree `configuration/webroot.config.php`
+
+`configuration/` is gitignored, so this file lives only on disk in the worktree
+(it never ends up in commits). Use the worktree's own directory name as the
+`WWW_ROOT` so a new clone self-configures:
+
+```php
+<?php
+if (! defined('WWW_ROOT')) {
+    $hash = basename(dirname(__DIR__));
+    define('WWW_ROOT', '/pmacontrol-reviews/'.$hash.'/');
+}
+```
+
+The rest of `configuration/` is a per-file symlink set into
+`/srv/www/pmacontrol/configuration/` (db creds, ACL, language, etc. — shared
+with the live deployment).
+
+## Apache vhost (`/etc/apache2/sites-enabled/000-default.conf`)
+
+Inside the existing `<VirtualHost *:80>`:
+
+```apache
+# Parallel deployments under /srv/www/pmacontrol-reviews/worktrees/<hash>/
+# served as http://<host>/pmacontrol-reviews/<hash>/...
+AliasMatch "^/pmacontrol-reviews/(?:worktrees/)?([a-f0-9]{6,40})(/.*)?$" \
+    "/srv/www/pmacontrol-reviews/worktrees/$1/App/Webroot$2"
+
+<Directory /srv/www/pmacontrol-reviews/worktrees>
+    AllowOverride None
+    Options FollowSymLinks
+    Require all granted
+</Directory>
+
+# Front-controller rewrite at server level. [PT] re-feeds the rewritten URI
+# to mod_alias so the AliasMatch above maps it back into the worktree tree.
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^/pmacontrol-reviews/(?:worktrees/)?([a-f0-9]{6,40})/(.*)$ \
+    /pmacontrol-reviews/$1/index.php?glial_path=$2 [QSA,PT,L]
+```
+
+Gotchas baked into the rules above (learned the hard way — restore them if
+you simplify the config):
+
+- `AllowOverride None` on the worktrees parent stops Apache walking the
+  project-root `.htaccess` (which would otherwise rewrite everything into
+  `App/Webroot/App/Webroot/…` and loop).
+- The rewrite lives at server level, **not** in the App/Webroot/.htaccess.
+  Per-directory rewrites with no static `RewriteBase` matched the URI against
+  the per-dir prefix and looped on `add path info postfix`.
+- `[PT]` is required so the rewritten URI re-enters mod_alias instead of
+  being resolved against `DocumentRoot /srv/www/`.
+
+## Onboarding a new branch as a parallel HTTP target
+
+```bash
+# 1. Create or move a worktree under the writable parent.
+sudo install -d -o www-data -g www-data -m 755 /srv/www/pmacontrol-reviews/worktrees
+cd /srv/www/pmacontrol
+git worktree add /srv/www/pmacontrol-reviews/worktrees/<hash> <branch>
+
+cd /srv/www/pmacontrol-reviews/worktrees/<hash>
+
+# 2. Wire configuration: per-file symlinks to prod, except webroot.config.php.
+rm -f configuration/.gitignore  # placeholder only; restore later if needed
+for f in /srv/www/pmacontrol/configuration/*; do
+    ln -sfn "$f" "configuration/$(basename "$f")"
+done
+rm configuration/webroot.config.php
+cat > configuration/webroot.config.php <<'PHP'
+<?php
+if (! defined('WWW_ROOT')) {
+    $hash = basename(dirname(__DIR__));
+    define('WWW_ROOT', '/pmacontrol-reviews/'.$hash.'/');
+}
+PHP
+
+# 3. Wire vendor + the shared read-only tmp subdirs.
+ln -sfn /srv/www/pmacontrol/vendor vendor
+for d in database keys translations dot img md5; do
+    rm -rf "tmp/$d" && ln -sfn "/srv/www/pmacontrol/tmp/$d" "tmp/$d"
+done
+
+# 4. Worktree-private cache/acl/log dirs that Apache (www-data) writes to.
+sudo mkdir -p tmp/acl tmp/cache tmp/log
+sudo chown -R www-data:www-data tmp/acl tmp/cache tmp/log
+
+# 5. Bust the worktree's ACL cache so new public actions get discovered.
+sudo rm -f tmp/acl/*.ser
+
+# 6. Smoke-test (no Apache reload needed — AliasMatch is generic).
+HASH=<your-hash>
+curl -sS -o /dev/null -w '%{http_code}\n' \
+    "http://10.68.68.111/pmacontrol-reviews/$HASH/en/user/connection"
+# expect 200
+```
+
+After committing on the branch, update `<hash>` and re-test; the URL
+follows HEAD because the AliasMatch matches any `[a-f0-9]{6,40}` hash that
+exists under `worktrees/`.
+
+## Tear-down
+
+```bash
+cd /srv/www/pmacontrol
+git worktree remove /srv/www/pmacontrol-reviews/worktrees/<hash>
+```
+
+Apache config is generic — nothing to reload, nothing to clean up in the vhost.

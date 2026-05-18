@@ -35,6 +35,7 @@ The active integration target is `master`. Create issue branches from an up-to-d
 | Auto-import of MySQL/MariaDB error / slow / general / OOM logs from monitored servers (`/MysqlServer/logs/<id>/`, daemon_main #37 + #38) | [docs/mysql_logs_import.md](docs/mysql_logs_import.md) |
 | MariaDB SYSTEM_TIME partitioned tables, `PARTITION(pn)` hint convention | [docs/system_versioning_partitions.md](docs/system_versioning_partitions.md) |
 | Small gotchas (`grep -a` on binlog, stale browser cache, worker hot-reload, …) | [docs/tips.md](docs/tips.md) |
+| Serving a git worktree side-by-side with the live `/pmacontrol/` deployment (`http://<host>/pmacontrol-reviews/<hash>/…`, Apache AliasMatch, per-worktree `webroot.config.php`, shared `vendor`/tmp symlinks) | [docs/worktrees_parallel_http.md](docs/worktrees_parallel_http.md) |
 
 Full topic index: [docs/README.md](docs/README.md).
 
