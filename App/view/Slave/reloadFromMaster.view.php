@@ -19,6 +19,7 @@ $preflight     = $data['preflight'] ?? ['conditions' => [], 'physical_eligible' 
 $conditions    = $preflight['conditions'] ?? [];
 $physicalOk    = !empty($preflight['physical_eligible']);
 $logicalOk     = !empty($preflight['logical_eligible']);
+$mydumperOk    = !empty($preflight['mydumper_eligible']);
 $idServer      = (int) ($data['id_mysql_server'] ?? 0);
 $conn          = (string) ($data['connection_name'] ?? '');
 $versions      = $data['versions'] ?? [];
@@ -151,6 +152,49 @@ function svReloadStatusIcon(string $status): string
                 <?= $logicalOk ? '' : 'disabled' ?>
                 onclick="return confirm('<?= __('Wipe slave datadir and stream mariadb-dump over SSH. Continue?') ?>');">
                 <i class="fa fa-cloud-download"></i> <?= __('Start logical reload') ?>
+            </button>
+        </form>
+    </div>
+
+    <!-- ============ MYDUMPER (parallel) ============ -->
+    <div class="sv-reload-card">
+        <h3><i class="fa fa-bolt"></i> <?= __('mydumper / myloader (parallel)') ?></h3>
+        <div class="sv-reload-subtitle"><?= __('Parallel multi-threaded dump/load, streamed via SSH. Faster than mariadb-dump on multi-database workloads. Requires mydumper on master and myloader on slave (probed by the first step).') ?></div>
+
+        <ul class="sv-reload-checklist">
+            <?php foreach ($conditions as $c):
+                $status = (string) ($c['status'] ?? '');
+                $key = (string) ($c['key'] ?? '');
+                // Like logical: cross-version is fine for mydumper.
+                $isVersionFail = $key === 'version_match' && $status === ReloadFromMaster::STATUS_FAIL;
+            ?>
+                <li <?= $isVersionFail ? 'style="opacity:0.5;text-decoration:line-through"' : '' ?>>
+                    <?= svReloadStatusIcon($isVersionFail ? ReloadFromMaster::STATUS_WARN : $status) ?>
+                    <span class="sv-reload-msg"><?= htmlspecialchars((string) ($c['message'] ?? '')) ?></span>
+                    <?php if ($isVersionFail): ?>
+                        <em style="color:#94a3b8;font-size:0.85rem">(<?= __('not required for mydumper') ?>)</em>
+                    <?php endif; ?>
+                </li>
+            <?php endforeach; ?>
+            <li>
+                <?= svReloadStatusIcon(ReloadFromMaster::STATUS_WARN) ?>
+                <span class="sv-reload-msg"><?= __('mydumper/myloader binaries presence is verified by the first job step (probe_binaries) — install on both sides if missing.') ?></span>
+            </li>
+        </ul>
+
+        <form method="post" action="<?= LINK ?>Slave/reloadFromMasterStart/<?= $idServer ?>/<?= urlencode($conn) ?>/" style="margin:0">
+            <?= $csrfHidden ?>
+            <input type="hidden" name="procedure" value="mydumper">
+            <?php if ($hasAtRiskWarn): ?>
+                <label class="sv-reload-ack">
+                    <input type="checkbox" name="acknowledge_at_risk" value="1" required>
+                    <?= __('I acknowledge that ReplicationSourceCoverage reports the replica position as at_risk.') ?>
+                </label>
+            <?php endif; ?>
+            <button type="submit" class="btn btn-warning <?= $mydumperOk ? '' : 'sv-reload-btn-disabled' ?>"
+                <?= $mydumperOk ? '' : 'disabled' ?>
+                onclick="return confirm('<?= __('Wipe slave tables and stream mydumper over SSH. Continue?') ?>');">
+                <i class="fa fa-bolt"></i> <?= __('Start mydumper reload') ?>
             </button>
         </form>
     </div>

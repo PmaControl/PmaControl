@@ -4965,7 +4965,7 @@ var chart = new Chart(ctx, {
             }
 
             $procedure = (string) ($_POST['procedure'] ?? '');
-            if (!in_array($procedure, ['physical', 'logical'], true)) {
+            if (!in_array($procedure, ['physical', 'logical', 'mydumper'], true)) {
                 http_response_code(400);
                 echo 'Invalid procedure';
                 return;
@@ -4986,9 +4986,11 @@ var chart = new Chart(ctx, {
                 $slave ?? [], $master ?? [], $slaveStatus, $sourceCoverage,
                 $diskStats, $sshProbe, $versions
             );
-            $eligible = $procedure === 'physical'
-                ? $preflight['physical_eligible']
-                : $preflight['logical_eligible'];
+            $eligible = match ($procedure) {
+                'physical' => $preflight['physical_eligible'] ?? false,
+                'mydumper' => $preflight['mydumper_eligible'] ?? false,
+                default    => $preflight['logical_eligible']  ?? false,
+            };
             if (!$eligible) {
                 http_response_code(409);
                 echo 'Preflight conditions not met server-side. Refresh the page.';
@@ -5146,6 +5148,8 @@ var chart = new Chart(ctx, {
 
             if ($procedure === 'logical') {
                 self::reloadCliRunLogical($db, $ctx);
+            } elseif ($procedure === 'mydumper') {
+                self::reloadCliRunMydumper($db, $ctx);
             } else {
                 self::reloadCliRunPhysical($db, $ctx);
             }
@@ -5292,6 +5296,106 @@ var chart = new Chart(ctx, {
             ['name' => 'dump_and_pipe',     'pct' => 80, 'cmd' => $dumpCmd],
             ['name' => 'configure_replica', 'pct' => 95,
              'cmd' => 'mysql -uroot -e "CHANGE MASTER TO MASTER_HOST=\''.addslashes($mIp).'\', MASTER_USER=\''.addslashes($mUser).'\', MASTER_PASSWORD=\''.addslashes($mPwd).'\', MASTER_USE_GTID=slave_pos; START REPLICA;" 2>&1 | grep -v "^Warning" || true'],
+        ];
+
+        foreach ($steps as $step) {
+            $ok = self::reloadRunStep($db, $ctx, $step['name'], $step['cmd'], (int) $step['pct']);
+            if (!$ok) {
+                return;
+            }
+        }
+        self::reloadCliFinish($db, $jobId, $logPath);
+    }
+
+    /**
+     * mydumper procedure: parallel multi-threaded dump/load. The
+     * master streams via `mydumper --stream` (binary TAR-on-stdout
+     * since mydumper 0.12), piped over SSH into `myloader --stream`
+     * on the slave. Much faster than mariadb-dump on multi-database
+     * workloads thanks to per-table parallelism, and cross-version
+     * compatible at the SQL layer.
+     *
+     * Pre-requisites operator must provision on the hosts (the
+     * worker probes presence on the first step and fails fast with a
+     * clear message if missing):
+     *   - `mydumper` on the master (any 0.12+ build)
+     *   - `myloader` on the slave (matching major version)
+     */
+    private static function reloadCliRunMydumper($db, array $ctx): void
+    {
+        $jobId   = $ctx['jobId'];
+        $logPath = $ctx['logPath'];
+        $mUser   = $ctx['masterUser'];
+        $mPwd    = $ctx['masterPwd'];
+        $mIp     = $ctx['masterLanIp'];
+
+        $sshMasterPrefix = "ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o UserKnownHostsFile=/dev/null"
+                         . " root@".escapeshellarg($mIp);
+
+        // mydumper flags:
+        //   --stream                → TAR-on-stdout, no tmp dir
+        //   --trx-consistency-only  → InnoDB-style consistency,
+        //                             avoids global FLUSH TABLES
+        //                             WITH READ LOCK (which would
+        //                             block the master)
+        //   --threads=4             → reasonable default; configurable
+        //                             via `mydumper_threads` config
+        //                             override on the row in a follow-up
+        //   --rows=10000000         → chunk large tables; ditto
+        //   --less-locking          → minimise lock window
+        //   --kill-long-queries     → don't wait for stuck readers
+        $threads = 4;
+        $dumpInner = "mydumper --stream --trx-consistency-only --less-locking --kill-long-queries"
+                   . " --threads=".$threads
+                   . " --rows=10000000"
+                   . " --host=127.0.0.1 --protocol=tcp"
+                   . " --user=".self::reloadShSingleQuote($mUser)
+                   . " --password=".self::reloadShSingleQuote($mPwd)
+                   . " 2> /tmp/reload-mydumper-".$jobId.".log";
+        // myloader on the slave: --stream consumes mydumper's TAR
+        // output via stdin, --enable-binlog so the new state is
+        // captured in the slave's own binlog stream after the load.
+        $loadInner = "myloader --stream --threads=".$threads
+                   . " --host=127.0.0.1 --protocol=tcp"
+                   . " --user=root --enable-binlog"
+                   . " --overwrite-tables"
+                   . " 2>&1";
+        $dumpCmd = "set -o pipefail; ".$sshMasterPrefix." ".self::reloadShSingleQuoteWrap($dumpInner)." | ".$loadInner;
+
+        // mydumper also writes the master's `metadata` file out-of-band
+        // (binlog file + position + GTID); we capture it from the
+        // master post-dump to reset slave_pos before reconnect.
+        $fetchGtidCmd = $sshMasterPrefix." 'mariadb --host=127.0.0.1 --protocol=TCP --user="
+                      . self::reloadShSingleQuote($mUser)." --password=".self::reloadShSingleQuote($mPwd)
+                      . " -BNe \"SELECT @@gtid_binlog_pos\"'";
+
+        $steps = [
+            [
+                'name' => 'probe_binaries', 'pct' => 3,
+                // Verify both ends have mydumper/myloader before
+                // wiping anything. The outer SSH targets the slave;
+                // the inner SSH probes the master.
+                'cmd'  => '(which myloader >/dev/null 2>&1 || (echo "myloader missing on slave" >&2; exit 65)) && '
+                        . $sshMasterPrefix." 'which mydumper >/dev/null 2>&1 || (echo \"mydumper missing on master\" >&2; exit 65)'",
+            ],
+            ['name' => 'stop_replica', 'pct' => 5, 'cmd' => 'mysql -uroot -e "STOP REPLICA;" 2>/dev/null || mysql -uroot -e "STOP SLAVE;"'],
+            ['name' => 'dump_and_load', 'pct' => 85, 'cmd' => $dumpCmd],
+            [
+                'name' => 'configure_replica', 'pct' => 97,
+                // mydumper doesn't auto-emit a CHANGE MASTER block.
+                // We `RESET MASTER` then derive gtid_slave_pos from
+                // the master's @@gtid_binlog_pos captured at the end
+                // of the dump (race window is tiny because the slave
+                // already STOP REPLICA-d before the dump started).
+                'cmd' => 'GTID=$('.$fetchGtidCmd.' 2>/dev/null | tr -d "[:space:]"); '
+                       . 'mysql -uroot -e "RESET MASTER; SET GLOBAL gtid_slave_pos=\"$GTID\"; '
+                       . 'CHANGE MASTER TO MASTER_HOST=\\\"'.addslashes($mIp).'\\\", MASTER_USER=\\\"'.addslashes($mUser).'\\\", MASTER_PASSWORD=\\\"'.addslashes($mPwd).'\\\", MASTER_USE_GTID=slave_pos; '
+                       . 'START REPLICA;" 2>&1 | grep -v "^Warning" || true',
+            ],
+            [
+                'name' => 'cleanup_mydumper_log', 'pct' => 99,
+                'cmd'  => 'rm -f /tmp/reload-mydumper-'.$jobId.'.log',
+            ],
         ];
 
         foreach ($steps as $step) {

@@ -221,6 +221,15 @@ final class ReloadFromMaster
             'conditions'        => $conditions,
             'physical_eligible' => self::allOkOrWarn($conditions, /* allowVersionFail */ false),
             'logical_eligible'  => self::allOkOrWarn($conditions, /* allowVersionFail */ true),
+            // mydumper streams binary-safe dumps, doesn't require a
+            // major-version match between master and slave (the dump
+            // format is engine-version agnostic at the SQL layer), and
+            // is typically faster than mariadb-dump on multi-database
+            // workloads thanks to its per-table parallelism. We expose
+            // it whenever the logical path is OK — binary presence on
+            // both sides is checked at run-time by the worker, not at
+            // preflight (avoids an extra SSH probe in the hot path).
+            'mydumper_eligible' => self::allOkOrWarn($conditions, /* allowVersionFail */ true),
         ];
     }
 
