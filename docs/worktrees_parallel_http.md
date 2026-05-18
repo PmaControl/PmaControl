@@ -189,6 +189,22 @@ After committing on the branch, update `<hash>` and re-test; the URL
 follows HEAD because the AliasMatch matches any `[a-f0-9]{6,40}` hash that
 exists under `worktrees/`.
 
+## Busting the worktree's ACL cache
+
+`tmp/acl/` is worktree-local (not symlinked to prod), so Glial caches the
+per-worktree controller/action map there. **Every time you add, rename, or
+remove a public action in this worktree** (or merge a branch that does),
+purge the cache or new routes return 403 "permission denied" until it
+rebuilds:
+
+```bash
+rm -f /srv/www/pmacontrol-reviews/worktrees/<hash>/tmp/acl/*.ser
+```
+
+Don't touch the production cache at `/srv/www/pmacontrol/tmp/acl/acl.ser`
+from inside a worktree — the live deployment regenerates its own. Two
+independent files, two independent lifecycles.
+
 ## Tear-down
 
 ```bash
