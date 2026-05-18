@@ -108,14 +108,28 @@ final class ReloadFromMaster
         ];
 
         // Gate 3 — replication is stopped or far behind.
-        $stoppedFor = self::secondsSqlStopped($slaveStatus);
-        $sqlRunning = self::slaveSqlRunning($slaveStatus);
+        $stoppedFor    = self::secondsSqlStopped($slaveStatus);
+        $sqlRunning    = self::slaveSqlRunning($slaveStatus);
+        $ioRaw         = strtolower((string) ($slaveStatus['Slave_IO_Running'] ?? $slaveStatus['Replica_IO_Running'] ?? ''));
+        // `Connecting` means the IO thread cannot reach the master — it is
+        // NOT a healthy state. Without this check, a slave whose master is
+        // unreachable looks "healthy within SLA" because `seconds_behind`
+        // is NULL and SQL=Yes (it just keeps applying what's already in
+        // the relay log). Reload is exactly the right remediation here.
+        $ioConnecting  = $ioRaw === 'connecting' || $ioRaw === 'no';
         $secondsBehind = self::secondsBehindSource($slaveStatus);
         $sla = (int) ($slaveRow['replica_lag_sla_seconds'] ?? 30);
         $reallyLate = $sla * self::LAG_BLOCKER_MULTIPLIER;
         $lagBlocker = false;
         $lagMsg = 'Replication is running within SLA';
-        if (!$sqlRunning && $stoppedFor !== null && $stoppedFor >= self::SQL_STOPPED_BLOCKER_SECONDS) {
+        if ($ioConnecting) {
+            $lagBlocker = true;
+            $lagMsg = sprintf(
+                'Slave_IO_Running = %s — master is unreachable (%s). Reload required.',
+                $ioRaw === '' ? 'unknown' : $ioRaw,
+                (string) ($slaveStatus['Last_IO_Error'] ?? 'no error message')
+            );
+        } elseif (!$sqlRunning && $stoppedFor !== null && $stoppedFor >= self::SQL_STOPPED_BLOCKER_SECONDS) {
             $lagBlocker = true;
             $lagMsg = sprintf('Slave_SQL_Running != Yes for ≥ %ds — reload required', self::SQL_STOPPED_BLOCKER_SECONDS);
         } elseif ($secondsBehind !== null && $secondsBehind > $reallyLate) {

@@ -5294,27 +5294,41 @@ var chart = new Chart(ctx, {
     }
 
     /**
-     * Run the non-interactive SSH probe. Times out at 5 s with BatchMode
-     * so the page never hangs.
+     * Run the non-interactive SSH probe to the slave. PmaControl manages
+     * every remote server through SSH tunnels (`ssh_tunnel` table) — the
+     * slave row's `ip` is therefore typically `127.0.0.1` and `ssh_port`
+     * is a local-loopback port that maps onto a real
+     * `<bastion>...<target>:22` chain. We honor that mapping by feeding
+     * the SSH command the *resolved* endpoint + the jump-host chain via
+     * `-J`, otherwise the probe always tries to land on
+     * `root@127.0.0.1:10104` and fails on hosts where the local-tunnel
+     * loop didn't open the port.
      *
-     * @return array{ok:bool,command:string,stderr:string}
+     * @return array{ok:bool,command:string,stderr:string,via_tunnel:bool,jump_hosts:list<string>}
      */
     private static function reloadProbeSsh(?array $slave): array
     {
         if ($slave === null) {
-            return ['ok' => false, 'command' => '', 'stderr' => 'slave row not found'];
+            return ['ok' => false, 'command' => '', 'stderr' => 'slave row not found', 'via_tunnel' => false, 'jump_hosts' => []];
         }
         $login = trim((string) ($slave['ssh_login'] ?? ''), " \t\n\r'\"");
         if ($login === '') {
             $login = 'root';
         }
-        $host = (string) ($slave['ip'] ?? '');
-        $port = (int) ($slave['ssh_port'] ?? 22);
+        $localHost = (string) ($slave['ip'] ?? '');
+        $localPort = (int) ($slave['ssh_port'] ?? 22);
+
+        $resolved = self::reloadResolveSshEndpoint($localHost, $localPort);
+        $targetHost = $resolved['host'];
+        $targetPort = $resolved['port'];
+        $jumpFlag   = $resolved['jump_flag'];
+
         $cmd = sprintf(
-            "ssh -o ConnectTimeout=5 -o BatchMode=yes -p %d %s@%s 'echo ok'",
-            $port,
+            "ssh -o ConnectTimeout=5 -o BatchMode=yes -o StrictHostKeyChecking=no%s -p %d %s@%s 'echo ok'",
+            $jumpFlag,
+            $targetPort,
             escapeshellarg($login),
-            escapeshellarg($host)
+            escapeshellarg($targetHost)
         );
         $stderrFile = tempnam(sys_get_temp_dir(), 'sshprobe');
         $out = (string) @shell_exec($cmd.' 2> '.escapeshellarg($stderrFile));
@@ -5323,7 +5337,80 @@ var chart = new Chart(ctx, {
             @unlink($stderrFile);
         }
         $ok = trim($out) === 'ok';
-        return ['ok' => $ok, 'command' => $cmd, 'stderr' => trim($err)];
+        return [
+            'ok'         => $ok,
+            'command'    => $cmd,
+            'stderr'     => trim($err),
+            'via_tunnel' => $resolved['via_tunnel'],
+            'jump_hosts' => $resolved['jump_hosts'],
+        ];
+    }
+
+    /**
+     * Resolve a slave's logical SSH endpoint into the real `<bastion> ...
+     * <target>:port` chain via `ssh_tunnel`. Returns the raw endpoint
+     * unchanged when the row's `ip:port` isn't tunneled (direct-access
+     * server). Building `-J` so the actual remote (and any intermediate
+     * jump host) is fed to `ssh` as a ProxyJump chain.
+     *
+     * @return array{host:string,port:int,via_tunnel:bool,jump_hosts:list<string>,jump_flag:string}
+     */
+    private static function reloadResolveSshEndpoint(string $localHost, int $localPort): array
+    {
+        $direct = [
+            'host'       => $localHost,
+            'port'       => $localPort,
+            'via_tunnel' => false,
+            'jump_hosts' => [],
+            'jump_flag'  => '',
+        ];
+        if ($localHost === '' || $localPort <= 0) {
+            return $direct;
+        }
+        try {
+            $db = Sgbd::sql(DB_DEFAULT);
+            $sql = "SELECT remote_host, remote_port, servers_jump "
+                 . "FROM ssh_tunnel "
+                 . "WHERE date_end IS NULL "
+                 . "  AND local_host = '".$db->sql_real_escape_string($localHost)."' "
+                 . "  AND local_port = ".$localPort." "
+                 . "LIMIT 1";
+            $res = $db->sql_query_silent($sql);
+            if (!$res) {
+                return $direct;
+            }
+            $row = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+            if (!$row) {
+                return $direct;
+            }
+            $remoteHost = (string) $row['remote_host'];
+            $remotePort = (int) $row['remote_port'];
+            $jumps      = json_decode((string) ($row['servers_jump'] ?? '[]'), true) ?: [];
+            $jumpHosts  = [];
+            // The last entry of `servers_jump` is the target itself (also
+            // recorded in `remote_host`/`remote_port`). Everything before
+            // is a real intermediate hop we need to express with `-J`.
+            $hopCount = count($jumps);
+            for ($i = 0; $i < $hopCount - 1; $i++) {
+                $hop = $jumps[$i];
+                $hh = (string) ($hop['ip'] ?? $hop['remote_host'] ?? '');
+                $hp = (int)    ($hop['port'] ?? $hop['remote_port'] ?? 22);
+                if ($hh === '') continue;
+                $jumpHosts[] = $hh.':'.$hp;
+            }
+            $jumpFlag = $jumpHosts !== []
+                ? ' -J '.escapeshellarg(implode(',', $jumpHosts))
+                : '';
+            return [
+                'host'       => $remoteHost,
+                'port'       => $remotePort > 0 ? $remotePort : 22,
+                'via_tunnel' => true,
+                'jump_hosts' => $jumpHosts,
+                'jump_flag'  => $jumpFlag,
+            ];
+        } catch (\Throwable $e) {
+            return $direct;
+        }
     }
 
     private static function reloadInsertJobRow($db, array $params): int
