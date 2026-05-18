@@ -952,15 +952,15 @@ $(document).on('click', '#sv-preflight-btn', function() {
                     <?php endif; ?>
                 </div>
 
-                <?php if (!empty($data['db_on_master'])): ?>
                 <div class="sv-action-group">
                     <div class="sv-action-group-title"><?= __("Rebuild") ?></div>
                     <a class="btn btn-warning btn-sm" href="<?= LINK ?>Slave/reloadFromMaster/<?= $data['id_mysql_server'] ?>/<?= $data['replication_name'] ?>/">
                         <i class="fa fa-refresh"></i> <?= __('Reload from Master') ?>
+<?php if (!empty($data['db_on_master'])): ?>
                         <small>(<?= implode(',', $data['db_on_master']) ?>)</small>
+<?php endif; ?>
                     </a>
                 </div>
-                <?php endif; ?>
 
                 <div class="sv-action-group">
                     <div class="sv-action-group-title">
