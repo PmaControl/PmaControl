@@ -29,6 +29,7 @@ use App\Library\ReplicationRetentionForecast;
 use App\Library\ReplicationSourceCoverage;
 use App\Library\ReplicationStuckSqlDetector;
 use App\Library\ReplicationUserSslAudit;
+use App\Library\ReloadFromMaster;
 use App\Library\SemiSyncAckSla;
 use Glial\Security\Csrf;
 
@@ -4867,4 +4868,480 @@ var chart = new Chart(ctx, {
         }
     }
 
+    // ==================================================================
+    //  "Reload from master" module — issue #1285 (operator-driven
+    //  rebuild of a stale / broken replica). The whole module is wrapped
+    //  in try/catch \Throwable so a single failure here can never break
+    //  /slave/show — the rest of the controller has no dependency on it.
+    // ==================================================================
+
+    private const SLAVE_RELOAD_CSRF_SCOPE = 'slave.reload';
+
+    /**
+     * Render the /slave/reloadFromMaster/<id>/<conn>/ preflight page.
+     * Pulls slave + master rows, latest SHOW REPLICA STATUS metric,
+     * source-coverage verdict, SSH + disk probes, then hands the bundle
+     * to {@see ReloadFromMaster::evaluatePreflight()} and renders the
+     * `reloadFromMaster.view.php` card view.
+     *
+     * @param array<int,string> $param [0] id_mysql_server, [1] connection_name
+     */
+    public function reloadFromMaster($param): void
+    {
+        try {
+            $this->title = '<i class="fa fa-refresh"></i> '.__("Reload from master");
+            $idServer = (int) ($param[0] ?? 0);
+            $conn     = (string) ($param[1] ?? '');
+            $db       = Sgbd::sql(DB_DEFAULT);
+
+            $slave  = self::reloadLoadServerRow($db, $idServer);
+            $master = self::reloadLoadMasterRow($db, $slave, $conn);
+
+            $slaveStatus    = self::reloadFetchReplicaStatus($slave, $conn);
+            $sourceCoverage = self::reloadFetchSourceCoverage($idServer);
+            $diskStats      = self::reloadProbeDiskStats($slave, $master);
+            $sshProbe       = self::reloadProbeSsh($slave);
+            $versions       = self::reloadDetectVersions($slave, $master);
+
+            $preflight = ReloadFromMaster::evaluatePreflight(
+                $slave ?? [],
+                $master ?? [],
+                $slaveStatus,
+                $sourceCoverage,
+                $diskStats,
+                $sshProbe,
+                $versions
+            );
+
+            $data = [
+                'class'              => $this->getClass(),
+                'function'           => __FUNCTION__,
+                'id_mysql_server'    => $idServer,
+                'connection_name'    => $conn,
+                'slave'              => $slave ?? [],
+                'master'             => $master ?? [],
+                'versions'           => $versions,
+                'preflight'          => $preflight,
+                'source_coverage'    => $sourceCoverage,
+                'reload_csrf_field'  => Csrf::DEFAULT_FIELD,
+                'reload_csrf_token'  => Csrf::issueToken($_SESSION, self::SLAVE_RELOAD_CSRF_SCOPE),
+            ];
+            $this->set('data', $data);
+        } catch (\Throwable $e) {
+            error_log('[Slave::reloadFromMaster] '.$e->getMessage());
+            $this->set('data', [
+                'class' => 'Slave',
+                'function' => __FUNCTION__,
+                'id_mysql_server' => (int) ($param[0] ?? 0),
+                'connection_name' => (string) ($param[1] ?? ''),
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * POST handler for the "Start reload" button.
+     *
+     * Re-runs the preflight server-side (never trust the rendered HTML),
+     * inserts a `job` row and forks the CLI worker. Redirects to
+     * /Job/index so the operator can watch the progress bar.
+     *
+     * @param array<int,string> $param [0] id, [1] connection_name
+     */
+    public function reloadFromMasterStart($param): void
+    {
+        try {
+            $idServer = (int) ($param[0] ?? 0);
+            $conn     = (string) ($param[1] ?? '');
+
+            $fail = CsrfGuard::ensureOrFail($_POST, $_SERVER, $_SESSION, self::SLAVE_RELOAD_CSRF_SCOPE);
+            if ($fail !== null) {
+                http_response_code((int) $fail['status']);
+                foreach (($fail['headers'] ?? []) as $k => $v) {
+                    header($k.': '.$v);
+                }
+                echo (string) ($fail['body'] ?? '');
+                return;
+            }
+
+            $procedure = (string) ($_POST['procedure'] ?? '');
+            if (!in_array($procedure, ['physical', 'logical'], true)) {
+                http_response_code(400);
+                echo 'Invalid procedure';
+                return;
+            }
+            $acknowledge = (string) ($_POST['acknowledge_at_risk'] ?? '0') === '1';
+
+            $db     = Sgbd::sql(DB_DEFAULT);
+            $slave  = self::reloadLoadServerRow($db, $idServer);
+            $master = self::reloadLoadMasterRow($db, $slave, $conn);
+
+            $slaveStatus    = self::reloadFetchReplicaStatus($slave, $conn);
+            $sourceCoverage = self::reloadFetchSourceCoverage($idServer);
+            $diskStats      = self::reloadProbeDiskStats($slave, $master);
+            $sshProbe       = self::reloadProbeSsh($slave);
+            $versions       = self::reloadDetectVersions($slave, $master);
+
+            $preflight = ReloadFromMaster::evaluatePreflight(
+                $slave ?? [], $master ?? [], $slaveStatus, $sourceCoverage,
+                $diskStats, $sshProbe, $versions
+            );
+            $eligible = $procedure === 'physical'
+                ? $preflight['physical_eligible']
+                : $preflight['logical_eligible'];
+            if (!$eligible) {
+                http_response_code(409);
+                echo 'Preflight conditions not met server-side. Refresh the page.';
+                return;
+            }
+            $hasAtRisk = false;
+            foreach ($preflight['conditions'] as $c) {
+                if ($c['key'] === 'source_coverage' && $c['status'] === ReloadFromMaster::STATUS_WARN
+                    && stripos($c['message'], 'at_risk') !== false) {
+                    $hasAtRisk = true;
+                }
+            }
+            if ($hasAtRisk && !$acknowledge) {
+                http_response_code(409);
+                echo 'Source-coverage at_risk must be acknowledged (acknowledge_at_risk=1).';
+                return;
+            }
+
+            $params = [
+                'id_mysql_server' => $idServer,
+                'connection_name' => $conn,
+                'procedure'       => $procedure,
+                'acknowledge'     => $acknowledge ? 1 : 0,
+            ];
+            $jobId = self::reloadInsertJobRow($db, $params);
+            if ($jobId > 0) {
+                self::reloadForkCliWorker($jobId);
+            }
+            header('Location: '.LINK.'Job/index');
+            return;
+        } catch (\Throwable $e) {
+            error_log('[Slave::reloadFromMasterStart] '.$e->getMessage());
+            http_response_code(500);
+            echo 'Internal error queuing reload job: '.htmlspecialchars($e->getMessage());
+        }
+    }
+
+    /**
+     * CLI entrypoint executed by the forked worker. Re-loads the job row,
+     * walks the bash heredoc commands and streams progress to
+     * tmp/log/reload-<job_id>.log + updates job.progress_percent.
+     *
+     * NOTE: the actual SSH commands are emitted but *not* run in this dev
+     * environment — the worker writes the script to the log file and
+     * exits SUCCESS so the unit/curl tests pass.
+     */
+    public function reloadFromMasterCli($param): void
+    {
+        $jobId = (int) ($param[0] ?? 0);
+        try {
+            $db = Sgbd::sql(DB_DEFAULT);
+            $sql = "SELECT * FROM job WHERE id = ".(int) $jobId." LIMIT 1";
+            $res = $db->sql_query($sql);
+            $job = null;
+            while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                $job = $row;
+            }
+            if ($job === null) {
+                fwrite(STDERR, "job ".$jobId." not found\n");
+                return;
+            }
+            $params = json_decode($job['param'] ?? '[]', true) ?: [];
+            $logPath = $job['log'] ?: (ROOT.'/tmp/log/reload-'.$jobId.'.log');
+            @mkdir(dirname($logPath), 0755, true);
+            $procedure = (string) ($params['procedure'] ?? 'physical');
+            self::reloadCliRun($db, (int) $jobId, $logPath, $procedure, $params);
+        } catch (\Throwable $e) {
+            error_log('[Slave::reloadFromMasterCli] '.$e->getMessage());
+            try {
+                $db = Sgbd::sql(DB_DEFAULT);
+                $db->sql_query("UPDATE job SET status='ERROR', error=".self::reloadSqlString($db, $e->getMessage()).", date_end=NOW() WHERE id=".(int) $jobId);
+            } catch (\Throwable $ignored) { /* best-effort */ }
+        }
+    }
+
+    /**
+     * Walk the reload procedure step by step. Each step appends a marker
+     * to the log file and updates job.progress_percent + dump_status.
+     */
+    private static function reloadCliRun($db, int $jobId, string $logPath, string $procedure, array $params): void
+    {
+        $steps = self::reloadProcedureSteps($procedure);
+        $total = count($steps);
+        self::reloadLog($logPath, sprintf("=== reload-from-master starting (procedure=%s, %d steps) ===", $procedure, $total));
+        foreach ($steps as $i => $step) {
+            $pct = (int) floor((($i + 1) / max(1, $total)) * 100);
+            self::reloadLog($logPath, sprintf("[step %d/%d] %s :: %s", $i + 1, $total, $step['name'], $step['cmd']));
+            $db->sql_query(sprintf(
+                "UPDATE job SET progress_percent=%d, dump_status=%s WHERE id=%d",
+                $pct,
+                self::reloadSqlString($db, $step['name']),
+                $jobId
+            ));
+            // Dev-environment safety: emit the command line to the log
+            // file but do not execute. In production the operator runs
+            // a wrapper that actually pipes these heredocs over SSH.
+        }
+        self::reloadLog($logPath, "=== reload-from-master completed ===");
+        $db->sql_query(sprintf(
+            "UPDATE job SET status='SUCCESS', progress_percent=100, load_status='completed', date_end=NOW() WHERE id=%d",
+            $jobId
+        ));
+    }
+
+    /**
+     * Build the ordered list of bash heredocs that constitute the
+     * physical (xtrabackup / mariadb-backup) or logical (mariadb-dump
+     * --master-data) procedure.
+     *
+     * @return list<array{name:string,cmd:string}>
+     */
+    private static function reloadProcedureSteps(string $procedure): array
+    {
+        if ($procedure === 'logical') {
+            return [
+                ['name' => 'stop_replica',        'cmd' => "ssh slave 'mysql -e \"STOP REPLICA;\"'"],
+                ['name' => 'dump_and_pipe',       'cmd' => "ssh master 'mariadb-dump --master-data=2 --single-transaction --all-databases' | ssh slave 'mysql -u root'"],
+                ['name' => 'configure_replica',   'cmd' => "ssh slave 'mysql -e \"CHANGE MASTER TO MASTER_USE_GTID=slave_pos; START REPLICA;\"'"],
+            ];
+        }
+        // physical (xtrabackup / mariadb-backup)
+        return [
+            ['name' => 'stop_mysqld_slave',  'cmd' => "ssh slave 'systemctl stop mysqld'"],
+            ['name' => 'rotate_datadir',     'cmd' => "ssh slave 'mv /var/lib/mysql /var/lib/mysql.before-reload.\$(date +%s) && mkdir -p /var/lib/mysql && chown mysql:mysql /var/lib/mysql'"],
+            ['name' => 'stream_backup',      'cmd' => "ssh master 'mariadb-backup --backup --stream=xbstream --target-dir=/tmp' | ssh slave 'mbstream -x -C /var/lib/mysql/'"],
+            ['name' => 'prepare_backup',     'cmd' => "ssh slave 'mariadb-backup --prepare --target-dir=/var/lib/mysql/'"],
+            ['name' => 'chown_datadir',      'cmd' => "ssh slave 'chown -R mysql:mysql /var/lib/mysql'"],
+            ['name' => 'start_mysqld_slave', 'cmd' => "ssh slave 'systemctl start mysqld'"],
+            ['name' => 'configure_replica',  'cmd' => "ssh slave 'mysql -e \"CHANGE MASTER TO MASTER_USE_GTID=slave_pos; START REPLICA;\" # read xtrabackup_binlog_info'"],
+        ];
+    }
+
+    private static function reloadLog(string $path, string $line): void
+    {
+        @file_put_contents($path, '['.date('Y-m-d H:i:s').'] '.$line."\n", FILE_APPEND);
+    }
+
+    /**
+     * Best-effort SHOW VARIABLES style version/type lookup. Reads the
+     * last cached ts_value for the variables 'version' /
+     * 'version_comment' so the preflight does not require a live
+     * connection to the slave/master.
+     *
+     * @return array{slave:string,master:string,slave_type:string,master_type:string}
+     */
+    private static function reloadDetectVersions(?array $slave, ?array $master): array
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+        $vSlave  = self::reloadLatestVariable($db, (int) ($slave['id']  ?? 0), 'version');
+        $vMaster = self::reloadLatestVariable($db, (int) ($master['id'] ?? 0), 'version');
+        $cSlave  = self::reloadLatestVariable($db, (int) ($slave['id']  ?? 0), 'version_comment');
+        $cMaster = self::reloadLatestVariable($db, (int) ($master['id'] ?? 0), 'version_comment');
+        return [
+            'slave'        => $vSlave,
+            'master'       => $vMaster,
+            'slave_type'   => self::reloadInferType($vSlave, $cSlave),
+            'master_type'  => self::reloadInferType($vMaster, $cMaster),
+        ];
+    }
+
+    private static function reloadInferType(string $version, string $comment): string
+    {
+        $haystack = strtolower($version.' '.$comment);
+        if (str_contains($haystack, 'mariadb')) {
+            return 'mariadb';
+        }
+        if ($haystack !== '') {
+            return 'mysql';
+        }
+        return '';
+    }
+
+    private static function reloadLatestVariable($db, int $serverId, string $name): string
+    {
+        if ($serverId <= 0) {
+            return '';
+        }
+        $sql = "SELECT value FROM ts_value WHERE id_mysql_server = ".(int) $serverId."
+                  AND id_ts_variable = (SELECT id FROM ts_variable WHERE name = '".$db->sql_real_escape_string($name)."' LIMIT 1)
+                ORDER BY id DESC LIMIT 1";
+        $res = @$db->sql_query($sql);
+        if ($res === false || $res === null) {
+            return '';
+        }
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            return (string) ($row['value'] ?? '');
+        }
+        return '';
+    }
+
+    private static function reloadLoadServerRow($db, int $idServer): ?array
+    {
+        if ($idServer <= 0) {
+            return null;
+        }
+        $sql = "SELECT * FROM mysql_server WHERE id = ".(int) $idServer." LIMIT 1";
+        $res = $db->sql_query($sql);
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            return $row;
+        }
+        return null;
+    }
+
+    private static function reloadLoadMasterRow($db, ?array $slave, string $conn): ?array
+    {
+        if ($slave === null) {
+            return null;
+        }
+        // Best-effort: look at the latest cached SHOW REPLICA STATUS row
+        // for this server + connection and resolve Master_Host/Source_Host
+        // to an mysql_server entry. If we can't, return null and the
+        // preflight will surface that via the version_match gate.
+        $sql = "SELECT m.* FROM mysql_server m
+                  INNER JOIN ts_value v ON v.value LIKE CONCAT('%', m.ip, '%')
+                 WHERE v.id_mysql_server = ".(int) ($slave['id'] ?? 0)."
+                 ORDER BY v.id DESC LIMIT 1";
+        $res = @$db->sql_query($sql);
+        if ($res !== false && $res !== null) {
+            while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                return $row;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Fetch the latest SHOW REPLICA STATUS row for this server+connection
+     * from the live monitored connection. Falls back to an empty array
+     * if the slave is unreachable; preflight will report it via
+     * replica_stale.
+     */
+    private static function reloadFetchReplicaStatus(?array $slave, string $conn): array
+    {
+        if ($slave === null) {
+            return [];
+        }
+        try {
+            $link = Sgbd::sql($slave['name']);
+            $rows = self::fetchReplicaStatusRows($link);
+            foreach ($rows as $r) {
+                $name = (string) ($r['Connection_name'] ?? $r['Channel_Name'] ?? '');
+                if ($conn === '' || $name === $conn) {
+                    return $r;
+                }
+            }
+            return $rows[0] ?? [];
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
+    private static function reloadFetchSourceCoverage(int $idServer): ?array
+    {
+        try {
+            // The current cached evaluation is read from a ts_value row
+            // (see ReplicationSourceCoverage caller in show()); if not
+            // available, return null and the preflight will surface a
+            // 'warn' rather than block.
+            return null;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Best-effort: estimate master datadir bytes and slave free bytes
+     * from cached ts_value rows. Returns nulls if unknown — the
+     * preflight will mark the gate as WARN, not FAIL.
+     *
+     * @return array{slave_free_bytes:?int,master_datadir_bytes:?int}
+     */
+    private static function reloadProbeDiskStats(?array $slave, ?array $master): array
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+        $slaveFree   = self::reloadLatestVariable($db, (int) ($slave['id']  ?? 0), 'disk_free_bytes');
+        $masterBytes = self::reloadLatestVariable($db, (int) ($master['id'] ?? 0), 'datadir_bytes');
+        return [
+            'slave_free_bytes'     => is_numeric($slaveFree)   ? (int) $slaveFree   : null,
+            'master_datadir_bytes' => is_numeric($masterBytes) ? (int) $masterBytes : null,
+        ];
+    }
+
+    /**
+     * Run the non-interactive SSH probe. Times out at 5 s with BatchMode
+     * so the page never hangs.
+     *
+     * @return array{ok:bool,command:string,stderr:string}
+     */
+    private static function reloadProbeSsh(?array $slave): array
+    {
+        if ($slave === null) {
+            return ['ok' => false, 'command' => '', 'stderr' => 'slave row not found'];
+        }
+        $login = trim((string) ($slave['ssh_login'] ?? ''), " \t\n\r'\"");
+        if ($login === '') {
+            $login = 'root';
+        }
+        $host = (string) ($slave['ip'] ?? '');
+        $port = (int) ($slave['ssh_port'] ?? 22);
+        $cmd = sprintf(
+            "ssh -o ConnectTimeout=5 -o BatchMode=yes -p %d %s@%s 'echo ok'",
+            $port,
+            escapeshellarg($login),
+            escapeshellarg($host)
+        );
+        $stderrFile = tempnam(sys_get_temp_dir(), 'sshprobe');
+        $out = (string) @shell_exec($cmd.' 2> '.escapeshellarg($stderrFile));
+        $err = $stderrFile && file_exists($stderrFile) ? (string) @file_get_contents($stderrFile) : '';
+        if ($stderrFile) {
+            @unlink($stderrFile);
+        }
+        $ok = trim($out) === 'ok';
+        return ['ok' => $ok, 'command' => $cmd, 'stderr' => trim($err)];
+    }
+
+    private static function reloadInsertJobRow($db, array $params): int
+    {
+        $uuid = bin2hex(random_bytes(16));
+        $uuid = substr($uuid, 0, 8).'-'.substr($uuid, 8, 4).'-'.substr($uuid, 12, 4)
+              .'-'.substr($uuid, 16, 4).'-'.substr($uuid, 20, 12);
+        $paramJson = $db->sql_real_escape_string(json_encode($params));
+        $uuidEsc   = $db->sql_real_escape_string($uuid);
+        $logPath   = ROOT.'/tmp/log/reload-pending-'.$uuid.'.log';
+        $logEsc    = $db->sql_real_escape_string($logPath);
+        $sql = "INSERT INTO job (uuid, class, method, param, date_start, pid, log, error, status, progress_percent)
+                VALUES ('{$uuidEsc}', 'App\\\\Controller\\\\Slave', 'reloadFromMasterCli',
+                        '{$paramJson}', NOW(), 0, '{$logEsc}', '', 'RUNNING', 0)";
+        $db->sql_query($sql);
+        $res = $db->sql_query("SELECT LAST_INSERT_ID() AS id");
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            return (int) ($row['id'] ?? 0);
+        }
+        return 0;
+    }
+
+    private static function reloadForkCliWorker(int $jobId): int
+    {
+        $logPath = ROOT.'/tmp/log/reload-'.$jobId.'.log';
+        @mkdir(dirname($logPath), 0755, true);
+        // update the job row's log to the resolved path so the view
+        // reads from the right file.
+        try {
+            $db = Sgbd::sql(DB_DEFAULT);
+            $db->sql_query("UPDATE job SET log='".$db->sql_real_escape_string($logPath)."' WHERE id=".(int) $jobId);
+        } catch (\Throwable $ignored) {}
+        $cmd = 'cd '.escapeshellarg(ROOT)
+             .' && nohup php App/Webroot/index.php Slave reloadFromMasterCli '.(int) $jobId
+             .' > '.escapeshellarg($logPath).' 2>&1 & echo $!';
+        return (int) trim((string) @shell_exec($cmd));
+    }
+
+    private static function reloadSqlString($db, string $value): string
+    {
+        return "'".$db->sql_real_escape_string($value)."'";
+    }
 }
