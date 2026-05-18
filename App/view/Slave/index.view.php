@@ -314,7 +314,7 @@ $graphsUrl = LINK.'slave/indexGraphs/ajax:true/';
             if (!started){ ctx.moveTo(xx, yy); started = true; }
             else { ctx.lineTo(xx, yy); }
         }
-        ctx.strokeStyle = 'rgba(0,0,0,1)'; ctx.lineWidth = 1; ctx.stroke();
+        ctx.strokeStyle = 'rgba(0,0,0,1)'; ctx.lineWidth = 0.5; ctx.stroke();
     }
 
     function fmtStat(v){
