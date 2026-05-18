@@ -3202,6 +3202,39 @@ class Aspirateur extends Controller
         return false;
     }
 
+    /**
+     * Replication observability (#1280 P0.1): collect the server's GTID
+     * execution position as a text time-series value. The Integrate layer
+     * stores the returned `gtid_executed` key under `slave::gtid_executed`
+     * when the migration has registered the ts_variable row.
+     */
+    public function sampleGtidExecuted($param)
+    {
+        Debug::parseDebug($param);
+        $id_mysql_server = (int)($param[0] ?? 0);
+        if ($id_mysql_server <= 0) {
+            return false;
+        }
+
+        $mysql_tested = Mysql::getDbLink($id_mysql_server);
+        if (!$mysql_tested || !$mysql_tested->testAccess()) {
+            return false;
+        }
+
+        foreach ([
+            "SELECT @@GLOBAL.gtid_executed AS gtid_executed",
+            "SELECT @@GLOBAL.gtid_slave_pos AS gtid_executed",
+            "SELECT @@GLOBAL.gtid_binlog_pos AS gtid_executed",
+        ] as $sql) {
+            $res = $mysql_tested->sql_query_silent($sql);
+            if ($res && ($row = $mysql_tested->sql_fetch_array($res, MYSQLI_ASSOC))) {
+                return ['gtid_executed' => (string)($row['gtid_executed'] ?? '')];
+            }
+        }
+
+        return ['gtid_executed' => ''];
+    }
+
 /**
  * Retrieve aspirateur state through `getArbitrator`.
  *
