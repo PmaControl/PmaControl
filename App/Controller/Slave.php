@@ -5332,35 +5332,70 @@ var chart = new Chart(ctx, {
         $sshMasterPrefix = "ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o UserKnownHostsFile=/dev/null"
                          . " root@".escapeshellarg($mIp);
 
-        // mydumper flags:
-        //   --stream                → TAR-on-stdout, no tmp dir
-        //   --trx-consistency-only  → InnoDB-style consistency,
-        //                             avoids global FLUSH TABLES
-        //                             WITH READ LOCK (which would
-        //                             block the master)
-        //   --threads=4             → reasonable default; configurable
-        //                             via `mydumper_threads` config
-        //                             override on the row in a follow-up
-        //   --rows=10000000         → chunk large tables; ditto
-        //   --less-locking          → minimise lock window
-        //   --kill-long-queries     → don't wait for stuck readers
-        $threads = 4;
-        $dumpInner = "mydumper --stream --trx-consistency-only --less-locking --kill-long-queries"
+        // mydumper flags (master side):
+        //   -o <dir>     → write per-table SQL files to a tmp dir;
+        //                  the master's mydumper >= 0.12 supports
+        //                  `--stream` but the slave's myloader 0.10
+        //                  (Debian stock) does not, so we use the
+        //                  dir-based form + tar-pipe over SSH for
+        //                  cross-version compatibility. The
+        //                  reloadMydumperUpgradeHint() method
+        //                  surfaces the proper upgrade procedure.
+        //   --threads=4  → reasonable default
+        //   --rows=…     → chunk large tables
+        //
+        // We deliberately DO NOT pass --trx-consistency-only /
+        // --less-locking / --kill-long-queries: those flags were
+        // renamed or removed across the 0.10 → 0.21 transition
+        // (e.g. --trx-consistency-only is a CRITICAL on 0.21+) and
+        // the default lock strategy of every supported version is
+        // already InnoDB-friendly enough for our use case.
+        $threads      = 4;
+        $masterTmpDir = '/tmp/mydumper-'.$jobId;
+        $slaveTmpDir  = '/tmp/myloader-'.$jobId;
+        $dumpInner = "set -o pipefail; "
+                   . "rm -rf ".$masterTmpDir." && mkdir -p ".$masterTmpDir." && "
+                   . "mydumper"
                    . " --threads=".$threads
                    . " --rows=10000000"
+                   // Exclude system schemas — the slave already has
+                   // its own mysql.* / sys.* / *_schema and they
+                   // mustn't be overwritten by master's copy
+                   // (would clobber local accounts, slave-only
+                   // configuration, etc.). --regex is a PCRE
+                   // negative lookahead matching schema.table.
+                   . " --regex=".self::reloadShSingleQuoteWrap('^(?!(mysql|sys|information_schema|performance_schema)\\.)')
+                   // Lowest-lock-impact consistent mode: InnoDB
+                   // tables are dumped inside a single transaction
+                   // (default since 0.12+), --use-savepoints
+                   // releases metadata locks between tables so
+                   // OLTP traffic on the master keeps flowing.
+                   . " --use-savepoints"
                    . " --host=127.0.0.1 --protocol=tcp"
                    . " --user=".self::reloadShSingleQuote($mUser)
                    . " --password=".self::reloadShSingleQuote($mPwd)
-                   . " 2> /tmp/reload-mydumper-".$jobId.".log";
-        // myloader on the slave: --stream consumes mydumper's TAR
-        // output via stdin, --enable-binlog so the new state is
-        // captured in the slave's own binlog stream after the load.
-        $loadInner = "myloader --stream --threads=".$threads
-                   . " --host=127.0.0.1 --protocol=tcp"
+                   . " -o ".$masterTmpDir
+                   . " > /tmp/reload-mydumper-".$jobId.".log 2>&1 && "
+                   . "tar c -C ".$masterTmpDir." . && "
+                   . "rm -rf ".$masterTmpDir;
+        // Slave-side: untar to a fresh tmp dir, then load with the
+        // (old) myloader 0.10 that does NOT support --stream.
+        $loadInner = "set -o pipefail; "
+                   . "rm -rf ".$slaveTmpDir." && mkdir -p ".$slaveTmpDir." && "
+                   . $sshMasterPrefix." ".self::reloadShSingleQuoteWrap($dumpInner)
+                   . " | tar x -C ".$slaveTmpDir." && "
+                   // myloader 0.10 (Debian stock) doesn't know
+                   // --protocol=tcp; specifying --host is enough to
+                   // bypass the Unix socket and connect over TCP.
+                   . "myloader -d ".$slaveTmpDir
+                   . " --threads=".$threads
+                   . " --host=127.0.0.1"
                    . " --user=root --enable-binlog"
-                   . " --overwrite-tables"
-                   . " 2>&1";
-        $dumpCmd = "set -o pipefail; ".$sshMasterPrefix." ".self::reloadShSingleQuoteWrap($dumpInner)." | ".$loadInner;
+                   . " --overwrite-tables 2>&1";
+        // Cleanup step runs separately so we keep the dir on failure
+        // for forensics (operator can rm manually).
+        $cleanupCmd = 'rm -rf '.$slaveTmpDir;
+        $dumpCmd = $loadInner;
 
         // mydumper also writes the master's `metadata` file out-of-band
         // (binlog file + position + GTID); we capture it from the
@@ -5394,7 +5429,7 @@ var chart = new Chart(ctx, {
             ],
             [
                 'name' => 'cleanup_mydumper_log', 'pct' => 99,
-                'cmd'  => 'rm -f /tmp/reload-mydumper-'.$jobId.'.log',
+                'cmd'  => $cleanupCmd.'; rm -f /tmp/reload-mydumper-'.$jobId.'.log',
             ],
         ];
 
@@ -6064,7 +6099,10 @@ var chart = new Chart(ctx, {
             escapeshellarg($login),
             escapeshellarg($targetHost)
         );
-        $stderrFile = tempnam(sys_get_temp_dir(), 'sshprobe');
+        // PHP 8.x emits a Notice on tempnam() success ("file created in
+        // the system's temporary directory") — harmless but visible in
+        // the debug footer. Silence it explicitly.
+        $stderrFile = @tempnam(sys_get_temp_dir(), 'sshprobe');
         $out = (string) @shell_exec($cmd.' 2> '.escapeshellarg($stderrFile));
         $err = $stderrFile && file_exists($stderrFile) ? (string) @file_get_contents($stderrFile) : '';
         if ($stderrFile) {
