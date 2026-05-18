@@ -2507,9 +2507,28 @@ var chart = new Chart(ctx, {
             $this->layout_name = false;
             $this->view        = false;
 
-            $ttl = (preg_match('/^\d{4}-\d{2}-\d{2}$/', $day) === 1 && $day === date('Y-m-d'))
-                ? 10
-                : 86400 * 7;
+            $isToday = (preg_match('/^\d{4}-\d{2}-\d{2}$/', $day) === 1 && $day === date('Y-m-d'));
+            $ttl     = $isToday ? 10 : 86400 * 7;
+
+            // Browser-cache headers — Glial's Bootstrap sets
+            // "Cache-Control: no-store, no-cache, must-revalidate" globally
+            // so the browser re-hits the network on every page load even
+            // when our disk cache is fresh. Override per-day:
+            //   * today  → max-age=10, must-revalidate  (still mutating)
+            //   * past   → max-age=604800, immutable    (frozen partition)
+            // so cached past-day responses don't even reach the spinner.
+            if (!headers_sent()) {
+                header('Content-Type: text/html; charset=UTF-8');
+                if ($isToday) {
+                    header('Cache-Control: private, max-age=10, must-revalidate', true);
+                    header('Pragma: cache', true);
+                } else {
+                    header('Cache-Control: private, max-age=604800, immutable', true);
+                    header('Pragma: cache', true);
+                }
+                // Glial pre-sets Expires to 1981. Clear it.
+                header_remove('Expires');
+            }
 
             $payload = self::rememberShowGraphDayHtml(
                 $ttl,
