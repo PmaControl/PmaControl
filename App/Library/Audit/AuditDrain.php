@@ -186,9 +186,16 @@ final class AuditDrain
         $values = [];
         foreach ($rows as $r) {
             [$geoCountry, $geoCity] = GeoIpResolver::resolve((string) ($r['ip'] ?? ''));
+            // page_uid is stored as BINARY(16); convert the canonical
+            // UUIDv7 string from the spool by stripping the dashes and
+            // UNHEX-ing into 16 bytes. NULL stays NULL.
+            $pageUidExpr = ($r['page_uid'] ?? null) !== null
+                ? "UNHEX('" . $this->db->sql_real_escape_string(str_replace('-', '', (string) $r['page_uid'])) . "')"
+                : 'NULL';
             $values[] = sprintf(
-                "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                 $this->q($r['request_uid'] ?? ''),
+                $pageUidExpr,
                 $this->q($r['date'] ?? null),
                 $r['id_user_main'] !== null ? (int) $r['id_user_main'] : 'NULL',
                 $this->q($r['ip'] ?? ''),
@@ -208,13 +215,51 @@ final class AuditDrain
             );
         }
         $sql = "INSERT IGNORE INTO request_log "
-             . "(request_uid, date, id_user_main, ip, geo_country_iso, geo_city, method, uri, status, bytes_sent, referer, "
+             . "(request_uid, page_uid, date, id_user_main, ip, geo_country_iso, geo_city, method, uri, status, bytes_sent, referer, "
              . " user_agent_hash, duration_us, php_ms, controller, action, user_role_class) VALUES "
              . implode(',', $values);
         $this->db->sql_query($sql);
-        return is_object($this->db) && method_exists($this->db, 'sql_affected_rows')
+        $affected = is_object($this->db) && method_exists($this->db, 'sql_affected_rows')
             ? (int) $this->db->sql_affected_rows()
             : count($rows);
+
+        // Backfill page_uid on AJAX rows just inserted (or any older AJAX
+        // row that was inserted before a slow-to-arrive parent). The
+        // collector leaves page_uid NULL on /ajax:true/ requests; here
+        // we link each AJAX child to its parent page by matching the
+        // Referer path against the parent's URI. Restricted to the
+        // last hour so the join stays bounded — sessions older than
+        // that have already been linked or are stale.
+        $this->backfillAjaxPageUid();
+        return $affected;
+    }
+
+    /**
+     * Resolve page_uid for AJAX request_log rows whose Referer points at
+     * a row that already has a page_uid. Idempotent — only rows still
+     * NULL are touched. Strips scheme + host from Referer with a regex
+     * so the comparison is path-to-path.
+     */
+    private function backfillAjaxPageUid(): void
+    {
+        $sql = "UPDATE request_log child "
+             . "INNER JOIN ( "
+             . "    SELECT c.id AS child_id, p.page_uid "
+             . "    FROM request_log c "
+             . "    INNER JOIN request_log p "
+             . "      ON p.page_uid IS NOT NULL "
+             . "         AND p.uri = REGEXP_REPLACE(c.referer, '^https?://[^/]+', '') "
+             . "         AND p.date <= c.date "
+             . "         AND p.date > c.date - INTERVAL 1 HOUR "
+             . "    WHERE c.page_uid IS NULL "
+             . "      AND c.referer IS NOT NULL "
+             . "      AND c.uri LIKE '%/ajax:true%' "
+             . "      AND c.date > NOW() - INTERVAL 1 HOUR "
+             . "    ORDER BY p.date DESC "
+             . ") m ON m.child_id = child.id "
+             . "SET child.page_uid = m.page_uid "
+             . "WHERE child.page_uid IS NULL";
+        $this->db->sql_query($sql);
     }
 
     /**

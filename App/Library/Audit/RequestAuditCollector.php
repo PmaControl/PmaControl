@@ -49,7 +49,9 @@ final class RequestAuditCollector
         self::$requestUid = bin2hex(random_bytes(16));
         self::$timeStart = $timeStart ?? microtime(true);
 
-        if (!self::$registered && PHP_SAPI !== 'cli') {
+        // register_shutdown_function works under php-cli too, so daemons /
+        // cron CLI hits get audited the same way as HTTP requests.
+        if (!self::$registered) {
             \register_shutdown_function([self::class, 'flush']);
             self::$registered = true;
         }
@@ -120,28 +122,63 @@ final class RequestAuditCollector
         $now = microtime(true);
         $phpMs = (int) round(($now - self::$timeStart) * 1000);
 
-        $uaRaw = (string) ($server['HTTP_USER_AGENT'] ?? '');
+        $isCli = PHP_SAPI === 'cli';
+
+        $uaRaw = $isCli ? '' : (string) ($server['HTTP_USER_AGENT'] ?? '');
         $uaHash = $uaRaw !== '' ? md5($uaRaw) : null;
 
-        $referer = (string) ($server['HTTP_REFERER'] ?? '');
+        $referer = $isCli ? '' : (string) ($server['HTTP_REFERER'] ?? '');
         if (strlen($referer) > 2048) {
             $referer = substr($referer, 0, 2048);
         }
 
-        $uri = (string) ($server['REQUEST_URI'] ?? '');
+        if ($isCli) {
+            // Synthesize a stable "uri" from argv so /AuditLog can still
+            // pivot on controller/action for CLI runs. Format:
+            //   cli://<argv[1]>/<argv[2]>/<argv[3]>...
+            // — argv[0] (the script path) is dropped because it's always
+            // the same App/Webroot/index.php.
+            $argv = $server['argv'] ?? ($GLOBALS['argv'] ?? []);
+            $tail = array_slice($argv, 1);
+            $uri = 'cli://' . implode('/', array_map('strval', $tail));
+            $method = 'CLI';
+            $ip = 'cli';
+        } else {
+            $uri = (string) ($server['REQUEST_URI'] ?? '');
+            $method = (string) ($server['REQUEST_METHOD'] ?? 'GET');
+            $ip = self::clientIp($server);
+        }
         if (strlen($uri) > 2048) {
             $uri = substr($uri, 0, 2048);
         }
         $uri = self::redactSensitiveQueryParts($uri);
 
+        // page_uid (UUIDv7) — root identifier for the "page render → AJAX
+        // descendants" tree. Stamped only on HTML page renders (anything
+        // that is not /ajax:true/ and not CLI). AJAX rows are left NULL
+        // and the drain backfills them via Referer lookup so they inherit
+        // the parent page's page_uid.
+        $isAjax = !$isCli && (stripos($uri, '/ajax:true/') !== false || stripos($uri, '/ajax:true') !== false);
+        $pageUid = null;
+        if (!$isCli && !$isAjax) {
+            try {
+                $pageUid = \Ramsey\Uuid\Uuid::uuid7()->toString();
+            } catch (\Throwable $e) {
+                // ramsey/uuid missing or RNG failure — fall back to NULL so
+                // the audit pipeline still records the row.
+                $pageUid = null;
+            }
+        }
+
         return [
             'request_uid'     => self::$requestUid,
+            'page_uid'        => $pageUid,
             'date'            => self::dateMillis($now),
             'id_user_main'    => $idUser,
-            'ip'              => self::clientIp($server),
-            'method'          => (string) ($server['REQUEST_METHOD'] ?? 'GET'),
+            'ip'              => $ip,
+            'method'          => $method,
             'uri'             => $uri,
-            'status'          => http_response_code() ?: null,
+            'status'          => $isCli ? null : (http_response_code() ?: null),
             'bytes_sent'      => null, // filled by Apache backfill if needed; primary path leaves null
             'referer'         => $referer !== '' ? $referer : null,
             'user_agent_raw'  => $uaRaw !== '' ? $uaRaw : null,

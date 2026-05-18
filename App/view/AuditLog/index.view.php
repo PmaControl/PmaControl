@@ -6,6 +6,7 @@ $tu = $data['top_users'];
 $tr = $data['top_routes'];
 $ti = $data['top_ips'];
 $af = $data['auth_failures'];
+$pr = $data['page_renders'] ?? [];
 ?>
 <style>
 .al-card { background:#fff;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:14px; }
@@ -48,13 +49,15 @@ $af = $data['auth_failures'];
   var labels = <?= json_encode(array_map(static fn($b) => substr($b['ts'], 11, 5), $data['hits_per_hour'])) ?>;
   var human  = <?= json_encode(array_map(static fn($b) => $b['human'], $data['hits_per_hour'])) ?>;
   var robot  = <?= json_encode(array_map(static fn($b) => $b['robot'], $data['hits_per_hour'])) ?>;
+  var cli    = <?= json_encode(array_map(static fn($b) => $b['cli'], $data['hits_per_hour'])) ?>;
   var ok     = <?= json_encode(array_map(static fn($b) => $b['ok'], $data['auth_per_hour'])) ?>;
   var ko     = <?= json_encode(array_map(static fn($b) => $b['ko'], $data['auth_per_hour'])) ?>;
   new Chart(document.getElementById('al-hist-hits'), {
     type: 'bar',
     data: { labels: labels, datasets: [
       { label: 'Human hits', data: human, backgroundColor: '#4c1d95' },
-      { label: 'Robot hits', data: robot, backgroundColor: '#b45309' }
+      { label: 'Robot hits', data: robot, backgroundColor: '#b45309' },
+      { label: 'CLI hits',   data: cli,   backgroundColor: '#0f766e' }
     ]},
     options: { responsive: true, maintainAspectRatio: false,
       scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } },
@@ -95,6 +98,47 @@ $af = $data['auth_failures'];
 </div>
 
 <div class="al-card">
+  <div class="al-card-head">
+    <?= __('Recent page renders (24 h)') ?>
+    &nbsp;<small style="float:right"><a href="<?= LINK ?>AuditLog/visitors/" style="color:#cbd5e1"><?= __('Full chronological feed →') ?></a></small>
+  </div>
+  <div class="al-card-body">
+    <small style="color:#64748b"><?= __('Each row is one HTML page render. AJAX children are linked via Referer → parent URI and share the same UUIDv7. Click to expand the tree.') ?></small>
+    <table class="al-table">
+      <tr>
+        <th><?= __('Page UID') ?></th>
+        <th><?= __('Route') ?></th>
+        <th><?= __('User') ?></th>
+        <th><?= __('IP') ?></th>
+        <th style="text-align:right"><?= __('AJAX children') ?></th>
+        <th><?= __('First seen') ?></th>
+        <th><?= __('Last seen') ?></th>
+      </tr>
+<?php foreach ($pr as $r): ?>
+      <tr>
+        <td><code><a href="<?= LINK ?>AuditLog/page/<?= htmlspecialchars((string) $r['page_uid_hex']) ?>/"><?= htmlspecialchars(substr((string) $r['page_uid_hex'], 0, 8)) ?>…</a></code></td>
+        <td><code><?= htmlspecialchars((string) ($r['controller'] ?? '')) ?>/<?= htmlspecialchars((string) ($r['action'] ?? '')) ?></code></td>
+        <td>
+<?php if (!empty($r['id_user_main'])): ?>
+          <a href="<?= LINK ?>AuditLog/user/<?= (int) $r['id_user_main'] ?>/"><?= htmlspecialchars((string) ($r['login'] ?? '#' . (int) $r['id_user_main'])) ?></a>
+<?php else: ?>
+          <small style="color:#94a3b8">—</small>
+<?php endif; ?>
+        </td>
+        <td><a href="<?= LINK ?>AuditLog/ip/<?= htmlspecialchars((string) $r['ip']) ?>/"><code><?= htmlspecialchars((string) $r['ip']) ?></code></a></td>
+        <td style="text-align:right"><?= number_format((int) $r['ajax_hits']) ?></td>
+        <td><?= htmlspecialchars((string) $r['first_seen']) ?></td>
+        <td><?= htmlspecialchars((string) $r['last_seen']) ?></td>
+      </tr>
+<?php endforeach; ?>
+<?php if (empty($pr)): ?>
+      <tr><td colspan="7" style="color:#94a3b8"><?= __('No page render in the last 24 h carries a page_uid yet — the collector started stamping just now. Wait for the next page hit.') ?></td></tr>
+<?php endif; ?>
+    </table>
+  </div>
+</div>
+
+<div class="al-card">
   <div class="al-card-head"><?= __('Top routes (24 h)') ?></div>
   <div class="al-card-body">
     <table class="al-table">
@@ -115,12 +159,13 @@ $af = $data['auth_failures'];
   <div class="al-card-head"><?= __('Top IPs (24 h)') ?></div>
   <div class="al-card-body">
     <table class="al-table">
-      <tr><th><?= __('IP') ?></th><th style="text-align:right"><?= __('Hits') ?></th><th style="text-align:right"><?= __('Users') ?></th><th><?= __('Last seen') ?></th></tr>
+      <tr><th><?= __('IP') ?></th><th style="text-align:right"><?= __('Hits') ?></th><th style="text-align:right"><?= __('Users') ?></th><th><?= __('First seen') ?></th><th><?= __('Last seen') ?></th></tr>
 <?php foreach ($ti as $r): ?>
       <tr>
         <td><a href="<?= LINK ?>AuditLog/ip/<?= htmlspecialchars((string) $r['ip']) ?>/"><code><?= htmlspecialchars((string) $r['ip']) ?></code></a></td>
         <td style="text-align:right"><?= number_format((int) $r['hits']) ?></td>
         <td style="text-align:right"><?= (int) $r['users'] ?></td>
+        <td><?= htmlspecialchars((string) $r['first_seen']) ?></td>
         <td><?= htmlspecialchars((string) $r['last_seen']) ?></td>
       </tr>
 <?php endforeach; ?>

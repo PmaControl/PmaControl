@@ -134,4 +134,25 @@ final class BinlogAnalyzerWindowFilterTest extends TestCase
             $start, $end
         ));
     }
+
+    public function testMariaDbGtidVolumeParserHandlesRelayBinlogWithoutXid(): void
+    {
+        $start = strtotime('2026-05-18 00:51:03');
+        $end   = strtotime('2026-05-18 00:51:04');
+        $lines = implode("\n", [
+            '#260518  0:51:03 server id 111  end_log_pos 463 CRC32 0xf4574855 	GTID 0-111-750929068 trans',
+            '#260518  0:51:03 server id 111  end_log_pos 956 CRC32 0x9c77401a 	GTID 0-111-750929069 trans',
+            '#260518  0:51:04 server id 111  end_log_pos 1447 CRC32 0xceed9669 	GTID 0-111-750929070 trans',
+            '#260518  0:51:05 server id 111  end_log_pos 1941 CRC32 0xb86b95d1 	GTID 0-111-750929071 trans',
+        ]);
+
+        $parsed = BinlogAnalyzer::parseMariaDbGtidVolumeLines($lines, $start, $end);
+
+        $this->assertSame([
+            '2026-05-18 00:51:03' => 2,
+            '2026-05-18 00:51:04' => 1,
+        ], $parsed['txn_per_second']);
+        $this->assertSame(984, $parsed['volume_per_second']['2026-05-18 00:51:03']);
+        $this->assertArrayNotHasKey('2026-05-18 00:51:05', $parsed['txn_per_second']);
+    }
 }

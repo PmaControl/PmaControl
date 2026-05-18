@@ -49,13 +49,12 @@ $TIME_START = microtime(true);
 
 require ROOT.DS.'vendor/autoload.php';
 
-// Audit module #1235: stamp every HTTP request with a request_uid the
-// moment it lands, so controllers, sub-process launchers and client-side
-// JS can correlate against the same id. Shutdown handler writes one
-// NDJSON row to tmp/audit/requests/ — never touches the DB on hot path.
-if (!IS_CLI) {
-    RequestAuditCollector::begin($TIME_START);
-}
+// Audit module #1235: RequestAuditCollector::begin() now fires from the
+// Glial front controller (App/Webroot/index.php) before the favicon
+// early-exit and the surrounding try/catch — so evidence is captured on
+// every HTTP hit, not just the ones that survive long enough to reach
+// this file. begin() is idempotent; the stampRoute()/stampUser() calls
+// further down enrich the row once routing and auth have resolved.
 
 if (!IS_CLI) {
     $cookieTrustedProxies = CookieSecurity::trustedProxies();
@@ -201,6 +200,15 @@ if (IS_CLI) {
         }
 
         //cli_set_process_title("glial-" . $_SYSTEM['controller'] . "-" . $_SYSTEM['action']." (".$name.")");
+
+        // Audit #1235: stamp the resolved CLI route on the collector so
+        // the spooled row carries controller/action (the apache branch
+        // does the same further down). CLI has no $_SITE → no role class.
+        RequestAuditCollector::stampRoute(
+            (string) $_SYSTEM['controller'],
+            (string) $_SYSTEM['action'],
+            null
+        );
     } else {
 
         Throw new InvalidArgumentException('usage : gial <controlleur> <action> [params]');
@@ -247,7 +255,8 @@ if (IS_CLI) {
 
     // Audit #1235: route is now known — stamp it on the collector so the
     // spooled row reflects the resolved controller/action and the role
-    // class of the logged-in user. Skipping for CLI.
+    // class of the logged-in user. CLI stamping happens earlier in the
+    // CLI branch above (no $_SITE / no role class there).
     if (!IS_CLI) {
         $audit_role_class = '';
         if (isset($_SITE['id_group'])) {

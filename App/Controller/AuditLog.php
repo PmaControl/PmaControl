@@ -50,9 +50,218 @@ class AuditLog extends Controller
             'top_ips'         => self::topIps($db),
             'hits_per_hour'   => self::hitsPerHour24h($db),
             'auth_per_hour'   => self::authPerHour24h($db),
+            'page_renders'   => self::recentPageRenders($db, 30),
             'now'             => time(),
         ];
         $this->set('data', $data);
+    }
+
+    /**
+     * GET /AuditLog/page/<page_uid>/ — drill-down tree for one page
+     * render: the root HTML request + every AJAX descendant whose
+     * Referer pointed back at the root (linked via page_uid).
+     *
+     * `<page_uid>` is the 32-hex form (no dashes); ramsey-uuid emits
+     * 8-4-4-4-12 but we URL-encode the dashes out for cleaner links.
+     */
+    public function page($param)
+    {
+        $uidHex = strtolower(preg_replace('/[^a-f0-9]/i', '', (string) ($param[0] ?? '')));
+        if (strlen($uidHex) !== 32) {
+            header('Location: ' . LINK . 'AuditLog/index');
+            exit;
+        }
+        $db = Sgbd::sql(DB_DEFAULT);
+        $uidEsc = $db->sql_real_escape_string($uidHex);
+
+        $rows = [];
+        $sql = "SELECT id, date, method, uri, status, ip, controller, action, "
+             . "       php_ms, referer, id_user_main "
+             . "FROM request_log "
+             . "WHERE page_uid = UNHEX('$uidEsc') "
+             . "ORDER BY date ASC";
+        $res = $db->sql_query($sql);
+        if ($res) {
+            while ($r = $db->sql_fetch_array($res, MYSQLI_ASSOC)) { $rows[] = $r; }
+        }
+
+        $root = null;
+        $children = [];
+        foreach ($rows as $r) {
+            if (stripos((string) $r['uri'], '/ajax:true') === false) {
+                if ($root === null) {
+                    $root = $r;
+                    continue;
+                }
+            }
+            $children[] = $r;
+        }
+
+        $userLogin = null;
+        if ($root !== null && !empty($root['id_user_main'])) {
+            $idu = (int) $root['id_user_main'];
+            $r2 = $db->sql_query("SELECT login FROM user_main WHERE id = $idu");
+            if ($r2 && $row2 = $db->sql_fetch_array($r2, MYSQLI_ASSOC)) {
+                $userLogin = (string) $row2['login'];
+            }
+        }
+
+        $this->title  = __('Page render') . ' ' . substr($uidHex, 0, 8) . '…';
+        $this->ariane = __('SuperAdmin') . ' / Audit / page';
+        $this->set('data', [
+            'page_uid_hex'     => $uidHex,
+            'page_uid_display' => self::formatUuid($uidHex),
+            'root'             => $root,
+            'children'         => $children,
+            'all'              => $rows,
+            'user_login'       => $userLogin,
+        ]);
+    }
+
+    /**
+     * GET /AuditLog/visitors/ — chronological feed of the last 100
+     * page renders, all users mixed. AJAX children are aggregated
+     * under their parent (one row per page_uid). For each row we also
+     * resolve the "mother page" — the previous non-AJAX render whose
+     * URI matches this one's Referer — so the navigation chain is
+     * visible (A → B → C).
+     */
+    public function visitors()
+    {
+        $this->title  = __('Visitor feed');
+        $this->ariane = __('SuperAdmin') . ' / Audit / visitors';
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $rows = [];
+        $sql = "SELECT p.id, LCASE(HEX(p.page_uid)) AS page_uid_hex, "
+             . "       p.date AS first_seen, p.referer, "
+             . "       p.uri AS root_uri, p.method, p.status, "
+             . "       p.controller, p.action, p.ip, p.id_user_main, "
+             . "       u.login, "
+             . "       COALESCE(c.ajax_hits, 0) AS ajax_hits, "
+             . "       COALESCE(c.last_seen, p.date) AS last_seen "
+             . "FROM request_log p "
+             . "LEFT JOIN user_main u ON u.id = p.id_user_main "
+             . "LEFT JOIN ( "
+             . "    SELECT page_uid, COUNT(*) AS ajax_hits, MAX(date) AS last_seen "
+             . "    FROM request_log "
+             . "    WHERE page_uid IS NOT NULL AND uri LIKE '%/ajax:true%' "
+             . "      AND date > NOW() - INTERVAL 24 HOUR "
+             . "    GROUP BY page_uid "
+             . ") c ON c.page_uid = p.page_uid "
+             . "WHERE p.page_uid IS NOT NULL "
+             . "  AND p.uri NOT LIKE '%/ajax:true%' "
+             . "  AND p.date > NOW() - INTERVAL 24 HOUR "
+             . "ORDER BY p.date DESC "
+             . "LIMIT 100";
+        $res = $db->sql_query($sql);
+        if ($res) {
+            while ($r = $db->sql_fetch_array($res, MYSQLI_ASSOC)) { $rows[] = $r; }
+        }
+
+        // Mother-page lookup: batch-fetch all candidate parents in one
+        // round-trip (uri IN (...)), then pick the most recent one
+        // strictly older than each child in PHP. Cheaper than a
+        // correlated subquery for 100 rows on a multi-million-row table.
+        $needles = [];
+        foreach ($rows as $r) {
+            if (!empty($r['referer'])) {
+                $path = preg_replace('#^https?://[^/]+#', '', (string) $r['referer']);
+                if ($path !== '' && $path !== $r['root_uri']) {
+                    $needles[$r['id']] = $path;
+                }
+            }
+        }
+        if ($needles !== []) {
+            $escaped = [];
+            foreach (array_unique($needles) as $p) {
+                $escaped[] = "'" . $db->sql_real_escape_string($p) . "'";
+            }
+            $motherSql = "SELECT id, date, uri, LCASE(HEX(page_uid)) AS page_uid_hex "
+                       . "FROM request_log "
+                       . "WHERE page_uid IS NOT NULL "
+                       . "  AND uri NOT LIKE '%/ajax:true%' "
+                       . "  AND uri IN (" . implode(',', $escaped) . ") "
+                       . "  AND date > NOW() - INTERVAL 24 HOUR "
+                       . "ORDER BY date DESC";
+            $r2 = $db->sql_query($motherSql);
+            $byUri = [];
+            if ($r2) {
+                while ($m = $db->sql_fetch_array($r2, MYSQLI_ASSOC)) {
+                    $byUri[$m['uri']][] = $m;
+                }
+            }
+            foreach ($rows as &$row) {
+                if (!isset($needles[$row['id']])) continue;
+                $path = $needles[$row['id']];
+                if (!isset($byUri[$path])) continue;
+                $childTs = strtotime((string) $row['first_seen']);
+                foreach ($byUri[$path] as $cand) {
+                    if (strtotime((string) $cand['date']) < $childTs) {
+                        $row['mother_uri']     = $cand['uri'];
+                        $row['mother_uid_hex'] = $cand['page_uid_hex'];
+                        break;
+                    }
+                }
+            }
+            unset($row);
+        }
+
+        $this->set('data', ['rows' => $rows, 'now' => time()]);
+    }
+
+    /**
+     * Convert a 32-char hex UUID into the canonical 8-4-4-4-12 form.
+     */
+    private static function formatUuid(string $hex32): string
+    {
+        if (strlen($hex32) !== 32) {
+            return $hex32;
+        }
+        return substr($hex32, 0, 8) . '-'
+             . substr($hex32, 8, 4) . '-'
+             . substr($hex32, 12, 4) . '-'
+             . substr($hex32, 16, 4) . '-'
+             . substr($hex32, 20);
+    }
+
+    /**
+     * Aggregate per-page-render stats for the last 24 h. Each row of
+     * the result is one HTML page render (= one page_uid) plus the
+     * number of AJAX descendants that inherited the same page_uid via
+     * Referer → parent.uri linkage in the drain. Used by the
+     * "Recent page renders" card on /AuditLog/index.
+     */
+    private static function recentPageRenders($db, int $limit = 30): array
+    {
+        $out = [];
+        $sql = "SELECT LCASE(HEX(p.page_uid)) AS page_uid_hex, "
+             . "       p.date AS first_seen, "
+             . "       COALESCE(c.last_seen, p.date) AS last_seen, "
+             . "       p.uri AS root_uri, p.method, p.status, "
+             . "       p.controller, p.action, p.ip, p.id_user_main, "
+             . "       u.login, "
+             . "       COALESCE(c.ajax_hits, 0) AS ajax_hits "
+             . "FROM request_log p "
+             . "LEFT JOIN user_main u ON u.id = p.id_user_main "
+             . "LEFT JOIN ( "
+             . "    SELECT page_uid, COUNT(*) AS ajax_hits, MAX(date) AS last_seen "
+             . "    FROM request_log "
+             . "    WHERE page_uid IS NOT NULL AND uri LIKE '%/ajax:true%' "
+             . "      AND date > NOW() - INTERVAL 24 HOUR "
+             . "    GROUP BY page_uid "
+             . ") c ON c.page_uid = p.page_uid "
+             . "WHERE p.page_uid IS NOT NULL "
+             . "  AND p.uri NOT LIKE '%/ajax:true%' "
+             . "  AND p.date > NOW() - INTERVAL 24 HOUR "
+             . "ORDER BY last_seen DESC "
+             . "LIMIT $limit";
+        $res = $db->sql_query($sql);
+        if ($res) {
+            while ($r = $db->sql_fetch_array($res, MYSQLI_ASSOC)) { $out[] = $r; }
+        }
+        return $out;
     }
 
     /**
@@ -607,22 +816,32 @@ class AuditLog extends Controller
      */
     private static function hitsPerHour24h($db): array
     {
-        $out = array_fill(0, 24, ['ts' => null, 'human' => 0, 'robot' => 0]);
+        // CLI rows have method = 'CLI' (no user_agent_hash → join is NULL).
+        // Bucket them separately so daemon/cron loops don't pollute the
+        // "human" series.
         $sql = "SELECT DATE_FORMAT(r.date, '%Y-%m-%d %H:00') AS bucket, "
-             . "       SUM(IFNULL(ua.is_robot, 0) = 1) AS robots, "
-             . "       SUM(IFNULL(ua.is_robot, 0) = 0) AS humans "
+             . "       SUM(r.method = 'CLI') AS cli, "
+             . "       SUM(r.method <> 'CLI' AND IFNULL(ua.is_robot, 0) = 1) AS robots, "
+             . "       SUM(r.method <> 'CLI' AND IFNULL(ua.is_robot, 0) = 0) AS humans "
              . "FROM request_log r "
              . "LEFT JOIN audit_user_agent ua ON ua.ua_hash = r.user_agent_hash "
              . "WHERE r.date > NOW() - INTERVAL 24 HOUR "
              . "GROUP BY bucket "
              . "ORDER BY bucket";
         $res = $db->sql_query($sql);
-        if (!$res) return array_values($out);
+        if (!$res) {
+            $empty = [];
+            for ($i = 23; $i >= 0; $i--) {
+                $empty[] = ['ts' => date('Y-m-d H:00', time() - $i * 3600), 'human' => 0, 'robot' => 0, 'cli' => 0];
+            }
+            return $empty;
+        }
         $rows = [];
         while ($r = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $rows[$r['bucket']] = [
                 'human' => (int) $r['humans'],
                 'robot' => (int) $r['robots'],
+                'cli'   => (int) $r['cli'],
             ];
         }
         // Fill every hour of the last 24 h, even if empty, so the chart
@@ -634,6 +853,7 @@ class AuditLog extends Controller
                 'ts'    => $ts,
                 'human' => $rows[$ts]['human'] ?? 0,
                 'robot' => $rows[$ts]['robot'] ?? 0,
+                'cli'   => $rows[$ts]['cli']   ?? 0,
             ];
         }
         return $out;
@@ -673,7 +893,8 @@ class AuditLog extends Controller
     private static function topIps($db, int $limit = 15): array
     {
         $out = [];
-        $sql = "SELECT ip, COUNT(*) AS hits, COUNT(DISTINCT id_user_main) AS users, MAX(date) AS last_seen "
+        $sql = "SELECT ip, COUNT(*) AS hits, COUNT(DISTINCT id_user_main) AS users, "
+             . "       MIN(date) AS first_seen, MAX(date) AS last_seen "
              . "FROM request_log "
              . "WHERE date > NOW() - INTERVAL 24 HOUR "
              . "GROUP BY ip ORDER BY hits DESC LIMIT $limit";

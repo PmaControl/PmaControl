@@ -1354,30 +1354,51 @@ class BinlogAnalyzer
                 }
             }
         } else {
-            // MariaDB: count Xid events per second and use end_log_pos delta as volume proxy
-            $cmdTs = $cmd . " 2>/dev/null | grep -aoP '^#\\d{6}\\s+\\d+:\\d+:\\d+\\s+server id\\s+\\d+\\s+end_log_pos\\s+\\d+.*?Xid'";
-            $output = shell_exec($cmdTs . " 2>/dev/null") ?: '';
+            $analysis = $this->getAnalysis();
+            $startTs  = (int) strtotime((string) ($analysis['time_start'] ?? '@0'));
+            $endTs    = (int) strtotime((string) ($analysis['time_end']   ?? '@' . PHP_INT_MAX));
+            if ($endTs <= 0) $endTs = PHP_INT_MAX;
 
-            $volumePerSec = [];
-            $txnPerSec = [];
-            $lastPos = [];
+            // MariaDB relay / BLACKHOLE binlogs can carry transactions as
+            // `GTID ... trans` + row events + `Query ... xid=0`/COMMIT with
+            // no Xid event at all. Build the time series from GTID boundaries
+            // first, then fall back to Xid for older/classic streams.
+            $cmdGtid = $cmd . " 2>/dev/null | grep -aoP '^#\\d{6}\\s+\\d+:\\d+:\\d+\\s+server id\\s+\\d+\\s+end_log_pos\\s+\\d+.*?GTID.*trans'";
+            $output = shell_exec($cmdGtid . " 2>/dev/null") ?: '';
+            $parsed = self::parseMariaDbGtidVolumeLines($output, $startTs, $endTs);
+            $volumePerSec = $parsed['volume_per_second'];
+            $txnPerSec = $parsed['txn_per_second'];
 
-            foreach (explode("\n", trim($output)) as $line) {
-                if (preg_match('/#(\d{2})(\d{2})(\d{2})\s+(\d+:\d+:\d+).*end_log_pos\s+(\d+)/', $line, $m)) {
-                    $fullTs = (2000 + (int)$m[1]) . '-' . $m[2] . '-' . $m[3] . ' ' . $m[4];
-                    $pos = (int) $m[5];
-                    $txnPerSec[$fullTs] = ($txnPerSec[$fullTs] ?? 0) + 1;
+            if (empty($txnPerSec)) {
+                // MariaDB fallback: count Xid events per second and use
+                // end_log_pos delta as volume proxy.
+                $cmdTs = $cmd . " 2>/dev/null | grep -aoP '^#\\d{6}\\s+\\d+:\\d+:\\d+\\s+server id\\s+\\d+\\s+end_log_pos\\s+\\d+.*?Xid'";
+                $output = shell_exec($cmdTs . " 2>/dev/null") ?: '';
 
-                    // Estimate bytes from pos delta (skip negative = new binlog file boundary)
-                    if (isset($lastPos[$fullTs])) {
-                        $delta = $pos - $lastPos[$fullTs];
-                        if ($delta > 0) {
-                            $volumePerSec[$fullTs] = ($volumePerSec[$fullTs] ?? 0) + $delta;
-                        }
-                    } else {
-                        $volumePerSec[$fullTs] = ($volumePerSec[$fullTs] ?? 0);
+                $volumePerSec = [];
+                $txnPerSec = [];
+                $lastPos = [];
+
+                foreach (explode("\n", trim($output)) as $line) {
+                    if (!self::mysqlbinlogLineMatchesWindow($line, $startTs, $endTs)) {
+                        continue;
                     }
-                    $lastPos[$fullTs] = $pos;
+                    if (preg_match('/#(\d{2})(\d{2})(\d{2})\s+(\d+:\d+:\d+).*end_log_pos\s+(\d+)/', $line, $m)) {
+                        $fullTs = (2000 + (int)$m[1]) . '-' . $m[2] . '-' . $m[3] . ' ' . $m[4];
+                        $pos = (int) $m[5];
+                        $txnPerSec[$fullTs] = ($txnPerSec[$fullTs] ?? 0) + 1;
+
+                        // Estimate bytes from pos delta (skip negative = new binlog file boundary)
+                        if (isset($lastPos[$fullTs])) {
+                            $delta = $pos - $lastPos[$fullTs];
+                            if ($delta > 0) {
+                                $volumePerSec[$fullTs] = ($volumePerSec[$fullTs] ?? 0) + $delta;
+                            }
+                        } else {
+                            $volumePerSec[$fullTs] = ($volumePerSec[$fullTs] ?? 0);
+                        }
+                        $lastPos[$fullTs] = $pos;
+                    }
                 }
             }
 
@@ -1414,6 +1435,50 @@ class BinlogAnalyzer
             'peak_bytes' => $peakBytes,
             'peak_txn'   => $peakTxn,
             'min_txn'    => $minTxn,
+        ];
+    }
+
+    /**
+     * MariaDB relay binlogs generated with log_slave_updates can omit Xid
+     * commit events. GTID event headers are the stable transaction boundary
+     * in that shape, so use consecutive GTID end_log_pos deltas as a volume
+     * proxy and count GTIDs per second for the throughput graph.
+     *
+     * @return array{volume_per_second: array<string,int>, txn_per_second: array<string,int>}
+     */
+    public static function parseMariaDbGtidVolumeLines(string $output, int $startTs, int $endTs): array
+    {
+        $volumePerSec = [];
+        $txnPerSec = [];
+        $previousTs = null;
+        $previousPos = null;
+
+        foreach (explode("\n", trim($output)) as $line) {
+            $line = trim($line);
+            if ($line === '' || !self::mysqlbinlogLineMatchesWindow($line, $startTs, $endTs)) {
+                continue;
+            }
+            if (!preg_match('/#(\d{2})(\d{2})(\d{2})\s+(\d{1,2}):(\d{2}):(\d{2}).*end_log_pos\s+(\d+).*GTID.*trans/', $line, $m)) {
+                continue;
+            }
+
+            $fullTs = sprintf('20%s-%s-%s %02d:%s:%s', $m[1], $m[2], $m[3], (int)$m[4], $m[5], $m[6]);
+            $pos = (int) $m[7];
+
+            $txnPerSec[$fullTs] = ($txnPerSec[$fullTs] ?? 0) + 1;
+            $volumePerSec[$fullTs] = $volumePerSec[$fullTs] ?? 0;
+
+            if ($previousTs !== null && $previousPos !== null && $pos > $previousPos) {
+                $volumePerSec[$previousTs] = ($volumePerSec[$previousTs] ?? 0) + ($pos - $previousPos);
+            }
+
+            $previousTs = $fullTs;
+            $previousPos = $pos;
+        }
+
+        return [
+            'volume_per_second' => $volumePerSec,
+            'txn_per_second' => $txnPerSec,
         ];
     }
 

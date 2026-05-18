@@ -131,6 +131,46 @@ try {
 
     define('GLIAL_INDEX', __FILE__);
 
+    // Audit module #1235: bootstrap evidence collection here, at the Glial
+    // front controller, so every hit lands in tmp/audit/requests/ — HTTP
+    // (incl. the favicon early-exit below and any pre-bootstrap fatal the
+    // surrounding try/catch would otherwise swallow silently) AND CLI
+    // (cron jobs, audit_drain, ad-hoc scripts).
+    //
+    // Two exceptions, both filtered here at the entry point:
+    //   - HTTP: AuditLog/recordClientMetrics is a sendBeacon endpoint
+    //     fired by clientMetrics.js on every page render. Auditing it
+    //     would duplicate every real request and dominate the "Top
+    //     routes" view — its payload is already spooled separately by
+    //     the controller into tmp/audit/client_metrics/.
+    //   - CLI: daemon loop iterations carry a "loop:<id>" argv suffix
+    //     (set in App/Controller/Agent.php when spawning daemons). They
+    //     can fire thousands of times per hour and aren't user evidence,
+    //     so we skip them. One-shot CLI commands (no loop: argv) are
+    //     still audited.
+    try {
+        require_once ROOT.DS.'vendor'.DS.'autoload.php';
+        $auditSkip = false;
+        if (!IS_CLI) {
+            $auditSkip = isset($_GET['glial_path'])
+                && stripos((string) $_GET['glial_path'], 'AuditLog/recordClientMetrics') !== false;
+        } else {
+            $argvForAudit = $_SERVER['argv'] ?? ($GLOBALS['argv'] ?? []);
+            foreach ($argvForAudit as $arg) {
+                if (is_string($arg) && str_starts_with($arg, 'loop:')) {
+                    $auditSkip = true;
+                    break;
+                }
+            }
+            unset($argvForAudit);
+        }
+        if (!$auditSkip) {
+            \App\Library\Audit\RequestAuditCollector::begin(TIME_START);
+        }
+    } catch (\Throwable $auditBootstrapError) {
+        error_log('RequestAuditCollector boot failed: '.$auditBootstrapError->getMessage());
+    }
+
     if (isset($_GET['glial_path']) && strpos($_GET['glial_path'], 'favicon.ico')) {
         //case where navigator ask favicon.ico even if it's not set in your html
         exit;
