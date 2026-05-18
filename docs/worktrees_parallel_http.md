@@ -57,7 +57,13 @@ so logging into the production webroot is enough to reach the worktree URLs.
         │   ├── dot       → /srv/www/pmacontrol/tmp/dot
         │   ├── img       → /srv/www/pmacontrol/tmp/img
         │   └── md5       → /srv/www/pmacontrol/tmp/md5
-        └── vendor → /srv/www/pmacontrol/vendor
+        └── vendor/                               ← real dir; per-package symlinks
+            ├── composer/                         ← LOCAL real copy (so Composer's
+            │                                       autoload_static.php __DIR__ resolves
+            │                                       to the worktree → App\* loads from
+            │                                       the worktree's App/, not prod's)
+            ├── autoload.php                      ← LOCAL real copy
+            └── <package>/  → /srv/www/pmacontrol/vendor/<package>  (everything else)
 ```
 
 Why not `/srv/www/pmacontrol-ai-reviews/worktrees/`: that tree is owned and
@@ -133,6 +139,12 @@ you simplify the config):
   same rule recursively. Without it the look-ahead rewrites to index.php
   (which exists) and the initial check passes the file test incorrectly,
   skipping the rewrite and returning 404 for every dynamic route.
+- `vendor/composer/` must be a real local copy, not a symlink. Composer's
+  `autoload_static.php` uses `__DIR__ . '/../..'` to anchor the `App\` PSR-4
+  mapping, and PHP follows symlinks when resolving `__DIR__` — a fully
+  symlinked vendor sends `App\Controller\*` autoload back into production's
+  `App/Controller/`, the worktree's edits never load, and new actions
+  silently 302 to `ErrorWeb/error404` even after `rm tmp/acl/*.ser`.
 
 ## Onboarding a new branch as a parallel HTTP target
 
@@ -158,8 +170,26 @@ if (! defined('WWW_ROOT')) {
 }
 PHP
 
-# 3. Wire vendor + the shared read-only tmp subdirs.
-ln -sfn /srv/www/pmacontrol/vendor vendor
+# 3. Wire vendor. Per-package symlinks BUT keep vendor/composer/ and
+# vendor/autoload.php as REAL local files. Composer's autoload_static.php
+# uses __DIR__ . '/../..' to map the App\ PSR-4 namespace — if vendor is a
+# pure symlink to /srv/www/pmacontrol/vendor, __DIR__ resolves to
+# /srv/www/pmacontrol/vendor/composer and App\Controller\Slave is loaded
+# from production's App/Controller/Slave.php (the worktree's edits are
+# invisible — typical symptom: "Glial route 404 for new action even after
+# rm tmp/acl/*.ser").
+rm -f vendor && mkdir vendor
+for entry in /srv/www/pmacontrol/vendor/*; do
+    name=$(basename "$entry")
+    case "$name" in
+        composer|autoload.php) continue ;;
+        *) ln -sfn "$entry" "vendor/$name" ;;
+    esac
+done
+cp -r /srv/www/pmacontrol/vendor/composer vendor/composer
+cp    /srv/www/pmacontrol/vendor/autoload.php vendor/autoload.php
+
+# 3a. The same applies to tmp/ shared read-only subdirs.
 for d in database keys translations dot img md5; do
     rm -rf "tmp/$d" && ln -sfn "/srv/www/pmacontrol/tmp/$d" "tmp/$d"
 done
