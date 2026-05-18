@@ -439,6 +439,59 @@ $(document).ready(function() {
 });
 </script>
 <?php else: ?>
+<?php
+// #1280 follow-up — source-coverage banner. Renders ABOVE the
+// health scorecard because the failure mode is silent: SHOW
+// REPLICA STATUS still shows Yes/Yes while the replica's
+// position has been purged on the master.
+$sc = (is_array($data['source_coverage'] ?? null)) ? $data['source_coverage'] : null;
+$scAtRisk = $sc !== null && ($sc['status'] ?? '') === \App\Library\ReplicationSourceCoverage::STATUS_AT_RISK;
+$slaveStCur = (is_array($data['slave'] ?? null)) ? $data['slave'] : [];
+$ioRun  = (string) ($slaveStCur['Slave_IO_Running']  ?? $slaveStCur['Replica_IO_Running']  ?? '');
+$sqlRun = (string) ($slaveStCur['Slave_SQL_Running'] ?? $slaveStCur['Replica_SQL_Running'] ?? '');
+$srcCoverageBlock = $scAtRisk && $ioRun === 'Yes' && $sqlRun === 'Yes';
+?>
+<?php if ($srcCoverageBlock): ?>
+<div style="background:#fef2f2;border:2px solid #b91c1c;border-radius:6px;margin:10px 0;padding:0">
+    <div style="padding:8px 12px;background:linear-gradient(135deg,#7f1d1d,#b91c1c);color:#fff;font-size:13px;font-weight:600;border-radius:4px 4px 0 0">
+        <i class="fa fa-exclamation-triangle"></i>
+        <?= __('CRITICAL — source no longer covers replica position') ?>
+        <small style="float:right;opacity:.9">#1280 source coverage</small>
+    </div>
+    <div style="padding:10px 12px;font-size:12px;line-height:1.5">
+        <p style="margin:4px 0;font-weight:600;color:#7f1d1d">
+            ⚠ <?= __('Replication is running fine right now, but if this replica loses its relay logs (crash, disk wipe, restart with relay_log_purge surprises) it cannot reconnect — those events are GONE from the master.') ?>
+        </p>
+        <p style="margin:8px 0;font-size:11px;color:#475569">
+            <strong><?= __('Mode') ?>:</strong>
+            <code><?= htmlspecialchars((string) ($sc['mode'] ?? '')) ?></code>
+            &nbsp;|&nbsp;
+            <strong><?= __('Why') ?>:</strong>
+            <?= htmlspecialchars((string) ($sc['reason'] ?? '')) ?>
+        </p>
+<?php if (($sc['mode'] ?? '') === \App\Library\ReplicationSourceCoverage::MODE_FILE): ?>
+        <p style="margin:4px 0;font-size:11px;color:#475569">
+            <strong><?= __('Replica reads') ?>:</strong> <code><?= htmlspecialchars((string) ($sc['replica_read_file'] ?? '—')) ?></code>
+            &nbsp;|&nbsp;
+            <strong><?= __('Replica applies') ?>:</strong> <code><?= htmlspecialchars((string) ($sc['replica_exec_file'] ?? '—')) ?></code>
+            &nbsp;|&nbsp;
+            <strong><?= __('Master oldest') ?>:</strong> <code><?= htmlspecialchars((string) ($sc['master_oldest_file'] ?? '—')) ?></code>
+            &nbsp;|&nbsp;
+            <strong><?= __('Master newest') ?>:</strong> <code><?= htmlspecialchars((string) ($sc['master_newest_file'] ?? '—')) ?></code>
+        </p>
+<?php else: ?>
+        <p style="margin:4px 0;font-size:11px;color:#475569;word-break:break-all">
+            <strong><?= __('GTID overlap (replica retrieved ∩ master purged)') ?>:</strong>
+            <code><?= htmlspecialchars((string) ($sc['overlap_with_purged'] ?? '—')) ?></code>
+        </p>
+<?php endif; ?>
+        <p style="margin:8px 0 4px;font-size:11px;color:#7f1d1d">
+            <strong><?= __('GTID activate/deactivate is BLOCKED on this page') ?></strong> — <?= __('toggling now would force the replica to re-resolve its position against a master that no longer holds it, causing an immediate failure.') ?>
+            &nbsp;<a href="<?= WWW_ROOT ?>site/en/site/blog_post/gtid-file-position-binlogs-purges/" target="_blank">→ <?= __('Why this matters') ?></a>
+        </p>
+    </div>
+</div>
+<?php endif; ?>
 <?php if (!empty($obsHealth)): ?>
 <div class="sv-scorecard" id="sv-health-scorecard">
     <div class="sv-scorecard-head">
@@ -840,7 +893,32 @@ $(document).on('click', '#sv-preflight-btn', function() {
                 ?>
                 <div class="sv-action-group" data-gtid-compat="<?= $gtidIncompat ? 'mixed' : 'ok' ?>">
                     <div class="sv-action-group-title">GTID</div>
-                    <?php if ($gtidIncompat): ?>
+                    <?php
+                    // #1280 follow-up — block the GTID toggle when the
+                    // source no longer covers the replica's position.
+                    // Toggling activate/deactivate re-resolves the
+                    // position against the master, which would fail
+                    // immediately because the binlogs / GTIDs are
+                    // already purged on the source.
+                    $srcBlocksGtid = !empty($srcCoverageBlock);
+                    $srcBlockReason = $srcBlocksGtid
+                        ? __('Source no longer covers replica position — toggling GTID would re-resolve against a master that has PURGED the relevant binlogs/GTIDs. Fix the source-coverage gap (re-clone or restart replication after extending source retention) before changing GTID mode.')
+                        : '';
+                    ?>
+                    <?php if ($srcBlocksGtid): ?>
+                        <a class="btn btn-default btn-sm disabled" disabled aria-disabled="true" tabindex="-1"
+                           title="<?= htmlspecialchars($srcBlockReason, ENT_QUOTES, 'UTF-8') ?>"
+                           data-toggle="tooltip" data-placement="top"
+                           style="cursor:not-allowed">
+                            <i class="fa fa-lock" style="color:#b91c1c"></i> <?= __('Activate') ?>
+                        </a>
+                        <a class="btn btn-default btn-sm disabled" disabled aria-disabled="true" tabindex="-1"
+                           title="<?= htmlspecialchars($srcBlockReason, ENT_QUOTES, 'UTF-8') ?>"
+                           data-toggle="tooltip" data-placement="top"
+                           style="cursor:not-allowed">
+                            <i class="fa fa-lock" style="color:#b91c1c"></i> <?= __('Deactivate') ?>
+                        </a>
+                    <?php elseif ($gtidIncompat): ?>
                         <a class="btn btn-default btn-sm disabled" disabled aria-disabled="true" tabindex="-1"
                            title="<?= htmlspecialchars($gtidIncompatReason, ENT_QUOTES, 'UTF-8') ?>"
                            data-toggle="tooltip" data-placement="top"

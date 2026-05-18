@@ -26,6 +26,7 @@ use App\Library\ReplicationHeartbeatCheck;
 use App\Library\ReplicationHealth;
 use App\Library\ReplicationMetadataReader;
 use App\Library\ReplicationRetentionForecast;
+use App\Library\ReplicationSourceCoverage;
 use App\Library\ReplicationStuckSqlDetector;
 use App\Library\ReplicationUserSslAudit;
 use App\Library\SemiSyncAckSla;
@@ -1397,6 +1398,45 @@ if (!empty($_GET['mysql_server']['id'])) {
                     'estimate' => true,
                 ];
             }
+        }
+
+        // #1280 follow-up — source-side coverage check. Does the
+        // master still hold the binlog file (or GTIDs) the replica is
+        // currently reading? If not, replication is fine RIGHT NOW
+        // but a relay-log loss would be unrecoverable. We reuse the
+        // master's binlog files cache that the gap block above just
+        // resolved, plus the cached gtid_purged from
+        // ts_value_general_text.
+        try {
+            $data['source_coverage'] = null;
+            if (!empty($data['slave']) && !empty($master_id)) {
+                $coverageFiles = [];
+                if (isset($files) && is_array($files)) {
+                    foreach ($files as $f) {
+                        if (is_string($f) && $f !== '') {
+                            $coverageFiles[] = $f;
+                        }
+                    }
+                }
+                $purgedRes = $db->sql_query_silent(
+                    "SELECT t.value FROM ts_value_general_text t "
+                  . "INNER JOIN ts_variable v ON v.id = t.id_ts_variable "
+                  . "WHERE v.name = 'gtid_purged' "
+                  . "  AND t.id_mysql_server = " . (int) $master_id . " "
+                  . "ORDER BY t.date DESC LIMIT 1"
+                );
+                $purged = null;
+                if ($purgedRes && $prow = $db->sql_fetch_array($purgedRes, MYSQLI_ASSOC)) {
+                    $purged = (string) $prow['value'];
+                }
+                $data['source_coverage'] = ReplicationSourceCoverage::evaluate(
+                    $data['slave'],
+                    $coverageFiles,
+                    $purged
+                );
+            }
+        } catch (\Throwable $e) {
+            $data['source_coverage'] = null;
         }
 
         // Sparkline: last 1 hour of replication lag for this server
