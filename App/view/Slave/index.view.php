@@ -205,9 +205,9 @@ foreach ($data['slave'] as $slaves) {
 
         $canvasId = 'myChart'.$slave['id_mysql_server'].crc32($connect_name);
         echo '<td class="'.$class.'" style="padding:0;">'."\n";
-        echo ' <div class="slave-sparkline-cell" data-graph-key="'.htmlspecialchars($graphKey, ENT_QUOTES, 'UTF-8').'" style="width:160px; height:17px; display:inline-block; position:relative; vertical-align:bottom;">'."\n"
-            .'  <i class="slave-sparkline-spinner fa fa-spinner fa-spin" style="font-size:12px;color:#999;line-height:17px;"></i>'."\n"
-            .'  <canvas width="160" height="17" style="width:160px;height:17px;display:none;vertical-align:bottom;" id="'.$canvasId.'"></canvas>'."\n"
+        echo ' <div class="slave-sparkline-cell" data-graph-key="'.htmlspecialchars($graphKey, ENT_QUOTES, 'UTF-8').'" style="width:176px; height:25px; display:inline-block; position:relative; vertical-align:bottom;">'."\n"
+            .'  <i class="slave-sparkline-spinner fa fa-spinner fa-spin" style="font-size:14px;color:#999;line-height:25px;"></i>'."\n"
+            .'  <canvas width="176" height="25" style="width:176px;height:25px;display:none;vertical-align:bottom;" id="'.$canvasId.'"></canvas>'."\n"
             .'</div>'."\n";
         echo '</td>'."\n";
 
