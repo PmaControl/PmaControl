@@ -1341,38 +1341,31 @@ ctx.strokeStyle="rgba(0,0,0,1)";ctx.lineWidth=1;ctx.stroke();
         }
 
         $data['replication_name'] = $replication_name;
-        Extraction::setOption('groupbyday', true);
 
-        $date        = date('Y-m-d H:i:s');
-        $date_format = 'Y-m-d';
+        // Lag graphs (1 per day) used to be fetched here synchronously via
+        // Extraction::extract + enrichSlavesWithRelayLogSpaceGraph + a JS
+        // build block per day. Both Extraction calls are heavy UNIONs over
+        // ts_value_slave_* / ts_value_general_*, so the page used to stall
+        // 1–3 s before a single byte hit the browser. Move them behind the
+        // existing /slave/showGraphDay/ AJAX endpoint (see indexGraphs
+        // pattern on /slave/index/): the action carries a disk cache,
+        // 10 s TTL for the current day (still mutating) and 7 days for
+        // any past day (data is immutable once the partition rolls).
+        $this->di['js']->addJavascript(array(
+            "moment.js",
+            "chart-4.5.1.umd.min.js",
+            "chartjs-adapter-moment.min.js",
+            "hammer.min.js",
+            "chartjs-plugin-zoom.js",
+            "chartjs-chart-treemap.min.js",
+        ));
 
-        $array_date = date_parse_from_format($date_format, $date);
-
-        $more_days = -1;
-        $next_date = date(
-            $date_format, mktime(0, 0, 0, $array_date['month'], $array_date['day'] + $more_days, $array_date['year'])
-        );
-
-        $slaves = Extraction::extract($this->getReplicationLagVariables(), array($id_mysql_server), array($next_date, $date), true, true);
-        $slaves = $this->normalizeReplicationLagGraphRows($slaves ?: []);
-
-        // Filter to the selected replication source only
-        $slaves = array_values(array_filter($slaves, function($s) use ($replication_name) {
-            return ($s['connection_name'] ?? '') === $replication_name;
-        }));
-
-        $slaves = $this->enrichSlavesWithRelayLogSpaceGraph(
-            $slaves,
-            (int) $id_mysql_server,
-            array($next_date, $date),
-            (string) $replication_name
-        );
-
-        $this->generateGraphSlave($slaves);
-
-        foreach ($slaves as $slave) {
-            $data['graph'][$slave['day']] = $slave;
-        }
+        $today           = date('Y-m-d');
+        $yesterday       = date('Y-m-d', strtotime('-1 day'));
+        $data['graph']   = [];
+        // Chronological order so the oldest day renders on top and the
+        // "Load previous day" button can decrement from there.
+        $data['graph_days'] = [$yesterday, $today];
 
         $sql = "WITH LastCluster AS (
         SELECT id_dot3_cluster
@@ -2496,12 +2489,8 @@ var chart = new Chart(ctx, {
 
     public function showGraphDay($param)
     {
-        if (!empty($_GET['ajax']) && $_GET['ajax'] === "true") {
-            $this->layout_name = false;
-        }
-
-        $id_mysql_server = $param[0];
-        $day = $param[1];
+        $id_mysql_server  = (int)($param[0] ?? 0);
+        $day              = (string)($param[1] ?? '');
         // Glial pushes "key:value" segments into $param too, so a stale
         // browser hitting `…/<day>//ajax:true/` would land "ajax:true" in
         // the connection_name slot and silently filter every row out (#816).
@@ -2509,6 +2498,48 @@ var chart = new Chart(ctx, {
         // strips it — so colon-bearing segments are framework noise.
         $replication_name = self::extractConnectionNameParam($param[2] ?? '');
 
+        $isAjax = (!empty($_GET['ajax']) && $_GET['ajax'] === 'true');
+
+        if ($isAjax) {
+            // AJAX path: bypass layout + view, write the canvas + chart
+            // bootstrap JS directly so we can wrap the heavy Extraction
+            // calls in a disk cache.
+            $this->layout_name = false;
+            $this->view        = false;
+
+            $ttl = (preg_match('/^\d{4}-\d{2}-\d{2}$/', $day) === 1 && $day === date('Y-m-d'))
+                ? 10
+                : 86400 * 7;
+
+            $payload = self::rememberShowGraphDayHtml(
+                $ttl,
+                $id_mysql_server,
+                $replication_name,
+                $day,
+                function () use ($id_mysql_server, $replication_name, $day) {
+                    return $this->buildShowGraphDayHtml($id_mysql_server, $replication_name, $day);
+                }
+            );
+
+            echo $payload;
+            exit;
+        }
+
+        // Non-AJAX path (legacy / direct URL): keep the view-based render so
+        // bookmarks and tab-opens still produce a full HTML page.
+        $data['graphs'] = $this->fetchShowGraphDaySlaves($id_mysql_server, $replication_name, $day);
+        $this->set('data', $data);
+    }
+
+    /**
+     * Pull the per-day lag rows + relay-log-space enrichment used by both
+     * showGraphDay paths. Extracted so the AJAX HTML builder and the
+     * legacy view path stay in sync.
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    private function fetchShowGraphDaySlaves(int $id_mysql_server, string $replication_name, string $day): array
+    {
         Extraction::setOption('groupbyday', true);
 
         $date_start = $day;
@@ -2523,31 +2554,74 @@ var chart = new Chart(ctx, {
         );
         $slaves = $this->normalizeReplicationLagGraphRows($slaves ?: []);
 
-        // Filter to selected replication source
         if ($replication_name !== '') {
-            $slaves = array_values(array_filter($slaves, function($s) use ($replication_name) {
+            $slaves = array_values(array_filter($slaves, function ($s) use ($replication_name) {
                 return ($s['connection_name'] ?? '') === $replication_name;
             }));
         }
 
-        // Same dual-axis treatment as the initial show() render: tag
-        // each slave row with the relay_log_space payload so the
-        // shared `Slave::buildLagChartJs()` helper renders the
-        // right-side GB axis on the AJAX-loaded "previous day" chart
-        // too.
-        $slaves = $this->enrichSlavesWithRelayLogSpaceGraph(
+        return $this->enrichSlavesWithRelayLogSpaceGraph(
             $slaves,
-            (int) $id_mysql_server,
+            $id_mysql_server,
             array($date_start, $date_end),
-            (string) $replication_name
+            $replication_name
         );
+    }
 
-        $data['graphs'] = [];
+    /**
+     * Build the raw HTML (canvas wrappers + Chart.js bootstrap scripts)
+     * returned to the AJAX caller. Mirrors what
+     * `App/view/Slave/showGraphDay.view.php` emits — kept inline here so
+     * the cache layer can capture the bytes and serve them verbatim.
+     */
+    private function buildShowGraphDayHtml(int $id_mysql_server, string $replication_name, string $day): string
+    {
+        $slaves = $this->fetchShowGraphDaySlaves($id_mysql_server, $replication_name, $day);
+
+        $html = '';
         foreach ($slaves as $slave) {
-            $data['graphs'][] = $slave;
+            $canvasId = 'myChart' . $slave['id_mysql_server']
+                . crc32(($slave['connection_name'] ?? '') . $slave['day']);
+            $html .= '<div class="sv-chart-wrap" data-day="' . htmlspecialchars((string) $slave['day'], ENT_QUOTES, 'UTF-8') . '"><canvas id="' . $canvasId . '"></canvas></div>' . "\n";
+            $html .= '<script>' . "\n" . self::buildLagChartJs($slave) . "\n" . '</script>' . "\n";
+        }
+        return $html;
+    }
+
+    /**
+     * Disk cache for the per-day AJAX HTML built by showGraphDay().
+     * TTL is chosen by the caller (10 s for the current day, 7 days for
+     * any past day — past-day data is immutable once the SYSTEM_TIME
+     * partition rolls).
+     *
+     * @param callable():string $producer
+     */
+    private static function rememberShowGraphDayHtml(
+        int $ttl,
+        int $id_mysql_server,
+        string $replication_name,
+        string $day,
+        callable $producer
+    ): string {
+        $cacheDir = TMP . 'cache/slave-show/';
+        if (!is_dir($cacheDir)) {
+            @mkdir($cacheDir, 0775, true);
         }
 
-        $this->set('data', $data);
+        $key       = sha1($id_mysql_server . '|' . $replication_name . '|' . $day);
+        $cacheFile = $cacheDir . 'lag_' . $key . '.html';
+
+        if (is_file($cacheFile) && (time() - filemtime($cacheFile)) < $ttl) {
+            $raw = @file_get_contents($cacheFile);
+            if (is_string($raw) && $raw !== '') {
+                return $raw;
+            }
+        }
+
+        $payload = $producer();
+        @file_put_contents($cacheFile, $payload);
+
+        return $payload;
     }
 
     public function getLag($param)

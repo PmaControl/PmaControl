@@ -665,12 +665,10 @@ $(document).on('click', '#sv-preflight-btn', function() {
     <div class="sv-card-head">
         <span><i class="fa fa-area-chart"></i> <?= __("Replication lag") ?></span>
         <?php
-        $oldestDay = null;
-        if (!empty($data['graph'])) {
-            $days = array_keys($data['graph']);
-            sort($days);
-            $oldestDay = $days[0];
-        }
+        // graph_days holds [yesterday, today] in chronological order.
+        // The button below decrements from the oldest entry.
+        $days = $data['graph_days'] ?? [];
+        $oldestDay = !empty($days) ? $days[0] : null;
         ?>
         <button type="button" class="sv-btn-load" id="btn-load-more-days"
                 data-server="<?= $data['id_mysql_server'] ?>"
@@ -681,9 +679,14 @@ $(document).on('click', '#sv-preflight-btn', function() {
     </div>
     <div class="sv-card-body" id="slave-graphs-container">
         <?php
-        if (!empty($data['graph'])) {
-            foreach ($data['graph'] as $slave) {
-                echo '<div class="sv-chart-wrap"><canvas id="myChart'.$slave['id_mysql_server'].crc32(($slave['connection_name'] ?? '').$slave['day']).'"></canvas></div>';
+        if (!empty($days)) {
+            // Render one placeholder per day. JS below fires an AJAX
+            // request to /slave/showGraphDay/ for each placeholder and
+            // swaps it for the canvas + Chart.js bootstrap once the
+            // response arrives. The endpoint is disk-cached (10 s for
+            // today, 7 days for any past day) so reloads are instant.
+            foreach ($days as $day) {
+                echo '<div class="sv-chart-wrap sv-chart-day-pending" data-day="'.htmlspecialchars($day, ENT_QUOTES, 'UTF-8').'" style="display:flex;align-items:center;justify-content:center;color:var(--clr-muted);min-height:120px"><i class="fa fa-spinner fa-spin"></i>&nbsp;'.htmlspecialchars($day, ENT_QUOTES, 'UTF-8').'</div>';
             }
         } else {
             echo '<div style="text-align:center;padding:24px;color:var(--clr-muted)"><i class="fa fa-line-chart"></i> '.__('No replication lag data available').'</div>';
@@ -691,6 +694,84 @@ $(document).on('click', '#sv-preflight-btn', function() {
         ?>
     </div>
 </div>
+<?php
+$showGraphDayBase = LINK.'slave/showGraphDay/'.$data['id_mysql_server'].'/';
+$showGraphDayRepl = (string)($data['replication_name'] ?? '');
+?>
+<script>
+(function(){
+    var BASE = <?= json_encode($showGraphDayBase) ?>;
+    var REPL = <?= json_encode($showGraphDayRepl) ?>;
+
+    function buildUrl(day){
+        var u = BASE + encodeURIComponent(day) + '/';
+        if (REPL) { u += encodeURIComponent(REPL) + '/'; }
+        return u + 'ajax:true/';
+    }
+
+    function injectDayHtml(placeholder, html){
+        if (!html || !html.replace(/<script[\s\S]*?<\/script>/gi,'').trim()) {
+            placeholder.innerHTML = '<div style="color:#94a3b8;font-size:12px;border:1px dashed #e2e8f0;border-radius:6px;padding:12px;text-align:center">'
+                + placeholder.getAttribute('data-day') + ' — no data</div>';
+            return;
+        }
+        // Parse the response and pull scripts aside so we can re-create
+        // them with createElement('script') — innerHTML alone does not
+        // execute embedded <script> tags (same trick the existing
+        // "Load previous day" button uses, kept consistent here).
+        var tmpl = document.createElement('template');
+        tmpl.innerHTML = html;
+        var scripts = tmpl.content.querySelectorAll('script');
+        var pendingScripts = [];
+        scripts.forEach(function(s){ pendingScripts.push(s.textContent); s.remove(); });
+
+        var parent = placeholder.parentNode;
+        // Move the parsed nodes in front of the placeholder, then drop
+        // the placeholder itself.
+        while (tmpl.content.firstChild) {
+            parent.insertBefore(tmpl.content.firstChild, placeholder);
+        }
+        parent.removeChild(placeholder);
+
+        for (var i = 0; i < pendingScripts.length; i++) {
+            var s = document.createElement('script');
+            s.textContent = pendingScripts[i];
+            parent.appendChild(s);
+        }
+        if (typeof window.attachLagDragSelectAll === 'function') {
+            window.attachLagDragSelectAll();
+        }
+    }
+
+    function loadDay(placeholder){
+        var day = placeholder.getAttribute('data-day');
+        if (!day) return;
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', buildUrl(day), true);
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        xhr.onreadystatechange = function(){
+            if (xhr.readyState !== 4) return;
+            if (xhr.status < 200 || xhr.status >= 300) {
+                placeholder.innerHTML = '<div style="color:#dc2626;font-size:12px">'
+                    + day + ' — load failed (' + xhr.status + ')</div>';
+                return;
+            }
+            injectDayHtml(placeholder, xhr.responseText);
+        };
+        xhr.send();
+    }
+
+    function loadAllDays(){
+        document.querySelectorAll('.sv-chart-day-pending').forEach(loadDay);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadAllDays);
+    } else {
+        loadAllDays();
+    }
+})();
+</script>
 
 
 <!-- ============================================================
