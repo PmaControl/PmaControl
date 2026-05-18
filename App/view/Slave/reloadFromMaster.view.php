@@ -108,7 +108,7 @@ function svReloadStatusIcon(string $status): string
             <?php endif; ?>
             <button type="submit" class="btn btn-warning <?= $physicalOk ? '' : 'sv-reload-btn-disabled' ?>"
                 <?= $physicalOk ? '' : 'disabled' ?>
-                onclick="return confirm('<?= __('Wipe slave datadir and stream master\\'s backup over SSH. Continue?') ?>');">
+                onclick="return confirm('<?= __('Wipe slave datadir and stream master backup over SSH. Continue?') ?>');">
                 <i class="fa fa-bolt"></i> <?= __('Start physical reload') ?>
             </button>
         </form>

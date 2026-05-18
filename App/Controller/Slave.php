@@ -5166,15 +5166,29 @@ var chart = new Chart(ctx, {
         if ($serverId <= 0) {
             return '';
         }
-        $sql = "SELECT value FROM ts_value WHERE id_mysql_server = ".(int) $serverId."
-                  AND id_ts_variable = (SELECT id FROM ts_variable WHERE name = '".$db->sql_real_escape_string($name)."' LIMIT 1)
-                ORDER BY id DESC LIMIT 1";
-        $res = @$db->sql_query($sql);
-        if ($res === false || $res === null) {
-            return '';
-        }
-        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            return (string) ($row['value'] ?? '');
+        // ts_value is partitioned by (from, type) — ts_value_general_text
+        // for the SHOW VARIABLES bag. Probe both the text and double
+        // variants so disk-space / version are both reachable. Any SQL
+        // error (table missing on this install) is swallowed and we
+        // return ''; the preflight will surface a WARN, not FAIL.
+        $candidates = ['ts_value_general_text', 'ts_value_general_int', 'ts_value_slave_text'];
+        foreach ($candidates as $tbl) {
+            try {
+                $sql = "SELECT value FROM ".$tbl."
+                          WHERE id_mysql_server = ".(int) $serverId."
+                            AND id_ts_variable = (SELECT id FROM ts_variable WHERE name = '".$db->sql_real_escape_string($name)."' LIMIT 1)
+                          ORDER BY date DESC LIMIT 1";
+                $res = @$db->sql_query($sql);
+                if ($res === false || $res === null) {
+                    continue;
+                }
+                while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                    $v = (string) ($row['value'] ?? '');
+                    if ($v !== '') {
+                        return $v;
+                    }
+                }
+            } catch (\Throwable $e) { /* try next table */ }
         }
         return '';
     }
@@ -5197,20 +5211,28 @@ var chart = new Chart(ctx, {
         if ($slave === null) {
             return null;
         }
-        // Best-effort: look at the latest cached SHOW REPLICA STATUS row
-        // for this server + connection and resolve Master_Host/Source_Host
-        // to an mysql_server entry. If we can't, return null and the
-        // preflight will surface that via the version_match gate.
-        $sql = "SELECT m.* FROM mysql_server m
-                  INNER JOIN ts_value v ON v.value LIKE CONCAT('%', m.ip, '%')
-                 WHERE v.id_mysql_server = ".(int) ($slave['id'] ?? 0)."
-                 ORDER BY v.id DESC LIMIT 1";
-        $res = @$db->sql_query($sql);
-        if ($res !== false && $res !== null) {
-            while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-                return $row;
+        // Best-effort: resolve Master_Host / Source_Host from the live
+        // SHOW REPLICA STATUS via the same fetchReplicaStatusRows() the
+        // /slave/show page uses, then look up the matching mysql_server
+        // row by ip or hostname. Failures fall through to null and the
+        // preflight surfaces the gap via version_match.
+        try {
+            $rows = self::reloadFetchReplicaStatus($slave, $conn);
+            $masterHost = (string) ($rows['Master_Host'] ?? $rows['Source_Host'] ?? '');
+            if ($masterHost !== '') {
+                $hostEsc = $db->sql_real_escape_string($masterHost);
+                $sql = "SELECT * FROM mysql_server
+                          WHERE is_deleted = 0
+                            AND (ip = '{$hostEsc}' OR hostname = '{$hostEsc}' OR name = '{$hostEsc}')
+                          LIMIT 1";
+                $res = @$db->sql_query($sql);
+                if ($res !== false && $res !== null) {
+                    while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                        return $row;
+                    }
+                }
             }
-        }
+        } catch (\Throwable $e) { /* swallow */ }
         return null;
     }
 
