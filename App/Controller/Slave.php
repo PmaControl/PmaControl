@@ -913,31 +913,137 @@ class Slave extends Controller
 
         $data['tunnel_details'] = $this->getTunnelDetails();
 
-        /*
-          $res2 = Extraction::extract(array("slave::seconds_behind_master"), array(), "1 hour", false, true);
-          $slaves = array();
-          while($slave = $db->sql_fetch_array($res2, MYSQLI_ASSOC))
-          {
-          $slaves[] = $slave;
-          }
-          $this->generateGraph($slaves);
-         */
-
-        $slaves = Extraction::extract($this->getReplicationLagVariables(), array(), "1 hour", false, true);
-        $slaves = $this->normalizeReplicationLagGraphRows($slaves ?: []);
-        $this->generateGraph($slaves);
-
-        if (!empty($slaves)) {
-            foreach ($slaves as $slave) {
-                $data['graph'][$slave['id_mysql_server']][$slave['connection_name']]             = $slave;
-                $data['graph'][$slave['id_mysql_server']][$slave['connection_name']]['id_graph'] = $slave['id_mysql_server'].crc32($slave['connection_name']);
-                $data['server']['idgraph'][$slave['id_mysql_server']][$slave['connection_name']] = $slave['id_mysql_server'].crc32($slave['connection_name']);
-
-                $this->hydrateMasterFromAliasDns($data, $slave);
+        // Sparkline data (1 h of seconds_behind_master per replica) used to be
+        // fetched here synchronously via `Extraction::extract(..., $graph=true)`.
+        // That UNION over `ts_value_slave_*` partitions dominated the page-load
+        // time, so the initial render now ships an empty sparkline cell with a
+        // spinner and the data is pulled afterwards from `Slave::indexGraphs`
+        // (10 s TTL cache). hydrateMasterFromAliasDns + idgraph map now derive
+        // from the already-loaded $data['slave'] rows so the cell IDs the JS
+        // will target remain stable.
+        if (!empty($data['slave']) && is_array($data['slave'])) {
+            foreach ($data['slave'] as $idSrv => $byConn) {
+                if (!is_array($byConn)) {
+                    continue;
+                }
+                foreach ($byConn as $connName => $slaveRow) {
+                    if (!is_array($slaveRow)) {
+                        continue;
+                    }
+                    $data['server']['idgraph'][$idSrv][$connName] = $idSrv.crc32((string)$connName);
+                    $this->hydrateMasterFromAliasDns($data, $slaveRow);
+                }
             }
         }
 
         $this->set('data', $data);
+    }
+
+    /**
+     * AJAX/JSON endpoint feeding the /slave/index/ sparklines (Seconds Behind
+     * Master + min/max/avg/std) after the page has rendered. Heavy work is
+     * cached on disk for 10 seconds; subsequent reloads inside that window are
+     * served from the cache and never touch the time-series tables.
+     *
+     * URL contract: `/{lang}/slave/indexGraphs/ajax:true/`
+     */
+    public function indexGraphs()
+    {
+        $this->layout_name = false;
+        $this->view = false;
+
+        if (!headers_sent()) {
+            header('Content-Type: application/json; charset=UTF-8');
+            header('Cache-Control: no-store, no-cache, must-revalidate');
+        }
+
+        $payload = self::rememberIndexGraphsPayload(10, function () {
+            return $this->buildIndexGraphsPayload();
+        });
+
+        echo json_encode($payload);
+        exit;
+    }
+
+    /**
+     * Build the per-replica sparkline payload returned by indexGraphs(). One
+     * entry per (id_mysql_server, connection_name) keyed as `"$id|$conn"` so
+     * the client can look up rows directly.
+     *
+     * @return array{generated_at:int,by_key:array<string,array{values:array<int,float|null>,min:?float,max:?float,avg:?float,std:?float,canvas_id:string}>}
+     */
+    private function buildIndexGraphsPayload(): array
+    {
+        $rows = Extraction::extract($this->getReplicationLagVariables(), array(), "1 hour", false, true);
+        $rows = $this->normalizeReplicationLagGraphRows($rows ?: []);
+
+        $byKey = [];
+        foreach ($rows as $row) {
+            $idSrv = (int)($row['id_mysql_server'] ?? 0);
+            $conn  = (string)($row['connection_name'] ?? '');
+            $key   = $idSrv.'|'.$conn;
+
+            $values = [];
+            foreach (self::extractSparklineYValues((string)($row['graph'] ?? '')) as $raw) {
+                $values[] = ($raw === 'null') ? null : (float)$raw;
+            }
+
+            $byKey[$key] = [
+                'values'    => $values,
+                'min'       => isset($row['min']) ? (float)$row['min'] : null,
+                'max'       => isset($row['max']) ? (float)$row['max'] : null,
+                'avg'       => isset($row['avg']) ? (float)$row['avg'] : null,
+                'std'       => isset($row['std']) ? (float)$row['std'] : null,
+                'canvas_id' => 'myChart'.$idSrv.crc32($conn),
+            ];
+        }
+
+        return [
+            'generated_at' => time(),
+            'by_key'       => $byKey,
+        ];
+    }
+
+    /**
+     * 10 s on-disk cache for the indexGraphs payload, partitioned per filtered
+     * server list so two users with different ACL scopes don't pollute each
+     * other's view. Pattern mirrors App\Library\ServerStateTimeline::remember.
+     *
+     * @param callable():array $producer
+     */
+    private static function rememberIndexGraphsPayload(int $ttl, callable $producer): array
+    {
+        $cacheDir = TMP.'cache/slave-index/';
+        if (!is_dir($cacheDir)) {
+            @mkdir($cacheDir, 0775, true);
+        }
+
+        $servers = \App\Library\Extraction2::getServerList();
+        if (is_array($servers)) {
+            sort($servers, SORT_NUMERIC);
+            $scope = implode(',', $servers);
+        } else {
+            $scope = (string)$servers;
+        }
+        $key = sha1($scope);
+        $cacheFile = $cacheDir.'graphs_'.$key.'.json';
+
+        if (is_file($cacheFile) && (time() - filemtime($cacheFile)) < $ttl) {
+            $raw = @file_get_contents($cacheFile);
+            if (is_string($raw) && $raw !== '') {
+                $decoded = json_decode($raw, true);
+                if (is_array($decoded)) {
+                    $decoded['cache_hit'] = true;
+                    return $decoded;
+                }
+            }
+        }
+
+        $payload = $producer();
+        @file_put_contents($cacheFile, json_encode($payload));
+        $payload['cache_hit'] = false;
+
+        return $payload;
     }
 
     private function getTunnelDetails(): array
