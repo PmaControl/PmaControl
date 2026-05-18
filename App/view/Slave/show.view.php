@@ -23,6 +23,9 @@ $show = \App\Controller\Slave::buildShowReplicaStatusSql(
 
 // Key variable extraction (MySQL 5/MariaDB + MySQL 8 compat)
 $sv = $data['slave'];
+$obs = $data['replication_observability'] ?? [];
+$obsHealth = $obs['health'] ?? [];
+$obsLights = $obsHealth['lights'] ?? [];
 
 $io_running     = $sv['Slave_IO_Running']  ?? $sv['Replica_IO_Running']  ?? null;
 $sql_running    = $sv['Slave_SQL_Running'] ?? $sv['Replica_SQL_Running'] ?? null;
@@ -237,6 +240,34 @@ elseif ((int)$seconds_behind > 0) $health = 'behind';
 .sv-new-source .sv-form-row { display: flex; gap: 12px; }
 .sv-new-source .sv-form-row > * { flex: 1; }
 
+/* ---------- replication observability (#1280) ---------- */
+.sv-scorecard { position: sticky; top: 60px; z-index: 5; background:#fff; border:1px solid var(--clr-border);
+                border-radius:var(--radius); padding:12px 14px; margin-bottom:16px; box-shadow:0 4px 14px rgba(15,23,42,.08); }
+.sv-scorecard-head { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:8px; }
+.sv-score { font-size:20px; font-weight:800; color:#0f172a; }
+.sv-score-status { display:inline-block; padding:2px 10px; border-radius:12px; font-size:12px; font-weight:700; text-transform:uppercase; }
+.sv-score-status.healthy { background:#dcfce7; color:#166534; }
+.sv-score-status.risky { background:#fef3c7; color:#92400e; }
+.sv-score-status.critical, .sv-score-status.stale { background:#fee2e2; color:#991b1b; }
+.sv-score-lights { display:flex; flex-wrap:wrap; gap:6px; }
+.sv-score-light { color:#334155; border:1px solid #e2e8f0; border-radius:12px; padding:2px 8px; font-size:12px; text-decoration:none; }
+.sv-score-light.ok { background:#f0fdf4; border-color:#bbf7d0; }
+.sv-score-light.fail { background:#fef2f2; border-color:#fecaca; }
+.sv-ob-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px; margin-bottom:16px; }
+.sv-ob-card { background:#fff; border:1px solid var(--clr-border); border-radius:var(--radius); padding:12px; min-height:92px; }
+.sv-ob-card h4 { margin:0 0 8px 0; font-size:13px; text-transform:uppercase; color:#475569; letter-spacing:.4px; }
+.sv-ob-card p { margin:4px 0; font-size:12px; color:#475569; }
+.sv-ob-card code { white-space:pre-wrap; word-break:break-all; display:block; background:#f8fafc; padding:6px; border-radius:4px; }
+.sv-ob-badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:12px; font-weight:700; }
+.sv-ob-badge.ok { background:#dcfce7; color:#166534; }
+.sv-ob-badge.warning { background:#fef3c7; color:#92400e; }
+.sv-ob-badge.critical, .sv-ob-badge.blocked { background:#fee2e2; color:#991b1b; }
+.sv-channel-stack { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:10px; margin-bottom:16px; }
+.sv-channel-card { display:block; background:#fff; border:1px solid var(--clr-border); border-radius:var(--radius); padding:10px 12px; text-decoration:none; color:#334155; }
+.sv-channel-card:hover { text-decoration:none; border-color:#93c5fd; }
+.sv-channel-title { display:flex; justify-content:space-between; gap:8px; font-weight:700; }
+.sv-channel-meta { font-size:12px; color:#64748b; margin-top:4px; }
+
 </style>
 
 
@@ -408,6 +439,169 @@ $(document).ready(function() {
 });
 </script>
 <?php else: ?>
+<?php if (!empty($obsHealth)): ?>
+<div class="sv-scorecard" id="sv-health-scorecard">
+    <div class="sv-scorecard-head">
+        <div>
+            <span class="sv-score">Health <?= (int)($obsHealth['score'] ?? 0) ?> / 100</span>
+            <span class="sv-score-status <?= htmlspecialchars((string)($obsHealth['status'] ?? 'critical'), ENT_QUOTES, 'UTF-8') ?>">
+                <?= htmlspecialchars((string)($obsHealth['status'] ?? 'critical'), ENT_QUOTES, 'UTF-8') ?>
+            </span>
+        </div>
+        <div>
+            <a class="btn btn-default btn-xs" href="<?= LINK ?>Replication/topology/"><i class="fa fa-sitemap"></i> <?= __('Topology') ?></a>
+            <a class="btn btn-default btn-xs" href="<?= LINK ?>Replication/gtidDiff/"><i class="fa fa-random"></i> <?= __('GTID diff') ?></a>
+            <a class="btn btn-default btn-xs" href="<?= LINK ?>slave/replicationMetadata/<?= (int)$data['id_mysql_server'] ?>/ajax:true/" target="_blank"><i class="fa fa-table"></i> <?= __('Metadata') ?></a>
+            <button type="button" class="btn btn-primary btn-xs" id="sv-preflight-btn"
+                    data-url="<?= LINK ?>slave/failoverPreflight/<?= (int)$data['id_mysql_server'] ?>/<?= urlencode((string)$data['replication_name']) ?>/ajax:true/">
+                <i class="fa fa-check-square-o"></i> <?= __('Pre-flight failover') ?>
+            </button>
+        </div>
+    </div>
+    <div class="sv-score-lights">
+        <?php foreach ($obsLights as $key => $light): ?>
+        <a class="sv-score-light <?= !empty($light['ok']) ? 'ok' : 'fail' ?>"
+           href="<?= htmlspecialchars((string)($light['anchor'] ?? '#'), ENT_QUOTES, 'UTF-8') ?>"
+           title="<?= htmlspecialchars((string)($light['reason'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+            <?= !empty($light['ok']) ? '✓' : '!' ?> <?= htmlspecialchars((string)($light['label'] ?? $key), ENT_QUOTES, 'UTF-8') ?>
+        </a>
+        <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
+
+<?php if (!empty($obs['channels'])): ?>
+<div class="sv-channel-stack" id="sv-channel-dashboard">
+    <?php foreach ($obs['channels'] as $channel): ?>
+    <a class="sv-channel-card" href="<?= htmlspecialchars((string)$channel['url'], ENT_QUOTES, 'UTF-8') ?>">
+        <div class="sv-channel-title">
+            <span><?= __("Channel") ?> '<?= htmlspecialchars((string)$channel['label'], ENT_QUOTES, 'UTF-8') ?>'</span>
+            <span class="sv-ob-badge <?= in_array(($channel['health'] ?? ''), ['ok', 'behind'], true) ? 'ok' : 'warning' ?>">
+                <?= htmlspecialchars((string)($channel['health'] ?? 'unknown'), ENT_QUOTES, 'UTF-8') ?>
+            </span>
+        </div>
+        <div class="sv-channel-meta">
+            <?= __('lag') ?> <?= ($channel['lag'] === null || $channel['lag'] === 'NULL') ? 'NULL' : (int)$channel['lag'] . 's' ?>
+        </div>
+    </a>
+    <?php endforeach; ?>
+</div>
+<?php endif; ?>
+
+<div class="sv-ob-grid" id="sv-observability">
+    <?php $gtidDrift = $obs['gtid_drift'] ?? []; ?>
+    <div class="sv-ob-card" id="sv-gtid-drift">
+        <h4><i class="fa fa-code-fork"></i> GTID drift</h4>
+        <?php if (!empty($gtidDrift['errant_set'])): ?>
+            <span class="sv-ob-badge critical"><?= (int)($gtidDrift['count'] ?? 0) ?> errant</span>
+            <code><?= htmlspecialchars((string)$gtidDrift['errant_set'], ENT_QUOTES, 'UTF-8') ?></code>
+        <?php else: ?>
+            <span class="sv-ob-badge ok">none</span>
+            <p><?= __('No errant GTID cached for this channel.') ?></p>
+        <?php endif; ?>
+    </div>
+
+    <?php $stuck = $obs['stuck_sql'] ?? []; ?>
+    <div class="sv-ob-card" id="sv-stuck-sql">
+        <h4><i class="fa fa-pause-circle"></i> SQL thread stuck</h4>
+        <span class="sv-ob-badge <?= !empty($stuck['stuck']) ? 'critical' : 'ok' ?>"><?= !empty($stuck['stuck']) ? __('stuck') : __('clear') ?></span>
+        <p><?= htmlspecialchars((string)($stuck['message'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+    </div>
+
+    <?php $heartbeat = $obs['heartbeat'] ?? []; ?>
+    <div class="sv-ob-card" id="sv-heartbeat">
+        <h4><i class="fa fa-heartbeat"></i> Heartbeat</h4>
+        <span class="sv-ob-badge <?= !empty($heartbeat['healthy']) ? 'ok' : 'warning' ?>"><?= htmlspecialchars((string)($heartbeat['status'] ?? 'unknown'), ENT_QUOTES, 'UTF-8') ?></span>
+        <p><?= htmlspecialchars((string)($heartbeat['message'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+    </div>
+
+    <?php $filters = $obs['filters'] ?? ['rows' => []]; ?>
+    <div class="sv-ob-card" id="sv-repl-filters">
+        <h4><i class="fa fa-filter"></i> <?= __('Replication filters') ?></h4>
+        <span class="sv-ob-badge <?= empty($filters['rows']) ? 'ok' : 'warning' ?>"><?= empty($filters['rows']) ? __('none') : count($filters['rows']) ?></span>
+        <?php foreach (array_slice($filters['rows'] ?? [], 0, 3) as $row): ?>
+            <p><code><?= htmlspecialchars((string)$row['type'] . ': ' . (string)$row['pattern'], ENT_QUOTES, 'UTF-8') ?></code></p>
+        <?php endforeach; ?>
+    </div>
+
+    <?php $semi = $obs['semi_sync'] ?? []; ?>
+    <div class="sv-ob-card" id="sv-semisync-sla">
+        <h4><i class="fa fa-reply"></i> Semi-sync ACK</h4>
+        <span class="sv-ob-badge <?= !empty($semi['healthy']) ? 'ok' : 'warning' ?>"><?= !empty($semi['configured']) ? round(((float)($semi['timeout_ratio'] ?? 0)) * 100, 2) . '% timeout' : __('not configured') ?></span>
+        <p><?= htmlspecialchars((string)($semi['message'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+    </div>
+
+    <?php $sslAudit = $obs['ssl'] ?? []; ?>
+    <div class="sv-ob-card" id="sv-repl-user-ssl">
+        <h4><i class="fa fa-lock"></i> <?= __('Replication user / SSL') ?></h4>
+        <span class="sv-ob-badge <?= !empty($sslAudit['healthy']) ? 'ok' : 'warning' ?>"><?= htmlspecialchars((string)($sslAudit['ssl'] ?? 'off'), ENT_QUOTES, 'UTF-8') ?></span>
+        <p><?= htmlspecialchars((string)($sslAudit['user'] ?? ''), ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars((string)($sslAudit['message'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+    </div>
+
+    <?php $retention = $obs['retention'] ?? []; ?>
+    <div class="sv-ob-card" id="sv-retention-forecast">
+        <h4><i class="fa fa-hdd-o"></i> <?= __('Retention forecast') ?></h4>
+        <span class="sv-ob-badge <?= htmlspecialchars((string)($retention['status'] ?? 'unknown'), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string)($retention['status'] ?? 'unknown'), ENT_QUOTES, 'UTF-8') ?></span>
+        <p><?= __('configured') ?>: <?= (float)($retention['configured_days'] ?? 0) ?> <?= __('days') ?></p>
+    </div>
+
+    <?php $preflight = $obs['failover_preflight'] ?? []; ?>
+    <div class="sv-ob-card" id="sv-failover-preflight">
+        <h4><i class="fa fa-plane"></i> <?= __('Failover pre-flight') ?></h4>
+        <span class="sv-ob-badge <?= htmlspecialchars((string)($preflight['verdict'] ?? 'blocked'), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string)($preflight['verdict'] ?? 'blocked'), ENT_QUOTES, 'UTF-8') ?></span>
+        <p><?= count($preflight['checks'] ?? []) ?> <?= __('checks') ?></p>
+    </div>
+
+    <?php $reconnects = $obs['reconnects'] ?? []; ?>
+    <div class="sv-ob-card" id="sv-reconnects">
+        <h4><i class="fa fa-plug"></i> <?= __('Reconnects') ?></h4>
+        <span class="sv-ob-badge <?= !empty($reconnects['storm']) ? 'warning' : 'ok' ?>"><?= (int)($reconnects['total'] ?? 0) ?></span>
+        <p><?= __('peak') ?> <?= (int)($reconnects['peak'] ?? 0) ?> / 30s</p>
+    </div>
+
+    <?php $dbLag = $obs['per_database_lag'] ?? []; ?>
+    <div class="sv-ob-card" id="sv-per-db-lag">
+        <h4><i class="fa fa-th"></i> <?= __('Per-database lag') ?></h4>
+        <span class="sv-ob-badge <?= empty($dbLag) ? 'warning' : 'ok' ?>"><?= empty($dbLag) ? __('no worker data') : count($dbLag) ?></span>
+        <?php foreach (array_slice($dbLag, 0, 3) as $row): ?>
+            <p><?= htmlspecialchars((string)$row['worker'], ENT_QUOTES, 'UTF-8') ?> / <?= htmlspecialchars((string)$row['database'], ENT_QUOTES, 'UTF-8') ?>: <?= (int)$row['lag_ms'] ?> ms</p>
+        <?php endforeach; ?>
+    </div>
+</div>
+
+<div class="sv-card" id="sv-annotations">
+    <div class="sv-card-head"><span><i class="fa fa-tags"></i> <?= __('Replication annotations') ?></span></div>
+    <div class="sv-card-body">
+        <?php foreach (($obs['annotations'] ?? []) as $annotation): ?>
+            <p><b><?= htmlspecialchars((string)$annotation['annotation_time'], ENT_QUOTES, 'UTF-8') ?></b> <?= htmlspecialchars((string)$annotation['title'], ENT_QUOTES, 'UTF-8') ?></p>
+        <?php endforeach; ?>
+        <form method="post" action="<?= LINK ?>ReplicationAnnotation/save/" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <input type="hidden" name="<?= htmlspecialchars((string)($data['replication_annotation_csrf_field'] ?? '_csrf_token'), ENT_QUOTES, 'UTF-8') ?>" value="<?= htmlspecialchars((string)($data['replication_annotation_save_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+            <input type="hidden" name="id_mysql_server" value="<?= (int)$data['id_mysql_server'] ?>">
+            <input type="hidden" name="connection_name" value="<?= htmlspecialchars((string)$data['replication_name'], ENT_QUOTES, 'UTF-8') ?>">
+            <input type="datetime-local" name="annotation_time" value="<?= date('Y-m-d\TH:i') ?>" class="form-control" style="width:190px">
+            <select name="annotation_type" class="form-control" style="width:130px"><option>deploy</option><option>migration</option><option>tuning</option><option>incident</option><option>other</option></select>
+            <input type="text" name="title" class="form-control" placeholder="<?= __('Annotation title') ?>" style="min-width:220px;flex:1">
+            <button type="submit" class="btn btn-primary btn-sm"><i class="fa fa-save"></i> <?= __('Save') ?></button>
+        </form>
+    </div>
+</div>
+
+<script>
+$(document).on('click', '#sv-preflight-btn', function() {
+    var url = $(this).data('url');
+    fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+        var lines = ['Verdict: ' + (data.verdict || 'unknown')];
+        (data.checks || []).forEach(function(c) {
+            lines.push((c.status || '?') + ' - ' + c.name + ': ' + (c.message || ''));
+        });
+        alert(lines.join("\n"));
+    }).catch(function(err) {
+        alert('Pre-flight failed: ' + err);
+    });
+});
+</script>
+
 <!-- ============================================================
      1) REPLICATION LAG GRAPHS
      ============================================================ -->
@@ -451,7 +645,7 @@ $(document).ready(function() {
 
     <!-- ---- Status ---- -->
     <div class="col-md-6">
-        <div class="sv-card">
+        <div class="sv-card" id="sv-repl-status">
             <div class="sv-card-head">
                 <span><i class="fa fa-heartbeat"></i> <?= __("Replication status") ?></span>
             </div>

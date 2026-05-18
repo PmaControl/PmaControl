@@ -17,6 +17,18 @@ use \Glial\Sgbd\Sgbd;
 use \App\Library\Chiffrement;
 use \App\Library\DryRun;
 use \App\Library\BinlogAnalyzer;
+use App\Library\FailoverPreflight;
+use App\Library\GtidSet;
+use App\Library\PerDatabaseLag;
+use App\Library\ReplicaReconnectTracker;
+use App\Library\ReplicationFiltersAudit;
+use App\Library\ReplicationHeartbeatCheck;
+use App\Library\ReplicationHealth;
+use App\Library\ReplicationMetadataDictionary;
+use App\Library\ReplicationRetentionForecast;
+use App\Library\ReplicationStuckSqlDetector;
+use App\Library\ReplicationUserSslAudit;
+use App\Library\SemiSyncAckSla;
 use Glial\Security\Csrf;
 
 /**
@@ -1446,6 +1458,18 @@ if (!empty($_GET['mysql_server']['id'])) {
         $data['slave_replication_variable_set_csrf_field'] = Csrf::DEFAULT_FIELD;
         $data['slave_replication_variable_set_csrf_token'] = Csrf::issueToken($_SESSION, self::SLAVE_REPLICATION_VARIABLE_SET_CSRF_SCOPE);
         $data['replication_variable_whitelist'] = self::replicationVariableWhitelist();
+        $data['replication_observability'] = $this->buildReplicationObservability(
+            $db,
+            (int)$id_mysql_server,
+            (string)$replication_name,
+            $data['slave'] ?? [],
+            $server ?? [],
+            $master_id ? (int)$master_id : null,
+            $data['all_connections'] ?? [],
+            $data['binlog_gap'] ?? null
+        );
+        $data['replication_annotation_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['replication_annotation_save_csrf_token'] = Csrf::issueToken($_SESSION, ReplicationAnnotation::SAVE_CSRF_SCOPE);
         if ($replication_name === '__new__' && self::normalizeSetupSourceServerId($id_mysql_server) !== null) {
             $data['slave_setup_source_csrf_field'] = Csrf::DEFAULT_FIELD;
             $data['slave_setup_source_csrf_token'] = Csrf::issueToken($_SESSION, self::SLAVE_SETUP_SOURCE_CSRF_SCOPE);
@@ -2027,6 +2051,172 @@ var chart = new Chart(ctx, {
 });
 })();
 ';
+    }
+
+    /**
+     * Issue #1280 — keep replication observability tied to the existing
+     * /slave/show data contract. Every primitive is computed from SHOW
+     * REPLICA/SLAVE STATUS, existing time-series rows or the small cache
+     * columns added by the migration; no parallel data model is required.
+     *
+     * @return array<string,mixed>
+     */
+    private function buildReplicationObservability(
+        object $db,
+        int $serverId,
+        string $replicationName,
+        array $slaveRow,
+        array $serverRow,
+        ?int $masterId,
+        array $connections,
+        ?array $binlogGap
+    ): array {
+        $filters = ReplicationFiltersAudit::audit($slaveRow);
+        $heartbeat = ReplicationHeartbeatCheck::evaluate($slaveRow);
+        $ssl = ReplicationUserSslAudit::audit($slaveRow);
+        $stuck = ReplicationStuckSqlDetector::detect($slaveRow, []);
+        $semiSync = SemiSyncAckSla::evaluate($this->loadLatestStatusMetrics($masterId ?: $serverId, [
+            'rpl_semi_sync_master_yes_tx',
+            'rpl_semi_sync_master_no_tx',
+            'rpl_semi_sync_master_avg_wait_time',
+        ]));
+
+        $errantSet = '';
+        if (empty($serverRow['errant_gtid_ignore'])) {
+            $errantSet = trim((string)($serverRow['errant_gtid_set'] ?? ''));
+        }
+        $sourceExecuted = (string)($slaveRow['Retrieved_Gtid_Set'] ?? '');
+        $replicaExecuted = (string)($slaveRow['Executed_Gtid_Set'] ?? $slaveRow['Gtid_IO_Pos'] ?? $slaveRow['Gtid_Slave_Pos'] ?? '');
+        if ($errantSet === '' && $sourceExecuted !== '' && $replicaExecuted !== '') {
+            $sourceSet = GtidSet::parse($sourceExecuted);
+            $replicaSet = GtidSet::parse($replicaExecuted);
+            if ($sourceSet->isCompatibleWith($replicaSet)) {
+                $errantSet = $replicaSet->subtract($sourceSet)->toString();
+            }
+        }
+
+        $context = [
+            'lag_sla_seconds' => (int)($serverRow['replica_lag_sla_seconds'] ?? 30),
+            'errant_gtid_set' => $errantSet,
+            'filters' => $filters,
+            'semi_sync' => $semiSync,
+            'ssl' => $ssl,
+            'stuck_sql' => $stuck,
+            'heartbeat' => $heartbeat,
+            'relay_log_purge' => $this->loadLatestVariableMetric($serverId, 'relay_log_purge') ?: 'ON',
+        ];
+        $health = ReplicationHealth::evaluate($slaveRow, $context);
+
+        return [
+            'health' => $health,
+            'gtid_drift' => [
+                'errant_set' => $errantSet,
+                'count' => GtidSet::parse($errantSet)->count(),
+                'source_executed' => $sourceExecuted,
+                'replica_executed' => $replicaExecuted,
+                'sampled_at' => (string)($serverRow['errant_gtid_sampled_at'] ?? ''),
+                'ignored' => !empty($serverRow['errant_gtid_ignore']),
+            ],
+            'channels' => $this->buildChannelDashboard($serverId, $connections),
+            'stuck_sql' => $stuck,
+            'filters' => $filters,
+            'semi_sync' => $semiSync,
+            'retention' => ReplicationRetentionForecast::forecast([
+                'retained_bytes' => (int)($binlogGap['bytes'] ?? 0),
+                'generation_rate_bytes_per_day' => 0,
+                'disk_free_bytes' => 0,
+                'configured_days' => (float)($this->loadLatestVariableMetric($masterId ?: $serverId, 'expire_logs_days') ?: 0),
+            ]),
+            'ssl' => $ssl,
+            'per_database_lag' => PerDatabaseLag::fromWorkerRows($this->loadWorkerRows($serverId, $replicationName)),
+            'reconnects' => ReplicaReconnectTracker::summarize('', []),
+            'heartbeat' => $heartbeat,
+            'failover_preflight' => FailoverPreflight::evaluate($slaveRow, $context + [
+                'health' => $health,
+                'semi_sync' => $semiSync,
+                'ssl' => $ssl,
+            ]),
+            'annotations' => $this->loadReplicationAnnotations($db, $serverId, $replicationName),
+        ];
+    }
+
+    /**
+     * @return list<array<string,mixed>>
+     */
+    private function buildChannelDashboard(int $serverId, array $connections): array
+    {
+        $cards = [];
+        foreach ($connections as $conn) {
+            $name = (string)($conn['name'] ?? '');
+            $cards[] = [
+                'name' => $name,
+                'label' => $name !== '' ? $name : 'default',
+                'lag' => $conn['lag'] ?? null,
+                'health' => (string)($conn['health'] ?? 'unknown'),
+                'url' => LINK . 'slave/show/' . $serverId . '/' . urlencode($name) . '/',
+            ];
+        }
+
+        return $cards;
+    }
+
+    private function loadLatestVariableMetric(int $serverId, string $name): ?string
+    {
+        $data = Extraction2::display(['variables::' . $name], [$serverId]);
+        return isset($data[$serverId][''][$name]) ? (string)$data[$serverId][''][$name] : null;
+    }
+
+    /**
+     * @param list<string> $names
+     * @return array<string,mixed>
+     */
+    private function loadLatestStatusMetrics(int $serverId, array $names): array
+    {
+        $vars = array_map(static fn(string $name): string => 'status::' . $name, $names);
+        $data = Extraction2::display($vars, [$serverId]);
+
+        return isset($data[$serverId]['']) && is_array($data[$serverId]['']) ? $data[$serverId][''] : [];
+    }
+
+    /**
+     * @return list<array<string,mixed>>
+     */
+    private function loadWorkerRows(int $serverId, string $replicationName): array
+    {
+        $data = Extraction2::display(['slave::replication_applier_status_by_worker'], [$serverId]);
+        $raw = $data[$serverId]['@slave'][$replicationName]['replication_applier_status_by_worker']
+            ?? $data[$serverId]['']['replication_applier_status_by_worker']
+            ?? '';
+        $decoded = is_string($raw) && $raw !== '' ? json_decode($raw, true) : [];
+
+        return is_array($decoded) ? array_values(array_filter($decoded, 'is_array')) : [];
+    }
+
+    /**
+     * @return list<array<string,mixed>>
+     */
+    private function loadReplicationAnnotations(object $db, int $serverId, string $replicationName): array
+    {
+        $check = $db->sql_query_silent("SELECT 1 FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'replication_annotation'");
+        if (!$check || !$db->sql_fetch_array($check, MYSQLI_ASSOC)) {
+            return [];
+        }
+
+        $serverId = (int)$serverId;
+        $cn = $db->sql_real_escape_string($replicationName);
+        $res = $db->sql_query(
+            "SELECT * FROM replication_annotation
+             WHERE (id_mysql_server = {$serverId} OR id_mysql_server = 0)
+               AND (connection_name = '' OR connection_name = '{$cn}')
+             ORDER BY annotation_time DESC
+             LIMIT 10"
+        );
+        $rows = [];
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $rows[] = $row;
+        }
+
+        return $rows;
     }
 
     /**
@@ -2689,6 +2879,81 @@ var chart = new Chart(ctx, {
         }
         header('Content-Type: application/json; charset=UTF-8');
         echo json_encode(['error' => $message]);
+    }
+
+    public function failoverPreflight($param)
+    {
+        $this->view = false;
+        header('Content-Type: application/json; charset=UTF-8');
+
+        $serverId = self::normalizeSetupSourceServerId($param[0] ?? null);
+        $connectionName = self::sanitizeConnectionName($param[1] ?? '');
+        if ($serverId === null) {
+            self::sendSlaveJsonError(400, 'Invalid server id');
+            return;
+        }
+
+        try {
+            $link = Mysql::getDbLink($serverId);
+            $rows = self::fetchReplicaStatusRows($link);
+            $selected = [];
+            foreach ($rows as $row) {
+                $cn = (string)($row['Connection_name'] ?? $row['Channel_Name'] ?? '');
+                if ($cn === $connectionName || ($connectionName === '' && $selected === [])) {
+                    $selected = $row;
+                    if ($cn === $connectionName) {
+                        break;
+                    }
+                }
+            }
+            echo json_encode(FailoverPreflight::evaluate($selected), JSON_UNESCAPED_SLASHES);
+        } catch (\Throwable $e) {
+            self::sendSlaveJsonError(503, 'Pre-flight failed: ' . $e->getMessage());
+        }
+    }
+
+    public function replicationMetadata($param)
+    {
+        $this->view = false;
+        header('Content-Type: application/json; charset=UTF-8');
+
+        $serverId = self::normalizeSetupSourceServerId($param[0] ?? null);
+        if ($serverId === null) {
+            self::sendSlaveJsonError(400, 'Invalid server id');
+            return;
+        }
+
+        try {
+            $link = Mysql::getDbLink($serverId);
+            $tables = [
+                'performance_schema.replication_connection_configuration',
+                'performance_schema.replication_connection_status',
+                'performance_schema.replication_applier_configuration',
+                'performance_schema.replication_applier_status_by_coordinator',
+                'performance_schema.replication_applier_status_by_worker',
+                'mysql.slave_master_info',
+                'mysql.slave_relay_log_info',
+            ];
+            $payload = [];
+            foreach ($tables as $table) {
+                $rows = [];
+                $res = $link->sql_query_silent('SELECT * FROM ' . $table . ' LIMIT 200');
+                if ($res) {
+                    while ($row = $link->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                        $rows[] = $row;
+                    }
+                }
+                $rows = ReplicationMetadataDictionary::maskSensitiveRows($rows);
+                $payload[$table] = [
+                    'rows' => $rows,
+                    'tooltips' => ReplicationMetadataDictionary::tooltipMapForRows($rows),
+                    'available' => $res !== false,
+                ];
+            }
+            echo json_encode($payload, JSON_UNESCAPED_SLASHES);
+        } catch (\Throwable $e) {
+            self::sendSlaveJsonError(503, 'Metadata read failed: ' . $e->getMessage());
+        }
     }
 
 /**
