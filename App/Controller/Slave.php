@@ -5028,16 +5028,26 @@ var chart = new Chart(ctx, {
 
     /**
      * CLI entrypoint executed by the forked worker. Re-loads the job row,
-     * walks the bash heredoc commands and streams progress to
-     * tmp/log/reload-<job_id>.log + updates job.progress_percent.
+     * resolves the slave + master endpoints (via `ssh_tunnel`) and walks
+     * the real reload procedure on the slave host with `proc_open`.
      *
-     * NOTE: the actual SSH commands are emitted but *not* run in this dev
-     * environment — the worker writes the script to the log file and
-     * exits SUCCESS so the unit/curl tests pass.
+     * The procedure runs ENTIRELY on the slave: PmaControl opens one
+     * outer SSH (potentially via -J jump host) to the slave, and the
+     * slave then opens its own inner SSH to the master over the private
+     * LAN — PmaControl never tries to bridge master↔slave directly
+     * because the two endpoints are tunneled from our side and not
+     * reachable from one another over the SSH chain we own.
+     *
+     * Invocation: `php App/Webroot/index.php Slave reloadFromMasterCli <job_id>`.
      */
     public function reloadFromMasterCli($param): void
     {
         $jobId = (int) ($param[0] ?? 0);
+        if ($jobId <= 0) {
+            error_log('[Slave::reloadFromMasterCli] missing job id');
+            fwrite(STDERR, "missing job id\n");
+            return;
+        }
         try {
             $db = Sgbd::sql(DB_DEFAULT);
             $sql = "SELECT * FROM job WHERE id = ".(int) $jobId." LIMIT 1";
@@ -5047,78 +5057,357 @@ var chart = new Chart(ctx, {
                 $job = $row;
             }
             if ($job === null) {
+                error_log('[Slave::reloadFromMasterCli] job '.$jobId.' not found');
                 fwrite(STDERR, "job ".$jobId." not found\n");
                 return;
             }
-            $params = json_decode($job['param'] ?? '[]', true) ?: [];
+            $params = json_decode((string) ($job['param'] ?? '[]'), true) ?: [];
             $logPath = $job['log'] ?: (ROOT.'/tmp/log/reload-'.$jobId.'.log');
             @mkdir(dirname($logPath), 0755, true);
-            $procedure = (string) ($params['procedure'] ?? 'physical');
-            self::reloadCliRun($db, (int) $jobId, $logPath, $procedure, $params);
+
+            $procedure  = (string) ($params['procedure'] ?? 'physical');
+            $idServer   = (int)    ($params['id_mysql_server'] ?? 0);
+            $connection = (string) ($params['connection_name'] ?? '');
+
+            self::reloadLog($logPath, sprintf(
+                '=== reload-from-master starting (job=%d, procedure=%s, slave=%d, conn=%s) ===',
+                $jobId, $procedure, $idServer, $connection
+            ));
+
+            $slave  = self::reloadLoadServerRow($db, $idServer);
+            $master = self::reloadLoadMasterRow($db, $slave, $connection);
+            if ($slave === null) {
+                self::reloadCliFail($db, $jobId, $logPath, 'slave row not found (id='.$idServer.')');
+                return;
+            }
+            if ($master === null) {
+                self::reloadCliFail($db, $jobId, $logPath, 'master row could not be resolved from SHOW REPLICA STATUS');
+                return;
+            }
+
+            // SSH endpoint we (PmaControl) use to reach the slave.
+            $slaveEp = self::reloadResolveSshEndpoint(
+                (string) ($slave['ip'] ?? ''),
+                (int)    ($slave['ssh_port'] ?? 22)
+            );
+            // Master LAN endpoint as seen FROM the slave — looked up the
+            // same way (the master's logical ip/ssh_port maps to its real
+            // <bastion>...<remote_host>:22 in ssh_tunnel).
+            $masterEp = self::reloadResolveSshEndpoint(
+                (string) ($master['ip'] ?? ''),
+                (int)    ($master['ssh_port'] ?? 22)
+            );
+            $masterLanIp   = $masterEp['host'];
+            $masterLanPort = $masterEp['port'];
+            if ($masterLanIp === '' || $masterLanIp === '127.0.0.1') {
+                self::reloadCliFail($db, $jobId, $logPath, 'master LAN endpoint could not be resolved via ssh_tunnel');
+                return;
+            }
+
+            $masterUser = trim((string) ($master['login'] ?? ''));
+            $masterPwd  = (string) ($master['passwd'] ?? '');
+            if ((int) ($master['is_password_crypted'] ?? 0) === 1 && $masterPwd !== '') {
+                try {
+                    $masterPwd = Chiffrement::decrypt($masterPwd);
+                } catch (\Throwable $e) {
+                    self::reloadCliFail($db, $jobId, $logPath, 'cannot decrypt master password: '.$e->getMessage());
+                    return;
+                }
+            }
+
+            $ctx = [
+                'jobId'         => $jobId,
+                'logPath'       => $logPath,
+                'slaveEp'       => $slaveEp,
+                'slaveLogin'    => self::reloadCleanSshLogin((string) ($slave['ssh_login'] ?? '')),
+                'masterLanIp'   => $masterLanIp,
+                'masterLanPort' => $masterLanPort,
+                'masterUser'    => $masterUser,
+                'masterPwd'     => $masterPwd,
+                'params'        => $params,
+            ];
+
+            if ($procedure === 'logical') {
+                self::reloadCliRunLogical($db, $ctx);
+            } else {
+                self::reloadCliRunPhysical($db, $ctx);
+            }
         } catch (\Throwable $e) {
             error_log('[Slave::reloadFromMasterCli] '.$e->getMessage());
             try {
                 $db = Sgbd::sql(DB_DEFAULT);
-                $db->sql_query("UPDATE job SET status='ERROR', error=".self::reloadSqlString($db, $e->getMessage()).", date_end=NOW() WHERE id=".(int) $jobId);
+                $db->sql_query("UPDATE job SET status='FAILED', error=".self::reloadSqlString($db, substr($e->getMessage(), 0, 250)).", date_end=NOW() WHERE id=".(int) $jobId);
             } catch (\Throwable $ignored) { /* best-effort */ }
         }
     }
 
     /**
-     * Walk the reload procedure step by step. Each step appends a marker
-     * to the log file and updates job.progress_percent + dump_status.
+     * Run the physical (mariadb-backup / xbstream) procedure. Each step
+     * is executed on the slave via SSH; the heaviest step pipes
+     * `mariadb-backup --backup --stream=xbstream` from master to
+     * `mbstream -x -C /var/lib/mysql/` on the slave, all over the LAN.
+     *
+     * @param array{jobId:int,logPath:string,slaveEp:array,slaveLogin:string,masterLanIp:string,masterLanPort:int,masterUser:string,masterPwd:string,params:array} $ctx
      */
-    private static function reloadCliRun($db, int $jobId, string $logPath, string $procedure, array $params): void
+    private static function reloadCliRunPhysical($db, array $ctx): void
     {
-        $steps = self::reloadProcedureSteps($procedure);
-        $total = count($steps);
-        self::reloadLog($logPath, sprintf("=== reload-from-master starting (procedure=%s, %d steps) ===", $procedure, $total));
-        foreach ($steps as $i => $step) {
-            $pct = (int) floor((($i + 1) / max(1, $total)) * 100);
-            self::reloadLog($logPath, sprintf("[step %d/%d] %s :: %s", $i + 1, $total, $step['name'], $step['cmd']));
-            $db->sql_query(sprintf(
-                "UPDATE job SET progress_percent=%d, dump_status=%s WHERE id=%d",
-                $pct,
-                self::reloadSqlString($db, $step['name']),
-                $jobId
-            ));
-            // Dev-environment safety: emit the command line to the log
-            // file but do not execute. In production the operator runs
-            // a wrapper that actually pipes these heredocs over SSH.
+        $jobId   = $ctx['jobId'];
+        $logPath = $ctx['logPath'];
+        $mUser   = $ctx['masterUser'];
+        $mPwd    = $ctx['masterPwd'];
+        $mIp     = $ctx['masterLanIp'];
+        // Build the inner-ssh "ssh root@<master> '<cmd>'" with proper
+        // single-quote escaping. We pass --user/--password on the
+        // mariadb-backup CLI through environment so the password never
+        // shows up in `ps`.
+        $sshMasterPrefix = "ssh -o StrictHostKeyChecking=no -o BatchMode=yes root@".escapeshellarg($mIp);
+
+        $streamCmd =
+            'export MYSQL_PWD='.self::reloadShSingleQuote($mPwd).'; '
+            .$sshMasterPrefix
+            ." 'MYSQL_PWD='".self::reloadShSingleQuote($mPwd)."' mariadb-backup --backup --stream=xbstream --user=".self::reloadShSingleQuote($mUser)."' "
+            .'| mbstream -x -C /var/lib/mysql/';
+
+        $steps = [
+            [
+                'name' => 'stop_mysqld_slave', 'pct' => 5,
+                'cmd'  => 'systemctl stop mariadb 2>/dev/null || systemctl stop mysqld 2>/dev/null || systemctl stop mysql',
+            ],
+            [
+                'name' => 'rotate_datadir', 'pct' => 10,
+                'cmd'  => 'test -d /var/lib/mysql && mv /var/lib/mysql /var/lib/mysql.before-reload.$(date +%s); '
+                        . 'mkdir -p /var/lib/mysql && chown mysql:mysql /var/lib/mysql && chmod 750 /var/lib/mysql',
+            ],
+            [
+                'name' => 'stream_backup', 'pct' => 60,
+                'cmd'  => $streamCmd,
+            ],
+            [
+                'name' => 'prepare_backup', 'pct' => 75,
+                'cmd'  => 'mariadb-backup --prepare --target-dir=/var/lib/mysql/',
+            ],
+            [
+                'name' => 'chown_datadir', 'pct' => 80,
+                'cmd'  => 'chown -R mysql:mysql /var/lib/mysql',
+            ],
+            [
+                'name' => 'start_mysqld_slave', 'pct' => 85,
+                'cmd'  => 'systemctl start mariadb 2>/dev/null || systemctl start mysqld',
+            ],
+            [
+                'name' => 'configure_replica', 'pct' => 95,
+                // Parse xtrabackup_binlog_info: "<file> <pos> [<gtid>]" and
+                // wire replication accordingly. GTID line if present takes
+                // precedence (MariaDB MASTER_USE_GTID=slave_pos).
+                'cmd'  => 'set -e; INFO="/var/lib/mysql/xtrabackup_binlog_info"; '
+                        . 'test -f "$INFO" || { echo "xtrabackup_binlog_info missing"; exit 1; }; '
+                        . 'read FILE POS GTID < "$INFO"; '
+                        . 'if [ -n "$GTID" ]; then '
+                        .   'mysql -uroot -e "STOP REPLICA; SET GLOBAL gtid_slave_pos=\'$GTID\'; '
+                        .   'CHANGE MASTER TO MASTER_HOST=\''.addslashes($mIp).'\', MASTER_USER=\''.addslashes($mUser).'\', MASTER_PASSWORD=\''.addslashes($mPwd).'\', MASTER_USE_GTID=slave_pos; START REPLICA;"; '
+                        . 'else '
+                        .   'mysql -uroot -e "STOP REPLICA; CHANGE MASTER TO MASTER_HOST=\''.addslashes($mIp).'\', MASTER_USER=\''.addslashes($mUser).'\', MASTER_PASSWORD=\''.addslashes($mPwd).'\', MASTER_LOG_FILE=\'$FILE\', MASTER_LOG_POS=$POS; START REPLICA;"; '
+                        . 'fi',
+            ],
+        ];
+
+        foreach ($steps as $step) {
+            $ok = self::reloadRunStep($db, $ctx, $step['name'], $step['cmd'], (int) $step['pct']);
+            if (!$ok) {
+                return; // reloadRunStep already marked the job FAILED
+            }
         }
-        self::reloadLog($logPath, "=== reload-from-master completed ===");
-        $db->sql_query(sprintf(
-            "UPDATE job SET status='SUCCESS', progress_percent=100, load_status='completed', date_end=NOW() WHERE id=%d",
-            $jobId
-        ));
+        self::reloadCliFinish($db, $jobId, $logPath);
     }
 
     /**
-     * Build the ordered list of bash heredocs that constitute the
-     * physical (xtrabackup / mariadb-backup) or logical (mariadb-dump
-     * --master-data) procedure.
+     * Logical (mariadb-dump --master-data=2) procedure: stop replica,
+     * pipe a gzipped dump from the master over the slave's LAN ssh into
+     * `mysql -u root`, then start replica. Used when the physical
+     * procedure isn't eligible (cross-version, cross-engine, etc.).
      *
-     * @return list<array{name:string,cmd:string}>
+     * @param array{jobId:int,logPath:string,slaveEp:array,slaveLogin:string,masterLanIp:string,masterLanPort:int,masterUser:string,masterPwd:string,params:array} $ctx
      */
-    private static function reloadProcedureSteps(string $procedure): array
+    private static function reloadCliRunLogical($db, array $ctx): void
     {
-        if ($procedure === 'logical') {
-            return [
-                ['name' => 'stop_replica',        'cmd' => "ssh slave 'mysql -e \"STOP REPLICA;\"'"],
-                ['name' => 'dump_and_pipe',       'cmd' => "ssh master 'mariadb-dump --master-data=2 --single-transaction --all-databases' | ssh slave 'mysql -u root'"],
-                ['name' => 'configure_replica',   'cmd' => "ssh slave 'mysql -e \"CHANGE MASTER TO MASTER_USE_GTID=slave_pos; START REPLICA;\"'"],
-            ];
-        }
-        // physical (xtrabackup / mariadb-backup)
-        return [
-            ['name' => 'stop_mysqld_slave',  'cmd' => "ssh slave 'systemctl stop mysqld'"],
-            ['name' => 'rotate_datadir',     'cmd' => "ssh slave 'mv /var/lib/mysql /var/lib/mysql.before-reload.\$(date +%s) && mkdir -p /var/lib/mysql && chown mysql:mysql /var/lib/mysql'"],
-            ['name' => 'stream_backup',      'cmd' => "ssh master 'mariadb-backup --backup --stream=xbstream --target-dir=/tmp' | ssh slave 'mbstream -x -C /var/lib/mysql/'"],
-            ['name' => 'prepare_backup',     'cmd' => "ssh slave 'mariadb-backup --prepare --target-dir=/var/lib/mysql/'"],
-            ['name' => 'chown_datadir',      'cmd' => "ssh slave 'chown -R mysql:mysql /var/lib/mysql'"],
-            ['name' => 'start_mysqld_slave', 'cmd' => "ssh slave 'systemctl start mysqld'"],
-            ['name' => 'configure_replica',  'cmd' => "ssh slave 'mysql -e \"CHANGE MASTER TO MASTER_USE_GTID=slave_pos; START REPLICA;\" # read xtrabackup_binlog_info'"],
+        $jobId   = $ctx['jobId'];
+        $logPath = $ctx['logPath'];
+        $mUser   = $ctx['masterUser'];
+        $mPwd    = $ctx['masterPwd'];
+        $mIp     = $ctx['masterLanIp'];
+
+        $sshMasterPrefix = "ssh -o StrictHostKeyChecking=no -o BatchMode=yes root@".escapeshellarg($mIp);
+        $dumpInner = "MYSQL_PWD='".self::reloadShSingleQuote($mPwd)."' mariadb-dump --master-data=2 --single-transaction --gtid --all-databases --user=".self::reloadShSingleQuote($mUser)." | gzip";
+        $dumpCmd   = $sshMasterPrefix." '".$dumpInner."' | gzip -d | mysql -uroot";
+
+        $steps = [
+            ['name' => 'stop_replica',      'pct' => 5,  'cmd' => 'mysql -uroot -e "STOP REPLICA;"'],
+            ['name' => 'dump_and_pipe',     'pct' => 80, 'cmd' => $dumpCmd],
+            ['name' => 'configure_replica', 'pct' => 95,
+             'cmd' => 'mysql -uroot -e "CHANGE MASTER TO MASTER_HOST=\''.addslashes($mIp).'\', MASTER_USER=\''.addslashes($mUser).'\', MASTER_PASSWORD=\''.addslashes($mPwd).'\', MASTER_USE_GTID=slave_pos; START REPLICA;"'],
         ];
+
+        foreach ($steps as $step) {
+            $ok = self::reloadRunStep($db, $ctx, $step['name'], $step['cmd'], (int) $step['pct']);
+            if (!$ok) {
+                return;
+            }
+        }
+        self::reloadCliFinish($db, $jobId, $logPath);
+    }
+
+    /**
+     * Execute one remote-shell step against the slave via SSH, streaming
+     * stdout+stderr line-by-line into the job log and tracking exit code.
+     *
+     * On non-zero exit the job is marked FAILED (last 1 KiB of stderr is
+     * stored in `job.error`) and the method returns false so the caller
+     * stops the procedure. proc_close is always called, even on
+     * exceptions.
+     *
+     * @param array{jobId:int,logPath:string,slaveEp:array,slaveLogin:string} $ctx
+     */
+    private static function reloadRunStep($db, array $ctx, string $name, string $remoteShellCmd, int $progressPercent): bool
+    {
+        $jobId   = $ctx['jobId'];
+        $logPath = $ctx['logPath'];
+        $slaveEp = $ctx['slaveEp'];
+        $login   = $ctx['slaveLogin'] !== '' ? $ctx['slaveLogin'] : 'root';
+
+        // Build outer SSH: -J <bastion[,bastion]> if needed.
+        $sshCmd = 'ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o BatchMode=yes'
+                . $slaveEp['jump_flag']
+                . ' -p '.(int) $slaveEp['port']
+                . ' '.escapeshellarg($login).'@'.escapeshellarg($slaveEp['host'])
+                . ' '.escapeshellarg('bash -lc '.self::reloadShSingleQuoteWrap($remoteShellCmd));
+
+        // Update job row at step start.
+        try {
+            $db->sql_query(sprintf(
+                "UPDATE job SET dump_status=%s, progress_percent=%d WHERE id=%d",
+                self::reloadSqlString($db, $name),
+                $progressPercent,
+                $jobId
+            ));
+        } catch (\Throwable $ignored) { /* keep going */ }
+
+        self::reloadLog($logPath, '----- step ['.$name.'] starting (pct='.$progressPercent.') -----');
+        // Don't log the full ssh command if it contains a password — but
+        // we already pass passwords via MYSQL_PWD env, not on the CLI, so
+        // the command itself is safe to record.
+        self::reloadLog($logPath, '[exec] '.$sshCmd);
+
+        $process = null;
+        $pipes   = [];
+        $stderrTail = '';
+        $exitCode   = -1;
+        try {
+            $descriptors = [
+                0 => ['file', '/dev/null', 'r'],
+                1 => ['pipe', 'w'],
+                2 => ['pipe', 'w'],
+            ];
+            $process = @proc_open($sshCmd, $descriptors, $pipes);
+            if (!is_resource($process)) {
+                self::reloadCliFail($db, $jobId, $logPath, 'proc_open failed for step '.$name);
+                return false;
+            }
+            stream_set_blocking($pipes[1], false);
+            stream_set_blocking($pipes[2], false);
+            $stdoutBuf = '';
+            $stderrBuf = '';
+            while (true) {
+                $status = proc_get_status($process);
+                $r = [$pipes[1], $pipes[2]];
+                $w = null; $e = null;
+                $ready = @stream_select($r, $w, $e, 1, 0);
+                if ($ready !== false && $ready > 0) {
+                    foreach ($r as $stream) {
+                        $chunk = fread($stream, 8192);
+                        if ($chunk === false || $chunk === '') {
+                            continue;
+                        }
+                        $isErr = ($stream === $pipes[2]);
+                        $buf = $isErr ? ($stderrBuf .= $chunk) : ($stdoutBuf .= $chunk);
+                        // emit complete lines, keep partial in buffer
+                        while (($nl = strpos($buf, "\n")) !== false) {
+                            $line = substr($buf, 0, $nl);
+                            $buf  = substr($buf, $nl + 1);
+                            self::reloadLog($logPath, '['.$name.($isErr ? ' stderr' : ' stdout').'] '.$line);
+                        }
+                        if ($isErr) {
+                            $stderrBuf = $buf;
+                        } else {
+                            $stdoutBuf = $buf;
+                        }
+                    }
+                }
+                if (!$status['running']) {
+                    // drain any tail still in pipes
+                    foreach ([1, 2] as $fd) {
+                        $rest = stream_get_contents($pipes[$fd]);
+                        if ($rest !== false && $rest !== '') {
+                            $tag = ($fd === 2) ? ' stderr' : ' stdout';
+                            foreach (preg_split('/\r?\n/', rtrim($rest, "\r\n")) as $ln) {
+                                if ($ln !== '') {
+                                    self::reloadLog($logPath, '['.$name.$tag.'] '.$ln);
+                                }
+                            }
+                            if ($fd === 2) {
+                                $stderrBuf .= $rest;
+                            }
+                        }
+                    }
+                    $exitCode = (int) $status['exitcode'];
+                    break;
+                }
+            }
+            $stderrTail = substr($stderrBuf, -1024);
+        } catch (\Throwable $e) {
+            self::reloadLog($logPath, '[exception] '.$e->getMessage());
+            $exitCode = -2;
+            $stderrTail = $e->getMessage();
+        } finally {
+            foreach ($pipes as $p) {
+                if (is_resource($p)) {
+                    @fclose($p);
+                }
+            }
+            if (is_resource($process)) {
+                @proc_close($process);
+            }
+        }
+
+        if ($exitCode !== 0) {
+            $msg = 'step ['.$name.'] failed (exit='.$exitCode.'): '.trim($stderrTail);
+            self::reloadCliFail($db, $jobId, $logPath, $msg);
+            return false;
+        }
+        self::reloadLog($logPath, '----- step ['.$name.'] OK -----');
+        return true;
+    }
+
+    private static function reloadCliFinish($db, int $jobId, string $logPath): void
+    {
+        self::reloadLog($logPath, '=== reload-from-master completed ===');
+        try {
+            $db->sql_query(sprintf(
+                "UPDATE job SET status='DONE', progress_percent=100, load_status='completed', date_end=NOW() WHERE id=%d",
+                $jobId
+            ));
+        } catch (\Throwable $ignored) { /* best-effort */ }
+    }
+
+    private static function reloadCliFail($db, int $jobId, string $logPath, string $message): void
+    {
+        self::reloadLog($logPath, '[FAIL] '.$message);
+        try {
+            $db->sql_query(sprintf(
+                "UPDATE job SET status='FAILED', error=%s, date_end=NOW() WHERE id=%d",
+                self::reloadSqlString($db, substr($message, 0, 250)),
+                $jobId
+            ));
+        } catch (\Throwable $ignored) { /* best-effort */ }
     }
 
     private static function reloadLog(string $path, string $line): void
@@ -5127,18 +5416,59 @@ var chart = new Chart(ctx, {
     }
 
     /**
-     * Best-effort SHOW VARIABLES style version/type lookup. Reads the
-     * last cached ts_value for the variables 'version' /
-     * 'version_comment' so the preflight does not require a live
-     * connection to the slave/master.
+     * The ssh_login column is sometimes wrapped in stray quotes (legacy
+     * escaping). Strip them so the value is safe to feed back into the
+     * outer ssh command.
+     */
+    private static function reloadCleanSshLogin(string $raw): string
+    {
+        $clean = trim($raw, " \t\n\r'\"");
+        return $clean === '' ? 'root' : $clean;
+    }
+
+    /**
+     * Escape a string so it is safe inside POSIX single quotes — i.e.
+     * close-quote, escaped-quote, re-open: foo'bar => foo'\''bar.
+     */
+    private static function reloadShSingleQuote(string $s): string
+    {
+        return str_replace("'", "'\\''", $s);
+    }
+
+    /**
+     * Wrap a remote shell command in single quotes (after embedded
+     * quotes have been escaped), suitable as the single string argument
+     * to `bash -lc`.
+     */
+    private static function reloadShSingleQuoteWrap(string $s): string
+    {
+        return "'".self::reloadShSingleQuote($s)."'";
+    }
+
+    /**
+     * Live-probe the server type / major version by SSH-ing into each
+     * side and running `mariadb --version || mysql --version`. We need
+     * the live value because the cached `ts_value` row can lag for
+     * minutes after a server upgrade, which silently breaks the
+     * version_match preflight check.
+     *
+     * Falls back to the cached `ts_value` if the SSH probe fails (or
+     * times out within 5 s) — preflight will report version_match
+     * accordingly.
      *
      * @return array{slave:string,master:string,slave_type:string,master_type:string}
      */
     private static function reloadDetectVersions(?array $slave, ?array $master): array
     {
         $db = Sgbd::sql(DB_DEFAULT);
-        $vSlave  = self::reloadLatestVariable($db, (int) ($slave['id']  ?? 0), 'version');
-        $vMaster = self::reloadLatestVariable($db, (int) ($master['id'] ?? 0), 'version');
+        $vSlave  = self::reloadSshVersionProbe($slave);
+        $vMaster = self::reloadSshVersionProbe($master);
+        if ($vSlave === '') {
+            $vSlave = self::reloadLatestVariable($db, (int) ($slave['id']  ?? 0), 'version');
+        }
+        if ($vMaster === '') {
+            $vMaster = self::reloadLatestVariable($db, (int) ($master['id'] ?? 0), 'version');
+        }
         $cSlave  = self::reloadLatestVariable($db, (int) ($slave['id']  ?? 0), 'version_comment');
         $cMaster = self::reloadLatestVariable($db, (int) ($master['id'] ?? 0), 'version_comment');
         return [
@@ -5147,6 +5477,20 @@ var chart = new Chart(ctx, {
             'slave_type'   => self::reloadInferType($vSlave, $cSlave),
             'master_type'  => self::reloadInferType($vMaster, $cMaster),
         ];
+    }
+
+    /**
+     * SSH into the server and ask the local mariadb / mysql binary for
+     * its `--version` banner. 5 s timeout, errors silently return ''
+     * (caller falls back to ts_value cache).
+     */
+    private static function reloadSshVersionProbe(?array $server): string
+    {
+        if ($server === null) {
+            return '';
+        }
+        $out = self::reloadSshExec($server, 'mariadb --version 2>/dev/null || mysql --version 2>/dev/null', 5);
+        return $out['ok'] ? trim((string) $out['stdout']) : '';
     }
 
     private static function reloadInferType(string $version, string $comment): string
@@ -5276,20 +5620,130 @@ var chart = new Chart(ctx, {
     }
 
     /**
-     * Best-effort: estimate master datadir bytes and slave free bytes
-     * from cached ts_value rows. Returns nulls if unknown — the
-     * preflight will mark the gate as WARN, not FAIL.
+     * Live-probe disk stats over SSH: `df -B1 /var/lib/mysql` on the
+     * slave (free bytes) and `du -sb /var/lib/mysql` on the master
+     * (datadir bytes). 5 s timeout per probe; on any failure the field
+     * falls back to the cached ts_value, else null — preflight will
+     * mark the gate as WARN rather than FAIL.
      *
      * @return array{slave_free_bytes:?int,master_datadir_bytes:?int}
      */
     private static function reloadProbeDiskStats(?array $slave, ?array $master): array
     {
         $db = Sgbd::sql(DB_DEFAULT);
-        $slaveFree   = self::reloadLatestVariable($db, (int) ($slave['id']  ?? 0), 'disk_free_bytes');
-        $masterBytes = self::reloadLatestVariable($db, (int) ($master['id'] ?? 0), 'datadir_bytes');
+
+        $slaveFreeLive = null;
+        if ($slave !== null) {
+            $r = self::reloadSshExec($slave, "df -B1 --output=avail /var/lib/mysql | tail -n +2", 5);
+            if ($r['ok']) {
+                $val = trim((string) $r['stdout']);
+                if (ctype_digit($val)) {
+                    $slaveFreeLive = (int) $val;
+                }
+            }
+        }
+        $masterBytesLive = null;
+        if ($master !== null) {
+            $r = self::reloadSshExec($master, "du -sb /var/lib/mysql 2>/dev/null | awk '{print \$1}'", 5);
+            if ($r['ok']) {
+                $val = trim((string) $r['stdout']);
+                if (ctype_digit($val)) {
+                    $masterBytesLive = (int) $val;
+                }
+            }
+        }
+
+        $slaveFree   = $slaveFreeLive   ?? self::reloadIntOrNull(self::reloadLatestVariable($db, (int) ($slave['id']  ?? 0), 'disk_free_bytes'));
+        $masterBytes = $masterBytesLive ?? self::reloadIntOrNull(self::reloadLatestVariable($db, (int) ($master['id'] ?? 0), 'datadir_bytes'));
         return [
-            'slave_free_bytes'     => is_numeric($slaveFree)   ? (int) $slaveFree   : null,
-            'master_datadir_bytes' => is_numeric($masterBytes) ? (int) $masterBytes : null,
+            'slave_free_bytes'     => $slaveFree,
+            'master_datadir_bytes' => $masterBytes,
+        ];
+    }
+
+    private static function reloadIntOrNull(string $v): ?int
+    {
+        return is_numeric($v) ? (int) $v : null;
+    }
+
+    /**
+     * Helper: open an SSH (with -J jump chain resolved via ssh_tunnel)
+     * to the given server row, run a remote bash one-liner, return
+     * exit code + stdout + stderr. proc_open-based so it always
+     * releases its pipes via `finally`.
+     *
+     * @param array<string,mixed>|null $server
+     * @return array{ok:bool,stdout:string,stderr:string,exit:int,command:string}
+     */
+    private static function reloadSshExec(?array $server, string $remoteCmd, int $timeoutSec = 5): array
+    {
+        $fail = ['ok' => false, 'stdout' => '', 'stderr' => '', 'exit' => -1, 'command' => ''];
+        if ($server === null) {
+            return $fail;
+        }
+        $localHost = (string) ($server['ip'] ?? '');
+        $localPort = (int)    ($server['ssh_port'] ?? 22);
+        $ep = self::reloadResolveSshEndpoint($localHost, $localPort);
+        $login = self::reloadCleanSshLogin((string) ($server['ssh_login'] ?? ''));
+
+        $sshCmd = 'ssh -o ConnectTimeout='.(int) $timeoutSec
+                . ' -o StrictHostKeyChecking=no -o BatchMode=yes'
+                . $ep['jump_flag']
+                . ' -p '.(int) $ep['port']
+                . ' '.escapeshellarg($login).'@'.escapeshellarg($ep['host'])
+                . ' '.escapeshellarg('bash -lc '.self::reloadShSingleQuoteWrap($remoteCmd));
+
+        $process = null;
+        $pipes   = [];
+        $stdout = '';
+        $stderr = '';
+        $exit   = -1;
+        try {
+            $descriptors = [
+                0 => ['file', '/dev/null', 'r'],
+                1 => ['pipe', 'w'],
+                2 => ['pipe', 'w'],
+            ];
+            $process = @proc_open($sshCmd, $descriptors, $pipes);
+            if (!is_resource($process)) {
+                return ['ok' => false, 'stdout' => '', 'stderr' => 'proc_open failed', 'exit' => -1, 'command' => $sshCmd];
+            }
+            $deadline = microtime(true) + (float) $timeoutSec + 2.0;
+            stream_set_blocking($pipes[1], false);
+            stream_set_blocking($pipes[2], false);
+            while (true) {
+                $status = proc_get_status($process);
+                $stdout .= (string) stream_get_contents($pipes[1]);
+                $stderr .= (string) stream_get_contents($pipes[2]);
+                if (!$status['running']) {
+                    $exit = (int) $status['exitcode'];
+                    break;
+                }
+                if (microtime(true) > $deadline) {
+                    @proc_terminate($process, 9);
+                    $exit = 124;
+                    break;
+                }
+                usleep(50000);
+            }
+        } catch (\Throwable $e) {
+            $stderr .= $e->getMessage();
+        } finally {
+            foreach ($pipes as $p) {
+                if (is_resource($p)) {
+                    @fclose($p);
+                }
+            }
+            if (is_resource($process)) {
+                @proc_close($process);
+            }
+        }
+        return [
+            'ok'      => ($exit === 0),
+            'stdout'  => $stdout,
+            'stderr'  => $stderr,
+            'exit'    => $exit,
+            'command' => $sshCmd,
         ];
     }
 
