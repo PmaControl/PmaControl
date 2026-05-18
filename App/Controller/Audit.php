@@ -390,7 +390,7 @@ class Audit extends Controller {
         $db = Sgbd::sql(DB_DEFAULT);
         $id_mysql_server = $param[0];
 
-        $sql ="SELECT * FROM mysql_server where id=".$id_mysql_server.";";
+        $sql ="SELECT * FROM mysql_server PARTITION(pn) where id=".$id_mysql_server.";";
 
         $res = $db->sql_query($sql);
 
@@ -943,9 +943,9 @@ performance_schema_digests_size
 
         Debug::debug($id_dot3_cluster, "CLSUTER NUMBER");
 
-        $sql2 = "SELECT a.id_mysql_server,b.display_name 
+        $sql2 = "SELECT a.id_mysql_server,b.display_name
         FROM dot3_cluster__mysql_server a
-        INNER JOIN mysql_server b ON a.id_mysql_server = b.id
+        INNER JOIN mysql_server PARTITION(pn) b ON a.id_mysql_server = b.id
         WHERE a.id_dot3_cluster=".$id_dot3_cluster." AND a.id_mysql_server IN(".$id_mysql_servers.") AND is_proxy=0;";
         
         $server_name = [];
@@ -1804,7 +1804,7 @@ La suppression des index inutilisés permet donc d’améliorer les performances
         }
 
         return "SELECT
-            variable_name,".implode(',', $inter)." FROM global_variable
+            variable_name,".implode(',', $inter)." FROM global_variable PARTITION(pn)
         WHERE id_mysql_server IN (".ServerIdSelection::toCsv($id_mysql_servers).")
         GROUP BY variable_name
         HAVING COUNT(DISTINCT value) > 1

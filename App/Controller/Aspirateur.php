@@ -433,7 +433,7 @@ class Aspirateur extends Controller
         $detectedServerBanner = '';
 
         $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT is_proxy, is_vip, ip, port FROM mysql_server WHERE id=".$id_mysql_server;
+        $sql = "SELECT is_proxy, is_vip, ip, port FROM mysql_server PARTITION(pn) WHERE id=".$id_mysql_server;
         $res = $db->sql_query($sql);
 
         while($ob = $db->sql_fetch_object($res)) {
@@ -617,7 +617,7 @@ class Aspirateur extends Controller
 
             $data = array();
             $db  = Sgbd::sql(DB_DEFAULT);
-            $sql ="SELECT id FROM mysql_server WHERE id=".$id_mysql_server." AND `is_proxy`!=1";
+            $sql ="SELECT id FROM mysql_server PARTITION(pn) WHERE id=".$id_mysql_server." AND `is_proxy`!=1";
             $res = $db->sql_query($sql);
             while ($ob = $db->sql_fetch_object($res)){
                 $sql = "UPDATE `mysql_server` SET `is_proxy`=1 WHERE `id`=".$id_mysql_server." AND `is_proxy`!=1;";
@@ -1509,7 +1509,7 @@ class Aspirateur extends Controller
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT a.id, a.ip,c.user,c.private_key FROM `mysql_server` a
+        $sql = "SELECT a.id, a.ip,c.user,c.private_key FROM `mysql_server` PARTITION(pn) a
         INNER JOIN `link__mysql_server__ssh_key` b ON a.id = b.id_mysql_server
         INNER JOIN `ssh_key` c on c.id = b.id_ssh_key
         where a.id=".$id_mysql_server." AND b.`active` = 1 LIMIT 1;";
