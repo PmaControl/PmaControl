@@ -142,6 +142,9 @@ final class Dot3JsonToDotComparisonTest extends TestCase
         $this->assertStringContainsString('db-replica-3', $dot);
         $this->assertStringContainsString('1:target -> 2:target', $dot);
         $this->assertStringContainsString('1:target -> 3:target', $dot);
+        $this->assertStringNotContainsString('HA by Repman', $dot);
+        $this->assertStringNotContainsString('cluster_repman_ha', $dot);
+        $this->assertStringNotContainsString('10.68.68.156', $dot);
     }
 
     /**

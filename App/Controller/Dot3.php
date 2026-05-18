@@ -1915,8 +1915,6 @@ class Dot3 extends Controller
             $dot .= Graphviz::generateServer($server);
         }
 
-        $dot .= Graphviz::generateRepmanHaOverlay(self::$build_server);
-
         $dot .= Graphviz::generateGalera(self::$build_galera);
         $dot .= Graphviz::generateInnoDBCluster(self::$build_innodb_cluster);
         $dot .= Graphviz::generateNdbCluster(self::$build_ndb_cluster);
