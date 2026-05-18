@@ -61,6 +61,45 @@ class Job extends Controller {
  * @since 5.0
  * @version 1.0
  */
+    /**
+     * AJAX poll endpoint used by App/Webroot/js/Job/index.js to drive
+     * the percent-bar updates on long-running reload jobs.
+     *
+     * URL: /Job/progress/<job_id>/ajax:true/
+     * Output: {"id":N,"status":"RUNNING","progress_percent":42,"dump_status":"stream_backup"}
+     *
+     * Wrapped in try/catch so any failure produces an HTTP 500 JSON
+     * payload rather than a debug-footer that would corrupt the JS
+     * parser.
+     */
+    public function progress($param) {
+        $this->layout_name = false;
+        $this->view = false;
+        header('Content-Type: application/json');
+        try {
+            $id = (int) ($param[0] ?? 0);
+            $db = Sgbd::sql(DB_DEFAULT);
+            $sql = "SELECT id, status, progress_percent, dump_status, load_status, date_end
+                      FROM `job` WHERE id = ".$id." LIMIT 1";
+            $res = $db->sql_query($sql);
+            $out = ['id' => $id, 'status' => null, 'progress_percent' => null];
+            while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                $out = [
+                    'id'               => (int) $row['id'],
+                    'status'           => (string) $row['status'],
+                    'progress_percent' => $row['progress_percent'] === null ? null : (int) $row['progress_percent'],
+                    'dump_status'      => $row['dump_status'],
+                    'load_status'      => $row['load_status'],
+                    'date_end'         => $row['date_end'],
+                ];
+            }
+            echo json_encode($out);
+        } catch (\Throwable $e) {
+            http_response_code(500);
+            echo json_encode(['error' => $e->getMessage()]);
+        }
+    }
+
     public function index() {
         $db = Sgbd::sql(DB_DEFAULT);
         $sql = "SELECT * from `job` ORDER BY date_start DESC LIMIT 20;";

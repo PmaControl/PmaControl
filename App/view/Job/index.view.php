@@ -115,7 +115,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 : $redactedParam;
             ?>
 
-            <tr>
+            <tr data-job-id="<?= (int) $job['id'] ?>" data-job-status="<?= htmlspecialchars((string) $job['status']) ?>">
                 <td><?= $i ?></td>
                 <td><?= $job['class'] ?></td>
                 <td><?= $job['method'] ?></td>
@@ -127,7 +127,19 @@ document.addEventListener('DOMContentLoaded', function () {
                 <td><?= $job['date_start'] ?></td>
                 <td><?= $job['date_end'] ?></td>
                 <td><?= $job['pid'] ?></td>
-                <td><big><span class="label label-<?= getBadge($job['status']) ?>"><?= $job['status'] ?></span></big>
+                <td><big><span class="label label-<?= getBadge($job['status']) ?>" data-role="job-status-badge"><?= $job['status'] ?></span></big>
+                <?php if ($job['progress_percent'] !== null && $job['status'] === 'RUNNING'): ?>
+                    <div class="progress" style="margin-top:6px;margin-bottom:0;height:14px" data-role="job-progress-wrap">
+                        <div class="progress-bar progress-bar-striped active"
+                             role="progressbar"
+                             data-role="job-progress-bar"
+                             aria-valuenow="<?= (int) $job['progress_percent'] ?>"
+                             aria-valuemin="0" aria-valuemax="100"
+                             style="width: <?= (int) $job['progress_percent'] ?>%">
+                            <span data-role="job-progress-label"><?= (int) $job['progress_percent'] ?>%</span>
+                        </div>
+                    </div>
+                <?php endif; ?>
 
                 <?php
 
@@ -176,3 +188,5 @@ document.addEventListener('DOMContentLoaded', function () {
         ?>
 
     </table>
+</div>
+<script src="<?= LINK ?>js/Job/index.js" defer></script>
