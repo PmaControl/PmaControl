@@ -136,7 +136,7 @@ class Tunnel extends Controller
         }
 
         // 2. Récupération des tunnels existants
-        $sql = "SELECT * FROM ssh_tunnel";
+        $sql = "SELECT * FROM ssh_tunnel PARTITION(pn)";
         $res = $db->sql_query($sql);
         $existingTunnels = [];
         while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
@@ -602,7 +602,7 @@ class Tunnel extends Controller
         $mysqlServerIpById = [];
         $mysqlServerIps = [];
 
-        $sqlMysql = "SELECT id, ip FROM mysql_server WHERE is_deleted = 0";
+        $sqlMysql = "SELECT id, ip FROM mysql_server PARTITION(pn) WHERE is_deleted = 0";
         $resMysql = $db->sql_query($sqlMysql);
         while ($rowMysql = $db->sql_fetch_array($resMysql, MYSQLI_ASSOC)) {
             $mysqlServerIpById[(int)$rowMysql['id']] = (string)$rowMysql['ip'];
@@ -611,8 +611,8 @@ class Tunnel extends Controller
 
         // Récupérer tous les tunnels
         $sql = "SELECT t.*, m.display_name AS mysql_display_name
-                FROM ssh_tunnel t
-                LEFT JOIN mysql_server m ON t.id_mysql_server = m.id
+                FROM ssh_tunnel PARTITION(pn) t
+                LEFT JOIN mysql_server PARTITION(pn) m ON t.id_mysql_server = m.id
                 ORDER BY t.remote_host, t.remote_port DESC";
         $res = $db->sql_query($sql);
 
@@ -922,8 +922,8 @@ class Tunnel extends Controller
         $db = Sgbd::sql(DB_DEFAULT);
 
         // Récupérer tous les tunnels sans id_mysql_server
-        $sql = "SELECT id, local_host, local_port, pid, remote_host, remote_port 
-                FROM ssh_tunnel 
+        $sql = "SELECT id, local_host, local_port, pid, remote_host, remote_port
+                FROM ssh_tunnel PARTITION(pn)
                 WHERE id_mysql_server IS NULL";
         $res = $db->sql_query($sql);
 
@@ -1020,7 +1020,7 @@ class Tunnel extends Controller
     private static function preloadTunnelCache(): void
     {
         $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT * FROM ssh_tunnel WHERE date_end IS NULL";
+        $sql = "SELECT * FROM ssh_tunnel PARTITION(pn) WHERE date_end IS NULL";
         $res = $db->sql_query($sql);
 
         self::$tunnel_cache = [];
@@ -1074,13 +1074,14 @@ class Tunnel extends Controller
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT local_host, local_port, remote_host, remote_port FROM ssh_tunnel";
-
         if (!empty($date_request)) {
             $escaped_date = $db->sql_real_escape_string($date_request);
+            $sql  = "SELECT local_host, local_port, remote_host, remote_port FROM ssh_tunnel";
             $sql .= " FOR SYSTEM_TIME AS OF TIMESTAMP '{$escaped_date}'";
-            $sql .= " WHERE 
+            $sql .= " WHERE
             '{$escaped_date}' BETWEEN row_start AND row_end";
+        } else {
+            $sql = "SELECT local_host, local_port, remote_host, remote_port FROM ssh_tunnel PARTITION(pn)";
         }
 
         Debug::sql($sql);
@@ -1158,9 +1159,9 @@ class Tunnel extends Controller
 
         // === Sélection des tunnels à traiter ===
         $sql = "SELECT id, local_host, local_port, remote_host, remote_port, pid
-                FROM ssh_tunnel
-                WHERE id_mysql_server IS NULL 
-                AND id_maxscale_server IS NULL 
+                FROM ssh_tunnel PARTITION(pn)
+                WHERE id_mysql_server IS NULL
+                AND id_maxscale_server IS NULL
                 AND id_proxysql_server IS NULL";
         $res = $db->sql_query($sql);
 
