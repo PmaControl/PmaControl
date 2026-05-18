@@ -5,10 +5,17 @@ use App\Controller\Tunnel;
 class TunnelTest extends TestCase
 {
     private Tunnel $parser;
+    private string $defaultTimezone;
 
     protected function setUp(): void
     {
+        $this->defaultTimezone = date_default_timezone_get();
         $this->parser = new Tunnel("","","");
+    }
+
+    protected function tearDown(): void
+    {
+        date_default_timezone_set($this->defaultTimezone);
     }
 
     

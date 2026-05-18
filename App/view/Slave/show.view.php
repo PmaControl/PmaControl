@@ -590,7 +590,9 @@ $(document).ready(function() {
 <script>
 $(document).on('click', '#sv-preflight-btn', function() {
     var url = $(this).data('url');
-    fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+    fetch(url).then(function(r) {
+        return window.svParseJsonResponse(r);
+    }).then(function(data) {
         var lines = ['Verdict: ' + (data.verdict || 'unknown')];
         (data.checks || []).forEach(function(c) {
             lines.push((c.status || '?') + ' - ' + c.name + ': ' + (c.message || ''));
