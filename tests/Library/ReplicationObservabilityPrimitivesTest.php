@@ -7,6 +7,7 @@ use App\Library\PerDatabaseLag;
 use App\Library\ReplicaReconnectTracker;
 use App\Library\ReplicationHeartbeatCheck;
 use App\Library\ReplicationMetadataDictionary;
+use App\Library\ReplicationMetadataReader;
 use App\Library\ReplicationRetentionForecast;
 use App\Library\ReplicationStuckSqlDetector;
 use App\Library\ReplicationTopologyDot;
@@ -109,6 +110,34 @@ final class ReplicationObservabilityPrimitivesTest extends TestCase
         $this->assertNotSame('', ReplicationMetadataDictionary::tooltip('HOST'));
     }
 
+    public function testMetadataReaderSkipsUnavailablePerformanceSchemaTables(): void
+    {
+        $db = new ReplicationMetadataReaderFakeDb(
+            ['mysql.slave_master_info' => true],
+            ['mysql.slave_master_info' => [['User_password' => 'secret', 'Host' => 'db1']]]
+        );
+
+        $payload = ReplicationMetadataReader::read($db, [
+            'performance_schema.replication_connection_configuration',
+            'mysql.slave_master_info',
+        ]);
+
+        $this->assertFalse($payload['performance_schema.replication_connection_configuration']['available']);
+        $this->assertSame('table_not_available', $payload['performance_schema.replication_connection_configuration']['reason']);
+        $this->assertTrue($payload['mysql.slave_master_info']['available']);
+        $this->assertSame('****', $payload['mysql.slave_master_info']['rows'][0]['User_password']);
+        $this->assertContains(
+            "SELECT * FROM `mysql`.`slave_master_info` LIMIT 200",
+            $db->queries
+        );
+        foreach ($db->queries as $query) {
+            $this->assertStringNotContainsString(
+                'SELECT * FROM `performance_schema`.`replication_connection_configuration`',
+                $query
+            );
+        }
+    }
+
     public function testFailoverPreflightBlocksErrantGtid(): void
     {
         $result = FailoverPreflight::evaluate([
@@ -134,5 +163,78 @@ final class ReplicationObservabilityPrimitivesTest extends TestCase
 
         $this->assertStringContainsString('s1 -> s2', $dot);
         $this->assertStringContainsString('c1 lag=0s', $dot);
+    }
+}
+
+final class ReplicationMetadataReaderFakeResult
+{
+    /**
+     * @param list<array<string,mixed>> $rows
+     */
+    public function __construct(private array $rows)
+    {
+    }
+
+    /**
+     * @return array<string,mixed>|false
+     */
+    public function next(): array|false
+    {
+        $row = current($this->rows);
+        if ($row === false) {
+            return false;
+        }
+        next($this->rows);
+
+        return $row;
+    }
+}
+
+final class ReplicationMetadataReaderFakeDb
+{
+    /** @var list<string> */
+    public array $queries = [];
+
+    /**
+     * @param array<string,bool> $available
+     * @param array<string,list<array<string,mixed>>> $rows
+     */
+    public function __construct(private array $available, private array $rows)
+    {
+    }
+
+    public function sql_real_escape_string(string $value): string
+    {
+        return addslashes($value);
+    }
+
+    public function sql_query_silent(string $query): ReplicationMetadataReaderFakeResult|false
+    {
+        $this->queries[] = $query;
+
+        if (preg_match("/^SHOW TABLES FROM `([^`]+)` LIKE '([^']+)'$/", $query, $m)) {
+            $qualified = $m[1] . '.' . stripslashes($m[2]);
+            if (!($this->available[$qualified] ?? false)) {
+                return new ReplicationMetadataReaderFakeResult([]);
+            }
+
+            return new ReplicationMetadataReaderFakeResult([[$m[2] => $m[2]]]);
+        }
+
+        if (preg_match('/^SELECT \* FROM `([^`]+)`\.`([^`]+)` LIMIT 200$/', $query, $m)) {
+            $qualified = $m[1] . '.' . $m[2];
+
+            return new ReplicationMetadataReaderFakeResult($this->rows[$qualified] ?? []);
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array<string,mixed>|false
+     */
+    public function sql_fetch_array(ReplicationMetadataReaderFakeResult $result, int $mode): array|false
+    {
+        return $result->next();
     }
 }

@@ -24,7 +24,7 @@ use App\Library\ReplicaReconnectTracker;
 use App\Library\ReplicationFiltersAudit;
 use App\Library\ReplicationHeartbeatCheck;
 use App\Library\ReplicationHealth;
-use App\Library\ReplicationMetadataDictionary;
+use App\Library\ReplicationMetadataReader;
 use App\Library\ReplicationRetentionForecast;
 use App\Library\ReplicationStuckSqlDetector;
 use App\Library\ReplicationUserSslAudit;
@@ -2883,14 +2883,12 @@ var chart = new Chart(ctx, {
 
     public function failoverPreflight($param)
     {
-        $this->view = false;
-        header('Content-Type: application/json; charset=UTF-8');
+        $this->slaveBeginJsonResponse();
 
         $serverId = self::normalizeSetupSourceServerId($param[0] ?? null);
         $connectionName = self::sanitizeConnectionName($param[1] ?? '');
         if ($serverId === null) {
-            self::sendSlaveJsonError(400, 'Invalid server id');
-            return;
+            $this->slaveSendJson(['error' => 'Invalid server id'], 400);
         }
 
         try {
@@ -2906,21 +2904,19 @@ var chart = new Chart(ctx, {
                     }
                 }
             }
-            echo json_encode(FailoverPreflight::evaluate($selected), JSON_UNESCAPED_SLASHES);
+            $this->slaveSendJson(FailoverPreflight::evaluate($selected));
         } catch (\Throwable $e) {
-            self::sendSlaveJsonError(503, 'Pre-flight failed: ' . $e->getMessage());
+            $this->slaveSendJson(['error' => 'Pre-flight failed: ' . $e->getMessage()], 503);
         }
     }
 
     public function replicationMetadata($param)
     {
-        $this->view = false;
-        header('Content-Type: application/json; charset=UTF-8');
+        $this->slaveBeginJsonResponse();
 
         $serverId = self::normalizeSetupSourceServerId($param[0] ?? null);
         if ($serverId === null) {
-            self::sendSlaveJsonError(400, 'Invalid server id');
-            return;
+            $this->slaveSendJson(['error' => 'Invalid server id'], 400);
         }
 
         try {
@@ -2934,25 +2930,9 @@ var chart = new Chart(ctx, {
                 'mysql.slave_master_info',
                 'mysql.slave_relay_log_info',
             ];
-            $payload = [];
-            foreach ($tables as $table) {
-                $rows = [];
-                $res = $link->sql_query_silent('SELECT * FROM ' . $table . ' LIMIT 200');
-                if ($res) {
-                    while ($row = $link->sql_fetch_array($res, MYSQLI_ASSOC)) {
-                        $rows[] = $row;
-                    }
-                }
-                $rows = ReplicationMetadataDictionary::maskSensitiveRows($rows);
-                $payload[$table] = [
-                    'rows' => $rows,
-                    'tooltips' => ReplicationMetadataDictionary::tooltipMapForRows($rows),
-                    'available' => $res !== false,
-                ];
-            }
-            echo json_encode($payload, JSON_UNESCAPED_SLASHES);
+            $this->slaveSendJson(ReplicationMetadataReader::read($link, $tables));
         } catch (\Throwable $e) {
-            self::sendSlaveJsonError(503, 'Metadata read failed: ' . $e->getMessage());
+            $this->slaveSendJson(['error' => 'Metadata read failed: ' . $e->getMessage()], 503);
         }
     }
 
