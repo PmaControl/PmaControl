@@ -16,9 +16,21 @@ $jobRestartCsrfInput = CsrfRender::hiddenInput($data, 'job_restart');
  */
 function getBadge($status)
 {
-
+    // Map every job status PmaControl writes to one of the existing
+    // Bootstrap badge palettes. New statuses written by features
+    // landed after the original Job module:
+    //   - DONE       → final success (used by the reload-from-master
+    //                  worker and the BLACKHOLE conversion runner)
+    //   - FAILED     → final failure (same workers)
+    //   - NOT STARTED → default state of the job row right after the
+    //                   INSERT but before fork
+    // Pre-existing statuses (ERROR / SUCCESS / WARNING / RUNNING /
+    // INTERRUPTED) keep their existing colour. The default arm now
+    // returns `default` so an unknown status doesn't fire an
+    // "Undefined variable $color" warning on PHP 8.x.
     switch ($status) {
         case "ERROR":
+        case "FAILED":
             $color = "danger";
             break;
 
@@ -27,6 +39,7 @@ function getBadge($status)
             break;
 
         case "SUCCESS":
+        case "DONE":
             $color = "success";
             break;
 
@@ -34,13 +47,16 @@ function getBadge($status)
             $color = "warning";
             break;
 
-
         case "RUNNING":
             $color = "primary";
             break;
 
+        case "NOT STARTED":
+            $color = "info";
+            break;
 
         default:
+            $color = "default";
             break;
     }
 

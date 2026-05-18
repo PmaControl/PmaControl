@@ -5115,11 +5115,28 @@ var chart = new Chart(ctx, {
                 }
             }
 
+            // Resolve the SSH identity from the `ssh_key` table linked
+            // to this server (table `link__mysql_server__ssh_key`,
+            // managed in /Ssh/index). The lib materialises the private
+            // key into a per-job 0600 file under tmp/reload-keys/ and
+            // returns `{user, key_path, key_id}` so the SSH command
+            // can use `-l <user> -i <key_path>`. Falls back to the
+            // slave's `ssh_login` + ambient agent when no key is linked.
+            $sshIdentity = self::reloadResolveSshIdentity($db, (int) $slave['id'], $jobId);
+
             $ctx = [
                 'jobId'         => $jobId,
                 'logPath'       => $logPath,
                 'slaveEp'       => $slaveEp,
-                'slaveLogin'    => self::reloadCleanSshLogin((string) ($slave['ssh_login'] ?? '')),
+                'slaveLogin'    => $sshIdentity['user'] !== ''
+                    ? $sshIdentity['user']
+                    : self::reloadCleanSshLogin((string) ($slave['ssh_login'] ?? '')),
+                'slaveKeyPath'  => $sshIdentity['key_path'],
+                // Local tunnel endpoint as maintained by ssh_tunnel —
+                // SSH'ing to 127.0.0.1:<local_ssh_port> reaches the
+                // slave through the same chain the daemon already opens.
+                'slaveLocalHost' => (string) ($slave['ip']      ?? '127.0.0.1'),
+                'slaveLocalPort' => (int)    ($slave['ssh_port'] ?? 22),
                 'masterLanIp'   => $masterLanIp,
                 'masterLanPort' => $masterLanPort,
                 'masterUser'    => $masterUser,
@@ -5236,15 +5253,45 @@ var chart = new Chart(ctx, {
         $mPwd    = $ctx['masterPwd'];
         $mIp     = $ctx['masterLanIp'];
 
-        $sshMasterPrefix = "ssh -o StrictHostKeyChecking=no -o BatchMode=yes root@".escapeshellarg($mIp);
-        $dumpInner = "MYSQL_PWD='".self::reloadShSingleQuote($mPwd)."' mariadb-dump --master-data=2 --single-transaction --gtid --all-databases --user=".self::reloadShSingleQuote($mUser)." | gzip";
-        $dumpCmd   = $sshMasterPrefix." '".$dumpInner."' | gzip -d | mysql -uroot";
+        // The slave SSH-keys to its master directly over the LAN —
+        // operator deploys root@slave's pubkey into root@master's
+        // authorized_keys. PmaControl doesn't push a key here anymore.
+        $sshMasterPrefix = "ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o UserKnownHostsFile=/dev/null"
+                         . " root@".escapeshellarg($mIp);
+        // Flags:
+        //   --host=127.0.0.1 --protocol=TCP  → matches `pmacontrol@%`
+        //     rather than `pmacontrol@localhost` (typically not granted)
+        //   --skip-lock-tables               → required when the schema
+        //     contains MariaDB SEQUENCE objects; --single-transaction
+        //     alone trips ERROR 1100 on them
+        //   --password=…                     → MYSQL_PWD env doesn't
+        //     reliably propagate through `ssh -c` on MariaDB 11.4
+        //   2>&1                             → fold stderr into the
+        //     gzipped stream so pipefail catches dump-side errors
+        // --master-data=1 + --gtid → the dump itself starts with
+        //   `RESET MASTER; SET GLOBAL gtid_slave_pos='…';` so the
+        //   slave's GTID position is rewritten to the master's
+        //   actual position at dump time. With =2 those lines are
+        //   COMMENTED OUT, and the slave keeps its stale slave_pos,
+        //   which causes a 1236 error on START REPLICA.
+        // --skip-add-locks → dump CONTAINS no LOCK TABLES statements,
+        //   which would otherwise wrap each table's INSERT block. The
+        //   LOAD side trips ERROR 1100 ("Table not locked") when a
+        //   SEQUENCE object is touched inside another table's LOCK
+        //   region. Removing LOCK TABLES entirely is fine here —
+        //   --single-transaction already makes the dump consistent.
+        $dumpInner = "mariadb-dump --host=127.0.0.1 --protocol=TCP --master-data=1 --single-transaction"
+                   . " --skip-lock-tables --skip-add-locks --gtid --all-databases"
+                   . " --user=".self::reloadShSingleQuote($mUser)
+                   . " --password=".self::reloadShSingleQuote($mPwd)
+                   . " 2>&1 | gzip";
+        $dumpCmd   = "set -o pipefail; ".$sshMasterPrefix." ".self::reloadShSingleQuoteWrap($dumpInner)." | gzip -d | mysql -uroot";
 
         $steps = [
-            ['name' => 'stop_replica',      'pct' => 5,  'cmd' => 'mysql -uroot -e "STOP REPLICA;"'],
+            ['name' => 'stop_replica',      'pct' => 5,  'cmd' => 'mysql -uroot -e "STOP REPLICA;" 2>/dev/null || mysql -uroot -e "STOP SLAVE;"'],
             ['name' => 'dump_and_pipe',     'pct' => 80, 'cmd' => $dumpCmd],
             ['name' => 'configure_replica', 'pct' => 95,
-             'cmd' => 'mysql -uroot -e "CHANGE MASTER TO MASTER_HOST=\''.addslashes($mIp).'\', MASTER_USER=\''.addslashes($mUser).'\', MASTER_PASSWORD=\''.addslashes($mPwd).'\', MASTER_USE_GTID=slave_pos; START REPLICA;"'],
+             'cmd' => 'mysql -uroot -e "CHANGE MASTER TO MASTER_HOST=\''.addslashes($mIp).'\', MASTER_USER=\''.addslashes($mUser).'\', MASTER_PASSWORD=\''.addslashes($mPwd).'\', MASTER_USE_GTID=slave_pos; START REPLICA;" 2>&1 | grep -v "^Warning" || true'],
         ];
 
         foreach ($steps as $step) {
@@ -5274,11 +5321,23 @@ var chart = new Chart(ctx, {
         $slaveEp = $ctx['slaveEp'];
         $login   = $ctx['slaveLogin'] !== '' ? $ctx['slaveLogin'] : 'root';
 
-        // Build outer SSH: -J <bastion[,bastion]> if needed.
-        $sshCmd = 'ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o BatchMode=yes'
-                . $slaveEp['jump_flag']
-                . ' -p '.(int) $slaveEp['port']
-                . ' '.escapeshellarg($login).'@'.escapeshellarg($slaveEp['host'])
+        // Use the LOCAL SSH-tunnel endpoint that PmaControl already
+        // maintains: every slave has a 127.0.0.1:<local_port> mapping
+        // in `ssh_tunnel` that the tunnel daemon keeps alive through
+        // the bastion + jump hops. We just SSH to that local port — no
+        // need to rebuild the jump chain in this worker. The linked
+        // ssh_key (via /Ssh/index) provides the identity for the
+        // FINAL hop, which the tunnel forwards transparently.
+        $localHost = (string) ($ctx['slaveLocalHost'] ?? '127.0.0.1');
+        $localPort = (int)    ($ctx['slaveLocalPort'] ?? 22);
+        $keyPath   = (string) ($ctx['slaveKeyPath']   ?? '');
+        $identityFlag = $keyPath !== ''
+            ? ' -i '.escapeshellarg($keyPath).' -o IdentitiesOnly=yes'
+            : '';
+        $sshCmd = 'ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o BatchMode=yes -o UserKnownHostsFile=/dev/null'
+                . $identityFlag
+                . ' -p '.$localPort
+                . ' '.escapeshellarg($login).'@'.escapeshellarg($localHost)
                 . ' '.escapeshellarg('bash -lc '.self::reloadShSingleQuoteWrap($remoteShellCmd));
 
         // Update job row at step start.
@@ -5413,6 +5472,99 @@ var chart = new Chart(ctx, {
     private static function reloadLog(string $path, string $line): void
     {
         @file_put_contents($path, '['.date('Y-m-d H:i:s').'] '.$line."\n", FILE_APPEND);
+    }
+
+    /**
+     * Resolve the SSH user used on the jump host(s). Read from
+     * `configuration/ssh_tunnel.config.php` if present (matches the
+     * tunnel daemon's existing config) — otherwise defaults to the
+     * convention PmaControl already uses across the inventory.
+     */
+    private static function reloadJumpUser(): string
+    {
+        $cfgFile = (defined('CONFIG') ? \constant('CONFIG') : ROOT.'/configuration/').'ssh_tunnel.config.php';
+        if (is_readable($cfgFile)) {
+            $cfg = @include $cfgFile;
+            if (is_array($cfg) && !empty($cfg['jump_user'])) {
+                return (string) $cfg['jump_user'];
+            }
+        }
+        return 'aurelien';
+    }
+
+    /**
+     * Resolve the SSH identity (user + private key path) for a slave
+     * server by looking up the ssh_key linked to it via
+     * link__mysql_server__ssh_key (managed in `/Ssh/index`).
+     *
+     * Materialises `ssh_key.private_key` into a per-job 0600 file at
+     * `tmp/reload-keys/<jobId>-<keyId>.key` that the worker passes
+     * to `ssh -i`. When no active link exists, returns empty paths
+     * so the caller falls back to the ambient SSH config / agent.
+     *
+     * The temp key file is deliberately NOT cleaned up at the end of
+     * the run — the worker may be running multiple steps that each
+     * spawn ssh and re-reading the same file is harmless. A separate
+     * cron prunes `tmp/reload-keys/` older than 24 h.
+     *
+     * @return array{user:string,key_path:string,key_id:int}
+     */
+    private static function reloadResolveSshIdentity($db, int $idMysqlServer, int $jobId): array
+    {
+        $blank = ['user' => '', 'key_path' => '', 'key_id' => 0];
+        try {
+            $sql = "SELECT k.id, k.name, k.user, k.private_key "
+                 . "FROM ssh_key k "
+                 . "INNER JOIN link__mysql_server__ssh_key l ON l.id_ssh_key = k.id "
+                 . "WHERE l.id_mysql_server = ".(int) $idMysqlServer." "
+                 . "  AND l.active = 1 "
+                 . "ORDER BY l.added_on DESC, k.id DESC "
+                 . "LIMIT 1";
+            $res = $db->sql_query_silent($sql);
+            if (!$res) {
+                return $blank;
+            }
+            $row = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+            if (!$row || trim((string) $row['private_key']) === '') {
+                return $blank;
+            }
+            $dir = ROOT.'/tmp/reload-keys';
+            @mkdir($dir, 0700, true);
+            @chmod($dir, 0700);
+            $path = $dir.'/'.$jobId.'-'.(int) $row['id'].'.key';
+            // Some DB rows store the key with literal `\n` escapes
+            // (legacy import); normalise to real newlines so ssh
+            // accepts it.
+            $key = (string) $row['private_key'];
+            // ssh_key.private_key is stored encrypted at rest (same
+            // Chiffrement helper as mysql_server.passwd). Decrypt
+            // before writing to disk; if decryption throws (key
+            // was inserted unencrypted by a legacy import), fall
+            // back to the raw value.
+            try {
+                $key = Chiffrement::decrypt($key);
+            } catch (\Throwable $ignored) { /* assume already plain */ }
+            if (strpos($key, '\\n') !== false && strpos($key, "\n") === false) {
+                $key = str_replace('\\n', "\n", $key);
+            }
+            // libcrypto rejects CRLF line endings in PEM bodies — the
+            // PmaControl SSH-key dialog stores Windows-style newlines
+            // when copy-pasted from PuTTY etc. Normalise to LF.
+            $key = str_replace("\r\n", "\n", $key);
+            $key = str_replace("\r",   "\n", $key);
+            if (substr($key, -1) !== "\n") {
+                $key .= "\n";
+            }
+            @file_put_contents($path, $key);
+            @chmod($path, 0600);
+            return [
+                'user'     => trim((string) ($row['user'] ?? '')),
+                'key_path' => $path,
+                'key_id'   => (int) $row['id'],
+            ];
+        } catch (\Throwable $e) {
+            return $blank;
+        }
     }
 
     /**
@@ -5563,8 +5715,10 @@ var chart = new Chart(ctx, {
         try {
             $rows = self::reloadFetchReplicaStatus($slave, $conn);
             $masterHost = (string) ($rows['Master_Host'] ?? $rows['Source_Host'] ?? '');
+            $masterPort = (int)    ($rows['Master_Port'] ?? $rows['Source_Port'] ?? 3306);
             if ($masterHost !== '') {
                 $hostEsc = $db->sql_real_escape_string($masterHost);
+                // Look-up #1 — direct match (works for hosts not behind a tunnel).
                 $sql = "SELECT * FROM mysql_server
                           WHERE is_deleted = 0
                             AND (ip = '{$hostEsc}' OR hostname = '{$hostEsc}' OR name = '{$hostEsc}')
@@ -5572,6 +5726,28 @@ var chart = new Chart(ctx, {
                 $res = @$db->sql_query($sql);
                 if ($res !== false && $res !== null) {
                     while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                        return $row;
+                    }
+                }
+                // Look-up #2 — via ssh_tunnel.remote_host. In PmaControl's
+                // tunneled inventory the `mysql_server.ip` is the local
+                // loopback endpoint; the LAN IP the slave knows lives in
+                // `ssh_tunnel.remote_host`. Match against the MySQL tunnel
+                // (port-mode), not the SSH tunnel.
+                $portClause = $masterPort > 0
+                    ? " AND t.remote_port = ".(int) $masterPort
+                    : '';
+                $sql2 = "SELECT m.* FROM mysql_server m
+                          INNER JOIN ssh_tunnel t ON t.id_mysql_server = m.id
+                          WHERE m.is_deleted = 0
+                            AND t.date_end IS NULL
+                            AND t.remote_host = '{$hostEsc}'"
+                            .$portClause."
+                          ORDER BY t.id DESC
+                          LIMIT 1";
+                $res2 = @$db->sql_query($sql2);
+                if ($res2 !== false && $res2 !== null) {
+                    while ($row = $db->sql_fetch_array($res2, MYSQLI_ASSOC)) {
                         return $row;
                     }
                 }
