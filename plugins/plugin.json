@@ -28,6 +28,17 @@
       "URL": "http://localhost/plugins/mysql-sys/v1.2.zip"
     }
   },
+  "eol": {
+    "v1.0.0": {
+      "Picture": "{LINK}plugins/extracted/eol-1.0.0/logo.svg",
+      "MD5": "c974b59324932a881b685a66da2a34da",
+      "CreationDate": "18/05/2026",
+      "Contributor": "PmaControl",
+      "LicenceType": "GPL-3.0",
+      "Description": "MySQL and MariaDB end-of-life tracker with daily refresh, EOL badges and minor-version update hints.",
+      "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol.pmactrl"
+    }
+  },
   "test-plug": {
     "v1.1": {
       "Picture": "http://localhost/pmacontrol_web/plugimg/test-plug.jpg",

@@ -2,6 +2,17 @@
 
 Plugins may expose a `plugin.json` manifest at the root of the extracted package. The manifest gives PmaControl an explicit install/uninstall plan instead of relying on a blind directory scan.
 
+Catalog `URL` values may point to either a legacy `.zip` archive or a `.pmactrl`
+archive. A `.pmactrl` archive follows the Debian package container shape:
+
+- `debian-binary` containing `2.0\n`
+- `control.tar.gz` with package metadata
+- `data.tar.gz` containing the extracted plugin directory, for example
+  `eol-1.0.0/plugin.json`
+
+The extracted plugin directory name must still match the historical
+`{plugin-name}-{version-without-leading-v}` convention used by `Plugin::install`.
+
 ```json
 {
   "name": "example",
@@ -66,8 +77,8 @@ before the ZIP is opened or extracted. New catalog entries should publish:
 
 Rules:
 
-- `SHA256` is computed on the exact ZIP bytes published at `URL`.
-- `Signature` is a base64 Ed25519 detached signature over the same ZIP bytes.
+- `SHA256` is computed on the exact archive bytes published at `URL`.
+- `Signature` is a base64 Ed25519 detached signature over the same archive bytes.
 - `MD5` is accepted only for legacy transition entries. If both `MD5` and
   `SHA256` are present, both checks must pass.
 - A catalog entry with `SHA256` but no valid signature is rejected before

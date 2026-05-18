@@ -540,6 +540,14 @@ class Server extends Controller
             $data['extra'] ?? [],
             empty($_GET['ajax'])
         );
+        $data['eol_servers'] = [];
+        if (class_exists('\App\Library\Eol\EolCatalog')) {
+            $data['eol_servers'] = \App\Library\Eol\EolCatalog::loadForServerMain(
+                $db,
+                $data['servers'] ?? [],
+                $data['extra'] ?? []
+            );
+        }
 
         $this->set('data', $data);
     }

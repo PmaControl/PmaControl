@@ -83,6 +83,19 @@ function server_main_cve_short_title($title, $max = 92): string {
     return mb_substr($title, 0, $max, 'UTF-8').'…';
 }
 
+function server_main_eol_status_class($status): string {
+    $status = strtolower((string)$status);
+    if ($status === 'supported') return 'ok';
+    if ($status === 'warning') return 'warn';
+    if ($status === 'eol') return 'crit';
+    return 'muted';
+}
+
+function server_main_eol_date_label($date): string {
+    $date = trim((string)$date);
+    return $date !== '' ? $date : 'Active';
+}
+
 // Count servers by status
 $statusCounts = ['ok' => 0, 'warning' => 0, 'error' => 0, 'acknowledged' => 0, 'unmonitored' => 0];
 if (!empty($data['servers'])) {
@@ -259,6 +272,25 @@ if (empty($_GET['ajax'])):
 .sm-cve-more { color:#cbd5e1; border-top:1px solid #1e293b; padding-top:7px; font-size:10px; font-weight:700; }
 .sm-cve-empty { color: var(--sm-muted); font-size: 10px; }
 
+.sm-eol-cell { white-space: nowrap; min-width: 106px; }
+.sm-eol-badge { display: inline-flex; align-items: center; gap: 4px; border: 1px solid #e2e8f0;
+                border-radius: 999px; padding: 2px 7px; font-size: 10px; font-weight: 800;
+                text-decoration: none; }
+.sm-eol-badge:hover, .sm-eol-badge:focus { text-decoration: none; color: inherit; }
+.sm-eol-badge.ok { background: #d1e7dd; border-color: #badbcc; color: #0f5132; }
+.sm-eol-badge.warn { background: #fff3cd; border-color: #ffecb5; color: #856404; }
+.sm-eol-badge.crit { background: #f8d7da; border-color: #f5c2c7; color: #842029; }
+.sm-eol-badge.muted { background: #f1f5f9; border-color: #e2e8f0; color: #64748b; }
+.sm-eol-upgrade-pulse { display: inline-flex; align-items: center; margin-top: 2px; padding: 1px 6px;
+                        border-radius: 999px; background: #dbeafe; color: #1e40af; font-size: 9px;
+                        font-weight: 800; box-shadow: 0 0 0 0 rgba(59,130,246,.45);
+                        animation: sm-eol-upgrade-pulse 1.7s infinite; }
+@keyframes sm-eol-upgrade-pulse {
+    from { box-shadow: 0 0 0 0 rgba(59,130,246,.45); }
+    70% { box-shadow: 0 0 0 7px rgba(59,130,246,0); }
+    to { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
+}
+
 .sm-badge { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 3px; font-weight: 600; }
 .sm-badge.ok   { background: #d1fae5; color: #065f46; }
 .sm-badge.good { background: #dbeafe; color: #1e40af; }
@@ -396,6 +428,7 @@ if (empty($_GET['ajax'])):
     <th><?= __("Tag") ?></th>
     <th><?= __("Host") ?></th>
     <th><?= __("Version") ?></th>
+    <th><?= __("EOL") ?></th>
     <th><?= __("Organization") ?></th>
     <th><?= __("Latency") ?></th>
     <th><?= __("Seen") ?></th>
@@ -405,7 +438,7 @@ if (empty($_GET['ajax'])):
 <tbody>
 <?php
 if (empty($data['servers'])) {
-    echo '<tr><td colspan="12" class="sm-empty"><i class="fa fa-server"></i> '.__('No servers found').'</td></tr>';
+    echo '<tr><td colspan="13" class="sm-empty"><i class="fa fa-server"></i> '.__('No servers found').'</td></tr>';
 } else {
     foreach ($data['servers'] as $server) {
         $isEffectiveMonitored = !empty($server['effective_is_monitored']) && (string)$server['effective_is_monitored'] === "1";
@@ -421,6 +454,7 @@ if (empty($data['servers'])) {
         $isProxyLikeServer = $isProxyServer || (!empty($extra['is_proxysql']) && (string)$extra['is_proxysql'] === "1");
         $status = serverStatus($server, $extra, $isEffectiveMonitored);
         $cveImpact = $data['cve_impacts'][(int)$server['id']] ?? null;
+        $eolInfo = $data['eol_servers'][(int)$server['id']] ?? null;
 
         $rowClass = '';
         if ($status === 'error') $rowClass = 'sm-row-err';
@@ -430,7 +464,13 @@ if (empty($data['servers'])) {
         if (!empty($serverProcessing)) $rowClass = trim($rowClass.' sm-row-proc');
 
         // Build searchable text
-        $searchText = strtolower($server['display_name'].' '.$server['client'].' '.$server['environment'].' '.implode(' ', $tagSearchParts).' '.$server['ip'].' '.($extra['version'] ?? ''));
+        $eolSearch = is_array($eolInfo) ? implode(' ', array_filter([
+            $eolInfo['product'] ?? '',
+            $eolInfo['series'] ?? '',
+            $eolInfo['status'] ?? '',
+            $eolInfo['latest_version'] ?? '',
+        ])) : '';
+        $searchText = strtolower($server['display_name'].' '.$server['client'].' '.$server['environment'].' '.implode(' ', $tagSearchParts).' '.$server['ip'].' '.($extra['version'] ?? '').' '.$eolSearch);
 ?>
 <tr class="<?= $rowClass ?>" data-search="<?= htmlspecialchars($searchText, ENT_QUOTES) ?>">
     <td class="sm-status"></td>
@@ -559,6 +599,29 @@ if (empty($data['servers'])) {
         ?>
     </td>
 
+    <!-- EOL -->
+    <td class="sm-eol-cell">
+        <?php if (is_array($eolInfo) && !empty($eolInfo['status'])): ?>
+            <?php
+            $eolClass = server_main_eol_status_class($eolInfo['status'] ?? '');
+            $eolProduct = strtolower((string)($eolInfo['product'] ?? ''));
+            $eolHref = LINK.'Eol/index/'.rawurlencode($eolProduct).'/';
+            $eolTitle = trim((string)($eolInfo['product_label'] ?? '').' '.(string)($eolInfo['series'] ?? '').' '.(string)($eolInfo['status'] ?? ''));
+            ?>
+            <a class="sm-eol-badge <?= $eolClass ?>" href="<?= htmlspecialchars($eolHref, ENT_QUOTES) ?>" title="<?= htmlspecialchars($eolTitle, ENT_QUOTES) ?>">
+                <i class="fa fa-calendar-times-o" aria-hidden="true"></i>
+                <?= htmlspecialchars(server_main_eol_date_label($eolInfo['support_until'] ?? ''), ENT_QUOTES) ?>
+            </a>
+            <?php if (!empty($eolInfo['minor_update_available']) && !empty($eolInfo['current_version']) && !empty($eolInfo['latest_version'])): ?>
+                <br><span class="sm-eol-upgrade-pulse" title="<?= htmlspecialchars(__('Minor version available'), ENT_QUOTES) ?>">
+                    <?= htmlspecialchars((string)$eolInfo['current_version'], ENT_QUOTES) ?> &rarr; <?= htmlspecialchars((string)$eolInfo['latest_version'], ENT_QUOTES) ?>
+                </span>
+            <?php endif; ?>
+        <?php else: ?>
+            <span class="sm-cve-empty">-</span>
+        <?php endif; ?>
+    </td>
+
     <!-- Organization -->
     <td class="sm-org-cell"><?= htmlspecialchars($server['client']) ?></td>
 
@@ -615,7 +678,7 @@ if (empty($data['servers'])) {
         if ($errMsg || $hasStatusActions):
 ?>
 <tr class="sm-detail-row<?= $errMsg ? ' sm-err-row' : '' ?>" data-search="<?= htmlspecialchars($searchText, ENT_QUOTES) ?>">
-    <td colspan="12">
+    <td colspan="13">
         <div class="sm-detail-line">
             <?php if ($errMsg): ?>
                 <div class="sm-err-text"><i class="fa fa-exclamation-triangle"></i> <?= $errMsg ?></div>
