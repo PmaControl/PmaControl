@@ -4913,18 +4913,31 @@ var chart = new Chart(ctx, {
                 $versions
             );
 
+            // List available remote storage areas so the operator can
+            // pick one as an intermediate landing zone for the
+            // mydumper procedure (in addition to the local
+            // DIRECTORY_BACKUP / slave_tmp options).
+            $sasRows = [];
+            $resSa = @$db->sql_query_silent("SELECT id, libelle, ip, port, path FROM backup_storage_area ORDER BY id");
+            if ($resSa) {
+                while ($row = $db->sql_fetch_array($resSa, MYSQLI_ASSOC)) {
+                    $sasRows[] = $row;
+                }
+            }
+
             $data = [
-                'class'              => $this->getClass(),
-                'function'           => __FUNCTION__,
-                'id_mysql_server'    => $idServer,
-                'connection_name'    => $conn,
-                'slave'              => $slave ?? [],
-                'master'             => $master ?? [],
-                'versions'           => $versions,
-                'preflight'          => $preflight,
-                'source_coverage'    => $sourceCoverage,
-                'reload_csrf_field'  => Csrf::DEFAULT_FIELD,
-                'reload_csrf_token'  => Csrf::issueToken($_SESSION, self::SLAVE_RELOAD_CSRF_SCOPE),
+                'class'                  => $this->getClass(),
+                'function'               => __FUNCTION__,
+                'id_mysql_server'        => $idServer,
+                'connection_name'        => $conn,
+                'slave'                  => $slave ?? [],
+                'master'                 => $master ?? [],
+                'versions'               => $versions,
+                'preflight'              => $preflight,
+                'source_coverage'        => $sourceCoverage,
+                'mydumper_storage_areas' => $sasRows,
+                'reload_csrf_field'      => Csrf::DEFAULT_FIELD,
+                'reload_csrf_token'      => Csrf::issueToken($_SESSION, self::SLAVE_RELOAD_CSRF_SCOPE),
             ];
             $this->set('data', $data);
         } catch (\Throwable $e) {
@@ -4970,6 +4983,20 @@ var chart = new Chart(ctx, {
                 echo 'Invalid procedure';
                 return;
             }
+            // mydumper-only options: where the intermediate dump lands
+            // (slave_tmp = stream straight to myloader untar on slave,
+            //  pmacontrol_local = stage to DIRECTORY_BACKUP on PmaControl,
+            //  sa:<id> = stage to a backup_storage_area row), and which
+            // compression algorithm to use in the pipe. The compressor
+            // is also used as the on-disk extension for any staged file.
+            $landingStorage = (string) ($_POST['landing_storage'] ?? 'slave_tmp');
+            if (!preg_match('/^(slave_tmp|pmacontrol_local|sa:\d+)$/', $landingStorage)) {
+                $landingStorage = 'slave_tmp';
+            }
+            $compression = (string) ($_POST['compression'] ?? 'lz4');
+            if (!in_array($compression, ['none', 'lz4', 'zstd', 'gzip', 'xz'], true)) {
+                $compression = 'lz4';
+            }
             $acknowledge = (string) ($_POST['acknowledge_at_risk'] ?? '0') === '1';
 
             $db     = Sgbd::sql(DB_DEFAULT);
@@ -5014,6 +5041,8 @@ var chart = new Chart(ctx, {
                 'connection_name' => $conn,
                 'procedure'       => $procedure,
                 'acknowledge'     => $acknowledge ? 1 : 0,
+                'landing_storage' => $landingStorage,
+                'compression'     => $compression,
             ];
             $jobId = self::reloadInsertJobRow($db, $params);
             if ($jobId > 0) {
@@ -5353,6 +5382,25 @@ var chart = new Chart(ctx, {
         $threads      = 4;
         $masterTmpDir = '/tmp/mydumper-'.$jobId;
         $slaveTmpDir  = '/tmp/myloader-'.$jobId;
+
+        // Operator-picked landing storage + compression. The defaults
+        // preserve the historical behaviour (stream slave_tmp + no
+        // compression) when the form fields aren't posted.
+        $params         = $ctx['params'] ?? [];
+        $landingStorage = (string) ($params['landing_storage'] ?? 'slave_tmp');
+        $compression    = (string) ($params['compression']     ?? 'none');
+        // Compression command pair: [encoder_argv, decoder_argv, ext].
+        // `lz4` is the project default (fastest compress + decompress);
+        // `zstd` is a reasonable middle ground; `xz` is the densest
+        // but slowest. Picking `none` keeps a straight tar pipe.
+        $codec = match ($compression) {
+            'lz4'  => ['lz4',  'lz4 -d',   'lz4'],
+            'zstd' => ['zstd', 'zstd -d',  'zst'],
+            'gzip' => ['gzip', 'gzip -d',  'gz'],
+            'xz'   => ['xz',   'xz -d',    'xz'],
+            default => ['cat',  'cat',     'tar'],
+        };
+        [$compEnc, $compDec, $compExt] = $codec;
         $dumpInner = "set -o pipefail; "
                    . "rm -rf ".$masterTmpDir." && mkdir -p ".$masterTmpDir." && "
                    . "mydumper"
@@ -5376,26 +5424,71 @@ var chart = new Chart(ctx, {
                    . " --password=".self::reloadShSingleQuote($mPwd)
                    . " -o ".$masterTmpDir
                    . " > /tmp/reload-mydumper-".$jobId.".log 2>&1 && "
-                   . "tar c -C ".$masterTmpDir." . && "
+                   . "tar c -C ".$masterTmpDir." . | ".$compEnc." && "
                    . "rm -rf ".$masterTmpDir;
-        // Slave-side: untar to a fresh tmp dir, then load with the
-        // (old) myloader 0.10 that does NOT support --stream.
-        $loadInner = "set -o pipefail; "
-                   . "rm -rf ".$slaveTmpDir." && mkdir -p ".$slaveTmpDir." && "
-                   . $sshMasterPrefix." ".self::reloadShSingleQuoteWrap($dumpInner)
-                   . " | tar x -C ".$slaveTmpDir." && "
-                   // myloader 0.10 (Debian stock) doesn't know
-                   // --protocol=tcp; specifying --host is enough to
-                   // bypass the Unix socket and connect over TCP.
-                   . "myloader -d ".$slaveTmpDir
-                   . " --threads=".$threads
-                   . " --host=127.0.0.1"
-                   . " --user=root --enable-binlog"
-                   . " --overwrite-tables 2>&1";
-        // Cleanup step runs separately so we keep the dir on failure
-        // for forensics (operator can rm manually).
         $cleanupCmd = 'rm -rf '.$slaveTmpDir;
-        $dumpCmd = $loadInner;
+        // myloader 0.10 (Debian stock) doesn't know --protocol=tcp;
+        // specifying --host is enough to bypass the Unix socket.
+        $myloaderCmd = "myloader -d ".$slaveTmpDir
+                     . " --threads=".$threads
+                     . " --host=127.0.0.1"
+                     . " --user=root --enable-binlog"
+                     . " --overwrite-tables 2>&1";
+
+        // Three landing-storage flavours, picked by the operator:
+        //
+        // slave_tmp        — tar+compressed dump streamed straight
+        //                    into a tmpdir on the slave, then
+        //                    myloader. Requires ~uncompressed dump
+        //                    size of free disk on slave /tmp.
+        // pmacontrol_local — stage the compressed dump to
+        //                    DIRECTORY_BACKUP on the PmaControl host
+        //                    first, then read it back through the
+        //                    slave SSH tunnel into the tmpdir +
+        //                    myloader. Decouples the master/slave
+        //                    pipe so a slow slave doesn't stall the
+        //                    master. Adds one full I/O round-trip.
+        // sa:<id>          — stage to a backup_storage_area row
+        //                    (separate SSH endpoint). Same pattern.
+        $stageDir = '';
+        $stageFile = '';
+        if ($landingStorage === 'pmacontrol_local') {
+            @include CONFIG.'backup.config.php';
+            $stageDir = defined('DIRECTORY_BACKUP') ? rtrim(\constant('DIRECTORY_BACKUP'), '/') : '/srv/backup';
+            @mkdir($stageDir, 0750, true);
+            $stageFile = $stageDir.'/reload-'.$jobId.'.tar.'.$compExt;
+        } elseif (str_starts_with($landingStorage, 'sa:')) {
+            // Stub for SA-based staging — falls back to slave_tmp if
+            // the row isn't resolvable (kept simple for v1).
+            $landingStorage = 'slave_tmp';
+        }
+        if ($landingStorage === 'pmacontrol_local' && $stageFile !== '') {
+            // Stage step: ssh master ... | <enc> > /srv/backup/<file>
+            // Then load step: <dec> < /srv/backup/<file> | ssh slave 'tar x | myloader'
+            $stageCmd = "set -o pipefail; rm -f ".$stageFile." && "
+                      . $sshMasterPrefix." ".self::reloadShSingleQuoteWrap($dumpInner)
+                      . " > ".$stageFile;
+            // The load step runs OUTSIDE the outer SSH wrapper —
+            // PmaControl shells out, decompresses locally, and pipes
+            // through ssh slave 'tar x ... && myloader'. We pack
+            // both into a single bash step in the slave SSH.
+            $loadInner = "set -o pipefail; "
+                       . "rm -rf ".$slaveTmpDir." && mkdir -p ".$slaveTmpDir." && "
+                       . "tar x -C ".$slaveTmpDir." && "
+                       . $myloaderCmd;
+            $dumpCmd = $stageCmd; // step 1: stage to disk
+            $ctx['mydumperStageFile'] = $stageFile;
+            $ctx['mydumperLoadInner'] = $loadInner;
+            $ctx['mydumperCompDec']   = $compDec;
+        } else {
+            // Direct streaming pipe — historical behaviour.
+            $loadInner = "set -o pipefail; "
+                       . "rm -rf ".$slaveTmpDir." && mkdir -p ".$slaveTmpDir." && "
+                       . $sshMasterPrefix." ".self::reloadShSingleQuoteWrap($dumpInner)
+                       . " | ".$compDec." | tar x -C ".$slaveTmpDir." && "
+                       . $myloaderCmd;
+            $dumpCmd = $loadInner;
+        }
 
         // mydumper also writes the master's `metadata` file out-of-band
         // (binlog file + position + GTID); we capture it from the
@@ -5414,7 +5507,24 @@ var chart = new Chart(ctx, {
                         . $sshMasterPrefix." 'which mydumper >/dev/null 2>&1 || (echo \"mydumper missing on master\" >&2; exit 65)'",
             ],
             ['name' => 'stop_replica', 'pct' => 5, 'cmd' => 'mysql -uroot -e "STOP REPLICA;" 2>/dev/null || mysql -uroot -e "STOP SLAVE;"'],
-            ['name' => 'dump_and_load', 'pct' => 85, 'cmd' => $dumpCmd],
+        ];
+
+        if ($landingStorage === 'pmacontrol_local') {
+            // Stage step runs LOCALLY on the PmaControl host (no
+            // outer-SSH wrap). reloadRunLocalStep is identical to
+            // reloadRunStep minus the slave-SSH chain.
+            $steps[] = ['name' => 'stage_to_pmacontrol', 'pct' => 60, 'cmd' => $dumpCmd, 'local' => true];
+            // Load step: from PmaControl, decompress the staged file
+            // and pipe it through the slave SSH into tar+myloader.
+            $sshSlaveOuter = self::reloadBuildOuterSshForSlave($ctx); // helper for the slave SSH prefix
+            $loadCmd = $compDec." < ".$stageFile." | ".$sshSlaveOuter." ".self::reloadShSingleQuoteWrap($ctx['mydumperLoadInner']);
+            $steps[] = ['name' => 'load_from_pmacontrol', 'pct' => 90, 'cmd' => $loadCmd, 'local' => true];
+            $cleanupCmd .= '; rm -f '.$stageFile;
+        } else {
+            $steps[] = ['name' => 'dump_and_load', 'pct' => 85, 'cmd' => $dumpCmd];
+        }
+
+        $steps = array_merge($steps, [
             [
                 'name' => 'configure_replica', 'pct' => 97,
                 // mydumper doesn't auto-emit a CHANGE MASTER block.
@@ -5431,15 +5541,123 @@ var chart = new Chart(ctx, {
                 'name' => 'cleanup_mydumper_log', 'pct' => 99,
                 'cmd'  => $cleanupCmd.'; rm -f /tmp/reload-mydumper-'.$jobId.'.log',
             ],
-        ];
+        ]);
 
         foreach ($steps as $step) {
-            $ok = self::reloadRunStep($db, $ctx, $step['name'], $step['cmd'], (int) $step['pct']);
+            $isLocal = !empty($step['local']);
+            $ok = $isLocal
+                ? self::reloadRunLocalStep($db, $ctx, $step['name'], $step['cmd'], (int) $step['pct'])
+                : self::reloadRunStep($db, $ctx, $step['name'], $step['cmd'], (int) $step['pct']);
             if (!$ok) {
                 return;
             }
         }
         self::reloadCliFinish($db, $jobId, $logPath);
+    }
+
+    /**
+     * Build the outer-SSH prefix that targets the slave (same as
+     * reloadRunStep would emit, minus the trailing bash -lc payload).
+     * Used by the pmacontrol_local landing path so the load step can
+     * pipe a locally-decompressed file into the slave's tar+myloader.
+     */
+    private static function reloadBuildOuterSshForSlave(array $ctx): string
+    {
+        $login   = $ctx['slaveLogin'] !== '' ? $ctx['slaveLogin'] : 'root';
+        $host    = (string) ($ctx['slaveLocalHost'] ?? '127.0.0.1');
+        $port    = (int)    ($ctx['slaveLocalPort'] ?? 22);
+        $keyPath = (string) ($ctx['slaveKeyPath']   ?? '');
+        $identityFlag = $keyPath !== '' ? ' -i '.escapeshellarg($keyPath).' -o IdentitiesOnly=yes' : '';
+        return 'ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o BatchMode=yes -o UserKnownHostsFile=/dev/null'
+             . $identityFlag
+             . ' -p '.$port
+             . ' '.escapeshellarg($login).'@'.escapeshellarg($host)
+             . ' bash -lc';
+    }
+
+    /**
+     * Same shape as reloadRunStep but executes the shell command
+     * locally on the PmaControl host (no outer SSH wrap). Used by
+     * the pmacontrol_local mydumper landing strategy.
+     */
+    private static function reloadRunLocalStep($db, array $ctx, string $name, string $shellCmd, int $progressPercent): bool
+    {
+        $jobId   = $ctx['jobId'];
+        $logPath = $ctx['logPath'];
+        try {
+            $db->sql_query(sprintf(
+                "UPDATE job SET dump_status=%s, progress_percent=%d WHERE id=%d",
+                self::reloadSqlString($db, $name),
+                $progressPercent,
+                $jobId
+            ));
+        } catch (\Throwable $ignored) {}
+        self::reloadLog($logPath, '----- step ['.$name.'] starting (pct='.$progressPercent.', local) -----');
+        self::reloadLog($logPath, '[exec-local] '.$shellCmd);
+        $stderr = '';
+        $exit   = -1;
+        $process = null;
+        $pipes   = [];
+        try {
+            $descriptors = [
+                0 => ['file', '/dev/null', 'r'],
+                1 => ['pipe', 'w'],
+                2 => ['pipe', 'w'],
+            ];
+            $process = @proc_open(['bash', '-lc', $shellCmd], $descriptors, $pipes);
+            if (!is_resource($process)) {
+                self::reloadCliFail($db, $jobId, $logPath, 'proc_open failed for local step '.$name);
+                return false;
+            }
+            stream_set_blocking($pipes[1], false);
+            stream_set_blocking($pipes[2], false);
+            $stdoutBuf = '';
+            $stderrBuf = '';
+            while (true) {
+                $status = proc_get_status($process);
+                $r = [$pipes[1], $pipes[2]];
+                $w = null; $e = null;
+                $ready = @stream_select($r, $w, $e, 1, 0);
+                if ($ready !== false && $ready > 0) {
+                    foreach ($r as $stream) {
+                        $chunk = fread($stream, 8192);
+                        if ($chunk === false || $chunk === '') continue;
+                        $isErr = ($stream === $pipes[2]);
+                        $buf = $isErr ? ($stderrBuf .= $chunk) : ($stdoutBuf .= $chunk);
+                        while (($nl = strpos($buf, "\n")) !== false) {
+                            $line = substr($buf, 0, $nl);
+                            $buf  = substr($buf, $nl + 1);
+                            self::reloadLog($logPath, '['.$name.($isErr ? ' stderr' : ' stdout').'] '.$line);
+                        }
+                        if ($isErr) { $stderrBuf = $buf; } else { $stdoutBuf = $buf; }
+                    }
+                }
+                if (!$status['running']) {
+                    foreach ([1, 2] as $fd) {
+                        $rest = stream_get_contents($pipes[$fd]);
+                        if ($rest !== false && $rest !== '') {
+                            $isErr = ($fd === 2);
+                            $stderr .= $isErr ? $rest : '';
+                            foreach (explode("\n", rtrim($rest, "\n")) as $ln) {
+                                if ($ln === '') continue;
+                                self::reloadLog($logPath, '['.$name.($isErr ? ' stderr' : ' stdout').'] '.$ln);
+                            }
+                        }
+                    }
+                    $exit = $status['exitcode'];
+                    break;
+                }
+            }
+        } finally {
+            foreach ($pipes as $p) { if (is_resource($p)) @fclose($p); }
+            if (is_resource($process)) { @proc_close($process); }
+        }
+        if ($exit !== 0) {
+            self::reloadCliFail($db, $jobId, $logPath, 'step ['.$name.'] failed locally (exit='.(int) $exit.'): '.substr(trim($stderrBuf.$stderr), -1024));
+            return false;
+        }
+        self::reloadLog($logPath, '----- step ['.$name.'] OK -----');
+        return true;
     }
 
     /**

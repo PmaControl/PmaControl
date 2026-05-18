@@ -185,6 +185,31 @@ function svReloadStatusIcon(string $status): string
         <form method="post" action="<?= LINK ?>Slave/reloadFromMasterStart/<?= $idServer ?>/<?= urlencode($conn) ?>/" style="margin:0">
             <?= $csrfHidden ?>
             <input type="hidden" name="procedure" value="mydumper">
+
+            <fieldset style="border:1px solid #e2e8f0;border-radius:4px;padding:6px 10px;margin:6px 0;font-size:12px">
+                <legend style="font-size:11px;color:#475569;padding:0 4px;width:auto"><?= __('Intermediate landing') ?></legend>
+<?php
+$mydumperSAs = $data['mydumper_storage_areas'] ?? [];
+?>
+                <label style="display:block;margin:3px 0"><input type="radio" name="landing_storage" value="slave_tmp" checked> <?= __('Slave /tmp (direct stream, requires dump-size free disk on slave)') ?></label>
+                <label style="display:block;margin:3px 0"><input type="radio" name="landing_storage" value="pmacontrol_local"> <?= __('PmaControl host') ?> <code>DIRECTORY_BACKUP</code> = <code>/srv/backup</code> <small style="color:#64748b">(<?= __('decouples master/slave, adds an I/O round-trip') ?>)</small></label>
+<?php foreach ($mydumperSAs as $sa): ?>
+                <label style="display:block;margin:3px 0"><input type="radio" name="landing_storage" value="sa:<?= (int) $sa['id'] ?>"> <?= __('Remote storage area') ?> #<?= (int) $sa['id'] ?> &mdash; <strong><?= htmlspecialchars((string) $sa['libelle']) ?></strong> <code><?= htmlspecialchars((string) $sa['ip']) ?>:<?= (int) $sa['port'] ?></code> <code><?= htmlspecialchars((string) $sa['path']) ?></code></label>
+<?php endforeach; ?>
+            </fieldset>
+
+            <fieldset style="border:1px solid #e2e8f0;border-radius:4px;padding:6px 10px;margin:6px 0;font-size:12px">
+                <legend style="font-size:11px;color:#475569;padding:0 4px;width:auto"><?= __('Compression') ?></legend>
+                <select name="compression" style="font-family:monospace;padding:2px 4px">
+                    <option value="lz4" selected><?= __('lz4 (fastest compress + decompress — recommended)') ?></option>
+                    <option value="zstd"><?= __('zstd (balanced)') ?></option>
+                    <option value="gzip"><?= __('gzip (legacy, universal)') ?></option>
+                    <option value="xz"><?= __('xz (densest, slowest)') ?></option>
+                    <option value="none"><?= __('none (raw tar)') ?></option>
+                </select>
+                <small style="color:#64748b;display:block;margin-top:4px"><?= __('Binary must be present on both master and slave (probe_binaries step verifies)') ?></small>
+            </fieldset>
+
             <?php if ($hasAtRiskWarn): ?>
                 <label class="sv-reload-ack">
                     <input type="checkbox" name="acknowledge_at_risk" value="1" required>
