@@ -59,7 +59,7 @@ final class VariableIndexInputValidationTest extends TestCase
         );
 
         $this->assertNull($filters['filter_id_mysql_server']);
-        $this->assertSame('SELECT distinct ID FROM mysql_server WHERE is_proxy=0', $filters['list_server']);
+        $this->assertSame('SELECT distinct ID FROM mysql_server PARTITION(pn) WHERE is_proxy=0', $filters['list_server']);
         $this->assertSame('query_cache_size', $filters['filter_variable']);
         $this->assertSame(' AND `variable_name` ="query_cache_size" ', $filters['variable_where']);
     }

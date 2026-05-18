@@ -764,7 +764,7 @@ class Listener extends Controller
         {
 
             $db  = Sgbd::sql(DB_DEFAULT);
-            $sql = "SELECT * FROM `global_variable` WHERE `id_mysql_server` IN (" . implode(',', array_keys($data)) . ");";
+            $sql = "SELECT * FROM `global_variable` PARTITION(pn) WHERE `id_mysql_server` IN (" . implode(',', array_keys($data)) . ");";
             Debug::sql($sql);
             $res = $db->sql_query($sql);
 
@@ -829,7 +829,7 @@ class Listener extends Controller
                 $elem_del = array();
                 foreach ($delete as $id_mysql_server => $variables) {
                     foreach ($variables as $variable => $value) {
-                        $elem_del[] = 'SELECT id FROM global_variable WHERE id_mysql_server=' . $id_mysql_server . ' AND `variable_name` ="' . $variable . '"';
+                        $elem_del[] = 'SELECT id FROM global_variable PARTITION(pn) WHERE id_mysql_server=' . $id_mysql_server . ' AND `variable_name` ="' . $variable . '"';
                     }
                 }
                 if (!empty($elem_del)) {

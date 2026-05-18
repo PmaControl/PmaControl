@@ -157,7 +157,7 @@ final class KpiServerDrilldown
         $limit = max(1, min(1000, $limit + 1));
 
         return 'SELECT c.variable_name, c.value AS value_today, p.value AS value_yesterday '
-            .'FROM `global_variable` c '
+            .'FROM `global_variable` PARTITION(pn) c '
             .'LEFT JOIN `global_variable` FOR SYSTEM_TIME AS OF TIMESTAMP (NOW() - INTERVAL 1 DAY) p '
             .'ON p.id_mysql_server = c.id_mysql_server AND p.variable_name = c.variable_name '
             .'WHERE c.id_mysql_server = '.$serverId.' '

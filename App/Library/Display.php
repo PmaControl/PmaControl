@@ -205,7 +205,7 @@ class Display
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT local_host, local_port, remote_host, remote_port, servers_jump
-                FROM ssh_tunnel
+                FROM ssh_tunnel PARTITION(pn)
                 WHERE date_end IS NULL";
 
         $res = $db->sql_query($sql);

@@ -190,8 +190,8 @@ class CheckConfig extends Controller
                     //in case server is not available we looking for in cache
                     if (in_array($id_mysql_server, $server_note_available) || ($alone === true && $step1 === false)) {
 
-                        $sql = "SELECT variable_name as Variable_name, value as Value 
-                        FROM global_variable WHERE id_mysql_server=".$id_mysql_server." ORDER BY 1;";
+                        $sql = "SELECT variable_name as Variable_name, value as Value
+                        FROM global_variable PARTITION(pn) WHERE id_mysql_server=".$id_mysql_server." ORDER BY 1;";
 
                         $res = $db->sql_query($sql);
                         //debug($sql);

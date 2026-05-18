@@ -91,7 +91,7 @@ GROUP BY id_mysql_server,variable_name having count(1) > 1)
     public static function evaluateIndexFilters(array $get, callable $escape): array
     {
         $filterIdMysqlServer = null;
-        $listServer = "SELECT distinct ID FROM mysql_server WHERE is_proxy=0";
+        $listServer = "SELECT distinct ID FROM mysql_server PARTITION(pn) WHERE is_proxy=0";
 
         if (!empty($get['id_mysql_server']) && is_scalar($get['id_mysql_server'])) {
             $idMysqlServer = (int) $get['id_mysql_server'];

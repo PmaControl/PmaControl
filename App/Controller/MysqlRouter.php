@@ -556,7 +556,7 @@ class MysqlRouter extends Controller
         }
 
         $tunnels = [];
-        $resTunnel = $db->sql_query("SELECT id_mysql_server, remote_host, remote_port FROM ssh_tunnel WHERE date_end IS NULL AND id_mysql_server IS NOT NULL");
+        $resTunnel = $db->sql_query("SELECT id_mysql_server, remote_host, remote_port FROM ssh_tunnel PARTITION(pn) WHERE date_end IS NULL AND id_mysql_server IS NOT NULL");
         while ($row = $db->sql_fetch_array($resTunnel, MYSQLI_ASSOC)) {
             $tunnels[] = $row;
         }

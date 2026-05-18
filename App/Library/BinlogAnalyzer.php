@@ -451,7 +451,7 @@ class BinlogAnalyzer
     {
         // Primary source: global_variable table (populated by Aspirateur)
         $res = $this->db->sql_query(
-            "SELECT value FROM global_variable WHERE id_mysql_server = $masterId AND variable_name = 'version' LIMIT 1"
+            "SELECT value FROM global_variable PARTITION(pn) WHERE id_mysql_server = $masterId AND variable_name = 'version' LIMIT 1"
         );
         if ($res && $row = $this->db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             return $row['value'];

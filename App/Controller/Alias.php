@@ -87,7 +87,7 @@ class Alias extends Controller
             return;
         }
 
-        $sql = "SELECT *,ROW_START,ROW_END FROM alias_dns a
+        $sql = "SELECT *,ROW_START,ROW_END FROM alias_dns PARTITION(pn) a
         ORDER BY dns, port";
 
         $res = $db->sql_query($sql);
