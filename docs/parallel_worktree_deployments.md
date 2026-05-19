@@ -51,14 +51,24 @@ A fresh worktree (created with `git worktree add /srv/www/pmacontrol-worktrees/<
 needs three things before the URL serves anything but 500s:
 
 1. **`configuration/webroot.config.php`** — derives `WWW_ROOT` from the
-   directory name so Glial generates matching links:
+   directory name so Glial generates matching links, and points
+   `PLUGIN_STORAGE_DIR` at the canonical cache shared with master so the
+   worktree does not allocate its own `<branch>-plugin/.cache/` next door:
 
    ```php
    <?php
-   if (! defined('WWW_ROOT'))
-   {
+   if (! defined('WWW_ROOT')) {
        $branch = basename(dirname(__DIR__));
        define('WWW_ROOT', '/pmacontrol-worktrees/'.$branch.'/');
+   }
+
+   // Share the plugin install cache with /srv/www/pmacontrol/ rather
+   // than letting each worktree allocate its own
+   //   /srv/www/pmacontrol-worktrees/<branch>-plugin/.cache/
+   // (the default in App/Webroot/index.php). Saves redundant downloads
+   // and extra chowns when juggling several worktrees.
+   if (! defined('PLUGIN_STORAGE_DIR')) {
+       define('PLUGIN_STORAGE_DIR', '/srv/www/pmacontrol-plugin/.cache/');
    }
    ```
 
