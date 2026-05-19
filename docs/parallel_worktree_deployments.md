@@ -47,6 +47,36 @@ prevents the look-ahead from re-firing the rule against itself.
 
 ## Per-worktree bootstrap
 
+### One-shot script
+
+For a fresh worktree the six steps below are automated in
+`dev/worktree-install.php`. After `git worktree add`, run from inside
+the worktree:
+
+```bash
+cd /srv/www/pmacontrol-worktrees/<branch>
+sudo php dev/worktree-install.php
+```
+
+The script is **standalone** — no Glial bootstrap, no autoload — so it
+keeps working even when the worktree is in the broken half-bootstrap
+state it is meant to repair. Idempotent: re-running confirms the layout
+and re-runs the Glial table-cache regenerator. Useful flags:
+
+| Flag | Effect |
+|---|---|
+| `--master=/srv/www/pmacontrol` | Override the source checkout (default `/srv/www/pmacontrol`). |
+| `--plugin-cache=<path>` | Override `PLUGIN_STORAGE_DIR` in the generated `webroot.config.php`. |
+| `--www-prefix=/some-prefix/` | Override the WWW URL prefix (default `/pmacontrol-worktrees/`). |
+| `--no-chown` | Skip the recursive `chown -R www-data:www-data .`. |
+| `--no-glial` | Skip `./glial administration all`. |
+| `--dry-run` | Print every step without changing anything. |
+
+The script is the canonical reference; the steps below stay for manual
+debugging (and so you know what the script does).
+
+### Manual steps (what the script automates)
+
 A fresh worktree (created with `git worktree add /srv/www/pmacontrol-worktrees/<branch> <branch>`)
 needs three things before the URL serves anything but 500s:
 
