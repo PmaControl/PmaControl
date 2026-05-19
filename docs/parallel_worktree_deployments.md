@@ -61,13 +61,26 @@ sudo php dev/worktree-install.php
 The script is **standalone** — no Glial bootstrap, no autoload — so it
 keeps working even when the worktree is in the broken half-bootstrap
 state it is meant to repair. Idempotent: re-running confirms the layout
-and re-runs the Glial table-cache regenerator. Useful flags:
+and re-runs the Glial table-cache regenerator.
+
+It also scans `/srv/www/pmacontrol-plugin/*/.keys/*.public.b64` for
+Ed25519 dev signing keys (e.g. `eol-dev.public.b64`) and injects them
+into the generated `webroot.config.php` as a `putenv()` of
+`PMACONTROL_PLUGIN_SIGNATURE_PUBLIC_KEYS`. That lets the worktree
+install dev-signed `.pmactrl` archives without the
+"No trusted plugin signature public key configured" error. Skip with
+`--no-trust-dev-keys` on a checkout where real keys come from a
+production env / vault.
+
+Useful flags:
 
 | Flag | Effect |
 |---|---|
 | `--master=/srv/www/pmacontrol` | Override the source checkout (default `/srv/www/pmacontrol`). |
 | `--plugin-cache=<path>` | Override `PLUGIN_STORAGE_DIR` in the generated `webroot.config.php`. |
+| `--plugin-src=<path>` | Plugin source root scanned for `.keys/*.public.b64` (default `/srv/www/pmacontrol-plugin`). |
 | `--www-prefix=/some-prefix/` | Override the WWW URL prefix (default `/pmacontrol-worktrees/`). |
+| `--no-trust-dev-keys` | Do **not** inject the discovered dev signing keys (use on production checkouts). |
 | `--no-chown` | Skip the recursive `chown -R www-data:www-data .`. |
 | `--no-glial` | Skip `./glial administration all`. |
 | `--dry-run` | Print every step without changing anything. |
