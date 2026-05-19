@@ -42,7 +42,7 @@ curl -LsS https://r.mariadb.com/downloads/mariadb_repo_setup | bash -s -- --mari
 ./install-mariadb.sh -v 10.11 -p $password -d /srv/mysql -r
 
 
-apt-get -y install php7.4 apache2 graphviz php7.4-mysql php7.4-ldap php7.4-json php7.4-curl php7.4-cli php7.4-mbstring php7.4-intl php7.4-fpm libapache2-mod-php7.4 php7.4-gd php7.4-xml php7.4-gmp
+apt-get -y install php7.4 apache2 graphviz php7.4-mysql php7.4-ldap php7.4-json php7.4-curl php7.4-cli php7.4-mbstring php7.4-intl php7.4-fpm libapache2-mod-php7.4 php7.4-gd php7.4-xml php7.4-gmp php7.4-zip
 
 apt-get -y install mariadb-plugin-rocksdb 
 

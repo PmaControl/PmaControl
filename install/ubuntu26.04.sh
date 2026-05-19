@@ -223,6 +223,7 @@ install_packages()
         php-mysql \
         php-ssh2 \
         php-xml \
+        php-zip \
         rsync \
         skopeo \
         sudo \

@@ -45,3 +45,4 @@ One topic per file. Load only what the current task needs.
 ## Installation
 - [install_ubuntu2604.md](install_ubuntu2604.md) — Ubuntu 26.04 installer variables, re-run behavior, CI target
 - [install_debian13.md](install_debian13.md) — Debian 13 installer and network hardening variables
+- [parallel_worktree_deployments.md](parallel_worktree_deployments.md) — Apache vhost + per-worktree bootstrap for `/pmacontrol-reviews/<hash>/` and `/pmacontrol-worktrees/<branch>/`
