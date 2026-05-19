@@ -71,8 +71,10 @@ run_bench() {
         return 1
     fi
 
-    # Warm-up so opcache + ts_max_date caches are populated.
-    curl -sS -o /dev/null -b "$jar" -c "$jar" "$URL" || true
+    # Warmup loop: 3 hits so opcache + ts_max_date caches stabilise.
+    for _ in 1 2 3; do
+        curl -sS -o /dev/null -b "$jar" -c "$jar" "$URL" || true
+    done
 
     local times=()
     for i in $(seq 1 "$ITER"); do
@@ -82,11 +84,13 @@ run_bench() {
     done
 
     awk -v label="$label" '
-        BEGIN { min = 1e9; max = 0; sum = 0 }
-        { v = $1 * 1000; sum += v; if (v < min) min = v; if (v > max) max = v; n++ }
+        { v[NR] = $1 * 1000; sum += v[NR] }
         END {
-            printf "%-46s  (n=%d)  min %.0f ms | mean %.0f ms | max %.0f ms\n",
-                   label, n, min, sum / n, max
+            n = NR
+            asort(v)
+            printf "%-46s  (n=%d)  min %.0f | p50 %.0f | mean %.0f | p90 %.0f | max %.0f  ms\n",
+                   label, n, v[1], v[int(n/2)+1], sum/n,
+                   v[int(n*0.9)], v[n]
         }
     ' <(printf '%s\n' "${times[@]}")
 
