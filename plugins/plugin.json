@@ -132,6 +132,19 @@
       "LicenceType": "GPL-3.0",
       "Description": "Bundles every open plugin-eol issue: drop proxies+VIPs from fleet baseline (#1), fall back to global_variable for version when Extraction2 is silent (#2), new /Eol/patches/ paginated patch history via MariaDB system versioning (#3, closes #5), auto-hide 0-count product tabs (#6), harmonised By organization / By environment / Org × Env matrix labels (#7).",
       "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.11.0.pmactrl"
+    },
+    "v1.13.0": {
+      "Title": "End-Of-Life",
+      "Picture": "{WWW}image/plugin/eol.svg",
+      "MD5": "9c5af92bae313d0c4c9cdadc05452e83",
+      "SHA256": "1027b4a2e7b5e9bf684b49552c90300fe18ded751fb72bfc5f93c76fb4ebc93f",
+      "Signature": "adwFYS9u15zyY5fY/oOqtWtfnvWBLAYeMOZvUXEJc+szgNy0yW1vVsPxMRm6incS5VsCYMN0LM0f0zOqLXxHBg==",
+      "KeyId": "eol-dev",
+      "CreationDate": "19/05/2026",
+      "Contributor": "PmaControl",
+      "LicenceType": "GPL-3.0",
+      "Description": "/Eol/matrix/ palette polish: grand-total cell uses slate-300 (#cbd5e1) instead of dark navy; bottom-left 'Total' label matches the totals-row #f8fafc background so the whole totals band reads as one continuous strip.",
+      "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.13.0.pmactrl"
     }
   },
   "test-plug": {
