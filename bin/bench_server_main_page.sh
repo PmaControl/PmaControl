@@ -1,6 +1,11 @@
 #!/bin/bash
-# Bench the full /Server/main page (HTTP, authenticated) on master vs worktree.
-# Average of N runs (default 10) for each side, using time-total from curl.
+# Bench the full /Server/main page (HTTP, authenticated) on the same
+# worktree URL with two code variants:
+#
+#   - "master"   : Server.php reverted to origin/master (Extraction2 only)
+#   - "worktree" : current branch HEAD              (GlobalVariable + Extraction2)
+#
+# Average of N runs (default 10), curl time_total.
 #
 # Usage:
 #     bin/bench_server_main_page.sh [iterations]
@@ -9,66 +14,76 @@ set -euo pipefail
 
 ITER=${1:-10}
 BASE="http://localhost"
-MASTER_PREFIX=""
-WORKTREE_PREFIX="/pmacontrol-worktrees/server-main-versions-from-global-variable"
+PREFIX="/pmacontrol-worktrees/server-main-versions-from-global-variable"
+URL="${BASE}${PREFIX}/en/server/main/"
+LOGIN_URL="${BASE}${PREFIX}/en/user/connection/"
 
-USER="claude"
-PASS="pcPEUByN1aXHLLjHiCxPnP6m"
+USER_LOGIN="claude"
+USER_PASS="pcPEUByN1aXHLLjHiCxPnP6m"
 
-login_and_time() {
-    local prefix="$1"
-    local label="$2"
-    local jar
-    jar=$(mktemp)
+if ! git rev-parse --git-dir > /dev/null 2>&1; then
+    echo "Run from inside a git worktree." >&2
+    exit 1
+fi
+if ! git diff --quiet HEAD --; then
+    echo "Working tree has uncommitted changes. Commit or stash first." >&2
+    exit 1
+fi
 
-    local conn_url="${BASE}${prefix}/en/user/connection/"
-    local main_url="${BASE}${prefix}/en/server/main/"
+CONTROLLER="App/Controller/Server.php"
 
-    # Step 1: GET login page to seat session + grab CSRF token.
+restore_controller() {
+    git checkout HEAD -- "$CONTROLLER" >/dev/null 2>&1 || true
+}
+trap restore_controller EXIT INT TERM
+
+login_jar() {
+    local jar="$1"
     local html
-    html=$(curl -sS -c "$jar" -b "$jar" "$conn_url")
+    html=$(curl -sS -c "$jar" -b "$jar" "$LOGIN_URL")
     local token
     token=$(printf '%s' "$html" | grep -oE 'name="_csrf_token" value="[^"]+"' | head -1 | sed -E 's/.*value="([^"]+)"/\1/')
     if [ -z "$token" ]; then
-        echo "$label: could not extract CSRF token from $conn_url" >&2
-        rm -f "$jar"
+        echo "Could not extract CSRF token from $LOGIN_URL" >&2
         return 1
     fi
-
-    # Step 2: POST creds.
-    local post_status
-    post_status=$(curl -sS -o /dev/null -w '%{http_code}' \
+    local code
+    code=$(curl -sS -o /dev/null -w '%{http_code}' \
         -c "$jar" -b "$jar" -L \
         -d "_csrf_token=${token}" \
         -d "loginForm=loginForm" \
-        --data-urlencode "user_main[login]=${USER}" \
-        --data-urlencode "user_main[password]=${PASS}" \
+        --data-urlencode "user_main[login]=${USER_LOGIN}" \
+        --data-urlencode "user_main[password]=${USER_PASS}" \
         -d "login=Connexion" \
-        "$conn_url")
-    if [ "$post_status" != "200" ] && [ "$post_status" != "302" ]; then
-        echo "$label: login POST returned $post_status" >&2
+        "$LOGIN_URL")
+    [ "$code" = "200" ] || [ "$code" = "302" ]
+}
+
+run_bench() {
+    local label="$1"
+    local jar
+    jar=$(mktemp)
+    if ! login_jar "$jar"; then
+        echo "$label: login failed" >&2
         rm -f "$jar"
         return 1
     fi
 
-    # Warm-up: hit /Server/main once so server-side caches (opcache,
-    # ts_max_date etc.) are populated for both sides.
-    curl -sS -o /dev/null -b "$jar" -c "$jar" "$main_url" || true
+    # Warm-up so opcache + ts_max_date caches are populated.
+    curl -sS -o /dev/null -b "$jar" -c "$jar" "$URL" || true
 
-    local total=0
     local times=()
     for i in $(seq 1 "$ITER"); do
         local t
-        t=$(curl -sS -o /dev/null -b "$jar" -c "$jar" -w '%{time_total}' "$main_url")
+        t=$(curl -sS -o /dev/null -b "$jar" -c "$jar" -w '%{time_total}' "$URL")
         times+=("$t")
     done
 
-    # Mean / min / max in milliseconds.
-    awk -v label="$label" -v iter="$ITER" '
+    awk -v label="$label" '
         BEGIN { min = 1e9; max = 0; sum = 0 }
         { v = $1 * 1000; sum += v; if (v < min) min = v; if (v > max) max = v; n++ }
         END {
-            printf "%s  (n=%d)  min %.0f ms | mean %.0f ms | max %.0f ms\n",
+            printf "%-46s  (n=%d)  min %.0f ms | mean %.0f ms | max %.0f ms\n",
                    label, n, min, sum / n, max
         }
     ' <(printf '%s\n' "${times[@]}")
@@ -77,7 +92,13 @@ login_and_time() {
 }
 
 echo "Iterations per side: $ITER"
+echo "URL: $URL"
 echo
 
-login_and_time "$MASTER_PREFIX"   "master    (Extraction2 only)"
-login_and_time "$WORKTREE_PREFIX" "worktree  (GlobalVariable + Extraction2)"
+# Side A: master code on Server.php (Extraction2 only)
+git checkout origin/master -- "$CONTROLLER" >/dev/null 2>&1
+run_bench "master code      (Extraction2(17))"
+
+# Side B: branch HEAD code (GlobalVariable + Extraction2)
+git checkout HEAD -- "$CONTROLLER" >/dev/null 2>&1
+run_bench "worktree code    (GlobalVariable(9)+Extraction2(8))"
