@@ -7,6 +7,7 @@ use \Glial\Synapse\Controller;
 use \Glial\Security\Crypt\Crypt;
 use App\Library\Extraction;
 use App\Library\Extraction2;
+use App\Library\GlobalVariable;
 
 use \App\Library\Debug;
 use \App\Library\Mysql;
@@ -436,11 +437,32 @@ class Server extends Controller
             $typeIndexMap[(int)$arr['id']] = count($data['servers']) - 1;
         }
 
-        $data['extra'] = Extraction2::display(array("version", "version_comment", "mysql_ping","time_server","wsrep_cluster_status","have_ssl",
-         "mysql_available", "mysql_server::mysql_error" ,"general_log", "wsrep_on", "is_proxysql", "performance_schema", "read_only",
-         "avg_latency","delta_sum_timer_wait", "delta_sum_lock_time", "variables::hostname"));
+        // Variables ingérées depuis le fichier collecteur `mysql_global_variable` :
+        // leur dernière valeur connue est mirroir-ée dans la table `global_variable`
+        // par Listener::afterUpdateVariable(). On la lit directement, ce qui survit
+        // à une perte VPN prolongée — `ts_variable` (Extraction2) se vide quand
+        // plus aucun fichier n'arrive, alors que `global_variable` garde la
+        // dernière valeur connue indéfiniment. #1321
+        $globalVarKeys = ["version", "version_comment", "have_ssl", "general_log",
+            "wsrep_on", "is_proxysql", "performance_schema", "read_only",
+            "variables::hostname"];
+        $computedKeys = ["mysql_ping", "time_server", "wsrep_cluster_status",
+            "mysql_available", "mysql_server::mysql_error", "avg_latency",
+            "delta_sum_timer_wait", "delta_sum_lock_time"];
 
-        
+        $fromGlobal = GlobalVariable::display($globalVarKeys, $servers);
+        $fromExtraction2 = Extraction2::display($computedKeys);
+
+        $data['extra'] = [];
+        $allIds = array_unique(array_merge(array_keys($fromExtraction2), array_keys($fromGlobal)));
+        foreach ($allIds as $id) {
+            $data['extra'][$id] = array_merge(
+                $fromExtraction2[$id] ?? [],
+                $fromGlobal[$id] ?? []
+            );
+        }
+
+
 
         $data['last_date'] = Extraction2::display(array("mysql_available"));
         $data['tunnel_mapping'] = Tunnel::getTunnelsMapping();
