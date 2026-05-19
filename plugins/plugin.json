@@ -158,6 +158,19 @@
       "LicenceType": "GPL-3.0",
       "Description": "Full translation pack: every __() call in src/ (159 unique strings) is now translated to fr / ar / ru / pl / zh-cn — 795 INSERT IGNORE rows seeded via the manifest's data.install phase. Reference generator + process doc lives in pmacontrol dev/gen-plugin-translations.php.",
       "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.14.0.pmactrl"
+    },
+    "v1.14.1": {
+      "Title": "End-Of-Life",
+      "Picture": "{WWW}image/plugin/eol.svg",
+      "MD5": "235449e1584c8ba677bd0de2bb1e30ac",
+      "SHA256": "fab6c2eb84b06c39568bd706a05eae8ecb56c49a23d0fb77f3f655016728404a",
+      "Signature": "YTdbaxrnaV0yRlA36l46Qg466JlicCLB0hkLkXLYeSbBOlNl6V1yuoOShEF5zX6UY5plfBvds967TN/E06gFDw==",
+      "KeyId": "eol-dev",
+      "CreationDate": "19/05/2026",
+      "Contributor": "PmaControl",
+      "LicenceType": "GPL-3.0",
+      "Description": "PHP 8.4+ deprecation fix: EolKpi::loadVersionExtras() $servers parameter is now explicitly nullable (?array $servers = null). Same translation pack as v1.14.0.",
+      "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.14.1.pmactrl"
     }
   },
   "test-plug": {
