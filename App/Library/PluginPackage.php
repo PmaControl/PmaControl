@@ -133,6 +133,37 @@ class PluginPackage
         return $removed;
     }
 
+    /**
+     * Enumerate every destination path declared by the manifest (files +
+     * extension partials) that already exists on disk. Used by
+     * Plugin::install to decide whether an automatic cleanup is needed
+     * before the actual copy starts.
+     *
+     * @return array<int, string>  absolute paths that would collide
+     */
+    public static function detectCollisions(array $manifest, $projectRoot)
+    {
+        $collisions = array();
+
+        foreach ($manifest['files'] ?? array() as $file) {
+            if (empty($file['destination'])) continue;
+            $destination = self::resolveTargetPath($projectRoot, $file['destination']);
+            if (file_exists($destination) || is_link($destination)) {
+                $collisions[] = $destination;
+            }
+        }
+
+        foreach ($manifest['extensions'] ?? array() as $extension) {
+            if (($extension['kind'] ?? '') !== 'partial' || empty($extension['destination'])) continue;
+            $destination = self::resolveTargetPath($projectRoot, $extension['destination']);
+            if (file_exists($destination) || is_link($destination)) {
+                $collisions[] = $destination;
+            }
+        }
+
+        return $collisions;
+    }
+
     public static function copyFiles(array $manifest, $pluginDirectory, $projectRoot)
     {
         $copied = array();

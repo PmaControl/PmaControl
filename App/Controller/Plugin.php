@@ -259,6 +259,32 @@ SELECT '" . addslashes($key) . "','" . addslashes($title) . "','" . addslashes($
 
         if (is_file($manifestFile)) {
             $manifest = PluginPackage::load($ThisPluginDirectory);
+
+            // Recover from a stale layout (interrupted install, manual
+            // copy left over, double-clicked Install, ...). Walk the
+            // manifest's declared destinations, list what already
+            // exists, then mechanically uninstall ONLY those manifest
+            // entries plus the plugin's DB rows. The next attempt
+            // re-runs from a clean slate. If the second attempt still
+            // collides, surface every conflicting path so the admin
+            // can finish the cleanup by hand instead of staring at a
+            // PHP trace.
+            $collisions = PluginPackage::detectCollisions($manifest, ROOT);
+            if (!empty($collisions)) {
+                $this->cleanupStaleInstall($pluginId, $manifest);
+                $remaining = PluginPackage::detectCollisions($manifest, ROOT);
+                if (!empty($remaining)) {
+                    Throw new \Exception(
+                        "Plugin install aborted — the following paths exist on disk and were not "
+                        ."created by the plugin's manifest (manual changes? other plugin? race?):\n  - "
+                        .implode("\n  - ", $remaining)."\n\n"
+                        ."Resolve the conflict and retry, or contact the administrator. To force "
+                        ."the install after backing up the listed files, remove them manually:\n  "
+                        ."sudo rm -f ".implode(' ', $remaining)
+                    );
+                }
+            }
+
             $plan = PluginPackage::install($manifest, $ThisPluginDirectory, ROOT);
 
             foreach ($plan['files'] as $file) {
@@ -713,6 +739,27 @@ SELECT '" . addslashes($key) . "','" . addslashes($title) . "','" . addslashes($
         }
 
         return (array)$hook->$methodName();
+    }
+
+    /**
+     * Best-effort recovery from a half-installed plugin. Removes the
+     * destinations declared by `$manifest` and purges the plugin's
+     * extension / menu / file rows so the next install pass can start
+     * from a clean slate. Intentionally avoids touching anything not
+     * referenced by the manifest — destinations created out-of-band
+     * (manual edits, other plugins) are NEVER deleted here.
+     */
+    private function cleanupStaleInstall($pluginId, array $manifest)
+    {
+        if (class_exists('\App\Library\PluginSlot')) {
+            \App\Library\PluginSlot::unregisterAll($pluginId);
+        }
+        PluginPackage::removeExtensionPartials($manifest, ROOT);
+        PluginPackage::removeFiles($manifest, ROOT);
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $db->sql_query("DELETE FROM plugin_menu WHERE id_plugin_main = ".(int)$pluginId);
+        $db->sql_query("DELETE FROM plugin_file WHERE id_plugin_main = ".(int)$pluginId);
     }
 
     private function downloadPluginArchive($sourceUrl, $destination)
