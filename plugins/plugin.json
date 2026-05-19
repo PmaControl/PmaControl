@@ -171,6 +171,19 @@
       "LicenceType": "GPL-3.0",
       "Description": "PHP 8.4+ deprecation fix: EolKpi::loadVersionExtras() $servers parameter is now explicitly nullable (?array $servers = null). Same translation pack as v1.14.0.",
       "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.14.1.pmactrl"
+    },
+    "v1.15.0": {
+      "Title": "End-Of-Life",
+      "Picture": "{WWW}image/plugin/eol.svg",
+      "MD5": "086bbcc05bda0d85fdef5067c72393da",
+      "SHA256": "02e0c44e12bb915497a9c1e982fdffe79800b4607d90e2a7981a49ca202d6b9a",
+      "Signature": "2mv8unsW9MUUSWNvswip/cpFegsnABcLvGz74d4J/GMP0JxzSKFSjwHdcOlgxwOsV/KnaevU4JqROCGxfZBnDQ==",
+      "KeyId": "eol-dev",
+      "CreationDate": "19/05/2026",
+      "Contributor": "PmaControl",
+      "LicenceType": "GPL-3.0",
+      "Description": "/Eol/patches/ improvements: Organization column, click-to-filter on server/org/env cells, removable active-filter pills (org/server/until/since), All-time default, drag-to-zoom on the weekly-volume sparkline. Translations: 168 strings × 5 langs (840 rows). Closes plugin-eol#9.",
+      "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.15.0.pmactrl"
     }
   },
   "test-plug": {
