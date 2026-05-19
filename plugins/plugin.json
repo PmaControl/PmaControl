@@ -41,6 +41,32 @@
       "LicenceType": "GPL-3.0",
       "Description": "MySQL and MariaDB end-of-life tracker with daily refresh, EOL badges, minor-version update hints, and a dedicated card on /Home listing every monitored server with a minor version behind. Uses the slot/registry extension model to (de)register UI hooks cleanly on install/uninstall.",
       "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol.pmactrl"
+    },
+    "v1.5.0": {
+      "Title": "End-Of-Life",
+      "Picture": "{WWW}image/plugin/eol.svg",
+      "MD5": "5a9360beb9bc27c07605b07b8d5e4877",
+      "SHA256": "eb465122ee8d59caa9a7d596cb1230eb24b42258691c5ecbc48b01e05a4bfc6f",
+      "Signature": "apMwXBo4X+u8z1dD2j+icYYnXWyVLNke2b121SIeIXyQs5bDu0pCo99R6gzL8saUWIaKAOmUq9Y0qtdmeqaQCA==",
+      "KeyId": "eol-dev",
+      "CreationDate": "19/05/2026",
+      "Contributor": "PmaControl",
+      "LicenceType": "GPL-3.0",
+      "Description": "Adds Percona Server for MySQL + Percona XtraDB Cluster to the EOL tracker. Both catalogs mirror upstream MySQL (per Percona's stated policy) and carry their own product codes, GA dates, and support labels. Includes the v1.4.0 Fleet KPI dashboard + PDF export.",
+      "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.5.0.pmactrl"
+    },
+    "v1.6.0": {
+      "Title": "End-Of-Life",
+      "Picture": "{WWW}image/plugin/eol.svg",
+      "MD5": "da64b128c64a90122664735ef2922790",
+      "SHA256": "6ef4c90aaaa4e356cb8a60758fe11a556f4f1b5bcb09c57ab4c279ddbbe3afc2",
+      "Signature": "7hRWFYha76lo2HD8YQyWIKS1Hv0kmHbGzA2491iy9wTRA/eXWVAdhZzkFpD+GjLNeue/yWxEYCPRnyuVW+6QAQ==",
+      "KeyId": "eol-dev",
+      "CreationDate": "19/05/2026",
+      "Contributor": "PmaControl",
+      "LicenceType": "GPL-3.0",
+      "Description": "Implements #1301 quick wins: scope X/Y in header, MariaDB/MySQL official colours, X/Y centred donuts, version sprawl sorted by status with target-migration arrows + LTS badges, runway with per-bucket dates, top-servers with target/complexity/env/risk-breakdown columns, compliance gauge with target band, auto TL;DR, global legend.",
+      "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.6.0.pmactrl"
     }
   },
   "test-plug": {
