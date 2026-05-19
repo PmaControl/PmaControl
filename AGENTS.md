@@ -11,6 +11,27 @@ It is a thin index: per-topic rules live in `docs/`, deep references in `documen
 - Use a dedicated worktree under `/srv/www/pmacontrol-worktrees/` for feature work, fixes, reviews, PR preparation and experiments.
 - Only leave `/srv/www/pmacontrol` on a non-`master` branch when the user gives a clear contrary instruction, and switch it back to `master` as soon as that exception is no longer needed.
 
+### Bootstrap a new worktree
+
+After `git worktree add`, run the one-shot bootstrap from inside the
+new tree so Apache can serve it:
+
+```bash
+git -C /srv/www/pmacontrol worktree add -b <branch> \
+    /srv/www/pmacontrol-worktrees/<branch> origin/master
+cd /srv/www/pmacontrol-worktrees/<branch>
+sudo php dev/worktree-install.php
+```
+
+The script generates `configuration/webroot.config.php`, symlinks
+configuration files, builds the `vendor/` hybrid layout (Composer
+PSR-4-safe), drops the `App/Webroot/plugins` symlink, creates
+`App/model/IdentifierPmacontrol/`, chowns the tree to `www-data`, and
+runs `./glial administration all`. It is idempotent and self-contained
+(no Glial bootstrap required), so it stays usable in the half-broken
+state it is designed to repair. Full reference + flags:
+[docs/parallel_worktree_deployments.md](docs/parallel_worktree_deployments.md).
+
 ## Claude Code
 
 Claude Code is available locally through the `claude` CLI.
