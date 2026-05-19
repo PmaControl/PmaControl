@@ -143,11 +143,20 @@ function step_webroot_config($root, $branch, $wwwPrefix, $pluginCache, $pluginSr
         ."}\n"
         .$trustBlock;
 
-    if (is_file($target) && @file_get_contents($target) === $contents) {
+    if (is_file($target) && !is_link($target) && @file_get_contents($target) === $contents) {
         return ok("configuration/webroot.config.php (already current)");
     }
     if ($dryRun) return ok("[dry] write {$target}{$trustSummary}");
     @mkdir(dirname($target), 0755, true);
+    // Defensive: a stray symlink at $target (e.g. a manual `ln -s` back to
+    // master/configuration/ before the first run, or a worktree placed inside
+    // master where another script symlinked the file) would make
+    // file_put_contents() follow the link and overwrite master's
+    // webroot.config.php — silently breaking master's WWW_ROOT.
+    // Unlink first so the write always lands in the worktree.
+    if (is_link($target)) {
+        @unlink($target);
+    }
     if (file_put_contents($target, $contents) === false) {
         die_red("Cannot write {$target}");
     }
