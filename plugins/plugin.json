@@ -106,6 +106,19 @@
       "LicenceType": "GPL-3.0",
       "Description": "Adds /Eol/byEnvironment/ (compliance ranked per environment) and /Eol/matrix/ (organization × environment grid with one mini supported/warning/EOL donut per cell, deep-link to /Eol/kpi/?org=…&env=…). Closes plugin-eol#4.",
       "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.9.0.pmactrl"
+    },
+    "v1.10.0": {
+      "Title": "End-Of-Life",
+      "Picture": "{WWW}image/plugin/eol.svg",
+      "MD5": "c4c6f1971cf948c36b5e0af4645d1a58",
+      "SHA256": "6a8bf13a64d6334d1992bdc378a577d2acb613c45a287015d86bb56202ed9d1b",
+      "Signature": "JiB+hmUOLdOaOk4VRGszA4D43DoUciKRhpGJ2X8wr0qokCJ98fv0a+o+2dBVoUPhuaK77Ss+NE1YQEN5bb/FDw==",
+      "KeyId": "eol-dev",
+      "CreationDate": "19/05/2026",
+      "Contributor": "PmaControl",
+      "LicenceType": "GPL-3.0",
+      "Description": "Nested menu hierarchy: five active=0 child menu rows under the visible 'EOL' parent for /Eol/{kpi,byOrganization,byEnvironment,matrix,index/updates}/, so Glial resolves the page title and breadcrumb on every sub-page without polluting the visible nav.",
+      "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.10.0.pmactrl"
     }
   },
   "test-plug": {
