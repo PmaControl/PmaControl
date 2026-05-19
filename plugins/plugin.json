@@ -184,6 +184,19 @@
       "LicenceType": "GPL-3.0",
       "Description": "/Eol/patches/ improvements: Organization column, click-to-filter on server/org/env cells, removable active-filter pills (org/server/until/since), All-time default, drag-to-zoom on the weekly-volume sparkline. Translations: 168 strings × 5 langs (840 rows). Closes plugin-eol#9.",
       "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.15.0.pmactrl"
+    },
+    "v1.15.1": {
+      "Title": "End-Of-Life",
+      "Picture": "{WWW}image/plugin/eol.svg",
+      "MD5": "6782a53a68cdfc4557ba9b9e721c90a0",
+      "SHA256": "09c599bb82dd465bbc966b5a921d9218dfb42f6d3eae0ae8924ddb73ad94565e",
+      "Signature": "jFIo0UHj0xAd2tvIAnX6JgUFKtQK3PdhROhNGclL+Nysn1nJjKeGGwZB1Kwprkr9takJc7R0vrOVkpQmOCJdAA==",
+      "KeyId": "eol-dev",
+      "CreationDate": "19/05/2026",
+      "Contributor": "PmaControl",
+      "LicenceType": "GPL-3.0",
+      "Description": "Cosmetic: strip the microsecond suffix from patched_at on /Eol/patches/. DATE_FORMAT in the temporal CTE; second-precision values everywhere downstream.",
+      "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.15.1.pmactrl"
     }
   },
   "test-plug": {
