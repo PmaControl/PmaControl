@@ -80,6 +80,19 @@
       "LicenceType": "GPL-3.0",
       "Description": "Adds /Eol/byOrganization/ — per-tenant compliance comparison with sortable table (compliance pill, lifecycle mini-bar, top server-at-risk per org) and drill-down to /Eol/kpi/?org=<id>. Closes #1303.",
       "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.7.0.pmactrl"
+    },
+    "v1.8.0": {
+      "Title": "End-Of-Life",
+      "Picture": "{WWW}image/plugin/eol.svg",
+      "MD5": "db48fa4940ee9a268b08260910197052",
+      "SHA256": "42cb5c563f0dfbac4a8c7168827f72756e8baa3bba6d11cac953f9f25e667967",
+      "Signature": "+HES93CaxPUOfujX0OM6QkRN4AFgol/g5A49XAL15UFRp67BpS7BEMeKWoHUg0Oe1YM3BbYXhgC7vu4QtZ9DDQ==",
+      "KeyId": "eol-dev",
+      "CreationDate": "19/05/2026",
+      "Contributor": "PmaControl",
+      "LicenceType": "GPL-3.0",
+      "Description": "URL-persisted env/product/status filter pills on /Eol/kpi/ (#1301), CSV export of the full top-servers list (#1301), tab-bar fleet counters per SGBD with grey-out at 0 (#1302), 'Percona Server' short label (#1305).",
+      "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.8.0.pmactrl"
     }
   },
   "test-plug": {
