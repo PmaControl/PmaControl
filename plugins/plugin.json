@@ -67,6 +67,19 @@
       "LicenceType": "GPL-3.0",
       "Description": "Implements #1301 quick wins: scope X/Y in header, MariaDB/MySQL official colours, X/Y centred donuts, version sprawl sorted by status with target-migration arrows + LTS badges, runway with per-bucket dates, top-servers with target/complexity/env/risk-breakdown columns, compliance gauge with target band, auto TL;DR, global legend.",
       "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.6.0.pmactrl"
+    },
+    "v1.7.0": {
+      "Title": "End-Of-Life",
+      "Picture": "{WWW}image/plugin/eol.svg",
+      "MD5": "4eb20d8407697803168da0283676dc0e",
+      "SHA256": "4efd599e963b67d0d49e588b70cf543d018d4d0b6bb6bf8847645a50b6cec449",
+      "Signature": "HlTgwAoudy5VwKFkiN/VdgmSocm0MZ8U4rBx5TtC2d1ei/+UPGFWwJALFwzD9YxHrXk0QyWs9R64dWLYSNhVDg==",
+      "KeyId": "eol-dev",
+      "CreationDate": "19/05/2026",
+      "Contributor": "PmaControl",
+      "LicenceType": "GPL-3.0",
+      "Description": "Adds /Eol/byOrganization/ — per-tenant compliance comparison with sortable table (compliance pill, lifecycle mini-bar, top server-at-risk per org) and drill-down to /Eol/kpi/?org=<id>. Closes #1303.",
+      "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.7.0.pmactrl"
     }
   },
   "test-plug": {
