@@ -197,6 +197,32 @@
       "LicenceType": "GPL-3.0",
       "Description": "Cosmetic: strip the microsecond suffix from patched_at on /Eol/patches/. DATE_FORMAT in the temporal CTE; second-precision values everywhere downstream.",
       "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.15.1.pmactrl"
+    },
+    "v1.15.2": {
+      "Title": "End-Of-Life",
+      "Picture": "{WWW}image/plugin/eol.svg",
+      "MD5": "1bc6ccc5b36ed885c50f45287c978c5a",
+      "SHA256": "abfc2b30e5ef3f2259d242d1a738df126314da1b654b0236223d41e4666f9517",
+      "Signature": "BBp+v9HYwK70bpPs7rFboad1w+vllwbpnwCXbcflr76UwbIcbKaXfvuWVeoPqLgYwSPTiBsEdFnqVHI0SkiuAQ==",
+      "KeyId": "eol-dev",
+      "CreationDate": "19/05/2026",
+      "Contributor": "PmaControl",
+      "LicenceType": "GPL-3.0",
+      "Description": "/Eol/patches/ sparkline anchors to the first observed patch instead of the 5-year theoretical baseline (plugin-eol#11). All-time window no longer renders empty bars before the data.",
+      "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.15.2.pmactrl"
+    },
+    "v1.15.3": {
+      "Title": "End-Of-Life",
+      "Picture": "{WWW}image/plugin/eol.svg",
+      "MD5": "a3df2f67342447845b95652c9b941cf5",
+      "SHA256": "a36b2844e617b9e0b04d41ecd33d08130c433a948afbb52a42c3406908a2c10d",
+      "Signature": "zKGY6+iDUsVSlxyIGe5ZwiN5Ktdx3SVoFIl0RvVVKsSuKiB7TJ/5KNlvmQGXGqSv0+UWe4H6SmTSv6mJ6xKeCw==",
+      "KeyId": "eol-dev",
+      "CreationDate": "19/05/2026",
+      "Contributor": "PmaControl",
+      "LicenceType": "GPL-3.0",
+      "Description": "/Eol/patches/ minor/major patches stand out: Δ pills size + saturate by importance with daltonism icons; weekly-volume sparkline stacks each column by Δ class. Closes plugin-eol#12.",
+      "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.15.3.pmactrl"
     }
   },
   "test-plug": {
