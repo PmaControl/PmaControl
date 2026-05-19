@@ -50,6 +50,8 @@ login_jar() {
     local code
     code=$(curl -sS -o /dev/null -w '%{http_code}' \
         -c "$jar" -b "$jar" -L \
+        -H "Origin: ${BASE}" \
+        -H "Referer: ${LOGIN_URL}" \
         -d "_csrf_token=${token}" \
         -d "loginForm=loginForm" \
         --data-urlencode "user_main[login]=${USER_LOGIN}" \
