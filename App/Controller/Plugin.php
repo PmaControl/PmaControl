@@ -81,20 +81,21 @@ class Plugin extends Controller {
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $Query = "SELECT id, nom, COALESCE(title, '') AS title, description, auteur, image, fichier, date_installation, md5_zip, sha256_zip, signature_zip, version, type_licence, est_actif, maxversion
-        FROM plugin_main ";
-        $Query .= " INNER JOIN"
-                . " (SELECT nom AS tempnom, MAX(version) AS maxversion FROM plugin_main GROUP BY nom)"
-                . " AS Temp ON plugin_main.nom = Temp.tempnom";
+        // Pull every row up-front. Filtering by "newer than the latest
+        // catalogue entry" used to happen via a `MAX(version)` SQL
+        // subquery, but MySQL/MariaDB `MAX()` is a string max — once a
+        // plugin shipped a v1.10.0 alongside v1.9.0 the subquery picked
+        // 'v1.9.0' (because '9' > '1' lexicographically after the
+        // second '1') and the Update button disappeared (#1314). The
+        // filter is reapplied in PHP below using version_compare(),
+        // which correctly orders dotted-numeric versions of arbitrary
+        // segment width.
+        $Query = "SELECT id, nom, COALESCE(title, '') AS title, description, auteur, image, fichier, date_installation, md5_zip, sha256_zip, signature_zip, version, type_licence, est_actif
+                  FROM plugin_main";
 
-        if (isset($param[0])) {
-            if (strtolower($param[0]) == 'installed') {
-                $Query .= " WHERE est_actif = 1";
-            }
-            if (strtolower($param[0]) == 'toupdate') {
-                $Query .= " WHERE plugin_main.version < Temp.maxversion"
-                        . " AND plugin_main.est_actif = 1";
-            }
+        $filter = isset($param[0]) ? strtolower($param[0]) : '';
+        if ($filter === 'installed') {
+            $Query .= " WHERE est_actif = 1";
         }
 
         $res = $db->sql_query($Query);
@@ -102,6 +103,31 @@ class Plugin extends Controller {
         $plugins = array();
         while ($plugin = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $plugins[$plugin["nom"]][$plugin["version"]] = $plugin;
+        }
+
+        // "toupdate" view: keep only plugins where an active row is
+        // strictly older than the catalogue max for that name. Done in
+        // PHP so the version comparison uses version_compare() rather
+        // than MariaDB's string compare.
+        if ($filter === 'toupdate') {
+            foreach ($plugins as $name => $versions) {
+                $current = null;
+                $latest = null;
+                foreach ($versions as $v => $row) {
+                    if ($latest === null || version_compare($v, $latest, '>')) {
+                        $latest = $v;
+                    }
+                    if ((int)($row['est_actif'] ?? 0) === 1) {
+                        $current = $v;
+                    }
+                }
+                $isStale = $current !== null
+                    && $latest !== null
+                    && version_compare($current, $latest, '<');
+                if (!$isStale) {
+                    unset($plugins[$name]);
+                }
+            }
         }
 
         $this->set('data', $plugins);

@@ -20,7 +20,10 @@ $activeFilter = isset($param[0]) ? (string)$param[0] : 'all';
 $plugins = array();
 if (!is_null($data)) {
     foreach ($data as $name => $versions) {
-        ksort($versions);
+        // Order versions with version_compare() so two-digit minors
+        // (v1.10.0, v1.11.0) sit after v1.9.0 — not before, as the
+        // previous ksort() string sort would have it (#1314).
+        uksort($versions, 'version_compare');
         $row = array();
         $oldVersions = array();
         $currentVersion = '';
@@ -39,7 +42,11 @@ if (!is_null($data)) {
         $row['_oldVersions'] = $oldVersions;
         $row['_currentVersion'] = (string)$currentVersion;
         $row['_installed'] = $currentVersion !== '';
-        $row['_updateAvailable'] = $currentVersion !== '' && $currentVersion < $latestVersion;
+        // version_compare() — string < would say 'v1.9.0' is not less
+        // than 'v1.11.0' (because '9' > '1'), hiding the Update button
+        // (#1314).
+        $row['_updateAvailable'] = $currentVersion !== ''
+            && version_compare($currentVersion, $latestVersion, '<');
         $plugins[$name] = $row;
     }
 }
