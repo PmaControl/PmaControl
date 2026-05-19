@@ -145,6 +145,19 @@
       "LicenceType": "GPL-3.0",
       "Description": "/Eol/matrix/ palette polish: grand-total cell uses slate-300 (#cbd5e1) instead of dark navy; bottom-left 'Total' label matches the totals-row #f8fafc background so the whole totals band reads as one continuous strip.",
       "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.13.0.pmactrl"
+    },
+    "v1.14.0": {
+      "Title": "End-Of-Life",
+      "Picture": "{WWW}image/plugin/eol.svg",
+      "MD5": "00c9062cb6b534e11392d0ac06caea48",
+      "SHA256": "db17f90be5e5ebf6cb372d47049eef0ce6430a500bff6c268f320d394418f240",
+      "Signature": "WzjXy4LzZSq5jp2Oy3GNMbzX7BZOlLMOO5WBpqDcQE5v51EzocngBdL2Jgy6o3yzceEoM6nGPZ6mUdrTvqonDg==",
+      "KeyId": "eol-dev",
+      "CreationDate": "19/05/2026",
+      "Contributor": "PmaControl",
+      "LicenceType": "GPL-3.0",
+      "Description": "Full translation pack: every __() call in src/ (159 unique strings) is now translated to fr / ar / ru / pl / zh-cn — 795 INSERT IGNORE rows seeded via the manifest's data.install phase. Reference generator + process doc lives in pmacontrol dev/gen-plugin-translations.php.",
+      "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.14.0.pmactrl"
     }
   },
   "test-plug": {
