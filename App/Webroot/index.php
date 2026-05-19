@@ -107,6 +107,16 @@ try {
     define("TMP", ROOT.DS."tmp".DS);
     define("DATA", ROOT.DS."data".DS);
 
+//Plugin storage: cached .pmactrl archives + extracted bundles live next
+//to the canonical checkout, in /srv/www/<root>-plugin/.cache/ so they
+//never overlap with the per-plugin source repositories that may sit at
+///srv/www/<root>-plugin/<name>/ (one directory per plugin, mirroring
+//the future marketplace layout). Operators can override the cache
+//location by defining PLUGIN_STORAGE_DIR in configuration/.
+    if (!defined('PLUGIN_STORAGE_DIR')) {
+        define('PLUGIN_STORAGE_DIR', dirname(ROOT).DS.basename(ROOT).'-plugin'.DS.'.cache'.DS);
+    }
+
 //The actual directory name for the "config".
     define('CONFIG', ROOT.DS."configuration".DS);
 

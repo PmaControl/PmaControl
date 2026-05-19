@@ -191,7 +191,10 @@ SELECT '" . addslashes($key) . "','" . addslashes($title) . "','" . addslashes($
         }
         $pluginId = (int)$param[0];
 
-        $LOCALPLUGIN = $_SERVER["DOCUMENT_ROOT"] . WWW_ROOT . "plugins/";
+        // Plugin archives and their extracted bundles live outside the
+        // served webroot at PLUGIN_STORAGE_DIR (default /srv/www/<root>-plugin/).
+        // Manifest copies still target the canonical pmacontrol tree.
+        $LOCALPLUGIN = defined('PLUGIN_STORAGE_DIR') ? PLUGIN_STORAGE_DIR : (ROOT.DS.'plugins'.DS);
         $LOCALAPPLICATION = $_SERVER["DOCUMENT_ROOT"] . WWW_ROOT . "App/";
 
         $db = Sgbd::sql(DB_DEFAULT);
@@ -203,10 +206,12 @@ SELECT '" . addslashes($key) . "','" . addslashes($title) . "','" . addslashes($
 
         $plugin = array();
         if ($plugin = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            //Téléchargement du fichier
-            if (!is_dir($LOCALPLUGIN . $plugin["nom"])) {
-                //Directory does not exist, so lets create it.
-                mkdir($LOCALPLUGIN . $plugin["nom"], 0755, true);
+            $pluginDir = $LOCALPLUGIN . $plugin["nom"];
+            if (!is_dir($pluginDir) && !@mkdir($pluginDir, 0755, true) && !is_dir($pluginDir)) {
+                Throw new \Exception(
+                    "Cannot create plugin storage directory ".$pluginDir.". "
+                    ."Run: sudo mkdir -p ".$LOCALPLUGIN." && sudo chown -R www-data:www-data ".$LOCALPLUGIN
+                );
             }
 
             $archiveExtension = PluginPackage::archiveExtensionFromUrl($plugin["fichier"]);
@@ -219,17 +224,28 @@ SELECT '" . addslashes($key) . "','" . addslashes($title) . "','" . addslashes($
                 'signature' => isset($plugin['signature_zip']) ? $plugin['signature_zip'] : '',
             ), self::trustedPluginSignaturePublicKeys());
 
+            $extractedRoot = $LOCALPLUGIN . "extracted/";
+            if (!is_dir($extractedRoot) && !@mkdir($extractedRoot, 0755, true) && !is_dir($extractedRoot)) {
+                Throw new \Exception(
+                    "Cannot create extraction directory ".$extractedRoot.". "
+                    ."Run: sudo chown -R www-data:www-data ".$LOCALPLUGIN
+                );
+            }
             if ($archiveExtension === 'pmactrl') {
-                PluginPackage::extractPmactrl($archivePath, $LOCALPLUGIN . "extracted/");
+                PluginPackage::extractPmactrl($archivePath, $extractedRoot);
             } else {
                 $zip = new \ZipArchive;
                 $res = $zip->open($archivePath);
                 if ($res === TRUE) {
                     $this->assertZipArchiveIsSafe($zip);
-                    $zip->extractTo($LOCALPLUGIN . "extracted/");
+                    $zip->extractTo($extractedRoot);
                     $zip->close();
                 } else {
-                    Throw new \Exception("Check your ZIP PHP extension or directory right", 99);
+                    Throw new \Exception(
+                        "Cannot open ".$archivePath." as a ZIP archive (libzip error ".$res.") — "
+                        ."verify PHP ZipArchive extension is loaded (php -m | grep zip) "
+                        ."and that the file is readable by www-data."
+                    );
                 }
             }
         } else {
@@ -611,7 +627,7 @@ SELECT '" . addslashes($key) . "','" . addslashes($title) . "','" . addslashes($
             Throw new \Exception("Error while loading plugin in database");
         }
 
-        $LOCALPLUGIN = $_SERVER["DOCUMENT_ROOT"] . WWW_ROOT . "plugins/";
+        $LOCALPLUGIN = defined('PLUGIN_STORAGE_DIR') ? PLUGIN_STORAGE_DIR : (ROOT.DS.'plugins'.DS);
         $ThisPluginDirectory = $LOCALPLUGIN . "extracted/" . $plugin["nom"] . "-" . substr($plugin["version"], 1);
         $manifestFile = $ThisPluginDirectory . "/plugin.json";
         $this->loadPluginMenu($ThisPluginDirectory, 'uninstall.php', 'uninstall', 'menu_uninstall');
@@ -701,15 +717,20 @@ SELECT '" . addslashes($key) . "','" . addslashes($title) . "','" . addslashes($
 
     private function downloadPluginArchive($sourceUrl, $destination)
     {
-        $input = fopen($sourceUrl, 'rb');
+        $input = @fopen($sourceUrl, 'rb');
         if ($input === false) {
-            Throw new \Exception("Echec lors de l'ouverture du flux vers l'URL");
+            Throw new \Exception("Cannot open source URL ".$sourceUrl." — check network access, plugin_main.fichier, and allow_url_fopen.");
         }
 
-        $output = fopen($destination, 'wb');
+        $output = @fopen($destination, 'wb');
         if ($output === false) {
             fclose($input);
-            Throw new \Exception("Echec lors de l'ouverture du fichier archive local");
+            $dir = dirname($destination);
+            Throw new \Exception(
+                "Cannot write plugin archive to ".$destination.". "
+                ."Verify the directory ".$dir." exists and is writable by www-data "
+                ."(sudo chown -R www-data:www-data ".$dir.")."
+            );
         }
 
         try {
