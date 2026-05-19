@@ -46,7 +46,7 @@ echo "password: $password"
 ./install-mariadb-v2.sh -v 10.11 -p $password -d /srv/mysql -r
 
 
-dnf -y install httpd php graphviz php-cli php-fpm php-mysqlnd php-ldap php-json php-curl php-mbstring php-intl php-gd php-xml php-gmp 
+dnf -y install httpd php graphviz php-cli php-fpm php-mysqlnd php-ldap php-json php-curl php-mbstring php-intl php-gd php-xml php-gmp php-zip
 
 dnf -y install MariaDB-rocksdb-engine
 

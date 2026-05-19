@@ -235,6 +235,7 @@ install_php()
         "php${php_version}-gd" \
         "php${php_version}-xml" \
         "php${php_version}-gmp" \
+        "php${php_version}-zip" \
         php-json
 
     a2enmod proxy_fcgi setenvif rewrite
