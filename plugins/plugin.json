@@ -93,6 +93,19 @@
       "LicenceType": "GPL-3.0",
       "Description": "URL-persisted env/product/status filter pills on /Eol/kpi/ (#1301), CSV export of the full top-servers list (#1301), tab-bar fleet counters per SGBD with grey-out at 0 (#1302), 'Percona Server' short label (#1305).",
       "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.8.0.pmactrl"
+    },
+    "v1.9.0": {
+      "Title": "End-Of-Life",
+      "Picture": "{WWW}image/plugin/eol.svg",
+      "MD5": "72f61fb46568e97ad94fcc919beb3ceb",
+      "SHA256": "d7cb79cb079ee724adf23a9f9942637ee6c4134005bb0ac1dbb7ff12423b9dc1",
+      "Signature": "YPnJ913yYQBThg0QeIV8M5yemP5cFGta679KZo7UZGCZbPLdaG07Af9GJzJ+mxsQTr7Ar2FilpETApGlLorsDQ==",
+      "KeyId": "eol-dev",
+      "CreationDate": "19/05/2026",
+      "Contributor": "PmaControl",
+      "LicenceType": "GPL-3.0",
+      "Description": "Adds /Eol/byEnvironment/ (compliance ranked per environment) and /Eol/matrix/ (organization × environment grid with one mini supported/warning/EOL donut per cell, deep-link to /Eol/kpi/?org=…&env=…). Closes plugin-eol#4.",
+      "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.9.0.pmactrl"
     }
   },
   "test-plug": {
