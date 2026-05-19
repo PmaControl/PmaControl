@@ -259,6 +259,8 @@ if (empty($_GET['ajax'])):
 .sm-cve-more { color:#cbd5e1; border-top:1px solid #1e293b; padding-top:7px; font-size:10px; font-weight:700; }
 .sm-cve-empty { color: var(--sm-muted); font-size: 10px; }
 
+<?php foreach (\App\Library\PluginSlot::partials('server.main.styles') as $_p) include $_p; ?>
+
 .sm-badge { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 3px; font-weight: 600; }
 .sm-badge.ok   { background: #d1fae5; color: #065f46; }
 .sm-badge.good { background: #dbeafe; color: #1e40af; }
@@ -396,6 +398,7 @@ if (empty($_GET['ajax'])):
     <th><?= __("Tag") ?></th>
     <th><?= __("Host") ?></th>
     <th><?= __("Version") ?></th>
+    <?php foreach (\App\Library\PluginSlot::partials('server.main.column.head') as $_p) include $_p; ?>
     <th><?= __("Organization") ?></th>
     <th><?= __("Latency") ?></th>
     <th><?= __("Seen") ?></th>
@@ -404,8 +407,11 @@ if (empty($_GET['ajax'])):
 </thead>
 <tbody>
 <?php
+$_extraColumns = count(\App\Library\PluginSlot::partials('server.main.column.head'));
+$_baseColumns = 12;
+$_totalColumns = $_baseColumns + $_extraColumns;
 if (empty($data['servers'])) {
-    echo '<tr><td colspan="12" class="sm-empty"><i class="fa fa-server"></i> '.__('No servers found').'</td></tr>';
+    echo '<tr><td colspan="'.$_totalColumns.'" class="sm-empty"><i class="fa fa-server"></i> '.__('No servers found').'</td></tr>';
 } else {
     foreach ($data['servers'] as $server) {
         $isEffectiveMonitored = !empty($server['effective_is_monitored']) && (string)$server['effective_is_monitored'] === "1";
@@ -429,8 +435,12 @@ if (empty($data['servers'])) {
         elseif ($status === 'unmonitored') $rowClass = 'sm-row-off';
         if (!empty($serverProcessing)) $rowClass = trim($rowClass.' sm-row-proc');
 
-        // Build searchable text
+        // Build searchable text. Plugins can append by registering a
+        // `server.main.row.search` callback returning a string per server.
         $searchText = strtolower($server['display_name'].' '.$server['client'].' '.$server['environment'].' '.implode(' ', $tagSearchParts).' '.$server['ip'].' '.($extra['version'] ?? ''));
+        $searchText .= ' '.strtolower(\App\Library\PluginSlot::apply('server.main.row.search', '', [
+            'server' => $server, 'extra' => $extra, 'data' => $data,
+        ]));
 ?>
 <tr class="<?= $rowClass ?>" data-search="<?= htmlspecialchars($searchText, ENT_QUOTES) ?>">
     <td class="sm-status"></td>
@@ -559,6 +569,8 @@ if (empty($data['servers'])) {
         ?>
     </td>
 
+    <?php foreach (\App\Library\PluginSlot::partials('server.main.column.cell') as $_p) include $_p; ?>
+
     <!-- Organization -->
     <td class="sm-org-cell"><?= htmlspecialchars($server['client']) ?></td>
 
@@ -615,7 +627,7 @@ if (empty($data['servers'])) {
         if ($errMsg || $hasStatusActions):
 ?>
 <tr class="sm-detail-row<?= $errMsg ? ' sm-err-row' : '' ?>" data-search="<?= htmlspecialchars($searchText, ENT_QUOTES) ?>">
-    <td colspan="12">
+    <td colspan="13">
         <div class="sm-detail-line">
             <?php if ($errMsg): ?>
                 <div class="sm-err-text"><i class="fa fa-exclamation-triangle"></i> <?= $errMsg ?></div>

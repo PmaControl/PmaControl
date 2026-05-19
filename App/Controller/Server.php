@@ -540,6 +540,9 @@ class Server extends Controller
             $data['extra'] ?? [],
             empty($_GET['ajax'])
         );
+        // Let installed plugins enrich $data. Each callback receives
+        // ($data, ['db' => $db]) and must return the updated $data.
+        $data = \App\Library\PluginSlot::apply('server.main.data', $data, ['db' => $db]);
 
         $this->set('data', $data);
     }

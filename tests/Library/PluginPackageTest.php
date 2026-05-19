@@ -123,6 +123,28 @@ final class PluginPackageTest extends TestCase
         )), $this->tmpRoot.'/plugin', $this->tmpRoot.'/project');
     }
 
+    public function testArchiveExtensionFromUrlRecognizesPmactrl(): void
+    {
+        $this->assertSame('pmactrl', PluginPackage::archiveExtensionFromUrl('https://example.test/eol.pmactrl?download=1'));
+        $this->assertSame('zip', PluginPackage::archiveExtensionFromUrl('https://example.test/mysql-sys.zip'));
+        $this->assertSame('zip', PluginPackage::archiveExtensionFromUrl('https://example.test/no-extension'));
+    }
+
+    public function testExtractPmactrlArchiveUsesDebLikeDataTar(): void
+    {
+        $archive = $this->tmpRoot.'/eol.pmactrl';
+        $this->writePmactrlArchive($archive, array(
+            'eol-1.0.0/plugin.json' => '{"name":"eol"}',
+            'eol-1.0.0/src/App/Controller/Eol.php' => '<?php class DemoEol {}',
+        ));
+
+        PluginPackage::extractPmactrl($archive, $this->tmpRoot.'/extracted');
+
+        $this->assertFileExists($this->tmpRoot.'/extracted/eol-1.0.0/plugin.json');
+        $this->assertFileExists($this->tmpRoot.'/extracted/eol-1.0.0/src/App/Controller/Eol.php');
+        $this->assertSame('{"name":"eol"}', file_get_contents($this->tmpRoot.'/extracted/eol-1.0.0/plugin.json'));
+    }
+
     public function testMysqlSysExamplePackageDeclaresLogoAndDeployPlan(): void
     {
         $pluginDirectory = dirname(__DIR__, 2).'/plugins/extracted/mysql-sys-1.2';
@@ -180,5 +202,72 @@ final class PluginPackageTest extends TestCase
         }
 
         rmdir($path);
+    }
+
+    private function writePmactrlArchive(string $path, array $dataFiles): void
+    {
+        $controlTarGz = gzencode($this->buildTar(array(
+            'control' => "Package: eol\nVersion: 1.0.0\nArchitecture: all\n",
+        )));
+        $dataTarGz = gzencode($this->buildTar($dataFiles));
+
+        file_put_contents(
+            $path,
+            "!<arch>\n"
+            .$this->arEntry('debian-binary', "2.0\n")
+            .$this->arEntry('control.tar.gz', $controlTarGz)
+            .$this->arEntry('data.tar.gz', $dataTarGz)
+        );
+    }
+
+    private function arEntry(string $name, string $contents): string
+    {
+        $header = str_pad($name.'/', 16)
+            .str_pad((string)time(), 12)
+            .str_pad('0', 6)
+            .str_pad('0', 6)
+            .str_pad('100644', 8)
+            .str_pad((string)strlen($contents), 10)
+            ."`\n";
+
+        return $header.$contents.(strlen($contents) % 2 === 1 ? "\n" : '');
+    }
+
+    private function buildTar(array $files): string
+    {
+        $tar = '';
+        foreach ($files as $name => $contents) {
+            $tar .= $this->tarFileEntry((string)$name, (string)$contents);
+        }
+
+        return $tar.str_repeat("\0", 1024);
+    }
+
+    private function tarFileEntry(string $name, string $contents): string
+    {
+        $header = str_pad($name, 100, "\0")
+            .str_pad(sprintf('%07o', 0644), 8, "\0", STR_PAD_LEFT)
+            .str_pad(sprintf('%07o', 0), 8, "\0", STR_PAD_LEFT)
+            .str_pad(sprintf('%07o', 0), 8, "\0", STR_PAD_LEFT)
+            .str_pad(sprintf('%011o', strlen($contents)), 12, "\0", STR_PAD_LEFT)
+            .str_pad(sprintf('%011o', time()), 12, "\0", STR_PAD_LEFT)
+            .'        '
+            .'0'
+            .str_repeat("\0", 100)
+            .'ustar'."\0"
+            .'00'
+            .str_repeat("\0", 255);
+
+        $header = substr($header, 0, 512);
+        $checksum = 0;
+        for ($i = 0; $i < 512; $i++) {
+            $checksum += ord($header[$i]);
+        }
+
+        $header = substr($header, 0, 148)
+            .str_pad(sprintf('%06o', $checksum), 6, '0', STR_PAD_LEFT)."\0 "
+            .substr($header, 156);
+
+        return $header.$contents.str_repeat("\0", (512 - (strlen($contents) % 512)) % 512);
     }
 }

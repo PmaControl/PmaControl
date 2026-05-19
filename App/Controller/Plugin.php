@@ -11,6 +11,7 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use App\Library\Tree as TreeInterval;
 use App\Library\PluginPackage;
+use App\Library\PluginSlot;
 use App\Library\Security\PluginPackageIntegrity;
 use App\Library\Security\SafeRedirect;
 use \Glial\Sgbd\Sgbd;
@@ -80,7 +81,7 @@ class Plugin extends Controller {
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $Query = "SELECT id, nom, description, auteur, image, fichier, date_installation, md5_zip, sha256_zip, signature_zip, version, type_licence, est_actif, maxversion
+        $Query = "SELECT id, nom, COALESCE(title, '') AS title, description, auteur, image, fichier, date_installation, md5_zip, sha256_zip, signature_zip, version, type_licence, est_actif, maxversion
         FROM plugin_main ";
         $Query .= " INNER JOIN"
                 . " (SELECT nom AS tempnom, MAX(version) AS maxversion FROM plugin_main GROUP BY nom)"
@@ -144,15 +145,18 @@ class Plugin extends Controller {
                 $Query = "SELECT * FROM plugin_main WHERE nom = '" . addslashes($key) . "' AND version = '" . addslashes($key2) . "'";
                 $res = $db->sql_query($Query);
 
+                $md5Zip = isset($line2['MD5']) ? $line2['MD5'] : (isset($line2['md5']) ? $line2['md5'] : '');
                 $sha256Zip = isset($line2['SHA256']) ? $line2['SHA256'] : (isset($line2['sha256']) ? $line2['sha256'] : '');
                 $signatureZip = isset($line2['Signature']) ? $line2['Signature'] : (isset($line2['signature']) ? $line2['signature'] : '');
 
+                $title = isset($line2['Title']) ? (string)$line2['Title'] : '';
+
                 if ($db->sql_num_rows($res) > 0) {
-                    $Query = "UPDATE plugin_main SET description = '" . addslashes($line2['Description']) . "', auteur = '" . addslashes($line2['Contributor']) . "', image = '" . addslashes($line2['Picture']) . "', fichier = '" . addslashes($line2["URL"]) . "', date_installation = '" . $date->format('Y-m-d') . "', md5_zip = '" . addslashes($line2['MD5']) . "', sha256_zip = CASE WHEN '" . addslashes($sha256Zip) . "' = '' AND sha256_zip <> '' THEN sha256_zip ELSE '" . addslashes($sha256Zip) . "' END, signature_zip = CASE WHEN '" . addslashes($signatureZip) . "' = '' AND COALESCE(signature_zip, '') <> '' THEN signature_zip ELSE '" . addslashes($signatureZip) . "' END, type_licence = '" . addslashes($line2['LicenceType']) . "' WHERE nom = '" . addslashes($key) . "' AND version = '" . addslashes($key2) . "'";
+                    $Query = "UPDATE plugin_main SET title = '" . addslashes($title) . "', description = '" . addslashes($line2['Description']) . "', auteur = '" . addslashes($line2['Contributor']) . "', image = '" . addslashes($line2['Picture']) . "', fichier = '" . addslashes($line2["URL"]) . "', date_installation = '" . $date->format('Y-m-d') . "', md5_zip = '" . addslashes($md5Zip) . "', sha256_zip = CASE WHEN '" . addslashes($sha256Zip) . "' = '' AND sha256_zip <> '' THEN sha256_zip ELSE '" . addslashes($sha256Zip) . "' END, signature_zip = CASE WHEN '" . addslashes($signatureZip) . "' = '' AND COALESCE(signature_zip, '') <> '' THEN signature_zip ELSE '" . addslashes($signatureZip) . "' END, type_licence = '" . addslashes($line2['LicenceType']) . "' WHERE nom = '" . addslashes($key) . "' AND version = '" . addslashes($key2) . "'";
                     $db->sql_query($Query);
                 } else {
-                    $Query = "INSERT INTO plugin_main (nom, description, auteur, image, fichier, date_installation, md5_zip, sha256_zip, signature_zip, version, type_licence )
-SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','" . addslashes($line2['Contributor']) . "','" . addslashes($line2['Picture']) . "','" . addslashes($line2["URL"]) . "','" . $date->format('Y-m-d') . "','" . addslashes($line2['MD5']) . "','" . addslashes($sha256Zip) . "','" . addslashes($signatureZip) . "','" . addslashes($key2) . "','" . addslashes($line2['LicenceType']) . "'";
+                    $Query = "INSERT INTO plugin_main (nom, title, description, auteur, image, fichier, date_installation, md5_zip, sha256_zip, signature_zip, version, type_licence )
+SELECT '" . addslashes($key) . "','" . addslashes($title) . "','" . addslashes($line2['Description']) . "','" . addslashes($line2['Contributor']) . "','" . addslashes($line2['Picture']) . "','" . addslashes($line2["URL"]) . "','" . $date->format('Y-m-d') . "','" . addslashes($md5Zip) . "','" . addslashes($sha256Zip) . "','" . addslashes($signatureZip) . "','" . addslashes($key2) . "','" . addslashes($line2['LicenceType']) . "'";
                     $db->sql_query($Query);
                 }
             endforeach;
@@ -205,36 +209,28 @@ SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','
                 mkdir($LOCALPLUGIN . $plugin["nom"], 0755, true);
             }
 
-            $zipPath = $LOCALPLUGIN . $plugin["nom"] . "/" . $plugin["version"] . ".zip";
-            $handle = fopen($plugin["fichier"], "r");
-            $handle2 = fopen($zipPath, "w");
-            if (FALSE === $handle) {
-                Throw new \Exception("Echec lors de l'ouverture du flux vers l'URL");
-            }
-            if (FALSE === $handle2) {
-                Throw new \Exception("Echec lors de l'ouverture du fichier ZIP local");
-            }
+            $archiveExtension = PluginPackage::archiveExtensionFromUrl($plugin["fichier"]);
+            $archivePath = $LOCALPLUGIN . $plugin["nom"] . "/" . $plugin["version"] . "." . $archiveExtension;
+            $this->downloadPluginArchive($plugin["fichier"], $archivePath);
 
-            while (!feof($handle)) {
-                fwrite($handle2, fread($handle, 8192));
-            }
-            fclose($handle);
-            fclose($handle2);
-
-            PluginPackageIntegrity::ensureZipTrusted($zipPath, array(
+            PluginPackageIntegrity::ensureZipTrusted($archivePath, array(
                 'md5' => isset($plugin['md5_zip']) ? $plugin['md5_zip'] : '',
                 'sha256' => isset($plugin['sha256_zip']) ? $plugin['sha256_zip'] : '',
                 'signature' => isset($plugin['signature_zip']) ? $plugin['signature_zip'] : '',
             ), self::trustedPluginSignaturePublicKeys());
 
-            $zip = new \ZipArchive;
-            $res = $zip->open($zipPath);
-            if ($res === TRUE) {
-                $this->assertZipArchiveIsSafe($zip);
-                $zip->extractTo($LOCALPLUGIN . "extracted/");
-                $zip->close();
+            if ($archiveExtension === 'pmactrl') {
+                PluginPackage::extractPmactrl($archivePath, $LOCALPLUGIN . "extracted/");
             } else {
-                Throw new \Exception("Check your ZIP PHP extension or directory right", 99);
+                $zip = new \ZipArchive;
+                $res = $zip->open($archivePath);
+                if ($res === TRUE) {
+                    $this->assertZipArchiveIsSafe($zip);
+                    $zip->extractTo($LOCALPLUGIN . "extracted/");
+                    $zip->close();
+                } else {
+                    Throw new \Exception("Check your ZIP PHP extension or directory right", 99);
+                }
             }
         } else {
             Throw new \Exception("Error while loading plugin in database");
@@ -251,6 +247,19 @@ SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','
 
             foreach ($plan['files'] as $file) {
                 $this->logpluginfilepath($file['destination'], $pluginId);
+            }
+
+            foreach ($plan['extensions'] as $extension) {
+                if ($extension['kind'] === 'partial') {
+                    $this->logpluginfilepath($extension['payload'], $pluginId);
+                }
+                PluginSlot::register(
+                    $pluginId,
+                    $extension['slot'],
+                    $extension['kind'],
+                    $extension['payload'],
+                    $extension['order']
+                );
             }
 
             foreach ($plan['sql'] as $sqlFile) {
@@ -511,7 +520,34 @@ SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = file_get_contents($filename);
-        $db->sql_query($sql);
+        if ($sql === false || trim($sql) === '') {
+            return;
+        }
+
+        if (!$db->sql_multi_query($sql)) {
+            Throw new \Exception("Plugin SQL failed in ".$filename.": ".$db->sql_error());
+        }
+
+        while (true) {
+            $result = $db->sql_store_result();
+            if ($result) {
+                $db->sql_free_result($result);
+            }
+
+            $error = $db->sql_error();
+            if ($error) {
+                Throw new \Exception("Plugin SQL failed in ".$filename.": ".$error);
+            }
+
+            if (!$db->sql_more_results()) {
+                break;
+            }
+
+            if (!$db->sql_next_result()) {
+                $error = $db->sql_error();
+                Throw new \Exception("Plugin SQL failed in ".$filename.($error ? ": ".$error : ''));
+            }
+        }
     }
 
 /**
@@ -591,6 +627,9 @@ SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','
                 $this->sqlexecute($sqlFile);
             }
 
+            PluginPackage::removeExtensionPartials($manifest, ROOT);
+            PluginSlot::unregisterAll($pluginId);
+
             PluginPackage::removeFiles($manifest, ROOT);
 
             $QueryDelete = "DELETE FROM plugin_file WHERE id_plugin_main = " . $pluginId;
@@ -658,6 +697,35 @@ SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','
         }
 
         return (array)$hook->$methodName();
+    }
+
+    private function downloadPluginArchive($sourceUrl, $destination)
+    {
+        $input = fopen($sourceUrl, 'rb');
+        if ($input === false) {
+            Throw new \Exception("Echec lors de l'ouverture du flux vers l'URL");
+        }
+
+        $output = fopen($destination, 'wb');
+        if ($output === false) {
+            fclose($input);
+            Throw new \Exception("Echec lors de l'ouverture du fichier archive local");
+        }
+
+        try {
+            while (!feof($input)) {
+                $chunk = fread($input, 8192);
+                if ($chunk === false) {
+                    Throw new \Exception("Echec lors de la lecture de l'archive plugin");
+                }
+                if ($chunk !== '' && fwrite($output, $chunk) === false) {
+                    Throw new \Exception("Echec lors de l'écriture de l'archive plugin");
+                }
+            }
+        } finally {
+            fclose($input);
+            fclose($output);
+        }
     }
 
     private function assertZipArchiveIsSafe(\ZipArchive $zip)
