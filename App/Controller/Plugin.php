@@ -166,7 +166,16 @@ class Plugin extends Controller {
 
             foreach ($line as $key2 => $line2):
 
-                $date = \DateTime::createFromFormat('d/m/Y', $line2['CreationDate']);
+                // The catalog's CreationDate is date-only (`d/m/Y`),
+                // historically written verbatim to `date_installation`
+                // which is a `datetime` — every row ended up with a
+                // literal `00:00:00` time suffix (#1324). The column
+                // name says "installation"; the data should match.
+                // Switching policy: on INSERT we stamp NOW() so the
+                // row records when this PmaControl install first saw
+                // the version; on UPDATE we leave `date_installation`
+                // alone so the original first-seen timestamp persists
+                // across catalog refreshes.
 
                 $Query = "SELECT * FROM plugin_main WHERE nom = '" . addslashes($key) . "' AND version = '" . addslashes($key2) . "'";
                 $res = $db->sql_query($Query);
@@ -178,11 +187,18 @@ class Plugin extends Controller {
                 $title = isset($line2['Title']) ? (string)$line2['Title'] : '';
 
                 if ($db->sql_num_rows($res) > 0) {
-                    $Query = "UPDATE plugin_main SET title = '" . addslashes($title) . "', description = '" . addslashes($line2['Description']) . "', auteur = '" . addslashes($line2['Contributor']) . "', image = '" . addslashes($line2['Picture']) . "', fichier = '" . addslashes($line2["URL"]) . "', date_installation = '" . $date->format('Y-m-d') . "', md5_zip = '" . addslashes($md5Zip) . "', sha256_zip = CASE WHEN '" . addslashes($sha256Zip) . "' = '' AND sha256_zip <> '' THEN sha256_zip ELSE '" . addslashes($sha256Zip) . "' END, signature_zip = CASE WHEN '" . addslashes($signatureZip) . "' = '' AND COALESCE(signature_zip, '') <> '' THEN signature_zip ELSE '" . addslashes($signatureZip) . "' END, type_licence = '" . addslashes($line2['LicenceType']) . "' WHERE nom = '" . addslashes($key) . "' AND version = '" . addslashes($key2) . "'";
+                    // UPDATE — re-ingest of an already-known row.
+                    // Refresh every catalogue-side field except
+                    // date_installation, which keeps the first-seen
+                    // timestamp captured at original INSERT.
+                    $Query = "UPDATE plugin_main SET title = '" . addslashes($title) . "', description = '" . addslashes($line2['Description']) . "', auteur = '" . addslashes($line2['Contributor']) . "', image = '" . addslashes($line2['Picture']) . "', fichier = '" . addslashes($line2["URL"]) . "', md5_zip = '" . addslashes($md5Zip) . "', sha256_zip = CASE WHEN '" . addslashes($sha256Zip) . "' = '' AND sha256_zip <> '' THEN sha256_zip ELSE '" . addslashes($sha256Zip) . "' END, signature_zip = CASE WHEN '" . addslashes($signatureZip) . "' = '' AND COALESCE(signature_zip, '') <> '' THEN signature_zip ELSE '" . addslashes($signatureZip) . "' END, type_licence = '" . addslashes($line2['LicenceType']) . "' WHERE nom = '" . addslashes($key) . "' AND version = '" . addslashes($key2) . "'";
                     $db->sql_query($Query);
                 } else {
+                    // INSERT — first time this (nom, version) pair is
+                    // seen on this PmaControl. Stamp NOW() so the
+                    // datetime carries a real second-precision value.
                     $Query = "INSERT INTO plugin_main (nom, title, description, auteur, image, fichier, date_installation, md5_zip, sha256_zip, signature_zip, version, type_licence )
-SELECT '" . addslashes($key) . "','" . addslashes($title) . "','" . addslashes($line2['Description']) . "','" . addslashes($line2['Contributor']) . "','" . addslashes($line2['Picture']) . "','" . addslashes($line2["URL"]) . "','" . $date->format('Y-m-d') . "','" . addslashes($md5Zip) . "','" . addslashes($sha256Zip) . "','" . addslashes($signatureZip) . "','" . addslashes($key2) . "','" . addslashes($line2['LicenceType']) . "'";
+SELECT '" . addslashes($key) . "','" . addslashes($title) . "','" . addslashes($line2['Description']) . "','" . addslashes($line2['Contributor']) . "','" . addslashes($line2['Picture']) . "','" . addslashes($line2["URL"]) . "',NOW(),'" . addslashes($md5Zip) . "','" . addslashes($sha256Zip) . "','" . addslashes($signatureZip) . "','" . addslashes($key2) . "','" . addslashes($line2['LicenceType']) . "'";
                     $db->sql_query($Query);
                 }
             endforeach;

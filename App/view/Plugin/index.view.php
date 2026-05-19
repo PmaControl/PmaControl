@@ -233,7 +233,7 @@ if (!is_null($data)) {
                     <?php endif; ?>
                     <?php if ($installedAt !== ''): ?>
                     <div class="pi-meta-item">
-                        <span class="pi-meta-lbl"><?= __('Released') ?></span>
+                        <span class="pi-meta-lbl"><?= __('First seen') ?></span>
                         <span class="pi-meta-val"><?= htmlspecialchars($installedAt, ENT_QUOTES, 'UTF-8') ?></span>
                     </div>
                     <?php endif; ?>
