@@ -80,6 +80,7 @@ step_vendor($root, $master, $dryRun);
 step_webroot_plugins_symlink($root, $dryRun);
 step_app_model_dir($root, $dryRun);
 step_chown($root, $skipChown, $dryRun);
+step_plugin_cache_dir($pluginCache, $skipChown, $dryRun);
 step_glial_admin($root, $skipGlial, $dryRun);
 
 global $_REPORT;
@@ -244,6 +245,50 @@ function step_app_model_dir($root, $dryRun)
     if ($dryRun) return ok("[dry] mkdir {$dir}");
     if (!mkdir($dir, 0755, true)) die_red("Cannot mkdir {$dir}");
     ok("App/model/IdentifierPmacontrol (created)");
+}
+
+/**
+ * mkdir + chown the PLUGIN_STORAGE_DIR that step_webroot_config baked
+ * into the worktree's configuration/webroot.config.php. Without this,
+ * the first Plugin/install/ click in the freshly bootstrapped worktree
+ * dies with a "Cannot create plugin storage directory" error and asks
+ * the operator to drop to a root shell to mkdir+chown by hand.
+ *
+ * Idempotent: re-running on a populated cache only fixes ownership.
+ * Runs *after* step_chown so the recursive chown of the worktree
+ * cannot clobber this work (the cache usually lives outside the
+ * worktree, but a user passing --plugin-cache=<inside-worktree-path>
+ * would otherwise see this step land first and then get reverted).
+ */
+function step_plugin_cache_dir($pluginCache, $skipChown, $dryRun)
+{
+    $pluginCache = rtrim($pluginCache, '/');
+    $extracted = $pluginCache.'/extracted';
+
+    foreach (array($pluginCache, $extracted) as $dir) {
+        if (is_dir($dir)) continue;
+        if ($dryRun) { ok("[dry] mkdir -p {$dir}"); continue; }
+        if (!@mkdir($dir, 0755, true) && !is_dir($dir)) {
+            die_red("Cannot mkdir {$dir}");
+        }
+    }
+
+    if ($skipChown) {
+        return warn("plugin cache {$pluginCache} (chown skipped: --no-chown)");
+    }
+    if (posix_getuid() !== 0) {
+        return warn("plugin cache {$pluginCache} (chown skipped: not running as root)");
+    }
+    if ($dryRun) {
+        return ok("[dry] chown www-data:www-data {$pluginCache} {$extracted}");
+    }
+
+    foreach (array($pluginCache, $extracted) as $dir) {
+        if (!is_dir($dir)) continue;
+        exec('chown www-data:www-data '.escapeshellarg($dir), $out, $rc);
+        if ($rc !== 0) die_red("chown failed on {$dir} (rc={$rc})");
+    }
+    ok("plugin cache {$pluginCache} (mkdir + chown www-data:www-data)");
 }
 
 function step_chown($root, $skip, $dryRun)
