@@ -618,8 +618,56 @@ SELECT '" . addslashes($key) . "','" . addslashes($title) . "','" . addslashes($
         if (!isset($param[0])) {
             Throw new \Exception("No plugin Id provided");
         }
-        $pluginId = (int)$param[0];
+        $this->removeCore((int)$param[0]);
+        $this->redirectTo(SafeRedirect::refererOrFallback($_SERVER, LINK.'plugin/index'));
+    }
 
+/**
+ * In-place upgrade: uninstall the currently active version of a
+ * plugin, then install the catalog row whose id is passed as the
+ * route parameter. The catalog view links here when the latest known
+ * version is newer than the installed one (`_updateAvailable` in
+ * App/view/Plugin/index.view.php).
+ *
+ * Closes #1297.
+ */
+    public function update($param) {
+        if (!isset($param[0])) {
+            Throw new \Exception("No plugin Id provided");
+        }
+        $newId = (int)$param[0];
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $res = $db->sql_query("SELECT nom FROM plugin_main WHERE id = ".$newId);
+        $target = $res ? $db->sql_fetch_array($res, MYSQLI_ASSOC) : null;
+        if (!is_array($target)) {
+            Throw new \Exception("Error while loading plugin in database");
+        }
+
+        // Uninstall every currently-active version of the same plugin
+        // (defensive — there should only be one), then chain into the
+        // existing install flow which handles archive download, signature
+        // verification, preflight, copy, SQL install, menu install, ACL
+        // reset, and the final redirect.
+        $name = (string)$target['nom'];
+        $res = $db->sql_query(
+            "SELECT id FROM plugin_main WHERE nom = '".$db->sql_real_escape_string($name)
+            ."' AND est_actif = 1 AND id <> ".$newId
+        );
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $this->removeCore((int)$row['id']);
+        }
+
+        $this->install(array($newId));
+    }
+
+/**
+ * Uninstall a plugin version without redirecting. Shared by remove()
+ * (thin wrapper that adds the redirect) and update() (chains into
+ * install() after this).
+ */
+    private function removeCore($pluginId)
+    {
         $db = Sgbd::sql(DB_DEFAULT);
 
         //On charge le bon menu pour pouvoir l'administrer
@@ -703,8 +751,6 @@ SELECT '" . addslashes($key) . "','" . addslashes($title) . "','" . addslashes($
         $sql = "UPDATE plugin_main SET est_actif = 0 WHERE id = " . $pluginId . ";";
         $db->sql_query($sql);
         $this->clearAclCache();
-
-        $this->redirectTo(SafeRedirect::refererOrFallback($_SERVER, LINK.'plugin/index'));
     }
 
     private function findSqlScript($pluginDirectory, $filename)
