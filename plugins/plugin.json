@@ -29,13 +29,17 @@
     }
   },
   "eol": {
-    "v1.0.0": {
-      "Picture": "{LINK}plugins/extracted/eol-1.0.0/logo.svg",
-      "MD5": "c974b59324932a881b685a66da2a34da",
-      "CreationDate": "18/05/2026",
+    "v1.3.2": {
+      "Title": "End-Of-Life",
+      "Picture": "{WWW}image/plugin/eol.svg",
+      "MD5": "5fad6e5de7808994646d8329f71915fc",
+      "SHA256": "96126ff1c68572ccc4ffc9ede5c9e53b8de11522cf19f4e31238284451f4fdf9",
+      "Signature": "cQvJ8d2gCZEYOeGrTgffqOH8DmBYD8QGFE+ctQFtzTdZvUmX4aWeIpQsXteWk08VDSaIVPagvTdUgkbs39jtBA==",
+      "KeyId": "eol-dev",
+      "CreationDate": "19/05/2026",
       "Contributor": "PmaControl",
       "LicenceType": "GPL-3.0",
-      "Description": "MySQL and MariaDB end-of-life tracker with daily refresh, EOL badges and minor-version update hints.",
+      "Description": "MySQL and MariaDB end-of-life tracker with daily refresh, EOL badges, minor-version update hints, and a dedicated card on /Home listing every monitored server with a minor version behind. Uses the slot/registry extension model to (de)register UI hooks cleanly on install/uninstall.",
       "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol.pmactrl"
     }
   },

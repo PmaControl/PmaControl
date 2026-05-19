@@ -540,14 +540,9 @@ class Server extends Controller
             $data['extra'] ?? [],
             empty($_GET['ajax'])
         );
-        $data['eol_servers'] = [];
-        if (class_exists('\App\Library\Eol\EolCatalog')) {
-            $data['eol_servers'] = \App\Library\Eol\EolCatalog::loadForServerMain(
-                $db,
-                $data['servers'] ?? [],
-                $data['extra'] ?? []
-            );
-        }
+        // Let installed plugins enrich $data. Each callback receives
+        // ($data, ['db' => $db]) and must return the updated $data.
+        $data = \App\Library\PluginSlot::apply('server.main.data', $data, ['db' => $db]);
 
         $this->set('data', $data);
     }

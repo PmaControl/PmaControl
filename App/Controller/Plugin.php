@@ -11,6 +11,7 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use App\Library\Tree as TreeInterval;
 use App\Library\PluginPackage;
+use App\Library\PluginSlot;
 use App\Library\Security\PluginPackageIntegrity;
 use App\Library\Security\SafeRedirect;
 use \Glial\Sgbd\Sgbd;
@@ -80,7 +81,7 @@ class Plugin extends Controller {
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $Query = "SELECT id, nom, description, auteur, image, fichier, date_installation, md5_zip, sha256_zip, signature_zip, version, type_licence, est_actif, maxversion
+        $Query = "SELECT id, nom, COALESCE(title, '') AS title, description, auteur, image, fichier, date_installation, md5_zip, sha256_zip, signature_zip, version, type_licence, est_actif, maxversion
         FROM plugin_main ";
         $Query .= " INNER JOIN"
                 . " (SELECT nom AS tempnom, MAX(version) AS maxversion FROM plugin_main GROUP BY nom)"
@@ -148,12 +149,14 @@ class Plugin extends Controller {
                 $sha256Zip = isset($line2['SHA256']) ? $line2['SHA256'] : (isset($line2['sha256']) ? $line2['sha256'] : '');
                 $signatureZip = isset($line2['Signature']) ? $line2['Signature'] : (isset($line2['signature']) ? $line2['signature'] : '');
 
+                $title = isset($line2['Title']) ? (string)$line2['Title'] : '';
+
                 if ($db->sql_num_rows($res) > 0) {
-                    $Query = "UPDATE plugin_main SET description = '" . addslashes($line2['Description']) . "', auteur = '" . addslashes($line2['Contributor']) . "', image = '" . addslashes($line2['Picture']) . "', fichier = '" . addslashes($line2["URL"]) . "', date_installation = '" . $date->format('Y-m-d') . "', md5_zip = '" . addslashes($md5Zip) . "', sha256_zip = CASE WHEN '" . addslashes($sha256Zip) . "' = '' AND sha256_zip <> '' THEN sha256_zip ELSE '" . addslashes($sha256Zip) . "' END, signature_zip = CASE WHEN '" . addslashes($signatureZip) . "' = '' AND COALESCE(signature_zip, '') <> '' THEN signature_zip ELSE '" . addslashes($signatureZip) . "' END, type_licence = '" . addslashes($line2['LicenceType']) . "' WHERE nom = '" . addslashes($key) . "' AND version = '" . addslashes($key2) . "'";
+                    $Query = "UPDATE plugin_main SET title = '" . addslashes($title) . "', description = '" . addslashes($line2['Description']) . "', auteur = '" . addslashes($line2['Contributor']) . "', image = '" . addslashes($line2['Picture']) . "', fichier = '" . addslashes($line2["URL"]) . "', date_installation = '" . $date->format('Y-m-d') . "', md5_zip = '" . addslashes($md5Zip) . "', sha256_zip = CASE WHEN '" . addslashes($sha256Zip) . "' = '' AND sha256_zip <> '' THEN sha256_zip ELSE '" . addslashes($sha256Zip) . "' END, signature_zip = CASE WHEN '" . addslashes($signatureZip) . "' = '' AND COALESCE(signature_zip, '') <> '' THEN signature_zip ELSE '" . addslashes($signatureZip) . "' END, type_licence = '" . addslashes($line2['LicenceType']) . "' WHERE nom = '" . addslashes($key) . "' AND version = '" . addslashes($key2) . "'";
                     $db->sql_query($Query);
                 } else {
-                    $Query = "INSERT INTO plugin_main (nom, description, auteur, image, fichier, date_installation, md5_zip, sha256_zip, signature_zip, version, type_licence )
-SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','" . addslashes($line2['Contributor']) . "','" . addslashes($line2['Picture']) . "','" . addslashes($line2["URL"]) . "','" . $date->format('Y-m-d') . "','" . addslashes($md5Zip) . "','" . addslashes($sha256Zip) . "','" . addslashes($signatureZip) . "','" . addslashes($key2) . "','" . addslashes($line2['LicenceType']) . "'";
+                    $Query = "INSERT INTO plugin_main (nom, title, description, auteur, image, fichier, date_installation, md5_zip, sha256_zip, signature_zip, version, type_licence )
+SELECT '" . addslashes($key) . "','" . addslashes($title) . "','" . addslashes($line2['Description']) . "','" . addslashes($line2['Contributor']) . "','" . addslashes($line2['Picture']) . "','" . addslashes($line2["URL"]) . "','" . $date->format('Y-m-d') . "','" . addslashes($md5Zip) . "','" . addslashes($sha256Zip) . "','" . addslashes($signatureZip) . "','" . addslashes($key2) . "','" . addslashes($line2['LicenceType']) . "'";
                     $db->sql_query($Query);
                 }
             endforeach;
@@ -244,6 +247,19 @@ SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','
 
             foreach ($plan['files'] as $file) {
                 $this->logpluginfilepath($file['destination'], $pluginId);
+            }
+
+            foreach ($plan['extensions'] as $extension) {
+                if ($extension['kind'] === 'partial') {
+                    $this->logpluginfilepath($extension['payload'], $pluginId);
+                }
+                PluginSlot::register(
+                    $pluginId,
+                    $extension['slot'],
+                    $extension['kind'],
+                    $extension['payload'],
+                    $extension['order']
+                );
             }
 
             foreach ($plan['sql'] as $sqlFile) {
@@ -610,6 +626,9 @@ SELECT '" . addslashes($key) . "', '" . addslashes($line2['Description']) . "','
             foreach (PluginPackage::phaseFiles($manifest, $ThisPluginDirectory, 'uninstall') as $sqlFile) {
                 $this->sqlexecute($sqlFile);
             }
+
+            PluginPackage::removeExtensionPartials($manifest, ROOT);
+            PluginSlot::unregisterAll($pluginId);
 
             PluginPackage::removeFiles($manifest, ROOT);
 

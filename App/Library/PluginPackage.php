@@ -31,6 +31,7 @@ class PluginPackage
         $manifest['ddl'] = self::normalizePhaseMap($manifest['ddl'] ?? array());
         $manifest['data'] = self::normalizePhaseMap($manifest['data'] ?? array());
         $manifest['scripts'] = self::normalizePhaseMap($manifest['scripts'] ?? array());
+        $manifest['extensions'] = self::normalizeExtensions($manifest['extensions'] ?? array());
 
         return $manifest;
     }
@@ -38,11 +39,13 @@ class PluginPackage
     public static function install(array $manifest, $pluginDirectory, $projectRoot)
     {
         $copied = self::copyFiles($manifest, $pluginDirectory, $projectRoot);
+        $extensions = self::copyExtensionPartials($manifest, $pluginDirectory, $projectRoot);
 
         return array(
             'files' => $copied,
             'sql' => self::phaseFiles($manifest, $pluginDirectory, 'install'),
             'scripts' => self::phaseScripts($manifest, $pluginDirectory, 'install'),
+            'extensions' => $extensions,
         );
     }
 
@@ -52,7 +55,82 @@ class PluginPackage
             'files' => self::removeFiles($manifest, $projectRoot),
             'sql' => self::phaseFiles($manifest, $pluginDirectory, 'uninstall'),
             'scripts' => self::phaseScripts($manifest, $pluginDirectory, 'uninstall'),
+            'extensions' => self::removeExtensionPartials($manifest, $projectRoot),
         );
+    }
+
+    /**
+     * Compute the per-extension entries to push into the plugin_extension
+     * registry. For "partial" entries the source file is copied to its
+     * declared destination (under App/view/_partials/<plugin>/...). For
+     * "callback" entries only the payload is returned.
+     *
+     * @return array<int, array{slot:string,kind:string,payload:string,order:int}>
+     */
+    public static function copyExtensionPartials(array $manifest, $pluginDirectory, $projectRoot)
+    {
+        $registered = array();
+
+        foreach ($manifest['extensions'] ?? array() as $extension) {
+            $slot = (string)$extension['slot'];
+            $kind = (string)$extension['kind'];
+            $order = (int)$extension['order'];
+
+            if ($kind === 'partial') {
+                $source = self::resolveExistingPath($pluginDirectory, $extension['source']);
+                $destination = self::resolveTargetPath($projectRoot, $extension['destination']);
+                $destinationDirectory = dirname($destination);
+
+                if (file_exists($destination)) {
+                    throw new \RuntimeException('Plugin partial already exists: '.$destination);
+                }
+
+                if (!is_dir($destinationDirectory) && !mkdir($destinationDirectory, 0755, true) && !is_dir($destinationDirectory)) {
+                    throw new \RuntimeException('Cannot create partial directory: '.$destinationDirectory);
+                }
+
+                if (!copy($source, $destination)) {
+                    throw new \RuntimeException('Cannot copy plugin partial to: '.$destination);
+                }
+
+                $registered[] = array(
+                    'slot' => $slot,
+                    'kind' => 'partial',
+                    'payload' => self::normalizeRelativePath($extension['destination']),
+                    'order' => $order,
+                );
+            } else {
+                $registered[] = array(
+                    'slot' => $slot,
+                    'kind' => 'callback',
+                    'payload' => (string)$extension['payload'],
+                    'order' => $order,
+                );
+            }
+        }
+
+        return $registered;
+    }
+
+    /**
+     * @return array<int, string> filesystem paths of partials removed
+     */
+    public static function removeExtensionPartials(array $manifest, $projectRoot)
+    {
+        $removed = array();
+
+        foreach ($manifest['extensions'] ?? array() as $extension) {
+            if ($extension['kind'] !== 'partial') {
+                continue;
+            }
+            $destination = self::resolveTargetPath($projectRoot, $extension['destination']);
+            if (is_file($destination) || is_link($destination)) {
+                unlink($destination);
+                $removed[] = $destination;
+            }
+        }
+
+        return $removed;
     }
 
     public static function copyFiles(array $manifest, $pluginDirectory, $projectRoot)
@@ -205,6 +283,48 @@ class PluginPackage
             'install' => array_values(array_map('strval', (array)$map)),
             'uninstall' => array(),
         );
+    }
+
+    private static function normalizeExtensions($extensions)
+    {
+        $normalized = array();
+
+        foreach ((array)$extensions as $extension) {
+            if (!is_array($extension) || empty($extension['slot']) || empty($extension['kind'])) {
+                continue;
+            }
+
+            $slot = (string)$extension['slot'];
+            $kind = (string)$extension['kind'];
+            $order = isset($extension['order']) ? (int)$extension['order'] : 100;
+
+            if ($kind === 'partial') {
+                if (empty($extension['source']) || empty($extension['destination'])) {
+                    throw new \InvalidArgumentException('Partial extension requires source and destination: '.$slot);
+                }
+                $normalized[] = array(
+                    'slot' => $slot,
+                    'kind' => 'partial',
+                    'source' => (string)$extension['source'],
+                    'destination' => (string)$extension['destination'],
+                    'order' => $order,
+                );
+            } elseif ($kind === 'callback') {
+                if (empty($extension['payload'])) {
+                    throw new \InvalidArgumentException('Callback extension requires payload: '.$slot);
+                }
+                $normalized[] = array(
+                    'slot' => $slot,
+                    'kind' => 'callback',
+                    'payload' => (string)$extension['payload'],
+                    'order' => $order,
+                );
+            } else {
+                throw new \InvalidArgumentException('Unknown extension kind: '.$kind);
+            }
+        }
+
+        return $normalized;
     }
 
     private static function normalizeRelativePath($relativePath)

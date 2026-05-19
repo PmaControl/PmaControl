@@ -530,6 +530,10 @@ if (is_array($pa) && !empty($pa['available']) && (int) ($pa['total_servers'] ?? 
 </div>
 <?php endif; ?>
 
+<!-- Plugin-provided cards: each partial renders one or more .hm-card blocks
+     with full access to $data. Registered by plugins on slot "home.cards". -->
+<?php foreach (\App\Library\PluginSlot::partials('home.cards') as $_p) include $_p; ?>
+
 <!-- ════════════════════════════════════════
      ROW 3: BREAKDOWN CHARTS
      ════════════════════════════════════════ -->

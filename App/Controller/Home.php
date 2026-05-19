@@ -194,6 +194,9 @@ class Home extends Controller {
             $data['stuck_analyses'][] = $row;
         }
 
+        // Let installed plugins enrich $data. Mirror of /server/main slot.
+        $data = \App\Library\PluginSlot::apply('home.data', $data, ['db' => $db]);
+
         $this->set('data', $data);
     }
 
