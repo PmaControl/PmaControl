@@ -119,6 +119,19 @@
       "LicenceType": "GPL-3.0",
       "Description": "Nested menu hierarchy: five active=0 child menu rows under the visible 'EOL' parent for /Eol/{kpi,byOrganization,byEnvironment,matrix,index/updates}/, so Glial resolves the page title and breadcrumb on every sub-page without polluting the visible nav.",
       "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.10.0.pmactrl"
+    },
+    "v1.11.0": {
+      "Title": "End-Of-Life",
+      "Picture": "{WWW}image/plugin/eol.svg",
+      "MD5": "7935879bd2be731bcebc36592c7a4dae",
+      "SHA256": "b08064adb59f3f818ee22cfc2499c7f62d7e5531526285faecb05b95e11fbc6b",
+      "Signature": "vjqv68d4fnRLSZ0Swnh1KEIUcvhvwkaua1VzpgEAGNByDYQJE65xBm/ZZORgPsaDH8mVmOdQFy6Tm/k2Q83yCA==",
+      "KeyId": "eol-dev",
+      "CreationDate": "19/05/2026",
+      "Contributor": "PmaControl",
+      "LicenceType": "GPL-3.0",
+      "Description": "Bundles every open plugin-eol issue: drop proxies+VIPs from fleet baseline (#1), fall back to global_variable for version when Extraction2 is silent (#2), new /Eol/patches/ paginated patch history via MariaDB system versioning (#3, closes #5), auto-hide 0-count product tabs (#6), harmonised By organization / By environment / Org × Env matrix labels (#7).",
+      "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.11.0.pmactrl"
     }
   },
   "test-plug": {
