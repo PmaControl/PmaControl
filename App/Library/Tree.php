@@ -136,7 +136,15 @@ class Tree
 
         $sql = "SELECT * FROM `".$this->table_name."` WHERE `".$this->fields['id']."`=".$id;
 
-        $ob       = $this->db->sql_fetch_object($this->db->sql_query($sql));
+        $ob = $this->db->sql_fetch_object($this->db->sql_query($sql));
+        if (!is_object($ob)) {
+            // #1316 — idempotent: a missing row is the intended end
+            // state, not an error. Triggered when a caller iterates a
+            // list with duplicate entries pointing at the same node
+            // (Plugin::removeCore over a plugin_menu with duplicate
+            // URLs) or when two requests race the same delete.
+            return false;
+        }
         $bg       = self::normalizePositiveInteger($ob->{$this->fields['bg']}, 'tree left bound');
         $bd       = self::normalizePositiveInteger($ob->{$this->fields['bd']}, 'tree right bound');
         $interval = $bd - $bg + 1;

@@ -217,6 +217,10 @@ SELECT '" . addslashes($key) . "','" . addslashes($title) . "','" . addslashes($
         }
         $pluginId = (int)$param[0];
 
+        // Snapshot the menu table before any nested-set mutation
+        // (#1316). Backup file lands in tmp/plugin_menu_backup/.
+        $this->backupMenu(Sgbd::sql(DB_DEFAULT), 'install-'.$pluginId);
+
         // Plugin archives and their extracted bundles live outside the
         // served webroot at PLUGIN_STORAGE_DIR (default /srv/www/<root>-plugin/).
         // Manifest copies still target the canonical pmacontrol tree.
@@ -382,7 +386,20 @@ SELECT '" . addslashes($key) . "','" . addslashes($title) . "','" . addslashes($
                 $tree->add($value, $ids["id"]);
 
                 //On met en base le fait que le plugin est installé.
-                $sql = "INSERT INTO plugin_menu (id_plugin_main, url) SELECT " . $pluginId . ", '" . $db->sql_real_escape_string($value["url"]) . "';";
+                // #1316 — skip-if-exists guard. The plugin_menu table
+                // didn't carry a UNIQUE (id_plugin_main, url) index
+                // historically (and won't on older deployments), so a
+                // re-install accumulated duplicate rows which then made
+                // removeCore's Tree::delete loop crash on the second
+                // pass. Don't insert if (plugin, url) is already there.
+                $escapedUrl = $db->sql_real_escape_string($value["url"]);
+                $sql = "INSERT INTO plugin_menu (id_plugin_main, url)
+                        SELECT " . $pluginId . ", '" . $escapedUrl . "' FROM DUAL
+                        WHERE NOT EXISTS (
+                          SELECT 1 FROM plugin_menu
+                          WHERE id_plugin_main = " . $pluginId . "
+                            AND url = '" . $escapedUrl . "'
+                        );";
                 $db->sql_query($sql);
 
                 $lastinstallmenu = $value["url"];
@@ -696,6 +713,12 @@ SELECT '" . addslashes($key) . "','" . addslashes($title) . "','" . addslashes($
     {
         $db = Sgbd::sql(DB_DEFAULT);
 
+        // Snapshot the menu table before mutating the nested-set
+        // (#1316). If anything corrupts bg/bd mid-flight, the operator
+        // can roll back with `mysql pmacontrol < <backup-file>` instead
+        // of hand-rebuilding the tree.
+        $this->backupMenu($db, 'remove-'.$pluginId);
+
         //On charge le bon menu pour pouvoir l'administrer
         $Query = "SELECT group_id, id, url FROM menu WHERE title = 'Plugins'";
         $res = $db->sql_query($Query);
@@ -705,18 +728,28 @@ SELECT '" . addslashes($key) . "','" . addslashes($title) . "','" . addslashes($
 
         $tree = new TreeInterval($db, "menu", array("id_parent" => "parent_id"), array("group_id" => $ids["group_id"]));
 
-        //On charge les entrées menus à retirer
-        $Query = "SELECT menu.id AS menuid, plugin_menu.id AS pluginmenuid FROM plugin_menu INNER JOIN menu ON menu.url = plugin_menu.url WHERE plugin_menu.id_plugin_main = " . $pluginId;
+        // #1316 — deduplicate menu ids. plugin_menu can carry
+        // duplicate rows for the same URL when an install ran twice
+        // (each call appends without an ON DUPLICATE guard). The old
+        // loop called Tree::delete once per plugin_menu row → the
+        // second call hit a missing menu row and crashed on $ob->bg.
+        // Collect distinct ids first, then iterate.
+        $Query = "SELECT DISTINCT menu.id AS menuid
+                  FROM plugin_menu
+                  INNER JOIN menu ON menu.url = plugin_menu.url
+                  WHERE plugin_menu.id_plugin_main = " . $pluginId;
         $res = $db->sql_query($Query);
-
-        $menu = array();
-        while ($menu = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-            //On efface le menu
-            $tree->delete($menu["menuid"]);
-            // On purge le menu effacé de la base de données.
-            $QueryDelete = "DELETE FROM plugin_menu WHERE id = " . $menu["pluginmenuid"];
-            $db->sql_query($QueryDelete);
+        $menuIds = array();
+        while ($r = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $menuIds[] = (int)$r['menuid'];
         }
+        foreach ($menuIds as $menuId) {
+            $tree->delete($menuId);   // Tree::delete is now idempotent (#1316)
+        }
+        // Single bulk wipe of every plugin_menu row for this plugin,
+        // duplicates included — no per-iteration DELETE that risks
+        // half-finishing if anything throws.
+        $db->sql_query("DELETE FROM plugin_menu WHERE id_plugin_main = " . $pluginId);
 
         $Query = "SELECT nom, version FROM plugin_main WHERE id = " . $pluginId;
         $res = $db->sql_query($Query);
@@ -777,6 +810,90 @@ SELECT '" . addslashes($key) . "','" . addslashes($title) . "','" . addslashes($
         $sql = "UPDATE plugin_main SET est_actif = 0 WHERE id = " . $pluginId . ";";
         $db->sql_query($sql);
         $this->clearAclCache();
+    }
+
+/**
+ * Snapshot the `menu` table to a SQL file before any destructive
+ * tree mutation (#1316). Cheap insurance against nested-set bg/bd
+ * corruption — if anything goes wrong, the operator can roll back
+ * with `mysql pmacontrol < <returned-file>`.
+ *
+ * Stores backups in `tmp/plugin_menu_backup/menu-YYYYMMDD-HHMMSS-<reason>.sql`.
+ * Rotates older backups out so the directory never carries more than
+ * 20 files (~200 KB total at ~10 KB per dump). Surfaces non-fatal: a
+ * failed backup logs a warning and lets the install/remove continue —
+ * a backup nobody can write is worse than no backup but not worth
+ * blocking the user's operation.
+ *
+ * @return string|null Path of the backup file, or null on failure.
+ */
+    private function backupMenu($db, $reason)
+    {
+        try {
+            $dir = (defined('TMP') ? TMP : (ROOT.DS.'tmp'.DS)).'plugin_menu_backup';
+            if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
+                return null;
+            }
+
+            $stamp = date('Ymd-His');
+            $safe  = preg_replace('/[^a-zA-Z0-9_-]/', '_', (string)$reason);
+            $file  = $dir.DIRECTORY_SEPARATOR.'menu-'.$stamp.'-'.$safe.'.sql';
+
+            $fp = @fopen($file, 'w');
+            if ($fp === false) {
+                return null;
+            }
+
+            fwrite($fp, "-- plugin_menu_backup\n-- created: ".date('c')."\n-- reason: ".$reason."\n\n");
+            fwrite($fp, "-- Restore with: mysql <db> < ".basename($file)."\n");
+            fwrite($fp, "SET FOREIGN_KEY_CHECKS=0;\n\n");
+
+            foreach (array('menu', 'plugin_menu') as $table) {
+                $res = $db->sql_query("SELECT * FROM `".$table."`");
+                if (!$res) continue;
+
+                $cols = null;
+                fwrite($fp, "DELETE FROM `".$table."`;\n");
+                while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                    if ($cols === null) {
+                        $cols = array_keys($row);
+                    }
+                    $values = array();
+                    foreach ($cols as $c) {
+                        $v = $row[$c];
+                        if ($v === null) {
+                            $values[] = 'NULL';
+                        } else {
+                            $values[] = "'".$db->sql_real_escape_string((string)$v)."'";
+                        }
+                    }
+                    fwrite($fp, "INSERT INTO `".$table."` (`"
+                        .implode('`, `', $cols)."`) VALUES ("
+                        .implode(', ', $values).");\n");
+                }
+                fwrite($fp, "\n");
+            }
+            fwrite($fp, "SET FOREIGN_KEY_CHECKS=1;\n");
+            fclose($fp);
+
+            $this->pruneOldMenuBackups($dir, 20);
+            return $file;
+        } catch (\Throwable $exception) {
+            return null;
+        }
+    }
+
+    private function pruneOldMenuBackups($dir, $keep)
+    {
+        $files = @glob($dir.DIRECTORY_SEPARATOR.'menu-*.sql');
+        if (!is_array($files) || count($files) <= $keep) {
+            return;
+        }
+        // Oldest first by mtime, drop everything beyond the keep limit.
+        usort($files, function ($a, $b) { return filemtime($a) - filemtime($b); });
+        foreach (array_slice($files, 0, count($files) - $keep) as $old) {
+            @unlink($old);
+        }
     }
 
     private function findSqlScript($pluginDirectory, $filename)
