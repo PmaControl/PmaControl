@@ -1,0 +1,88 @@
+---
+title: 'binlog2sql: Binlog to Raw SQL Conversion and Point In Time Recovery'
+source:
+  name: Percona Blog
+  url: https://www.percona.com/blog/binlog2sql-binlog-to-raw-sql-conversion-and-point-in-time-recovery/
+  post_id: 22695
+source_author:
+  name: Sri Sakthivel
+  slug: sri-sakthivel
+  url: https://www.percona.com/blog/author/sri-sakthivel/
+  website: ''
+published_at: '2020-07-09T17:05:41'
+published_at_gmt: '2020-07-09T17:05:41'
+modified_at: '2026-05-05T16:30:55'
+modified_at_gmt: '2026-05-05T16:30:55'
+curator:
+  name: Sylvain ARBAUDIE
+  slug: sylvain-arbaudie
+  source_url: https://www.pmacontrol.fr/fr/site/blog_author/sylvain-arbaudie/
+matched_topics:
+- MySQL
+matched_filters:
+- category:mysql:83
+categories:
+- Insight for DBAs
+- MySQL
+category_slugs:
+- insight-for-dbas
+- mysql
+tags:
+- insight for DBAs
+- MySQL
+- mysql-and-variants
+- SQL
+tag_slugs:
+- insight-for-dbas
+- mysql
+- mysql-and-variants
+- sql
+featured_image_url: https://www.percona.com/wp-content/uploads/2026/03/binlog2sql.png
+image_count: 2
+graph_or_chart_count: 0
+content_import: metadata_excerpt_headings_and_source_image_urls_only
+copyright_notice: Percona All Rights Reserved; full article text and local image copies are not reproduced.
+---
+
+# binlog2sql: Binlog to Raw SQL Conversion and Point In Time Recovery
+
+Source: [Percona Blog](https://www.percona.com/blog/binlog2sql-binlog-to-raw-sql-conversion-and-point-in-time-recovery/)
+
+Auteur source: [Sri Sakthivel](https://www.percona.com/blog/author/sri-sakthivel/)
+
+Publication: 2020-07-09T17:05:41
+
+Curateur PmaControl: [Sylvain ARBAUDIE](../../../authors/sylvain-arbaudie.md)
+
+## Note de droits
+
+Fiche de veille uniquement: les metadonnees, l'extrait public, les titres de sections detectes et les URLs des visuels sont conserves. Le texte complet et les copies locales des images restent sur la source Percona.
+
+## Extrait public
+
+In this blog, I will look at the tool binlog2sql, designed by Cao Danfeng. The tool will help to decode the MySQL binary logs and extract the raw SQL, which also helps to generate the ROLLBACK statements for point in time recovery (PITR) using the “flashback” feature. This feature is also implemented in MariaDB’s version … Continued
+
+## Structure detectee
+
+- H2: Mysqlbinlog vs Binlog2sql
+- H3: Mysqlbinlog:
+- H3: Binlog2sql:
+- H2: What is binlog2sql?
+- H2: MySQL Requirements
+- H2: Installation
+- H2: Tested Environment
+- H2: Binlog2sql Options
+- H2: How to Extract the Raw SQL From Binary Logs
+- H2: How Does binlog2sql Support PITR?
+- H3: Case 1 – PITR from DELETE:
+- H3: Case 2 – PITR from UPDATE:
+- H3: Conclusion
+
+## Images et graphiques reperes
+
+- featured / image: [binlog2sql: Binlog to Raw SQL Conversion and Point In Time Recovery](https://www.percona.com/wp-content/uploads/2026/03/binlog2sql.png)
+- content / image: [binlog2sql](https://www.percona.com/wp-content/uploads/2026/03/binlog2sql-300x157.png)
+
+## Auteur source
+
+Oracle certified MySQL DBA. Working on MySQL and related technologies to ensures database performance. Handling multi client projects round the clock. Currently focusing on MySQL Cluster technologies like Galera and Group replication/InnoDB cluster. Active MySQL Blogger.

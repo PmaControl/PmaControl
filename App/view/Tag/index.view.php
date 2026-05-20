@@ -1,4 +1,7 @@
 <?php
+
+use App\Library\Security\CsrfRender;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -7,6 +10,8 @@
 
 
 
+
+$tagUpdateCsrfAttributes = CsrfRender::attributes($data, 'tag_update');
 
 echo '<table class="table table-bordered table-striped" id="table">';
 echo '<tr>';
@@ -25,9 +30,9 @@ foreach ($data['tags'] as $tag) {
     echo '<tr>';
     echo '<td>'.$i.'</td>';
     echo '<td>'.$tag['id'].'</td>';
-    echo '<td class="line-edit" data-name="name" data-pk="'.$tag['id'].'" data-type="text" data-url="'.LINK.'tag/update" data-title="Enter Libelle">'.$tag['name'].'</td>';
-    echo '<td class="line-edit" data-name="color" data-pk="'.$tag['id'].'" data-type="text" data-url="'.LINK.'tag/update" data-title="Enter Color">'.$tag['color'].'</td>';
-    echo '<td class="line-edit" data-name="background" data-pk="'.$tag['id'].'" data-type="text" data-url="'.LINK.'tag/update" data-title="Enter Color">'.$tag['background'].'</td>';
+    echo '<td class="line-edit" data-name="name" data-pk="'.$tag['id'].'" data-type="text" data-url="'.LINK.'tag/update" data-title="Enter Libelle"'.$tagUpdateCsrfAttributes.'>'.$tag['name'].'</td>';
+    echo '<td class="line-edit" data-name="color" data-pk="'.$tag['id'].'" data-type="text" data-url="'.LINK.'tag/update" data-title="Enter Color"'.$tagUpdateCsrfAttributes.'>'.$tag['color'].'</td>';
+    echo '<td class="line-edit" data-name="background" data-pk="'.$tag['id'].'" data-type="text" data-url="'.LINK.'tag/update" data-title="Enter Color"'.$tagUpdateCsrfAttributes.'>'.$tag['background'].'</td>';
 
     echo '<td><span class="label" style="color:'.$tag['color'].'; background:'.$tag['background'].' ;">'.$tag['name'].'</span></td>';
     echo '</tr>'."\n";

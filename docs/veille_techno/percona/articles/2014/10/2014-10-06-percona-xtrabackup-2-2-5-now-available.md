@@ -1,0 +1,77 @@
+---
+title: Percona XtraBackup 2.2.5 now available (free MySQL hot backup software)
+source:
+  name: Percona Blog
+  url: https://www.percona.com/blog/percona-xtrabackup-2-2-5-now-available/
+  post_id: 8603
+source_author:
+  name: Hrvoje Matijakovic
+  slug: hrvojem
+  url: https://www.percona.com/blog/author/hrvojem/
+  website: ''
+published_at: '2014-10-06T12:50:09'
+published_at_gmt: '2014-10-06T12:50:09'
+modified_at: '2026-03-25T17:42:40'
+modified_at_gmt: '2026-03-25T17:42:40'
+curator:
+  name: Sylvain ARBAUDIE
+  slug: sylvain-arbaudie
+  source_url: https://www.pmacontrol.fr/fr/site/blog_author/sylvain-arbaudie/
+matched_topics:
+- MySQL
+- XtraBackup
+matched_filters:
+- category:mysql:83
+- search:percona-xtrabackup
+- search:xtrabackup
+- tag:percona-xtrabackup:330
+categories:
+- MySQL
+- Percona Events
+- Percona Software
+category_slugs:
+- mysql
+- percona-events
+- percona-software
+tags:
+- InnoDB
+- MySQL 5.6.21
+- MySQL hot backup
+- Percona XtraBackup
+- Secondary
+- XtraDB
+tag_slugs:
+- innodb
+- mysql-5-6-21
+- mysql-hot-backup
+- percona-xtrabackup
+- secondary
+- xtradb
+featured_image_url: https://www.percona.com/wp-content/uploads/2026/03/Percona_XtraBackup.jpg
+image_count: 1
+graph_or_chart_count: 0
+content_import: metadata_excerpt_headings_and_source_image_urls_only
+copyright_notice: Percona All Rights Reserved; full article text and local image copies are not reproduced.
+---
+
+# Percona XtraBackup 2.2.5 now available (free MySQL hot backup software)
+
+Source: [Percona Blog](https://www.percona.com/blog/percona-xtrabackup-2-2-5-now-available/)
+
+Auteur source: [Hrvoje Matijakovic](https://www.percona.com/blog/author/hrvojem/)
+
+Publication: 2014-10-06T12:50:09
+
+Curateur PmaControl: [Sylvain ARBAUDIE](../../../authors/sylvain-arbaudie.md)
+
+## Note de droits
+
+Fiche de veille uniquement: les metadonnees, l'extrait public, les titres de sections detectes et les URLs des visuels sont conserves. Le texte complet et les copies locales des images restent sur la source Percona.
+
+## Extrait public
+
+Percona is glad to announce the release of Percona XtraBackup 2.2.5 on October 2, 2014. Downloads are available from our download site here and Percona Software Repositories. Percona XtraBackup enables MySQL backups without blocking user queries, making it ideal for companies with large data sets and mission-critical applications that cannot tolerate long periods of downtime. … Continued
+
+## Images et graphiques reperes
+
+- featured / image: [Percona XtraBackup 2.2.5 now available (free MySQL hot backup software)](https://www.percona.com/wp-content/uploads/2026/03/Percona_XtraBackup.jpg)

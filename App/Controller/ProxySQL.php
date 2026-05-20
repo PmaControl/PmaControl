@@ -7,7 +7,13 @@ use \App\Library\Debug;
 use \App\Library\Mysql;
 use \App\Library\Extraction;
 use \App\Library\Extraction2;
+use App\Library\Http\HttpResponse;
+use App\Library\Security\CsrfGuard;
+use App\Library\Security\Identifier;
+use App\Library\Security\PositiveIntegerSelection;
+use App\Library\Security\SafeRedirect;
 use \Glial\Sgbd\Sgbd;
+use Glial\Security\Csrf;
 use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
@@ -53,20 +59,124 @@ class ProxySQL extends Controller
     use \App\Library\Filter;
 
     const DB_STATS = 'stats';
+    private const PROXYSQL_ADD_CSRF_SCOPE = 'proxysql.add';
+    private const PROXYSQL_ADD_HOSTNAME_MAX_LENGTH = 255;
+    private const PROXYSQL_ADD_LOGIN_MAX_LENGTH = 128;
+    private const PROXYSQL_ADD_PASSWORD_MAX_LENGTH = 1024;
+    private const PROXYSQL_ADD_DISPLAY_NAME_MAX_LENGTH = 255;
+    private const PROXYSQL_UPDATE_CSRF_SCOPE = 'proxysql.update';
+    private const PROXYSQL_UPDATE_COMMANDS = ['SAVE', 'LOAD'];
+    private const PROXYSQL_UPDATE_CONFIG_AREAS = [
+        'ADMIN_VARIABLES',
+        'MYSQL_QUERY_RULES',
+        'MYSQL_SERVERS',
+        'MYSQL_USERS',
+        'MYSQL_VARIABLES',
+        'PROXYSQL_SERVERS',
+        'SCHEDULER',
+    ];
+    private const PROXYSQL_UPDATE_TARGETS = ['MEMORY', 'DISK', 'RUNTIME', 'CONFIG'];
+    private const PROXYSQL_UPDATE_FIELD_CSRF_SCOPE = 'proxysql.update_field';
+    private const PROXYSQL_ADD_LINE_CSRF_SCOPE = 'proxysql.add_line';
+    private const PROXYSQL_DELETE_LINE_CSRF_SCOPE = 'proxysql.delete_line';
+    private const PROXYSQL_UPDATE_FIELD_TABLES = [
+        'global_variables',
+        'mysql_query_rules',
+        'mysql_servers',
+        'mysql_replication_hostgroups',
+        'mysql_group_replication_hostgroups',
+        'mysql_galera_hostgroups',
+        'mysql_aws_aurora_hostgroups',
+        'mysql_hostgroup_attributes',
+        'mysql_users',
+        'proxysql_servers',
+        'scheduler',
+    ];
+    private const PROXYSQL_DELETE_LINE_TABLES = [
+        'mysql_query_rules',
+        'mysql_servers',
+        'mysql_replication_hostgroups',
+        'mysql_group_replication_hostgroups',
+        'mysql_galera_hostgroups',
+        'mysql_aws_aurora_hostgroups',
+        'mysql_hostgroup_attributes',
+        'mysql_users',
+        'proxysql_servers',
+        'scheduler',
+    ];
+    private const PROXYSQL_UPDATE_FIELD_VALUE_MAX_LENGTH = 4096;
+    private const PROXYSQL_UPDATE_FIELD_PK_MAX_LENGTH = 2048;
 
+/**
+ * Stores `$clip` for clip.
+ *
+ * @var int
+ * @phpstan-var int
+ * @psalm-var int
+ */
     var $clip = 0;
 
     //var $database = array('main', )
     //var $exclude_table = array('reset');
 
+/**
+ * Stores `$logger` for logger.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $logger;
 
+/**
+ * Stores `$log` for log.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     static $log;
 
 
+/**
+ * Stores `$proxysql_server` for proxysql server.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $proxysql_server = array();
 
+/**
+ * Stores `$proxysql_list` for proxysql list.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
+    static $proxysql_list = array();
 
+/**
+ * Prepare proxy s q l state through `before`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for before.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::before()
+ * @example /fr/proxysql/before
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function before($param)
     {
         $monolog       = new Logger("ProxySQL");
@@ -78,6 +188,27 @@ class ProxySQL extends Controller
 
 
 
+/**
+ * Render proxy s q l state through `main`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for main.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::main()
+ * @example /fr/proxysql/main
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function main($param)
     {
 
@@ -101,21 +232,149 @@ class ProxySQL extends Controller
 
     public function add()
     {
-        $db = Sgbd::sql(DB_DEFAULT);
+        $data = array(
+            'proxysql_add_csrf_field' => Csrf::DEFAULT_FIELD,
+            'proxysql_add_csrf_token' => Csrf::issueToken($_SESSION, self::PROXYSQL_ADD_CSRF_SCOPE),
+        );
 
         if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            debug($_POST);
+            $outcome = self::evaluateAddRequest($_POST, $_SERVER, $_SESSION, IS_CLI);
+            if (!$outcome['allowed']) {
+                set_flash("error", __("Error"), $outcome['body']);
+                $this->set('data', $data);
+                return;
+            }
 
-            $param = array();
-            $param[0] = $_POST['proxysql_server']['hostname'];
-            $param[1] = $_POST['proxysql_server']['port'];
-            $param[2] = $_POST['proxysql_server']['login'];
-            $param[3] = $_POST['proxysql_server']['password'];
-            $param[4] = $_POST['proxysql_server']['display_name'];
-
-            $this->insertProxySqlAdmin($param);
+            $this->insertProxySqlAdmin($outcome['proxysql']);
             //$this->addProxyAdmin($param);
         }
+
+        $this->set('data', $data);
+    }
+
+    public static function evaluateAddRequest(array $post, array $server, array $session, bool $isCli = false): array
+    {
+        if (!$isCli) {
+            if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::PROXYSQL_ADD_CSRF_SCOPE)) {
+                return [
+                    'allowed' => false,
+                    'status' => $failure['status'],
+                    'body' => $failure['body'],
+                    'headers' => $failure['headers'],
+                    'proxysql' => null,
+                ];
+            }
+        }
+
+        $proxysql = self::normalizeAddPayload($post);
+        if ($proxysql === null) {
+            return [
+                'allowed' => false,
+                'status' => 400,
+                'body' => 'Invalid ProxySQL add payload',
+                'headers' => [],
+                'proxysql' => null,
+            ];
+        }
+
+        return [
+            'allowed' => true,
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'proxysql' => $proxysql,
+        ];
+    }
+
+    public static function normalizeAddPayload(array $post): ?array
+    {
+        $values = $post['proxysql_server'] ?? null;
+        if (!is_array($values)) {
+            return null;
+        }
+
+        $hostname = self::normalizeProxySqlHostname($values['hostname'] ?? null);
+        $port = self::normalizeProxySqlPort($values['port'] ?? null);
+        $login = self::normalizeProxySqlRequiredText($values['login'] ?? null, self::PROXYSQL_ADD_LOGIN_MAX_LENGTH);
+        $password = self::normalizeProxySqlPassword($values['password'] ?? null);
+        $displayName = self::normalizeProxySqlRequiredText(
+            $values['display_name'] ?? null,
+            self::PROXYSQL_ADD_DISPLAY_NAME_MAX_LENGTH
+        );
+
+        if (
+            $hostname === null
+            || $port === null
+            || $login === null
+            || $password === null
+            || $displayName === null
+        ) {
+            return null;
+        }
+
+        return [
+            $hostname,
+            (string) $port,
+            $login,
+            $password,
+            $displayName,
+        ];
+    }
+
+    private static function normalizeProxySqlHostname($value): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $hostname = trim((string) $value);
+        if (
+            $hostname === ''
+            || strlen($hostname) > self::PROXYSQL_ADD_HOSTNAME_MAX_LENGTH
+            || preg_match('/^[A-Za-z0-9_.:-]+$/', $hostname) !== 1
+        ) {
+            return null;
+        }
+
+        return $hostname;
+    }
+
+    private static function normalizeProxySqlPort($value): ?int
+    {
+        $port = self::normalizePositiveInteger($value);
+        if ($port === null || $port > 65535) {
+            return null;
+        }
+
+        return $port;
+    }
+
+    private static function normalizeProxySqlRequiredText($value, int $maxLength): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $text = trim((string) $value);
+        if ($text === '' || strlen($text) > $maxLength) {
+            return null;
+        }
+
+        return $text;
+    }
+
+    private static function normalizeProxySqlPassword($value): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $password = (string) $value;
+        if ($password === '' || strlen($password) > self::PROXYSQL_ADD_PASSWORD_MAX_LENGTH) {
+            return null;
+        }
+
+        return $password;
     }
     /*
      * Test if it's ProxySQL Admin Module
@@ -338,31 +597,40 @@ class ProxySQL extends Controller
         }
     } */
 
-    public function index()
+    public function index($param)
     {
+        Debug::parseDebug($param);
 
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT * FROM proxysql_server;";
-
         $res = $db->sql_query($sql);
+
+        $proxysql = Extraction2::display(['proxysql_available','proxysql_runtime::mysql_servers']);
 
         $data = array();
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
 
             $arr['servers'] = array();
-            $arr['servers'] = self::getServers($arr['hostname'], $arr['port'], $arr['login'], $arr['password']);
+            //$arr['servers'] = self::getServers($arr['hostname'], $arr['port'], $arr['login'], $arr['password']);
+            $arr['servers'] = [];
 
-            if (!empty($arr['id_mysql_server'])) {
-                
-                $var = Extraction::display(array('mysql_server::mysql_available', 'mysql_server::mysql_error'), array($arr['id_mysql_server']));
-                $arr['mysql_available'] = $var[$arr['id_mysql_server']]['']['mysql_available'];
-
+            if (isset($proxysql[$arr['id_mysql_server']]['mysql_servers']))
+            {
+                $arr['servers'] = $proxysql[$arr['id_mysql_server']]['mysql_servers'];
             }
 
-            $arr['mysql_error'] = $var[$arr['id_mysql_server']]['']['mysql_error'] ?? "";
+            $arr['mysql_available'] = "";
+            $arr['mysql_error'] = "";
+            if (!empty($arr['id_mysql_server'])) {
+                $var = Extraction::display(array('mysql_server::mysql_available', 'mysql_server::mysql_error'), array($arr['id_mysql_server']));
+                $server_state = $var[$arr['id_mysql_server']][''] ?? [];
+                $arr['mysql_available'] = $server_state['mysql_available'] ?? "";
+                $arr['mysql_error'] = $server_state['mysql_error'] ?? "";
+            }
 
-            $data['proxysql_error'] = $this->getErrorConnect(array($arr['id']));
+            $data['proxysql_error'] = [];
+            //$data['proxysql_error'] = $this->getErrorConnect(array($arr['id']));
             $data['proxysql'][] = $arr;
         }
 
@@ -370,8 +638,36 @@ class ProxySQL extends Controller
     }
 
 
-
-
+/**
+ * Retrieve proxy s q l state through `getServers`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $hostname Input value for `hostname`.
+ * @phpstan-param mixed $hostname
+ * @psalm-param mixed $hostname
+ * @param mixed $port Input value for `port`.
+ * @phpstan-param mixed $port
+ * @psalm-param mixed $port
+ * @param mixed $login Input value for `login`.
+ * @phpstan-param mixed $login
+ * @psalm-param mixed $login
+ * @param mixed $password Input value for `password`.
+ * @phpstan-param mixed $password
+ * @psalm-param mixed $password
+ * @return mixed Returned value for getServers.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getServers()
+ * @example /fr/proxysql/getServers
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function getServers($hostname, $port, $login, $password)
     {
         $link = mysqli_connect($hostname . ":" . $port, $login, trim($password));
@@ -500,6 +796,27 @@ class ProxySQL extends Controller
         }
     }
 
+/**
+ * Handle proxy s q l state through `statistic`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for statistic.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::statistic()
+ * @example /fr/proxysql/statistic
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function statistic($param)
     {
         Debug::parseDebug($param);
@@ -547,6 +864,28 @@ class ProxySQL extends Controller
     }
 
 
+/**
+ * Retrieve proxy s q l state through `getErrorConnect`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getErrorConnect.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::getErrorConnect()
+ * @example /fr/proxysql/getErrorConnect
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getErrorConnect($param)
     {
         Debug::parseDebug($param);
@@ -615,6 +954,28 @@ class ProxySQL extends Controller
 
 
 
+/**
+ * Handle proxy s q l state through `import`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for import.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::import()
+ * @example /fr/proxysql/import
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function import($param)
     {
         Debug::parseDebug($param);
@@ -644,6 +1005,27 @@ class ProxySQL extends Controller
         return $import;
     }
 
+/**
+ * Handle proxy s q l state through `auto`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for auto.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::auto()
+ * @example /fr/proxysql/auto
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function auto($param)
     {
 
@@ -657,41 +1039,42 @@ class ProxySQL extends Controller
         $this->set('data', $data);
     }
 
-
-    public function config($param)
+/**
+ * Retrieve proxy s q l state through `getConfigMenuDefinition`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for getConfigMenuDefinition.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getConfigMenuDefinition()
+ * @example /fr/proxysql/getConfigMenuDefinition
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function getConfigMenuDefinition()
     {
-        $data = array();
-
-        $this->di['js']->addJavascript(array('bootstrap-editable.min.js'));
-
-
-        $this->di['js']->code_javascript('
-        $.fn.editable.defaults.mode = "inline";
-
-        $(document).ready(function () {
-            $(".line-edit").editable();
-        });');
-
-        Debug::parseDebug($param);
-        $id_proxysql_server = $param[0] ?? "";
-
-        $param['menu_current'] = __FUNCTION__;
-        $data['param'] = $param;
-        $data['id_proxysql_server'] = $id_proxysql_server;
-        $data['current'] = $param[1] ?? "MYSQL SERVERS";
-
-        if (empty($id_proxysql_server)) {
-            throw new \Exception(__FUNCTION__ . ' should have id_proxysql_server in parameter');
-        }
-
-        $db = Sgbd::sql('proxysql_' . $id_proxysql_server);
-
         $sqls = array();
         $sqls["ADMIN VARIABLES"]['sql'] = "SELECT * FROM {PREFIX}global_variables WHERE variable_name LIKE 'admin%' ORDER BY variable_name ASC;";
         $sqls["ADMIN VARIABLES"]['insert_or_delete'] = "0";
         $sqls["ADMIN VARIABLES"]['update_only'] = array("variable_value");
         $sqls["MYSQL QUERY RULES"]['sql'] = "SELECT * FROM {PREFIX}mysql_query_rules ORDER BY rule_id ASC;";
         $sqls["MYSQL SERVERS"]['sql'] = "SELECT * FROM {PREFIX}mysql_servers ORDER BY hostgroup_id, hostname, port;";
+        // Extra ProxySQL tables that reference `hostgroup_id` (async replication, Group Replication,
+        // Galera, AWS Aurora and per-hostgroup attributes). They are loaded on a best-effort basis:
+        // older ProxySQL builds may be missing some of them, so `config()` skips tables that don't exist.
+        $sqls["MYSQL SERVERS"]['related_sql'] = array(
+            "SELECT * FROM {PREFIX}mysql_replication_hostgroups ORDER BY writer_hostgroup, reader_hostgroup;",
+            "SELECT * FROM {PREFIX}mysql_group_replication_hostgroups ORDER BY writer_hostgroup;",
+            "SELECT * FROM {PREFIX}mysql_galera_hostgroups ORDER BY writer_hostgroup;",
+            "SELECT * FROM {PREFIX}mysql_aws_aurora_hostgroups ORDER BY writer_hostgroup;",
+            "SELECT * FROM {PREFIX}mysql_hostgroup_attributes ORDER BY hostgroup_id;",
+        );
         $sqls["MYSQL USERS"]['sql'] = "SELECT * FROM {PREFIX}mysql_users ORDER BY default_hostgroup, username ASC;";
 
         $sqls["MYSQL VARIABLES"]['sql'] = "SELECT * FROM {PREFIX}global_variables WHERE variable_name NOT LIKE 'admin%' ORDER BY variable_name ASC;";
@@ -699,84 +1082,599 @@ class ProxySQL extends Controller
         $sqls["PROXYSQL SERVERS"]['sql'] = "SELECT * FROM {PREFIX}proxysql_servers ORDER BY hostname ASC, port ASC;";
         $sqls["SCHEDULER"]['sql'] = "SELECT * FROM {PREFIX}scheduler ORDER BY id desc;";
 
+        return $sqls;
+    }
+
+/**
+ * Handle proxy s q l state through `extractTableNameFromSqlTemplate`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $sql_template Input value for `sql_template`.
+ * @phpstan-param mixed $sql_template
+ * @psalm-param mixed $sql_template
+ * @return mixed Returned value for extractTableNameFromSqlTemplate.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::extractTableNameFromSqlTemplate()
+ * @example /fr/proxysql/extractTableNameFromSqlTemplate
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function extractTableNameFromSqlTemplate($sql_template)
+    {
+        $sql = str_replace('{PREFIX}', '', $sql_template);
+
+        $output_array = array();
+        preg_match('/FROM\s+`?([a-zA-Z0-9_]+)`?/i', $sql, $output_array);
+
+        return $output_array[1] ?? "";
+    }
+
+/**
+ * Retrieve proxy s q l state through `getSqliteCreateTableStatement`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $db Input value for `db`.
+ * @phpstan-param mixed $db
+ * @psalm-param mixed $db
+ * @param mixed $table_name Input value for `table_name`.
+ * @phpstan-param mixed $table_name
+ * @psalm-param mixed $table_name
+ * @return mixed Returned value for getSqliteCreateTableStatement.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getSqliteCreateTableStatement()
+ * @example /fr/proxysql/getSqliteCreateTableStatement
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function getSqliteCreateTableStatement($db, $table_name)
+    {
+        $table_name = str_replace("'", "''", $table_name);
+        $sql = "SELECT sql FROM sqlite_master WHERE type='table' AND name='".$table_name."' LIMIT 1;";
+        $res = $db->sql_query($sql);
+
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            if (!empty($arr['sql'])) {
+                return $arr['sql'];
+            }
+        }
+
+        return "";
+    }
+
+/**
+ * Handle proxy s q l state through `normalizeDefaultValue`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $default_value Input value for `default_value`.
+ * @phpstan-param mixed $default_value
+ * @psalm-param mixed $default_value
+ * @return mixed Returned value for normalizeDefaultValue.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::normalizeDefaultValue()
+ * @example /fr/proxysql/normalizeDefaultValue
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function normalizeDefaultValue($default_value)
+    {
+        if ($default_value === null) {
+            return null;
+        }
+
+        $default_value = trim((string) $default_value);
+
+        if ($default_value === '' || strtoupper($default_value) === 'NULL') {
+            return null;
+        }
+
+        if (
+            (substr($default_value, 0, 1) === "'" && substr($default_value, -1) === "'")
+            || (substr($default_value, 0, 1) === '"' && substr($default_value, -1) === '"')
+        ) {
+            $default_value = substr($default_value, 1, -1);
+        }
+
+        return str_replace("''", "'", $default_value);
+    }
+
+/**
+ * Handle proxy s q l state through `parseEnumValues`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $raw_values Input value for `raw_values`.
+ * @phpstan-param mixed $raw_values
+ * @psalm-param mixed $raw_values
+ * @return mixed Returned value for parseEnumValues.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::parseEnumValues()
+ * @example /fr/proxysql/parseEnumValues
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function parseEnumValues($raw_values)
+    {
+        $output = array();
+
+        preg_match_all('/\'((?:\'\'|[^\'])*)\'|"((?:""|[^"])*)"|([^,]+)/', $raw_values, $matches, PREG_SET_ORDER);
+
+        foreach ($matches as $match) {
+            $value = "";
+
+            if (isset($match[1]) && $match[1] !== "") {
+                $value = str_replace("''", "'", $match[1]);
+            } else if (isset($match[2]) && $match[2] !== "") {
+                $value = str_replace('""', '"', $match[2]);
+            } else if (isset($match[3])) {
+                $value = trim($match[3]);
+            }
+
+            $value = trim($value);
+
+            if ($value === "") {
+                continue;
+            }
+
+            $output[$value] = $value;
+        }
+
+        return array_values($output);
+    }
+
+/**
+ * Retrieve proxy s q l state through `getEnumValuesByColumn`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $create_table_sql Input value for `create_table_sql`.
+ * @phpstan-param mixed $create_table_sql
+ * @psalm-param mixed $create_table_sql
+ * @param mixed $columns Input value for `columns`.
+ * @phpstan-param mixed $columns
+ * @psalm-param mixed $columns
+ * @return mixed Returned value for getEnumValuesByColumn.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getEnumValuesByColumn()
+ * @example /fr/proxysql/getEnumValuesByColumn
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function getEnumValuesByColumn($create_table_sql, $columns)
+    {
+        $enum_by_column = array();
+
+        if (empty($create_table_sql)) {
+            return $enum_by_column;
+        }
+
+        $mysql_enum = array();
+        preg_match_all('/[`"]?([a-zA-Z0-9_]+)[`"]?\s+enum\s*\(([^)]*)\)/i', $create_table_sql, $mysql_enum, PREG_SET_ORDER);
+
+        foreach ($mysql_enum as $match) {
+            $column_name = $match[1];
+            $values = $this->parseEnumValues($match[2]);
+
+            if (!empty($values)) {
+                $enum_by_column[$column_name] = $values;
+            }
+        }
+
+        foreach ($columns as $column) {
+            $column_name = $column['name'];
+
+            if (!empty($enum_by_column[$column_name])) {
+                continue;
+            }
+
+            $escaped = preg_quote($column_name, '/');
+            $regex = '/[`"]?'.$escaped.'[`"]?.*?\bCHECK\s*\(\s*\(?\s*(?:[`"]?'.$escaped.'[`"]?\s+)?IN\s*\(([^\)]*)\)\s*\)?\s*\)/is';
+
+            if (!preg_match($regex, $create_table_sql, $check_values)) {
+                continue;
+            }
+
+            $values = $this->parseEnumValues($check_values[1] ?? "");
+
+            if (!empty($values)) {
+                $enum_by_column[$column_name] = $values;
+            }
+        }
+
+        return $enum_by_column;
+    }
+
+/**
+ * Retrieve proxy s q l state through `getAutoincrementByColumn`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $create_table_sql Input value for `create_table_sql`.
+ * @phpstan-param mixed $create_table_sql
+ * @psalm-param mixed $create_table_sql
+ * @param mixed $columns Input value for `columns`.
+ * @phpstan-param mixed $columns
+ * @psalm-param mixed $columns
+ * @return mixed Returned value for getAutoincrementByColumn.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getAutoincrementByColumn()
+ * @example /fr/proxysql/getAutoincrementByColumn
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function getAutoincrementByColumn($create_table_sql, $columns)
+    {
+        $autoincrement_by_column = array();
+
+        foreach ($columns as $column) {
+            $column_name = $column['name'];
+            $escaped = preg_quote($column_name, '/');
+
+            $regex = '/[`"]?'.$escaped.'[`"]?\s+[^,]*AUTOINCREMENT/i';
+            $autoincrement_by_column[$column_name] = preg_match($regex, $create_table_sql) === 1;
+        }
+
+        return $autoincrement_by_column;
+    }
+
+
+/**
+ * Handle proxy s q l state through `config`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for config.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::config()
+ * @example /fr/proxysql/config
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public function config($param)
+    {
+        $data = array();
+
+        $this->di['js']->addJavascript(array('bootstrap-editable.min.js', 'Tree/index.js'));
+
+        Debug::parseDebug($param);
+        $id_proxysql_server = $param[0] ?? "";
+
+        $param['menu_current'] = __FUNCTION__;
+        $data['param'] = $param;
+        $data['id_proxysql_server'] = $id_proxysql_server;
+        $data['proxysql_update_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['proxysql_update_csrf_token'] = Csrf::issueToken($_SESSION, self::PROXYSQL_UPDATE_CSRF_SCOPE);
+        $data['proxysql_update_field_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['proxysql_update_field_csrf_token'] = Csrf::issueToken($_SESSION, self::PROXYSQL_UPDATE_FIELD_CSRF_SCOPE);
+        $data['proxysql_delete_line_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['proxysql_delete_line_csrf_token'] = Csrf::issueToken($_SESSION, self::PROXYSQL_DELETE_LINE_CSRF_SCOPE);
+
+        if (empty($id_proxysql_server)) {
+            throw new \Exception(__FUNCTION__ . ' should have id_proxysql_server in parameter');
+        }
+
+        $db = Sgbd::sql('proxysql_' . $id_proxysql_server);
+
+        $sqls = $this->getConfigMenuDefinition();
+
+        $config_tabs = array();
+        foreach (array_keys($sqls) as $tab_name) {
+            $config_tabs[] = str_replace(' ', '_', $tab_name);
+        }
+
+        $default_config_tab = 'MYSQL_SERVERS';
+        $current_config_tab = strtoupper((string) ($param[1] ?? ''));
+
+        if (!in_array($current_config_tab, $config_tabs, true)) {
+            $session_tab = strtoupper((string) ($_SESSION['proxysql_config_tab'] ?? ''));
+
+            if (in_array($session_tab, $config_tabs, true)) {
+                $current_config_tab = $session_tab;
+            } else {
+                $current_config_tab = $default_config_tab;
+            }
+        }
+
+        $_SESSION['proxysql_config_tab'] = $current_config_tab;
+        $data['current'] = $current_config_tab;
+
         $data['table'] = array();
+        $data['primary_keys'] = array();
 
         foreach ($sqls as $name => $elem) {
 
             $key = str_replace(' ', '_', $name);
 
-            if ($data['current'] != $key) {
+            if ($data['current'] !== $key) {
                 continue;
             }
 
+            $sql_templates = array($elem['sql']);
+            if (!empty($elem['related_sql']) && is_array($elem['related_sql'])) {
+                $sql_templates = array_merge($sql_templates, $elem['related_sql']);
+            }
+
             $prefix = array('', 'runtime_');
-            foreach ($prefix as $opt) {
 
-                $sql_finale = str_replace('{PREFIX}', $opt, $elem['sql']);
-                $output_array = array();
-                preg_match('/FROM\s+(\S+)/', $sql_finale, $output_array);
+            foreach ($sql_templates as $sql_template) {
+                $base_table = $this->extractTableNameFromSqlTemplate($sql_template);
 
-                $table_name = $output_array[1];
-
-                if ($opt === '') {
-                    $data['table'][] = $table_name;
+                if ($base_table === '') {
+                    continue;
                 }
 
-                $res = $db->sql_query($sql_finale);
+                // Related tables may be absent on older ProxySQL builds; skip silently.
+                $safe_base_table = str_replace("'", "''", $base_table);
+                $exists_sql = "SELECT 1 FROM sqlite_master WHERE type='table' AND name='".$safe_base_table."' LIMIT 1;";
+                $exists_res = $db->sql_query_silent($exists_sql);
+                if ($exists_res === false || $db->sql_num_rows($exists_res) === 0) {
+                    continue;
+                }
 
-                $data['tables'][$table_name] = array();
-                while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
-                    $data['tables'][$table_name][] = $arr;
+                foreach ($prefix as $opt) {
+
+                    $sql_finale = str_replace('{PREFIX}', $opt, $sql_template);
+                    $output_array = array();
+                    preg_match('/FROM\s+(\S+)/', $sql_finale, $output_array);
+
+                    $table_name = $output_array[1];
+
+                    if ($opt === '') {
+                        $data['table'][] = $table_name;
+                    }
+
+                    $data['tables'][$table_name] = array();
+                    $res = $db->sql_query_silent($sql_finale);
+                    if ($res === false) {
+                        continue;
+                    }
+
+                    while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                        $data['tables'][$table_name][] = $arr;
+                    }
+                }
+
+                //get Primary Key per table (needed for inline edit / delete of related tables)
+                $sql2 = "SELECT name FROM pragma_table_info('".$safe_base_table."') WHERE pk > 0;";
+                $res2 = $db->sql_query($sql2);
+                $data['primary_keys'][$base_table] = array();
+                while ($ob = $db->sql_fetch_object($res2, MYSQLI_ASSOC)) {
+                    $data['primary_keys'][$base_table][] = $ob->name;
                 }
             }
 
-            //get Primary Key for update
-            $sql2 = "SELECT name FROM pragma_table_info('".$table_name."') WHERE pk > 0;";
-            $res2 = $db->sql_query($sql2);
-            $data['primary_key'] = array();
-            while ($ob = $db->sql_fetch_object($res2, MYSQLI_ASSOC)) {
-                $data['primary_key'][] = $ob->name;
-            }
+            // Backward compatibility: keep primary_key pointed at the tab's main table.
+            $main_table = $this->extractTableNameFromSqlTemplate($elem['sql']);
+            $data['primary_key'] = $data['primary_keys'][$main_table] ?? array();
         }
 
         $data['menu'] = $sqls;
+        $data['proxysql_server_links'] = self::buildProxysqlServerLinks(
+            (string) $current_config_tab,
+            (int) $id_proxysql_server
+        );
 
         $this->set('data', $data);
     }
 
+    /**
+     * Run the configuration-audit checks against the selected ProxySQL
+     * admin connection and render the findings (#895 / #897).
+     *
+     * Each check class (registered in `App\Library\ProxySqlAudit\Registry`)
+     * receives the ProxySQL admin DB plus a small context bag carrying
+     * pmacontrol-side handles. The runner swallows per-check exceptions
+     * so one buggy probe can't bury the rest of the report.
+     */
+    public function audit($param)
+    {
+        $data = array();
+        $this->di['js']->addJavascript(array('Tree/index.js'));
+
+        Debug::parseDebug($param);
+        $id_proxysql_server = $param[0] ?? '';
+        $param['menu_current'] = __FUNCTION__;
+        $data['param'] = $param;
+        $data['id_proxysql_server'] = $id_proxysql_server;
+
+        if ((string) $id_proxysql_server === '') {
+            throw new \Exception(__FUNCTION__ . ' should have id_proxysql_server in parameter');
+        }
+
+        $data['findings'] = [];
+        $data['categories'] = [];
+        $data['audit_error'] = '';
+
+        try {
+            $db = Sgbd::sql('proxysql_' . $id_proxysql_server);
+            $ctx = [
+                'id_proxysql_server' => (int) $id_proxysql_server,
+                'pmacontrol_db'      => Sgbd::sql(DB_DEFAULT),
+            ];
+            $findings = \App\Library\ProxySqlAudit\Runner::runAll($db, $ctx);
+            $data['findings'] = array_map(
+                static function (\App\Library\ProxySqlAudit\Finding $f): array { return $f->toArray(); },
+                $findings
+            );
+        } catch (\Throwable $e) {
+            // Connection-level failure (auth, network) — surface it as a
+            // single finding rather than a 500 page.
+            $data['audit_error'] = $e->getMessage();
+        }
+
+        // Group by category for the view; keep severity counts so the
+        // home-page card (#929) can later read the same shape.
+        $byCat = [];
+        $counts = [
+            \App\Library\ProxySqlAudit\Finding::SEVERITY_CRITICAL => 0,
+            \App\Library\ProxySqlAudit\Finding::SEVERITY_WARNING  => 0,
+            \App\Library\ProxySqlAudit\Finding::SEVERITY_INFO     => 0,
+        ];
+        foreach ($data['findings'] as $f) {
+            $cat = (string) ($f['category'] ?? 'meta');
+            $byCat[$cat][] = $f;
+            $sev = (string) ($f['severity'] ?? 'info');
+            if (isset($counts[$sev])) {
+                $counts[$sev]++;
+            }
+        }
+        ksort($byCat);
+        $data['by_category'] = $byCat;
+        $data['severity_counts'] = $counts;
+
+        $this->set('data', $data);
+    }
+
+    /**
+     * Build a `"hostname:port" => peer_id` map of ProxySQL nodes
+     * registered in pmacontrol, so the PROXYSQL_SERVERS view can
+     * render a cross-link from each peer row to that peer's own
+     * `/ProxySQL/config/<peer_id>/` page (#893).
+     *
+     * Returns an empty map when not on the PROXYSQL_SERVERS tab so
+     * the lookup is paid for only when the view will use it.
+     *
+     * @return array<string,int>
+     */
+    public static function buildProxysqlServerLinks(string $currentTab, int $currentProxysqlServerId): array
+    {
+        if (strtoupper($currentTab) !== 'PROXYSQL_SERVERS') {
+            return [];
+        }
+
+        $links = [];
+        try {
+            $db = Sgbd::sql(DB_DEFAULT);
+            $res = $db->sql_query_silent(
+                "SELECT id, hostname, port FROM proxysql_server"
+            );
+            if ($res === false) {
+                return [];
+            }
+            while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                $peerId = (int) ($row['id'] ?? 0);
+                if ($peerId <= 0 || $peerId === $currentProxysqlServerId) {
+                    // No self-link.
+                    continue;
+                }
+                $hostname = trim((string) ($row['hostname'] ?? ''));
+                $port = (int) ($row['port'] ?? 0);
+                if ($hostname === '' || $port <= 0) {
+                    continue;
+                }
+                $links[self::proxysqlServerLinkKey($hostname, $port)] = $peerId;
+            }
+        } catch (\Throwable $e) {
+            // Cross-link is purely additive — if the lookup fails the
+            // view just doesn't render the icon.
+            return [];
+        }
+        return $links;
+    }
+
+    /**
+     * Canonical "hostname:port" key the controller and view share so
+     * lookups don't silently miss on whitespace / leading-zero ports.
+     */
+    public static function proxysqlServerLinkKey(string $hostname, int $port): string
+    {
+        return strtolower(trim($hostname)) . ':' . $port;
+    }
+
+/**
+ * Update proxy s q l state through `update`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for update.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::update()
+ * @example /fr/proxysql/update
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function update($param)
     {
         Debug::parseDebug($param);
 
-        $id_proxysql_server = $param[0] ?? "";
-        $from = $param[1];
-        $table = $param[2];
-        $to = $param[3];
+        $this->view        = false;
+        $this->layout_name = false;
 
-     
-        $restrict[0] = array('SAVE','LOAD');
-        $restrict[1] = array('ADMIN_VARIABLES','MYSQL_QUERY_RULES','MYSQL_SERVERS', 'MYSQL_USERS','MYSQL_VARIABLES', 'PROXYSQL_SERVERS', 'SCHEDULER');
-        $restrict[2] = array('MEMORY','DISK', 'RUNTIME','CONFIG'); 
+        $id_proxysql_server = (string) ($param[0] ?? "");
+        $table = $param[2] ?? "";
 
-        unset($param[0]);
-
-        $i = 0;
-        foreach($param as $elem)
-        {
-            $to_match = $restrict[$i];
-            $i++;
-
-            Debug::debug($elem, 'ELEM');
-            Debug::debug($to_match, 'RESTRICT');
-
-            if (! in_array($elem , $to_match)){
-                throw new \Exception("ERROR UNKNOW OPTION : ".$elem);
+        $outcome = self::evaluateUpdateRequest($param, $_POST, $_SERVER, $_SESSION, IS_CLI);
+        if (!$outcome['allowed']) {
+            if (!IS_CLI) {
+                set_flash("error", __("Error"), $outcome['body']);
+                header("location: " . self::getUpdateRedirectTarget($id_proxysql_server, (string) $table, $_SERVER['HTTP_REFERER'] ?? null, null, $_SERVER['HTTP_HOST'] ?? null), true, 303);
             }
+
+            return;
         }
 
-        $db = Sgbd::sql("proxysql_".$id_proxysql_server);        
+        $command = $outcome['command'];
+        $db = Sgbd::sql("proxysql_".$command['id_proxysql_server']);
 
-        $sql = $from." ".str_replace('_', ' ',$table )." TO ".$to.";";
+        $sql = self::buildUpdateCommandSql($command);
         Debug::sql($sql);
 
         try{
@@ -790,12 +1688,171 @@ class ProxySQL extends Controller
         }
         finally{
             if (! IS_CLI) {
-                header("location: " . $_SERVER['HTTP_REFERER']);
+                header("location: " . self::getUpdateRedirectTarget($id_proxysql_server, (string) $table, $_SERVER['HTTP_REFERER'] ?? null, null, $_SERVER['HTTP_HOST'] ?? null), true, 303);
             }
         }
     }
 
+    public static function evaluateUpdateRequest(
+        array $param,
+        array $post,
+        array $server,
+        array $session,
+        bool $isCli = false
+    ): array {
+        if (!$isCli) {
+            if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::PROXYSQL_UPDATE_CSRF_SCOPE)) {
+                return [
+                    'allowed' => false,
+                    'status' => $failure['status'],
+                    'body' => $failure['body'],
+                    'headers' => $failure['headers'],
+                    'command' => null,
+                ];
+            }
+        }
 
+        $command = self::normalizeUpdateCommandPayload($param);
+        if ($command === null) {
+            return [
+                'allowed' => false,
+                'status' => 400,
+                'body' => 'Invalid ProxySQL update command',
+                'headers' => [],
+                'command' => null,
+            ];
+        }
+
+        return [
+            'allowed' => true,
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'command' => $command,
+        ];
+    }
+
+    public static function normalizeUpdateCommandPayload(array $param): ?array
+    {
+        if (
+            !isset($param[0], $param[1], $param[2], $param[3])
+            || !is_scalar($param[1])
+            || !is_scalar($param[2])
+            || !is_scalar($param[3])
+        ) {
+            return null;
+        }
+
+        $idProxysqlServer = self::normalizePositiveInteger($param[0]);
+        $from = self::normalizeUpdateOption($param[1], self::PROXYSQL_UPDATE_COMMANDS);
+        $table = self::normalizeUpdateOption($param[2], self::PROXYSQL_UPDATE_CONFIG_AREAS);
+        $to = self::normalizeUpdateOption($param[3], self::PROXYSQL_UPDATE_TARGETS);
+
+        if ($idProxysqlServer === null || $from === null || $table === null || $to === null) {
+            return null;
+        }
+
+        return [
+            'id_proxysql_server' => $idProxysqlServer,
+            'from' => $from,
+            'table' => $table,
+            'to' => $to,
+        ];
+    }
+
+    public static function buildUpdateCommandSql(array $command): string
+    {
+        return $command['from']." ".str_replace('_', ' ', $command['table'])." TO ".$command['to'].";";
+    }
+
+    private static function normalizeUpdateOption($value, array $allowed): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $value = strtoupper(trim((string) $value));
+        if (!in_array($value, $allowed, true)) {
+            return null;
+        }
+
+        return $value;
+    }
+
+    public static function isUpdateRequestAllowed(bool $isCli, ?string $requestMethod): bool
+    {
+        return $isCli || strtoupper((string) $requestMethod) === 'POST';
+    }
+
+    public static function getUpdateRedirectTarget(
+        string $idProxysqlServer,
+        string $table,
+        ?string $httpReferer = null,
+        ?string $baseLink = null,
+        ?string $httpHost = null
+    ): string {
+        if (self::isSafeUpdateReferer($httpReferer, $httpHost)) {
+            return $httpReferer;
+        }
+
+        $base = rtrim($baseLink ?? (defined('LINK') ? LINK : '/'), '/') . '/';
+
+        return $base . 'ProxySQL/config/' . rawurlencode($idProxysqlServer) . '/' . rawurlencode($table) . '/';
+    }
+
+    public static function isSafeUpdateReferer(?string $httpReferer, ?string $httpHost): bool
+    {
+        if (empty($httpReferer)) {
+            return false;
+        }
+
+        $parts = parse_url($httpReferer);
+        if ($parts === false) {
+            return false;
+        }
+
+        if (empty($parts['host'])) {
+            return str_starts_with($httpReferer, '/') && ! str_starts_with($httpReferer, '//');
+        }
+
+        if (empty($httpHost)) {
+            return false;
+        }
+
+        $current = parse_url('http://' . $httpHost);
+        if ($current === false || empty($current['host'])) {
+            return false;
+        }
+
+        if (strcasecmp((string) $parts['host'], (string) $current['host']) !== 0) {
+            return false;
+        }
+
+        return (int)($parts['port'] ?? 0) === (int)($current['port'] ?? 0);
+    }
+
+
+/**
+ * Handle proxy s q l state through `menu`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for menu.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::menu()
+ * @example /fr/proxysql/menu
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function menu($param)
     {
         Debug::parseDebug($param);
@@ -803,12 +1860,43 @@ class ProxySQL extends Controller
         $id_proxysql_server = $param[0] ?? "";
 
         $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT * FROM proxysql_server a ORDER BY display_name";
+        $sql = "SELECT a.* FROM proxysql_server a 
+        LEFT JOIN mysql_server b ON a.id_mysql_server = b.id
+        INNER JOIN client c on b.id_client = c.id
+        WHERE b.is_deleted IS NULL or b.is_deleted = 0 and c.is_monitored =1
+        ORDER BY a.display_name";
         $res = $db->sql_query($sql);
 
         $data = array();
         $data['param'] = $param;
         $data['id_proxysql_server'] = $id_proxysql_server;
+
+        $config_tabs = array(
+            'ADMIN_VARIABLES',
+            'MYSQL_QUERY_RULES',
+            'MYSQL_SERVERS',
+            'MYSQL_USERS',
+            'MYSQL_VARIABLES',
+            'PROXYSQL_SERVERS',
+            'SCHEDULER',
+        );
+
+        $default_config_tab = 'MYSQL_SERVERS';
+        $current_config_tab = strtoupper((string)($param[1] ?? ''));
+
+        if (in_array($current_config_tab, $config_tabs, true)) {
+            $_SESSION['proxysql_config_tab'] = $current_config_tab;
+        } else {
+            $session_tab = strtoupper((string)($_SESSION['proxysql_config_tab'] ?? ''));
+
+            if (in_array($session_tab, $config_tabs, true)) {
+                $current_config_tab = $session_tab;
+            } else {
+                $current_config_tab = $default_config_tab;
+            }
+        }
+
+        $data['current_config_tab'] = $current_config_tab;
 
 
         //menu
@@ -817,20 +1905,26 @@ class ProxySQL extends Controller
         $data['menu']['auto']['link'] = LINK.'ProxySQL/auto/'.$data['id_proxysql_server'];
         
         $data['menu']['config']['title'] =  __('Configuration');
-        $data['menu']['config']['link'] = LINK.'ProxySQL/config/'.$data['id_proxysql_server'].'/MYSQL_SERVERS';
+        $data['menu']['config']['link'] = LINK.'ProxySQL/config/'.$data['id_proxysql_server'].'/'.$current_config_tab;
 
 
         $data['menu']['statistic']['title'] =  __('Statistics');
         $data['menu']['statistic']['link'] = LINK.'ProxySQL/statistic/'.$data['id_proxysql_server'];
 
-        $data['menu']['monitor']['title'] =  __('Monitor');
-        $data['menu']['monitor']['link'] = LINK.'ProxySQL/monitor/'.$data['id_proxysql_server'];
+       // $data['menu']['monitor']['title'] =  __('Monitor');
+        //$data['menu']['monitor']['link'] = LINK.'ProxySQL/monitor/'.$data['id_proxysql_server'];
 
         $data['menu']['cluster']['title'] =  __('Cluster');
         $data['menu']['cluster']['link'] = LINK.'ProxySQL/cluster/'.$data['id_proxysql_server'];
 
         $data['menu']['log']['title'] =  __('Logs');
         $data['menu']['log']['link'] = LINK.'ProxySQL/log/'.$data['id_proxysql_server'];
+
+        // Configuration audit — surfaces misconfigurations the operator
+        // would otherwise hit at runtime (#895). Lands next to Logs so
+        // it sits at the end of the diagnostic group.
+        $data['menu']['audit']['title'] = __('Audit');
+        $data['menu']['audit']['link']  = LINK.'ProxySQL/audit/'.$data['id_proxysql_server'];
 
 
         while($ob = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
@@ -847,10 +1941,17 @@ class ProxySQL extends Controller
                     $data['proxysql'][$ob['id']]['version'] = explode("-", $ob2->variable_value)[0];
                 }
             } else {
-                $global_variable = Extraction2::display(array("proxysql_runtime::global_variables"), array($ob['id_mysql_server']));
+                $global_variable = Extraction2::display(["proxysql_runtime::global_variables", "proxysql_available"], [$ob['id_mysql_server']]);
 
-                $admin_version = $global_variable[$ob['id_mysql_server']]['global_variables']['admin-version'];
-                $data['proxysql'][$ob['id']]['version'] = explode("-",$admin_version)[0];
+                if (isset($global_variable[$ob['id_mysql_server']]['global_variables']['admin-version']))
+                {
+                    $admin_version = $global_variable[$ob['id_mysql_server']]['global_variables']['admin-version'];
+                    $data['proxysql'][$ob['id']]['version'] = explode("-",$admin_version)[0];
+                }
+                else{
+                    $data['proxysql'][$ob['id']]['version'] = "N/A";
+                }
+
             }
         }
 
@@ -861,6 +1962,27 @@ class ProxySQL extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Handle proxy s q l state through `ifProxySqlExist`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for ifProxySqlExist.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::ifProxySqlExist()
+ * @example /fr/proxysql/ifProxySqlExist
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function ifProxySqlExist($param)
     {
         Debug::parseDebug($param);
@@ -888,6 +2010,27 @@ class ProxySQL extends Controller
 
 
 
+/**
+ * Handle proxy s q l state through `insertProxySqlAdmin`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for insertProxySqlAdmin.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::insertProxySqlAdmin()
+ * @example /fr/proxysql/insertProxySqlAdmin
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function insertProxySqlAdmin($param)
     {
         $param[4] ?? "ProxySQL Admin";
@@ -935,25 +2078,49 @@ class ProxySQL extends Controller
     }
 
 
+/**
+ * Update proxy s q l state through `updateField`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for updateField.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::updateField()
+ * @example /fr/proxysql/updateField
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function updateField($param)
     {
 
         ini_set('display_errors','Off');    
 
-        $id_proxysql_server = $param[0];
-        $table = $param[1];
-
         $this->view        = false;
         $this->layout_name = false;
 
-        
+        $outcome = self::evaluateUpdateFieldRequest($param, $_POST, $_SERVER, $_SESSION);
+        if (!$outcome['allowed']) {
+            HttpResponse::sendOutcome($outcome, null);
+            return;
+        }
+
+        $update = $outcome['update'];
+
         try{
-            $db = Sgbd::sql("proxysql_".$id_proxysql_server);
+            $db = Sgbd::sql("proxysql_".$update['id_proxysql_server']);
 
-            //UPDATE menu SET `variable_value` = 'truefghdfh' WHERE id = variable_value
-            $sql = "UPDATE `".$table."` SET `".$_POST['name']."` = '".$_POST['value']."' WHERE ".$_POST['pk'].";";
+            $sql = self::buildUpdateFieldSql($update, [$db, 'sql_real_escape_string']);
 
-            $this->logger->emergency($sql." [id_proxysql_server:$id_proxysql_server]");
+            $this->logger->emergency($sql." [id_proxysql_server:".$update['id_proxysql_server']."]");
             $db->sql_query($sql);
     
             if ($db->sql_affected_rows() == 1) {
@@ -970,47 +2137,312 @@ class ProxySQL extends Controller
         }
     }
 
+    public static function evaluateUpdateFieldRequest(array $param, array $post, array $server, array $session): array
+    {
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::PROXYSQL_UPDATE_FIELD_CSRF_SCOPE)) {
+            return [
+                'allowed' => false,
+                'status' => $failure['status'],
+                'body' => $failure['body'],
+                'headers' => $failure['headers'],
+                'update' => null,
+            ];
+        }
+
+        $update = self::normalizeUpdateFieldPayload($param, $post);
+        if ($update === null) {
+            return [
+                'allowed' => false,
+                'status' => 400,
+                'body' => 'Invalid ProxySQL update payload',
+                'headers' => [],
+                'update' => null,
+            ];
+        }
+
+        return [
+            'allowed' => true,
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'update' => $update,
+        ];
+    }
+
+    public static function normalizeUpdateFieldPayload(array $param, array $post): ?array
+    {
+        if (
+            !isset($param[0], $param[1], $post['name'], $post['value'], $post['pk'])
+            || !is_scalar($param[1])
+            || !is_scalar($post['name'])
+            || !is_scalar($post['value'])
+            || !is_scalar($post['pk'])
+        ) {
+            return null;
+        }
+
+        $idProxysqlServer = self::normalizePositiveInteger($param[0]);
+        if ($idProxysqlServer === null) {
+            return null;
+        }
+
+        $table = self::normalizeUpdateFieldTable($param[1]);
+        $field = self::normalizeSqlIdentifier($post['name']);
+        $pk = self::normalizePrimaryKeyPredicate($post['pk']);
+        $value = (string) $post['value'];
+
+        if (
+            $table === null
+            || $field === null
+            || $pk === null
+            || strlen($value) > self::PROXYSQL_UPDATE_FIELD_VALUE_MAX_LENGTH
+        ) {
+            return null;
+        }
+
+        return [
+            'id_proxysql_server' => $idProxysqlServer,
+            'table' => $table,
+            'field' => $field,
+            'value' => $value,
+            'pk' => $pk,
+        ];
+    }
+
+    public static function buildUpdateFieldSql(array $update, callable $escape): string
+    {
+        return "UPDATE ".Identifier::quoteStrictSqlIdentifier((string) $update['table'])
+            ." SET ".Identifier::quoteStrictSqlIdentifier((string) $update['field'])
+            ." = '".$escape($update['value'])."' WHERE ".$update['pk'].";";
+    }
+
+    private static function normalizePositiveInteger($value): ?int
+    {
+        return PositiveIntegerSelection::normalizeSingle($value);
+    }
+
+    private static function normalizeUpdateFieldTable($value): ?string
+    {
+        $table = self::normalizeSqlIdentifier($value);
+        if ($table === null || !in_array($table, self::PROXYSQL_UPDATE_FIELD_TABLES, true)) {
+            return null;
+        }
+
+        return $table;
+    }
+
+    private static function normalizeSqlIdentifier($value): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $identifier = trim((string) $value);
+        if (!Identifier::isStrictSqlIdentifier($identifier)) {
+            return null;
+        }
+
+        return $identifier;
+    }
+
+    private static function normalizePrimaryKeyPredicate($value): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $predicate = trim((string) $value);
+        if ($predicate === '' || strlen($predicate) > self::PROXYSQL_UPDATE_FIELD_PK_MAX_LENGTH) {
+            return null;
+        }
+
+        $condition = "[A-Za-z_][A-Za-z0-9_]*\\s*=\\s*'(?:[^'\\\\]|\\\\.|'')*'";
+        if (preg_match('/^'.$condition.'(?:\\s+AND\\s+'.$condition.')*$/', $predicate) !== 1) {
+            return null;
+        }
+
+        return $predicate;
+    }
+
+/**
+ * Delete proxy s q l state through `deleteLine`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for deleteLine.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::deleteLine()
+ * @example /fr/proxysql/deleteLine
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function deleteLine($param)
     {
-        $id_proxysql_server = $param[0];
-        $table = $param[1];
-        $where = base64_decode($param[2]);
-
         $this->view        = false;
         $this->layout_name = false;
- 
-        $_GET['ajax'] = true;
 
-        try{
+        $outcome = self::evaluateDeleteLineRequest(is_array($param) ? $param : [], $_POST, $_SERVER, $_SESSION, IS_CLI);
+        if (!$outcome['allowed']) {
+            HttpResponse::sendOutcome($outcome, null);
+            return;
+        }
 
-        
+        $delete = $outcome['delete'];
 
-            $db = Sgbd::sql("proxysql_".$id_proxysql_server);
+        try {
+            $db = Sgbd::sql("proxysql_".$delete['id_proxysql_server']);
 
-            //UPDATE menu SET `variable_value` = 'truefghdfh' WHERE id = variable_value
-            $sql = "DELETE FROM `".$table."` WHERE ".$where.";";
+            $sql = self::buildDeleteLineSql($delete);
 
-            $this->logger->emergency($sql." DELETE");
+            $this->logger->emergency($sql." DELETE [id_proxysql_server:".$delete['id_proxysql_server']."]");
             $db->sql_query($sql);
-    
+
             if ($db->sql_affected_rows() == 1) {
 
                 set_flash( "success", "Title", "INfo");
-                header("location: " . $_SERVER['HTTP_REFERER']);
-                
             } else {
                 set_flash( "warning", "Title", "INfo");
-                header("location: " . $_SERVER['HTTP_REFERER']);
-                
             }
-        }
-        catch(\Exception $e){
+        } catch(\Exception $e) {
             set_flash( "error", "Title", "INfo");
-            header("location: " . $_SERVER['HTTP_REFERER']);
         }
 
+        if (! IS_CLI) {
+            header(
+                "location: "
+                . SafeRedirect::refererOrFallback(
+                    $_SERVER,
+                    self::proxysqlConfigUrl($delete['id_proxysql_server'], $delete['current'])
+                )
+            );
+        }
     }
 
+    public static function evaluateDeleteLineRequest(
+        array $param,
+        array $post,
+        array $server,
+        array $session,
+        bool $isCli = false
+    ): array {
+        if (!$isCli) {
+            if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::PROXYSQL_DELETE_LINE_CSRF_SCOPE)) {
+                return [
+                    'allowed' => false,
+                    'status' => $failure['status'],
+                    'body' => $failure['body'],
+                    'headers' => $failure['headers'],
+                    'delete' => null,
+                ];
+            }
+        }
+
+        $delete = self::normalizeDeleteLinePayload($param, $post);
+        if ($delete === null) {
+            return [
+                'allowed' => false,
+                'status' => 400,
+                'body' => 'Invalid ProxySQL delete payload',
+                'headers' => [],
+                'delete' => null,
+            ];
+        }
+
+        return [
+            'allowed' => true,
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'delete' => $delete,
+        ];
+    }
+
+    public static function normalizeDeleteLinePayload(array $param, array $post): ?array
+    {
+        unset($param);
+
+        if (
+            !isset($post['id_proxysql_server'], $post['current'], $post['table'], $post['pk'])
+            || !is_scalar($post['current'])
+            || !is_scalar($post['table'])
+            || !is_scalar($post['pk'])
+        ) {
+            return null;
+        }
+
+        $idProxysqlServer = self::normalizePositiveInteger($post['id_proxysql_server']);
+        $current = self::normalizeConfigCurrent($post['current']);
+        $table = self::normalizeDeleteLineTable($post['table']);
+        $pk = self::normalizePrimaryKeyPredicate($post['pk']);
+
+        if ($idProxysqlServer === null || $current === null || $table === null || $pk === null) {
+            return null;
+        }
+
+        return [
+            'id_proxysql_server' => $idProxysqlServer,
+            'current' => $current,
+            'table' => $table,
+            'pk' => $pk,
+        ];
+    }
+
+    public static function buildDeleteLineSql(array $delete): string
+    {
+        return "DELETE FROM ".Identifier::quoteStrictSqlIdentifier((string) $delete['table'])
+            ." WHERE ".$delete['pk'].";";
+    }
+
+    private static function normalizeDeleteLineTable($value): ?string
+    {
+        $table = self::normalizeSqlIdentifier($value);
+        if ($table === null || !in_array($table, self::PROXYSQL_DELETE_LINE_TABLES, true)) {
+            return null;
+        }
+
+        return $table;
+    }
+
+    private static function normalizeConfigCurrent($value): ?string
+    {
+        return self::normalizeSqlIdentifier($value);
+    }
+
+    private static function proxysqlConfigUrl(int $idProxysqlServer, string $current): string
+    {
+        return LINK.'ProxySQL/config/'.$idProxysqlServer.'/'.$current.'/';
+    }
+
+/**
+ * Handle proxy s q l state through `monitor`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for monitor.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::monitor()
+ * @example /fr/proxysql/monitor
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function monitor($param)
     {
 
@@ -1021,17 +2453,126 @@ class ProxySQL extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Handle proxy s q l state through `cluster`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for cluster.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::cluster()
+ * @example /fr/proxysql/cluster
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function cluster($param)
     {
+        Debug::parseDebug($param);
 
-        $data = [];
+        $id_proxysql_server = $param[0] ?? "";
+        if (empty($id_proxysql_server)) {
+            throw new \Exception(__FUNCTION__ . ' should have id_proxysql_server in parameter');
+        }
+
         $param['menu_current'] = __FUNCTION__;
+
+        $data = array();
         $data['param'] = $param;
+        $data['id_proxysql_server'] = $id_proxysql_server;
+
+        $id_mysql_server = self::getIdMysqlServer(array($id_proxysql_server));
+        $data['id_mysql_server'] = $id_mysql_server;
+
+        if (!empty($_GET['ajax']) && $_GET['ajax'] === "true") {
+            $this->layout_name = false;
+        }
+
+        if (empty($id_mysql_server)) {
+            $this->set('data', $data);
+            return;
+        }
+
+        $_GET['mysql_server']['id'] = $id_mysql_server;
+
+        $db = Sgbd::sql(DB_DEFAULT, "SVG");
+
+        $sub_query = "select max(z.id) from dot3_cluster__mysql_server z where z.id_mysql_server=".$id_mysql_server;
+
+        $sql = "SELECT c.svg FROM dot3_cluster__mysql_server a
+        INNER JOIN dot3_cluster b ON a.id_dot3_cluster = b.id
+        INNER JOIN dot3_graph c ON b.id_dot3_graph = c.id
+        WHERE a.id_mysql_server = ".$id_mysql_server." AND a.id in (".$sub_query.");";
+
+        $res = $db->sql_query($sql);
+
+        while ($ob = $db->sql_fetch_object($res)) {
+            $this->di['js']->code_javascript('
+            $(document).ready(function()
+            {
+                function refresh()
+                {
+                    var myURL = GLIAL_LINK+GLIAL_URL+"/ajax:true";
+                    $.ajax({
+                        url: myURL,
+                        type: "GET",
+                        success: function(data) {
+                            // Vérifier si les données ne sont pas vides
+                            if (data.trim().length > 0) {
+                                $("#graph").html(data);
+                            } else {
+                                console.log("Aucune donnée reçue.");
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.log("Erreur lors du chargement des données : ", error);
+                        }
+                    });
+                }
+
+                var intervalId = window.setInterval(function(){
+                    // call your function here
+                    refresh()  
+                  }, 1200);
+
+            })');
+            $data['svg'] = $ob->svg;
+        }
 
         $this->set('data', $data);
     }
 
 
+/**
+ * Handle proxy s q l state through `log`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for log.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::log()
+ * @example /fr/proxysql/log
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function log($param)
     {
 
@@ -1041,5 +2582,333 @@ class ProxySQL extends Controller
 
         $this->set('data', $data);
     }
+
+/**
+ * Retrieve proxy s q l state through `getIdMysqlServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getIdMysqlServer.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getIdMysqlServer()
+ * @example /fr/proxysql/getIdMysqlServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public static function getIdMysqlServer($param)
+    {
+        Debug::parseDebug($param);
+
+        $id_proxysql = $param[0];
+
+        if (count(self::$proxysql_list ) === 0)
+        {
+
+            $db = Sgbd::sql(DB_DEFAULT);
+            $sql = "SELECT id_mysql_server, id from proxysql_server";
+
+            $res = $db->sql_query($sql);
+            while($ob = $db->sql_fetch_object($res ))
+            {
+                self::$proxysql_list[$ob->id] = $ob->id_mysql_server;
+            }
+
+            Debug::debug(self::$proxysql_list, "LIST OF PROXYSQL");
+
+        }
+
+        if (! empty(self::$proxysql_list[$id_proxysql]))
+        {
+            return self::$proxysql_list[$id_proxysql];
+        }
+        else{
+            return false;
+        }
+
+    }
+
+/**
+ * Create proxy s q l state through `addLine`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for addLine.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::addLine()
+ * @example /fr/proxysql/addLine
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public function addLine($param)
+    {
+        Debug::parseDebug($param);
+        $this->view = false;
+
+        $id_proxysql_server = $param[0] ?? "";
+        $current = $param[1] ?? "MYSQL_SERVERS";
+        $requested_table = (string) ($param[2] ?? "");
+
+        if (empty($id_proxysql_server)) {
+            if (! IS_CLI) {
+                set_flash("warning", __("Warning"), __('ProxySQL server id is required'));
+                header("location: " . LINK . "ProxySQL/index/");
+                return;
+            }
+
+            throw new \Exception(__FUNCTION__ . ' should have id_proxysql_server in parameter');
+        }
+
+        $db = Sgbd::sql('proxysql_' . $id_proxysql_server);
+        $sqls = $this->getConfigMenuDefinition();
+
+        $menu_addline = $sqls;
+        unset($menu_addline['ADMIN VARIABLES'], $menu_addline['MYSQL VARIABLES']);
+
+        $forbidden_addline = in_array($current, array('ADMIN_VARIABLES', 'MYSQL_VARIABLES'), true);
+
+        if ($forbidden_addline) {
+            set_flash(
+                "caution",
+                __("Warning"),
+                __("Impossible to add variables from this section in addLine")
+            );
+
+            $param['menu_current'] = 'config';
+
+            $data = array();
+            $data['param'] = $param;
+            $data['id_proxysql_server'] = $id_proxysql_server;
+            $data['current'] = $current;
+            $data['table_name'] = '';
+            $data['menu'] = $menu_addline;
+            $data['columns'] = array();
+            $data['post'] = array();
+            $data['is_addline_allowed'] = false;
+            $data['proxysql_addline_csrf_field'] = Csrf::DEFAULT_FIELD;
+            $data['proxysql_addline_csrf_token'] = Csrf::issueToken($_SESSION, self::PROXYSQL_ADD_LINE_CSRF_SCOPE);
+
+            $this->view = 'addLine';
+            $this->set('data', $data);
+            return;
+        }
+
+        // Build the allow-list of tables reachable from this tab (main + related_sql),
+        // then pick the requested one if it matches, otherwise fall back to the main table.
+        $table_name = "";
+        $allowed_tables = array();
+        foreach ($sqls as $name => $elem) {
+            $key = str_replace(' ', '_', $name);
+
+            if ($key !== $current) {
+                continue;
+            }
+
+            $main_table = $this->extractTableNameFromSqlTemplate($elem['sql']);
+            if ($main_table !== '') {
+                $allowed_tables[] = $main_table;
+            }
+
+            if (!empty($elem['related_sql']) && is_array($elem['related_sql'])) {
+                foreach ($elem['related_sql'] as $related) {
+                    $related_table = $this->extractTableNameFromSqlTemplate($related);
+                    if ($related_table !== '') {
+                        $allowed_tables[] = $related_table;
+                    }
+                }
+            }
+
+            $table_name = $main_table;
+            break;
+        }
+
+        if ($requested_table !== '' && in_array($requested_table, $allowed_tables, true)) {
+            $table_name = $requested_table;
+        }
+
+        if (empty($table_name)) {
+            throw new \Exception('Unknown ProxySQL config section : ' . $current);
+        }
+
+        $table_name_safe = str_replace("'", "''", $table_name);
+        $sql_columns = "PRAGMA table_info('".$table_name_safe."');";
+        $res_columns = $db->sql_query($sql_columns);
+
+        $columns = array();
+        while ($arr = $db->sql_fetch_array($res_columns, MYSQLI_ASSOC)) {
+            $tmp = array();
+            $tmp['name'] = $arr['name'];
+            $tmp['type'] = strtoupper((string) ($arr['type'] ?? ''));
+            $tmp['notnull'] = !empty($arr['notnull']);
+            $tmp['pk'] = !empty($arr['pk']);
+            $tmp['default'] = $this->normalizeDefaultValue($arr['dflt_value'] ?? null);
+
+            $columns[] = $tmp;
+        }
+
+        if (count($columns) === 0) {
+            throw new \Exception('Unable to discover table structure for : ' . $table_name);
+        }
+
+        $create_table_sql = $this->getSqliteCreateTableStatement($db, $table_name);
+        $enum_by_column = $this->getEnumValuesByColumn($create_table_sql, $columns);
+        $autoincrement_by_column = $this->getAutoincrementByColumn($create_table_sql, $columns);
+
+        foreach ($columns as $key => $column) {
+            $name = $column['name'];
+
+            $columns[$key]['enum_values'] = $enum_by_column[$name] ?? array();
+            $columns[$key]['is_select'] = !empty($columns[$key]['enum_values']);
+            $columns[$key]['is_numeric'] = preg_match('/INT|REAL|DOUBLE|FLOAT|NUMERIC|DECIMAL/i', $column['type']) === 1;
+            $columns[$key]['autoincrement'] = !empty($autoincrement_by_column[$name]);
+        }
+
+        $posted_values = $_POST['proxysql_addline'] ?? array();
+
+        if ($_SERVER['REQUEST_METHOD'] === "POST") {
+            $outcome = self::evaluateAddLinePostRequest($_POST, $_SERVER, $_SESSION, IS_CLI);
+            if (!$outcome['allowed']) {
+                set_flash("error", __("Error"), $outcome['body']);
+                $posted_values = array();
+            } else {
+                $posted_values = $outcome['values'];
+                $fields = array();
+                $values = array();
+                $errors = array();
+
+                foreach ($columns as $column) {
+                    $column_name = $column['name'];
+                    $value = trim((string)($posted_values[$column_name] ?? ""));
+
+                    if ($value === "") {
+                        if (!empty($column['autoincrement'])) {
+                            continue;
+                        }
+
+                        if ($column['default'] !== null) {
+                            continue;
+                        }
+
+                        if (!empty($column['notnull'])) {
+                            $errors[] = __('Field') . " '" . $column_name . "' " . __('is required');
+                            continue;
+                        }
+
+                        $fields[] = "`" . $column_name . "`";
+                        $values[] = "NULL";
+                        continue;
+                    }
+
+                    $fields[] = "`" . $column_name . "`";
+                    $values[] = "'" . $db->sql_real_escape_string($value) . "'";
+                }
+
+                if (count($errors) > 0) {
+                    set_flash("error", __("Error"), implode('<br>', $errors));
+                } else if (count($fields) === 0) {
+                    set_flash("warning", __("Warning"), __("No value to insert"));
+                } else {
+                    $sql_insert = "INSERT INTO `".$table_name."` (".implode(', ', $fields).") VALUES (".implode(', ', $values).");";
+
+                    try {
+                        $db->sql_query($sql_insert);
+                        set_flash("success", __("Success !"), "ProxySQL Admin [(main)]> " . $sql_insert);
+
+                        if (! IS_CLI) {
+                            header("location: " . LINK . "ProxySQL/config/" . $id_proxysql_server . "/" . $current . "/");
+                            exit;
+                        }
+
+                        return;
+                    } catch(\Exception $e) {
+                        set_flash("error", "Error", $e->getMessage());
+                    }
+                }
+            }
+        }
+
+        $param['menu_current'] = 'config';
+
+        $data = array();
+        $data['param'] = $param;
+        $data['id_proxysql_server'] = $id_proxysql_server;
+        $data['current'] = $current;
+        $data['table_name'] = $table_name;
+        $data['menu'] = $menu_addline;
+        $data['columns'] = $columns;
+        $data['post'] = $posted_values;
+        $data['is_addline_allowed'] = true;
+        $data['proxysql_addline_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['proxysql_addline_csrf_token'] = Csrf::issueToken($_SESSION, self::PROXYSQL_ADD_LINE_CSRF_SCOPE);
+
+        $this->view = 'addLine';
+        $this->set('data', $data);
+    }
+
+    public static function evaluateAddLinePostRequest(array $post, array $server, array $session, bool $isCli = false): array
+    {
+        if (!$isCli) {
+            if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::PROXYSQL_ADD_LINE_CSRF_SCOPE)) {
+                return [
+                    'allowed' => false,
+                    'status' => $failure['status'],
+                    'body' => $failure['body'],
+                    'headers' => $failure['headers'],
+                    'values' => null,
+                ];
+            }
+        }
+
+        $values = $post['proxysql_addline'] ?? array();
+        if (!is_array($values)) {
+            return [
+                'allowed' => false,
+                'status' => 400,
+                'body' => 'Invalid ProxySQL addLine payload',
+                'headers' => array(),
+                'values' => null,
+            ];
+        }
+
+        foreach ($values as $value) {
+            if (!is_scalar($value)) {
+                return [
+                    'allowed' => false,
+                    'status' => 400,
+                    'body' => 'Invalid ProxySQL addLine payload',
+                    'headers' => array(),
+                    'values' => null,
+                ];
+            }
+        }
+
+        return [
+            'allowed' => true,
+            'status' => 200,
+            'body' => '',
+            'headers' => array(),
+            'values' => $values,
+        ];
+    }
+
+
 
 }

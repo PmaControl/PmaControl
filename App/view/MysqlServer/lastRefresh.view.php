@@ -1,0 +1,119 @@
+<?php
+
+use App\Library\EngineV4;
+
+function human_time_diff_dec($date_start, $precision = 1) {
+    $seconds = time() - strtotime($date_start);
+    $seconds--;
+
+    if ($seconds < 60) {
+        return round($seconds, $precision) . 's';
+    }
+
+    $minutes = $seconds / 60;
+    if ($minutes < 60) {
+        return round($minutes, $precision) . 'm';
+    }
+
+    $hours = $minutes / 60;
+    if ($hours < 24) {
+        return round($hours, $precision) . 'h';
+    }
+
+    $days = $hours / 24;
+    return round($days, $precision) . 'j';
+}
+
+function age_color($date) {
+    $seconds = time() - strtotime($date);
+    if ($seconds < 60) return 'label-success';
+    if ($seconds < 3600) return 'label-warning';
+    return 'label-danger';
+}
+
+function render_run_detail_link($id_mysql_server, $date) {
+    if (empty($date)) {
+        return '';
+    }
+
+    $safeDateToken = preg_replace('/[^0-9]/', '', (string) $date);
+    $url = LINK . 'MysqlServer/runDetail/' . (int) $id_mysql_server . '/' . $safeDateToken;
+    $escapedDate = htmlspecialchars((string) $date, ENT_QUOTES, 'UTF-8');
+
+    return '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '">' . $escapedDate . '</a>';
+}
+?>
+
+<table class="table table-condensed table-bordered table-striped">
+
+<tr>
+    <th>#</th> 
+    <th><?=__('File') ?></th> 
+    <th><?=__('Last refresh') ?></th>
+    <th><?=__('Date') ?></th>
+    <th><?=__('Date +1') ?></th>
+    <th><?=__('Date +2') ?></th>
+    <th><?=__('Date +3') ?></th>
+    <th><?=__('Date +4') ?></th>
+    <th><?=__('Listener refresh') ?></th>
+    <th style="text-align:right"><?=__('Action') ?></th>
+</tr>
+
+
+<?php 
+    $i=0;
+    foreach ($data['rows'] as $row): 
+        $i++;
+        $metricFile = (string)($row['file_name'] ?? '');
+        $md5File = EngineV4::PATH_MD5.$metricFile.'::'.$id_mysql_server.'.md5';
+        $hasMd5File = ($metricFile !== '' && is_file($md5File));
+?>
+<tr>
+  <td><?= $i ?></td>
+  <td><?= $row['file_name'] ?></td>
+    <td>
+        <span class="label <?= age_color($row['date']); ?>">
+            <?= human_time_diff_dec($row['date']); ?>
+        </span>
+    </td>
+  <td><?= render_run_detail_link($id_mysql_server, $row['date']) ?>
+      <small class="text-muted">(<?= $row['diff_date'] ?>)</small>
+  </td>
+
+  <td><?= render_run_detail_link($id_mysql_server, $row['date_p1']) ?>
+      <small class="text-muted">(<?= $row['diff_date_p1'] ?>)</small>
+  </td>
+
+  <td><?= render_run_detail_link($id_mysql_server, $row['date_p2']) ?>
+      <small class="text-muted">(<?= $row['diff_date_p2'] ?>)</small>
+  </td>
+
+  <td><?= render_run_detail_link($id_mysql_server, $row['date_p3']) ?>
+      <small class="text-muted">(<?= $row['diff_date_p3'] ?>)</small>
+  </td>
+
+  <td><?= render_run_detail_link($id_mysql_server, $row['date_p4']) ?>
+      <small class="text-muted">(<?= $row['diff_date_p4'] ?>)</small>
+  </td>
+
+  <td><?= render_run_detail_link($id_mysql_server, $row['last_date_listener']) ?>
+      <small class="text-muted">(<?= $row['diff_last_listener'] ?>)</small>
+  </td>
+
+  <td style="text-align:right; white-space:nowrap;">
+    <?php if ($hasMd5File): ?>
+      <a href="<?= LINK ?>MysqlServer/refreshMetric/<?= (int)$id_mysql_server ?>/<?= urlencode($metricFile) ?>"
+         class="btn btn-default btn-xs"
+         title="Refresh only this metric">
+        🔄
+      </a>
+    <?php endif; ?>
+  </td>
+</tr>
+<?php endforeach; ?>
+</table>
+
+
+<a href="<?=LINK ?>MysqlServer/refresh/<?= $id_mysql_server ?>" class="btn btn-default btn-sm">
+    🔄 Refresh all metrics now !
+</a>

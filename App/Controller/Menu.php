@@ -8,13 +8,50 @@
 
 namespace App\Controller;
 
+use \App\Library\LanguageMenuBuilder;
 use \Glial\Synapse\Controller;
 use \Glial\Synapse\FactoryController;
 use \Glial\Sgbd\Sgbd;
+use \Glial\I18n\I18n;
 
 
+/**
+ * Class responsible for menu workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Menu extends Controller {
 
+/**
+ * Handle menu state through `show`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $params Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $params
+ * @psalm-param array<int,mixed> $params
+ * @return void Returned value for show.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::show()
+ * @example /fr/menu/show
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function show($params) {
         $id_menu = $params[0];
         //debug($id_menu);
@@ -45,10 +82,56 @@ WHERE b.active = 1 and b.parent_id is not null and a.id='" . $id_menu . "' GROUP
         }
 
         $data['selectedmenu'] = $this->getSelectedLevelOneMenu($id_menu);
+        $currentLanguage = I18n::Get();
+        if (!is_string($currentLanguage) || $currentLanguage === '') {
+            $currentLanguage = self::getStringValue($_GET, 'lg');
+        }
+
+        $data['language_menu'] = LanguageMenuBuilder::build(
+            self::getStringValue($_GET, 'glial_path'),
+            self::getStringValue($_SERVER, 'QUERY_STRING'),
+            $currentLanguage,
+            LANGUAGE_AVAILABLE,
+            WWW_ROOT,
+            I18n::$languagesUTF8
+        );
 
         $this->set('data', $data);
     }
 
+/**
+ * Return a string value from request-like arrays without casting arrays to "Array".
+ *
+ * @param array<string,mixed> $source Source array.
+ * @param string $key Key to read.
+ * @return string String value or an empty fallback.
+ */
+    private static function getStringValue(array $source, string $key): string
+    {
+        return isset($source[$key]) && is_string($source[$key]) ? $source[$key] : '';
+    }
+
+/**
+ * Retrieve menu state through `getSelectedLevelOneMenu`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_menu Input value for `id_menu`.
+ * @phpstan-param int $id_menu
+ * @psalm-param int $id_menu
+ * @return mixed Returned value for getSelectedLevelOneMenu.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getSelectedLevelOneMenu()
+ * @example /fr/menu/getSelectedLevelOneMenu
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getSelectedLevelOneMenu($id_menu) {
         $Array = FactoryController::getRootNode();
 

@@ -1,4 +1,12 @@
-<div class="container">
+<?php
+
+use App\Library\Security\CsrfRender;
+
+$data = $data ?? array();
+$phpLiveRegexCsrfField = CsrfRender::field($data, 'phpliveregex_evaluate');
+$phpLiveRegexCsrfToken = CsrfRender::token($data, 'phpliveregex_evaluate');
+?>
+<div class="container" id="php-live-regex" data-csrf-field="<?= $phpLiveRegexCsrfField ?>" data-csrf-token="<?= $phpLiveRegexCsrfToken ?>">
     <div class="row well well-sm" style="padding-bottom: 18px">
         <div class="col-md-6">
             <label>Regex</label>

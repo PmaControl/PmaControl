@@ -1,8 +1,16 @@
 <?php
+
+use App\Library\Security\CsrfRender;
+
 use Glial\Html\Form\Form;
 use Glial\I18n\I18n;
+
+$tagAddCsrfField = CsrfRender::field($data, 'tag_add');
+$tagAddCsrfToken = CsrfRender::token($data, 'tag_add');
 ?>
 <form action="" method="post">
+    <input type="hidden" name="<?= $tagAddCsrfField ?>" value="<?= $tagAddCsrfToken ?>">
+
     <div class="panel panel-primary">
         <div class="panel-heading">
             <h3 class="panel-title"><?= __('Add a tag') ?></h3>
@@ -32,4 +40,3 @@ use Glial\I18n\I18n;
         </div>
     </div>
 </form>
-

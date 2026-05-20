@@ -8,6 +8,20 @@ use \App\Library\Debug;
 use \Glial\Sgbd\Sgbd;
 
 
+/**
+ * Class responsible for recover workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Recover extends Controller {
 
     const DIRECTORY='/srv/code/undrop-for-innodb/bin/export/cnfpt_national';
@@ -172,6 +186,30 @@ DROP PROCEDURE IF EXISTS ShowAllNonUniqueIndexes;
     }
 
 
+/**
+ * Retrieve recover state through `getTableId`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $table_schema Input value for `table_schema`.
+ * @phpstan-param mixed $table_schema
+ * @psalm-param mixed $table_schema
+ * @param mixed $table_name Input value for `table_name`.
+ * @phpstan-param mixed $table_name
+ * @psalm-param mixed $table_name
+ * @return mixed Returned value for getTableId.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getTableId()
+ * @example /fr/recover/getTableId
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getTableId($table_schema, $table_name)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -189,6 +227,27 @@ DROP PROCEDURE IF EXISTS ShowAllNonUniqueIndexes;
         }
     }
 
+/**
+ * Retrieve recover state through `getTableName`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $file Input value for `file`.
+ * @phpstan-param mixed $file
+ * @psalm-param mixed $file
+ * @return mixed Returned value for getTableName.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getTableName()
+ * @example /fr/recover/getTableName
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getTableName($file)
     {
         preg_match('/pages-(\w+)\.0/', $file, $output_array);
@@ -203,6 +262,27 @@ DROP PROCEDURE IF EXISTS ShowAllNonUniqueIndexes;
 
 
 
+/**
+ * Handle recover state through `importData`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for importData.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::importData()
+ * @example /fr/recover/importData
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function importData($param)
     {
         Debug::parseDebug($param);
@@ -245,6 +325,27 @@ DROP PROCEDURE IF EXISTS ShowAllNonUniqueIndexes;
         }
     }
 
+/**
+ * Delete recover state through `removeComments`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $content Input value for `content`.
+ * @phpstan-param mixed $content
+ * @psalm-param mixed $content
+ * @return mixed Returned value for removeComments.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::removeComments()
+ * @example /fr/recover/removeComments
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function removeComments($content) {
 
         $content = str_replace('SET FOREIGN_KEY_CHECKS=0;', '', $content);
@@ -259,3 +360,4 @@ DROP PROCEDURE IF EXISTS ShowAllNonUniqueIndexes;
         return $content;
     }
 }
+

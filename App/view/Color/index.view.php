@@ -1,36 +1,55 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
+$colorIndexCsrfField = CsrfRender::field($data, 'color_index');
+$colorIndexCsrfToken = CsrfRender::token($data, 'color_index');
+$selectedColorType = (string)($_GET['type'] ?? '');
+$escapedSelectedColorType = htmlspecialchars($selectedColorType, ENT_QUOTES, 'UTF-8');
+
 echo '<div class="btn-group">';
 foreach($data['type'] as $type)
 {
+    $type = (string) $type;
     $active = "";
-    if ($type == $_GET['type'])
+    if ($type == $selectedColorType)
     {
         $active = "active";
     }
-    echo '<a href="'.LINK.'Color/index/'.$type.'/" type="button" class="btn btn-primary '.$active.'">'.$type.'</a>';
+    $escapedType = htmlspecialchars($type, ENT_QUOTES, 'UTF-8');
+    echo '<a href="'.LINK.'Color/index/'.rawurlencode($type).'/" type="button" class="btn btn-primary '.$active.'">'.$escapedType.'</a>';
 }  
 echo '</div><br><br>';
 
 
 
 
-function color_picker($const,$color)
+function dot_style_select($id, $selected_style, $dot_style_values)
 {
+    $id = (int) $id;
+    $selected_style = (string) $selected_style;
 
-    $color = strtoupper($color);
-        return '<div class="colorpicker input-group colorpicker-component">
-      <input type="text" value="'.$color.'" class="form-control" />
-      <span class="input-group-addon"><i></i></span>
-    </div>';
+    $html = '<select class="form-control input-sm" name="dot3_legend['.$id.'][style]">';
 
+    foreach ($dot_style_values as $style) {
+        $style = (string) $style;
+        $selected = ($style === $selected_style) ? ' selected="selected"' : '';
+        $escaped_style = htmlspecialchars($style, ENT_QUOTES, 'UTF-8');
 
+        $html .= '<option value="'.$escaped_style.'"'.$selected.'>'.$escaped_style.'</option>';
+    }
+
+    $html .= '</select>';
+
+    return $html;
 }
 
+echo '<form action="'.LINK.'Color/index/'.rawurlencode($selectedColorType).'/" method="post">';
+echo '<input type="hidden" name="'.$colorIndexCsrfField.'" value="'.$colorIndexCsrfToken.'" />';
 
 echo '<div class="panel panel-primary">';
 echo '<div class="panel-heading">';
-echo '<h3 class="panel-title">'.$_GET['type'].'</h3>';
+echo '<h3 class="panel-title">'.$escapedSelectedColorType.'</h3>';
 echo '</div>';
 echo '<div>';
 
@@ -54,13 +73,39 @@ echo '</tr>';
 
 foreach($data['legend'][$_GET['type']] as $elem)
 {
+    $id = (int) $elem['id'];
+    $const = htmlspecialchars((string) $elem['const'], ENT_QUOTES, 'UTF-8');
+    $name = htmlspecialchars((string) $elem['name'], ENT_QUOTES, 'UTF-8');
+
     echo '<tr>';
-    echo '<td>'.$elem['const'].'</td>';
-    echo '<td>'.$elem['name'].'</td>';
-    echo '<td style="padding:0">'.color_picker($elem['const'], $elem['font']).'</td>';
-    echo '<td style="padding:0">'.color_picker($elem['const'], $elem['color']).'</td>';
-    echo '<td style="padding:0">'.color_picker($elem['const'], $elem['background']).'</td>';
-    echo '<td>'.$elem['style'].'</td>';
+    echo '<td>'.$const.'</td>';
+    echo '<td>'.$name.'</td>';
+
+    $font = htmlspecialchars(strtoupper((string) $elem['font']), ENT_QUOTES, 'UTF-8');
+    echo '<td style="padding:0">'
+        .'<div class="colorpicker input-group colorpicker-component">'
+        .'<input type="text" name="dot3_legend['.$id.'][font]" value="'.$font.'" class="form-control" />'
+        .'<span class="input-group-addon"><i></i></span>'
+        .'</div>'
+        .'</td>';
+
+    $color = htmlspecialchars(strtoupper((string) $elem['color']), ENT_QUOTES, 'UTF-8');
+    echo '<td style="padding:0">'
+        .'<div class="colorpicker input-group colorpicker-component">'
+        .'<input type="text" name="dot3_legend['.$id.'][color]" value="'.$color.'" class="form-control" />'
+        .'<span class="input-group-addon"><i></i></span>'
+        .'</div>'
+        .'</td>';
+
+    $background = htmlspecialchars(strtoupper((string) $elem['background']), ENT_QUOTES, 'UTF-8');
+    echo '<td style="padding:0">'
+        .'<div class="colorpicker input-group colorpicker-component">'
+        .'<input type="text" name="dot3_legend['.$id.'][background]" value="'.$background.'" class="form-control" />'
+        .'<span class="input-group-addon"><i></i></span>'
+        .'</div>'
+        .'</td>';
+
+    echo '<td>'.dot_style_select($id, $elem['style'], $data['dot_style_values'] ?? array()).'</td>';
 
     
     echo '</tr>';
@@ -89,4 +134,8 @@ echo '</div>'; //fin row
 
 echo '</div></div>';
 
+echo '<div style="text-align:left">';
+echo '<button type="submit" class="btn btn-primary">'.__("Update").'</button>';
+echo '</div>';
 
+echo '</form>';

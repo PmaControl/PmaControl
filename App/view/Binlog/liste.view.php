@@ -57,7 +57,23 @@ use App\Library\Format;
 
             echo '<td>'.$server['mysql_binlog']['binlog_file_first'].'</td>';
             echo '<td>'.$server['mysql_binlog']['binlog_file_last'].'</td>';
-            echo '<td>'.$server['mysql_binlog']['expire_logs_days'].'</td>';
+
+            echo "<td>";
+            if ( ! empty($server['mysql_binlog']['expire_logs_days']))
+            {
+                echo $server['mysql_binlog']['expire_logs_days']." ".__("days");
+            }
+            if(! empty($server['mysql_binlog']['binlog_expire_logs_seconds'])) 
+            {
+                if ( ! empty($server['mysql_binlog']['expire_logs_days']))
+                {
+                    echo " - ";
+                }
+                echo $server['mysql_binlog']['binlog_expire_logs_seconds'].' '.__("seconds");
+            }
+            echo "</td>";
+
+            //echo '<td>'.$server['mysql_binlog']['expire_logs_days'].'</td>';
             echo '<td>'.$server['mysql_binlog']['binlog_nb_files'].'</td>';
             echo '<td>'.Format::bytes($server['mysql_binlog']['binlog_total_size']).'</td>';
 

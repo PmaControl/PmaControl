@@ -2,11 +2,22 @@
 set +x
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=install/lib/harden_apache.sh
+. "${SCRIPT_DIR}/lib/harden_apache.sh"
+# shellcheck source=install/lib/install_secrets.sh
+. "${SCRIPT_DIR}/lib/install_secrets.sh"
+trap cleanup_install_ssh_key EXIT
+trap 'cleanup_install_ssh_key; exit 129' HUP
+trap 'cleanup_install_ssh_key; exit 130' INT
+trap 'cleanup_install_ssh_key; exit 143' TERM
+
 DEV_MOD=0
 password=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
 pwd_pmacontrol=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
 pwd_admin=$(date +%s | sha256sum | base64 | head -c 32 ; echo)
 VERSION_MARIADB="10.11"
+PMACTRL_HARDEN_APACHE_DOCROOT="${PMACTRL_HARDEN_APACHE_DOCROOT:-1}"
 
 while getopts 'hp:v:d' flag; do
   case "${flag}" in
@@ -46,6 +57,7 @@ apt install -y dnsutils
 apt install -y sysbench
 apt install -y skopeo
 apt install -y jq
+apt install -y openssh-client
 apt install -y sudo
 
 sysctl vm.swappiness=1
@@ -64,7 +76,7 @@ curl -LsS https://r.mariadb.com/downloads/mariadb_repo_setup | bash -s -- --mari
 
 ./install-mariadb.sh -v "$VERSION_MARIADB" -p "$password" -d /srv/mysql -r
 
-apt-get -y install php8.2 apache2 php8.2-mysql php8.2-ldap php-json php8.2-curl php8.2-cli php8.2-mbstring php8.2-intl php8.2-fpm libapache2-mod-php8.2 php8.2-gd php8.2-xml php8.2-gmp
+apt-get -y install php8.2 apache2 php8.2-mysql php8.2-ldap php-json php8.2-curl php8.2-cli php8.2-mbstring php8.2-intl php8.2-fpm libapache2-mod-php8.2 php8.2-gd php8.2-xml php8.2-gmp php8.2-zip
 apt -y install graphviz
 apt -y install libcairo2
 
@@ -86,6 +98,7 @@ sed -i  's#;date.timezone =#date.timezone = Europe/Paris#g' /etc/php/8.2/cli/php
 sed -i 's/\/var\/www/\/srv\/www/g' /etc/apache2/apache2.conf
 sed -i 's/\/var\/www\/html/\/srv\/www/g' /etc/apache2/sites-enabled/000-default.conf
 awk '/AllowOverride/ && ++i==3 {sub(/None/,"All")}1' /etc/apache2/apache2.conf > /tmp/xfgh && mv /tmp/xfgh /etc/apache2/apache2.conf
+pmactrl_harden_apache_docroot
 
 mkdir -p /srv/www/
 cd /srv/www/
@@ -123,7 +136,11 @@ fi
 #mv composer.phar /usr/local/bin/composer
 
 #export COMPOSER_ALLOW_SUPERUSER=1
-sudo -u www-data composer install
+composer_install_args=(--no-dev --no-interaction --prefer-dist --optimize-autoloader)
+if [[ $DEV_MOD -eq 1 ]]; then
+    composer_install_args=(--no-interaction)
+fi
+sudo -u www-data composer install "${composer_install_args[@]}"
 
 
 service apache2 restart
@@ -135,6 +152,10 @@ sleep 1
 
 
 mysql -e "GRANT ALL ON *.* TO pmacontrol@'127.0.0.1' IDENTIFIED BY '${pwd_pmacontrol}' WITH GRANT OPTION;"
+
+generate_install_ssh_key
+ssh_private_key_json=$(json_escape_file "${SSH_PRIVATE_KEY_FILE}")
+ssh_public_key_json=$(json_escape_file "${SSH_PUBLIC_KEY_FILE}")
 
 
 cat > /tmp/config.json << EOF
@@ -188,8 +209,8 @@ cat > /tmp/config.json << EOF
 ,
   "ssh": [{
     "user": "pmacontrol",
-    "private key": "-----BEGIN RSA PRIVATE KEY-----\nMIIJKQIBAAKCAgEAsLxsW/pqk8VkCh/eUuhXusDLyG72sWz7uJk6Y1V/3lQRXbCX\n8orlGSlpcBwtMnVOAMUdul4/NQ9swDJqfSYMx5+s4hgswiDwqliwNmu8KGP7gseq\ntpB1apOsIGKby8KVkqwpmxyFs4W+dKwcxmPlw+1b5w5aro6keIbcomKAFNqq1nzR\nARBfL+AUEEZKjkK1o3vfzEhYL8nO+zpMzv2TMcbTumw+jjHC+DzKtUILBo/LjjkC\nwyWKva6QArS125itvIMT5pUW6X72RgWByKIUzCJrR+HzWO9zl8FQQeRlZjtCp+9C\n7HwMPiKH4upN2FfwWXSEa+NyYFUuNyjOCdbrRpgX0FfChE4XFklSNhMXdKMu\n-----END RSA PRIVATE KEY-----\n",
-    "public key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCwvGxb+mqTxWQKH95S6Fe6wMvIbvaxbPu4mTpjVX/eVBFdsJfyiuUZKWlwHC0ydU4AxR26Xj81D2zAMmp9JgzHn6ziGCzCIPCqWLA2a7woY/uCx6q2kHVqk6wgYpvLwpWSrCmbHIWzhb50rBzGY+XD7VvnDlqujqR4htyiYoAU2qrWfNEs5NseGEcQaiRMHe57lw2UTXGbj3Ked+h+n/XngRLV4D01DzaQZ8k45dREe32rUmJZJ3hvE3FI57ICEnVtnrQ8+lQrAoYP0jnYT7eXcIvjHDgyMXKc7fEAyp3b2QG+4J/HxL6K+elFJErLQ2yQlDR9afadnTsBJxFBA2/6yx42Lrp0pMprxKOvhSiMKNiDrP73Jt7d8Z5Z89YN+414Vo2M9713O54IB5H2r88qtdY4fuLzK4d4V39vz6ii5H2aEXIJVsbafLCn/qzbjp7IpoqvuB/3Smp2XW2RnWcZB1NY6diTQkS3MKpblDJILv5UtKN9RCyhRmRHFIM5RyTN21Euuei5bX6WhvEsL7jGo6JDmnXi3tzdAeTUbhPgOd2lX4LECBg9wbhzsezN47S6IGf+72sD/6BCJewKCZ8iheM34pEewDJdUSrg06LDLOr1TrRfaoV1qSsWNDtJVrfae/NTo4oKggxNkkDFkfeHm1pBej37dbMqzDVsKcNoCw=="
+    "private key": ${ssh_private_key_json},
+    "public key": ${ssh_public_key_json}
   }]
 }
 

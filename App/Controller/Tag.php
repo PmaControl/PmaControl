@@ -4,8 +4,13 @@ namespace App\Controller;
 
 use Glial\I18n\I18n;
 use Glial\Synapse\Controller;
+use App\Library\Http\HttpOutcome;
+use App\Library\Http\HttpResponse;
+use App\Library\Security\CsrfGuard;
+use App\Library\Security\InlineEditRequest;
 use App\Library\Post;
 use \Glial\Sgbd\Sgbd;
+use Glial\Security\Csrf;
 
 /*
  * Module pour gérer les tag sur les equipements pour les régrouper
@@ -13,7 +18,37 @@ use \Glial\Sgbd\Sgbd;
  *
  */
 class Tag extends Controller {
+    private const TAG_ADD_CSRF_SCOPE = 'tag.add';
+    private const TAG_ADD_FIELDS = ['name', 'color', 'background'];
+    private const TAG_ADD_FIELD_LIMITS = [
+        'name' => 50,
+        'color' => 20,
+        'background' => 20,
+    ];
+    public const TAG_UPDATE_CSRF_SCOPE = 'tag.update';
+    private const TAG_UPDATE_FIELDS = ['name', 'color', 'background'];
 
+/**
+ * Render tag state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $params Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $params
+ * @psalm-param array<int,mixed> $params
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/tag/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function index($params) {
 
 
@@ -40,63 +75,196 @@ class Tag extends Controller {
             $data['tags'][] = $arr;
         }
 
+        $data['tag_update_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['tag_update_csrf_token'] = Csrf::issueToken($_SESSION, self::TAG_UPDATE_CSRF_SCOPE);
 
         $this->set('data', $data);
     }
 
+/**
+ * Create tag state through `add`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for add.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::add()
+ * @example /fr/tag/add
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function add() {
-        $db = Sgbd::sql(DB_DEFAULT);
+        if (CsrfGuard::isPost($_SERVER)) {
+            $this->view = false;
+            $this->layout_name = false;
 
-
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            if (!empty($_POST['tag']['name'])) {
-
-                $save['tag'] = array();
-                $save['tag'] = $_POST['tag'];
-
-
-                $id_tag = $db->sql_save($save);
-
-                if ($id_tag) {
-                    $msg = I18n::getTranslation(__("The tag has been added"));
-                    $title = I18n::getTranslation(__("Success"));
-                    set_flash("success", $title, $msg);
-
-                    $method = "index";
-                } else {
-                    $msg = I18n::getTranslation(__("Impossible to add this tag : " . $db->sql_error()));
-                    $title = I18n::getTranslation(__("Error"));
-                    set_flash("error", $title, $msg);
-
-                    $method = __FUNCTION__;
-                }
-
-
-                header('location: ' . LINK .$this->getClass(). '/' . $method . '/' . Post::getToPost());
+            $outcome = self::evaluateAddRequest($_POST, $_SERVER, $_SESSION);
+            if ($outcome['status'] !== 200) {
+                self::sendTagAddError($outcome['status'], $outcome['body'], $outcome['headers']);
+                return;
             }
+
+            $db = Sgbd::sql(DB_DEFAULT);
+            $save['tag'] = $outcome['tag'];
+
+            $id_tag = $db->sql_save($save);
+
+            if ($id_tag) {
+                $msg = I18n::getTranslation(__("The tag has been added"));
+                $title = I18n::getTranslation(__("Success"));
+                set_flash("success", $title, $msg);
+
+                $method = "index";
+            } else {
+                $msg = I18n::getTranslation(__("Impossible to add this tag : " . $db->sql_error()));
+                $title = I18n::getTranslation(__("Error"));
+                set_flash("error", $title, $msg);
+
+                $method = __FUNCTION__;
+            }
+
+
+            header('location: ' . LINK .$this->getClass(). '/' . $method . '/' . Post::getToPost());
+            return;
         }
 
-        $data = array();
+        $data['tag_add_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['tag_add_csrf_token'] = Csrf::issueToken($_SESSION, self::TAG_ADD_CSRF_SCOPE);
         $this->set('data', $data);
     }
 
+    public static function evaluateAddRequest(array $post, array $server, array $session): array
+    {
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::TAG_ADD_CSRF_SCOPE)) {
+            return HttpOutcome::error($failure['status'], $failure['body'], $failure['headers'], ['tag' => null]);
+        }
+
+        $tag = self::normalizeAddPayload($post);
+        if ($tag === null) {
+            return HttpOutcome::error(400, 'Invalid tag add payload', [], ['tag' => null]);
+        }
+
+        return HttpOutcome::ok(['tag' => $tag]);
+    }
+
+    public static function normalizeAddPayload(array $post): ?array
+    {
+        if (! isset($post['tag']) || ! is_array($post['tag']) || $post['tag'] === []) {
+            return null;
+        }
+
+        $tag = [
+            'color' => '',
+            'background' => '',
+        ];
+
+        foreach ($post['tag'] as $field => $value) {
+            if (! is_string($field) || ! in_array($field, self::TAG_ADD_FIELDS, true) || ! is_scalar($value)) {
+                return null;
+            }
+
+            $text = trim((string) $value);
+            if (strlen($text) > self::TAG_ADD_FIELD_LIMITS[$field]) {
+                return null;
+            }
+
+            $tag[$field] = $text;
+        }
+
+        if (! isset($tag['name']) || $tag['name'] === '') {
+            return null;
+        }
+
+        return [
+            'name' => $tag['name'],
+            'color' => $tag['color'],
+            'background' => $tag['background'],
+        ];
+    }
+
+    private static function sendTagAddError(int $statusCode, string $message, array $headers = []): void
+    {
+        HttpResponse::sendError($statusCode, $message, $headers);
+    }
+
+/**
+ * Update tag state through `update`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @return void Returned value for update.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::update()
+ * @example /fr/tag/update
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function update() {
 
         $this->view = false;
         $this->layout_name = false;
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            $db = Sgbd::sql(DB_DEFAULT);
-
-            $sql = "UPDATE tag SET `" . $_POST['name'] . "` = '" . $_POST['value'] . "' WHERE id = " . $db->sql_real_escape_string($_POST['pk']) . "";
-            $db->sql_query($sql);
-
-            if ($db->sql_affected_rows() === 1) {
-                echo "OK";
-            } else {
-                header("HTTP/1.0 503 Internal Server Error");
-            }
+        $outcome = self::evaluateUpdateRequest($_POST, $_SERVER, $_SESSION);
+        if ($outcome['status'] !== 200) {
+            self::sendTagUpdateError($outcome['status'], $outcome['body'], $outcome['headers']);
+            return;
         }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = self::buildTagUpdateSql($outcome['update'], [$db, 'sql_real_escape_string']);
+        $db->sql_query($sql);
+
+        if ($db->sql_affected_rows() === 1) {
+            echo "OK";
+        } else {
+            self::sendTagUpdateError(503, "Tag not updated");
+        }
+    }
+
+    public static function evaluateUpdateRequest(array $post, array $server, array $session): array
+    {
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::TAG_UPDATE_CSRF_SCOPE)) {
+            return HttpOutcome::error($failure['status'], $failure['body'], $failure['headers'], ['update' => null]);
+        }
+
+        $update = self::normalizeUpdatePayload($post);
+        if ($update === null) {
+            return HttpOutcome::error(400, "Invalid tag update payload", [], ['update' => null]);
+        }
+
+        return HttpOutcome::ok(['update' => $update]);
+    }
+
+    public static function normalizeUpdatePayload(array $post): ?array
+    {
+        return InlineEditRequest::normalize($post, self::TAG_UPDATE_FIELDS, PHP_INT_MAX);
+    }
+
+    public static function buildTagUpdateSql(array $update, callable $escape): string
+    {
+        return sprintf(
+            "UPDATE tag SET `%s` = '%s' WHERE id = %d",
+            $update['field'],
+            $escape($update['value']),
+            $update['id']
+        );
+    }
+
+    private static function sendTagUpdateError(int $statusCode, string $message, array $headers = []): void
+    {
+        HttpResponse::sendError($statusCode, $message, $headers);
     }
 
 }

@@ -1,16 +1,13 @@
 <?php
 
+
 namespace App\Controller;
 
-use Exception;
 use \Glial\Synapse\Controller;
-use Fuz\Component\SharedMemory\Storage\StorageFile;
-use Fuz\Component\SharedMemory\SharedMemory;
 use \App\Library\Debug;
-use \App\Controller\Aspirateur;
-use \App\Library\Microsecond;
 use \App\Library\EngineV4;
 use \App\Library\Mysql;
+use \App\Library\SharedMemoryReader;
 use \Glial\Sgbd\Sgbd;
 use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
@@ -19,23 +16,187 @@ use \Monolog\Handler\StreamHandler;
 //require ROOT."/application/library/Filter.php";
 // ./glial control rebuildAll --debug
 
+/**
+ * Class responsible for integrate workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Integrate extends Controller
 {
+    private const MAX_UNSIGNED_BIGINT = '18446744073709551615';
+    private array $mysqlServerDisplayCache = [];
+
     use \App\Library\Filter;
-    const MAX_FILE_AT_ONCE = 100;
+    const MAX_FILE_AT_ONCE = 10;
     //advice *2 of or result from select count(1) from ts_file;
 
     const VARIABLES = "mysql_global_variable";
 
+/**
+ * Stores `$shared` for shared.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $shared;
     //var $memory_file = "answer";
+/**
+ * Stores `$files` for files.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $files = array();
 
+/**
+ * Stores `$logger` for logger.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $logger;
 
     // on list ici les serveurs pour lequel il faut purger les fichiers de md5 pour forcer le rafraichissement
+/**
+ * Stores `$id_mysql_server__to_refresh` for id mysql server  to refresh.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $id_mysql_server__to_refresh = array();
 
+    protected function normalizeSlaveMetricRow(string $typeMetrics, $value): ?array
+    {
+        if ($typeMetrics !== 'slave' || !is_array($value)) {
+            return null;
+        }
+
+        $value = array_change_key_case($value);
+
+        if (!isset($value['connection_name'])) {
+            $value['connection_name'] = '';
+        }
+
+        if (!isset($value['master_host']) && isset($value['source_host'])) {
+            $value['master_host'] = $value['source_host'];
+        }
+
+        if (!isset($value['master_port']) && isset($value['source_port'])) {
+            $value['master_port'] = $value['source_port'];
+        }
+
+        if (!isset($value['source_host']) && isset($value['master_host'])) {
+            $value['source_host'] = $value['master_host'];
+        }
+
+        if (!isset($value['source_port']) && isset($value['master_port'])) {
+            $value['source_port'] = $value['master_port'];
+        }
+
+        $sslFields = [
+            'ssl_allowed',
+            'ssl_ca_file',
+            'ssl_ca_path',
+            'ssl_cert',
+            'ssl_cipher',
+            'ssl_key',
+            'ssl_verify_server_cert',
+            'ssl_crl',
+            'ssl_crlpath',
+            'tls_version',
+        ];
+
+        foreach ($sslFields as $sslField) {
+            $masterKey = 'master_'.$sslField;
+            $sourceKey = 'source_'.$sslField;
+
+            if (!isset($value[$masterKey]) && isset($value[$sourceKey])) {
+                $value[$masterKey] = $value[$sourceKey];
+            }
+
+            if (!isset($value[$sourceKey]) && isset($value[$masterKey])) {
+                $value[$sourceKey] = $value[$masterKey];
+            }
+        }
+
+        if (!isset($value['slave_io_running']) && isset($value['replica_io_running'])) {
+            $value['slave_io_running'] = $value['replica_io_running'];
+        }
+
+        if (!isset($value['slave_sql_running']) && isset($value['replica_sql_running'])) {
+            $value['slave_sql_running'] = $value['replica_sql_running'];
+        }
+
+        if (!isset($value['replica_io_running']) && isset($value['slave_io_running'])) {
+            $value['replica_io_running'] = $value['slave_io_running'];
+        }
+
+        if (!isset($value['replica_sql_running']) && isset($value['slave_sql_running'])) {
+            $value['replica_sql_running'] = $value['slave_sql_running'];
+        }
+
+        $hasMasterLag = $this->hasAvailableReplicationLag($value, 'seconds_behind_master');
+        $hasSourceLag = $this->hasAvailableReplicationLag($value, 'seconds_behind_source');
+
+        if (!$hasMasterLag && $hasSourceLag) {
+            $value['seconds_behind_master'] = $value['seconds_behind_source'];
+            $hasMasterLag = true;
+        }
+
+        if (!$hasSourceLag && $hasMasterLag) {
+            $value['seconds_behind_source'] = $value['seconds_behind_master'];
+        }
+
+        return $value;
+    }
+
+    private function hasAvailableReplicationLag(array $value, string $field): bool
+    {
+        if (!array_key_exists($field, $value)) {
+            return false;
+        }
+
+        if ($value[$field] === null) {
+            return false;
+        }
+
+        return trim((string) $value[$field]) !== '';
+    }
+
+/**
+ * Prepare integrate state through `before`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for before.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::before()
+ * @example /fr/integrate/before
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function before($param)
     {
         $monolog       = new Logger("Integrate");
@@ -45,6 +206,108 @@ class Integrate extends Controller
         $this->logger = $monolog;
     }
 
+    protected function getIntegratePayloadLockPath(string $file): string
+    {
+        $fileName = basename($file);
+        $parts = explode(EngineV4::SEPERATOR, $fileName, 2);
+        $scope = $parts[1] ?? $fileName;
+        $baseName = preg_replace('/[^A-Za-z0-9_.:-]/', '_', $scope);
+
+        return EngineV4::PATH_LOCK.'integrate_payload/'.$baseName.'.lock';
+    }
+
+    protected function acquireIntegratePayloadLock(string $file): ?array
+    {
+        $lockPath = $this->getIntegratePayloadLockPath($file);
+        $lockDir = dirname($lockPath);
+
+        if (!is_dir($lockDir) && !@mkdir($lockDir, 0775, true) && !is_dir($lockDir)) {
+            return null;
+        }
+
+        $handle = @fopen($lockPath, 'c');
+        if (!is_resource($handle)) {
+            return null;
+        }
+
+        if (!@flock($handle, LOCK_EX | LOCK_NB)) {
+            fclose($handle);
+            return null;
+        }
+
+        ftruncate($handle, 0);
+        fwrite($handle, (string)getmypid()."\n".date('c')."\n".$file."\n");
+
+        return array('handle' => $handle, 'path' => $lockPath);
+    }
+
+    protected function releaseIntegratePayloadLock(?array $lock): void
+    {
+        if (empty($lock['handle']) || !is_resource($lock['handle'])) {
+            return;
+        }
+
+        @flock($lock['handle'], LOCK_UN);
+        fclose($lock['handle']);
+    }
+
+    /**
+     * (PmaControl) <br/>
+     * @example ./glial integrate show 1772662469::vip
+     * @description Display the raw shared memory content as JSON_PRETTY_PRINT
+     * @access public
+     */
+    public function show($param)
+    {
+        Debug::parseDebug($param);
+        $this->view = false;
+
+        $fileName = $param[0] ?? '';
+        if ($fileName === '') {
+            throw new Exception("Paramètre manquant : fichier tmp_file attendu (ex: 1772662469::vip)");
+        }
+
+        if (strpos($fileName, EngineV4::SEPERATOR) === false) {
+            throw new Exception("Paramètre invalide : format attendu 'timestamp::ts_file'");
+        }
+
+        $filePath = EngineV4::PATH_PIVOT_FILE.$fileName;
+        if (!file_exists($filePath)) {
+            throw new Exception("Fichier introuvable : ".$filePath);
+        }
+
+        $elems = SharedMemoryReader::read($filePath, $reason);
+        if ($elems === null) {
+            throw new Exception("Lecture impossible du fichier ".$filePath." (".$reason.")");
+        }
+
+        $payload = $this->normalizeSharedMemoryPayload($elems);
+
+        echo json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n";
+        return true;
+    }
+
+/**
+ * Retrieve integrate state through `getIdTsFile`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $ts_file Input value for `ts_file`.
+ * @phpstan-param mixed $ts_file
+ * @psalm-param mixed $ts_file
+ * @return mixed Returned value for getIdTsFile.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getIdTsFile()
+ * @example /fr/integrate/getIdTsFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getIdTsFile($ts_file)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -69,293 +332,25 @@ class Integrate extends Controller
         return $this->files[$ts_file];
     }
 
-    public function evaluate($param)
-    {
-        $TIME = time();
-        
-        //Debug::debug($id_ts_file, "id_ts_file");
 
-        $db         = Sgbd::sql(DB_DEFAULT);
-        $this->view = false;
-
-        $files = glob(EngineV4::PATH_PIVOT_FILE ."*".EngineV4::SEPERATOR."*");
-        Debug::debug($files, "FILES BEFORE");
-        
-        if (empty($files)) {
-            usleep(100);
-            return true;
-        }
-
-        array_multisort(array_map('filemtime', $files), SORT_NUMERIC, SORT_ASC, $files);
-
-        //$this->logger->emergency(print_r($files));
-        Debug::debug($files, "FILES SORTED");
-
-        $variables           = $this->get_variable();
-        $variables_to_insert = array();
-
-        $insert      = array();
-        $var_index   = array();
-        $file_parsed = 0;
-
-        $id_servers = array();
-        $history    = array();
-
-        foreach ($files as $file) {
-            
-            Debug::debug($file);
-            
-            $elems = explode('/', $file);
-            $file_name = end($elems);
-
-            $_elems = explode(EngineV4::SEPERATOR, $file_name);
-            $ts_file = end($_elems);
-
-            $timestamp = $_elems[0];
-
-            $id_ts_file = $this->getIdTsFile($ts_file);
-            $memory_file = $ts_file;
-            
-
-            Debug::debug("$timestamp :: $ts_file");
-
-
-            //if ($TIME == $timestamp || $TIME2 == $timestamp){
-            if ($TIME == $timestamp){
-                //$this->logger->warning("##### We don't take this file :".$file_name. " => $TIME");
-                unset($files[$id_ts_file]);
-                continue;
-            }
-            Debug::debug("$id_ts_file => $file");
-
-            
-            //$this->logger->notice("We occupy with file ".$file);
-
-            $file_parsed++;
-            Debug::debug($file, " [FILE] ");
-
-            $storage = new StorageFile($file); // to export in config ?
-            $data    = new SharedMemory($storage);
-
-            $elems = $data->getData();
-
-            //Debug::debug($elems,"data");
-
-            foreach ($elems as $elem) {
-
-                //sort by microsecond do we really need ?
-                foreach ($elem as $date => $server) {
-
-                    //$date = Microsecond::tsToDate($date);
-                    $date = date('Y-m-d H:i:s', $date);
-
-                    foreach ($server as $id_server => $all_metrics) {
-                        $history[$date][] = array('id_server' => $id_server, 'id_ts_file' => $id_ts_file);
-                        $id_servers[]     = $id_server;
-
-                        if (! empty($all_metrics)){
-                            foreach ($all_metrics as $type_metrics => $metrics) {
-
-                                Debug::debug("*** ts_file:$date > id_mysql_server:$id_server > from:$type_metrics  ***");
-
-                                if (is_array($metrics)) {
-                                    $metrics = array_change_key_case($metrics);
-
-                                    Debug::debug($metrics,"metrics");
-
-                                    foreach ($metrics as $variable => $value) {
-
-                                        //Debug::debug($variable, 'variable');
-
-                                        //cas spécial des thread de réplications (il peux y en avoir plusieurs)
-                                        //où des HDD ? genre DF ?
-                                        if (is_array($value)) {
-
-                                            //Debug::debug($value, "TABLE SLAVE");
-                                            $value = array_change_key_case($value);
-                                            foreach ($value as $slave_variable => $slave_value) {
-
-                                                // on définit un nom connexion par défaut
-                                                if (!empty($value['connection_name'])) {
-                                                    $connection_name = $value['connection_name'];
-                                                } else {
-                                                    $connection_name = "";
-                                                }
-
-                                                if (empty($variables[$type_metrics][$slave_variable])) {
-
-                                                    if ($slave_value === "-1") {
-                                                        continue;
-                                                    }
-
-                                                    // si les références n'existe pas on enregistre pas (ça évite les collisions et d'autres problèmes à gérer )
-                                                    // et on est pas à un run prêt, le but est de rester performant et exhaustif
-
-                                                    if (empty($var_index[$type_metrics][$slave_variable])) {
-                                                        $var_index[$type_metrics][$slave_variable] = 1;
-                                                        //$variables_to_insert[]                     = '("'.$slave_variable.'", '.$this->getTypeOfData($slave_value).', "'.$type_metrics.'", "slave")';
-                                                        //  '('.$id_ts_file.',"'.$variable.'", '.$this->getTypeOfData($value).', "'.$type_metrics.'", "general")';
-
-                                                        
-                                                        $variables_to_insert[] = '(' . $id_ts_file . ',"' . $slave_variable . '", "' . $this->getTypeOfData($slave_value) . '", "' . $type_metrics . '", "slave")';
-                                                        self::$id_mysql_server__to_refresh[$id_ts_file][] = $id_server;
-                                                        //exit;
-                                                    }
-
-                                                    if ($slave_value === "") {
-                                                        continue;
-                                                    }
-                                                } else {
-                                                    if ($variables[$type_metrics][$slave_variable]['type'] == "TEXT") {
-
-                                                        if (is_null($slave_value)) {
-                                                            $slave_value = '';
-                                                        }
-
-                                                        $slave_value = $db->sql_real_escape_string($slave_value);
-
-                                                        $slave[$variables[$type_metrics][$slave_variable]['type']][] = '(' . $id_server . ','
-                                                            . '"' . $connection_name . '", '
-                                                            . $variables[$type_metrics][$slave_variable]['id'] . ', "'
-                                                            . $date . '", "'
-                                                            . $slave_value . '")';
-                                                    } else {
-
-                                                        if ($slave_value == "") {
-                                                            $slave_value = 'NULL';
-                                                        }
-
-                                                        if ($variables[$type_metrics][$slave_variable]['type'] == "DOUBLE") {
-
-                                                            if ($slave_value === "") {
-                                                                $slave_value = 0;
-                                                            }
-
-                                                            $slave[$variables[$type_metrics][$slave_variable]['type']][] = '(' . $id_server . ','
-                                                                . '"' . $connection_name . '", '
-                                                                . $variables[$type_metrics][$slave_variable]['id'] . ', "'
-                                                                . $date . '", "'
-                                                                . $slave_value . '")';
-                                                        } else {
-
-                                                            $slave[$variables[$type_metrics][$slave_variable]['type']][] = '(' . $id_server . ','
-                                                                . '"' . $connection_name . '", '
-                                                                . $variables[$type_metrics][$slave_variable]['id'] . ', "'
-                                                                . $date . '", '
-                                                                . $slave_value . ')';
-                                                        }
-                                                    }
-                                                }
-                                            } // END SLAVE
-                                            //Debug::debug($slave);
-                                        } else { // partie pour les données général
-
-
-                                            //Debug::debug($variables[$type_metrics][$variable], "variable $type_metrics][$variable");
-
-                                            if (!empty($variables[$type_metrics][$variable])) {
-
-
-                                                //Debug::debug($memory_file,"MEMORY_FILE");
-                                                //Debug::debug($value,"MEMORY_FILE");
-                                                
-                                                
-                                                if ($memory_file === self::VARIABLES) {
-                                                    $mysql_variable[$id_server][strtolower($variable)] = $value;
-                                                }
-
-                                                if ($variables[$type_metrics][$variable]['type'] === 'INT') {
-                                                    if ($value === "") {
-                                                        $value = "0";
-                                                    } elseif ($value < 0) {
-                                                        continue;
-                                                    }
-                                                }elseif (in_array($variables[$type_metrics][$variable]['type'], array("TEXT", "JSON"))) {
-                                                    $value = $db->sql_real_escape_string($value);
-                                                }
-                                                elseif($variables[$type_metrics][$variable]['type'] == "DOUBLE") {
-                                                    if ($value === ""){ //fix for slave_heartbeat_period with Percona 5.6
-                                                        $value = 0;
-                                                    }
-                                                }
-                                                $insert[$variables[$type_metrics][$variable]['type']][] = '(' . $id_server . ','
-                                                    . $variables[$type_metrics][$variable]['id'] . ', "'
-                                                    . $date . '", "'
-                                                    . $value . '")';
-
-                                                    Debug::debug($insert, "INSERTTTTTTTTTTTTTTTTTTT");
-                                            } else {
-                                                //if empty we connot detemine type
-                                                if ($value === "-1" || $value === "") {
-                                                    continue;
-                                                }
-
-                                                // si les références n'existe pas on enregistre pas (ça évite les collisions et d'autres problèmes à gérer )
-                                                // et on est pas à un run prêt, le but est de rester performant et exaustif
-
-                                                Debug::debug($this->getTypeOfData($value), "TYPE : $variable");
-
-                                                if (empty($var_index[$type_metrics][$variable])) {
-                                                    Debug::debug($insert, "val to insert in ts_variable");
-                                                    $var_index[$type_metrics][$variable] = 1;
-                                                    $variables_to_insert[]               = '(' . $id_ts_file . ',"' . $variable . '", "' . $this->getTypeOfData($value) . '", "' . $type_metrics . '", "general")';
-                                                    self::$id_mysql_server__to_refresh[$id_ts_file][] = $id_server;
-                                                }
-                                            }
-                                        }
-                                    } //end variable
-                                }
-                            }
-                        }
-                    }
-                } // date
-            }
-
-            Debug::checkPoint("before insert file : " . $file);
-
-            if (file_exists($file)) {
-                unlink($file);
-            } else {
-                $this->logger->emergency('Two process in same time for integrate data, please remove one');
-                throw new \Exception("PMACTRL-647 : deux integrateur lancer en même temps (suprimer le pas bon)");
-            }
-
-            if ($file_parsed >= self::MAX_FILE_AT_ONCE) {
-                break;
-            }
-        }
-
-        if (count($files) === 0)
-        {
-            usleep(300000); // 0.3 sec
-            return true;
-        }
-
-        if (count($variables_to_insert) > 0) {
-
-            Debug::checkPoint("variables");
-            Debug::debug($variables_to_insert, "variables_to_insert");
-            $this->insert_variable($variables_to_insert);
-
-        } else {
-            Debug::checkPoint("values");
-            $this->insert_value($insert);
-
-            if (!empty($slave)) {
-                $this->insert_slave_value($slave);
-            }
-        }
-
-        if (!empty($history)) {
-            $this->linkServerVariable($history, $memory_file);
-        }
-
-        Debug::debugQueriesOff();
-
-        // end files
-        //Debug::checkPoint("end method ");
-    }
-
+/**
+ * Retrieve integrate state through `get_variable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for get_variable.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::get_variable()
+ * @example /fr/integrate/get_variable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function get_variable()
     {
         $db  = Sgbd::sql(DB_DEFAULT);
@@ -372,6 +367,140 @@ class Integrate extends Controller
         return $variables;
     }
 
+    private function getMysqlServerDisplayName(int $idMysqlServer): string
+    {
+        if (isset($this->mysqlServerDisplayCache[$idMysqlServer])) {
+            return $this->mysqlServerDisplayCache[$idMysqlServer];
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT display_name FROM mysql_server WHERE id = " . $idMysqlServer . " LIMIT 1";
+        $res = $db->sql_query($sql);
+        $row = $db->sql_fetch_array($res, MYSQLI_ASSOC);
+
+        $this->mysqlServerDisplayCache[$idMysqlServer] = $row['display_name'] ?? ('id:' . $idMysqlServer);
+
+        return $this->mysqlServerDisplayCache[$idMysqlServer];
+    }
+
+    private function isGreaterThanUnsignedBigint(string $value): bool
+    {
+        $value = ltrim($value, '0');
+        if ($value === '') {
+            return false;
+        }
+
+        $max = self::MAX_UNSIGNED_BIGINT;
+
+        if (strlen($value) !== strlen($max)) {
+            return strlen($value) > strlen($max);
+        }
+
+        return strcmp($value, $max) > 0;
+    }
+
+    private function getUnsignedBigintOverflowFactor(string $value): string
+    {
+        $normalized = ltrim($value, '0');
+        if ($normalized === '') {
+            return '0.00x';
+        }
+
+        $toScientificFloat = static function (string $number): float {
+            $number = ltrim($number, '0');
+            if ($number === '') {
+                return 0.0;
+            }
+
+            $scale = min(15, strlen($number));
+            $mantissa = (float) substr($number, 0, $scale);
+            $exponent = strlen($number) - $scale;
+
+            return $mantissa * (10 ** $exponent);
+        };
+
+        $valueFloat = $toScientificFloat($normalized);
+        $maxFloat = $toScientificFloat(self::MAX_UNSIGNED_BIGINT);
+
+        if ($maxFloat <= 0.0) {
+            return 'n/a';
+        }
+
+        return number_format($valueFloat / $maxFloat, 2, '.', '') . 'x';
+    }
+
+    private function clampUnsignedBigintOverflow($value, int $idMysqlServer, string $metricName, string $date)
+    {
+        $valueAsString = trim((string) $value);
+
+        if ($valueAsString === '' || strtoupper($valueAsString) === 'NULL' || !preg_match('/^[0-9]+$/', $valueAsString)) {
+            return $value;
+        }
+
+        if (! $this->isGreaterThanUnsignedBigint($valueAsString)) {
+            return $valueAsString;
+        }
+
+        $server = $this->getMysqlServerDisplayName($idMysqlServer);
+        $overflowFactor = $this->getUnsignedBigintOverflowFactor($valueAsString);
+        $this->logger->warning(
+            "[PMACONTROL-OVERFLOW] server_id={$idMysqlServer} server={$server} metric={$metricName} original_value={$valueAsString} clamped_value="
+            . self::MAX_UNSIGNED_BIGINT
+            . " overflow_factor={$overflowFactor} reason=out_of_range_for_unsigned_bigint date={$date}"
+        );
+
+        return self::MAX_UNSIGNED_BIGINT;
+    }
+
+    protected function sortExistingPivotFilesByMtime(array $files): array
+    {
+        $sortable = array();
+
+        foreach ($files as $file) {
+            if (!is_string($file) || !is_file($file)) {
+                continue;
+            }
+
+            $mtime = @filemtime($file);
+            if ($mtime === false || !is_file($file)) {
+                continue;
+            }
+
+            $sortable[] = array('mtime' => $mtime, 'file' => $file);
+        }
+
+        usort($sortable, static function (array $left, array $right): int {
+            if ($left['mtime'] === $right['mtime']) {
+                return strcmp($left['file'], $right['file']);
+            }
+
+            return $left['mtime'] <=> $right['mtime'];
+        });
+
+        return array_column($sortable, 'file');
+    }
+
+/**
+ * Handle integrate state through `isFloat`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $value Input value for `value`.
+ * @phpstan-param mixed $value
+ * @psalm-param mixed $value
+ * @return mixed Returned value for isFloat.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::isFloat()
+ * @example /fr/integrate/isFloat
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static private function isFloat($value)
     {
         // test before => must be numeric first
@@ -388,7 +517,7 @@ class Integrate extends Controller
 
     static private function getTypeOfData($value)
     {
-        Debug::debug($value, "VALUE");
+        //Debug::debug($value, "VALUE");
 
         $val = 3;
         $is_numeric = is_numeric($value);
@@ -400,12 +529,15 @@ class Integrate extends Controller
             $is_float = self::isFloat($value);
 
             if ($is_float) {
+                //throw new Exception("PMACTRL-497 : Negative value not allowed (" . $value . ")");
                 $val = 2;
             }
 
-            //case of negative int (not allowed)
+            // Some engines (ex: SingleStore) expose valid numeric settings
+            // with negative sentinel values (ex: -1 or -1.000000 = unlimited/auto).
+            // We store these values as DOUBLE to avoid unsigned INT constraints.
             if ($value < 0) {
-                throw new \Exception("PMACTRL-497 : Negative value not allowed (" . $value . ")");
+                $val = 2;
             }
         }
 
@@ -419,6 +551,28 @@ class Integrate extends Controller
         return self::convert($val);
     }
 
+/**
+ * Handle integrate state through `insert_variable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $variables_to_insert Input value for `variables_to_insert`.
+ * @phpstan-param mixed $variables_to_insert
+ * @psalm-param mixed $variables_to_insert
+ * @return void Returned value for insert_variable.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::insert_variable()
+ * @example /fr/integrate/insert_variable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function insert_variable($variables_to_insert)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -426,17 +580,51 @@ class Integrate extends Controller
         // insert IGNORE in case of first save have 2 slave
         //$this->logger->warning("Insert new value :".json_encode($variables_to_insert));
 
-        $sql = "INSERT IGNORE INTO ts_variable (`id_ts_file`, `name`,`type`,`from`,`radical`) VALUES " . implode(",", $variables_to_insert) . ";";
+        $sql = "INSERT IGNORE INTO ts_variable (`id_ts_file`, `name`,`type`,`from`,`radical`) 
+        VALUES " . implode(",", $variables_to_insert) . ";";
         $res = $db->sql_query($sql);
 
         //self::$id_mysql_server__to_refresh
         EngineV4::cleanMd5(self::$id_mysql_server__to_refresh);
 
         if (!$res) {
-            throw new \Exception("PMACTRL-994 : Impossible to insert value in ts_variable");
+            throw new Exception("PMACTRL-994 : Impossible to insert value in ts_variable");
         }
     }
 
+    protected function buildTimeSeriesInsertSql(string $table, array $columns, array $values): string
+    {
+        $quotedColumns = array();
+        foreach ($columns as $column) {
+            $quotedColumns[] = '`'.$column.'`';
+        }
+
+        return "INSERT INTO `".$table."` (".implode(',', $quotedColumns).") VALUES "
+            . implode(",\n", $values)
+            . " ON DUPLICATE KEY UPDATE `value` = VALUES(`value`);";
+    }
+
+/**
+ * Handle integrate state through `insert_value`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $values Input value for `values`.
+ * @phpstan-param mixed $values
+ * @psalm-param mixed $values
+ * @return mixed Returned value for insert_value.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::insert_value()
+ * @example /fr/integrate/insert_value
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function insert_value($values)
     {
         //Debug::debug($values);
@@ -453,7 +641,11 @@ class Integrate extends Controller
 
             $time_start = microtime(true);
 
-            $sql = "INSERT INTO `ts_value_general_" . strtolower($type) . "` (`id_mysql_server`,`id_ts_variable`,`date`, `value`) VALUES " . implode(",", $elems) . ";";
+            $sql = $this->buildTimeSeriesInsertSql(
+                "ts_value_general_" . strtolower($type),
+                array('id_mysql_server', 'id_ts_variable', 'date', 'value'),
+                $elems
+            );
             //Debug::debug(count($elems), "type : $type");
             $db->sql_query($sql);
 
@@ -469,9 +661,33 @@ class Integrate extends Controller
     }
 
 
+/**
+ * Handle integrate state through `insert_slave_value`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $values Input value for `values`.
+ * @phpstan-param mixed $values
+ * @psalm-param mixed $values
+ * @param mixed $val Input value for `val`.
+ * @phpstan-param mixed $val
+ * @psalm-param mixed $val
+ * @return mixed Returned value for insert_slave_value.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::insert_slave_value()
+ * @example /fr/integrate/insert_slave_value
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function insert_slave_value($values, $val = "slave")
     {
-        //Debug::debug($values);
+        Debug::debug($val, "VAL");
 
         if (count($values) == 0) {
             return 1;
@@ -485,9 +701,25 @@ class Integrate extends Controller
 
             $time_start = microtime(true);
 
-            $sql = "INSERT INTO `ts_value_" . $val . "_" . strtolower($type) . "` (`id_mysql_server`,`connection_name` ,`id_ts_variable`,`date`, `value`) VALUES " . implode(",\n", $elems) . ";";
 
-            //Debug::sql($sql);
+            switch($val)
+            {
+                case 'slave': 
+                    $extra_field = 'connection_name';
+                    break;
+
+                case 'digest':
+                    $extra_field = 'id_ts_mysql_query';
+                    break;
+            }
+
+            $sql = $this->buildTimeSeriesInsertSql(
+                "ts_value_" . $val . "_" . strtolower($type),
+                array('id_mysql_server', $extra_field, 'id_ts_variable', 'date', 'value'),
+                $elems
+            );
+
+            Debug::sql($sql);
 
             
             $gg = $db->sql_query($sql);
@@ -495,7 +727,7 @@ class Integrate extends Controller
             $time_end = microtime(true);
             $time = $time_end - $time_start;
 
-            Debug::debug("[ts_value_" . $val . "_" . strtolower($type) . "] insert in $time seconds");
+            Debug::debug("[ts_value_" . $val . "_" . strtolower($type) . "] (count : ".count($elems).") insert in $time seconds");
 
             /*
               if (!$gg) {
@@ -506,6 +738,30 @@ class Integrate extends Controller
         }
     }
 
+/**
+ * Handle integrate state through `linkServerVariable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $history Input value for `history`.
+ * @phpstan-param mixed $history
+ * @psalm-param mixed $history
+ * @param mixed $memory_file Input value for `memory_file`.
+ * @phpstan-param mixed $memory_file
+ * @psalm-param mixed $memory_file
+ * @return void Returned value for linkServerVariable.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::linkServerVariable()
+ * @example /fr/integrate/linkServerVariable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function linkServerVariable($history, $memory_file)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -556,6 +812,30 @@ class Integrate extends Controller
         $db->sql_query($sql4);
     }
 
+/**
+ * Handle integrate state through `convert`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $id Input value for `id`.
+ * @phpstan-param mixed $id
+ * @psalm-param mixed $id
+ * @param mixed $revert Input value for `revert`.
+ * @phpstan-param mixed $revert
+ * @psalm-param mixed $revert
+ * @return mixed Returned value for convert.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::convert()
+ * @example /fr/integrate/convert
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private static function convert($id, $revert = false)
     {
         $gg[1] = "INT";
@@ -570,6 +850,27 @@ class Integrate extends Controller
         return $gg[$id];
     }
 
+/**
+ * Retrieve integrate state through `getIdMemoryFile`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $memory_file Input value for `memory_file`.
+ * @phpstan-param mixed $memory_file
+ * @psalm-param mixed $memory_file
+ * @return mixed Returned value for getIdMemoryFile.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getIdMemoryFile()
+ * @example /fr/integrate/getIdMemoryFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getIdMemoryFile($memory_file)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -598,16 +899,108 @@ class Integrate extends Controller
         return $id_file_name;
     }
 
-    public function integrateAll($param)
-    {
-        Debug::parseDebug($param);
-        $this->logger->info('[Start] IntegrateAll '.date('Y-m-d H:i:s'));
-        $this->evaluate($param);
-        $this->logger->info('[END] IntegrateAll '.date('Y-m-d H:i:s'));
-    }
+
+/**
+ * Handle integrate state through `integrateAll`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for integrateAll.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::integrateAll()
+ * @example /fr/integrate/integrateAll
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+public function integrateAll($param)
+{
+    Debug::parseDebug($param);
 
 
+    Debug::debug($param, "PARAM");
+    // $param[0] = separator_type OPTIONAL
+
+
+    // mysql_binlog mysql_global mysql_global_variable mysql_innodb_metrics mysql_processlist mysql_schemata mysql_server mysql_variable_gtid
+    // ssh_server information_schema__metadata_lock_info 
+    // maxscale_filters maxscale_listeners maxscale_maxscale maxscale_monitors maxscale_server maxscale_servers maxscale_service_server maxscale_services maxscale_sessions maxscale_users
+    // ssh_hardware ssh_stats is_tables information_schema__plugins mysql_table
+    // digest
+
+
+    
+    $files = $param[0] ?? '';
+    $loop = $param[1] ?? "loop:0";
+
+    $db = Sgbd::sql(DB_DEFAULT);
+
+    $start = microtime(true);
+    $date = new \DateTime();
+    $date_start = $date->format('Y-m-d H:i:s.u');
+
+    $this->logger->info('[Start] IntegrateAll ' . $date_start . ' (sep=' . $files . ')');
+
+    // on passe uniquement le separator
+    $this->evaluate([$files]);
+
+    $date_end = date('Y-m-d H:i:s');
+    $end = microtime(true);
+
+    $duration_ms = round(($end - $start) *1000);
+
+    $this->logger->info('[END] IntegrateAll ' . $date_end . ' duration=' . $duration_ms . 'ms');
+
+
+    $parts = explode(':', $loop);
+    $loop = $parts[1] ?? 0;
+
+    // INSERT EXEC TIME
+    $sql = "INSERT INTO integrate_all_run_time 
+               (`loop`,`files`, `date_start`, `duration`)
+            VALUES (
+            $loop,
+               '" . $files . "',
+               '" . $date_start . "',
+               ".$duration_ms."
+            )";
+
+    $db->sql_query($sql);
+    $db->sql_close();
+
+    return true;
+}
     // move to other place ?
+/**
+ * Handle integrate state through `isJson`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $string Input value for `string`.
+ * @phpstan-param mixed $string
+ * @psalm-param mixed $string
+ * @return mixed Returned value for isJson.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::isJson()
+ * @example /fr/integrate/isJson
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function isJson($string) {
         
         if ($string == "NULL") {
@@ -621,6 +1014,477 @@ class Integrate extends Controller
         }
         json_decode($string);
         return json_last_error() === JSON_ERROR_NONE;
+    }
+
+
+/**
+ * Handle integrate state through `evaluate`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for evaluate.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::evaluate()
+ * @example /fr/integrate/evaluate
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public function evaluate($param)
+    {
+
+        Debug::parseDebug($param);
+        $TIME = time();
+
+        $ts_file_list = $param[0] ?? '';
+
+        $db         = Sgbd::sql(DB_DEFAULT);
+        $this->view = false;
+
+
+        $ts_file = explode(',',$ts_file_list);
+
+        // Alias de compatibilité : l'ancienne entrée digest
+        // ps_events_statements_summary_by_digest est maintenant exportée
+        // dans le fichier performance_schema.
+        $alias_ts_file = [
+            'ps_events_statements_summary_by_digest' => ['performance_schema'],
+        ];
+
+        $files = [];
+        foreach($ts_file as $file)
+        {
+
+            $file_match = EngineV4::PATH_PIVOT_FILE ."*".EngineV4::SEPERATOR."$file";
+            $part_file = glob($file_match);
+
+            if (!empty($alias_ts_file[$file])) {
+                foreach ($alias_ts_file[$file] as $alias) {
+                    $alias_match = EngineV4::PATH_PIVOT_FILE ."*".EngineV4::SEPERATOR."$alias";
+                    $part_file = array_merge($part_file, glob($alias_match));
+                }
+            }
+
+            $files = array_merge($files, $part_file);
+        }
+        $files = array_values(array_filter($files, 'is_file'));
+
+        Debug::debug($files, "FILES BEFORE");
+        $files = $this->sortExistingPivotFilesByMtime($files);
+        
+        if (empty($files)) {
+            usleep(100);
+            return true;
+        }
+
+        Debug::debug($files, "FILES SORTED");
+
+        $variables           = $this->get_variable();
+        $variables_to_insert = array();
+
+        $insert        = array();
+        $var_index     = array();
+        $file_parsed   = 0;
+        $id_servers    = array();
+        $history       = array();
+        $slave         = array();
+        $digest_insert = array();
+        $memory_file   = null;
+
+        foreach ($files as $file) {
+
+            Debug::debug($file);
+            $fileLock = $this->acquireIntegratePayloadLock($file);
+            if ($fileLock === null) {
+                if ($this->logger instanceof Logger) {
+                    $this->logger->info('[Skip] Integrate payload already locked or lock unavailable: '.$file);
+                }
+                continue;
+            }
+
+            try {
+            if (!is_file($file)) {
+                continue;
+            }
+
+            $elems = explode('/', $file);
+            $file_name = end($elems);
+
+            $_elems    = explode(EngineV4::SEPERATOR, $file_name);
+            $ts_file   = end($_elems);
+            $timestamp = $_elems[0];
+
+            $id_ts_file  = $this->getIdTsFile($ts_file);
+            $memory_file = $ts_file;
+
+            Debug::debug("$timestamp :: $ts_file");
+
+            if ($TIME == $timestamp) {
+                unset($files[$id_ts_file]);
+                continue;
+            }
+
+            Debug::debug("$id_ts_file => $file");
+
+            $elems = SharedMemoryReader::read($file, $reason);
+            if ($elems === null) {
+                $this->logger?->warning("[integrate] skip $file: $reason");
+                @unlink($file);
+                continue;
+            }
+
+            $file_parsed++;
+            $elems = $this->normalizeSharedMemoryPayload($elems);
+            if (!is_iterable($elems)) {
+                $this->logger?->warning('[Integrate] Ignoring invalid pivot payload: '.$file);
+                @unlink($file);
+                continue;
+            }
+
+            foreach ($elems as $elem) {
+                foreach ($elem as $date => $server) {
+                    $date = date('Y-m-d H:i:s', $date);
+
+                    foreach ($server as $id_server => $all_metrics) {
+
+                        $history[$date][] = array('id_server' => $id_server, 'id_ts_file' => $id_ts_file);
+                        $id_servers[]     = $id_server;
+
+                        if (!empty($all_metrics)) {
+                            foreach ($all_metrics as $type_metrics => $metrics) {
+                                //Debug::debug("*** ts_file:$date > id_mysql_server:$id_server > from:$type_metrics  ***");
+
+                                if (is_array($metrics)) {
+                                    $metrics = array_change_key_case($metrics);
+                                    //Debug::debug($metrics,"metrics");
+
+                                    foreach ($metrics as $variable => $value) {
+
+                                        if (is_array($value))
+                                        {
+                                            
+                                            $value = array_change_key_case($value);
+                                            //Debug::debug($value);
+                                        }
+
+                                        // === SLAVE SECTION ===
+                                        // MariaDB/MySQL mono-source replication returns a numeric list of rows
+                                        // from SHOW SLAVE STATUS without a connection_name field.
+                                        $normalizedSlaveValue = $this->normalizeSlaveMetricRow($type_metrics, $value);
+                                        if ($normalizedSlaveValue !== null) {
+                                            $value = $normalizedSlaveValue;
+
+                                            foreach ($value as $slave_variable => $slave_value) {
+
+                                                $connection_name = $value['connection_name'] ?? "";
+
+                                                if (empty($variables[$type_metrics][$slave_variable])) {
+
+                                                    if ($slave_value === "-1") continue;
+
+                                                    // If the first sample is unavailable, wait for a real
+                                                    // value before freezing the ts_value_* storage type.
+                                                    if ($slave_value === null) continue;
+                                                    if (is_string($slave_value) && trim($slave_value) === "") continue;
+
+                                                    if (empty($var_index[$type_metrics][$slave_variable])) {
+                                                        $var_index[$type_metrics][$slave_variable] = 1;
+                                                        $variables_to_insert[] = '(' . $id_ts_file . ',"' . $slave_variable . '", "' . $this->getTypeOfData($slave_value) . '", "' . $type_metrics . '", "slave")';
+                                                        self::$id_mysql_server__to_refresh[$id_ts_file][] = $id_server;
+                                                    }
+
+                                                    if ($slave_value === "") continue;
+                                                } else {
+                                                    $varType = $variables[$type_metrics][$slave_variable]['type'];
+
+                                                    if ($varType == "TEXT") {
+                                                        if (is_null($slave_value)) $slave_value = '';
+                                                        $slave_value = $db->sql_real_escape_string($slave_value);
+                                                        $slave[$varType][] = '(' . $id_server . ','
+                                                            . '"' . $connection_name . '", '
+                                                            . $variables[$type_metrics][$slave_variable]['id'] . ', "'
+                                                            . $date . '", "'
+                                                            . $slave_value . '")';
+                                                    } else {
+                                                        if ($slave_value == "") $slave_value = 'NULL';
+                                                        if ($varType == "DOUBLE" && $slave_value === "") $slave_value = 0;
+                                                        if ($varType === "INT") {
+                                                            $slave_value = $this->clampUnsignedBigintOverflow(
+                                                                $slave_value,
+                                                                (int) $id_server,
+                                                                (string) $slave_variable,
+                                                                (string) $date
+                                                            );
+                                                        }
+                                                        $slave[$varType][] = '(' . $id_server . ','
+                                                            . '"' . $connection_name . '", '
+                                                            . $variables[$type_metrics][$slave_variable]['id'] . ', "'
+                                                            . $date . '", '
+                                                            . $slave_value . ')';
+                                                    }
+                                                }
+                                            } // END SLAVE
+                                        }
+
+                                        // === DIGEST SECTION ===
+                                        elseif (is_array($value)) {
+
+                                            
+                                            foreach ($value as $digest_variable => $digest_value) {
+
+                                                $id_ts_mysql_query = $value['id_ts_mysql_query'] ?? "";
+
+                                                // id_ts_mysql_query est obligatoire pour ts_value_digest_*
+                                                if (!is_numeric($id_ts_mysql_query) || (int)$id_ts_mysql_query <= 0) {
+                                                    continue;
+                                                }
+
+                                                if (empty($variables[$type_metrics][$digest_variable])) {
+
+                                                    if ($digest_value === "-1") continue;
+
+                                                    if (empty($var_index[$type_metrics][$digest_variable])) {
+                                                        $var_index[$type_metrics][$digest_variable] = 1;
+
+                                                        //(`id_ts_file`, `name`,`type`,`from`,`radical`)
+                                                        $variables_to_insert[] = '(' . $id_ts_file . ',"' . $digest_variable . '", "' . $this->getTypeOfData($digest_value) . '", "' . $type_metrics . '", "digest")';
+                                                        self::$id_mysql_server__to_refresh[$id_ts_file][] = $id_server;
+                                                    }
+
+                                                    if ($digest_value === "") continue;
+                                                } else {
+                                                    $varType = $variables[$type_metrics][$digest_variable]['type'];
+
+                                                    if (in_array($varType, ["TEXT", "JSON"])) {
+                                                        if (is_null($digest_value)) $digest_value = '';
+                                                        $digest_value = $db->sql_real_escape_string($digest_value);
+                                                        $digest_insert[$varType][] = '(' . $id_server . ','
+                                                            . '"' . $id_ts_mysql_query . '", '
+                                                            . $variables[$type_metrics][$digest_variable]['id'] . ', "'
+                                                            . $date . '", "'
+                                                            . $digest_value . '")';
+                                                    } else {
+                                                        if ($digest_value === "") $digest_value = 'NULL';
+                                                        if ($varType == "DOUBLE" && $digest_value === "") $digest_value = 0;
+                                                        if ($varType === "INT") {
+                                                            $digest_value = $this->clampUnsignedBigintOverflow(
+                                                                $digest_value,
+                                                                (int) $id_server,
+                                                                (string) $digest_variable,
+                                                                (string) $date
+                                                            );
+                                                        }
+                                                        $digest_insert[$varType][] = '(' . $id_server . ','
+                                                            . '"' . $id_ts_mysql_query . '", '
+                                                            . $variables[$type_metrics][$digest_variable]['id'] . ', "'
+                                                            . $date . '", '
+                                                            . $digest_value . ')';
+                                                    }
+                                                }
+                                            } // END DIGEST
+                                        }
+
+                                        // === GENERAL SECTION ===
+                                        else {
+
+                                            if (!empty($variables[$type_metrics][$variable])) {
+
+                                                if ($memory_file === self::VARIABLES) {
+                                                    $mysql_variable[$id_server][strtolower($variable)] = $value;
+                                                }
+
+                                                if ($variables[$type_metrics][$variable]['type'] === 'INT') {
+                                                    if ($value === "") {
+                                                        $value = "0";
+                                                    } elseif ($value < 0) {
+                                                        continue;
+                                                    }
+                                                } elseif (in_array($variables[$type_metrics][$variable]['type'], array("TEXT", "JSON"))) {
+                                                    $value = $db->sql_real_escape_string($value);
+                                                } elseif ($variables[$type_metrics][$variable]['type'] == "DOUBLE") {
+                                                    if ($value === "") {
+                                                        $value = 0;
+                                                    }
+                                                }
+
+                                                if ($variables[$type_metrics][$variable]['type'] === 'INT') {
+                                                    $value = $this->clampUnsignedBigintOverflow(
+                                                        $value,
+                                                        (int) $id_server,
+                                                        (string) $variable,
+                                                        (string) $date
+                                                    );
+                                                }
+
+                                                $insert[$variables[$type_metrics][$variable]['type']][] = '(' . $id_server . ','
+                                                    . $variables[$type_metrics][$variable]['id'] . ', "'
+                                                    . $date . '", "'
+                                                    . $value . '")';
+
+                                                //Debug::debug($insert, "$type_metrics - $variable INSERTTTTTTTTTTTTTTTTTTT");
+                                            } else {
+
+                                                if ($value === "-1" || $value === "") {
+                                                    continue;
+                                                }
+
+                                                //Debug::debug($this->getTypeOfData($value), "TYPE : $variable");
+
+                                                if (empty($var_index[$type_metrics][$variable])) {
+                                                    Debug::debug($insert, "val to insert in ts_variable");
+                                                    $var_index[$type_metrics][$variable] = 1;
+                                                    $variables_to_insert[] = '(' . $id_ts_file . ',"' . $variable . '", "' . $this->getTypeOfData($value) . '", "' . $type_metrics . '", "general")';
+                                                    self::$id_mysql_server__to_refresh[$id_ts_file][] = $id_server;
+                                                }
+                                            }
+                                        }
+                                    } // end foreach $metrics
+                                }
+                            }
+                        }
+                    } // date
+                }
+            }
+
+            Debug::checkPoint("before insert file : " . $file);
+
+            if (!@unlink($file) && file_exists($file)) {
+                $this->logger->emergency('Unable to remove locked integrate payload: '.$file);
+                throw new Exception("PMACTRL-647 : impossible de supprimer le fichier intégré verrouillé");
+            }
+
+            /*
+            if ($file_parsed >= 2) {
+                break;
+            }*/
+
+            if ($file_parsed >= self::MAX_FILE_AT_ONCE) {
+                break;
+            }
+            } finally {
+                $this->releaseIntegratePayloadLock($fileLock);
+            }
+
+        }
+
+        if (count($files) === 0) {
+            usleep(300000);
+            return true;
+        }
+
+        if (count($variables_to_insert) > 0) {
+            Debug::checkPoint("variables");
+            Debug::debug($variables_to_insert, "variables_to_insert");
+            $this->insert_variable($variables_to_insert);
+        } else {
+            Debug::checkPoint("values");
+            $this->insert_value($insert);
+
+            if (!empty($slave)) {
+                $this->insert_slave_value($slave, "slave");
+            }
+
+            if (!empty($digest_insert)) {
+                $this->insert_slave_value($digest_insert, "digest");
+            }
+        }
+
+        if (!empty($history) && !empty($memory_file)) {
+            $this->linkServerVariable($history, $memory_file);
+        }
+
+        Debug::debugQueriesOff();
+    }
+
+/**
+ * Handle integrate state through `purgeAll`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for purgeAll.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::purgeAll()
+ * @example /fr/integrate/purgeAll
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public function purgeAll($param)
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        $sql ="SET FOREIGN_KEY_CHECKS=0;";
+        Debug::sql($sql);
+        $db->sql_query($sql);
+
+        $sql ="TRUNCATE TABLE listener_main";
+        Debug::sql($sql);
+        $db->sql_query($sql);
+
+
+        $sql ="SET FOREIGN_KEY_CHECKS=1;";
+        Debug::sql($sql);
+        $db->sql_query($sql);
+
+    }
+
+/**
+ * Handle integrate state through `normalizeSharedMemoryPayload`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $payload Input value for `payload`.
+ * @phpstan-param mixed $payload
+ * @psalm-param mixed $payload
+ * @return mixed Returned value for normalizeSharedMemoryPayload.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::normalizeSharedMemoryPayload()
+ * @example /fr/integrate/normalizeSharedMemoryPayload
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function normalizeSharedMemoryPayload($payload)
+    {
+        if (is_array($payload)) {
+            return $payload;
+        }
+
+        if (is_object($payload)) {
+            if (method_exists($payload, 'getData')) {
+                return $payload->getData();
+            }
+
+            if (property_exists($payload, 'data')) {
+                return $payload->data;
+            }
+
+            return (array) $payload;
+        }
+
+        return $payload;
     }
 
 }

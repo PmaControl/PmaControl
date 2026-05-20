@@ -16,7 +16,11 @@ echo "</table>";
 echo "</form>";
 */
 
+use App\Library\Security\CsrfRender;
 use Glial\Html\Form\Form;
+
+$userLostPasswordCsrfField = CsrfRender::field($data, 'user_lost_password');
+$userLostPasswordCsrfToken = CsrfRender::token($data, 'user_lost_password');
 
 ?>
 
@@ -30,6 +34,7 @@ use Glial\Html\Form\Form;
                 <h3 style="margin-bottom: 3px;"><?=__("Forgot password ?") ?></h3>
                 <form id="loginForm" name="loginForm" method="post" action="" class="form-horizontal">
                     <input type="hidden" name="loginForm" value="loginForm">
+                    <input type="hidden" name="<?=$userLostPasswordCsrfField?>" value="<?=$userLostPasswordCsrfToken?>">
 
                     <table class="table" style="margin-top: 7px;">
                         <tbody>

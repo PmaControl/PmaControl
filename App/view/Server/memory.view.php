@@ -39,15 +39,7 @@ function done()
 
 function format($bytes, $decimals = 2)
 {
-    // && $bytes != 0
-    if (empty($bytes)) {
-        return "";
-    }
-    $sz = ' KMGTP';
-
-    $factor = (int) floor(log($bytes) / log(1024));
-
-    return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor))." ".@$sz[$factor]."o";
+    return \App\Library\Format::bytesOrEmpty($bytes, $decimals);
 }
 
 function getUnit($bytes, $format = false)
@@ -55,15 +47,7 @@ function getUnit($bytes, $format = false)
     if (empty($bytes)) {
         return "";
     }
-    $sz     = ' KMGTP';
-    $factor = (int) floor(log($bytes) / log(1024));
-
-    $res = array();
-
-    $res['factor']  = $factor;
-    $res['unit']    = $sz[$factor];
-    $res['value']   = $bytes / pow(1024, $factor);
-    $res['arrondi'] = ceil($res['value']) * pow(1024, $factor);
+    $res = \App\Library\Format::byteParts($bytes, 'mysql');
 
     if ($format) {
         return $res['value'].$res['unit'];

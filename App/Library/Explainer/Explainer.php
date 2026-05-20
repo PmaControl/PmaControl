@@ -13,9 +13,37 @@ namespace Rap2hpoutre\MySQLExplainExplain;
  */
 class Explainer
 {
+/**
+ * Stores `$header_row` for header row.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     public $header_row;
+/**
+ * Stores `$mysql_version` for mysql version.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     public $mysql_version;
+/**
+ * Stores `$rows` for rows.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     public $rows = array();
+/**
+ * Stores `$hints` for hints.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     public $hints = array();
 
     /**

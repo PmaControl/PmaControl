@@ -1,0 +1,42 @@
+
+*
+!*/
+!*.php
+
+# dependencies
+vendor/
+
+# réautoriser le dossier glial
+!vendor/glial/
+
+# git
+.git/
+.github/
+
+# logs
+log/
+*.log
+
+# backups
+backup/
+dump/
+data/
+sql/
+
+
+# cache
+tmp/
+cache/
+
+# assets
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.mp4
+*.zip
+*.tar
+*.gz
+
+
+

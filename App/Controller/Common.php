@@ -4,21 +4,62 @@ namespace App\Controller;
 
 use App\Library\Extraction;
 use App\Library\Debug;
+use App\Library\MysqlServer;
+use App\Library\SelectorOptions;
 use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
 
 //use \Glial\Cli\Color;
 
 
+/**
+ * Class responsible for common workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Common extends Controller
 {
 
     use \App\Library\Filter;
     //list des tag pour eviter de faire la requete a chaque fois
+/**
+ * Stores `$tags` for tags.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $tags = array();
 
     //dba_source
 
+/**
+ * Render common state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/common/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index()
     {
         $db  = Sgbd::sql(DB_DEFAULT);
@@ -37,31 +78,26 @@ class Common extends Controller
         $db = Sgbd::sql(DB_DEFAULT);
 
 
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
+        if ($_SERVER['REQUEST_METHOD'] == "GET") {
 
 
-            if (!empty($_POST['client_environment'])) {
+            if (!empty($_GET['client_environment'])) {
                 $ret = "";
-                if (!empty($_POST['client']['libelle']) || !empty($_POST['environment']['libelle'])) {
-
-                    /* header("location: ".LINK."".\Glial\Synapse\FactoryController::$controller."/".\Glial\Synapse\FactoryController::$method."/client:libelle:"
-                      .$_POST['client']['libelle']."/environment:libelle:".$_POST['environment']['libelle']); */
-
-
-                    if (!empty($_POST['client']['libelle'])) {
-                        $_SESSION['client']['libelle'] = json_encode($_POST['client']['libelle']);
-                        $ret                           .= "/client:libelle:".json_encode($_POST['client']['libelle']);
+                if (!empty($_GET['client']['libelle']) || !empty($_GET['environment']['libelle'])) {
+                    if (!empty($_GET['client']['libelle'])) {
+                        $_SESSION['client']['libelle'] = json_encode($_GET['client']['libelle']);
+                        $ret                           .= "/client:libelle:".json_encode($_GET['client']['libelle']);
                     } else {
                         unset($_SESSION['client']['libelle']);
                     }
 
-                    if (!empty($_POST['environment']['libelle'])) {
-                        $_SESSION['environment']['libelle'] = json_encode($_POST['environment']['libelle']);
-                        $ret                                .= "/environment:libelle:".json_encode($_POST['environment']['libelle']);
+                    if (!empty($_GET['environment']['libelle'])) {
+                        $_SESSION['environment']['libelle'] = json_encode($_GET['environment']['libelle']);
+                        $ret                                .= "/environment:libelle:".json_encode($_GET['environment']['libelle']);
                     } else {
                         unset($_SESSION['environment']['libelle']);
                     }
-                } elseif (!empty($_POST['client_environment'])) {
+                } elseif (!empty($_GET['client_environment'])) {
                     unset($_SESSION['client']['libelle']);
                     unset($_SESSION['environment']['libelle']);
                 }
@@ -125,6 +161,27 @@ class Common extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Delete common state through `remove`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $array Input value for `array`.
+ * @phpstan-param mixed $array
+ * @psalm-param mixed $array
+ * @return mixed Returned value for remove.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::remove()
+ * @example /fr/common/remove
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function remove($array)
     {
 
@@ -189,21 +246,10 @@ class Common extends Controller
             }
         }
 
+        $data['databases'] = array();
         if (!empty($id_mysql_server)) {
             $db_to_get_db = $this->getDbLinkFromId($id_mysql_server);
-
-            $sql  = "SHOW DATABASES";
-            $res2 = $db_to_get_db->sql_query($sql);
-
-            $data['databases'] = [];
-            while ($ob                = $db_to_get_db->sql_fetch_object($res2)) {
-                $tmp                 = [];
-                $tmp['id']           = $ob->Database;
-                $tmp['libelle']      = $ob->Database;
-                $data['databases'][] = $tmp;
-            }
-        } else {
-            $data['databases'] = array();
+            $data['databases'] = SelectorOptions::databaseNamesFromConnection($db_to_get_db);
         }
 
         //debug($data['databases']);
@@ -212,19 +258,35 @@ class Common extends Controller
         return $data;
     }
 
+/**
+ * Retrieve common state through `getDbLinkFromId`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_db Input value for `id_db`.
+ * @phpstan-param int $id_db
+ * @psalm-param int $id_db
+ * @return mixed Returned value for getDbLinkFromId.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::getDbLinkFromId()
+ * @example /fr/common/getDbLinkFromId
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getDbLinkFromId($id_db)
     {
         if (IS_AJAX) {
             $this->layout_name = false;
         }
 
-        $db  = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT id,name FROM mysql_server WHERE id = '".$db->sql_real_escape_string($id_db)."';";
-        $res = $db->sql_query($sql);
-
-        while ($ob = $db->sql_fetch_object($res)) {
-            $db_link = Sgbd::sql($ob->name);
-        }
+        $db_link = MysqlServer::getDbLinkFromId($id_db);
 
         if (empty($db_link)) {
             throw new \Exception('PMACTRL-478 : impossible to find DB link with mysql_server.id = "'.$id_db.'".', 478);
@@ -233,6 +295,27 @@ class Common extends Controller
         return $db_link;
     }
 
+/**
+ * Retrieve common state through `getTableByServerAndDatabase`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getTableByServerAndDatabase.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getTableByServerAndDatabase()
+ * @example /fr/common/getTableByServerAndDatabase
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function getTableByServerAndDatabase($param)
     {
         if (IS_AJAX) {
@@ -242,21 +325,13 @@ class Common extends Controller
         $id_mysql_server = $param[0];
         $database        = $param[1];
 
-        $db_to_get_db = $this->getDbLinkFromId($id_mysql_server);
-
-        $sql = "use ".$database.";";
-        $db_to_get_db->sql_query($sql);
-
-        $tables = $db_to_get_db->getListTable();
-
-
-        $data['tables'] = [];
-        foreach ($tables['table'] as $table) {
-            $tmp              = [];
-            $tmp['id']        = $table;
-            $tmp['libelle']   = $table;
-            $data['tables'][] = $tmp;
-        }
+        $data['tables'] = SelectorOptions::tableNamesByServerIdAndDatabase(
+            $id_mysql_server,
+            (string) $database,
+            function ($id_mysql_server) {
+                return $this->getDbLinkFromId($id_mysql_server);
+            }
+        );
 
         $this->set("data", $data);
         return $data;
@@ -288,6 +363,11 @@ class Common extends Controller
         if (!empty($param[2])) {
 
             $options = (array) $param[2];
+        }
+
+        $data['selected'] = '';
+        if (isset($param[3])) {
+            $data['selected'] = $param[3];
         }
 
         $data['list_server'] = array();
@@ -344,7 +424,7 @@ class Common extends Controller
         $sql = "SELECT ".$available['case'].", a.id, a.display_name,a.ip,a.port, b.letter, b.class, b.libelle
             FROM mysql_server a
             INNER JOIN environment b ON a.id_environment = b.id
-            WHERE 1 ".self::getFilter($mysql_server_specify)." ORDER by b.libelle,a.name";
+            WHERE 1 ".self::getFilter($mysql_server_specify)." AND a.is_deleted=0 ORDER by b.libelle,a.name";
 
         //debug($_GET);
 
@@ -388,6 +468,27 @@ class Common extends Controller
         return $data['list_server'];
     }
 
+/**
+ * Retrieve common state through `getTsVariables`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getTsVariables.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getTsVariables()
+ * @example /fr/common/getTsVariables
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function getTsVariables($param = array())
     {
         
@@ -418,20 +519,7 @@ class Common extends Controller
 
 
 
-        $sql = "SELECT * FROM ts_variable order by `from`, `name`;";
-
-        $res = $db->sql_query($sql);
-
-        $data['variable'] = array();
-        while ($ob               = $db->sql_fetch_object($res)) {
-            $tmp            = [];
-            $tmp['id']      = $ob->from.'::'.$ob->name;
-            //$tmp['error']   = $ob->error;
-            $tmp['libelle'] = $ob->from.'::'.$ob->name."";
-
-            $tmp['extra'] = array("data-content" => "<small class='text-muted'>".$ob->from."</small> ".$ob->name);
-            $data['variable'][] = $tmp;
-        }
+        $data['variable'] = SelectorOptions::timeSeriesVariables($db, null, 'qualified');
 
         $this->di['js']->addJavascript(array('bootstrap-select.min.js'));
         $this->set('data', $data);
@@ -439,6 +527,27 @@ class Common extends Controller
 
 
 
+/**
+ * Retrieve common state through `getTsVariableJson`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getTsVariableJson.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getTsVariableJson()
+ * @example /fr/common/getTsVariableJson
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getTsVariableJson($param)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -470,21 +579,7 @@ class Common extends Controller
 
 
 
-        $sql = "SELECT * from ts_variable WHERE type ='JSON';";
-
-        $res = $db->sql_query($sql);
-
-
-        while ($ob = $db->sql_fetch_object($res))
-        {
-            $tmp = array();
-            $tmp['id'] = $ob->id;
-            $tmp['libelle'] = $ob->from."::".$ob->name;
-            $tmp['extra'] = array("data-content" => "<small class='text-muted'>".$ob->from."</small> ".$ob->name);
-
-            $data['variable'][] = $tmp;
-
-        }
+        $data['variable'] = SelectorOptions::timeSeriesVariables($db, 'JSON', 'id');
 
 
         $this->set('data', $data);
@@ -495,6 +590,27 @@ class Common extends Controller
 
 
 
+/**
+ * Retrieve common state through `getTagByServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getTagByServer.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getTagByServer()
+ * @example /fr/common/getTagByServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function getTagByServer($param)
     {
 
@@ -540,6 +656,27 @@ class Common extends Controller
         return $data;
     }
 
+/**
+ * Retrieve common state through `getTagArray`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $db Input value for `db`.
+ * @phpstan-param mixed $db
+ * @psalm-param mixed $db
+ * @return mixed Returned value for getTagArray.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getTagArray()
+ * @example /fr/common/getTagArray
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getTagArray($db)
     {
         if (empty(self::$tags)) {
@@ -566,6 +703,27 @@ class Common extends Controller
     }
 
 
+/**
+ * Retrieve common state through `getAvailable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getAvailable.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getAvailable()
+ * @example /fr/common/getAvailable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getAvailable($param = array())
     {
 

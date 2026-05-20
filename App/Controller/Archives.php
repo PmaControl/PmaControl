@@ -5,6 +5,10 @@
 
 namespace App\Controller;
 
+use App\Library\Archive\ArchiveLoader;
+use App\Library\Archive\MysqlRestoreCommand;
+use App\Library\Security\ArchiveRestoreRequest;
+use Glial\Security\Csrf;
 use \Glial\Synapse\Controller;
 use \Glial\I18n\I18n;
 use \Glial\Security\Crypt\Crypt;
@@ -15,6 +19,20 @@ use \App\Library\Debug;
 use \App\Library\System;
 use \Glial\Sgbd\Sgbd;
 
+/**
+ * Class responsible for archives workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Archives extends Controller
 {
 
@@ -22,12 +40,63 @@ class Archives extends Controller
     use \App\Library\Filter;
     use \App\Library\Scp;
     use \App\Library\File;
+
+    private const ARCHIVES_RESTORE_CSRF_SCOPE = 'archives.restore';
+/**
+ * Stores `$id_user_main` for id user main.
+ *
+ * @var int
+ * @phpstan-var int
+ * @psalm-var int
+ */
     var $id_user_main    = 0;
+/**
+ * Stores `$id_archive_load` for id archive load.
+ *
+ * @var int
+ * @phpstan-var int
+ * @psalm-var int
+ */
     var $id_archive_load = 0;
+/**
+ * Stores `$user` for user.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $user            = array();
 
+/**
+ * Stores `$logger` for logger.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $logger;
 
+/**
+ * Render archives state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/archives/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index($param)
     {
 
@@ -35,7 +104,7 @@ class Archives extends Controller
             'archives/index.js'
         ));
 
-        $this->di['js']->addJavascript(array("Chart.min.js"));
+        $this->di['js']->addJavascript(array("Chart.min.js", "formatters.js"));
         $this->title  = '<span class="glyphicon glyphicon-book" aria-hidden="true"></span> '.__("Archives");
         $this->ariane = ' > <a href⁼"">'.'<i class="fa fa-puzzle-piece"></i> '
             .__("Plugins").'</a> > '.$this->title;
@@ -70,19 +139,6 @@ class Archives extends Controller
         }
 
         $this->di['js']->code_javascript("
-
-function FileConvertSize(aSize){
-	aSize = Math.abs(parseInt(aSize, 10));
-        if (aSize == 0)
-        {
-            return 0;
-        }
-
-	var def = [[1, 'o'], [1024, 'Ko'], [1024*1024, 'Mo'], [1024*1024*1024, 'Go'], [1024*1024*1024*1024, 'To']];
-	for(var i=0; i< def.length; i++){
-		if(aSize<def[i][0]) return (aSize/def[i-1][0]).toFixed(2)+' '+def[i-1][1];
-	}
-}
 
 var ctx = document.getElementById('myChart').getContext('2d');
 var myChart = new Chart(ctx, {
@@ -151,9 +207,33 @@ var myChart = new Chart(ctx, {
 });
 ");
 
+        $data['archives_restore_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['archives_restore_csrf_token'] = Csrf::issueToken($_SESSION, self::ARCHIVES_RESTORE_CSRF_SCOPE);
+
         $this->set('data', $data);
     }
 
+/**
+ * Handle archives state through `file_available`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for file_available.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::file_available()
+ * @example /fr/archives/file_available
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function file_available($param)
     {
         $this->title  = '<span class="glyphicon glyphicon-book" aria-hidden="true"></span> '.__("Archives");
@@ -393,8 +473,6 @@ var myChart = new Chart(ctx, {
 
                 $conf = Sgbd::getParam($mysqlservertoload);
 
-                Debug::debug($conf, "Conf from getParam");
-
                 if (!empty($conf['crypted']) && $conf['crypted'] === "1") {
                     $conf['password'] = Crypt::decrypt($conf['password']);
                 }
@@ -406,29 +484,43 @@ var myChart = new Chart(ctx, {
 
 
                 //to prevent old stuff we archived, like enum with empty choice or duble choice
-                shell_exec("sed -i '1iSET sql_mode=\"ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION\";' ".$stats['file_path']);
+                $exit = 1;
+                $log_mysql = null;
+                $defaults_file = null;
+                $restore_exception = null;
 
-                $log_mysql = "/tmp/".uniqid();
+                try {
+                    MysqlRestoreCommand::prefixDumpWithSqlMode($stats['file_path']);
 
-                $cmd = "pv ".$stats['file_path']." | mysql -h ".$conf['hostname']." -P ".$conf['port']." -u ".$conf['user']." -p'{password}' ".$database." 2> ".$log_mysql;
+                    $log_mysql = MysqlRestoreCommand::createErrorLogFile();
+                    $defaults_file = MysqlRestoreCommand::createClientDefaultsFile($conf);
+                    $cmd = MysqlRestoreCommand::buildLoadCommand($defaults_file, $stats['file_path'], $database, $log_mysql);
 
-                Debug::debug($cmd);
-                $cmd = str_replace("{password}", $conf['password'], $cmd);
-
-                $db->sql_close(); // to prevent lost of connextion for inactivity
-                passthru($cmd, $exit);
-                $db = Sgbd::sql(DB_DEFAULT);
+                    $db->sql_close(); // to prevent lost of connextion for inactivity
+                    passthru($cmd, $exit);
+                    $db = Sgbd::sql(DB_DEFAULT);
+                } catch (\Throwable $exception) {
+                    $restore_exception = $exception;
+                    $exit = 1;
+                    $db = Sgbd::sql(DB_DEFAULT);
+                } finally {
+                    MysqlRestoreCommand::deleteFile($defaults_file);
+                }
 
                 if ($exit !== 0) {
 
                     $main_error = true;
 
                     $sql_error = "";
-                    $sql_error = file_get_contents($log_mysql);
+                    if ($restore_exception instanceof \Throwable) {
+                        $sql_error = $restore_exception->getMessage();
+                    } elseif ($log_mysql !== null && is_file($log_mysql)) {
+                        $sql_error = file_get_contents($log_mysql);
+                    }
 
                     $msg = "We could'nt load this file '".$stats['file_path']."' to mysql [".$sql_error."]";
 
-                    unlink($log_mysql);
+                    MysqlRestoreCommand::deleteFile($log_mysql);
 
                     $this->log("info", "MYSQL", $msg);
 
@@ -457,6 +549,8 @@ var myChart = new Chart(ctx, {
 
                     $size += $archive['size_sql'];
                 }
+
+                MysqlRestoreCommand::deleteFile($log_mysql);
 
                 unlink($stats['file_path']);
 
@@ -507,6 +601,27 @@ var myChart = new Chart(ctx, {
         }
     }
 
+/**
+ * Handle archives state through `history`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for history.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::history()
+ * @example /fr/archives/history
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function history($param)
     {
         $_GET['path'] = __FUNCTION__;
@@ -542,25 +657,85 @@ ORDER BY a.id DESC";
         $this->set('data', $data);
     }
 
+/**
+ * Handle archives state through `restore`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for restore.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::restore()
+ * @example /fr/archives/restore
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function restore($param)
     {
-
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-
-            $db = Sgbd::sql(DB_DEFAULT);
-
-            foreach ($_POST['mysql_server'] as $arr) {
-                if (!empty($arr['database'])) {
-
-                    $this->load_archive(array($arr['id'], $arr['database'], $_POST['id_cleaner_main']));
-
-                    header("location: ".LINK.'archives/index');
-                    exit;
-                }
-            }
+        $request = self::evaluateRestoreRequest($_POST, $_SERVER, $_SESSION);
+        if ($request['status'] !== 200) {
+            $this->view = false;
+            $this->layout_name = false;
+            self::sendRestoreError($request['status'], $request['body'], $request['headers']);
+            return;
         }
+
+        $restore = $request['restore'];
+        ArchiveLoader::dispatch($this, $restore);
+
+        header("location: ".LINK.'archives/index');
+        exit;
     }
 
+    public static function evaluateRestoreRequest(array $post, array $server, array $session): array
+    {
+        return ArchiveRestoreRequest::evaluate($post, $server, $session, self::ARCHIVES_RESTORE_CSRF_SCOPE);
+    }
+
+    public static function normalizeRestorePayload(array $post): ?array
+    {
+        return ArchiveRestoreRequest::normalize($post);
+    }
+
+    private static function sendRestoreError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
+    }
+
+/**
+ * Handle archives state through `menu`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for menu.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::menu()
+ * @example /fr/archives/menu
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function menu($param)
     {
         if (empty($_GET['path'])) {
@@ -594,6 +769,24 @@ ORDER BY a.id DESC";
         $this->set('data', $data);
     }
 
+/**
+ * Handle archives state through `testPid`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for testPid.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::testPid()
+ * @example /fr/archives/testPid
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function testPid()
     {
 
@@ -614,6 +807,27 @@ ORDER BY a.id DESC";
         }
     }
 
+/**
+ * Prepare archives state through `before`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for before.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::before()
+ * @example /fr/archives/before
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function before($param)
     {
         $logger       = new Logger('archive');
@@ -624,6 +838,34 @@ ORDER BY a.id DESC";
         $this->logger = $logger;
     }
 
+/**
+ * Handle archives state through `log`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $level Input value for `level`.
+ * @phpstan-param mixed $level
+ * @psalm-param mixed $level
+ * @param mixed $type Input value for `type`.
+ * @phpstan-param mixed $type
+ * @psalm-param mixed $type
+ * @param mixed $msg Input value for `msg`.
+ * @phpstan-param mixed $msg
+ * @psalm-param mixed $msg
+ * @return void Returned value for log.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::log()
+ * @example /fr/archives/log
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function log($level, $type, $msg)
     {
         if (empty($this->id_user_main)) {
@@ -640,6 +882,24 @@ ORDER BY a.id DESC";
             .$user['firstname']." ".$user['name']." (id:".$user['id'].")");
     }
 
+/**
+ * Retrieve archives state through `getUser`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for getUser.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getUser()
+ * @example /fr/archives/getUser
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getUser()
     {
         if (empty($this->user[$this->id_user_main])) {
@@ -661,6 +921,27 @@ ORDER BY a.id DESC";
         return $this->user[$this->id_user_main];
     }
 
+/**
+ * Handle archives state through `detail`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for detail.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::detail()
+ * @example /fr/archives/detail
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function detail($param)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -705,81 +986,31 @@ ORDER BY a.id DESC";
         $this->set('data', $data);
     }
 
-    public function load_archive($param)
-    {
-        Debug::parseDebug($param);
-
-        $db = Sgbd::sql(DB_DEFAULT);
-
-        //$tb = explode("-", $arr['database']);
-
-        $id_mysql_server = $param[0];
-        $database        = $param[1];
-        $id_cleaner_main = $param[2];
-
-        $php = explode(" ", shell_exec("whereis php"))[1];
-
-        $archive_load                                    = array();
-        $archive_load['archive_load']['id_cleaner_main'] = $id_cleaner_main;
-        $archive_load['archive_load']['id_mysql_server'] = $id_mysql_server;
-        $archive_load['archive_load']['database']        = $database;
-        $archive_load['archive_load']['date_start']      = date('Y-m-d H:i:s');
-        //$archive_load['archive_load']['date_end'] = "0000-00-00 00:00:00";
-        $archive_load['archive_load']['progression']     = 0;
-        $archive_load['archive_load']['duration']        = 0;
-        $archive_load['archive_load']['pid']             = 0;
-        $archive_load['archive_load']['status']          = "NOT_STARTED";
-        $archive_load['archive_load']['id_user_main']    = 1;
-        //$archive_load['archive_load']['id_archive']    = 1;
-
-        $id_archive_load = $db->sql_save($archive_load);
-
-        if ($id_archive_load) {
-
-
-            $sql = "SELECT * FROM archive WHERE id_cleaner = ".$id_cleaner_main;
-
-            if (IS_CLI) {
-
-                $this->load(array($id_archive_load));
-
-                $pid = getmypid();
-            } else {
-
-                $cmd = $php." ".GLIAL_INDEX." Archives load ".$id_archive_load." >> ".TMP."archive_".$id_cleaner_main."_".$database.".sql & echo $!";
-
-                Debug::debug($cmd);
-
-                $pid = shell_exec($cmd);
-            }
-
-            $db                                  = Sgbd::sql(DB_DEFAULT);
-            $archive_load                        = array();
-            $archive_load['archive_load']['pid'] = (int) $pid;
-            $archive_load['archive_load']['id']  = $id_archive_load;
-
-            Debug::debug($archive_load);
-
-            $db->sql_save($archive_load);
-
-            $msg   = I18n::getTranslation(__("The loading on database is currently in progress ..."));
-            $title = I18n::getTranslation(__("Loading"));
-            set_flash("success", $title, $msg);
-        } else {
-
-            debug($db->sql_error());
-            debug($archive_load);
-
-            debug($_POST);
-            exit;
-
-            $msg   = I18n::getTranslation(__("Impossible to save : ")."'".print_r($db->sql_error())."'");
-            $title = I18n::getTranslation(__("Loading"));
-            set_flash("error", $title, $msg);
-        }
-    }
-
     // to move in class logs
+/**
+ * Handle archives state through `format`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $lines Input value for `lines`.
+ * @phpstan-param mixed $lines
+ * @psalm-param mixed $lines
+ * @param int $id_cleaner Input value for `id_cleaner`.
+ * @phpstan-param int $id_cleaner
+ * @psalm-param int $id_cleaner
+ * @return mixed Returned value for format.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::format()
+ * @example /fr/archives/format
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function format($lines, $id_cleaner)
     {
         // cette fonction a besoin d'être optimisé !!
@@ -826,6 +1057,27 @@ ORDER BY a.id DESC";
         return $data;
     }
 
+/**
+ * Handle archives state through `setColor`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $type Input value for `type`.
+ * @phpstan-param mixed $type
+ * @psalm-param mixed $type
+ * @return mixed Returned value for setColor.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::setColor()
+ * @example /fr/archives/setColor
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function setColor($type)
     {
         $hex = substr(md5($type), 0, 6);
@@ -835,6 +1087,27 @@ ORDER BY a.id DESC";
         //return $hex['background'];
     }
 
+/**
+ * Handle archives state through `hexToRgb`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $colorName Input value for `colorName`.
+ * @phpstan-param mixed $colorName
+ * @psalm-param mixed $colorName
+ * @return mixed Returned value for hexToRgb.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::hexToRgb()
+ * @example /fr/archives/hexToRgb
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function hexToRgb($colorName)
     {
         list($r, $g, $b) = array_map(

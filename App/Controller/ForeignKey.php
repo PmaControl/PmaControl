@@ -16,54 +16,154 @@ use \Glial\Synapse\Controller;
 use \Glial\Cli\Color;
 use \App\Library\Debug;
 use \App\Library\Mysql;
+use App\Library\Http\HttpResponse;
+use App\Library\Security\CsrfGuard;
+use App\Library\Security\ForeignKeyRoute;
+use App\Library\Security\Identifier;
+use App\Library\Security\PositiveIntegerSelection;
+use App\Library\Security\SafeRedirect;
+use Glial\Security\Csrf;
 
+/**
+ * Class responsible for foreign key workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class ForeignKey extends Controller
 {
 
     CONST BEGIN = "id%";
     CONST END = "%id";
+    private const FOREIGN_KEY_ADD_CSRF_SCOPE = 'foreign_key.add';
+    public const FOREIGN_KEY_MUTATION_CSRF_SCOPE = 'foreign_key.mutation';
+    private const FOREIGN_KEY_ADD_FIELD_MAX_LENGTH = 64;
 
+/**
+ * Stores `$primary_key` for primary key.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $primary_key = array();
 
+/**
+ * Handle foreign key state through `autoDetect`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for autoDetect.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::autoDetect()
+ * @example /fr/foreignkey/autoDetect
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function autoDetect($param)
     {
         $this->view = false;
         Debug::parseDebug($param);
-        //$id_mysql_server = $param[0];
 
-        $this->autoId($param);
+        $request = self::evaluateForeignKeyContextMutationRequest($param, $_POST, $_SERVER, $_SESSION, IS_CLI);
+        if (!$request['allowed']) {
+            HttpResponse::sendOutcome($request);
+            return;
+        }
+
+        $this->autoId($request['param']);
 
         if ( ! IS_CLI){
-
-            $location = $_SERVER['HTTP_REFERER'];
-            header("location: $location");
-            //exit;
+            header('location: '.SafeRedirect::refererOrFallback($_SERVER, self::foreignKeyFallbackUrl($request['param'])));
         }
     }
 
+/**
+ * Handle foreign key state through `import`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for import.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::import()
+ * @example /fr/foreignkey/import
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function import($param)
     {
         $this->view = false;
         Debug::parseDebug($param);
-        //$id_mysql_server = $param[0];
 
-        $this->importRealForeignKey($param);
+        $request = self::evaluateForeignKeyContextMutationRequest($param, $_POST, $_SERVER, $_SESSION, IS_CLI);
+        if (!$request['allowed']) {
+            HttpResponse::sendOutcome($request);
+            return;
+        }
+
+        $this->importRealForeignKey($request['param']);
 
         if ( ! IS_CLI){
-
-            $location = $_SERVER['HTTP_REFERER'];
-            header("location: $location");
-            //exit;
+            header('location: '.SafeRedirect::refererOrFallback($_SERVER, self::foreignKeyFallbackUrl($request['param'])));
         }
     }
 
+/**
+ * Handle foreign key state through `autoId`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for autoId.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::autoId()
+ * @example /fr/foreignkey/autoId
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function autoId($param)
     {
         Debug::parseDebug($param);
 
-        $id_mysql_server = $param[0];
-        $database = $param[0];
-        
+        $id_mysql_server = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        if ($id_mysql_server === null) {
+            return;
+        }
+
         $default         = Sgbd::sql(DB_DEFAULT);
 
         $sql = "DELETE FROM foreign_key_virtual WHERE (id_mysql_server ='".$id_mysql_server."' OR id_mysql_server__link=".$id_mysql_server.")
@@ -188,21 +288,48 @@ class ForeignKey extends Controller
         }
     }
 
+/**
+ * Handle foreign key state through `isTableExist`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for isTableExist.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::isTableExist()
+ * @example /fr/foreignkey/isTableExist
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function isTableExist($param)
     {
 
         Debug::parseDebug($param);
 
-        $id_mysql_server = $param[0];
-        $table_name      = $param[2];
-        $database_name   = $param[1];
+        $route = self::normalizeServerDatabaseRoute($param);
+        if ($route === null || !is_scalar($param[2] ?? null)) {
+            return false;
+        }
+
+        $id_mysql_server = $route['id_mysql_server'];
+        $table_name      = trim((string) $param[2]);
+        $database_name   = $route['database'];
+        if ($table_name === '') {
+            return false;
+        }
 
         $db = Mysql::getDbLink($id_mysql_server);
 
-        $sql = "SELECT TABLE_SCHEMA, TABLE_NAME 
-        FROM `information_schema`.`tables` WHERE `TABLE_SCHEMA` = '".$database_name."' 
-        AND  LOWER(`TABLE_NAME`) = LOWER('".$table_name."');";
-        $res = $db->sql_query($sql);
+        $sql = self::buildTableExistSql($db, $database_name, $table_name);
+        $res = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql, $id_mysql_server, __METHOD__);
 
         $nb_tables = $db->sql_num_rows($res);
         if ($nb_tables > 1) {
@@ -217,6 +344,27 @@ class ForeignKey extends Controller
         return false;
     }
 
+/**
+ * Handle foreign key state through `cleanUp`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for cleanUp.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::cleanUp()
+ * @example /fr/foreignkey/cleanUp
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function cleanUp($param)
     {
 
@@ -228,6 +376,27 @@ class ForeignKey extends Controller
         Debug::sql($sql);
     }
 
+/**
+ * Handle foreign key state through `findField`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for findField.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::findField()
+ * @example /fr/foreignkey/findField
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function findField($param)
     {
         Debug::parseDebug($param);
@@ -247,6 +416,27 @@ class ForeignKey extends Controller
         AND COLUMN_NAME = '".$field_name."';";
     }
 
+/**
+ * Retrieve foreign key state through `getAll`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getAll.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getAll()
+ * @example /fr/foreignkey/getAll
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getAll($param)
     {
 
@@ -262,16 +452,44 @@ class ForeignKey extends Controller
         }
     }
 
+/**
+ * Handle foreign key state through `fill`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for fill.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::fill()
+ * @example /fr/foreignkey/fill
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function fill($param)
     {
         Debug::parseDebug($param);
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $id_mysql_server = $param[0];
-        $database = $param[1];
+        $route = self::normalizeServerDatabaseRoute($param);
+        if ($route === null) {
+            $this->view = false;
+            HttpResponse::sendError(400, 'Invalid foreign-key route');
+            return;
+        }
 
-        $sql = "SELECT * FROM foreign_key_virtual WHERE id_mysql_server = ".$id_mysql_server." 
-        AND (constraint_schema ='".$database."' OR referenced_schema ='".$database."')";
+        $id_mysql_server = $route['id_mysql_server'];
+        $database = $route['database'];
+        $param = $route['param'];
+
+        $sql = self::buildForeignKeyCacheSelectSql($db, 'foreign_key_virtual', $id_mysql_server, $database);
         
         $res = $db->sql_query($sql);
 
@@ -282,7 +500,10 @@ class ForeignKey extends Controller
         }
 
         $data['real_fk'] = Mysql::getRealForeignKey($param);
+        $data['param'] = $param;
+        $data = self::withForeignKeyMutationCsrf($data);
         $this->set('data', $data);
+        $this->set('param', $param);
     }
 
 
@@ -302,12 +523,17 @@ class ForeignKey extends Controller
 
         Debug::parseDebug($param);
 
-        $id_mysql_server = $param[0];
-        $database_name   = $param[1];
+        $route = self::normalizeServerDatabaseRoute($param);
+        if ($route === null) {
+            return [];
+        }
+
+        $id_mysql_server = $route['id_mysql_server'];
+        $database_name   = $route['database'];
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "SELECT * FROM foreign_key_remove_prefix WHERE id_mysql_server='".$id_mysql_server."' AND database_name='".$database_name."'";
+        $sql = self::buildForeignKeyRemovePrefixSelectSql($db, $id_mysql_server, $database_name);
         $res = $db->sql_query($sql);
 
         $data['prefix'] = array();
@@ -370,12 +596,38 @@ class ForeignKey extends Controller
         }
     }
 
+/**
+ * Retrieve foreign key state through `getConbinaison`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getConbinaison.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getConbinaison()
+ * @example /fr/foreignkey/getConbinaison
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getConbinaison($param)
     {
         Debug::parseDebug($param);
 
-        $id_mysql_server = $param[0];
-        $database_name   = $param[1];
+        $route = self::normalizeServerDatabaseRoute($param);
+        if ($route === null || !is_scalar($param[2] ?? null)) {
+            return false;
+        }
+
+        $id_mysql_server = $route['id_mysql_server'];
+        $database_name   = $route['database'];
         $table_name      = $param[2];
 
         $all_prefix = $this->getPrefix($param);
@@ -398,6 +650,27 @@ class ForeignKey extends Controller
         return false;
     }
 
+/**
+ * Retrieve foreign key state through `getDatabase`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getDatabase.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getDatabase()
+ * @example /fr/foreignkey/getDatabase
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getDatabase($param)
     {
         Debug::parseDebug($param);
@@ -419,6 +692,27 @@ class ForeignKey extends Controller
         return $databases;
     }
 
+/**
+ * Handle foreign key state through `sort_and_count_array`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $name_arr Input value for `name_arr`.
+ * @phpstan-param mixed $name_arr
+ * @psalm-param mixed $name_arr
+ * @return mixed Returned value for sort_and_count_array.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::sort_and_count_array()
+ * @example /fr/foreignkey/sort_and_count_array
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function sort_and_count_array($name_arr)
     {
         $new_arr = array_count_values($name_arr);
@@ -428,6 +722,33 @@ class ForeignKey extends Controller
     }
 
 
+/**
+ * Retrieve foreign key state through `getPrimaryKey`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param array<int|string,mixed> $database Input value for `database`.
+ * @phpstan-param array<int|string,mixed> $database
+ * @psalm-param array<int|string,mixed> $database
+ * @param mixed $table Input value for `table`.
+ * @phpstan-param mixed $table
+ * @psalm-param mixed $table
+ * @return mixed Returned value for getPrimaryKey.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getPrimaryKey()
+ * @example /fr/foreignkey/getPrimaryKey
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getPrimaryKey($id_mysql_server, $database, $table)
     {
         $db = Mysql::getDbLink($id_mysql_server);
@@ -458,6 +779,27 @@ class ForeignKey extends Controller
     }
 
 
+/**
+ * Retrieve foreign key state through `getIdFromComposedPk`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getIdFromComposedPk.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getIdFromComposedPk()
+ * @example /fr/foreignkey/getIdFromComposedPk
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getIdFromComposedPk($param)
     {
         Debug::parseDebug($param);
@@ -559,6 +901,27 @@ class ForeignKey extends Controller
         return $resultat;
     }
 
+/**
+ * Create foreign key state through `createVirtualForeignKey`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for createVirtualForeignKey.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::createVirtualForeignKey()
+ * @example /fr/foreignkey/createVirtualForeignKey
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function createVirtualForeignKey($param)
     {
         $this->view = false;
@@ -579,18 +942,45 @@ class ForeignKey extends Controller
         $res = $db->sql_query($sql);
     }
 
+/**
+ * Create foreign key state through `addForeignKey`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for addForeignKey.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::addForeignKey()
+ * @example /fr/foreignkey/addForeignKey
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function addForeignKey($param)
     {
         $this->view = false;
         Debug::parseDebug($param);
 
-        $id_foreign_key_virtual = $param[0];
+        $request = self::evaluateForeignKeyIdMutationRequest($param, $_POST, $_SERVER, $_SESSION, IS_CLI);
+        if (!$request['allowed']) {
+            HttpResponse::sendOutcome($request);
+            return;
+        }
+
+        $id_foreign_key_virtual = $request['id'];
 
         $db = Sgbd::sql(DB_DEFAULT);
 
         $sql = "SELECT id_mysql_server,constraint_schema,constraint_table, constraint_column,
         referenced_schema, referenced_table, referenced_column
-        FROM `foreign_key_virtual` WHERE id =".$id_foreign_key_virtual."";
+        FROM `foreign_key_virtual` WHERE id =".(int) $id_foreign_key_virtual."";
 
         $res = $db->sql_query($sql);
 
@@ -601,11 +991,31 @@ class ForeignKey extends Controller
         }
 
         if ( ! IS_CLI){
-            $location = $_SERVER['HTTP_REFERER'];
-            header("location: $location");
+            header('location: '.SafeRedirect::refererOrFallback($_SERVER, LINK.'ForeignKey/index'));
         }
     }
 
+/**
+ * Handle foreign key state through `settingPrefix`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for settingPrefix.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::settingPrefix()
+ * @example /fr/foreignkey/settingPrefix
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function settingPrefix($param)
     {
 
@@ -624,6 +1034,27 @@ class ForeignKey extends Controller
 
     }
 
+/**
+ * Create foreign key state through `add`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for add.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::add()
+ * @example /fr/foreignkey/add
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function add($param)
     {
         $this->di['js']->code_javascript('$("#foreign_key_remove_prefix-id_mysql_server").change(function () {
@@ -634,65 +1065,473 @@ class ForeignKey extends Controller
             });
         });');
 
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
-            if (!empty($_POST['foreign_key_remove_prefix']['id_mysql_server']) && !empty($_POST['foreign_key_remove_prefix']['database_name']) && !empty($_POST['foreign_key_remove_prefix']['prefix'])) {
-
-                $db = Sgbd::sql(DB_DEFAULT);
-                $db->sql_save($_POST);
-                
-                header('location: '.LINK.$this->getClass().'/settingPrefix/');
+        if (CsrfGuard::isPost($_SERVER)) {
+            $addPost = self::evaluateAddPost($_POST, $_SERVER, $_SESSION);
+            if ($addPost['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendForeignKeyAddError($addPost['status'], $addPost['body'], $addPost['headers']);
+                return;
             }
+
+            $db = Sgbd::sql(DB_DEFAULT);
+            $db->sql_save(['foreign_key_remove_prefix' => $addPost['payload']]);
+
+            header('location: '.LINK.$this->getClass().'/settingPrefix/');
+            return;
         }
+
+        $data = [
+            'foreign_key_add_csrf_field' => Csrf::DEFAULT_FIELD,
+            'foreign_key_add_csrf_token' => Csrf::issueToken($_SESSION, self::FOREIGN_KEY_ADD_CSRF_SCOPE),
+        ];
+        $this->set('data', $data);
     }
 
+    public static function evaluateAddPost(array $post, array $server, array $session): array
+    {
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::FOREIGN_KEY_ADD_CSRF_SCOPE)) {
+            return self::buildAddPostOutcome($failure['status'], $failure['body'], $failure['headers']);
+        }
+
+        $payload = self::normalizeAddPayload($post);
+        if ($payload === null) {
+            return self::buildAddPostOutcome(422, 'Invalid foreign-key prefix payload');
+        }
+
+        return [
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'payload' => $payload,
+        ];
+    }
+
+    public static function normalizeAddPayload(array $post): ?array
+    {
+        $raw = $post['foreign_key_remove_prefix'] ?? null;
+        if (!is_array($raw)) {
+            return null;
+        }
+
+        $idMysqlServer = PositiveIntegerSelection::normalizeSingle($raw['id_mysql_server'] ?? null);
+        $databaseName = self::normalizeBoundedString($raw['database_name'] ?? null);
+        $prefix = self::normalizeBoundedString($raw['prefix'] ?? null);
+        if ($idMysqlServer === null || $databaseName === null || $prefix === null) {
+            return null;
+        }
+
+        return [
+            'id_mysql_server' => $idMysqlServer,
+            'database_name' => $databaseName,
+            'prefix' => $prefix,
+        ];
+    }
+
+    private static function normalizeBoundedString($value): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $normalized = trim((string) $value);
+        if ($normalized === '' || strlen($normalized) > self::FOREIGN_KEY_ADD_FIELD_MAX_LENGTH) {
+            return null;
+        }
+
+        return $normalized;
+    }
+
+    private static function buildAddPostOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'payload' => [],
+        ];
+    }
+
+    private static function sendForeignKeyAddError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        echo $message;
+    }
+
+    public static function evaluateForeignKeyIdMutationRequest(
+        array $param,
+        array $post,
+        array $server,
+        array $session,
+        bool $isCli = false
+    ): array {
+        if (!$isCli) {
+            if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::FOREIGN_KEY_MUTATION_CSRF_SCOPE)) {
+                return self::buildForeignKeyRequestOutcome(false, $failure['status'], $failure['body'], $failure['headers']);
+            }
+        }
+
+        $id = self::resolvePositiveIntegerMutationId($param, $post, $isCli);
+        if ($id === null) {
+            return self::buildForeignKeyRequestOutcome(false, 400, 'Invalid foreign-key id');
+        }
+
+        return self::buildForeignKeyRequestOutcome(true, 200, '', [], $id, [$id]);
+    }
+
+    public static function evaluateForeignKeyContextMutationRequest(
+        array $param,
+        array $post,
+        array $server,
+        array $session,
+        bool $isCli = false
+    ): array {
+        if (!$isCli) {
+            if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::FOREIGN_KEY_MUTATION_CSRF_SCOPE)) {
+                return self::buildForeignKeyRequestOutcome(false, $failure['status'], $failure['body'], $failure['headers']);
+            }
+        }
+
+        $context = self::resolveMutationContext($param, $post, $isCli);
+        if ($context === null) {
+            return self::buildForeignKeyRequestOutcome(false, 400, 'Invalid foreign-key route');
+        }
+
+        return self::buildForeignKeyRequestOutcome(
+            true,
+            200,
+            '',
+            [],
+            $context['id_mysql_server'],
+            $context['param']
+        );
+    }
+
+    public static function normalizeServerDatabaseRoute(array $param): ?array
+    {
+        return ForeignKeyRoute::normalize($param);
+    }
+
+    public static function buildForeignKeyCacheSelectSql(
+        $db,
+        string $tableName,
+        int $idMysqlServer,
+        string $database,
+        bool $ordered = false
+    ): string {
+        $allowedTables = [
+            'foreign_key_virtual',
+            'foreign_key_real',
+            'foreign_key_proposal',
+            'foreign_key_blacklist',
+        ];
+        if (!in_array($tableName, $allowedTables, true)) {
+            throw new \InvalidArgumentException('Invalid foreign-key cache table.');
+        }
+
+        $databaseSql = $db->sql_real_escape_string($database);
+        $sql = "SELECT * FROM ".$tableName." WHERE id_mysql_server = ".$idMysqlServer
+            ." AND (constraint_schema ='".$databaseSql."' OR referenced_schema ='".$databaseSql."')";
+
+        if ($ordered) {
+            $sql .= " ORDER BY id_mysql_server, constraint_schema,constraint_table, constraint_column";
+        }
+
+        return $sql;
+    }
+
+    public static function buildForeignKeyRemovePrefixSelectSql($db, int $idMysqlServer, string $database): string
+    {
+        $databaseSql = $db->sql_real_escape_string($database);
+
+        return "SELECT * FROM foreign_key_remove_prefix WHERE id_mysql_server=".$idMysqlServer
+            ." AND database_name='".$databaseSql."'";
+    }
+
+    public static function buildTableExistSql($db, string $database, string $table): string
+    {
+        $databaseSql = $db->sql_real_escape_string($database);
+        $tableSql = $db->sql_real_escape_string($table);
+
+        return "SELECT TABLE_SCHEMA, TABLE_NAME "
+            ."FROM `information_schema`.`tables` WHERE `TABLE_SCHEMA` = '".$databaseSql."' "
+            ."AND  LOWER(`TABLE_NAME`) = LOWER('".$tableSql."');";
+    }
+
+    private static function resolvePositiveIntegerMutationId(array $param, array $post, bool $isCli): ?int
+    {
+        if ($isCli) {
+            return PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        }
+
+        $postId = PositiveIntegerSelection::normalizeSingle($post['id'] ?? null);
+        if ($postId === null) {
+            return null;
+        }
+
+        if (array_key_exists(0, $param) && $param[0] !== '' && $param[0] !== null) {
+            $routeId = PositiveIntegerSelection::normalizeSingle($param[0]);
+            if ($routeId === null || $routeId !== $postId) {
+                return null;
+            }
+        }
+
+        return $postId;
+    }
+
+    private static function resolveMutationContext(array $param, array $post, bool $isCli): ?array
+    {
+        if ($isCli) {
+            $idMysqlServer = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+            if ($idMysqlServer === null) {
+                return null;
+            }
+
+            $database = array_key_exists(1, $param) && $param[1] !== '' && $param[1] !== null
+                ? self::normalizeDatabaseName($param[1])
+                : null;
+            if (array_key_exists(1, $param) && $param[1] !== '' && $param[1] !== null && $database === null) {
+                return null;
+            }
+
+            return self::buildMutationContext($idMysqlServer, $database);
+        }
+
+        $idMysqlServer = PositiveIntegerSelection::normalizeSingle($post['id_mysql_server'] ?? null);
+        if ($idMysqlServer === null) {
+            return null;
+        }
+
+        $database = array_key_exists('database', $post) && $post['database'] !== ''
+            ? self::normalizeDatabaseName($post['database'])
+            : null;
+        if (array_key_exists('database', $post) && $post['database'] !== '' && $database === null) {
+            return null;
+        }
+
+        if (!self::routeMatchesPostedContext($param, $idMysqlServer, $database)) {
+            return null;
+        }
+
+        return self::buildMutationContext($idMysqlServer, $database);
+    }
+
+    private static function routeMatchesPostedContext(array $param, int $idMysqlServer, ?string $database): bool
+    {
+        if (array_key_exists(0, $param) && $param[0] !== '' && $param[0] !== null) {
+            $routeId = PositiveIntegerSelection::normalizeSingle($param[0]);
+            if ($routeId === null || $routeId !== $idMysqlServer) {
+                return false;
+            }
+        }
+
+        if (array_key_exists(1, $param) && $param[1] !== '' && $param[1] !== null) {
+            $routeDatabase = self::normalizeDatabaseName($param[1]);
+            if ($routeDatabase === null || $routeDatabase !== $database) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static function buildMutationContext(int $idMysqlServer, ?string $database): array
+    {
+        $normalizedParam = [$idMysqlServer];
+        if ($database !== null) {
+            $normalizedParam[] = $database;
+        }
+
+        return [
+            'id_mysql_server' => $idMysqlServer,
+            'database' => $database,
+            'param' => $normalizedParam,
+        ];
+    }
+
+    private static function normalizeDatabaseName($value): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $database = trim((string) $value);
+        if ($database === '' || !Identifier::isDatabaseName($database)) {
+            return null;
+        }
+
+        return $database;
+    }
+
+    private static function buildForeignKeyRequestOutcome(
+        bool $allowed,
+        int $status,
+        string $body,
+        array $headers = [],
+        ?int $id = null,
+        array $param = []
+    ): array {
+        return [
+            'allowed' => $allowed,
+            'status' => $status,
+            'body' => $body,
+            'headers' => $headers,
+            'id' => $id,
+            'param' => $param,
+        ];
+    }
+
+    private static function withForeignKeyMutationCsrf(array $data): array
+    {
+        $data['foreign_key_mutation_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['foreign_key_mutation_csrf_token'] = Csrf::issueToken($_SESSION, self::FOREIGN_KEY_MUTATION_CSRF_SCOPE);
+
+        return $data;
+    }
+
+    private static function foreignKeyFallbackUrl(array $param): string
+    {
+        $idMysqlServer = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        if ($idMysqlServer === null) {
+            return LINK.'ForeignKey/index';
+        }
+
+        $database = array_key_exists(1, $param) ? self::normalizeDatabaseName($param[1]) : null;
+        if ($database === null) {
+            return LINK.'ForeignKey/index';
+        }
+
+        return LINK.'ForeignKey/fill/'.$idMysqlServer.'/'.$database;
+    }
+
+/**
+ * Handle foreign key state through `dropForeignKey`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for dropForeignKey.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::dropForeignKey()
+ * @example /fr/foreignkey/dropForeignKey
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function dropForeignKey($param)
     {
         $this->view = false;
         Debug::parseDebug($param);
-        $id_foreign_key_remove_prefix = $param[0];
+        $request = self::evaluateForeignKeyIdMutationRequest($param, $_POST, $_SERVER, $_SESSION, IS_CLI);
+        if (!$request['allowed']) {
+            HttpResponse::sendOutcome($request);
+            return;
+        }
+
+        $id_foreign_key_remove_prefix = $request['id'];
 
         $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "DELETE FROM foreign_key_remove_prefix WHERE id=".$id_foreign_key_remove_prefix."";
+        $sql = "DELETE FROM foreign_key_remove_prefix WHERE id=".(int) $id_foreign_key_remove_prefix."";
 
         $res = $db->sql_query($sql);
 
         if ( ! IS_CLI){
-            $location = $_SERVER['HTTP_REFERER'];
-            header("location: $location");
+            header('location: '.SafeRedirect::refererOrFallback($_SERVER, LINK.'ForeignKey/index'));
         }
 
     }
 
+/**
+ * Handle foreign key state through `rmForeignKey`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for rmForeignKey.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::rmForeignKey()
+ * @example /fr/foreignkey/rmForeignKey
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function rmForeignKey($param)
     {
         $this->view = false;
         Debug::parseDebug($param);
 
-        $id_foreign_key_virtual = $param[0];
+        $request = self::evaluateForeignKeyIdMutationRequest($param, $_POST, $_SERVER, $_SESSION, IS_CLI);
+        if (!$request['allowed']) {
+            HttpResponse::sendOutcome($request);
+            return;
+        }
+
+        $id_foreign_key_virtual = $request['id'];
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $sql = "DELETE FROM `foreign_key_virtual` WHERE id =".$id_foreign_key_virtual."";
+        $sql = "DELETE FROM `foreign_key_virtual` WHERE id =".(int) $id_foreign_key_virtual."";
         $db->sql_query($sql);
 
         if ( ! IS_CLI){
-            $location = $_SERVER['HTTP_REFERER'];
-            header("location: $location");
+            header('location: '.SafeRedirect::refererOrFallback($_SERVER, LINK.'ForeignKey/index'));
         }
     }
 
+/**
+ * Retrieve foreign key state through `getRealForeignKey`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getRealForeignKey.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getRealForeignKey()
+ * @example /fr/foreignkey/getRealForeignKey
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getRealForeignKey($param)
     {
 
         Debug::parseDebug($param);
 
-        $id_mysql_server = $param[0];
-        $database        = $param[1];
+        $route = self::normalizeServerDatabaseRoute($param);
+        if ($route === null) {
+            return [];
+        }
+
+        $id_mysql_server = $route['id_mysql_server'];
+        $database        = $route['database'];
 
         $db = Mysql::getDbLink($id_mysql_server);
 
-        $sql = "SELECT * FROM `foreign_key_real` WHERE id_mysql_server = ".$id_mysql_server." AND "
-            ." (constraint_schema = '".$database."' OR 	referenced_schema = '".$database."'";
+        $sql = self::buildForeignKeyCacheSelectSql($db, 'foreign_key_real', $id_mysql_server, $database);
 
         Debug::sql($sql);
 
@@ -721,8 +1560,17 @@ class ForeignKey extends Controller
     {
         Debug::parseDebug($param);
 
-        $id_mysql_server = $param[0];
-        $database        = $param[1] ?? false;
+        $id_mysql_server = PositiveIntegerSelection::normalizeSingle($param[0] ?? null);
+        if ($id_mysql_server === null) {
+            return;
+        }
+
+        $database = array_key_exists(1, $param) && $param[1] !== '' && $param[1] !== null
+            ? self::normalizeDatabaseName($param[1])
+            : false;
+        if (array_key_exists(1, $param) && $param[1] !== '' && $param[1] !== null && $database === null) {
+            return;
+        }
 
         $db = Mysql::getDbLink($id_mysql_server);
         $default = Sgbd::sql(DB_DEFAULT);
@@ -736,8 +1584,9 @@ class ForeignKey extends Controller
 
         if ($database !== false)
         {
-            $sql .= " AND `REFERENCED_TABLE_SCHEMA`='".$database."' "
-            ." AND `CONSTRAINT_SCHEMA` ='".$database."' ";
+            $databaseSql = $db->sql_real_escape_string($database);
+            $sql .= " AND `REFERENCED_TABLE_SCHEMA`='".$databaseSql."' "
+            ." AND `CONSTRAINT_SCHEMA` ='".$databaseSql."' ";
         }
 
         Debug::sql($sql);
@@ -746,7 +1595,8 @@ class ForeignKey extends Controller
         
         if ($database !== false)
         {
-            $sql2 .=" AND (constraint_table ='".$database."' OR referenced_table ='".$database."')";
+            $databaseSql = $default->sql_real_escape_string($database);
+            $sql2 .=" AND (constraint_table ='".$databaseSql."' OR referenced_table ='".$databaseSql."')";
         }
         Debug::sql($sql2);
 
@@ -763,6 +1613,27 @@ class ForeignKey extends Controller
         }
     }
 
+/**
+ * Handle foreign key state through `menu`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for menu.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::menu()
+ * @example /fr/foreignkey/menu
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function menu($param)
     {
         $data = array();
@@ -772,6 +1643,27 @@ class ForeignKey extends Controller
         $this->set('param', $param);
     }
 
+/**
+ * Render foreign key state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/foreignkey/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index($param)
     {
         $data = array();
@@ -785,6 +1677,27 @@ class ForeignKey extends Controller
     }
 
 
+/**
+ * Handle foreign key state through `virtual`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for virtual.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::virtual()
+ * @example /fr/foreignkey/virtual
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function virtual($param)
     {
         $data = array();
@@ -792,12 +1705,18 @@ class ForeignKey extends Controller
         Debug::parseDebug($param);
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $id_mysql_server = $param[0];
-        $database = $param[1];
+        $route = self::normalizeServerDatabaseRoute($param);
+        if ($route === null) {
+            $this->view = false;
+            HttpResponse::sendError(400, 'Invalid foreign-key route');
+            return;
+        }
 
-        $sql = "SELECT * FROM foreign_key_virtual WHERE id_mysql_server = ".$id_mysql_server." 
-        AND (constraint_schema ='".$database."' OR referenced_schema ='".$database."')
-        ORDER BY id_mysql_server, constraint_schema,constraint_table, constraint_column";
+        $id_mysql_server = $route['id_mysql_server'];
+        $database = $route['database'];
+        $param = $route['param'];
+
+        $sql = self::buildForeignKeyCacheSelectSql($db, 'foreign_key_virtual', $id_mysql_server, $database, true);
         
         $res = $db->sql_query($sql);
 
@@ -807,13 +1726,33 @@ class ForeignKey extends Controller
             $data['virtual_fk'][] = $ob;
         }
 
-        $this->set('data', $data);
-
         $data['param'] = $param;
+        $data = self::withForeignKeyMutationCsrf($data);
         $this->set('data', $data);
         $this->set('param', $param);
     }
 
+/**
+ * Handle foreign key state through `real`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for real.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::real()
+ * @example /fr/foreignkey/real
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function real($param)
     {
         $data = array();
@@ -821,14 +1760,20 @@ class ForeignKey extends Controller
         Debug::parseDebug($param);
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $id_mysql_server = $param[0];
-        $database = $param[1];
+        $route = self::normalizeServerDatabaseRoute($param);
+        if ($route === null) {
+            $this->view = false;
+            HttpResponse::sendError(400, 'Invalid foreign-key route');
+            return;
+        }
+
+        $id_mysql_server = $route['id_mysql_server'];
+        $database = $route['database'];
+        $param = $route['param'];
 
         $_GET['mysql_server']['id'] = $id_mysql_server;
 
-        $sql = "SELECT * FROM foreign_key_real WHERE id_mysql_server = ".$id_mysql_server." 
-        AND (constraint_schema ='".$database."' OR referenced_schema ='".$database."') 
-        ORDER BY id_mysql_server, constraint_schema,constraint_table, constraint_column";
+        $sql = self::buildForeignKeyCacheSelectSql($db, 'foreign_key_real', $id_mysql_server, $database, true);
         
         $res = $db->sql_query($sql);
 
@@ -841,10 +1786,32 @@ class ForeignKey extends Controller
    
 
         $data['param'] = $param;
+        $data = self::withForeignKeyMutationCsrf($data);
         $this->set('data', $data);
         $this->set('param', $param);
     }
 
+/**
+ * Handle foreign key state through `proposal`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for proposal.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::proposal()
+ * @example /fr/foreignkey/proposal
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function proposal($param)
     {
 
@@ -854,12 +1821,18 @@ class ForeignKey extends Controller
         Debug::parseDebug($param);
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $id_mysql_server = $param[0];
-        $database = $param[1];
+        $route = self::normalizeServerDatabaseRoute($param);
+        if ($route === null) {
+            $this->view = false;
+            HttpResponse::sendError(400, 'Invalid foreign-key route');
+            return;
+        }
 
-        $sql = "SELECT * FROM foreign_key_proposal WHERE id_mysql_server = ".$id_mysql_server." 
-        AND (constraint_schema ='".$database."' OR referenced_schema ='".$database."') 
-        ORDER BY id_mysql_server, constraint_schema,constraint_table, constraint_column";
+        $id_mysql_server = $route['id_mysql_server'];
+        $database = $route['database'];
+        $param = $route['param'];
+
+        $sql = self::buildForeignKeyCacheSelectSql($db, 'foreign_key_proposal', $id_mysql_server, $database, true);
         
         $res = $db->sql_query($sql);
 
@@ -870,11 +1843,33 @@ class ForeignKey extends Controller
         }
 
         $data['param'] = $param;
+        $data = self::withForeignKeyMutationCsrf($data);
         $this->set('data', $data);
         $this->set('param', $param);
     }
 
 
+/**
+ * Handle foreign key state through `blackList`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for blackList.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::blackList()
+ * @example /fr/foreignkey/blackList
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function blackList($param)
     {
         $data = array();
@@ -883,12 +1878,18 @@ class ForeignKey extends Controller
         Debug::parseDebug($param);
         $db = Sgbd::sql(DB_DEFAULT);
 
-        $id_mysql_server = $param[0];
-        $database = $param[1];
+        $route = self::normalizeServerDatabaseRoute($param);
+        if ($route === null) {
+            $this->view = false;
+            HttpResponse::sendError(400, 'Invalid foreign-key route');
+            return;
+        }
 
-        $sql = "SELECT * FROM foreign_key_blacklist WHERE id_mysql_server = ".$id_mysql_server." 
-        AND (constraint_schema ='".$database."' OR referenced_schema ='".$database."') 
-        ORDER BY id_mysql_server, constraint_schema,constraint_table, constraint_column";
+        $id_mysql_server = $route['id_mysql_server'];
+        $database = $route['database'];
+        $param = $route['param'];
+
+        $sql = self::buildForeignKeyCacheSelectSql($db, 'foreign_key_blacklist', $id_mysql_server, $database, true);
         
         $res = $db->sql_query($sql);
 
@@ -899,10 +1900,32 @@ class ForeignKey extends Controller
         }
 
         $data['param'] = $param;
+        $data = self::withForeignKeyMutationCsrf($data);
         $this->set('data', $data);
         $this->set('param', $param);
     }
 
+/**
+ * Handle foreign key state through `custom`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for custom.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::custom()
+ * @example /fr/foreignkey/custom
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function custom($param)
     {
         Debug::parseDebug($param);

@@ -18,7 +18,6 @@ if (empty($data['storage_area'])) {
     echo '<a href="'.LINK.'StorageArea/index/" type="button" class="btn btn-primary"><span class="glyphicon glyphicon-plus" style="font-size:12px" aria-hidden="true"></span> Add an storage area</a>';
 } else {
 
-    echo '<form action="" method="post">';
     echo '<table class="table table-bordered table-striped" id="table">';
 
     echo '<tr>';
@@ -138,6 +137,4 @@ if (empty($data['storage_area'])) {
     //echo '<a href="#" id="add" class="btn btn-primary"><span class="glyphicon glyphicon glyphicon-plus" style="font-size:12px"></span> '.__("Add a backup").'</a>';
     //echo ' - <button type="submit" class="btn btn-success"><span class="glyphicon glyphicon-ok" style="font-size:12px"></span> '.__("Save").'</button>';
 
-
-    echo '</form>';
 }

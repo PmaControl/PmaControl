@@ -1,6 +1,9 @@
 <?php
+use App\Library\Security\CsrfRender;
 use Glial\Html\Form\Form;
 
+$add_csrf_input = CsrfRender::hiddenInput($data, 'crontab_add');
+$delete_csrf_input = CsrfRender::hiddenInput($data, 'crontab_delete');
 
 echo "<div id=\"crontab\">";
 
@@ -45,7 +48,7 @@ foreach($data as $key => $line)
 	echo "<td>".$cmd."</td>";
 
 
-	echo "<td>".hidden("crontab","delete",$key)."<input class=\"button btBlueTest overlayW btMedium\" type=\"submit\" value=\"".__("Delete")."\" /></td>";
+	echo "<td>".$delete_csrf_input.hidden("crontab","delete",$key)."<input class=\"button btBlueTest overlayW btMedium\" type=\"submit\" value=\"".__("Delete")."\" /></td>";
 
 	echo "</tr>";
 	echo "</form>";
@@ -61,7 +64,7 @@ echo "<td>".input("crontab","dayofmonth","crontab")."</td>";
 echo "<td>".input("crontab","month","crontab")."</td>";
 echo "<td>".input("crontab","dayofweek","crontab")."</td>";
 echo "<td>".input("crontab","command","cmd")."</td>";
-echo "<td><input class=\"button btBlueTest overlayW btMedium\" type=\"submit\" value=\"".__("Add")."\" /></td>";
+echo "<td>".$add_csrf_input."<input class=\"button btBlueTest overlayW btMedium\" type=\"submit\" value=\"".__("Add")."\" /></td>";
 echo "<tr>";
 echo "</form>";
 echo "</table>";

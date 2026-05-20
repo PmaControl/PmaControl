@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>ameliorations_completes</title>
+  <style>
+    html {
+      line-height: 1.5;
+      font-family: Georgia, serif;
+      font-size: 20px;
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 1em;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+      font-size: 85%;
+      margin: 0;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#liste-complete-des-ameliorations-de-pmacontrol">Liste
+Complete des Ameliorations de PmaControl</a>
+<ul>
+<li><a href="#architecture-et-code">1. Architecture et code</a></li>
+<li><a href="#base-de-donnees-et-acces-sql">2. Base de donnees et acces
+SQL</a></li>
+<li><a href="#securite">3. Securite</a></li>
+<li><a href="#testabilite-et-qualite">4. Testabilite et qualite</a></li>
+<li><a href="#performance-et-exploitation">5. Performance et
+exploitation</a></li>
+<li><a href="#ux-operateur-et-documentation">6. UX operateur et
+documentation</a></li>
+<li><a href="#modernisation-technique">7. Modernisation
+technique</a></li>
+<li><a href="#ordre-recommande-de-chantier">8. Ordre recommande de
+chantier</a>
+<ul>
+<li><a href="#lot-1">Lot 1</a></li>
+<li><a href="#lot-2">Lot 2</a></li>
+<li><a href="#lot-3">Lot 3</a></li>
+<li><a href="#lot-4">Lot 4</a></li>
+</ul></li>
+<li><a href="#conclusion">9. Conclusion</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="liste-complete-des-ameliorations-de-pmacontrol">Liste Complete
+des Ameliorations de PmaControl</h1>
+<ul>
+<li>Genere le: 2026-03-12 01:42:25</li>
+<li>Objectif: backlog d’amelioration transverse, couvrant architecture,
+securite, tests, DX, performance et gouvernance</li>
+</ul>
+<h2 id="architecture-et-code">1. Architecture et code</h2>
+<ol type="1">
+<li>Decouper les gros controleurs (<code>Cleaner</code>,
+<code>Schema</code>, <code>Aspirateur</code>, <code>Backup</code>,
+<code>Dot3</code>) en services orientés domaine.</li>
+<li>Sortir la logique metier des actions web vers des classes
+applicatives testables.</li>
+<li>Introduire des DTO pour les entrees API, formulaires et jobs.</li>
+<li>Remplacer les acces directs aux superglobales par une couche request
+explicite.</li>
+<li>Formaliser les contrats de sortie HTML/JSON/fichier.</li>
+<li>Unifier le style de code et les conventions de nommage.</li>
+<li>Supprimer le code mort, les commentaires historiques et les chemins
+de debug temporaires.</li>
+<li>Centraliser la construction d’URLs et de routes.</li>
+<li>Introduire des exceptions metier dediees par domaine.</li>
+<li>Documenter explicitement les dependances entre controleurs et
+bibliotheques.</li>
+</ol>
+<h2 id="base-de-donnees-et-acces-sql">2. Base de donnees et acces
+SQL</h2>
+<ol start="11" type="1">
+<li>Remplacer toute interpolation SQL par requetes preparees.</li>
+<li>Introduire un repository layer pour les entites critiques.</li>
+<li>Normaliser les transactions dans les parcours d’ecriture.</li>
+<li>Ajouter des contraintes BD manquantes la ou le metier les suppose
+deja.</li>
+<li>Distinguer clairement referentiel, time series, caches et
+journaux.</li>
+<li>Rationaliser les tables <code>ts_*</code> et documenter leur
+retention.</li>
+<li>Ajouter des index verifies par usage sur les tables de topologie,
+backup et monitoring.</li>
+<li>Mettre en place une strategie de migrations coherentement
+versionnee.</li>
+<li>Mesurer et limiter la croissance des tables system-versioned.</li>
+<li>Mieux separer les ecritures techniques des donnees de
+gouvernance.</li>
+</ol>
+<h2 id="securite">3. Securite</h2>
+<ol start="21" type="1">
+<li>Ajouter une protection CSRF globale.</li>
+<li>Renforcer la validation des entrees route, GET et POST.</li>
+<li>Centraliser les checks d’autorisation metier.</li>
+<li>Isoler les appels shell et interdire la concatenation brute.</li>
+<li>Basculer les secrets vers un vault ou un stockage externe.</li>
+<li>Reduire les privileges des comptes MySQL utilises par
+l’application.</li>
+<li>Segmenter les cles SSH par cas d’usage.</li>
+<li>Journaliser toutes les operations sensibles avec acteur, cible et
+resultat.</li>
+<li>Filtrer les logs pour eviter la fuite de secrets et chemins
+sensibles.</li>
+<li>Revoir l’exposition des endpoints de telechargement et
+d’import.</li>
+</ol>
+<h2 id="testabilite-et-qualite">4. Testabilite et qualite</h2>
+<ol start="31" type="1">
+<li>Ajouter des tests unitaires sur les services extraits des gros
+controleurs.</li>
+<li>Ajouter des tests d’integration sur API, backup, restore et
+topologie.</li>
+<li>Mettre en place des fixtures SQL minimales et reutilisables.</li>
+<li>Ajouter une base de tests dediee ou un environnement ephemeral.</li>
+<li>Introduire un pipeline CI pour lint, phpunit et verification
+doc.</li>
+<li>Ajouter une analyse statique PHPStan/Psalm graduellement.</li>
+<li>Couvrir les parcours d’erreur et d’autorisation.</li>
+<li>Tester explicitement les workflows CLI.</li>
+<li>Ajouter des snapshots de graphes et de documents generes.</li>
+<li>Mettre en place une strategie de non-regression sur les
+exports.</li>
+</ol>
+<h2 id="performance-et-exploitation">5. Performance et exploitation</h2>
+<ol start="41" type="1">
+<li>Identifier les requetes les plus couteuses des ecrans lourds.</li>
+<li>Mettre en cache les vues purement analytiques.</li>
+<li>Deplacer les taches longues hors requete web.</li>
+<li>Industrialiser la gestion des fichiers pivots, locks et md5.</li>
+<li>Documenter les timeouts reseau par integration.</li>
+<li>Ajouter des garde-fous de concurrence sur workers et cleaner.</li>
+<li>Rendre observable la file de jobs et les echecs techniques.</li>
+<li>Ajouter des budgets de retention sur logs, archives et
+historiques.</li>
+<li>Segreguer les volumes filesystem temporaires et definitifs.</li>
+<li>Prevoir une politique de reprise sur incident pour backup et
+collecte.</li>
+</ol>
+<h2 id="ux-operateur-et-documentation">6. UX operateur et
+documentation</h2>
+<ol start="51" type="1">
+<li>Uniformiser les messages d’erreur et de succes.</li>
+<li>Ajouter une doc fonctionnelle par domaine, pas seulement par
+classe.</li>
+<li>Expliquer dans l’UI les impacts des operations destructives.</li>
+<li>Ajouter un guide operateur pour backup, cleaner, schema,
+cluster.</li>
+<li>Generer un catalogue de routes/action par controleur.</li>
+<li>Ajouter un glossaire metier des objets <code>mysql_*</code>,
+<code>ts_*</code>, <code>dot3_*</code>, <code>backup_*</code>.</li>
+<li>Documenter les prerequis systeme exacts par module.</li>
+<li>Ajouter des exemples JSON/cURL pour toutes les integrations.</li>
+<li>Produire une matrice ACL lisible par role.</li>
+<li>Documenter les parcours d’onboarding et de support.</li>
+</ol>
+<h2 id="modernisation-technique">7. Modernisation technique</h2>
+<ol start="61" type="1">
+<li>Introduire progressivement des types retour PHP natifs.</li>
+<li>Eliminer les <code>var</code> et proprietes dynamiques legacy.</li>
+<li>Ajouter <code>strict_types=1</code> la ou c’est viable.</li>
+<li>Remplacer les utilitaires statiques les plus couplants par des
+services injectes.</li>
+<li>Isoler la couche Glial legacy derriere des adapters.</li>
+<li>Reduire le nombre de points d’entree qui ecrivent en base depuis le
+web.</li>
+<li>Factoriser les wrappers HTTP/SSH/SQL.</li>
+<li>Ajouter une strategy de compatibilite PHP documentee.</li>
+<li>Standardiser le packaging des scripts CLI.</li>
+<li>Simplifier la relation entre docs generees et docs
+hand-written.</li>
+</ol>
+<h2 id="ordre-recommande-de-chantier">8. Ordre recommande de
+chantier</h2>
+<h3 id="lot-1">Lot 1</h3>
+<ul>
+<li>SQL, CSRF, secret management, shell hardening</li>
+</ul>
+<h3 id="lot-2">Lot 2</h3>
+<ul>
+<li>extraction services sur <code>Api</code>, <code>Server</code>,
+<code>Client</code>, <code>Environment</code>, <code>Tag</code>,
+<code>Alias</code>, <code>StorageArea</code></li>
+</ul>
+<h3 id="lot-3">Lot 3</h3>
+<ul>
+<li>refonte par domaine des blocs lourds <code>Backup</code>,
+<code>Cleaner</code>, <code>Aspirateur</code>, <code>Schema</code>,
+<code>Dot3</code></li>
+</ul>
+<h3 id="lot-4">Lot 4</h3>
+<ul>
+<li>CI/CD, static analysis, test data management, observabilite</li>
+</ul>
+<h2 id="conclusion">9. Conclusion</h2>
+<p>La liste d’ameliorations est volontairement exhaustive et
+structurante. Le projet n’a pas besoin d’une simple couche cosmetique;
+il a besoin d’une mise a niveau par domaines, en commencant par la
+securite et les gros noeuds de complexite, puis en consolidant la
+testabilite et la gouvernance documentaire.</p>
+</body>
+</html>

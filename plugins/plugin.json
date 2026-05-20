@@ -1,1 +1,239 @@
-{"mysql-sys":{"v1.0":{"Picture":"http:\/\/localhost\/pmacontrol_web\/plugimg\/mysql-sys.jpg","MD5":"c49126b0038dc119e13a213f3976d4a6","CreationDate":"10\/05\/2019","Contributor":"PLATEL Renaud","LicenceType":"GNU\/GPL v3","Description":"Sed (saepe enim redeo ad Scipionem, cuius omnis sermo erat de amicitia) querebatur, quod omnibus in rebus homines diligentiores essent; capras et oves quot quisque haberet, dicere posse, amicos quot haberet, non posse dicere et in illis quidem parandis adhibere curam, in amicis eligendis neglegentis esse nec habere quasi signa quaedam et notas, quibus eos qui ad amicitias essent idonei, iudicarent. Sunt igitur firmi et stabiles et constantes eligendi; cuius generis est magna penuria. Et iudicare difficile est sane nisi expertum; experiendum autem est in ipsa amicitia. Ita praecurrit amicitia iudicium tollitque experiendi potestatem.","URL":"http:\/\/localhost\/plugins\/mysql-sys\/v1.0.zip"},"v1.1":{"Picture":"http:\/\/localhost\/pmacontrol_web\/plugimg\/mysql-sys.jpg","MD5":"a972651a3965715446e1c3d2c2a5319f","CreationDate":"10\/05\/2019","Contributor":"PLATEL Renaud","LicenceType":"GNU\/GPL v3","Description":"Sed (saepe enim redeo ad Scipionem, cuius omnis sermo erat de amicitia) querebatur, quod omnibus in rebus homines diligentiores essent; capras et oves quot quisque haberet, dicere posse, amicos quot haberet, non posse dicere et in illis quidem parandis adhibere curam, in amicis eligendis neglegentis esse nec habere quasi signa quaedam et notas, quibus eos qui ad amicitias essent idonei, iudicarent. Sunt igitur firmi et stabiles et constantes eligendi; cuius generis est magna penuria. Et iudicare difficile est sane nisi expertum; experiendum autem est in ipsa amicitia. Ita praecurrit amicitia iudicium tollitque experiendi potestatem.","URL":"http:\/\/localhost\/plugins\/mysql-sys\/v1.1.zip"},"v1.2":{"Picture":"http:\/\/localhost\/pmacontrol_web\/plugimg\/mysql-sys.jpg","MD5":"fd1fb5b12f5ce5ebda07108508d7b400","CreationDate":"10\/05\/2019","Contributor":"PLATEL Renaud","LicenceType":"GNU\/GPL v3","Description":"Sed (saepe enim redeo ad Scipionem, cuius omnis sermo erat de amicitia) querebatur, quod omnibus in rebus homines diligentiores essent; capras et oves quot quisque haberet, dicere posse, amicos quot haberet, non posse dicere et in illis quidem parandis adhibere curam, in amicis eligendis neglegentis esse nec habere quasi signa quaedam et notas, quibus eos qui ad amicitias essent idonei, iudicarent. Sunt igitur firmi et stabiles et constantes eligendi; cuius generis est magna penuria. Et iudicare difficile est sane nisi expertum; experiendum autem est in ipsa amicitia. Ita praecurrit amicitia iudicium tollitque experiendi potestatem.","URL":"http:\/\/localhost\/plugins\/mysql-sys\/v1.2.zip"}},"test-plug":{"v1.1":{"Picture":"http:\/\/localhost\/pmacontrol_web\/plugimg\/test-plug.jpg","MD5":"b09f05f0c13dcb86bff9570e39223996","CreationDate":"10\/05\/2019","Contributor":"LEQUOY Florent","LicenceType":"GNU\/GPL v3","Description":"Proinde concepta rabie saeviore, quam desperatio incendebat et fames, amplificatis viribus ardore incohibili in excidium urbium matris Seleuciae efferebantur, quam comes tuebatur Castricius tresque legiones bellicis sudoribus induratae.","URL":"http:\/\/localhost\/plugins\/test-plug\/v1.1.zip"}}}
+{
+  "mysql-sys": {
+    "v1.0": {
+      "Picture": "http://localhost/pmacontrol_web/plugimg/mysql-sys.jpg",
+      "MD5": "c49126b0038dc119e13a213f3976d4a6",
+      "CreationDate": "10/05/2019",
+      "Contributor": "PLATEL Renaud",
+      "LicenceType": "GNU/GPL v3",
+      "Description": "Sed (saepe enim redeo ad Scipionem, cuius omnis sermo erat de amicitia) querebatur, quod omnibus in rebus homines diligentiores essent; capras et oves quot quisque haberet, dicere posse, amicos quot haberet, non posse dicere et in illis quidem parandis adhibere curam, in amicis eligendis neglegentis esse nec habere quasi signa quaedam et notas, quibus eos qui ad amicitias essent idonei, iudicarent. Sunt igitur firmi et stabiles et constantes eligendi; cuius generis est magna penuria. Et iudicare difficile est sane nisi expertum; experiendum autem est in ipsa amicitia. Ita praecurrit amicitia iudicium tollitque experiendi potestatem.",
+      "URL": "http://localhost/plugins/mysql-sys/v1.0.zip"
+    },
+    "v1.1": {
+      "Picture": "http://localhost/pmacontrol_web/plugimg/mysql-sys.jpg",
+      "MD5": "a972651a3965715446e1c3d2c2a5319f",
+      "CreationDate": "10/05/2019",
+      "Contributor": "PLATEL Renaud",
+      "LicenceType": "GNU/GPL v3",
+      "Description": "Sed (saepe enim redeo ad Scipionem, cuius omnis sermo erat de amicitia) querebatur, quod omnibus in rebus homines diligentiores essent; capras et oves quot quisque haberet, dicere posse, amicos quot haberet, non posse dicere et in illis quidem parandis adhibere curam, in amicis eligendis neglegentis esse nec habere quasi signa quaedam et notas, quibus eos qui ad amicitias essent idonei, iudicarent. Sunt igitur firmi et stabiles et constantes eligendi; cuius generis est magna penuria. Et iudicare difficile est sane nisi expertum; experiendum autem est in ipsa amicitia. Ita praecurrit amicitia iudicium tollitque experiendi potestatem.",
+      "URL": "http://localhost/plugins/mysql-sys/v1.1.zip"
+    },
+    "v1.2": {
+      "Picture": "{LINK}plugins/extracted/mysql-sys-1.2/logo.svg",
+      "MD5": "fd1fb5b12f5ce5ebda07108508d7b400",
+      "CreationDate": "10/05/2019",
+      "Contributor": "PLATEL Renaud",
+      "LicenceType": "GNU/GPL v3",
+      "Description": "Sed (saepe enim redeo ad Scipionem, cuius omnis sermo erat de amicitia) querebatur, quod omnibus in rebus homines diligentiores essent; capras et oves quot quisque haberet, dicere posse, amicos quot haberet, non posse dicere et in illis quidem parandis adhibere curam, in amicis eligendis neglegentis esse nec habere quasi signa quaedam et notas, quibus eos qui ad amicitias essent idonei, iudicarent. Sunt igitur firmi et stabiles et constantes eligendi; cuius generis est magna penuria. Et iudicare difficile est sane nisi expertum; experiendum autem est in ipsa amicitia. Ita praecurrit amicitia iudicium tollitque experiendi potestatem.",
+      "URL": "http://localhost/plugins/mysql-sys/v1.2.zip"
+    }
+  },
+  "eol": {
+    "v1.3.2": {
+      "Title": "End-Of-Life",
+      "Picture": "{WWW}image/plugin/eol.svg",
+      "MD5": "5fad6e5de7808994646d8329f71915fc",
+      "SHA256": "96126ff1c68572ccc4ffc9ede5c9e53b8de11522cf19f4e31238284451f4fdf9",
+      "Signature": "cQvJ8d2gCZEYOeGrTgffqOH8DmBYD8QGFE+ctQFtzTdZvUmX4aWeIpQsXteWk08VDSaIVPagvTdUgkbs39jtBA==",
+      "KeyId": "eol-dev",
+      "CreationDate": "19/05/2026",
+      "Contributor": "PmaControl",
+      "LicenceType": "GPL-3.0",
+      "Description": "MySQL and MariaDB end-of-life tracker with daily refresh, EOL badges, minor-version update hints, and a dedicated card on /Home listing every monitored server with a minor version behind. Uses the slot/registry extension model to (de)register UI hooks cleanly on install/uninstall.",
+      "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol.pmactrl"
+    },
+    "v1.5.0": {
+      "Title": "End-Of-Life",
+      "Picture": "{WWW}image/plugin/eol.svg",
+      "MD5": "5a9360beb9bc27c07605b07b8d5e4877",
+      "SHA256": "eb465122ee8d59caa9a7d596cb1230eb24b42258691c5ecbc48b01e05a4bfc6f",
+      "Signature": "apMwXBo4X+u8z1dD2j+icYYnXWyVLNke2b121SIeIXyQs5bDu0pCo99R6gzL8saUWIaKAOmUq9Y0qtdmeqaQCA==",
+      "KeyId": "eol-dev",
+      "CreationDate": "19/05/2026",
+      "Contributor": "PmaControl",
+      "LicenceType": "GPL-3.0",
+      "Description": "Adds Percona Server for MySQL + Percona XtraDB Cluster to the EOL tracker. Both catalogs mirror upstream MySQL (per Percona's stated policy) and carry their own product codes, GA dates, and support labels. Includes the v1.4.0 Fleet KPI dashboard + PDF export.",
+      "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.5.0.pmactrl"
+    },
+    "v1.6.0": {
+      "Title": "End-Of-Life",
+      "Picture": "{WWW}image/plugin/eol.svg",
+      "MD5": "da64b128c64a90122664735ef2922790",
+      "SHA256": "6ef4c90aaaa4e356cb8a60758fe11a556f4f1b5bcb09c57ab4c279ddbbe3afc2",
+      "Signature": "7hRWFYha76lo2HD8YQyWIKS1Hv0kmHbGzA2491iy9wTRA/eXWVAdhZzkFpD+GjLNeue/yWxEYCPRnyuVW+6QAQ==",
+      "KeyId": "eol-dev",
+      "CreationDate": "19/05/2026",
+      "Contributor": "PmaControl",
+      "LicenceType": "GPL-3.0",
+      "Description": "Implements #1301 quick wins: scope X/Y in header, MariaDB/MySQL official colours, X/Y centred donuts, version sprawl sorted by status with target-migration arrows + LTS badges, runway with per-bucket dates, top-servers with target/complexity/env/risk-breakdown columns, compliance gauge with target band, auto TL;DR, global legend.",
+      "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.6.0.pmactrl"
+    },
+    "v1.7.0": {
+      "Title": "End-Of-Life",
+      "Picture": "{WWW}image/plugin/eol.svg",
+      "MD5": "4eb20d8407697803168da0283676dc0e",
+      "SHA256": "4efd599e963b67d0d49e588b70cf543d018d4d0b6bb6bf8847645a50b6cec449",
+      "Signature": "HlTgwAoudy5VwKFkiN/VdgmSocm0MZ8U4rBx5TtC2d1ei/+UPGFWwJALFwzD9YxHrXk0QyWs9R64dWLYSNhVDg==",
+      "KeyId": "eol-dev",
+      "CreationDate": "19/05/2026",
+      "Contributor": "PmaControl",
+      "LicenceType": "GPL-3.0",
+      "Description": "Adds /Eol/byOrganization/ — per-tenant compliance comparison with sortable table (compliance pill, lifecycle mini-bar, top server-at-risk per org) and drill-down to /Eol/kpi/?org=<id>. Closes #1303.",
+      "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.7.0.pmactrl"
+    },
+    "v1.8.0": {
+      "Title": "End-Of-Life",
+      "Picture": "{WWW}image/plugin/eol.svg",
+      "MD5": "db48fa4940ee9a268b08260910197052",
+      "SHA256": "42cb5c563f0dfbac4a8c7168827f72756e8baa3bba6d11cac953f9f25e667967",
+      "Signature": "+HES93CaxPUOfujX0OM6QkRN4AFgol/g5A49XAL15UFRp67BpS7BEMeKWoHUg0Oe1YM3BbYXhgC7vu4QtZ9DDQ==",
+      "KeyId": "eol-dev",
+      "CreationDate": "19/05/2026",
+      "Contributor": "PmaControl",
+      "LicenceType": "GPL-3.0",
+      "Description": "URL-persisted env/product/status filter pills on /Eol/kpi/ (#1301), CSV export of the full top-servers list (#1301), tab-bar fleet counters per SGBD with grey-out at 0 (#1302), 'Percona Server' short label (#1305).",
+      "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.8.0.pmactrl"
+    },
+    "v1.9.0": {
+      "Title": "End-Of-Life",
+      "Picture": "{WWW}image/plugin/eol.svg",
+      "MD5": "72f61fb46568e97ad94fcc919beb3ceb",
+      "SHA256": "d7cb79cb079ee724adf23a9f9942637ee6c4134005bb0ac1dbb7ff12423b9dc1",
+      "Signature": "YPnJ913yYQBThg0QeIV8M5yemP5cFGta679KZo7UZGCZbPLdaG07Af9GJzJ+mxsQTr7Ar2FilpETApGlLorsDQ==",
+      "KeyId": "eol-dev",
+      "CreationDate": "19/05/2026",
+      "Contributor": "PmaControl",
+      "LicenceType": "GPL-3.0",
+      "Description": "Adds /Eol/byEnvironment/ (compliance ranked per environment) and /Eol/matrix/ (organization × environment grid with one mini supported/warning/EOL donut per cell, deep-link to /Eol/kpi/?org=…&env=…). Closes plugin-eol#4.",
+      "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.9.0.pmactrl"
+    },
+    "v1.10.0": {
+      "Title": "End-Of-Life",
+      "Picture": "{WWW}image/plugin/eol.svg",
+      "MD5": "c4c6f1971cf948c36b5e0af4645d1a58",
+      "SHA256": "6a8bf13a64d6334d1992bdc378a577d2acb613c45a287015d86bb56202ed9d1b",
+      "Signature": "JiB+hmUOLdOaOk4VRGszA4D43DoUciKRhpGJ2X8wr0qokCJ98fv0a+o+2dBVoUPhuaK77Ss+NE1YQEN5bb/FDw==",
+      "KeyId": "eol-dev",
+      "CreationDate": "19/05/2026",
+      "Contributor": "PmaControl",
+      "LicenceType": "GPL-3.0",
+      "Description": "Nested menu hierarchy: five active=0 child menu rows under the visible 'EOL' parent for /Eol/{kpi,byOrganization,byEnvironment,matrix,index/updates}/, so Glial resolves the page title and breadcrumb on every sub-page without polluting the visible nav.",
+      "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.10.0.pmactrl"
+    },
+    "v1.11.0": {
+      "Title": "End-Of-Life",
+      "Picture": "{WWW}image/plugin/eol.svg",
+      "MD5": "7935879bd2be731bcebc36592c7a4dae",
+      "SHA256": "b08064adb59f3f818ee22cfc2499c7f62d7e5531526285faecb05b95e11fbc6b",
+      "Signature": "vjqv68d4fnRLSZ0Swnh1KEIUcvhvwkaua1VzpgEAGNByDYQJE65xBm/ZZORgPsaDH8mVmOdQFy6Tm/k2Q83yCA==",
+      "KeyId": "eol-dev",
+      "CreationDate": "19/05/2026",
+      "Contributor": "PmaControl",
+      "LicenceType": "GPL-3.0",
+      "Description": "Bundles every open plugin-eol issue: drop proxies+VIPs from fleet baseline (#1), fall back to global_variable for version when Extraction2 is silent (#2), new /Eol/patches/ paginated patch history via MariaDB system versioning (#3, closes #5), auto-hide 0-count product tabs (#6), harmonised By organization / By environment / Org × Env matrix labels (#7).",
+      "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.11.0.pmactrl"
+    },
+    "v1.13.0": {
+      "Title": "End-Of-Life",
+      "Picture": "{WWW}image/plugin/eol.svg",
+      "MD5": "9c5af92bae313d0c4c9cdadc05452e83",
+      "SHA256": "1027b4a2e7b5e9bf684b49552c90300fe18ded751fb72bfc5f93c76fb4ebc93f",
+      "Signature": "adwFYS9u15zyY5fY/oOqtWtfnvWBLAYeMOZvUXEJc+szgNy0yW1vVsPxMRm6incS5VsCYMN0LM0f0zOqLXxHBg==",
+      "KeyId": "eol-dev",
+      "CreationDate": "19/05/2026",
+      "Contributor": "PmaControl",
+      "LicenceType": "GPL-3.0",
+      "Description": "/Eol/matrix/ palette polish: grand-total cell uses slate-300 (#cbd5e1) instead of dark navy; bottom-left 'Total' label matches the totals-row #f8fafc background so the whole totals band reads as one continuous strip.",
+      "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.13.0.pmactrl"
+    },
+    "v1.14.0": {
+      "Title": "End-Of-Life",
+      "Picture": "{WWW}image/plugin/eol.svg",
+      "MD5": "00c9062cb6b534e11392d0ac06caea48",
+      "SHA256": "db17f90be5e5ebf6cb372d47049eef0ce6430a500bff6c268f320d394418f240",
+      "Signature": "WzjXy4LzZSq5jp2Oy3GNMbzX7BZOlLMOO5WBpqDcQE5v51EzocngBdL2Jgy6o3yzceEoM6nGPZ6mUdrTvqonDg==",
+      "KeyId": "eol-dev",
+      "CreationDate": "19/05/2026",
+      "Contributor": "PmaControl",
+      "LicenceType": "GPL-3.0",
+      "Description": "Full translation pack: every __() call in src/ (159 unique strings) is now translated to fr / ar / ru / pl / zh-cn — 795 INSERT IGNORE rows seeded via the manifest's data.install phase. Reference generator + process doc lives in pmacontrol dev/gen-plugin-translations.php.",
+      "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.14.0.pmactrl"
+    },
+    "v1.14.1": {
+      "Title": "End-Of-Life",
+      "Picture": "{WWW}image/plugin/eol.svg",
+      "MD5": "235449e1584c8ba677bd0de2bb1e30ac",
+      "SHA256": "fab6c2eb84b06c39568bd706a05eae8ecb56c49a23d0fb77f3f655016728404a",
+      "Signature": "YTdbaxrnaV0yRlA36l46Qg466JlicCLB0hkLkXLYeSbBOlNl6V1yuoOShEF5zX6UY5plfBvds967TN/E06gFDw==",
+      "KeyId": "eol-dev",
+      "CreationDate": "19/05/2026",
+      "Contributor": "PmaControl",
+      "LicenceType": "GPL-3.0",
+      "Description": "PHP 8.4+ deprecation fix: EolKpi::loadVersionExtras() $servers parameter is now explicitly nullable (?array $servers = null). Same translation pack as v1.14.0.",
+      "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.14.1.pmactrl"
+    },
+    "v1.15.0": {
+      "Title": "End-Of-Life",
+      "Picture": "{WWW}image/plugin/eol.svg",
+      "MD5": "086bbcc05bda0d85fdef5067c72393da",
+      "SHA256": "02e0c44e12bb915497a9c1e982fdffe79800b4607d90e2a7981a49ca202d6b9a",
+      "Signature": "2mv8unsW9MUUSWNvswip/cpFegsnABcLvGz74d4J/GMP0JxzSKFSjwHdcOlgxwOsV/KnaevU4JqROCGxfZBnDQ==",
+      "KeyId": "eol-dev",
+      "CreationDate": "19/05/2026",
+      "Contributor": "PmaControl",
+      "LicenceType": "GPL-3.0",
+      "Description": "/Eol/patches/ improvements: Organization column, click-to-filter on server/org/env cells, removable active-filter pills (org/server/until/since), All-time default, drag-to-zoom on the weekly-volume sparkline. Translations: 168 strings × 5 langs (840 rows). Closes plugin-eol#9.",
+      "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.15.0.pmactrl"
+    },
+    "v1.15.1": {
+      "Title": "End-Of-Life",
+      "Picture": "{WWW}image/plugin/eol.svg",
+      "MD5": "6782a53a68cdfc4557ba9b9e721c90a0",
+      "SHA256": "09c599bb82dd465bbc966b5a921d9218dfb42f6d3eae0ae8924ddb73ad94565e",
+      "Signature": "jFIo0UHj0xAd2tvIAnX6JgUFKtQK3PdhROhNGclL+Nysn1nJjKeGGwZB1Kwprkr9takJc7R0vrOVkpQmOCJdAA==",
+      "KeyId": "eol-dev",
+      "CreationDate": "19/05/2026",
+      "Contributor": "PmaControl",
+      "LicenceType": "GPL-3.0",
+      "Description": "Cosmetic: strip the microsecond suffix from patched_at on /Eol/patches/. DATE_FORMAT in the temporal CTE; second-precision values everywhere downstream.",
+      "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.15.1.pmactrl"
+    },
+    "v1.15.2": {
+      "Title": "End-Of-Life",
+      "Picture": "{WWW}image/plugin/eol.svg",
+      "MD5": "1bc6ccc5b36ed885c50f45287c978c5a",
+      "SHA256": "abfc2b30e5ef3f2259d242d1a738df126314da1b654b0236223d41e4666f9517",
+      "Signature": "BBp+v9HYwK70bpPs7rFboad1w+vllwbpnwCXbcflr76UwbIcbKaXfvuWVeoPqLgYwSPTiBsEdFnqVHI0SkiuAQ==",
+      "KeyId": "eol-dev",
+      "CreationDate": "19/05/2026",
+      "Contributor": "PmaControl",
+      "LicenceType": "GPL-3.0",
+      "Description": "/Eol/patches/ sparkline anchors to the first observed patch instead of the 5-year theoretical baseline (plugin-eol#11). All-time window no longer renders empty bars before the data.",
+      "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.15.2.pmactrl"
+    },
+    "v1.15.3": {
+      "Title": "End-Of-Life",
+      "Picture": "{WWW}image/plugin/eol.svg",
+      "MD5": "a3df2f67342447845b95652c9b941cf5",
+      "SHA256": "a36b2844e617b9e0b04d41ecd33d08130c433a948afbb52a42c3406908a2c10d",
+      "Signature": "zKGY6+iDUsVSlxyIGe5ZwiN5Ktdx3SVoFIl0RvVVKsSuKiB7TJ/5KNlvmQGXGqSv0+UWe4H6SmTSv6mJ6xKeCw==",
+      "KeyId": "eol-dev",
+      "CreationDate": "19/05/2026",
+      "Contributor": "PmaControl",
+      "LicenceType": "GPL-3.0",
+      "Description": "/Eol/patches/ minor/major patches stand out: Δ pills size + saturate by importance with daltonism icons; weekly-volume sparkline stacks each column by Δ class. Closes plugin-eol#12.",
+      "URL": "file:///srv/www/pmacontrol-plugin/eol/dist/eol-1.15.3.pmactrl"
+    }
+  },
+  "test-plug": {
+    "v1.1": {
+      "Picture": "http://localhost/pmacontrol_web/plugimg/test-plug.jpg",
+      "MD5": "b09f05f0c13dcb86bff9570e39223996",
+      "CreationDate": "10/05/2019",
+      "Contributor": "LEQUOY Florent",
+      "LicenceType": "GNU/GPL v3",
+      "Description": "Proinde concepta rabie saeviore, quam desperatio incendebat et fames, amplificatis viribus ardore incohibili in excidium urbium matris Seleuciae efferebantur, quam comes tuebatur Castricius tresque legiones bellicis sudoribus induratae.",
+      "URL": "http://localhost/plugins/test-plug/v1.1.zip"
+    }
+  }
+}

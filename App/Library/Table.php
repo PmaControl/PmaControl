@@ -9,11 +9,39 @@ namespace App\Library;
 
 use \Glial\Sgbd\Sgbd;
 
+/**
+ * Class responsible for table workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Table
 {
 
+/**
+ * Stores `$table` for table.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $table = array();
 
+/**
+ * Stores `$count` for count.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $count = array();
     /*
      * (PmaControl 2.0.64)<br/>
@@ -94,6 +122,27 @@ class Table
         return self::$table[$id_mysql_server][$table_schema][$table_name];
     }
 
+/**
+ * Handle table state through `findFieldPosition`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for findFieldPosition.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::findFieldPosition()
+ * @example /fr/table/findFieldPosition
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function findFieldPosition($param)
     {
         Debug::parseDebug($param);
@@ -115,6 +164,27 @@ class Table
         }
     }
 
+/**
+ * Retrieve table state through `getNumberOfField`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getNumberOfField.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getNumberOfField()
+ * @example /fr/table/getNumberOfField
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getNumberOfField($param)
     {
         Debug::parseDebug($param);
@@ -124,6 +194,27 @@ class Table
         return count($def);
     }
 
+/**
+ * Retrieve table state through `getCount`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getCount.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getCount()
+ * @example /fr/table/getCount
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getCount($param)
     {
         Debug::parseDebug($param);
@@ -147,6 +238,27 @@ class Table
         return self::$count[$id_mysql_server][$table_schema][$table_name];
     }
 
+/**
+ * Retrieve table state through `getIndex`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for getIndex.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::getIndex()
+ * @example /fr/table/getIndex
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getIndex($param)
     {
         Debug::parseDebug($param);
@@ -156,6 +268,27 @@ class Table
         $table_name = $param[2];
     }
 
+/**
+ * Handle table state through `importRealForeignKey`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for importRealForeignKey.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::importRealForeignKey()
+ * @example /fr/table/importRealForeignKey
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function importRealForeignKey($param)
     {
         Debug::parseDebug($param);
@@ -201,6 +334,27 @@ class Table
         }
     }
 
+/**
+ * Retrieve table state through `getTableWithFk`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getTableWithFk.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getTableWithFk()
+ * @example /fr/table/getTableWithFk
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getTableWithFk($param)
     {
         $id_mysql_server = $param[0];

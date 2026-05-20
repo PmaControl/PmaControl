@@ -8,7 +8,11 @@
  */
 
 if (!defined('AUTH_SESSION_TIME')) {
-    define("AUTH_SESSION_TIME",31536000);
+    define("AUTH_SESSION_TIME",1209600);
+}
+
+if (!defined('AUTH_SESSION_ABSOLUTE_TIME')) {
+    define("AUTH_SESSION_ABSOLUTE_TIME",2592000);
 }
 
 
@@ -16,4 +20,3 @@ if (! defined('AUTH_ACTIVE'))
 {
    define("AUTH_ACTIVE", true);
 }
-

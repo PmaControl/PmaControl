@@ -1,0 +1,59 @@
+---
+title: Replication of the NOW() function (also, time travel)
+source:
+  name: Percona Blog
+  url: https://www.percona.com/blog/replication-of-the-now-function-also-time-travel/
+  post_id: 6471
+source_author:
+  name: Justin Swanhart
+  slug: justin-swanhart
+  url: https://www.percona.com/blog/author/justin-swanhart/
+  website: http://www.percona.com/about-us/our-team/justin-swanhart/
+published_at: '2012-11-29T06:09:47'
+published_at_gmt: '2012-11-29T06:09:47'
+modified_at: '2026-05-04T21:53:55'
+modified_at_gmt: '2026-05-04T21:53:55'
+curator:
+  name: Sylvain ARBAUDIE
+  slug: sylvain-arbaudie
+  source_url: https://www.pmacontrol.fr/fr/site/blog_author/sylvain-arbaudie/
+matched_topics:
+- MySQL
+matched_filters:
+- category:mysql:83
+categories:
+- Insight for DBAs
+- MySQL
+category_slugs:
+- insight-for-dbas
+- mysql
+tags: []
+tag_slugs: []
+featured_image_url: ''
+image_count: 0
+graph_or_chart_count: 0
+content_import: metadata_excerpt_headings_and_source_image_urls_only
+copyright_notice: Percona All Rights Reserved; full article text and local image copies are not reproduced.
+---
+
+# Replication of the NOW() function (also, time travel)
+
+Source: [Percona Blog](https://www.percona.com/blog/replication-of-the-now-function-also-time-travel/)
+
+Auteur source: [Justin Swanhart](https://www.percona.com/blog/author/justin-swanhart/)
+
+Publication: 2012-11-29T06:09:47
+
+Curateur PmaControl: [Sylvain ARBAUDIE](../../../authors/sylvain-arbaudie.md)
+
+## Note de droits
+
+Fiche de veille uniquement: les metadonnees, l'extrait public, les titres de sections detectes et les URLs des visuels sont conserves. Le texte complet et les copies locales des images restent sur la source Percona.
+
+## Extrait public
+
+Notice the result of the NOW() function in the following query. The query was run on a real database server and I didn’t change the clock of the server or change anything in the database configuration settings. mysql> SELECT NOW(),SYSDATE(); +---------------------+---------------------+ | NOW() | SYSDATE() | +---------------------+---------------------+ | 1999-01-01 00:00:00 | 2012-11-29 05:50:03 | +---------------------+---------------------+ 1 row in set (0.00 sec) 1 2 3 4 5 6 7 mysql > SELECT NOW ( ) , SYSDATE ( ) ; + -- -- -- -- -- -- -- -- -- -- - + -- -- -- -- -- -- -- -- -- -- - + | NOW ( ) | SYSDATE ( ) | + -- -- -- -- -- -- -- -- -- -- - + -- -- -- -- -- -- -- -- -- -- - + | 1999 - 01 - 01 00 : 00 : 00 | 2012 - 11 - 29 05 : 50 : 03 | + -- -- -- -- -- -- -- -- -- -- - + -- -- -- -- -- -- -- -- -- -- - + 1 row in set ( 0.00 sec ) You may proceed to party like it is 1999. How ca...
+
+## Auteur source
+
+Justin is a former Principal Support Engineer on the support team. In the past, he was a trainer at Percona and a consultant. Justin also created and maintains Shard-Query, a middleware tool for sharding and parallel query execution and Flexviews, a tool for materialized views for MySQL. Prior to working at Percona Justin consulted for Proven Scaling, was a backend engineer at Yahoo! and a database administrator at Smule and Gazillion games.

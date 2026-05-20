@@ -1,4 +1,8 @@
 <?php
+use App\Library\Security\CsrfRender;
+
+$userPasswordRecoverCsrfField = CsrfRender::field($data, 'user_password_recover');
+$userPasswordRecoverCsrfToken = CsrfRender::token($data, 'user_password_recover');
 
 echo '<div style="width:1000px; margin-left:auto; margin-right:auto; padding:0" class="well">';
 
@@ -6,6 +10,7 @@ echo '<div style="width:1000px; margin-left:auto; margin-right:auto; padding:0" 
 
 
 echo "<form action=\"\" method=\"post\" class=\"form-horizontal\" width=\"100%\">";
+echo '<input type="hidden" name="'.$userPasswordRecoverCsrfField.'" value="'.$userPasswordRecoverCsrfToken.'">';
 
 
 echo '<div style="padding:10px">';

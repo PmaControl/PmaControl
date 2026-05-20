@@ -23,6 +23,40 @@
 //to know if we are in cli
 define('IS_CLI', PHP_SAPI === 'cli');
 
+if (IS_CLI) {
+    require_once dirname(__DIR__).DIRECTORY_SEPARATOR.'Library'.DIRECTORY_SEPARATOR.'CliRootGuard.php';
+
+    $pmacontrolCliEnv = [
+        'PMACONTROL_CLI_REEXEC' => getenv('PMACONTROL_CLI_REEXEC'),
+        'PMACONTROL_ALLOW_ROOT' => getenv('PMACONTROL_ALLOW_ROOT'),
+        'PMACONTROL_CLI_KEEP_ROOT' => getenv('PMACONTROL_CLI_KEEP_ROOT'),
+        'PMACONTROL_CLI_USER' => getenv('PMACONTROL_CLI_USER'),
+    ];
+    $pmacontrolEffectiveUserId = function_exists('posix_geteuid') ? posix_geteuid() : -1;
+
+    if (\App\Library\CliRootGuard::shouldReexec(true, $pmacontrolEffectiveUserId, $_SERVER['argv'] ?? [], $pmacontrolCliEnv)) {
+        $pmacontrolTargetUser = \App\Library\CliRootGuard::targetUser($pmacontrolCliEnv);
+        $pmacontrolScript = $_SERVER['SCRIPT_FILENAME'] ?? ($_SERVER['argv'][0] ?? __FILE__);
+        $pmacontrolPhp = PHP_BINARY ?: 'php';
+        $pmacontrolCommand = \App\Library\CliRootGuard::buildPhpCommand($_SERVER['argv'] ?? [], $pmacontrolScript, $pmacontrolPhp);
+
+        putenv('PMACONTROL_CLI_REEXEC=1');
+
+        if (function_exists('pcntl_exec') && is_executable('/usr/sbin/runuser')) {
+            pcntl_exec('/usr/sbin/runuser', array_merge(['-u', $pmacontrolTargetUser, '--'], $pmacontrolCommand));
+        }
+
+        $pmacontrolQuotedCommand = implode(' ', array_map('escapeshellarg', $pmacontrolCommand));
+        $pmacontrolShellCommand = 'PMACONTROL_CLI_REEXEC=1 exec su -s /bin/sh -c '
+            . escapeshellarg($pmacontrolQuotedCommand)
+            . ' '
+            . escapeshellarg($pmacontrolTargetUser);
+
+        passthru($pmacontrolShellCommand, $pmacontrolExitCode);
+        exit((int)$pmacontrolExitCode);
+    }
+}
+
 
 mb_internal_encoding("UTF-8");
 // Définit l'encodage de sortie en UTF-8
@@ -95,7 +129,59 @@ try {
         define('JS', WWW_ROOT."js".DS);
     }
 
+//Plugin storage: cached .pmactrl archives + extracted bundles live next
+//to the canonical checkout, in /srv/www/<root>-plugin/.cache/ so they
+//never overlap with the per-plugin source repositories that may sit at
+///srv/www/<root>-plugin/<name>/ (one directory per plugin, mirroring
+//the future marketplace layout). Operators can override the cache
+//location by defining PLUGIN_STORAGE_DIR in configuration/webroot.config.php
+//(it runs before this default so worktrees can share /srv/www/pmacontrol-plugin/.cache/
+//instead of allocating their own <branch>-plugin/.cache/ directory).
+    if (!defined('PLUGIN_STORAGE_DIR')) {
+        define('PLUGIN_STORAGE_DIR', dirname(ROOT).DS.basename(ROOT).'-plugin'.DS.'.cache'.DS);
+    }
+
     define('GLIAL_INDEX', __FILE__);
+
+    // Audit module #1235: bootstrap evidence collection here, at the Glial
+    // front controller, so every hit lands in tmp/audit/requests/ — HTTP
+    // (incl. the favicon early-exit below and any pre-bootstrap fatal the
+    // surrounding try/catch would otherwise swallow silently) AND CLI
+    // (cron jobs, audit_drain, ad-hoc scripts).
+    //
+    // Two exceptions, both filtered here at the entry point:
+    //   - HTTP: AuditLog/recordClientMetrics is a sendBeacon endpoint
+    //     fired by clientMetrics.js on every page render. Auditing it
+    //     would duplicate every real request and dominate the "Top
+    //     routes" view — its payload is already spooled separately by
+    //     the controller into tmp/audit/client_metrics/.
+    //   - CLI: daemon loop iterations carry a "loop:<id>" argv suffix
+    //     (set in App/Controller/Agent.php when spawning daemons). They
+    //     can fire thousands of times per hour and aren't user evidence,
+    //     so we skip them. One-shot CLI commands (no loop: argv) are
+    //     still audited.
+    try {
+        require_once ROOT.DS.'vendor'.DS.'autoload.php';
+        $auditSkip = false;
+        if (!IS_CLI) {
+            $auditSkip = isset($_GET['glial_path'])
+                && stripos((string) $_GET['glial_path'], 'AuditLog/recordClientMetrics') !== false;
+        } else {
+            $argvForAudit = $_SERVER['argv'] ?? ($GLOBALS['argv'] ?? []);
+            foreach ($argvForAudit as $arg) {
+                if (is_string($arg) && str_starts_with($arg, 'loop:')) {
+                    $auditSkip = true;
+                    break;
+                }
+            }
+            unset($argvForAudit);
+        }
+        if (!$auditSkip) {
+            \App\Library\Audit\RequestAuditCollector::begin(TIME_START);
+        }
+    } catch (\Throwable $auditBootstrapError) {
+        error_log('RequestAuditCollector boot failed: '.$auditBootstrapError->getMessage());
+    }
 
     if (isset($_GET['glial_path']) && strpos($_GET['glial_path'], 'favicon.ico')) {
         //case where navigator ask favicon.ico even if it's not set in your html

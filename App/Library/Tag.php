@@ -12,8 +12,47 @@ use App\Library\Mysql;
 use App\Library\Color;
 use \Glial\Sgbd\Sgbd;
 
+/**
+ * Class responsible for tag workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Tag {
 
+/**
+ * Handle tag state through `insertTag`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @param mixed $all_tags Input value for `all_tags`.
+ * @phpstan-param mixed $all_tags
+ * @psalm-param mixed $all_tags
+ * @return mixed Returned value for insertTag.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::insertTag()
+ * @example /fr/tag/insertTag
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function insertTag($id_mysql_server, $all_tags) {
 
         $db = Sgbd::sql(DB_DEFAULT);
@@ -60,3 +99,4 @@ class Tag {
     }
 
 }
+

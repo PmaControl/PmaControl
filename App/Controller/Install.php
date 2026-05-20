@@ -23,6 +23,13 @@ innodb_monitor_enable=all
  */
 class Install extends Controller
 {
+/**
+ * Stores `$link` for link.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $link; /* link mysql server */
 
     public function out($msg, $type)
@@ -51,6 +58,24 @@ class Install extends Controller
         return $ret;
     }
 
+/**
+ * Handle install state through `onError`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @return void Returned value for onError.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::onError()
+ * @example /fr/install/onError
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function onError()
     {
 
@@ -59,6 +84,30 @@ class Install extends Controller
         exit(10);
     }
 
+/**
+ * Handle install state through `cmd`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $cmd Input value for `cmd`.
+ * @phpstan-param mixed $cmd
+ * @psalm-param mixed $cmd
+ * @param mixed $msg Input value for `msg`.
+ * @phpstan-param mixed $msg
+ * @psalm-param mixed $msg
+ * @return mixed Returned value for cmd.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::cmd()
+ * @example /fr/install/cmd
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function cmd($cmd, $msg)
     {
         $code_retour = 0;
@@ -81,11 +130,84 @@ class Install extends Controller
         return $return;
     }
 
+/**
+ * Handle install state through `displayResult`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $msg Input value for `msg`.
+ * @phpstan-param mixed $msg
+ * @psalm-param mixed $msg
+ * @param mixed $fine Input value for `fine`.
+ * @phpstan-param mixed $fine
+ * @psalm-param mixed $fine
+ * @return void Returned value for displayResult.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::displayResult()
+ * @example /fr/install/displayResult
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     function displayResult($msg, $fine)
     {
         echo $this->out(Color::getColoredString("[".date("Y-m-d H:i:s")."] ", "purple").$msg, $fine);
     }
 
+    private function cliPrompt($label, $secret = false)
+    {
+        fwrite(STDOUT, $label);
+        fflush(STDOUT);
+
+        if ($secret) {
+            if (function_exists('shell_exec')) {
+                @shell_exec('stty -echo');
+            }
+
+            $value = fgets(STDIN);
+
+            if (function_exists('shell_exec')) {
+                @shell_exec('stty echo');
+            }
+
+            fwrite(STDOUT, PHP_EOL);
+            fflush(STDOUT);
+
+            return trim((string) $value);
+        }
+
+        return trim((string) fgets(STDIN));
+    }
+
+/**
+ * Handle install state through `anonymous`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $function Input value for `function`.
+ * @phpstan-param mixed $function
+ * @psalm-param mixed $function
+ * @param mixed $msg Input value for `msg`.
+ * @phpstan-param mixed $msg
+ * @psalm-param mixed $msg
+ * @return void Returned value for anonymous.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::anonymous()
+ * @example /fr/install/anonymous
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function anonymous($function, $msg)
     {
         list($fine, $message) = $function($msg);
@@ -93,6 +215,27 @@ class Install extends Controller
         echo $this->out($message, $fine);
     }
 
+/**
+ * Render install state through `index`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/install/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index($param = array())
     {
         $this->view = false;
@@ -154,6 +297,27 @@ class Install extends Controller
         echo Color::getColoredString("\n".SITE_NAME." ".SITE_VERSION." has been successfully installed !\n", "green");
     }
 
+/**
+ * Handle install state through `prompt`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $test Input value for `test`.
+ * @phpstan-param mixed $test
+ * @psalm-param mixed $test
+ * @return mixed Returned value for prompt.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::prompt()
+ * @example /fr/install/prompt
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function prompt($test)
     {
         echo $test;
@@ -162,6 +326,24 @@ class Install extends Controller
         return $line;
     }
 
+/**
+ * Handle install state through `testMysqlServer`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @return mixed Returned value for testMysqlServer.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::testMysqlServer()
+ * @example /fr/install/testMysqlServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function testMysqlServer()
     {
 
@@ -292,9 +474,34 @@ class Install extends Controller
         $mysql['user']     = $user;
         $mysql['password'] = $passwd;
         $mysql['database'] = $database;
+        $mysql['database'] = 0;
         return $mysql;
     }
 
+/**
+ * Handle install state through `cadre`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $text Input value for `text`.
+ * @phpstan-param mixed $text
+ * @psalm-param mixed $text
+ * @param mixed $elem Input value for `elem`.
+ * @phpstan-param mixed $elem
+ * @psalm-param mixed $elem
+ * @return void Returned value for cadre.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::cadre()
+ * @example /fr/install/cadre
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function cadre($text, $elem = '#')
     {
         echo str_repeat($elem, 80)."\n";
@@ -302,6 +509,27 @@ class Install extends Controller
         echo str_repeat($elem, 80)."\n";
     }
 
+/**
+ * Handle install state through `importData`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $server Input value for `server`.
+ * @phpstan-param mixed $server
+ * @psalm-param mixed $server
+ * @return void Returned value for importData.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::importData()
+ * @example /fr/install/importData
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function importData($server)
     {
         //$path = ROOT."/sql/*.sql";
@@ -321,6 +549,27 @@ class Install extends Controller
         }
     }
 
+/**
+ * Update install state through `updateConfig`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $server Input value for `server`.
+ * @phpstan-param mixed $server
+ * @psalm-param mixed $server
+ * @return void Returned value for updateConfig.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::updateConfig()
+ * @example /fr/install/updateConfig
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function updateConfig($server)
     {
         //update DB config
@@ -339,7 +588,8 @@ hostname=".$server["hostname"]."
 user=".$server['user']."
 password='".$server['password']."'
 crypted='1'
-database=".$server['database']."";
+database=".$server['database']."
+ssl=".($server['is_ssl'] ?? 0)."";
 
         $fp = fopen(CONFIG."/db.config.ini.php", 'w');
         fwrite($fp, $config);
@@ -348,6 +598,24 @@ database=".$server['database']."";
         $this->cmd("echo 1", "Generate config file for DB");
     }
 
+/**
+ * Update install state through `updateCache`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for updateCache.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::updateCache()
+ * @example /fr/install/updateCache
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function updateCache()
     {
         $this->cmd("php glial administration admin_index_unique", "Generating DDL cash for index");
@@ -355,6 +623,27 @@ database=".$server['database']."";
         $this->cmd("php glial administration generate_model", "Making model with reverse engineering of databases");
     }
 
+/**
+ * Create install state through `createAdmin`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for createAdmin.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::createAdmin()
+ * @example /fr/install/createAdmin
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function createAdmin($param = array())
     {
         $this->view = false;
@@ -406,7 +695,7 @@ database=".$server['database']."";
 
             $email_is_valid = false;
             do {
-                $email = readline('Your email : ');
+                $email = $this->cliPrompt('Your email : ');
 
                 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                     $this->displayResult("This email considered as valid !", "KO");
@@ -428,13 +717,13 @@ database=".$server['database']."";
             } while ($email_is_valid === false);
 
             //login
-            $login = readline('Your login : ');
+            $login = $this->cliPrompt('Your login : ');
 
             //first name
-            $firstname = readline('Your firstname : ');
+            $firstname = $this->cliPrompt('Your firstname : ');
 
             //last name
-            $lastname = readline('Your lastname : ');
+            $lastname = $this->cliPrompt('Your lastname : ');
 
             //country
             $sql = "SELECT libelle FROM geolocalisation_country where libelle != '' ORDER BY libelle";
@@ -447,7 +736,7 @@ database=".$server['database']."";
             }
 
             do {
-                $country2 = readline('Your country [First letter in upper case, then tab for help] : ');
+                $country2 = $this->cliPrompt('Your country [First letter in upper case, then tab for help] : ');
 
                 $sql = "select id from geolocalisation_country where libelle = '".$db->sql_real_escape_string($country2)."'";
                 $res = $db->sql_query($sql);
@@ -472,7 +761,7 @@ database=".$server['database']."";
             }
 
             do {
-                $city2 = readline('Your city [First letter in upper case, then tab for help] : ');
+                $city2 = $this->cliPrompt('Your city [First letter in upper case, then tab for help] : ');
 
                 $sql = "select id from geolocalisation_city where libelle = '".$db->sql_real_escape_string($city2)."'";
                 $res = $db->sql_query($sql);
@@ -488,8 +777,8 @@ database=".$server['database']."";
 
             $good = false;
             do {
-                $pwd  = readline('Password : ');
-                $pwd2 = readline('Password (repeat) : ');
+                $pwd  = $this->cliPrompt('Password : ', true);
+                $pwd2 = $this->cliPrompt('Password (repeat) : ', true);
 
                 if (!empty($pwd) && $pwd === $pwd2) {
                     $good = true;
@@ -571,6 +860,27 @@ database=".$server['database']."";
         echo "You can connect to the application on this url : ".Color::getColoredString("http://".gethostname().WWW_ROOT, "yellow")."\n";
     }
 
+/**
+ * Create install state through `createOrganisation`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for createOrganisation.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::createOrganisation()
+ * @example /fr/install/createOrganisation
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function createOrganisation($param)
     {
 
@@ -601,6 +911,27 @@ database=".$server['database']."";
         }
     }
 
+/**
+ * Handle install state through `rand_char`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $length Input value for `length`.
+ * @phpstan-param mixed $length
+ * @psalm-param mixed $length
+ * @return mixed Returned value for rand_char.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::rand_char()
+ * @example /fr/install/rand_char
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function rand_char($length)
     {
         $random = '';
@@ -610,16 +941,34 @@ database=".$server['database']."";
         return $random;
     }
 
+/**
+ * Handle install state through `generate_key`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for generate_key.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::generate_key()
+ * @example /fr/install/generate_key
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function generate_key()
     {
 
-        $key = str_replace("'", "", $this->rand_char(256));
+        $key = bin2hex(random_bytes(32));
 
         $data = "<?php
 
 if (! defined('CRYPT_KEY'))
 {
-    define('CRYPT_KEY', '".$key."');
+    define('CRYPT_KEY', ".var_export($key, true).");
 }
 ";
 
@@ -635,6 +984,27 @@ if (! defined('CRYPT_KEY'))
         }
     }
 
+/**
+ * Handle install state through `installLanguage`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $db Input value for `db`.
+ * @phpstan-param mixed $db
+ * @psalm-param mixed $db
+ * @return void Returned value for installLanguage.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::installLanguage()
+ * @example /fr/install/installLanguage
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function installLanguage($db)
     {
 
@@ -642,6 +1012,27 @@ if (! defined('CRYPT_KEY'))
         //\Glial\I18n\I18n::install();
     }
 
+/**
+ * Handle install state through `parseConfig`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $configFile Input value for `configFile`.
+ * @phpstan-param mixed $configFile
+ * @psalm-param mixed $configFile
+ * @return mixed Returned value for parseConfig.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::parseConfig()
+ * @example /fr/install/parseConfig
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function parseConfig($configFile)
     {
         //debug($configFile);
@@ -654,6 +1045,30 @@ if (! defined('CRYPT_KEY'))
         return $config;
     }
 
+/**
+ * Handle install state through `testIpPort`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $hostname Input value for `hostname`.
+ * @phpstan-param mixed $hostname
+ * @psalm-param mixed $hostname
+ * @param mixed $port Input value for `port`.
+ * @phpstan-param mixed $port
+ * @psalm-param mixed $port
+ * @return mixed Returned value for testIpPort.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::testIpPort()
+ * @example /fr/install/testIpPort
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function testIpPort($hostname, $port)
     {
 
@@ -672,6 +1087,36 @@ if (! defined('CRYPT_KEY'))
         }
     }
 
+/**
+ * Handle install state through `testMySQL`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $hostname Input value for `hostname`.
+ * @phpstan-param mixed $hostname
+ * @psalm-param mixed $hostname
+ * @param mixed $port Input value for `port`.
+ * @phpstan-param mixed $port
+ * @psalm-param mixed $port
+ * @param mixed $user Input value for `user`.
+ * @phpstan-param mixed $user
+ * @psalm-param mixed $user
+ * @param mixed $password Input value for `password`.
+ * @phpstan-param mixed $password
+ * @psalm-param mixed $password
+ * @return mixed Returned value for testMySQL.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::testMySQL()
+ * @example /fr/install/testMySQL
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function testMySQL($hostname, $port, $user, $password)
     {
 
@@ -690,6 +1135,24 @@ if (! defined('CRYPT_KEY'))
         }
     }
 
+/**
+ * Handle install state through `testVectorDB`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @return void Returned value for testVectorDB.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::testVectorDB()
+ * @example /fr/install/testVectorDB
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function testVectorDB()
     {
         if (empty($this->link)) {
@@ -716,6 +1179,24 @@ if (! defined('CRYPT_KEY'))
         }
     }
 
+/**
+ * Handle install state through `testSpider`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @return void Returned value for testSpider.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::testSpider()
+ * @example /fr/install/testSpider
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function testSpider()
     {
         $sql = "select count(1) as cpt from information_schema.engines where engine = 'SPIDER' and (SUPPORT = 'YES' OR SUPPORT = 'DEFAULT');";
@@ -738,6 +1219,27 @@ if (! defined('CRYPT_KEY'))
         }
     }
 
+/**
+ * Handle install state through `testDatabase`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int|string,mixed> $database Input value for `database`.
+ * @phpstan-param array<int|string,mixed> $database
+ * @psalm-param array<int|string,mixed> $database
+ * @return mixed Returned value for testDatabase.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::testDatabase()
+ * @example /fr/install/testDatabase
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function testDatabase($database)
     {
         $sql    = "SELECT count(1) as cpt FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '".mysqli_real_escape_string($this->link, $database)."'";
@@ -746,19 +1248,40 @@ if (! defined('CRYPT_KEY'))
         $ob = mysqli_fetch_object($result);
 
         if ($ob->cpt == "1") {
-            return "Database -> KO (this database already exist";
-        } else {
-            return true;
+            return "Database already exists";
         }
+
+        return true;
 
 
         exit;
     }
 
+/**
+ * Create install state through `createDatabase`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int|string,mixed> $database Input value for `database`.
+ * @phpstan-param array<int|string,mixed> $database
+ * @psalm-param array<int|string,mixed> $database
+ * @return mixed Returned value for createDatabase.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::createDatabase()
+ * @example /fr/install/createDatabase
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function createDatabase($database)
     {
 
-        $sql = "CREATE DATABASE ".mysqli_real_escape_string($this->link, $database)."";
+        $sql = "CREATE DATABASE IF NOT EXISTS ".mysqli_real_escape_string($this->link, $database)."";
         $res = mysqli_query($this->link, $sql);
 
         if ($res) {
@@ -768,6 +1291,28 @@ if (! defined('CRYPT_KEY'))
         }
     }
 
+/**
+ * Handle install state through `configMySQL`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $config Input value for `config`.
+ * @phpstan-param mixed $config
+ * @psalm-param mixed $config
+ * @return mixed Returned value for configMySQL.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::configMySQL()
+ * @example /fr/install/configMySQL
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function configMySQL($config)
     {
 
@@ -789,7 +1334,7 @@ if (! defined('CRYPT_KEY'))
         //$this->testSpider();
 
         $ret = $this->testDatabase($config['mysql']['database']);
-        if ($ret !== true) {
+        if ($ret !== true && $ret !== "Database already exists") {
             throw new \Exception($ret);
         }
 
@@ -805,6 +1350,27 @@ if (! defined('CRYPT_KEY'))
         return $config['mysql'];
     }
 
+/**
+ * Handle install state through `webroot`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for webroot.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::webroot()
+ * @example /fr/install/webroot
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function webroot($param)
     {
         $filename = $param[0] ?? "";
@@ -832,6 +1398,24 @@ if (! defined('WWW_ROOT'))
         }
     }
 
+/**
+ * Update install state through `updateVersion`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for updateVersion.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::updateVersion()
+ * @example /fr/install/updateVersion
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function updateVersion()
     {
         //echo "UPDATE site.config.php";
@@ -856,6 +1440,27 @@ if (! defined('WWW_ROOT'))
         //load DB and compare => upgradet
     }
 
+/**
+ * Update install state through `update`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for update.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::update()
+ * @example /fr/install/update
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function update($param)
     {
 

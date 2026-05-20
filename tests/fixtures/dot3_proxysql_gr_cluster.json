@@ -1,0 +1,123 @@
+{
+    "servers": {
+        "181": {
+            "id_mysql_server": "181",
+            "hostname": "10.68.68.134",
+            "port": "6033",
+            "version": "3.0.5",
+            "version_comment": "ProxySQL",
+            "is_proxysql": "1",
+            "is_proxy": "1",
+            "mysql_available": "2",
+            "mysql_servers": [
+                {
+                    "hostgroup_id": "40",
+                    "hostname": "10.68.68.131",
+                    "port": "3306",
+                    "gtid_port": "0",
+                    "status": "ONLINE",
+                    "weight": "1",
+                    "compression": "0",
+                    "max_connections": "1000",
+                    "max_replication_lag": "0",
+                    "use_ssl": "1",
+                    "max_latency_ms": "0",
+                    "comment": ""
+                },
+                {
+                    "hostgroup_id": "40",
+                    "hostname": "10.68.68.132",
+                    "port": "3306",
+                    "gtid_port": "0",
+                    "status": "SHUNNED",
+                    "weight": "1",
+                    "compression": "0",
+                    "max_connections": "1000",
+                    "max_replication_lag": "0",
+                    "use_ssl": "1",
+                    "max_latency_ms": "0",
+                    "comment": ""
+                },
+                {
+                    "hostgroup_id": "140",
+                    "hostname": "10.68.68.223",
+                    "port": "3306",
+                    "gtid_port": "0",
+                    "status": "SHUNNED",
+                    "weight": "1",
+                    "compression": "0",
+                    "max_connections": "1000",
+                    "max_replication_lag": "0",
+                    "use_ssl": "0",
+                    "max_latency_ms": "0",
+                    "comment": ""
+                },
+                {
+                    "hostgroup_id": "140",
+                    "hostname": "10.68.68.224",
+                    "port": "3306",
+                    "gtid_port": "0",
+                    "status": "SHUNNED",
+                    "weight": "1",
+                    "compression": "0",
+                    "max_connections": "1000",
+                    "max_replication_lag": "0",
+                    "use_ssl": "0",
+                    "max_latency_ms": "0",
+                    "comment": ""
+                }
+            ],
+            "mysql_group_replication_hostgroups": [
+                {
+                    "writer_hostgroup": "10",
+                    "backup_writer_hostgroup": "20",
+                    "reader_hostgroup": "30",
+                    "offline_hostgroup": "40",
+                    "active": "1",
+                    "max_writers": "1",
+                    "writer_is_also_reader": "0",
+                    "max_transactions_behind": "100"
+                },
+                {
+                    "writer_hostgroup": "110",
+                    "backup_writer_hostgroup": "120",
+                    "reader_hostgroup": "130",
+                    "offline_hostgroup": "140",
+                    "active": "1",
+                    "max_writers": "1",
+                    "writer_is_also_reader": "0",
+                    "max_transactions_behind": "100"
+                }
+            ],
+            "ip": "10.68.68.134",
+            "display_name": "prodCluster-proxysql-1",
+            "ip_real": "10.68.68.134",
+            "port_real": "6033"
+        },
+        "172": {
+            "id_mysql_server": "172",
+            "hostname": "group-replication-1",
+            "port": "3306",
+            "version": "8.4.8",
+            "version_comment": "MySQL Community Server - GPL",
+            "is_proxysql": "0",
+            "is_proxy": "0",
+            "mysql_available": "1",
+            "ip": "group-replication-1",
+            "display_name": "prodCluster-mysql-1-primary",
+            "ip_real": "10.68.68.131",
+            "port_real": "3306",
+            "gr_member_role": "",
+            "gr_member_state": "OFFLINE"
+        },
+        "252": {
+            "id_mysql_server": "252",
+            "port": "3306",
+            "is_proxy": "0",
+            "ip": "gr80-pxc-1",
+            "display_name": "gr80-pxc-1",
+            "ip_real": "10.68.68.223",
+            "port_real": "3306"
+        }
+    }
+}

@@ -32,7 +32,7 @@ https://github.com/file-icons/MFixx
     color:#fff;
 }
 
-body { padding-bottom: 70px;padding-top: 70px; font-size:12px}
+body { padding-bottom: 70px;padding-top: 60px; font-size:12px}
 
 
 .pmacontrol {width:100%; }
@@ -1712,4 +1712,36 @@ background-position: 0 0,0 25px,25px -25px,-25px 0;
 .colorpicker:before,
 .colorpicker:after {
   display: none !important;
+}
+
+.btn-group select {
+  cursor: pointer;
+  appearance: none;
+}
+
+/* Issue #1248 — cap the server-list selectpicker rendered by
+ * Common::getSelectServerAvailable() at 300px so long display_name (ip)
+ * strings don't stretch the widget across the page. Targets the
+ * bootstrap-select wrapper (the visible button group), with :has() as
+ * the primary selector and a class-mirror fallback in case bootstrap-
+ * select copies the class to the wrapper.
+ */
+.bootstrap-select:has(> select.selectpicker--server),
+.bootstrap-select.selectpicker--server {
+    max-width: 300px;
+}
+
+.bootstrap-select:has(> select.selectpicker--server) > .btn,
+.bootstrap-select.selectpicker--server > .btn {
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.bootstrap-select:has(> select.selectpicker--server) > .btn .filter-option,
+.bootstrap-select.selectpicker--server > .btn .filter-option {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }

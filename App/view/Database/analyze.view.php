@@ -5,12 +5,14 @@
  * and open the template in the editor.
  */
 
+use App\Library\Security\CsrfRender;
 use Glial\Html\Form\Form;
 
 ?>
 
 <form action="<?= LINK ?>database/analyze" method="POST">
-    <?= Form::input("database", "analyze", array("type" => "hidden", "value"=>"1")); ?>
+    <?= Form::input("analyze", "analyze", array("type" => "hidden", "value"=>"1")); ?>
+    <?= CsrfRender::hiddenInput($data, 'database_analyze') ?>
     <div class="panel panel-primary">
         <div class="panel-heading">
             <h3 class="panel-title"><?= __('Automatic updating indexes statistics') ?> (ANALYZE TABLE `XXXX`)</h3>

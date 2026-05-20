@@ -1,5 +1,7 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 use Glial\Html\Form\Form;
 use App\Library\Display;
 
@@ -21,12 +23,16 @@ use App\Library\Display;
  * select server
  *
  */
+$deployRsaKeyIndexCsrfField = CsrfRender::field($data, 'deploy_rsa_key_index');
+$deployRsaKeyIndexCsrfToken = CsrfRender::token($data, 'deploy_rsa_key_index');
 ?>
 <div class="well">
     <?= \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array()); ?>
 </div>
 
 <form action="" method="post" class="form-inline" autocomplete="off">
+    <input type="hidden" name="<?= $deployRsaKeyIndexCsrfField ?>" value="<?= $deployRsaKeyIndexCsrfToken ?>">
+
     <div class="row">
         <div class="col-md-6">
             <div class="panel panel-primary">
@@ -153,7 +159,9 @@ use App\Library\Display;
         foreach ($data['servers'] as $server) {
 
             $i++;
-            echo '<tr class="row-server key-'.implode(" key-", explode(',',$server['id_ssh_key'])).'">';
+            $sshKeyIds = array_filter(array_map('intval', explode(',', (string)($server['id_ssh_key'] ?? ''))));
+            $sshKeyClass = empty($sshKeyIds) ? '' : ' key-'.implode(' key-', $sshKeyIds);
+            echo '<tr class="row-server'.$sshKeyClass.'">';
 
 
             echo '<td style = "'.$style.'">';
@@ -186,9 +194,14 @@ use App\Library\Display;
 
             echo '<td style = "'.$style.'">';
 
+            $activeCount = 0;
+            foreach (explode(",", (string)($server['active'] ?? '')) as $active) {
+                if (is_numeric($active)) {
+                    $activeCount += (int)$active;
+                }
+            }
 
-
-            echo array_sum(explode(",", $server['active']));
+            echo $activeCount;
 
 
             //echo $server['cpt'];

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="16" height="16">
+  <g stroke="#000" stroke-width="4" stroke-linecap="square" stroke-linejoin="miter" fill="none">
+    <!-- pins top -->
+    <line x1="20" y1="6" x2="20" y2="14"/>
+    <line x1="28" y1="6" x2="28" y2="14"/>
+    <line x1="36" y1="6" x2="36" y2="14"/>
+    <line x1="44" y1="6" x2="44" y2="14"/>
+
+    <!-- pins bottom -->
+    <line x1="20" y1="50" x2="20" y2="58"/>
+    <line x1="28" y1="50" x2="28" y2="58"/>
+    <line x1="36" y1="50" x2="36" y2="58"/>
+    <line x1="44" y1="50" x2="44" y2="58"/>
+
+    <!-- pins left -->
+    <line x1="6" y1="20" x2="14" y2="20"/>
+    <line x1="6" y1="28" x2="14" y2="28"/>
+    <line x1="6" y1="36" x2="14" y2="36"/>
+    <line x1="6" y1="44" x2="14" y2="44"/>
+
+    <!-- pins right -->
+    <line x1="50" y1="20" x2="58" y2="20"/>
+    <line x1="50" y1="28" x2="58" y2="28"/>
+    <line x1="50" y1="36" x2="58" y2="36"/>
+    <line x1="50" y1="44" x2="58" y2="44"/>
+
+    <!-- body -->
+    <rect x="14" y="14" width="36" height="36"/>
+  </g>
+
+  <!-- core -->
+  <rect x="24" y="24" width="16" height="16" fill="#000"/>
+</svg>

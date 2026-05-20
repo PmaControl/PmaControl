@@ -15,7 +15,7 @@ use Glial\Html\Form\Form;
     //print_r($_GET);
     //echo $data['sql'];
 
-    echo '&nbsp;-&nbsp;<form class="form-inline" style="display:inline" action="" method="post">';
+    echo '&nbsp;-&nbsp;<form class="form-inline" style="display:inline" action="" method="get">';
 
     echo __("Server : ");
     echo ' ';
@@ -37,5 +37,4 @@ use Glial\Html\Form\Form;
     <li><a href="#"><?= __("Alert") ?></a></li>
     <li><a href="#"><?= __("Configuration") ?></a></li>
 </ul>
-
 

@@ -6,13 +6,31 @@
 
 
 $(".is_monitored").change(function () {
-    id_mysql_server = $(this).attr("data-id");
-    url = GLIAL_LINK + 'client/toggleMonitoring/' + id_mysql_server;
-    
-    if (this.checked) {
-        $.get(url + '/true/');
-    } else
-    {
-        $.get(url + '/false/');
+    var checkbox = $(this);
+    var idClient = checkbox.attr("data-id");
+    var isMonitored = checkbox.is(":checked") ? 1 : 0;
+    var previousState = !checkbox.is(":checked");
+    var csrfField = checkbox.attr("data-csrf-field") || "_csrf_token";
+    var csrfToken = checkbox.attr("data-csrf-token");
+    var payload = {
+        id: idClient,
+        is_monitored: isMonitored
+    };
+
+    if (csrfToken) {
+        payload[csrfField] = csrfToken;
     }
+
+    $.ajax({
+        url: GLIAL_LINK + 'client/toggleMonitoring/ajax:true',
+        method: 'POST',
+        dataType: 'json',
+        data: payload
+    }).done(function (response) {
+        if (!response || response.success !== true) {
+            checkbox.prop("checked", previousState);
+        }
+    }).fail(function () {
+        checkbox.prop("checked", previousState);
+    });
 });

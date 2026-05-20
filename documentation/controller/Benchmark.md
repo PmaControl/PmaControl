@@ -1,0 +1,38 @@
+# Benchmark
+
+- Type: class
+- Namespace: `App\Controller`
+- Source: `App/Controller/Benchmark.php`
+
+- `before($param)`: Prepare benchmark state through `before`.
+- `run($param)`: Handle benchmark state through `run`.
+- `getQueriesPerformedRead($input_lines)`: Retrieve benchmark state through `getQueriesPerformedRead`.
+- `getQueriesPerformedWrite($input_lines)`: Retrieve benchmark state through `getQueriesPerformedWrite`.
+- `getQueriesPerformedOther($input_lines)`: Retrieve benchmark state through `getQueriesPerformedOther`.
+- `getQueriesPerformedTotal($input_lines)`: Retrieve benchmark state through `getQueriesPerformedTotal`.
+- `getTransactions($input_lines)`: Retrieve benchmark state through `getTransactions`.
+- `getErrors($input_lines)`: Retrieve benchmark state through `getErrors`.
+- `getTotalTime($input_lines)`: Retrieve benchmark state through `getTotalTime`.
+- `getReponseTimeMin($input_lines)`: Retrieve benchmark state through `getReponseTimeMin`.
+- `getReponseTimeMax($input_lines)`: Retrieve benchmark state through `getReponseTimeMax`.
+- `getReponseTimeAvg($input_lines)`: Retrieve benchmark state through `getReponseTimeAvg`.
+- `getReponseTime95percent($input_lines)`: Retrieve benchmark state through `getReponseTime95percent`.
+- `testMoc($param)`: Handle benchmark state through `testMoc`.
+- `moc()`: Handle benchmark state through `moc`.
+- `moc2()`: Handle benchmark state through `moc2`.
+- `moc3()`: Handle benchmark state through `moc3`.
+- `index($param)`: Render benchmark state through `index`.
+- `testError($input_lines)`: Handle benchmark state through `testError`.
+- `install()`: Handle benchmark state through `install`.
+- `uninstall()`: Handle benchmark state through `uninstall`.
+- `graph()`: Handle benchmark state through `graph`.
+- `config()`: Handle benchmark state through `config`.
+- `bench($param)`: Handle benchmark state through `bench`.
+- `current()`: Handle benchmark state through `current`.
+- `getFilter()`: Retrieve benchmark state through `getFilter`.
+- `queue($param)`: Handle benchmark state through `queue`.
+- `debug($string)`: Handle benchmark state through `debug`.
+- `getSysbenchVersion($param)`: Retrieve benchmark state through `getSysbenchVersion`.
+- `getScriptLua($param)`: Retrieve benchmark state through `getScriptLua`.
+- `getDirectoryLua($param)`: Retrieve benchmark state through `getDirectoryLua`.
+- `getLua()`: Retrieve benchmark state through `getLua`.

@@ -12,7 +12,7 @@ use Glial\Html\Form\Form;
 Form::$select_display_msg = false;
 
 
-echo '<form style="display:inline" action="" method="post">';
+echo '<form style="display:inline" action="" method="get">';
 echo __("Client") . " : ";
 echo Form::select("client", "libelle", $data['client'], "", array("data-live-search" => "true", "class" => "selectpicker",  "data-actions-box"=> "true", "multiple"=>"multiple"));
 echo " - " . __("Environment") . " : ";

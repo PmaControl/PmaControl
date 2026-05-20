@@ -1,4 +1,9 @@
 <?php
+use App\Library\Security\CsrfRender;
+
+$userMailboxCsrfField = CsrfRender::field($data, 'user_mailbox');
+$userMailboxCsrfToken = CsrfRender::token($data, 'user_mailbox');
+
 $this->data['options'] = array("all_mails", "inbox", "sent_mail", "trash", "compose");
 ($data['request'] === "compose") ? $class1 = 'btBlueTest' : $class1 = 'btGreyLite';
 ($data['request'] === "all_mails") ? $class2 = 'btBlueTest' : $class2 = 'btGreyLite';
@@ -13,10 +18,11 @@ echo '<a href="' . LINK . 'user/mailbox/trash/" class="button ' . $class5 . ' ov
 echo '<div>';
 switch ($data['request'])
 {
-	case "compose":
-		echo '<div class="post">';
-		echo '<form action="" method="post">';
-		echo "<h3>" . __("Compose") . "</h3>";
+		case "compose":
+			echo '<div class="post">';
+			echo '<form action="" method="post">';
+			echo '<input type="hidden" name="' . $userMailboxCsrfField . '" value="' . $userMailboxCsrfToken . '">';
+			echo "<h3>" . __("Compose") . "</h3>";
 		if (empty($data['send_to'][1]) || empty($data['send_to'][1]))
 		{
 			echo '<label class="required"><strong>' . __("To") . ' <span>(' . __("Required") . ')</span></strong><br>';

@@ -1,0 +1,27 @@
+services:
+  mysql57-tls:
+    image: mysql:5.7
+    container_name: mysql57-tls
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: test
+      MYSQL_USER: pmacontrol
+      MYSQL_PASSWORD: pmacontrol
+    ports:
+      - "3357:3306"
+    # auto_generate_certs=ON is the 5.7 default — certs land in /var/lib/mysql/
+    # (ca.pem, server-cert.pem, server-key.pem) on first init. No cert mount needed.
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --require_secure_transport=ON
+    volumes:
+      - mysql57-tls-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mysql57-tls-data:

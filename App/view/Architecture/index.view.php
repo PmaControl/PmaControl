@@ -1,4 +1,8 @@
 <?php
+
+use App\Library\Debug;
+
+
 echo '<div class="well">';
 \Glial\Synapse\FactoryController::addNode("Common", "displayClientEnvironment", array());
 echo '</div>';
@@ -33,9 +37,21 @@ foreach ($data['graphs'] as $graph) {
 
     if (!empty($graph['svg'])) {
 
-        echo '<div class="grid-item" style="float:left; border:#000 0px solid">';
-        //echo $graph['height'];
-        echo $graph['svg'];
+        $border = "0";
+        if (Debug::$debug === true)
+        {
+            $border = "1";
+        }
+
+        $svg = $graph['svg'];
+        $svgSuffix = '-graph-'.$graph['id'];
+        $svg = str_replace('id="pmac-icon-gr"', 'id="pmac-icon-gr'.$svgSuffix.'"', $svg);
+        $svg = str_replace('id="pmac-icon-mysql"', 'id="pmac-icon-mysql'.$svgSuffix.'"', $svg);
+        $svg = str_replace('xlink:href="#pmac-icon-gr"', 'xlink:href="#pmac-icon-gr'.$svgSuffix.'" href="#pmac-icon-gr'.$svgSuffix.'"', $svg);
+        $svg = str_replace('xlink:href="#pmac-icon-mysql"', 'xlink:href="#pmac-icon-mysql'.$svgSuffix.'" href="#pmac-icon-mysql'.$svgSuffix.'"', $svg);
+
+        echo '<div class="grid-item" style="float:left; border:#000 '.$border.'px solid">';
+        echo $svg;
         echo '</div>';
         $date['date'][] = $graph['date_refresh'];
     }
@@ -55,4 +71,3 @@ if (!empty($data['graphs'])
         echo '<div style="float:right;">'.__("Date de rafraichissement :", "fr")." ".$date['date'][0]."</div>";
     }
 }
-

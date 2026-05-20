@@ -1,9 +1,9 @@
 /*M!999999\- enable the sandbox mode */ 
--- MariaDB dump 10.19  Distrib 10.11.13-MariaDB, for debian-linux-gnu (x86_64)
+-- MariaDB dump 10.19  Distrib 10.11.16-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: 127.0.0.1    Database: pmacontrol
 -- ------------------------------------------------------
--- Server version	10.11.13-MariaDB-deb12-log
+-- Server version	10.11.16-MariaDB-deb12-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -162857,11 +162857,11 @@ UNLOCK TABLES;
 
 -- Dump completed
 /*M!999999\- enable the sandbox mode */ 
--- MariaDB dump 10.19  Distrib 10.11.13-MariaDB, for debian-linux-gnu (x86_64)
+-- MariaDB dump 10.19  Distrib 10.11.16-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: 127.0.0.1    Database: pmacontrol
 -- ------------------------------------------------------
--- Server version	10.11.13-MariaDB-deb12-log
+-- Server version	10.11.16-MariaDB-deb12-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -162962,15 +162962,27 @@ CREATE TABLE `daemon_main` (
 
 LOCK TABLES `daemon_main` WRITE;
 /*!40000 ALTER TABLE `daemon_main` DISABLE KEYS */;
-INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',1525385,1,1,'Integrate','integrateAll','',0);
-INSERT INTO `daemon_main` VALUES (14,'Listener','2024-04-02 12:37:07',1525397,1,1,'Listener','checkAll','',0);
-INSERT INTO `daemon_main` VALUES (16,'Generate architecture graph v3','2016-11-08 00:00:00',1525409,3,10,'Dot3','run','',0);
-INSERT INTO `daemon_main` VALUES (17,'Binlog automatic purge','2024-04-16 18:31:47',1525421,71,5,'Binlog','purgeAll','',0);
-INSERT INTO `daemon_main` VALUES (19,'Log rotate','2024-04-27 16:36:26',1525433,127,5,'Log','rotate','',0);
-INSERT INTO `daemon_main` VALUES (20,'Aspirateur MySQL','2024-04-30 21:51:29',1525445,1,5,'Worker','addToQueue','1',0);
-INSERT INTO `daemon_main` VALUES (21,'Aspirateur ProxySQL','2024-04-30 21:51:29',1525457,10,5,'Worker','addToQueue','3',0);
-INSERT INTO `daemon_main` VALUES (22,'Aspirateur Ssh','2024-04-30 21:51:29',1525479,10,5,'Worker','addToQueue','2',0);
-INSERT INTO `daemon_main` VALUES (23,'Check all worker','2024-04-30 22:45:20',1525505,7,5,'Worker','checkAll','',0);
+INSERT INTO `daemon_main` VALUES (7,'integrate data','2017-12-05 12:27:30',1883994,1,1,'Integrate','integrateAll','mysql_*',0);
+INSERT INTO `daemon_main` VALUES (14,'Listener','2024-04-02 12:37:07',1958792,3,1,'Listener','checkAll','',0);
+INSERT INTO `daemon_main` VALUES (16,'Generate architecture graph v3','2016-11-08 00:00:00',1958801,3,10,'Dot3','run','',0);
+INSERT INTO `daemon_main` VALUES (17,'Binlog automatic purge','2024-04-16 18:31:47',1884023,71,5,'Binlog','purgeAll','',0);
+INSERT INTO `daemon_main` VALUES (19,'Log rotate','2024-04-27 16:36:26',1884035,127,5,'Log','rotate','',0);
+INSERT INTO `daemon_main` VALUES (20,'Aspirateur MySQL','2024-04-30 21:51:29',1884050,5,5,'Worker','addToQueue','1',0);
+INSERT INTO `daemon_main` VALUES (21,'Aspirateur ProxySQL','2024-04-30 21:51:29',1884062,5,5,'Worker','addToQueue','3',0);
+INSERT INTO `daemon_main` VALUES (22,'Aspirateur Ssh','2024-04-30 21:51:29',1884079,5,5,'Worker','addToQueue','2',0);
+INSERT INTO `daemon_main` VALUES (23,'Check all worker','2024-04-30 22:45:20',1958835,7,5,'Worker','checkAll','',0);
+INSERT INTO `daemon_main` VALUES (24,'Import information_schema','2025-06-26 21:52:52',1884104,3559,3000,'Aspirateur','eachHour','',0);
+INSERT INTO `daemon_main` VALUES (25,'Aspirateur MaxScale','2025-10-10 21:40:39',1884118,5,3,'Worker','addToQueue','4',0);
+INSERT INTO `daemon_main` VALUES (26,'Get Tunnel','2025-10-25 14:16:26',1958853,2,1,'Tunnel','agent','',0);
+INSERT INTO `daemon_main` VALUES (28,'Integrate queries from differents servers','2025-11-07 03:25:06',1958860,1,10,'integrate','integrateAll','ps_sum_summary_by_digest',0);
+INSERT INTO `daemon_main` VALUES (31,'Integrate Proxy (MaxScale / ProxySQL / HA Proxy','2025-11-07 03:25:06',1958869,1,10,'integrate','integrateAll','maxscale_*,proxysql_*,mysqlrouter_*',0);
+INSERT INTO `daemon_main` VALUES (32,'Integrate Extra table (JSON)','2025-11-07 03:25:06',1958885,1,10,'integrate','integrateAll','information_schema*,ssh_*,is_tables,performance_schema,performance_sc',0);
+INSERT INTO `daemon_main` VALUES (34,'ps_events_statements_summary_by_digest','2026-02-20 19:32:02',1958912,1,300,'integrate','integrateAll','ps_events_statements_summary_by_digest',0);
+INSERT INTO `daemon_main` VALUES (35,'to integrate information for vip','2026-02-20 19:32:02',1958926,1,300,'integrate','integrateAll','vip',0);
+INSERT INTO `daemon_main` VALUES (36,'Aspirateur MySQL Router','2026-03-16 03:58:20',1884250,5,3,'Worker','addToQueue','5',0);
+INSERT INTO `daemon_main` VALUES (37,'Aspirateur MySQL logs','2026-03-20 00:00:00',0,15,10,'Worker','addToQueue','6',0);
+INSERT INTO `daemon_main` VALUES (38,'Integrate MySQL logs','2026-03-20 00:00:00',0,15,10,'IntegrateLog','integrateAll','logs',0);
+INSERT INTO `daemon_main` VALUES (39,'Aggregate metric rollups','2026-03-21 00:00:00',0,30,20,'Worker','addToQueue','7',0);
 /*!40000 ALTER TABLE `daemon_main` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -163035,6 +163047,8 @@ INSERT INTO `docker_software` VALUES (1,'mariadb','2024-04-13 18:08:12','MariaDB
 INSERT INTO `docker_software` VALUES (2,'mysql','2024-04-13 18:08:12','MySQL','#ffffff','#e97b00');
 INSERT INTO `docker_software` VALUES (3,'percona','2024-04-13 18:08:28','Percona','#ffffff','#FF0000');
 INSERT INTO `docker_software` VALUES (4,'proxysql/proxysql','2024-04-28 18:20:33','ProxySQL','#ffffff','#000000');
+INSERT INTO `docker_software` VALUES (5,'mariadb/maxscale','2025-11-07 03:31:14','MaxScale','#FFFFFF','#003545');
+INSERT INTO `docker_software` VALUES (6,'percona/percona-server','2025-11-07 03:38:37','Percona','#ffffff','#0062CC');
 /*!40000 ALTER TABLE `docker_software` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -163056,7 +163070,8 @@ CREATE TABLE `dot3_legend` (
   `order` int(11) NOT NULL,
   `type` varchar(20) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
   `condition` text CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  CONSTRAINT `chk_style` CHECK (`style` in ('solid','dashed','dotted','bold','invis','filled','rounded','diagonals'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -163066,43 +163081,58 @@ CREATE TABLE `dot3_legend` (
 
 LOCK TABLES `dot3_legend` WRITE;
 /*!40000 ALTER TABLE `dot3_legend` DISABLE KEYS */;
-INSERT INTO `dot3_legend` VALUES (1,'REPLICATION_OK','Healty','#ffffff','#008000','#008000','solid',1,'REPLICATION','');
-INSERT INTO `dot3_legend` VALUES (2,'NODE_IST','Receive IST','#ffffff','#FFD700','#FFD700','solid',20,'NODE','');
-INSERT INTO `dot3_legend` VALUES (3,'REPLICATION_SST','Galera SST','#ffffff','#e3ea12','#e3ea12','solid',12,'REPLICATION','');
-INSERT INTO `dot3_legend` VALUES (4,'REPLICATION_STOPPED','Stopped','#ffffff','#0000FF','#0000FF','filled',4,'REPLICATION','');
-INSERT INTO `dot3_legend` VALUES (5,'REPLICATION_ERROR_SQL','Error SQL','#ffffff','#FF0000','#FF0000','filled',5,'REPLICATION','');
-INSERT INTO `dot3_legend` VALUES (7,'REPLICATION_DELAY','Delay','#ffffff','#FFA500','#FFA500','filled',2,'REPLICATION','');
-INSERT INTO `dot3_legend` VALUES (10,'REPLICATION_ERROR_IO','Error IO','#ffffff','#FF0000','#FF0000','dashed',6,'REPLICATION','');
-INSERT INTO `dot3_legend` VALUES (11,'REPLICATION_ERROR_CONNECT','Can\'t connect','#ffffff','#696969','#696969','dashed',8,'REPLICATION','');
-INSERT INTO `dot3_legend` VALUES (13,'NODE_OK','Healty','#ffffff','#008000','#008000','solid',1,'NODE','');
-INSERT INTO `dot3_legend` VALUES (14,'NODE_ERROR','Out of order','#ffffff','#FF5733','#FF5733','solid',2,'NODE','');
-INSERT INTO `dot3_legend` VALUES (15,'NODE_BUSY','Going down','#ffffff','brown','brown','dashed',3,'NODE','');
-INSERT INTO `dot3_legend` VALUES (16,'NODE_NOT_PRIMARY','Node probably desynced','#ffffff','Orange','Orange','solid',10,'NODE','');
-INSERT INTO `dot3_legend` VALUES (17,'NODE_DONOR','Node donnor','#ffffff','#00FF00','#00FF00','solid',11,'NODE','');
-INSERT INTO `dot3_legend` VALUES (18,'NODE_DONOR_DESYNCED','Node donor desynced','#ffffff','#337AB7','#337AB7','solid',11,'NODE','');
-INSERT INTO `dot3_legend` VALUES (19,'NODE_MANUAL_DESYNC','node desync manually','#ffffff','#0000ff','#0000ff','solid',12,'NODE','');
-INSERT INTO `dot3_legend` VALUES (20,'NODE_JOINER','node joining cluster','#ffffff','#000000','#000000','dashed',15,'NODE','');
+INSERT INTO `dot3_legend` VALUES (1,'REPLICATION_OK','Healty','#FFFFFF','#008000','#008000','solid',1,'REPLICATION','');
+INSERT INTO `dot3_legend` VALUES (2,'NODE_IST','Receive IST','#FFFFFF','#FFD700','#FFD700','solid',20,'NODE','');
+INSERT INTO `dot3_legend` VALUES (3,'REPLICATION_SST','Galera SST','#FFFFFF','#00008B','#00008B','solid',12,'REPLICATION','');
+INSERT INTO `dot3_legend` VALUES (4,'REPLICATION_STOPPED','Stopped','#FFFFFF','#0000FF','#0000FF','filled',4,'REPLICATION','');
+INSERT INTO `dot3_legend` VALUES (5,'REPLICATION_ERROR_SQL','Error SQL','#FFFFFF','#FF0000','#FF0000','filled',5,'REPLICATION','');
+INSERT INTO `dot3_legend` VALUES (7,'REPLICATION_DELAY','Delay','#FFFFFF','#FFA500','#FFA500','filled',2,'REPLICATION','');
+INSERT INTO `dot3_legend` VALUES (10,'REPLICATION_ERROR_IO','Error IO','#FFFFFF','#FF0000','#FF0000','dashed',6,'REPLICATION','');
+INSERT INTO `dot3_legend` VALUES (11,'REPLICATION_ERROR_CONNECT','Can\'t connect','#FFFFFF','#696969','#696969','dashed',8,'REPLICATION','');
+INSERT INTO `dot3_legend` VALUES (13,'NODE_OK','Healty','#FFFFFF','#008000','#008000','solid',1,'NODE','');
+INSERT INTO `dot3_legend` VALUES (14,'NODE_ERROR','Out of order','#FFFFFF','#FF5733','#FF5733','dotted',2,'NODE','');
+INSERT INTO `dot3_legend` VALUES (15,'NODE_BUSY','Going down','#FFFFFF','#A52A2A','#A52A2A','dashed',3,'NODE','');
+INSERT INTO `dot3_legend` VALUES (16,'NODE_NOT_PRIMARY','Node probably desynced','#FFFFFF','#FFA500','#FFA500','solid',10,'NODE','');
+INSERT INTO `dot3_legend` VALUES (17,'NODE_DONOR','Node donnor','#FFFFFF','#00FF00','#00FF00','solid',11,'NODE','');
+INSERT INTO `dot3_legend` VALUES (18,'NODE_DONOR_DESYNCED','Node donor desynced','#FFFFFF','#337AB7','#337AB7','solid',11,'NODE','');
+INSERT INTO `dot3_legend` VALUES (19,'NODE_MANUAL_DESYNC','node desync manually','#FFFFFF','#0000FF','#0000FF','solid',12,'NODE','');
+INSERT INTO `dot3_legend` VALUES (20,'NODE_JOINER','node joining cluster','#FFFFFF','#000000','#000000','dashed',15,'NODE','');
 INSERT INTO `dot3_legend` VALUES (21,'GALERA_AVAILABLE','galera all ok','#ffffff','#008000','#008000','filled',1,'GALERA','');
 INSERT INTO `dot3_legend` VALUES (22,'GALERA_DEGRADED','','#ffffff','#e3ea12','#e3ea12','filled',2,'GALERA','');
-INSERT INTO `dot3_legend` VALUES (23,'GALERA_WARNING','N*2  node should be N*2+1','#ffffff','orange','orange','filled',3,'GALERA','');
+INSERT INTO `dot3_legend` VALUES (23,'GALERA_WARNING','N*2  node should be N*2+1','#ffffff','#FFA500','#FFA500','filled',3,'GALERA','');
 INSERT INTO `dot3_legend` VALUES (24,'GALERA_CRITICAL','only 2 node','#ffffff','#008000','#008000','filled',4,'GALERA','');
 INSERT INTO `dot3_legend` VALUES (25,'GALERA_EMERGENCY','only one node in galera','#ffffff','#FF0000','#FF0000','dashed',5,'GALERA','');
 INSERT INTO `dot3_legend` VALUES (26,'GALERA_OUTOFORDER','galera HS','#ffffff','#FF0000','#000000','filled',6,'GALERA','');
-INSERT INTO `dot3_legend` VALUES (27,'REPLICATION_BLACKOUT','Out of order','#ffffff','#000000','#000000','dashed',15,'REPLICATION','');
+INSERT INTO `dot3_legend` VALUES (27,'REPLICATION_BLACKOUT','Out of order','#FFFFFF','#000000','#000000','dashed',15,'REPLICATION','');
 INSERT INTO `dot3_legend` VALUES (28,'SEGMENT_OK','segment ok','#ffffff','#008000','#008000','dashed',1,'SEGMENT','');
 INSERT INTO `dot3_legend` VALUES (29,'SEGMENT_KO','segment out of order','#ffffff','#FF0000','#FF5733','dashed',2,'SEGMENT','');
 INSERT INTO `dot3_legend` VALUES (32,'SEGMENT_PARTIAL','un neud est hs','#ffffff','#f8b400','#f8b400','dashed',3,'SEGMENT','');
-INSERT INTO `dot3_legend` VALUES (33,'NODE_INITIALIZED','Node initialized','#ffffff','#7FFF00','#7FFF00','solid',16,'NODE','');
-INSERT INTO `dot3_legend` VALUES (34,'NODE_WAITING','Waiting for SST','#ffffff','#00008B','#00008B','dashed',17,'NODE','');
-INSERT INTO `dot3_legend` VALUES (35,'NODE_RECEIVE_IST','Node receiving Incremental State Transfert','#ffffff','#ec971f','#ec971f','filled',5,'NODE','');
+INSERT INTO `dot3_legend` VALUES (33,'NODE_INITIALIZED','Node initialized','#FFFFFF','#7FFF00','#7FFF00','solid',16,'NODE','');
+INSERT INTO `dot3_legend` VALUES (34,'NODE_WAITING','Waiting for SST','#FFFFFF','#00008B','#00008B','solid',17,'NODE','');
+INSERT INTO `dot3_legend` VALUES (35,'NODE_RECEIVE_IST','Node receiving Incremental State Transfert','#FFFFFF','#EC971F','#EC971F','filled',5,'NODE','');
 INSERT INTO `dot3_legend` VALUES (36,'PROXYSQL_ONLINE','server online','#ffffff','#008000','#008000','filled',1,'PROXYSQL','');
 INSERT INTO `dot3_legend` VALUES (37,'PROXYSQL_SHUNNED','serveur ecarté par ProxySQL','#ffffff','#FF0000','#CC5500','dashed',2,'PROXYSQL','');
 INSERT INTO `dot3_legend` VALUES (38,'PROXYSQL_OFFLINE_SOFT','keep connection but don\'t accept new','#333333','#FFAC1C','#ffc107','dashed',3,'PROXYSQL','');
 INSERT INTO `dot3_legend` VALUES (39,'PROXYSQL_OFFLINE_HARD','drop all connexion and don\'t allow to connect','#ffffff','#AA4A44','#AA4A44','filled',4,'PROXYSQL','');
-INSERT INTO `dot3_legend` VALUES (40,'PROXYSQL_CONFIG','Problem config with credentials','#ffffff','#0062CC','','none',4,'PROXYSQL','');
-INSERT INTO `dot3_legend` VALUES (41,'GALERA_NOTICE','N*2  node should be N*2+1 & N >= 4','limegreen','#008000','limegreen','filled',33,'GALERA','');
-INSERT INTO `dot3_legend` VALUES (42,'','','','','','',0,'','');
-INSERT INTO `dot3_legend` VALUES (43,'PROXYSQL_MIRRORING','keep connection but don\'t accept new','','','','',0,'PROXYSQL','');
+INSERT INTO `dot3_legend` VALUES (40,'PROXYSQL_CONFIG','Problem config with credentials','#ffffff','#0062CC','#0062CC','solid',4,'PROXYSQL','');
+INSERT INTO `dot3_legend` VALUES (41,'GALERA_NOTICE','N*2  node should be N*2+1 & N >= 4','#32CD32','#008000','#32CD32','filled',33,'GALERA','');
+INSERT INTO `dot3_legend` VALUES (43,'PROXYSQL_MIRRORING','keep connection but don\'t accept new','#ffffff','#FF6677','#FF6677','filled',45,'PROXYSQL','');
+INSERT INTO `dot3_legend` VALUES (44,'EDGE_WRITER_ON','arrow for writer on','#ffffff','#000000','#DD0000','filled',1,'PROXYSQL_EDGE','');
+INSERT INTO `dot3_legend` VALUES (45,'EDGE_READER','Arrow for reader on','#ffffff','#FFFFFF','#DD0000','filled',2,'PROXYSQL_EDGE','');
+INSERT INTO `dot3_legend` VALUES (46,'MAXSCALE_CONFIG','main info','#ffffff','#0062CC','#0062CC','filled',1,'MAXSCALE','');
+INSERT INTO `dot3_legend` VALUES (47,'MAXSCALE_CATEGORY','masxcale categories','#ffffff','#0062CC','#0062CC','filled',2,'MAXSCALE','');
+INSERT INTO `dot3_legend` VALUES (48,'SERVER_CONFIG','color of tr / td for line of configuration','#000001','#000002','#EEEEEF','dashed',1,'SERVER','');
+INSERT INTO `dot3_legend` VALUES (49,'MAXSCALE_RUNNING','server online','#ffffff','#ffffff','#008000','filled',1,'MAXSCALE','');
+INSERT INTO `dot3_legend` VALUES (50,'MAXSCALE_DOWN','serveur considérer HS par MaxScale','#ffffff','#ffffff','#CC5500','filled',2,'MAXSCALE','');
+INSERT INTO `dot3_legend` VALUES (51,'MAXSCALE_UNSYNC','maxscale unsync for master slave','arial','#ffffff','#337ab7','filled',5,'MAXSCALE','');
+INSERT INTO `dot3_legend` VALUES (52,'REPLICATION_BUG','Cannot found binlog','#FFFFFF','#FB2BAF','#FB2BAF','dashed',8,'REPLICATION','');
+INSERT INTO `dot3_legend` VALUES (53,'NODE_SST','Galera SST','#000000','#000000','#E3EA12','solid',12,'NODE','');
+INSERT INTO `dot3_legend` VALUES (54,'VIP_LINK_ACTIVE','VIP active destination','#FFFFFF','#008000','#008000','solid',16,'REPLICATION','');
+INSERT INTO `dot3_legend` VALUES (55,'VIP_LINK_PREVIOUS','VIP previous destination','#FFFFFF','#008000','#008000','dashed',17,'REPLICATION','');
+INSERT INTO `dot3_legend` VALUES (56,'NODE_GALERA_DISCONNECTED','when a node is disconnected (inconsistent)','#000000','#FFA500','#FFA500','solid',1,'NODE','wsrep_cluster_status=Disconnected\r\n&& wsrep_local_state_comment=Inconsistent');
+INSERT INTO `dot3_legend` VALUES (57,'NDB_CLUSTER_OK','NDB cluster healthy','#ffffff','#1565c0','#1565c0','filled',90,'NDB','');
+INSERT INTO `dot3_legend` VALUES (58,'NDB_CLUSTER_WARN','NDB cluster degraded (data/sql node missing)','#ffffff','#FFA500','#FFA500','filled',91,'NDB','');
+INSERT INTO `dot3_legend` VALUES (59,'NDB_CLUSTER_CRIT','NDB cluster critical (node group lost / no mgmd)','#ffffff','#FF0000','#FF0000','filled',92,'NDB','');
 /*!40000 ALTER TABLE `dot3_legend` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -163136,6 +163166,7 @@ INSERT INTO `environment` VALUES (3,'Recipe','recette','default','R');
 INSERT INTO `environment` VALUES (4,'Integration','integration','info','I');
 INSERT INTO `environment` VALUES (5,'Developpement','dev','success','D');
 INSERT INTO `environment` VALUES (6,'Test','test','primary','T');
+INSERT INTO `environment` VALUES (9,'Docker','docker','info','D');
 /*!40000 ALTER TABLE `environment` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -163306,125 +163337,141 @@ CREATE TABLE `menu` (
 
 LOCK TABLES `menu` WRITE;
 /*!40000 ALTER TABLE `menu` DISABLE KEYS */;
-INSERT INTO `menu` VALUES (60,0,281,282,1,'<span class=\"glyphicon glyphicon-off\"></span>','Login','{LINK}user/connection/','user','connection',0,3,'');
-INSERT INTO `menu` VALUES (61,0,283,284,1,'<span class=\"glyphicon glyphicon-user\"></span>','Register','{LINK}user/register/','user','register',0,3,'');
-INSERT INTO `menu` VALUES (62,0,285,286,1,'<span class=\"glyphicon glyphicon-envelope\"></span>','Lost password','{LINK}user/lost_password/','user','lost_password',0,3,'');
-INSERT INTO `menu` VALUES (92,NULL,1,232,1,'<big>⛯</big>','PmaControl','{LINK}home/index','home','index',0,1,'');
-INSERT INTO `menu` VALUES (95,92,4,53,1,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Dashboard','','dashboard','index',0,1,'');
-INSERT INTO `menu` VALUES (96,95,5,8,1,'<i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Servers','{LINK}server/main','server','main',0,1,'');
-INSERT INTO `menu` VALUES (97,95,9,10,1,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','Hardware','{LINK}server/hardware','server','hardware',0,1,'');
-INSERT INTO `menu` VALUES (98,95,11,12,1,'<span class=\"glyphicon glyphicon-signal\" style=\"font-size:12px\"></span>','Statistics','{LINK}server/statistics','server','statistics',0,1,'');
-INSERT INTO `menu` VALUES (99,95,13,14,1,'<span class=\"glyphicon glyphicon-floppy-disk\" style=\"font-size:12px\"></span>','Memory','{LINK}server/memory','server','memory',0,1,'');
-INSERT INTO `menu` VALUES (100,95,15,16,1,'<span class=\"glyphicon glyphicon-th-list\" style=\"font-size:12px\"></span>','Index','{LINK}server/index','server','index',0,1,'');
-INSERT INTO `menu` VALUES (101,95,17,18,1,'<i class=\"fa fa-line-chart\" aria-hidden=\"true\"></i>','Graphs','{LINK}server/id','server','id',0,1,'');
-INSERT INTO `menu` VALUES (102,92,54,81,1,'<i class=\"fa fa-object-group\" style=\"font-size:14px\"></i>','Architecture','','','',0,1,'');
-INSERT INTO `menu` VALUES (103,92,82,123,1,'<span class=\"glyphicon glyphicon-wrench\" aria-hidden=\"true\"></span>','Tools','','','',0,1,'');
-INSERT INTO `menu` VALUES (104,103,83,84,1,'<span class=\"glyphicon glyphicon-list-alt\" style=\"font-size:12px\"></span>','Query Analyzer','{LINK}monitoring/query/','monitoring','query',0,1,'');
-INSERT INTO `menu` VALUES (105,103,85,100,1,'<i class=\"glyphicon glyphicon-erase\"></i>','Cleaner','{LINK}cleaner/index/','cleaner','index',0,1,'');
-INSERT INTO `menu` VALUES (108,92,126,149,1,'<span class=\"glyphicon glyphicon-floppy-disk\" style=\"font-size:12px\"></span>','Backups','','','',0,1,'');
-INSERT INTO `menu` VALUES (109,92,150,155,1,'<i style=\"font-size: 16px\" class=\"fa fa-puzzle-piece\"></i>','Plugins','','','',0,1,'');
-INSERT INTO `menu` VALUES (110,109,151,152,1,'<span class=\"glyphicon glyphicon-th-list\" aria-hidden=\"true\"></span>','sys Schema','{LINK}mysqlsys/index/','mysqlsys','index',0,1,'');
-INSERT INTO `menu` VALUES (111,109,153,154,1,'<i class=\"fa fa-tachometer\" aria-hidden=\"true\"></i>','BenchMark','{LINK}benchmark/index/','benchmark','index',0,1,'');
-INSERT INTO `menu` VALUES (112,103,101,102,1,'<i class=\"fa fa-key\" style=\"font-size:16px\"  aria-hidden=\"true\"></i>','Deploy RSA key','{LINK}DeployRsaKey/index/','DeployRsaKey','index',0,1,'');
-INSERT INTO `menu` VALUES (113,92,156,207,1,'<span class=\"glyphicon glyphicon-cog\" style=\"font-size:12px\"></span>','Settings','','','',0,1,'');
-INSERT INTO `menu` VALUES (114,108,127,136,1,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','Storage area','{LINK}StorageArea/index/','StorageArea','index',0,1,'');
-INSERT INTO `menu` VALUES (115,108,137,144,1,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Archives','{LINK}Archives/index/','Archives','index',0,1,'');
-INSERT INTO `menu` VALUES (116,92,208,219,1,'<i class=\"fa fa-question\" style=\"font-size:16px\" aria-hidden=\"true\"></i>','Help','','','',0,1,'');
-INSERT INTO `menu` VALUES (117,116,209,210,1,'<i class=\"fa fa-book\" style=\"font-size:16px\"></i>','Online docs and support','https://github.com/PmaControl/PmaControl/wiki','','',0,1,'');
-INSERT INTO `menu` VALUES (118,116,211,212,1,'<i class=\"fa fa-refresh\" style=\"font-size:16px\"></i>','Check for update','https://github.com/PmaControl/PmaControl','update','index',0,1,'');
-INSERT INTO `menu` VALUES (119,116,213,214,1,'<i class=\"fa fa-bug\" style=\"font-size:16px\"></i>','Report issue','https://github.com/PmaControl/PmaControl/issues','','',0,1,'');
-INSERT INTO `menu` VALUES (120,116,217,218,1,'<i class=\"fa fa-info-circle\" style=\"font-size:16px\"></i>','About','{LINK}About/index','about','index',0,1,'');
-INSERT INTO `menu` VALUES (121,113,157,158,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Users','{LINK}user/index/','user','index',0,1,'');
-INSERT INTO `menu` VALUES (122,113,159,160,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Groups','{LINK}group/index/','group','index',0,1,'');
-INSERT INTO `menu` VALUES (123,113,161,164,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Organizations','{LINK}client/index/','client','index',0,1,'');
-INSERT INTO `menu` VALUES (124,113,165,168,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Environment','{LINK}environment/index/','environment','index',0,1,'');
-INSERT INTO `menu` VALUES (125,113,169,172,1,'<span class=\"glyphicon glyphicon-calendar\" style=\"font-size:12px\"></span>','Daemon','{LINK}daemon/index','daemon','index',0,1,'');
-INSERT INTO `menu` VALUES (126,113,173,178,1,' <i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Servers','{LINK}server/settings','server','settings',0,1,'');
-INSERT INTO `menu` VALUES (127,103,103,104,1,'<i class=\"glyphicon glyphicon-transfer\" style=\"font-size:12px\"></i>','Compare','{LINK}compare/index/','compare','index',0,1,'');
-INSERT INTO `menu` VALUES (128,103,105,106,1,'<span class=\"glyphicon glyphicon-search\" aria-hidden=\"true\"></span>','Scan network','{LINK}scan/index/','scan','index',0,1,'');
+INSERT INTO `menu` VALUES (60,0,313,314,1,'<span class=\"glyphicon glyphicon-off\"></span>','Login','{LINK}user/connection/','user','connection',0,3,'');
+INSERT INTO `menu` VALUES (61,0,315,316,1,'<span class=\"glyphicon glyphicon-user\"></span>','Register','{LINK}user/register/','user','register',0,3,'');
+INSERT INTO `menu` VALUES (62,0,317,318,1,'<span class=\"glyphicon glyphicon-envelope\"></span>','Lost password','{LINK}user/lost_password/','user','lost_password',0,3,'');
+INSERT INTO `menu` VALUES (92,NULL,1,264,1,'<big>⛯</big>','PmaControl','{LINK}home/index','home','index',0,1,'');
+INSERT INTO `menu` VALUES (95,92,4,63,1,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Dashboard','','dashboard','index',0,1,'');
+INSERT INTO `menu` VALUES (96,95,5,10,1,'<i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Servers','{LINK}server/main','server','main',0,1,'');
+INSERT INTO `menu` VALUES (97,95,11,12,1,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','Hardware','{LINK}server/hardware','server','hardware',0,1,'');
+INSERT INTO `menu` VALUES (98,95,13,14,1,'<span class=\"glyphicon glyphicon-signal\" style=\"font-size:12px\"></span>','Statistics','{LINK}server/statistics','server','statistics',0,1,'');
+INSERT INTO `menu` VALUES (99,95,15,16,1,'<span class=\"glyphicon glyphicon-floppy-disk\" style=\"font-size:12px\"></span>','Memory','{LINK}server/memory','server','memory',0,1,'');
+INSERT INTO `menu` VALUES (100,95,17,18,1,'<span class=\"glyphicon glyphicon-th-list\" style=\"font-size:12px\"></span>','Index','{LINK}server/index','server','index',0,1,'');
+INSERT INTO `menu` VALUES (101,95,19,20,1,'<i class=\"fa fa-line-chart\" aria-hidden=\"true\"></i>','Graphs','{LINK}server/id','server','id',0,1,'');
+INSERT INTO `menu` VALUES (102,92,64,95,1,'<i class=\"fa fa-object-group\" style=\"font-size:14px\"></i>','Architecture','','','',0,1,'');
+INSERT INTO `menu` VALUES (103,92,96,149,1,'<span class=\"glyphicon glyphicon-wrench\" aria-hidden=\"true\"></span> ','Tools','','','',0,1,'');
+INSERT INTO `menu` VALUES (104,103,97,98,1,'<span class=\"glyphicon glyphicon-list-alt\" style=\"font-size:12px\"></span>','Query Analyzer','{LINK}monitoring/query/','monitoring','query',0,1,'');
+INSERT INTO `menu` VALUES (105,103,99,114,1,'<i class=\"glyphicon glyphicon-erase\"></i>','Cleaner','{LINK}cleaner/index/','cleaner','index',0,1,'');
+INSERT INTO `menu` VALUES (108,92,152,175,1,'<span class=\"glyphicon glyphicon-floppy-disk\" style=\"font-size:12px\"></span>','Backups','','','',0,1,'');
+INSERT INTO `menu` VALUES (109,92,176,181,1,'<i style=\"font-size: 16px\" class=\"fa fa-puzzle-piece\"></i>','Plugins','','','',0,1,'');
+INSERT INTO `menu` VALUES (110,109,177,178,1,'<span class=\"glyphicon glyphicon-th-list\" aria-hidden=\"true\"></span>','sys Schema','{LINK}mysqlsys/index/','mysqlsys','index',0,1,'');
+INSERT INTO `menu` VALUES (111,109,179,180,1,'<i class=\"fa fa-tachometer\" aria-hidden=\"true\"></i>','BenchMark','{LINK}benchmark/index/','benchmark','index',0,1,'');
+INSERT INTO `menu` VALUES (112,103,115,116,1,'<i class=\"fa fa-key\" style=\"font-size:16px\"  aria-hidden=\"true\"></i>','Deploy RSA key','{LINK}DeployRsaKey/index/','DeployRsaKey','index',0,1,'');
+INSERT INTO `menu` VALUES (113,92,182,239,1,'<span class=\"glyphicon glyphicon-cog\" style=\"font-size:12px\"></span>','Settings','','','',0,1,'');
+INSERT INTO `menu` VALUES (114,108,153,162,1,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','Storage area','{LINK}StorageArea/index/','StorageArea','index',0,1,'');
+INSERT INTO `menu` VALUES (115,108,163,170,1,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Archives','{LINK}Archives/index/','Archives','index',0,1,'');
+INSERT INTO `menu` VALUES (116,92,240,251,1,'<i class=\"fa fa-question\" style=\"font-size:16px\" aria-hidden=\"true\"></i>','Help','','','',0,1,'');
+INSERT INTO `menu` VALUES (117,116,241,242,1,'<i class=\"fa fa-book\" style=\"font-size:16px\"></i>','Online docs and support','https://github.com/PmaControl/PmaControl/wiki','','',0,1,'');
+INSERT INTO `menu` VALUES (118,116,243,244,1,'<i class=\"fa fa-refresh\" style=\"font-size:16px\"></i>','Check for update','https://github.com/PmaControl/PmaControl','update','index',0,1,'');
+INSERT INTO `menu` VALUES (119,116,245,246,1,'<i class=\"fa fa-bug\" style=\"font-size:16px\"></i>','Report issue','https://github.com/PmaControl/PmaControl/issues','','',0,1,'');
+INSERT INTO `menu` VALUES (120,116,249,250,1,'<i class=\"fa fa-info-circle\" style=\"font-size:16px\"></i>','About','{LINK}About/index','about','index',0,1,'');
+INSERT INTO `menu` VALUES (121,113,183,184,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Users','{LINK}user/index/','user','index',0,1,'');
+INSERT INTO `menu` VALUES (122,113,185,186,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Groups','{LINK}group/index/','group','index',0,1,'');
+INSERT INTO `menu` VALUES (123,113,187,190,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Organizations','{LINK}client/index/','client','index',0,1,'');
+INSERT INTO `menu` VALUES (124,113,191,194,1,'<span class=\"glyphicon glyphicon-user\" style=\"font-size:12px\"></span>','Environment','{LINK}environment/index/','environment','index',0,1,'');
+INSERT INTO `menu` VALUES (125,113,195,198,1,'<span class=\"glyphicon glyphicon-calendar\" style=\"font-size:12px\"></span>','Daemon','{LINK}daemon/index','daemon','index',0,1,'');
+INSERT INTO `menu` VALUES (126,113,199,204,1,' <i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Servers','{LINK}server/settings','server','settings',0,1,'');
+INSERT INTO `menu` VALUES (127,103,117,118,1,'<i class=\"glyphicon glyphicon-transfer\" style=\"font-size:12px\"></i>','Compare','{LINK}compare/index/','compare','index',0,1,'');
+INSERT INTO `menu` VALUES (128,103,119,120,1,'<span class=\"glyphicon glyphicon-search\" aria-hidden=\"true\"></span>','Scan network','{LINK}scan/index/','scan','index',0,1,'');
 INSERT INTO `menu` VALUES (129,92,2,3,0,'<span class=\"glyphicon glyphicon glyphicon-home\"></span>','Home','{LINK}home/index','home','index',0,1,'');
-INSERT INTO `menu` VALUES (131,113,179,180,1,'<i class=\"fa fa-address-book\" aria-hidden=\"true\"></i>','LDAP','{LINK}ldap/index/','ldap','index',0,1,'');
-INSERT INTO `menu` VALUES (132,113,181,182,1,'<i class=\"fa fa-puzzle-piece\" aria-hidden=\"true\"></i>','Plugins','{LINK}plugin/index','plugin','index',0,1,'');
-INSERT INTO `menu` VALUES (133,113,183,188,1,'<i class=\"fa fa-key\" aria-hidden=\"true\"></i>','SSH keys','{LINK}ssh/index','ssh','index',0,1,'');
-INSERT INTO `menu` VALUES (136,103,107,108,1,'<i class=\"fa fa-wpforms\" aria-hidden=\"true\"></i>','Format SQL','{LINK}format/index/','format','index',0,1,'');
-INSERT INTO `menu` VALUES (137,92,220,221,1,'<span class=\"glyphicon glyphicon-off\" aria-hidden=\"true\"></span>','Logout','{LINK}user/logout/','user','logout',0,1,'');
-INSERT INTO `menu` VALUES (138,113,189,194,1,'<span class=\"glyphicon glyphicon-import\"></span>','Import / Export','{LINK}export/index','Export','index',0,1,'');
-INSERT INTO `menu` VALUES (139,103,109,110,1,'<i class=\"fa fa-wrench\" aria-hidden=\"true\"></i>','Check Config','{LINK}CheckConfig/index/','CheckConfig','index',0,1,'');
-INSERT INTO `menu` VALUES (140,108,145,148,1,'<span class=\"glyphicon glyphicon-cog\" style=\"font-size:12px\"></span>','Settings','{LINK}backup/settings/','backup','settings',0,1,'');
-INSERT INTO `menu` VALUES (141,113,195,196,1,'<span class=\"glyphicon glyphicon-globe\" aria-hidden=\"true\"></span>','Alias DNS','{LINK}alias/index','alias','index',0,1,'');
-INSERT INTO `menu` VALUES (142,92,222,231,1,'<i class=\"fa fa-id-card-o\" aria-hidden=\"true\"></i>','Developer','','','',0,1,'');
-INSERT INTO `menu` VALUES (143,142,223,224,1,'<i class=\"fa fa-terminal\"></i>','PHP Live REGEX','{LINK}PhpLiveRegex/index','PhpLiveRegex','index',0,1,'');
-INSERT INTO `menu` VALUES (144,142,225,228,1,'<span class=\"glyphicon glyphicon-menu-hamburger\" aria-hidden=\"true\"></span>','Manage menu','{LINK}tree/index','tree','index',0,1,'');
-INSERT INTO `menu` VALUES (145,113,197,200,1,'<span class=\"glyphicon glyphicon-tags\" aria-hidden=\"true\"></span>','Tags','{LINK}tag/index','tag','index',0,1,'');
-INSERT INTO `menu` VALUES (146,103,111,112,1,'<i class=\"fa fa-address-card\" aria-hidden=\"true\"></i>','MySQL User','{LINK}MysqlUser/index/','MysqlUser','index',0,1,'');
-INSERT INTO `menu` VALUES (147,102,55,56,1,'<i class=\"glyphicon glyphicon-th\"></i>','Topology','{LINK}architecture/index/','architecture','index',0,1,'');
-INSERT INTO `menu` VALUES (148,102,57,60,1,'<i class=\"fa fa-sitemap\"></i>','Master / Slave','{LINK}slave/index/','slave','index',0,1,'');
-INSERT INTO `menu` VALUES (149,102,61,62,1,'<i class=\"glyphicon glyphicon-th-large\"></i>','Galera Cluster','{LINK}GaleraCluster/index/','GaleraCluster','index',0,1,'');
-INSERT INTO `menu` VALUES (150,103,113,116,1,'<i class=\"fa fa-database fa-lg\"></i>','Database','{LINK}database/index','database','index',0,1,'');
-INSERT INTO `menu` VALUES (153,144,226,227,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add menu entry','{LINK}tree/add','tree','add',0,1,'');
+INSERT INTO `menu` VALUES (131,113,205,206,1,'<i class=\"fa fa-address-book\" aria-hidden=\"true\"></i>','LDAP','{LINK}ldap/index/','ldap','index',0,1,'');
+INSERT INTO `menu` VALUES (132,113,207,208,1,'<i class=\"fa fa-puzzle-piece\" aria-hidden=\"true\"></i>','Plugins','{LINK}plugin/index','plugin','index',0,1,'');
+INSERT INTO `menu` VALUES (133,113,209,214,1,'<i class=\"fa fa-key\" aria-hidden=\"true\"></i>','SSH keys','{LINK}ssh/index','ssh','index',0,1,'');
+INSERT INTO `menu` VALUES (136,103,121,122,1,'<i class=\"fa fa-wpforms\" aria-hidden=\"true\"></i>','Format SQL','{LINK}format/index/','format','index',0,1,'');
+INSERT INTO `menu` VALUES (137,92,252,253,1,'<span class=\"glyphicon glyphicon-off\" aria-hidden=\"true\"></span>','Logout','{LINK}user/logout/','user','logout',0,1,'');
+INSERT INTO `menu` VALUES (138,113,215,220,1,'<span class=\"glyphicon glyphicon-import\"></span>','Import / Export','{LINK}export/index','Export','index',0,1,'');
+INSERT INTO `menu` VALUES (139,103,123,124,1,'<i class=\"fa fa-wrench\" aria-hidden=\"true\"></i>','Check Config','{LINK}CheckConfig/index/','CheckConfig','index',0,1,'');
+INSERT INTO `menu` VALUES (140,108,171,174,1,'<span class=\"glyphicon glyphicon-cog\" style=\"font-size:12px\"></span>','Settings','{LINK}backup/settings/','backup','settings',0,1,'');
+INSERT INTO `menu` VALUES (141,113,221,222,1,'<span class=\"glyphicon glyphicon-globe\" aria-hidden=\"true\"></span>','Alias DNS','{LINK}alias/index','alias','index',0,1,'');
+INSERT INTO `menu` VALUES (142,92,254,263,1,'<i class=\"fa fa-id-card-o\" aria-hidden=\"true\"></i>','Developer','','','',0,1,'');
+INSERT INTO `menu` VALUES (143,142,255,256,1,'<i class=\"fa fa-terminal\"></i>','PHP Live REGEX','{LINK}PhpLiveRegex/index','PhpLiveRegex','index',0,1,'');
+INSERT INTO `menu` VALUES (144,142,257,260,1,'<span class=\"glyphicon glyphicon-menu-hamburger\" aria-hidden=\"true\"></span>','Manage menu','{LINK}tree/index','tree','index',0,1,'');
+INSERT INTO `menu` VALUES (145,113,223,226,1,'<span class=\"glyphicon glyphicon-tags\" aria-hidden=\"true\"></span>','Tags','{LINK}tag/index','tag','index',0,1,'');
+INSERT INTO `menu` VALUES (146,103,125,126,1,'<i class=\"fa fa-address-card\" aria-hidden=\"true\"></i>','MySQL User','{LINK}MysqlUser/index/','MysqlUser','index',0,1,'');
+INSERT INTO `menu` VALUES (147,102,65,66,1,'<i class=\"glyphicon glyphicon-th\"></i>','Topology','{LINK}architecture/index/','architecture','index',0,1,'');
+INSERT INTO `menu` VALUES (148,102,67,70,1,'<i class=\"fa fa-sitemap\"></i>','Master / Slave','{LINK}slave/index/','slave','index',0,1,'');
+INSERT INTO `menu` VALUES (149,102,71,72,1,'<i class=\"glyphicon glyphicon-th-large\"></i>','Galera Cluster','{LINK}GaleraCluster/index/','GaleraCluster','index',0,1,'');
+INSERT INTO `menu` VALUES (150,103,127,130,1,'<i class=\"fa fa-database fa-lg\"></i>','Database','{LINK}database/index','database','index',0,1,'');
+INSERT INTO `menu` VALUES (153,144,258,259,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add menu entry','{LINK}tree/add','tree','add',0,1,'');
 INSERT INTO `menu` VALUES (154,96,6,7,0,'<i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Servers listing','{LINK}Server/listing','Server','listing',0,1,'');
-INSERT INTO `menu` VALUES (155,105,86,87,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a cleaner','{LINK}cleaner/add/','cleaner','add',0,1,'');
-INSERT INTO `menu` VALUES (156,114,128,129,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a storage area','{LINK}StorageArea/add','StorageArea','add',0,1,'');
-INSERT INTO `menu` VALUES (157,114,130,131,0,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','List all storage area','{LINK}StorageArea/listStorage','StorageArea','listStorage',0,1,'');
-INSERT INTO `menu` VALUES (158,115,138,139,0,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Restoration history','{LINK}Archives/history','Archives','history',0,1,'');
-INSERT INTO `menu` VALUES (159,115,140,141,0,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Restoration detail','{LINK}Archives/detail/','Archives','detail',0,1,'');
-INSERT INTO `menu` VALUES (160,150,114,115,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Create database','{LINK}database/create','database','create',0,1,'');
-INSERT INTO `menu` VALUES (161,126,174,175,0,'<i class=\"fa fa-key\" aria-hidden=\"true\"></i>','Change server password','{LINK}server/password','server','password',0,1,'');
-INSERT INTO `menu` VALUES (162,126,176,177,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a new server','{LINK}mysql/add','mysql','add',0,1,'');
-INSERT INTO `menu` VALUES (163,123,162,163,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add an organization','{LINK}client/add','client','add',0,1,'');
-INSERT INTO `menu` VALUES (164,138,190,191,0,'<span class=\"glyphicon glyphicon-floppy-disk\"></span>','Import / Export configuration','{LINK}export/export_conf/','export','export_conf',0,1,'');
-INSERT INTO `menu` VALUES (165,138,192,193,0,'<span class=\"glyphicon glyphicon-floppy-disk\"></span>','Import / Export configuration','{LINK}export/import_conf/','export','import_conf',0,1,'');
-INSERT INTO `menu` VALUES (166,92,124,125,1,'<span class=\"glyphicon glyphicon-cog\" aria-hidden=\"true\"></span>','Jobs','{LINK}job/index','job','index',0,1,'');
-INSERT INTO `menu` VALUES (167,148,58,59,0,'<i class=\"fa fa-sitemap\"></i>','Slave Show','{LINK}slave/show/','slave','show',0,1,'');
-INSERT INTO `menu` VALUES (168,145,198,199,0,'<i class=\"fa fa-plus\"></i>','Add a new tag','{LINK}tag/add/','tag','add',0,1,'');
-INSERT INTO `menu` VALUES (169,124,166,167,0,'<i class=\"fa fa-plus\"></i>','Add an environment','{LINK}environment/add/','environment','add',0,1,'');
-INSERT INTO `menu` VALUES (170,133,184,185,0,'<i class=\"fa fa-plus\"></i>','Add a ssh key','{LINK}ssh/add/','ssh','add',0,1,'');
-INSERT INTO `menu` VALUES (171,133,186,187,0,'<i class=\"fa fa-edit\"></i>','Edit a ssh key','{LINK}ssh/edit/','ssh','edit',0,1,'');
-INSERT INTO `menu` VALUES (172,105,88,89,0,'<i class=\"fa fa-area-chart\" aria-hidden=\"true\"></i>','Statistics','{LINK}cleaner/statistics','cleaner','statistics',0,1,'');
-INSERT INTO `menu` VALUES (173,105,90,91,0,'<span class=\"glyphicon glyphicon-eye-open\"></span>','View','{LINK}cleaner/view','cleaner','view',0,1,'');
-INSERT INTO `menu` VALUES (175,105,92,93,0,'<i class=\"fa fa-file-text-o\" aria-hidden=\"true\"></i>','Details','{LINK}cleaner/details','cleaner','details',0,1,'');
-INSERT INTO `menu` VALUES (176,105,94,95,0,'<i class=\"fa fa-table\" aria-hidden=\"true\"></i>','Tables impacted','{LINK}cleaner/impacted','cleaner','impacted',0,1,'');
-INSERT INTO `menu` VALUES (177,114,132,133,0,'<span class=\"glyphicon glyphicon-stats\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Storage area','{LINK}storagearea/edit/','storagearea','edit',0,1,'');
-INSERT INTO `menu` VALUES (178,105,96,97,0,'<span class=\"glyphicon glyphicon-edit\"></span>','Edit','{LINK}cleaner/edit','cleaner','edit',0,1,'');
-INSERT INTO `menu` VALUES (179,103,117,118,1,'<span class=\"glyphicon glyphicon-list\"></span>','Manage binlog','{LINK}binlog/index','binlog','index',0,1,'');
-INSERT INTO `menu` VALUES (180,115,142,143,0,'<i class=\"fa fa-area-chart\" aria-hidden=\"true\"></i>','Files available','{LINK}archives/file_available','archives','file_available',0,1,'');
-INSERT INTO `menu` VALUES (181,140,146,147,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a backup ','{LINK}backup/add','backup','add',0,1,'');
-INSERT INTO `menu` VALUES (182,114,134,135,0,'<span class=\"glyphicon glyphicon-list\"></span>','Delete','{LINK}StorageArea/delete','storagearea','delete',0,1,'');
-INSERT INTO `menu` VALUES (183,95,19,22,1,'<i class=\"fa fa-database\"></i>','Databases','{LINK}database/show','database','show',0,1,'');
-INSERT INTO `menu` VALUES (184,95,23,24,1,'<span class=\"glyphicon glyphicon-plus\"></span>','Security','{LINK}mysqlUser/security','mysqlUser','security',0,1,'');
-INSERT INTO `menu` VALUES (185,103,119,120,1,'<i class=\"glyphicon glyphicon-search\"></i>','Variables version control','{LINK}variable/index','variable','index',0,1,'');
-INSERT INTO `menu` VALUES (191,95,25,26,0,'<span class=\"glyphicon glyphicon-random\"></span>','Percona','{LINK}percona/displayOsc','percona','displayOsc',0,1,'');
-INSERT INTO `menu` VALUES (193,102,63,78,1,'<span class=\"glyphicon glyphicon-asterisk\"></span>','ProxySQL','{LINK}ProxySQL/index','ProxySQL','index',0,1,'');
-INSERT INTO `menu` VALUES (194,183,20,21,0,'<i class=\"glyphicon glyphicon-random\"></i>','MPD','{LINK}mysql/mpd','mysql','mpd',0,1,'');
-INSERT INTO `menu` VALUES (195,113,201,202,1,'<span class=\"glyphicon glyphicon-asterisk\"></span>','Database size','{LINK}database/size','database','size',0,1,'');
-INSERT INTO `menu` VALUES (196,113,203,204,1,'<i class=\"fa fa-link\" aria-hidden=\"true\"></i>','Manage prefix for vFK','{LINK}ForeignKey/settingPrefix','ForeignKey','settingPrefix',0,1,'');
-INSERT INTO `menu` VALUES (197,95,27,48,0,'<i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Server','','Server','index',0,1,'');
-INSERT INTO `menu` VALUES (198,197,28,43,0,'<i class=\"fa fa-database\" aria-hidden=\"true\"></i>','Databases','','database','index',0,1,'');
-INSERT INTO `menu` VALUES (199,198,29,32,0,'<i class=\"fa fa-table\" aria-hidden=\"true\"></i>','Tables','','table','index',0,1,'');
-INSERT INTO `menu` VALUES (200,199,30,31,0,'<i class=\"fa fa-sitemap\" aria-hidden=\"true\"></i>','Relations view','{LINK}Table/mpd','table','mpd',0,1,'');
-INSERT INTO `menu` VALUES (201,198,33,34,0,'<i class=\"fa fa-sitemap\" aria-hidden=\"true\"></i>','Physical data model','{LINK}MysqlDatabase/mpd','MysqlDatabase','mpd',0,1,'');
-INSERT INTO `menu` VALUES (202,198,35,40,0,'<i class=\"glyphicon glyphicon-random\"></i>','Foreign keys','','MysqlDatabaseSDF','foreignKey',0,1,'');
-INSERT INTO `menu` VALUES (203,202,36,37,0,'<span class=\"glyphicon glyphicon-random\"></span>','Foreign keys virtual','{LINK}foreignKey/index','MysqlDatabase','foreignKey',0,1,'');
-INSERT INTO `menu` VALUES (204,202,38,39,0,'<span class=\"glyphicon glyphicon-random\"></span>','Foreign keys real','{LINK}foreignKey/real','foreignKey','real',0,1,'');
-INSERT INTO `menu` VALUES (205,198,41,42,0,'<span class=\"glyphicon glyphicon-asterisk\"></span>','List of tables','{LINK}MysqlDatabase/table','MysqlDatabase','table',0,1,'');
-INSERT INTO `menu` VALUES (206,197,44,45,0,'<i class=\"fa fa-list-alt\" aria-hidden=\"true\"></i>','Processlist','{LINK}MysqlServer/processlist','MysqlServer','processlist',0,1,'');
-INSERT INTO `menu` VALUES (207,197,46,47,1,'<span class=\"glyphicon glyphicon-random\"></span>','Cluster','{LINK}Cluster/svg','Cluster','svg',0,1,'');
-INSERT INTO `menu` VALUES (208,105,98,99,0,'<span class=\"glyphicon glyphicon-file\"></span>','Logs','{LINK}cleaner/logs','cleaner','logs',0,1,'');
-INSERT INTO `menu` VALUES (209,116,215,216,1,'<i class=\"fa fa-puzzle-piece\" aria-hidden=\"true\"></i>','Version','{LINK}Version/index','version','index',0,1,'');
-INSERT INTO `menu` VALUES (210,113,205,206,1,'<i class=\"fa fa-sitemap\" aria-hidden=\"true\"></i>','Worker','{LINK}Worker/index','Worker','index',0,1,'');
-INSERT INTO `menu` VALUES (211,125,170,171,0,'<i class=\"glyphicon glyphicon-align-justify\"></i>','Logs','','Agent','logs',0,1,'');
-INSERT INTO `menu` VALUES (212,95,49,50,1,' <i class=\"fa fa-table\" aria-hidden=\"true\"></i>','Json','{LINK}Dashboard/json','Dashboard','json',0,1,'');
-INSERT INTO `menu` VALUES (213,193,64,65,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a ProxySQL server','{LINK}ProxySQL/add','ProxySQL','add',0,1,'');
-INSERT INTO `menu` VALUES (214,193,66,67,0,'<span class=\"glyphicon glyphicon-random\"></span>','Config','{LINK}ProxySQL/config','ProxySQL','config',0,1,'');
-INSERT INTO `menu` VALUES (216,142,229,230,1,'<svg height=\"16\" width=\"16\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 640 512\"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d=\"M392.8 1.2c-17-4.9-34.7 5-39.6 22l-128 448c-4.9 17 5 34.7 22 39.6s34.7-5 39.6-22l128-448c4.9-17-5-34.7-22-39.6zm80.6 120.1c-12.5 12.5-12.5 32.8 0 45.3L562.7 256l-89.4 89.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l112-112c12.5-12.5 12.5-32.8 0-45.3l-112-112c-12.5-12.5-32.8-12.5-45.3 0zm-306.7 0c-12.5-12.5-32.8-12.5-45.3 0l-112 112c-12.5 12.5-12.5 32.8 0 45.3l112 112c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L77.3 256l89.4-89.4c12.5-12.5 12.5-32.8 0-45.3z\"/></svg>','Import JSON','{LINK}architecture/view','architecture','view',0,1,'');
-INSERT INTO `menu` VALUES (217,102,79,80,1,'<span class=\"glyphicon glyphicon-asterisk\"></span>','MaxScale','{LINK}MaxScale/index','Maxscale','index',0,1,'');
-INSERT INTO `menu` VALUES (218,103,121,122,1,'<i class=\"fa fa-bar-chart fa-lg\"></i>','Statement Analysis','{LINK}StatementAnalysis/index','StatementAnalysis','index',0,1,'');
-INSERT INTO `menu` VALUES (219,193,68,69,0,'<i class=\"fa fa-bar-chart fa-lg\"></i>','Statistics','{LINK}ProxySQL/statistic','ProxySQL','statistic',0,1,'');
-INSERT INTO `menu` VALUES (220,193,70,71,0,'<i class=\"fa fa-table\" aria-hidden=\"true\"></i>','Auto configuration','{LINK}ProxySQL/auto','ProxySQL','auto',0,1,'');
-INSERT INTO `menu` VALUES (221,193,72,73,0,'<span class=\"glyphicon glyphicon-asterisk\"></span>','Monitor','{LINK}ProxySQL/monitor','ProxySQL','monitor',0,1,'');
-INSERT INTO `menu` VALUES (222,193,74,75,0,'<i class=\"fa fa-sitemap\" aria-hidden=\"true\"></i>','Cluster','{LINK}ProxySQL/cluster','ProxySQL','cluster',0,1,'');
-INSERT INTO `menu` VALUES (223,193,76,77,0,'<i class=\"glyphicon glyphicon-random\"></i>','Logs','{LINK}ProxySQL/log','ProxySQL','log',0,1,'');
-INSERT INTO `menu` VALUES (224,95,51,52,1,'<i class=\"fa fa-table\" aria-hidden=\"true\"></i>','Query cache','{LINK}QueryCache/index','QueryCache','index',0,1,'');
+INSERT INTO `menu` VALUES (155,105,100,101,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a cleaner','{LINK}cleaner/add/','cleaner','add',0,1,'');
+INSERT INTO `menu` VALUES (156,114,154,155,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a storage area','{LINK}StorageArea/add','StorageArea','add',0,1,'');
+INSERT INTO `menu` VALUES (157,114,156,157,0,'<span class=\"glyphicon glyphicon-hdd\" style=\"font-size:12px\"></span>','List all storage area','{LINK}StorageArea/listStorage','StorageArea','listStorage',0,1,'');
+INSERT INTO `menu` VALUES (158,115,164,165,0,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Restoration history','{LINK}Archives/history','Archives','history',0,1,'');
+INSERT INTO `menu` VALUES (159,115,166,167,0,'<span class=\"glyphicon glyphicon-book\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Restoration detail','{LINK}Archives/detail/','Archives','detail',0,1,'');
+INSERT INTO `menu` VALUES (160,150,128,129,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Create database','{LINK}database/create','database','create',0,1,'');
+INSERT INTO `menu` VALUES (161,126,200,201,0,'<i class=\"fa fa-key\" aria-hidden=\"true\"></i>','Change server password','{LINK}server/password','server','password',0,1,'');
+INSERT INTO `menu` VALUES (162,126,202,203,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a new server','{LINK}mysql/add','mysql','add',0,1,'');
+INSERT INTO `menu` VALUES (163,123,188,189,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add an organization','{LINK}client/add','client','add',0,1,'');
+INSERT INTO `menu` VALUES (164,138,216,217,0,'<span class=\"glyphicon glyphicon-floppy-disk\"></span>','Import / Export configuration','{LINK}export/export_conf/','export','export_conf',0,1,'');
+INSERT INTO `menu` VALUES (165,138,218,219,0,'<span class=\"glyphicon glyphicon-floppy-disk\"></span>','Import / Export configuration','{LINK}export/import_conf/','export','import_conf',0,1,'');
+INSERT INTO `menu` VALUES (166,92,150,151,1,'<span class=\"glyphicon glyphicon-cog\" aria-hidden=\"true\"></span>','Jobs','{LINK}job/index','job','index',0,1,'');
+INSERT INTO `menu` VALUES (167,148,68,69,0,'<i class=\"fa fa-sitemap\"></i>','Slave Show','{LINK}slave/show/','slave','show',0,1,'');
+INSERT INTO `menu` VALUES (168,145,224,225,0,'<i class=\"fa fa-plus\"></i>','Add a new tag','{LINK}tag/add/','tag','add',0,1,'');
+INSERT INTO `menu` VALUES (169,124,192,193,0,'<i class=\"fa fa-plus\"></i>','Add an environment','{LINK}environment/add/','environment','add',0,1,'');
+INSERT INTO `menu` VALUES (170,133,210,211,0,'<i class=\"fa fa-plus\"></i>','Add a ssh key','{LINK}ssh/add/','ssh','add',0,1,'');
+INSERT INTO `menu` VALUES (171,133,212,213,0,'<i class=\"fa fa-edit\"></i>','Edit a ssh key','{LINK}ssh/edit/','ssh','edit',0,1,'');
+INSERT INTO `menu` VALUES (172,105,102,103,0,'<i class=\"fa fa-area-chart\" aria-hidden=\"true\"></i>','Statistics','{LINK}cleaner/statistics','cleaner','statistics',0,1,'');
+INSERT INTO `menu` VALUES (173,105,104,105,0,'<span class=\"glyphicon glyphicon-eye-open\"></span>','View','{LINK}cleaner/view','cleaner','view',0,1,'');
+INSERT INTO `menu` VALUES (175,105,106,107,0,'<i class=\"fa fa-file-text-o\" aria-hidden=\"true\"></i>','Details','{LINK}cleaner/details','cleaner','details',0,1,'');
+INSERT INTO `menu` VALUES (176,105,108,109,0,'<i class=\"fa fa-table\" aria-hidden=\"true\"></i>','Tables impacted','{LINK}cleaner/impacted','cleaner','impacted',0,1,'');
+INSERT INTO `menu` VALUES (177,114,158,159,0,'<span class=\"glyphicon glyphicon-stats\" style=\"font-size:12px\" aria-hidden=\"true\"></span>','Storage area','{LINK}storagearea/edit/','storagearea','edit',0,1,'');
+INSERT INTO `menu` VALUES (178,105,110,111,0,'<span class=\"glyphicon glyphicon-edit\"></span>','Edit','{LINK}cleaner/edit','cleaner','edit',0,1,'');
+INSERT INTO `menu` VALUES (179,103,131,132,1,'<span class=\"glyphicon glyphicon-list\"></span>','Manage binlog','{LINK}binlog/index','binlog','index',0,1,'');
+INSERT INTO `menu` VALUES (180,115,168,169,0,'<i class=\"fa fa-area-chart\" aria-hidden=\"true\"></i>','Files available','{LINK}archives/file_available','archives','file_available',0,1,'');
+INSERT INTO `menu` VALUES (181,140,172,173,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a backup ','{LINK}backup/add','backup','add',0,1,'');
+INSERT INTO `menu` VALUES (182,114,160,161,0,'<span class=\"glyphicon glyphicon-list\"></span>','Delete','{LINK}StorageArea/delete','storagearea','delete',0,1,'');
+INSERT INTO `menu` VALUES (183,95,21,24,1,'<i class=\"fa fa-database\"></i>','Databases','{LINK}database/show','database','show',0,1,'');
+INSERT INTO `menu` VALUES (184,95,25,26,1,'<span class=\"glyphicon glyphicon-plus\"></span>','Security','{LINK}mysqlUser/security','mysqlUser','security',0,1,'');
+INSERT INTO `menu` VALUES (185,103,133,134,1,'<i class=\"glyphicon glyphicon-search\"></i>','Variables version control','{LINK}variable/index','variable','index',0,1,'');
+INSERT INTO `menu` VALUES (191,95,27,28,0,'<span class=\"glyphicon glyphicon-random\"></span>','Percona','{LINK}percona/displayOsc','percona','displayOsc',0,1,'');
+INSERT INTO `menu` VALUES (193,102,73,90,1,'<span class=\"glyphicon glyphicon-asterisk\"></span>','ProxySQL','{LINK}ProxySQL/index','ProxySQL','index',0,1,'');
+INSERT INTO `menu` VALUES (194,183,22,23,0,'<i class=\"glyphicon glyphicon-random\"></i>','MPD','{LINK}mysql/mpd','mysql','mpd',0,1,'');
+INSERT INTO `menu` VALUES (195,113,227,228,1,'<span class=\"glyphicon glyphicon-asterisk\"></span>','Database size','{LINK}database/size','database','size',0,1,'');
+INSERT INTO `menu` VALUES (196,113,229,230,1,'<i class=\"fa fa-link\" aria-hidden=\"true\"></i>','Manage prefix for vFK','{LINK}ForeignKey/settingPrefix','ForeignKey','settingPrefix',0,1,'');
+INSERT INTO `menu` VALUES (197,95,29,58,0,'<i class=\"fa fa-server\" aria-hidden=\"true\" style=\"font-size:14px\"></i>','Server','','Server','index',0,1,'');
+INSERT INTO `menu` VALUES (198,197,30,45,0,'<i class=\"fa fa-database\" aria-hidden=\"true\"></i>','Databases','','database','index',0,1,'');
+INSERT INTO `menu` VALUES (199,198,31,34,0,'<i class=\"fa fa-table\" aria-hidden=\"true\"></i>','Tables','','table','index',0,1,'');
+INSERT INTO `menu` VALUES (200,199,32,33,0,'<i class=\"fa fa-sitemap\" aria-hidden=\"true\"></i>','Relations view','{LINK}Table/mpd','table','mpd',0,1,'');
+INSERT INTO `menu` VALUES (201,198,35,36,0,'<i class=\"fa fa-sitemap\" aria-hidden=\"true\"></i>','Physical data model','{LINK}MysqlDatabase/mpd','MysqlDatabase','mpd',0,1,'');
+INSERT INTO `menu` VALUES (202,198,37,42,0,'<i class=\"glyphicon glyphicon-random\"></i>','Foreign keys','','MysqlDatabaseSDF','foreignKey',0,1,'');
+INSERT INTO `menu` VALUES (203,202,38,39,0,'<span class=\"glyphicon glyphicon-random\"></span>','Foreign keys virtual','{LINK}foreignKey/index','MysqlDatabase','foreignKey',0,1,'');
+INSERT INTO `menu` VALUES (204,202,40,41,0,'<span class=\"glyphicon glyphicon-random\"></span>','Foreign keys real','{LINK}foreignKey/real','foreignKey','real',0,1,'');
+INSERT INTO `menu` VALUES (205,198,43,44,0,'<span class=\"glyphicon glyphicon-asterisk\"></span>','List of tables','{LINK}MysqlDatabase/table','MysqlDatabase','table',0,1,'');
+INSERT INTO `menu` VALUES (206,197,46,47,0,'<i class=\"fa fa-list-alt\" aria-hidden=\"true\"></i>','Processlist','{LINK}MysqlServer/processlist','MysqlServer','processlist',0,1,'');
+INSERT INTO `menu` VALUES (207,197,48,53,1,'<span class=\"glyphicon glyphicon-random\"></span>','Cluster','{LINK}Cluster/svg','Cluster','svg',0,1,'');
+INSERT INTO `menu` VALUES (208,105,112,113,0,'<span class=\"glyphicon glyphicon-file\"></span>','Logs','{LINK}cleaner/logs','cleaner','logs',0,1,'');
+INSERT INTO `menu` VALUES (209,116,247,248,1,'<i class=\"fa fa-puzzle-piece\" aria-hidden=\"true\"></i>','Version','{LINK}Version/index','version','index',0,1,'');
+INSERT INTO `menu` VALUES (210,113,231,232,1,'<i class=\"fa fa-sitemap\" aria-hidden=\"true\"></i>','Worker','{LINK}Worker/index','Worker','index',0,1,'');
+INSERT INTO `menu` VALUES (211,125,196,197,0,'<i class=\"glyphicon glyphicon-align-justify\"></i>','Logs','','Agent','logs',0,1,'');
+INSERT INTO `menu` VALUES (212,95,59,60,1,' <i class=\"fa fa-table\" aria-hidden=\"true\"></i>','Json','{LINK}Dashboard/json','Dashboard','json',0,1,'');
+INSERT INTO `menu` VALUES (213,193,74,75,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add a ProxySQL server','{LINK}ProxySQL/add','ProxySQL','add',0,1,'');
+INSERT INTO `menu` VALUES (214,193,76,79,0,'<span class=\"glyphicon glyphicon-random\"></span>','Config','{LINK}ProxySQL/config','ProxySQL','config',0,1,'');
+INSERT INTO `menu` VALUES (216,142,261,262,1,'<svg height=\"16\" width=\"16\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 640 512\"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d=\"M392.8 1.2c-17-4.9-34.7 5-39.6 22l-128 448c-4.9 17 5 34.7 22 39.6s34.7-5 39.6-22l128-448c4.9-17-5-34.7-22-39.6zm80.6 120.1c-12.5 12.5-12.5 32.8 0 45.3L562.7 256l-89.4 89.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l112-112c12.5-12.5 12.5-32.8 0-45.3l-112-112c-12.5-12.5-32.8-12.5-45.3 0zm-306.7 0c-12.5-12.5-32.8-12.5-45.3 0l-112 112c-12.5 12.5-12.5 32.8 0 45.3l112 112c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L77.3 256l89.4-89.4c12.5-12.5 12.5-32.8 0-45.3z\"/></svg>','Import JSON','{LINK}architecture/view','architecture','view',0,1,'');
+INSERT INTO `menu` VALUES (217,102,91,92,1,'<span class=\"glyphicon glyphicon-asterisk\"></span>','MaxScale','{LINK}MaxScale/index','Maxscale','index',0,1,'');
+INSERT INTO `menu` VALUES (218,103,135,136,1,'<i class=\"fa fa-bar-chart fa-lg\"></i>','Statement Analysis','{LINK}StatementAnalysis/index','StatementAnalysis','index',0,1,'');
+INSERT INTO `menu` VALUES (219,193,80,81,0,'<i class=\"fa fa-bar-chart fa-lg\"></i>','Statistics','{LINK}ProxySQL/statistic','ProxySQL','statistic',0,1,'');
+INSERT INTO `menu` VALUES (220,193,82,83,0,'<i class=\"fa fa-table\" aria-hidden=\"true\"></i>','Auto configuration','{LINK}ProxySQL/auto','ProxySQL','auto',0,1,'');
+INSERT INTO `menu` VALUES (221,193,84,85,0,'<span class=\"glyphicon glyphicon-asterisk\"></span>','Monitor','{LINK}ProxySQL/monitor','ProxySQL','monitor',0,1,'');
+INSERT INTO `menu` VALUES (222,193,86,87,0,'<i class=\"fa fa-sitemap\" aria-hidden=\"true\"></i>','Cluster','{LINK}ProxySQL/cluster','ProxySQL','cluster',0,1,'');
+INSERT INTO `menu` VALUES (223,193,88,89,0,'<i class=\"glyphicon glyphicon-random\"></i>','Logs','{LINK}ProxySQL/log','ProxySQL','log',0,1,'');
+INSERT INTO `menu` VALUES (224,95,61,62,1,'<i class=\"fa fa-table\" aria-hidden=\"true\"></i>','Query cache','{LINK}QueryCache/index','QueryCache','index',0,1,'');
+INSERT INTO `menu` VALUES (225,113,233,234,1,'<svg     xmlns=\"http://www.w3.org/2000/svg\"     viewBox=\"0 0 24 24\"     style=\"height: 1em; width: auto; vertical-align: middle; fill: currentColor; transition: fill 0.2s;\"     class=\"ssh-tunnel-icon\" >   <path d=\"M12.65 10A5.65 5.65 0 1 0 18.3 15.65c-.01-.34-.03-.68-.08-1.02l3.78-3.78a.75.75 0 0 0 .22-.53v-2.07a.75.75 0 0 0-.75-.75h-1.5V6.5a.5.5 0 0 0-.5-.5h-2.25a.5.5 0 0 0-.5.5v1.5h-1.5a.75.75 0 0 0-.53.22l-1.56 1.56A5.65 5.65 0 0 0 12.65 10zM10 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z\"/> </svg>  <style> .ssh-tunnel-icon:hover {     fill: #ff6600; /* couleur au survol */ } </style>','Color','{LINK}Color/index/NODE','Color','index',0,1,'');
+INSERT INTO `menu` VALUES (226,207,49,50,0,'<i class=\"fa fa-youtube-play\"></i>','Replay','{LINK}Cluster/history','Cluster','history',0,1,'');
+INSERT INTO `menu` VALUES (227,197,54,57,0,'<span class=\"glyphicon glyphicon-asterisk\"></span>','Queries','{LINK}Query/all','Query','all',0,1,'');
+INSERT INTO `menu` VALUES (228,227,55,56,0,'<i class=\"fa fa-table\" aria-hidden=\"true\"></i>','Digest','{LINK}Query/digest','Query','digest',0,1,'');
+INSERT INTO `menu` VALUES (229,113,235,236,1,'<svg     xmlns=\"http://www.w3.org/2000/svg\"     viewBox=\"0 0 24 24\"     style=\"height: 1em; width: auto; vertical-align: middle; fill: currentColor;\"     class=\"ssh-tunnel-icon\" >   <path d=\"M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10            10-4.48 10-10S17.52 2 12 2zm1 17.93c-2.83.48-5.63-.29-7.72-2.08            l1.41-1.41c1.73 1.57 4.33 2.17 6.31 1.55V19.93zm6.31-3.77            l-1.41 1.41c-1.73-1.57-4.33-2.17-6.31-1.55v-2.48c2.83-.48 5.63.29 7.72 2.08zM12 4            c1.85 0 3.55.63 4.9 1.69l-1.41 1.41C14.14 6.32 13.11 6 12 6            c-1.85 0-3.55.63-4.9 1.69L5.69 6.28C7.05 5.01 9 4 12 4z\"/> </svg>  <style> .palette-color:hover {     fill: #ff6600; /* couleur au survol */ } </style>','SSH Tunnels','{LINK}Tunnel/index','Tunnel','index',0,1,'');
+INSERT INTO `menu` VALUES (230,103,137,146,1,'<style>   .icon-docker-host {     width: 1em;     height: 1em;     vertical-align: -0.2em;     font-size: 1.2em; /* Zoom ×1.2 */   } </style>  <svg class=\"icon-docker-host\" viewBox=\"0 0 512 512\" fill=\"currentColor\" xmlns=\"http://www.w3.org/2000/svg\" aria-hidden=\"true\">   <path d=\"M507,211.16c-1.42-1.19-14.25-10.94-41.79-10.94a132.55,132.55,0,0,0-21.61,1.9c-5.22-36.4-35.38-54-36.57-55l-7.36-4.28-4.75,6.9a101.65,101.65,0,0,0-13.06,30.45c-5,20.7-1.9,40.2,8.55,56.85-12.59,7.14-33,8.8-37.28,9H15.94A15.93,15.93,0,0,0,0,262.07,241.25,241.25,0,0,0,14.75,348.9C26.39,379.35,43.72,402,66,415.74,91.22,431.2,132.3,440,178.6,440a344.23,344.23,0,0,0,62.45-5.71,257.44,257.44,0,0,0,81.69-29.73,223.55,223.55,0,0,0,55.57-45.67c26.83-30.21,42.74-64,54.38-94h4.75c29.21,0,47.26-11.66,57.23-21.65a63.31,63.31,0,0,0,15.2-22.36l2.14-6.18Z\"/>   <path d=\"M47.29,236.37H92.4a4,4,0,0,0,4-4h0V191.89a4,4,0,0,0-4-4H47.29a4,4,0,0,0-4,4h0v40.44a4.16,4.16,0,0,0,4,4h0\"/>   <path d=\"M109.5,236.37h45.12a4,4,0,0,0,4-4h0V191.89a4,4,0,0,0-4-4H109.5a4,4,0,0,0-4,4v40.44a4.16,4.16,0,0,0,4,4\"/>   <path d=\"M172.9,236.37H218a4,4,0,0,0,4-4h0V191.89a4,4,0,0,0-4-4H172.9a4,4,0,0,0-4,4h0v40.44a3.87,3.87,0,0,0,4,4h0\"/>   <path d=\"M235.36,236.37h45.12a4,4,0,0,0,4-4V191.89a4,4,0,0,0-4-4H235.36a4,4,0,0,0-4,4h0v40.44a4,4,0,0,0,4,4h0\"/>   <path d=\"M109.5,178.57h45.12a4.16,4.16,0,0,0,4-4V134.09a4,4,0,0,0-4-4H109.5a4,4,0,0,0-4,4v40.44a4.34,4.34,0,0,0,4,4\"/>   <path d=\"M172.9,178.57H218a4.16,4.16,0,0,0,4-4V134.09a4,4,0,0,0-4-4H172.9a4,4,0,0,0-4,4h0v40.44a4,4,0,0,0,4,4\"/>   <path d=\"M235.36,178.57h45.12a4.16,4.16,0,0,0,4-4V134.09a4.16,4.16,0,0,0-4-4H235.36a4,4,0,0,0-4,4h0v40.44a4.16,4.16,0,0,0,4,4\"/>   <path d=\"M235.36,120.53h45.12a4,4,0,0,0,4-4V76a4.16,4.16,0,0,0-4-4H235.36a4,4,0,0,0-4,4h0v40.44a4.17,4.17,0,0,0,4,4\"/>   <path d=\"M298.28,236.37H343.4a4,4,0,0,0,4-4V191.89a4,4,0,0,0-4-4H298.28a4,4,0,0,0-4,4h0v40.44a4.16,4.16,0,0,0,4,4\"/> </svg>','Docker servers','{LINK}Docker/index','Docker','index',0,1,'');
+INSERT INTO `menu` VALUES (231,230,138,139,0,'<style>   .icon-docker-host {     width: 1em;     height: 1em;     vertical-align: -0.2em;     font-size: 1.2em; /* Zoom ×1.2 */   } </style>  <svg class=\"icon-docker-host\" viewBox=\"0 0 512 512\" fill=\"currentColor\" xmlns=\"http://www.w3.org/2000/svg\" aria-hidden=\"true\">   <path d=\"M507,211.16c-1.42-1.19-14.25-10.94-41.79-10.94a132.55,132.55,0,0,0-21.61,1.9c-5.22-36.4-35.38-54-36.57-55l-7.36-4.28-4.75,6.9a101.65,101.65,0,0,0-13.06,30.45c-5,20.7-1.9,40.2,8.55,56.85-12.59,7.14-33,8.8-37.28,9H15.94A15.93,15.93,0,0,0,0,262.07,241.25,241.25,0,0,0,14.75,348.9C26.39,379.35,43.72,402,66,415.74,91.22,431.2,132.3,440,178.6,440a344.23,344.23,0,0,0,62.45-5.71,257.44,257.44,0,0,0,81.69-29.73,223.55,223.55,0,0,0,55.57-45.67c26.83-30.21,42.74-64,54.38-94h4.75c29.21,0,47.26-11.66,57.23-21.65a63.31,63.31,0,0,0,15.2-22.36l2.14-6.18Z\"/>   <path d=\"M47.29,236.37H92.4a4,4,0,0,0,4-4h0V191.89a4,4,0,0,0-4-4H47.29a4,4,0,0,0-4,4h0v40.44a4.16,4.16,0,0,0,4,4h0\"/>   <path d=\"M109.5,236.37h45.12a4,4,0,0,0,4-4h0V191.89a4,4,0,0,0-4-4H109.5a4,4,0,0,0-4,4v40.44a4.16,4.16,0,0,0,4,4\"/>   <path d=\"M172.9,236.37H218a4,4,0,0,0,4-4h0V191.89a4,4,0,0,0-4-4H172.9a4,4,0,0,0-4,4h0v40.44a3.87,3.87,0,0,0,4,4h0\"/>   <path d=\"M235.36,236.37h45.12a4,4,0,0,0,4-4V191.89a4,4,0,0,0-4-4H235.36a4,4,0,0,0-4,4h0v40.44a4,4,0,0,0,4,4h0\"/>   <path d=\"M109.5,178.57h45.12a4.16,4.16,0,0,0,4-4V134.09a4,4,0,0,0-4-4H109.5a4,4,0,0,0-4,4v40.44a4.34,4.34,0,0,0,4,4\"/>   <path d=\"M172.9,178.57H218a4.16,4.16,0,0,0,4-4V134.09a4,4,0,0,0-4-4H172.9a4,4,0,0,0-4,4h0v40.44a4,4,0,0,0,4,4\"/>   <path d=\"M235.36,178.57h45.12a4.16,4.16,0,0,0,4-4V134.09a4.16,4.16,0,0,0-4-4H235.36a4,4,0,0,0-4,4h0v40.44a4.16,4.16,0,0,0,4,4\"/>   <path d=\"M235.36,120.53h45.12a4,4,0,0,0,4-4V76a4.16,4.16,0,0,0-4-4H235.36a4,4,0,0,0-4,4h0v40.44a4.17,4.17,0,0,0,4,4\"/>   <path d=\"M298.28,236.37H343.4a4,4,0,0,0,4-4V191.89a4,4,0,0,0-4-4H298.28a4,4,0,0,0-4,4h0v40.44a4.16,4.16,0,0,0,4,4\"/> </svg>','Add a Docker server','{LINK}Docker/add','Docker','add',0,1,'');
+INSERT INTO `menu` VALUES (232,230,140,141,0,'<style>   .icon-docker-host {     width: 1em;     height: 1em;     vertical-align: -0.2em;     font-size: 1.2em; /* Zoom ×1.2 */   } </style>  <svg class=\"icon-docker-host\" viewBox=\"0 0 512 512\" fill=\"currentColor\" xmlns=\"http://www.w3.org/2000/svg\" aria-hidden=\"true\">   <path d=\"M507,211.16c-1.42-1.19-14.25-10.94-41.79-10.94a132.55,132.55,0,0,0-21.61,1.9c-5.22-36.4-35.38-54-36.57-55l-7.36-4.28-4.75,6.9a101.65,101.65,0,0,0-13.06,30.45c-5,20.7-1.9,40.2,8.55,56.85-12.59,7.14-33,8.8-37.28,9H15.94A15.93,15.93,0,0,0,0,262.07,241.25,241.25,0,0,0,14.75,348.9C26.39,379.35,43.72,402,66,415.74,91.22,431.2,132.3,440,178.6,440a344.23,344.23,0,0,0,62.45-5.71,257.44,257.44,0,0,0,81.69-29.73,223.55,223.55,0,0,0,55.57-45.67c26.83-30.21,42.74-64,54.38-94h4.75c29.21,0,47.26-11.66,57.23-21.65a63.31,63.31,0,0,0,15.2-22.36l2.14-6.18Z\"/>   <path d=\"M47.29,236.37H92.4a4,4,0,0,0,4-4h0V191.89a4,4,0,0,0-4-4H47.29a4,4,0,0,0-4,4h0v40.44a4.16,4.16,0,0,0,4,4h0\"/>   <path d=\"M109.5,236.37h45.12a4,4,0,0,0,4-4h0V191.89a4,4,0,0,0-4-4H109.5a4,4,0,0,0-4,4v40.44a4.16,4.16,0,0,0,4,4\"/>   <path d=\"M172.9,236.37H218a4,4,0,0,0,4-4h0V191.89a4,4,0,0,0-4-4H172.9a4,4,0,0,0-4,4h0v40.44a3.87,3.87,0,0,0,4,4h0\"/>   <path d=\"M235.36,236.37h45.12a4,4,0,0,0,4-4V191.89a4,4,0,0,0-4-4H235.36a4,4,0,0,0-4,4h0v40.44a4,4,0,0,0,4,4h0\"/>   <path d=\"M109.5,178.57h45.12a4.16,4.16,0,0,0,4-4V134.09a4,4,0,0,0-4-4H109.5a4,4,0,0,0-4,4v40.44a4.34,4.34,0,0,0,4,4\"/>   <path d=\"M172.9,178.57H218a4.16,4.16,0,0,0,4-4V134.09a4,4,0,0,0-4-4H172.9a4,4,0,0,0-4,4h0v40.44a4,4,0,0,0,4,4\"/>   <path d=\"M235.36,178.57h45.12a4.16,4.16,0,0,0,4-4V134.09a4.16,4.16,0,0,0-4-4H235.36a4,4,0,0,0-4,4h0v40.44a4.16,4.16,0,0,0,4,4\"/>   <path d=\"M235.36,120.53h45.12a4,4,0,0,0,4-4V76a4.16,4.16,0,0,0-4-4H235.36a4,4,0,0,0-4,4h0v40.44a4.17,4.17,0,0,0,4,4\"/>   <path d=\"M298.28,236.37H343.4a4,4,0,0,0,4-4V191.89a4,4,0,0,0-4-4H298.28a4,4,0,0,0-4,4h0v40.44a4.16,4.16,0,0,0,4,4\"/> </svg>','Docker host','{LINK}Docker/server','Docker','server',0,1,'');
+INSERT INTO `menu` VALUES (233,230,142,143,0,'<span class=\"glyphicon glyphicon-plus\"></span>','Add containers','{LINK}Docker/addContainer','Docker','addContainer',0,1,'');
+INSERT INTO `menu` VALUES (234,230,144,145,0,'<style>   .icon-docker-host {     width: 1em;     height: 1em;     vertical-align: -0.2em;     font-size: 1.2em; /* Zoom ×1.2 */   } </style>  <svg class=\"icon-docker-host\" viewBox=\"0 0 512 512\" fill=\"currentColor\" xmlns=\"http://www.w3.org/2000/svg\" aria-hidden=\"true\">   <path d=\"M507,211.16c-1.42-1.19-14.25-10.94-41.79-10.94a132.55,132.55,0,0,0-21.61,1.9c-5.22-36.4-35.38-54-36.57-55l-7.36-4.28-4.75,6.9a101.65,101.65,0,0,0-13.06,30.45c-5,20.7-1.9,40.2,8.55,56.85-12.59,7.14-33,8.8-37.28,9H15.94A15.93,15.93,0,0,0,0,262.07,241.25,241.25,0,0,0,14.75,348.9C26.39,379.35,43.72,402,66,415.74,91.22,431.2,132.3,440,178.6,440a344.23,344.23,0,0,0,62.45-5.71,257.44,257.44,0,0,0,81.69-29.73,223.55,223.55,0,0,0,55.57-45.67c26.83-30.21,42.74-64,54.38-94h4.75c29.21,0,47.26-11.66,57.23-21.65a63.31,63.31,0,0,0,15.2-22.36l2.14-6.18Z\"/>   <path d=\"M47.29,236.37H92.4a4,4,0,0,0,4-4h0V191.89a4,4,0,0,0-4-4H47.29a4,4,0,0,0-4,4h0v40.44a4.16,4.16,0,0,0,4,4h0\"/>   <path d=\"M109.5,236.37h45.12a4,4,0,0,0,4-4h0V191.89a4,4,0,0,0-4-4H109.5a4,4,0,0,0-4,4v40.44a4.16,4.16,0,0,0,4,4\"/>   <path d=\"M172.9,236.37H218a4,4,0,0,0,4-4h0V191.89a4,4,0,0,0-4-4H172.9a4,4,0,0,0-4,4h0v40.44a3.87,3.87,0,0,0,4,4h0\"/>   <path d=\"M235.36,236.37h45.12a4,4,0,0,0,4-4V191.89a4,4,0,0,0-4-4H235.36a4,4,0,0,0-4,4h0v40.44a4,4,0,0,0,4,4h0\"/>   <path d=\"M109.5,178.57h45.12a4.16,4.16,0,0,0,4-4V134.09a4,4,0,0,0-4-4H109.5a4,4,0,0,0-4,4v40.44a4.34,4.34,0,0,0,4,4\"/>   <path d=\"M172.9,178.57H218a4.16,4.16,0,0,0,4-4V134.09a4,4,0,0,0-4-4H172.9a4,4,0,0,0-4,4h0v40.44a4,4,0,0,0,4,4\"/>   <path d=\"M235.36,178.57h45.12a4.16,4.16,0,0,0,4-4V134.09a4.16,4.16,0,0,0-4-4H235.36a4,4,0,0,0-4,4h0v40.44a4.16,4.16,0,0,0,4,4\"/>   <path d=\"M235.36,120.53h45.12a4,4,0,0,0,4-4V76a4.16,4.16,0,0,0-4-4H235.36a4,4,0,0,0-4,4h0v40.44a4.17,4.17,0,0,0,4,4\"/>   <path d=\"M298.28,236.37H343.4a4,4,0,0,0,4-4V191.89a4,4,0,0,0-4-4H298.28a4,4,0,0,0-4,4h0v40.44a4.16,4.16,0,0,0,4,4\"/> </svg>','List of images available','{LINK}Docker/list','Docker','list',0,1,'');
+INSERT INTO `menu` VALUES (235,96,8,9,0,'<span class=\"glyphicon glyphicon-list-alt\" style=\"font-size:12px\"></span>','Server dashboard','{LINK}MysqlServer/main','MysqlServer','main',0,1,'');
+INSERT INTO `menu` VALUES (236,113,237,238,1,'<i class=\"fa fa-telegram\"></i>','Telegram','{LINK}telegram/index','telegram','index',0,1,'');
+INSERT INTO `menu` VALUES (237,103,147,148,1,'<i class=\"glyphicon glyphicon-random\"></i>','Compare Servers','{LINK}schema/compareModelsUi/','Schema','compareModelsUi',0,1,'');
+INSERT INTO `menu` VALUES (238,214,77,78,0,'<i class=\"glyphicon glyphicon-plus\"></i>','Add a line','{LINK}ProxySQL/addLine','ProxySQL','addLine',0,1,'');
+INSERT INTO `menu` VALUES (239,102,93,94,1,'<span class=\"glyphicon glyphicon-asterisk\"></span>','MySQL Router','{LINK}MysqlRouter/index','MysqlRouter','index',0,1,'');
+INSERT INTO `menu` VALUES (240,207,51,52,1,'<i class=\"fa fa-sitemap\" aria-hidden=\"true\"></i>','DOT / Graphviz Viewer','{LINK}Cluster/viewDot/','Cluster','viewDot',0,1,'');
 /*!40000 ALTER TABLE `menu` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -163487,37 +163534,6 @@ INSERT INTO `mysqlsys_config_export` VALUES (6,'schema_table_statistics','table_
 UNLOCK TABLES;
 
 --
--- Table structure for table `sharding`
---
-
-DROP TABLE IF EXISTS `sharding`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
-CREATE TABLE `sharding` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(250) NOT NULL,
-  `prefix` varchar(20) NOT NULL,
-  `date` datetime NOT NULL,
-  `table_link` varchar(64) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `prefix` (`prefix`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `sharding`
---
-
-LOCK TABLES `sharding` WRITE;
-/*!40000 ALTER TABLE `sharding` DISABLE KEYS */;
-INSERT INTO `sharding` VALUES (1,'slave','slave','2017-01-24 14:22:24','mysql_replication_thread__Connection_name');
-INSERT INTO `sharding` VALUES (2,'variables','variables','2017-02-21 16:15:07','mysql_server');
-INSERT INTO `sharding` VALUES (3,'status','status','2017-02-21 16:15:22','mysql_server');
-INSERT INTO `sharding` VALUES (4,'master','master','2017-02-21 16:15:35','mysql_server');
-/*!40000 ALTER TABLE `sharding` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `tag`
 --
 
@@ -163545,6 +163561,21 @@ INSERT INTO `tag` VALUES (2,'Docker','#ffffff','#1d63ed');
 INSERT INTO `tag` VALUES (3,'MySQL','#ffffff','#e97b00');
 INSERT INTO `tag` VALUES (4,'Percona','#ffffff','#FF0000');
 INSERT INTO `tag` VALUES (5,'ProxySQL','#ffffff','#000000');
+INSERT INTO `tag` VALUES (6,'MaxScale','#ffffff','#00B5E2');
+INSERT INTO `tag` VALUES (7,'prodCluster','#FFFFFF','#d5c12e');
+INSERT INTO `tag` VALUES (8,'innodb-cluster','#FFFFFF','#87c91a');
+INSERT INTO `tag` VALUES (9,'primary','#FFFFFF','#386bba');
+INSERT INTO `tag` VALUES (10,'mysql-8.4.8','#FFFFFF','#e536b8');
+INSERT INTO `tag` VALUES (11,'secondary','#FFFFFF','#1f7ba5');
+INSERT INTO `tag` VALUES (12,'mysql-router','#FFFFFF','#97be3c');
+INSERT INTO `tag` VALUES (13,'proxy','#FFFFFF','#431387');
+INSERT INTO `tag` VALUES (14,'rw','#FFFFFF','#038c0d');
+INSERT INTO `tag` VALUES (15,'mysqlrouter-ha','#FFFFFF','#5cf807');
+INSERT INTO `tag` VALUES (16,'ro','#FFFFFF','#3605c2');
+INSERT INTO `tag` VALUES (17,'rw-split','#FFFFFF','#2de9bc');
+INSERT INTO `tag` VALUES (18,'sql','#FFFFFF','#ac5c74');
+INSERT INTO `tag` VALUES (19,'keepalived','#FFFFFF','#fdbb04');
+INSERT INTO `tag` VALUES (20,'vip','#FFFFFF','#232059');
 /*!40000 ALTER TABLE `tag` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -164090,6 +164121,307 @@ INSERT INTO `translation_glial` VALUES (512,'74b86faffba5d6e58cd223964bc592c5e71
 INSERT INTO `translation_glial` VALUES (513,'ba776842b91f7f12e45408baa6c5efd28d70e210','Organizations','en','App/view/Menu/show.view.php',105,'2025-06-13 15:42:25');
 INSERT INTO `translation_glial` VALUES (514,'8cf673c91d1a2f3cbe02b38d19e581f17500f490','The daemon (id=16) with pid : \'3565308\' successfully stopped','en','App/Controller/Agent.php',161,'2025-06-13 18:31:00');
 INSERT INTO `translation_glial` VALUES (515,'96d9c4b2bdc35ae38a4c25b68e53a19fac1d6197','The daemon (id=7) with pid : \'302437\' successfully stopped','en','App/Controller/Agent.php',161,'2025-06-18 11:55:39');
+INSERT INTO `translation_glial` VALUES (516,'55d7c058abe9389fbf2c48ec4c94c2b8cdc3df98','Replay','en','App/view/Menu/show.view.php',105,'2025-07-09 13:19:08');
+INSERT INTO `translation_glial` VALUES (517,'437c51e4ba4bb039555694dd3f3f36bf0bdbc617','Add an organization','en','App/Library/Ariane.php',42,'2025-07-17 17:10:59');
+INSERT INTO `translation_glial` VALUES (518,'08386ea4bdc368b7435b9771ecfa0cd2c5be0555','The daemon (id=16) with pid : \'2373759\' successfully stopped','en','App/Controller/Agent.php',161,'2025-07-21 17:26:43');
+INSERT INTO `translation_glial` VALUES (519,'23921a60fd0d56d1e5dfbed2f9d1496c7d6780ec','The daemon (id=16) with pid : \'1383627\' successfully stopped','en','App/Controller/Agent.php',161,'2025-07-27 02:57:09');
+INSERT INTO `translation_glial` VALUES (520,'bb591f3ad364c9fde4492f832081a0f92aeb2a7a','The daemon (id=14) with pid : \'1383615\' successfully stopped','en','App/Controller/Agent.php',161,'2025-07-27 02:58:36');
+INSERT INTO `translation_glial` VALUES (521,'181a27ec55d48c535e881694ad885b1316153f2d','The daemon (id=14) with pid : \'1387976\' successfully stopped','en','App/Controller/Agent.php',161,'2025-07-27 02:59:54');
+INSERT INTO `translation_glial` VALUES (522,'56d068441d0033b2d0b2477eb7f0440f4aad28db','Impossible to find the daemon (id=16) with the pid :','en','App/Controller/Agent.php',182,'2025-07-27 03:01:43');
+INSERT INTO `translation_glial` VALUES (523,'9de50d1c5aa4a11d9396322565f62f0a62ce57d9','Daemon (id=16) was already stopped or in error','en','App/Controller/Agent.php',183,'2025-07-27 03:01:43');
+INSERT INTO `translation_glial` VALUES (524,'0b78950f3ba3f2cda8ac5c505cce1e4352c0e050','The daemon (id=14) with pid : \'1390211\' successfully stopped','en','App/Controller/Agent.php',161,'2025-07-27 03:01:45');
+INSERT INTO `translation_glial` VALUES (525,'d7405aa0eab62a0aa5ad1f26bbb91d0e8886c48c','The daemon (id=14) with pid : \'1393449\' successfully stopped','en','App/Controller/Agent.php',161,'2025-07-27 03:02:21');
+INSERT INTO `translation_glial` VALUES (526,'18946dabc2416b7a908bb5a0b16c40b26fa08cdc','The daemon (id=14) with pid : \'1394588\' successfully stopped','en','App/Controller/Agent.php',161,'2025-07-27 03:02:40');
+INSERT INTO `translation_glial` VALUES (527,'afa95a17835f3d7a970211afa885f1df3fe5adce','The daemon (id=14) with pid : \'1395133\' successfully stopped','en','App/Controller/Agent.php',161,'2025-07-27 03:03:15');
+INSERT INTO `translation_glial` VALUES (528,'1a726592b2bc524037a934538217e60089f6e084','The daemon (id=14) with pid : \'1396159\' successfully stopped','en','App/Controller/Agent.php',161,'2025-07-27 03:04:31');
+INSERT INTO `translation_glial` VALUES (529,'882c72fdb5e22f8e6ba4c4d16af4dbde72c3a11a','The daemon (id=14) with pid : \'30136\' successfully stopped','en','App/Controller/Agent.php',161,'2025-07-28 22:50:13');
+INSERT INTO `translation_glial` VALUES (530,'4d9b12b9beb35df0c9b94846af8928f9929ddfbb','The daemon (id=16) with pid : \'30148\' successfully stopped','en','App/Controller/Agent.php',161,'2025-07-29 11:14:05');
+INSERT INTO `translation_glial` VALUES (531,'63bb62e857a3d304c11275e333056386e81f8848','The daemon (id=14) with pid : \'3815198\' successfully stopped','en','App/Controller/Agent.php',161,'2025-07-31 13:17:42');
+INSERT INTO `translation_glial` VALUES (532,'937a7c496f8b68d2fb72ba82334130172865ca3b','The daemon (id=16) with pid : \'865685\' successfully stopped','en','App/Controller/Agent.php',161,'2025-07-31 14:31:35');
+INSERT INTO `translation_glial` VALUES (533,'3259c34de847e5cc69422701d663498cab379185','The daemon (id=16) with pid : \'3758534\' successfully stopped','en','App/Controller/Agent.php',161,'2025-08-26 13:01:10');
+INSERT INTO `translation_glial` VALUES (534,'76f1d318b1013e6c2c954bdd6b0960fc5ab8bd69','The daemon (id=16) with pid : \'3787267\' successfully stopped','en','App/Controller/Agent.php',161,'2025-08-26 13:02:59');
+INSERT INTO `translation_glial` VALUES (535,'6680726aef9a1ee4ffb207c11d4c25124b137524','The daemon (id=16) with pid : \'3826549\' successfully stopped','en','App/Controller/Agent.php',161,'2025-08-26 13:31:08');
+INSERT INTO `translation_glial` VALUES (536,'bef2965cf6828768466906affdf86556efa35264','The daemon (id=16) with pid : \'3963127\' successfully stopped','en','App/Controller/Agent.php',161,'2025-08-26 15:27:39');
+INSERT INTO `translation_glial` VALUES (537,'1b2032fd4731cd1317d5906dd94c5eed03cbe7c0','The daemon (id=16) with pid : \'4044696\' successfully stopped','en','App/Controller/Agent.php',161,'2025-08-26 16:17:38');
+INSERT INTO `translation_glial` VALUES (538,'a4c2d6717b0158293c35e8aa14f0dbc0b4e30f7b','User account','en','App/view/Server/password.view.php',17,'2025-09-03 12:52:25');
+INSERT INTO `translation_glial` VALUES (539,'8cd479b4211ccfd56368743d85f17669808678bf','Host name','en','App/view/Server/password.view.php',24,'2025-09-03 12:52:25');
+INSERT INTO `translation_glial` VALUES (540,'f88a0c8beb2d2b05ab0f62307cfe264a4061728f','Change password','en','App/view/Server/password.view.php',54,'2025-09-03 12:52:25');
+INSERT INTO `translation_glial` VALUES (541,'3797c2dff7106e640490e73b04a9d3441ed72029','Change server password','en','App/Library/Ariane.php',42,'2025-09-03 12:52:25');
+INSERT INTO `translation_glial` VALUES (542,'48aa086d2e64f5b98f3db4003712fe4ca0aec7ab','The daemon (id=14) with pid : \'3009346\' successfully stopped','en','App/Controller/Agent.php',161,'2025-09-05 13:27:13');
+INSERT INTO `translation_glial` VALUES (543,'c634a0ad2cc2307d01be947edf074a4851121afe','The daemon (id=14) with pid : \'1476307\' successfully stopped','en','App/Controller/Agent.php',161,'2025-09-20 13:45:45');
+INSERT INTO `translation_glial` VALUES (544,'d01f5d1e838fab3e2d9251f78d78d15acb6591da','The daemon (id=14) with pid : \'1800482\' successfully stopped','en','App/Controller/Agent.php',161,'2025-09-20 18:04:02');
+INSERT INTO `translation_glial` VALUES (545,'223f0e9c52f6ad27a12ba8512555543cb58a34ad','The ProxySQL Server has been added','en','App/Controller/ProxySQL.php',923,'2025-09-21 23:15:03');
+INSERT INTO `translation_glial` VALUES (546,'691cea4868f0ca05ab6ed214f7cc5622c165e2a1','The daemon (id=16) with pid : \'279056\' successfully stopped','en','App/Controller/Agent.php',161,'2025-09-21 23:54:27');
+INSERT INTO `translation_glial` VALUES (547,'53699bffad9b23eb11ac8f4208a37655fc8b02eb','The daemon (id=16) with pid : \'531538\' successfully stopped','en','App/Controller/Agent.php',161,'2025-09-22 10:50:29');
+INSERT INTO `translation_glial` VALUES (548,'c6569012eda1d7177bc11d90ebe6440b07122ea2','The daemon (id=16) with pid : \'2786622\' successfully stopped','en','App/Controller/Agent.php',161,'2025-09-22 11:03:19');
+INSERT INTO `translation_glial` VALUES (549,'17ef65f695e4d5a4405244811f1b14c6aaacf92c','The daemon (id=16) with pid : \'2894433\' successfully stopped','en','App/Controller/Agent.php',161,'2025-09-22 12:09:00');
+INSERT INTO `translation_glial` VALUES (550,'b735944221dda38c799df6fc6dfee46ec6a0e9e6','The daemon (id=16) with pid : \'3842224\' successfully stopped','en','App/Controller/Agent.php',161,'2025-09-22 19:02:23');
+INSERT INTO `translation_glial` VALUES (551,'c69c2c20643d1e61cd7d3585150abb96701c00e3','The daemon (id=16) with pid : \'1704778\' successfully stopped','en','App/Controller/Agent.php',161,'2025-09-22 19:22:35');
+INSERT INTO `translation_glial` VALUES (552,'12b9430008c29011a0fd8eb9770fc08ce6a2f613','Connection successfull, ProxySQL Admin Module detected !','en','App/Controller/ProxySQL.php',153,'2025-09-24 01:29:30');
+INSERT INTO `translation_glial` VALUES (553,'a38b6ff7afb9700db29a424c1aa07bfbe88a95a4','OFFLINE_HARD','en','App/view/ProxySQL/index.view.php',138,'2025-09-24 03:11:17');
+INSERT INTO `translation_glial` VALUES (554,'e892ef87ef3b0038c263ff1c93c015193ad04707','The daemon (id=7) with pid : \'989290\' successfully stopped','en','App/Controller/Agent.php',161,'2025-09-27 13:17:28');
+INSERT INTO `translation_glial` VALUES (555,'5bcc94aea2c395ae2c8159500d44eaad55404c29','The daemon (id=16) with pid : \'2228790\' successfully stopped','en','App/Controller/Agent.php',161,'2025-10-02 02:20:54');
+INSERT INTO `translation_glial` VALUES (556,'5c83865e0634248d83122653ba3a48a06f2f89c1','The daemon (id=16) with pid : \'2584631\' successfully stopped','en','App/Controller/Agent.php',161,'2025-10-02 13:27:42');
+INSERT INTO `translation_glial` VALUES (557,'caef313747de09556b8b1d9d6e4add3985392776','Queries','en','App/view/MysqlServer/menu.view.php',26,'2025-10-04 21:05:35');
+INSERT INTO `translation_glial` VALUES (558,'caef313747de09556b8b1d9d6e4add3985392776','Queries','en','App/view/Query/all.view.php',7,'2025-10-04 22:06:12');
+INSERT INTO `translation_glial` VALUES (559,'66839374205eb8e73edc5e1b39874922cd66a7b0','Count','en','App/view/Query/all.view.php',15,'2025-10-04 22:06:12');
+INSERT INTO `translation_glial` VALUES (560,'24fe80ffc5b88421935625150cc25c881c5a9a1c','Average  execution time','en','App/view/Query/all.view.php',16,'2025-10-04 22:06:12');
+INSERT INTO `translation_glial` VALUES (561,'7e0baebfbdb1c6cac130c9b6e2f8e16fdf28d49e','Load on total time','en','App/view/Query/all.view.php',17,'2025-10-04 22:06:12');
+INSERT INTO `translation_glial` VALUES (562,'caef313747de09556b8b1d9d6e4add3985392776','Queries','en','App/view/Query/all.view.php',9,'2025-10-04 22:18:30');
+INSERT INTO `translation_glial` VALUES (563,'66839374205eb8e73edc5e1b39874922cd66a7b0','Count','en','App/view/Query/all.view.php',17,'2025-10-04 22:18:30');
+INSERT INTO `translation_glial` VALUES (564,'24fe80ffc5b88421935625150cc25c881c5a9a1c','Average  execution time','en','App/view/Query/all.view.php',18,'2025-10-04 22:18:30');
+INSERT INTO `translation_glial` VALUES (565,'7e0baebfbdb1c6cac130c9b6e2f8e16fdf28d49e','Load on total time','en','App/view/Query/all.view.php',19,'2025-10-04 22:18:30');
+INSERT INTO `translation_glial` VALUES (566,'caef313747de09556b8b1d9d6e4add3985392776','Queries','en','App/view/Query/all.view.php',30,'2025-10-04 22:22:05');
+INSERT INTO `translation_glial` VALUES (567,'66839374205eb8e73edc5e1b39874922cd66a7b0','Count','en','App/view/Query/all.view.php',38,'2025-10-04 22:22:05');
+INSERT INTO `translation_glial` VALUES (568,'24fe80ffc5b88421935625150cc25c881c5a9a1c','Average  execution time','en','App/view/Query/all.view.php',39,'2025-10-04 22:22:05');
+INSERT INTO `translation_glial` VALUES (569,'7e0baebfbdb1c6cac130c9b6e2f8e16fdf28d49e','Load on total time','en','App/view/Query/all.view.php',40,'2025-10-04 22:22:05');
+INSERT INTO `translation_glial` VALUES (570,'66839374205eb8e73edc5e1b39874922cd66a7b0','Count','en','App/view/Query/all.view.php',39,'2025-10-04 22:29:13');
+INSERT INTO `translation_glial` VALUES (571,'24fe80ffc5b88421935625150cc25c881c5a9a1c','Average  execution time','en','App/view/Query/all.view.php',40,'2025-10-04 22:29:13');
+INSERT INTO `translation_glial` VALUES (572,'7e0baebfbdb1c6cac130c9b6e2f8e16fdf28d49e','Load on total time','en','App/view/Query/all.view.php',41,'2025-10-04 22:29:13');
+INSERT INTO `translation_glial` VALUES (573,'66839374205eb8e73edc5e1b39874922cd66a7b0','Count','en','App/view/Query/all.view.php',41,'2025-10-04 22:34:36');
+INSERT INTO `translation_glial` VALUES (574,'24fe80ffc5b88421935625150cc25c881c5a9a1c','Average  execution time','en','App/view/Query/all.view.php',42,'2025-10-04 22:34:36');
+INSERT INTO `translation_glial` VALUES (575,'7e0baebfbdb1c6cac130c9b6e2f8e16fdf28d49e','Load on total time','en','App/view/Query/all.view.php',43,'2025-10-04 22:34:36');
+INSERT INTO `translation_glial` VALUES (576,'caef313747de09556b8b1d9d6e4add3985392776','Queries','en','App/view/Menu/show.view.php',105,'2025-10-04 23:18:45');
+INSERT INTO `translation_glial` VALUES (577,'caef313747de09556b8b1d9d6e4add3985392776','Queries','en','App/Library/Ariane.php',42,'2025-10-05 02:59:10');
+INSERT INTO `translation_glial` VALUES (578,'403aa1689b2c55e3b8f8a0dbeef3db4a08b284d5','Digest','en','App/Library/Ariane.php',42,'2025-10-05 02:59:10');
+INSERT INTO `translation_glial` VALUES (579,'3e537138ddb1d50488e2a48542de282140bb34fe','New Maxscale Server','en','App/view/MaxScale/index.view.php',12,'2025-10-06 16:20:24');
+INSERT INTO `translation_glial` VALUES (580,'b7ad23d1fc3ef2ccba2817cafb24b9d8b3c0effc','Schema name','en','App/view/Query/all.view.php',42,'2025-10-07 13:52:12');
+INSERT INTO `translation_glial` VALUES (581,'66839374205eb8e73edc5e1b39874922cd66a7b0','Count','en','App/view/Query/all.view.php',44,'2025-10-07 13:52:12');
+INSERT INTO `translation_glial` VALUES (582,'24fe80ffc5b88421935625150cc25c881c5a9a1c','Average  execution time','en','App/view/Query/all.view.php',45,'2025-10-07 13:52:12');
+INSERT INTO `translation_glial` VALUES (583,'7e0baebfbdb1c6cac130c9b6e2f8e16fdf28d49e','Load on total time','en','App/view/Query/all.view.php',46,'2025-10-07 13:52:12');
+INSERT INTO `translation_glial` VALUES (584,'196b9b583263f173a6e8b452e20a94b68964e8f9','The daemon (id=25) with pid : \'4081952\' successfully stopped','en','App/Controller/Agent.php',161,'2025-10-11 14:59:29');
+INSERT INTO `translation_glial` VALUES (585,'1f72ea64daf3c4beb49c6c7daa8d04f27784674e','The daemon (id=20) with pid : \'1541874\' successfully stopped','en','App/Controller/Agent.php',161,'2025-10-14 03:42:28');
+INSERT INTO `translation_glial` VALUES (586,'506a69a5b679e6bbec12eb0f15cc5866343b6f2a','The daemon (id=23) with pid : \'1541951\' successfully stopped','en','App/Controller/Agent.php',161,'2025-10-14 03:42:49');
+INSERT INTO `translation_glial` VALUES (587,'8f1c629982f358d7701272f97533f91f5782e0d1','SSL','en','App/view/Server/main.view.php',42,'2025-10-14 14:43:43');
+INSERT INTO `translation_glial` VALUES (588,'41d63c14af2269cebeefbcf305841b5347b758ca','performance_schema is not activated on this server','en','App/view/Query/all.view.php',102,'2025-10-22 12:11:47');
+INSERT INTO `translation_glial` VALUES (589,'4e527a49d4764939ffb324fec498ffc248f195b2','Configuration','en','App/view/MaxScale/index.view.php',46,'2025-10-22 13:13:11');
+INSERT INTO `translation_glial` VALUES (590,'9f35d11a978d46e57f327cc521c7384a325adbdc','Statistics','en','App/view/MaxScale/index.view.php',47,'2025-10-22 13:13:11');
+INSERT INTO `translation_glial` VALUES (591,'e7608b16362fc3af4ed8ee38e7a110cc1f4b88f1','Logs','en','App/view/MaxScale/index.view.php',50,'2025-10-22 13:13:11');
+INSERT INTO `translation_glial` VALUES (592,'67a4e04c8a9babcce06bafc4d860911188b7ecd5','Hostname','en','App/view/MaxScale/index.view.php',121,'2025-10-22 13:13:11');
+INSERT INTO `translation_glial` VALUES (593,'8ddd689f0e7056872689fcd4f23d76ae218b65b1','Status','en','App/view/MaxScale/index.view.php',122,'2025-10-22 13:13:11');
+INSERT INTO `translation_glial` VALUES (594,'db4ce8e8ee4be7a8332b588022298d8569fedde3','Color','en','App/view/Menu/show.view.php',105,'2025-10-22 13:13:11');
+INSERT INTO `translation_glial` VALUES (595,'8cad7cc23b7a8f153ede91f45c298e8a8a30db0d','Server :','en','App/view/Dashboard/json.view.php',13,'2025-10-22 13:14:19');
+INSERT INTO `translation_glial` VALUES (596,'852440e7d9ee0122183930aaf6b88847e1540ee3','Nothing selected','en','/srv/www/glial/Glial/Html/Form/Form.php',95,'2025-10-22 13:14:19');
+INSERT INTO `translation_glial` VALUES (597,'36020c5fbf6c9d4f11641d456a5770666c145e7a','Port','en','App/view/Server/main.view.php',41,'2025-10-22 13:15:21');
+INSERT INTO `translation_glial` VALUES (598,'6995050e32bb8698ad5390842ba00259e45ab121','Yes','en','App/view/Server/main.view.php',168,'2025-10-22 13:15:21');
+INSERT INTO `translation_glial` VALUES (599,'fb763a35f80c8eba87d5f5e9b34b06282b698a53','READ ONLY','en','App/view/Server/main.view.php',159,'2025-10-22 13:15:21');
+INSERT INTO `translation_glial` VALUES (600,'be95e242d51f768d75a5b1e02cc1f7d2368d442c','Current Sessions','en','App/view/MaxScale/index.view.php',49,'2025-10-22 16:40:09');
+INSERT INTO `translation_glial` VALUES (601,'02e0446b99641afbed4a0f19c93a9b5aa0f8ddf9','Services','en','App/view/MaxScale/index.view.php',49,'2025-10-22 16:40:09');
+INSERT INTO `translation_glial` VALUES (602,'68a84a2a13ff089893450e360d5c019e92136e14','Listeners','en','App/view/MaxScale/index.view.php',49,'2025-10-22 16:40:09');
+INSERT INTO `translation_glial` VALUES (603,'75fed77fa7f1ba3af078504907cdc9c800a86837','Filters','en','App/view/MaxScale/index.view.php',49,'2025-10-22 16:40:09');
+INSERT INTO `translation_glial` VALUES (604,'cf5b3951835f479add25fe1f5335d66b716c081b','The daemon (id=16) with pid : \'3582679\' successfully stopped','en','App/Controller/Agent.php',161,'2025-10-22 19:04:24');
+INSERT INTO `translation_glial` VALUES (605,'f0b0fa08561d93638aed43849024fa285c4fb88b','The daemon (id=16) with pid : \'774062\' successfully stopped','en','App/Controller/Agent.php',161,'2025-10-22 19:06:56');
+INSERT INTO `translation_glial` VALUES (606,'934a5fade226307f5091ed28da2577023af0faa9','The daemon (id=16) with pid : \'940572\' successfully stopped','en','App/Controller/Agent.php',161,'2025-10-22 20:14:46');
+INSERT INTO `translation_glial` VALUES (607,'31a76808b8b61d4edaece15913be50cf1154673f','The daemon (id=16) with pid : \'962361\' successfully stopped','en','App/Controller/Agent.php',161,'2025-10-22 20:23:00');
+INSERT INTO `translation_glial` VALUES (608,'30ee91311ef9bf2ffefe755a01e952ed61f4ec23','The daemon (id=16) with pid : \'990246\' successfully stopped','en','App/Controller/Agent.php',161,'2025-10-22 20:36:23');
+INSERT INTO `translation_glial` VALUES (609,'cfe783f1fc33832d5192a5fea28f0a2b03f65d1a','The daemon (id=16) with pid : \'995862\' successfully stopped','en','App/Controller/Agent.php',161,'2025-10-22 20:38:23');
+INSERT INTO `translation_glial` VALUES (610,'e79cd62c30f83a82982642436978408a761599f3','The daemon (id=16) with pid : \'4026525\' successfully stopped','en','App/Controller/Agent.php',161,'2025-10-23 19:39:18');
+INSERT INTO `translation_glial` VALUES (611,'17015b746aec9e5b36013bef82e73df068fe58b3','The daemon (id=25) with pid : \'4026723\' successfully stopped','en','App/Controller/Agent.php',161,'2025-10-23 23:22:43');
+INSERT INTO `translation_glial` VALUES (612,'966420fb0890f13b2cfd2cb3d67570e944ae2be3','The daemon (id=25) with pid : \'417784\' successfully stopped','en','App/Controller/Agent.php',161,'2025-10-23 23:35:43');
+INSERT INTO `translation_glial` VALUES (613,'0213c1a917a7ed1422bed8a16e9245c4d02c5eda','The daemon (id=16) with pid : \'437359\' successfully stopped','en','App/Controller/Agent.php',161,'2025-10-23 23:37:27');
+INSERT INTO `translation_glial` VALUES (614,'dbad6bad2fdc41ab23948171f4fad311ecb67327','NO DATA','en','App/view/MaxScale/index.view.php',93,'2025-10-24 10:46:27');
+INSERT INTO `translation_glial` VALUES (615,'9d00744b0b1516f59a720ec4c86ee8902783df44','performance_schema is not activated on this server !','en','App/view/Query/all.view.php',102,'2025-10-24 14:05:08');
+INSERT INTO `translation_glial` VALUES (616,'7fc05cfc686de104b0820fede514227dd78181ea','SSH Tunnels','en','App/view/Menu/show.view.php',105,'2025-10-26 01:10:54');
+INSERT INTO `translation_glial` VALUES (617,'6b5554ab44ec2cd73083ce044b8d95df90171af7','Local','en','App/view/Tunnel/index.view.php',50,'2025-10-26 01:12:39');
+INSERT INTO `translation_glial` VALUES (618,'901c007a5f93584a20945980ecda03012094533b','Remote','en','App/view/Tunnel/index.view.php',51,'2025-10-26 01:12:39');
+INSERT INTO `translation_glial` VALUES (619,'2f284e1dd68b470ba6faef1597e7d9004ca6eeae','Jump Hosts','en','App/view/Tunnel/index.view.php',53,'2025-10-26 01:12:39');
+INSERT INTO `translation_glial` VALUES (620,'6c620ad13e0307e3432f793c4749bd1cc32ae8b8','Date Created','en','App/view/Tunnel/index.view.php',55,'2025-10-26 01:12:39');
+INSERT INTO `translation_glial` VALUES (621,'6b5554ab44ec2cd73083ce044b8d95df90171af7','Local','en','App/view/Tunnel/index.view.php',51,'2025-10-26 01:14:39');
+INSERT INTO `translation_glial` VALUES (622,'901c007a5f93584a20945980ecda03012094533b','Remote','en','App/view/Tunnel/index.view.php',52,'2025-10-26 01:14:39');
+INSERT INTO `translation_glial` VALUES (623,'2f284e1dd68b470ba6faef1597e7d9004ca6eeae','Jump Hosts','en','App/view/Tunnel/index.view.php',54,'2025-10-26 01:14:39');
+INSERT INTO `translation_glial` VALUES (624,'6c620ad13e0307e3432f793c4749bd1cc32ae8b8','Date Created','en','App/view/Tunnel/index.view.php',56,'2025-10-26 01:14:39');
+INSERT INTO `translation_glial` VALUES (625,'9ffe67128c758e9db6ec7f9d5b0bcc665150999e','The daemon (id=16) with pid : \'3998311\' successfully stopped','en','App/Controller/Agent.php',161,'2025-10-27 19:17:56');
+INSERT INTO `translation_glial` VALUES (626,'459b396a9c55d78a2d4921f07a54bf3004105de1','Controles','en','App/view/Cluster/history.view.php',25,'2025-10-29 15:38:47');
+INSERT INTO `translation_glial` VALUES (627,'aa37dcffb9ad44ab5849b411513e1c9fd9584b16','The daemon (id=20) with pid : \'1440038\' successfully stopped','en','App/Controller/Agent.php',161,'2025-11-01 16:06:00');
+INSERT INTO `translation_glial` VALUES (628,'26da1518104b8733a9c02e17535be82abb3517a1','The daemon (id=16) with pid : \'1440002\' successfully stopped','en','App/Controller/Agent.php',161,'2025-11-01 19:39:25');
+INSERT INTO `translation_glial` VALUES (629,'81b99229edc64366818e6d9f100217db16d6599f','Pid','en','App/view/Tunnel/index.view.php',54,'2025-11-02 01:58:27');
+INSERT INTO `translation_glial` VALUES (630,'053215906eae3b2cb3d7c299317b1ee1e0fd3a76','The daemon (id=16) with pid : \'1626493\' successfully stopped','en','App/Controller/Agent.php',161,'2025-11-02 17:58:58');
+INSERT INTO `translation_glial` VALUES (631,'d8fc93bf99c44f84a87712a89e9a6a1f5c8c3209','The daemon (id=16) with pid : \'2825172\' successfully stopped','en','App/Controller/Agent.php',161,'2025-11-02 20:45:51');
+INSERT INTO `translation_glial` VALUES (632,'290cb4b25e6b734c6d332870789864013825473a','The daemon (id=7) with pid : \'2825148\' successfully stopped','en','App/Controller/Agent.php',161,'2025-11-02 21:02:42');
+INSERT INTO `translation_glial` VALUES (633,'175250b5c58b453a6154a21e5587ed6e96815e40','The daemon (id=16) with pid : \'4142513\' successfully stopped','en','App/Controller/Agent.php',161,'2025-11-03 12:40:34');
+INSERT INTO `translation_glial` VALUES (634,'f3bcd78bab6f9db30ed6af2e218949f289d43869','The daemon (id=16) with pid : \'3800558\' successfully stopped','en','App/Controller/Agent.php',161,'2025-11-03 13:55:32');
+INSERT INTO `translation_glial` VALUES (635,'18eccf159761c5be2da12c3111bbc3f8b4725252','The daemon (id=7) with pid : \'494608\' successfully stopped','en','App/Controller/Agent.php',161,'2025-11-03 14:47:20');
+INSERT INTO `translation_glial` VALUES (636,'de9b99ad694e3c2349166580552c84b4183501a8','The daemon (id=7) with pid : \'546865\' successfully stopped','en','App/Controller/Agent.php',161,'2025-11-03 15:17:05');
+INSERT INTO `translation_glial` VALUES (637,'93c40d13c81f1867922420d151767bb755d461f7','The daemon (id=7) with pid : \'669222\' successfully stopped','en','App/Controller/Agent.php',161,'2025-11-03 15:18:00');
+INSERT INTO `translation_glial` VALUES (638,'f462a8dd948f0e36384ff9fc91593e1fafe7ed55','Docker Host Parameters','en','App/view/Docker/add.view.php',8,'2025-11-09 03:24:58');
+INSERT INTO `translation_glial` VALUES (639,'eb07fe27d98177b32f49bcd1c79079d5dc289a3a','Identification','en','App/view/Docker/add.view.php',14,'2025-11-09 03:24:58');
+INSERT INTO `translation_glial` VALUES (640,'697f2fa38ab13b7cd9c981eefc5bfb916bf5a6b6','Name to identify this Docker host','en','App/view/Docker/add.view.php',20,'2025-11-09 03:24:58');
+INSERT INTO `translation_glial` VALUES (641,'737e4cc5e83fb783c2de8db0438f6ba47b461e49','Connection (SSH)','en','App/view/Docker/add.view.php',29,'2025-11-09 03:24:58');
+INSERT INTO `translation_glial` VALUES (642,'3d02af15f1d2c33d0a8da23120dccdfc84188075','Hostname / IP','en','App/view/Docker/add.view.php',32,'2025-11-09 03:24:58');
+INSERT INTO `translation_glial` VALUES (643,'57340f25df59461d52e184d92a74034828ed9e63','SSH Port','en','App/view/Docker/add.view.php',37,'2025-11-09 03:24:58');
+INSERT INTO `translation_glial` VALUES (644,'0183609cb2932f2af1b0ba85b15af261c8ccdfdf','SSH Key','en','App/view/Docker/add.view.php',84,'2025-11-09 03:24:58');
+INSERT INTO `translation_glial` VALUES (645,'15818b84e5f9edfaf75795c9be4293e8b20b67ff','Choose the SSH key used to connect to this Docker host.','en','App/view/Docker/add.view.php',91,'2025-11-09 03:24:58');
+INSERT INTO `translation_glial` VALUES (646,'cc2c66d1d1d94ba5d53dea5a8e4cc1356fef2c8b','Docker servers','en','App/view/Menu/show.view.php',105,'2025-11-09 03:24:58');
+INSERT INTO `translation_glial` VALUES (647,'a5fdb871e96b2fed1c1445c8c3436e7ddb6e9b6b','Last refresh','en','App/view/Server/main.view.php',92,'2025-11-15 23:18:20');
+INSERT INTO `translation_glial` VALUES (648,'8835ed483f6981da0d73ff3991de98f13ff838af','Info','en','App/view/MysqlServer/menu.view.php',19,'2025-11-15 23:18:22');
+INSERT INTO `translation_glial` VALUES (649,'0596a42f5d2c086fac7640ec37abfeeeae94362b','Normalized query','en','App/view/Query/all.view.php',228,'2025-11-15 23:18:24');
+INSERT INTO `translation_glial` VALUES (650,'91a1e16d98635295845d37ab55c9e0888f7119c2','The daemon (id=16) with pid : \'3811219\' successfully stopped','en','App/Controller/Agent.php',161,'2025-11-16 19:57:05');
+INSERT INTO `translation_glial` VALUES (651,'89bc9c3b8e7689e272a694e2917c0818900ed0ff','The daemon (id=7) with pid : \'3811195\' successfully stopped','en','App/Controller/Agent.php',161,'2025-11-16 19:59:26');
+INSERT INTO `translation_glial` VALUES (652,'7baaf0cac3a3996744d441328e834864e9475c7c','The daemon (id=24) with pid : \'3992480\' successfully stopped','en','App/Controller/Agent.php',161,'2025-11-16 20:09:05');
+INSERT INTO `translation_glial` VALUES (653,'a5fdb871e96b2fed1c1445c8c3436e7ddb6e9b6b','Last refresh','en','App/view/MysqlServer/lastRefresh.view.php',38,'2025-11-16 20:22:28');
+INSERT INTO `translation_glial` VALUES (654,'1d6914a601832acf6508101bae2680085980416b','Date +1','en','App/view/MysqlServer/lastRefresh.view.php',40,'2025-11-16 20:22:28');
+INSERT INTO `translation_glial` VALUES (655,'8f031ac171b62c87aeac6ad3b62aea48400dd674','Date +2','en','App/view/MysqlServer/lastRefresh.view.php',41,'2025-11-16 20:22:28');
+INSERT INTO `translation_glial` VALUES (656,'f25b60b61bd7e132546f0fc71a2bf09249b873a6','Date +3','en','App/view/MysqlServer/lastRefresh.view.php',42,'2025-11-16 20:22:28');
+INSERT INTO `translation_glial` VALUES (657,'23eb6f2406aad2acf3e73e8522fc80a671d95187','Date +4','en','App/view/MysqlServer/lastRefresh.view.php',43,'2025-11-16 20:22:28');
+INSERT INTO `translation_glial` VALUES (658,'bfea4016953d19ec284056a64b2c7e22867e45ed','Listener refresh','en','App/view/MysqlServer/lastRefresh.view.php',44,'2025-11-16 20:22:28');
+INSERT INTO `translation_glial` VALUES (659,'95ffe5bb3eb086073f5cdcee879e29cc8b609c84','Server dashboard','en','App/Library/Ariane.php',42,'2025-11-16 20:22:28');
+INSERT INTO `translation_glial` VALUES (660,'030237900816dc4eea33053e134939ffc604020e','The daemon (id=17) with pid : \'4045954\' successfully stopped','en','App/Controller/Agent.php',161,'2025-11-16 20:34:10');
+INSERT INTO `translation_glial` VALUES (661,'bd35408c86d0b08c9fe456fca284f735496b833f','The daemon (id=23) with pid : \'4066362\' successfully stopped','en','App/Controller/Agent.php',161,'2025-11-16 21:29:25');
+INSERT INTO `translation_glial` VALUES (662,'2763a8817b5ea5f51eb9fd4ae1e8190a3236d51b','The daemon (id=14) with pid : \'713031\' successfully stopped','en','App/Controller/Agent.php',161,'2025-11-16 21:40:00');
+INSERT INTO `translation_glial` VALUES (663,'e45493c8cd15eb3c2a69eaa4db417676f539f7b9','The daemon (id=7) with pid : \'713019\' successfully stopped','en','App/Controller/Agent.php',161,'2025-11-16 21:41:40');
+INSERT INTO `translation_glial` VALUES (664,'025047273264d44623f24da8cd25c51ff2ce0844','The daemon (id=14) with pid : \'741417\' successfully stopped','en','App/Controller/Agent.php',161,'2025-11-16 21:41:44');
+INSERT INTO `translation_glial` VALUES (665,'985b220fb69d6841f23f79db6426b7f86f5a29a1','The daemon (id=14) with pid : \'761319\' successfully stopped','en','App/Controller/Agent.php',161,'2025-11-16 21:42:40');
+INSERT INTO `translation_glial` VALUES (666,'68ae98bf90390d9e63abba7ef2295716ae5b3c25','The daemon (id=16) with pid : \'713040\' successfully stopped','en','App/Controller/Agent.php',161,'2025-11-16 21:59:00');
+INSERT INTO `translation_glial` VALUES (667,'d0fd486e1bab0fb643a6db8787c100c7c04afe58','The daemon (id=14) with pid : \'776697\' successfully stopped','en','App/Controller/Agent.php',161,'2025-11-16 21:59:03');
+INSERT INTO `translation_glial` VALUES (668,'85e36c370bde09112e1614cfa74889438c9891b6','The daemon (id=14) with pid : \'1034144\' successfully stopped','en','App/Controller/Agent.php',161,'2025-11-16 22:05:47');
+INSERT INTO `translation_glial` VALUES (669,'a5fdb871e96b2fed1c1445c8c3436e7ddb6e9b6b','Last refresh','en','App/view/Server/main.view.php',94,'2025-11-17 00:47:08');
+INSERT INTO `translation_glial` VALUES (670,'a5fdb871e96b2fed1c1445c8c3436e7ddb6e9b6b','Last refresh','en','App/view/Server/main.view.php',142,'2025-11-17 00:54:23');
+INSERT INTO `translation_glial` VALUES (671,'a5fdb871e96b2fed1c1445c8c3436e7ddb6e9b6b','Last refresh','en','App/view/Server/main.view.php',141,'2025-11-17 01:01:07');
+INSERT INTO `translation_glial` VALUES (672,'a5fdb871e96b2fed1c1445c8c3436e7ddb6e9b6b','Last refresh','en','App/view/Server/main.view.php',139,'2025-11-17 01:06:17');
+INSERT INTO `translation_glial` VALUES (673,'a5fdb871e96b2fed1c1445c8c3436e7ddb6e9b6b','Last refresh','en','App/view/Server/main.view.php',143,'2025-11-17 01:18:00');
+INSERT INTO `translation_glial` VALUES (674,'a5fdb871e96b2fed1c1445c8c3436e7ddb6e9b6b','Last refresh','en','App/view/Server/main.view.php',145,'2025-11-17 01:18:18');
+INSERT INTO `translation_glial` VALUES (675,'a5fdb871e96b2fed1c1445c8c3436e7ddb6e9b6b','Last refresh','en','App/view/Server/main.view.php',147,'2025-11-17 01:24:57');
+INSERT INTO `translation_glial` VALUES (676,'c9809f1db99a477c715dc11aeba04254a1c41313','Window','en','App/view/Query/all.view.php',243,'2025-11-17 03:09:20');
+INSERT INTO `translation_glial` VALUES (677,'0596a42f5d2c086fac7640ec37abfeeeae94362b','Normalized query','en','App/view/Query/all.view.php',280,'2025-11-17 03:09:20');
+INSERT INTO `translation_glial` VALUES (678,'e97933338d687b3a0847cc1ea48023dc85e978b8','The daemon (id=14) with pid : \'53530\' successfully stopped','en','App/Controller/Agent.php',161,'2025-11-17 20:40:11');
+INSERT INTO `translation_glial` VALUES (679,'c484b8e9c196f3613484284921a0e12cfcbf9903','The daemon (id=26) with pid : \'1048777\' successfully stopped','en','App/Controller/Agent.php',161,'2025-11-19 19:01:08');
+INSERT INTO `translation_glial` VALUES (680,'52f134d0355d22b6c20d393912eb62912dfb3e19','The daemon (id=16) with pid : \'1048647\' successfully stopped','en','App/Controller/Agent.php',161,'2025-11-19 19:01:36');
+INSERT INTO `translation_glial` VALUES (681,'e10577a6adae10e177a1b48286c291377bbdf0b6','The daemon (id=16) with pid : \'3606732\' successfully stopped','en','App/Controller/Agent.php',161,'2025-11-19 22:52:45');
+INSERT INTO `translation_glial` VALUES (682,'3dfd66b31967296e8ba108f00c0360272594a3ce','The daemon (id=16) with pid : \'2133875\' successfully stopped','en','App/Controller/Agent.php',161,'2025-11-20 12:45:13');
+INSERT INTO `translation_glial` VALUES (683,'2d8049d96cdf9880f585e9dc2cbb805a6df5c238','options :','en','App/view/Job/index.view.php',83,'2025-11-24 17:40:24');
+INSERT INTO `translation_glial` VALUES (684,'8990c2bb65ec7f64489bcb8a0bd105541c18093e','Restart','en','App/view/Job/index.view.php',84,'2025-11-24 17:40:24');
+INSERT INTO `translation_glial` VALUES (685,'ef0f9b146413e19aa4cd0e9c5d09457694d94a62','Debug','en','App/view/Job/index.view.php',85,'2025-11-24 17:40:24');
+INSERT INTO `translation_glial` VALUES (686,'a5f4e45a77c076ee2bf4ee9291a489082942165c','Telegram','en','App/view/Menu/show.view.php',105,'2025-11-26 22:48:16');
+INSERT INTO `translation_glial` VALUES (687,'c2022c17e28c9454bc52361bc1e3dbf665dd1a1b','Docker host','en','App/Library/Ariane.php',42,'2025-12-04 01:16:49');
+INSERT INTO `translation_glial` VALUES (688,'ec904602ac9ee48e0e3c1ff5a2b3dd3e92eb7cea','Add containers','en','App/Library/Ariane.php',42,'2025-12-04 01:17:27');
+INSERT INTO `translation_glial` VALUES (689,'f7e2b0e40837da3652723cd52f01c40bdf95c88e','Compare Servers (All tables)','en','App/view/Menu/show.view.php',105,'2025-12-04 01:20:04');
+INSERT INTO `translation_glial` VALUES (690,'d5c59693ca9ba0c608b5192d62bc16980b6b1b71','Compare schema exports','en','App/Controller/Schema.php',749,'2025-12-04 01:21:41');
+INSERT INTO `translation_glial` VALUES (691,'0b8359d17d8e2901cf748b44b15c0dffa5a83c1b','Left server','en','App/view/Schema/compareModelsUi.view.php',25,'2025-12-04 01:21:41');
+INSERT INTO `translation_glial` VALUES (692,'979b650cd7b835c66a896111e4f908db36117072','Right server','en','App/view/Schema/compareModelsUi.view.php',35,'2025-12-04 01:21:41');
+INSERT INTO `translation_glial` VALUES (693,'d08e258a8b20425a1f4198e140af25c0295325cd','Summary for servers #%d and #%d','en','App/view/Schema/compareModelsUi.view.php',75,'2025-12-04 01:22:17');
+INSERT INTO `translation_glial` VALUES (694,'997b41d6f97fa6c47586ec5ffa8ecfeddcaa6f85','Missing on left','en','App/view/Schema/compareModelsUi.view.php',113,'2025-12-04 01:22:17');
+INSERT INTO `translation_glial` VALUES (695,'b29192c80a6c520f5ef8990569fedf942a65b2a0','Missing on right','en','App/view/Schema/compareModelsUi.view.php',114,'2025-12-04 01:22:17');
+INSERT INTO `translation_glial` VALUES (696,'f629222b00ffc4520f2fb3b10a9fc8a23320677a','Objects with differences','en','App/view/Schema/compareModelsUi.view.php',115,'2025-12-04 01:22:17');
+INSERT INTO `translation_glial` VALUES (697,'a79abb9e2542fdd8cbea1a84e0e0b76930b6432f','Database: %s','en','App/view/Schema/compareModelsUi.view.php',138,'2025-12-04 01:22:17');
+INSERT INTO `translation_glial` VALUES (698,'810852f0544fda8a957d2ea99cde9d373f2c93cf','None','en','App/view/Schema/compareModelsUi.view.php',149,'2025-12-04 01:22:17');
+INSERT INTO `translation_glial` VALUES (699,'5c5080ab13b1adb0e6a17cf6d9128bdf1e1da407','Diff for %s','en','App/view/Schema/compareModelsUi.view.php',169,'2025-12-04 01:22:17');
+INSERT INTO `translation_glial` VALUES (700,'3efb7991f1e23c1fd78ae9932219b943feeb2113','Compare Servers','en','App/view/Menu/show.view.php',105,'2025-12-04 01:31:09');
+INSERT INTO `translation_glial` VALUES (701,'a4d1d5be7dc14a71887b0ecfd032f14b856459f8','No differences detected between the exported schemas.','en','App/view/Schema/compareModelsUi.view.php',83,'2025-12-04 01:34:03');
+INSERT INTO `translation_glial` VALUES (702,'810852f0544fda8a957d2ea99cde9d373f2c93cf','None','en','App/view/Schema/compareModelsUi.view.php',159,'2025-12-04 01:34:11');
+INSERT INTO `translation_glial` VALUES (703,'d5c59693ca9ba0c608b5192d62bc16980b6b1b71','Compare schema exports','en','App/Controller/Schema.php',745,'2025-12-04 01:43:54');
+INSERT INTO `translation_glial` VALUES (704,'f3918df6af55f5fb21bd00232da7937ff508b077','Ignore column order','en','App/view/Schema/compareModelsUi.view.php',52,'2025-12-04 01:43:54');
+INSERT INTO `translation_glial` VALUES (705,'d08e258a8b20425a1f4198e140af25c0295325cd','Summary for servers #%d and #%d','en','App/view/Schema/compareModelsUi.view.php',82,'2025-12-04 01:43:54');
+INSERT INTO `translation_glial` VALUES (706,'997b41d6f97fa6c47586ec5ffa8ecfeddcaa6f85','Missing on left','en','App/view/Schema/compareModelsUi.view.php',125,'2025-12-04 01:43:54');
+INSERT INTO `translation_glial` VALUES (707,'b29192c80a6c520f5ef8990569fedf942a65b2a0','Missing on right','en','App/view/Schema/compareModelsUi.view.php',126,'2025-12-04 01:43:54');
+INSERT INTO `translation_glial` VALUES (708,'f629222b00ffc4520f2fb3b10a9fc8a23320677a','Objects with differences','en','App/view/Schema/compareModelsUi.view.php',127,'2025-12-04 01:43:54');
+INSERT INTO `translation_glial` VALUES (709,'a79abb9e2542fdd8cbea1a84e0e0b76930b6432f','Database: %s','en','App/view/Schema/compareModelsUi.view.php',150,'2025-12-04 01:43:54');
+INSERT INTO `translation_glial` VALUES (710,'810852f0544fda8a957d2ea99cde9d373f2c93cf','None','en','App/view/Schema/compareModelsUi.view.php',171,'2025-12-04 01:43:54');
+INSERT INTO `translation_glial` VALUES (711,'5c5080ab13b1adb0e6a17cf6d9128bdf1e1da407','Diff for %s','en','App/view/Schema/compareModelsUi.view.php',181,'2025-12-04 01:43:54');
+INSERT INTO `translation_glial` VALUES (712,'ea424e44da6e632e07dccec6dbe4abd8ae4f3605','Column order differences are ignored for this comparison.','en','App/view/Schema/compareModelsUi.view.php',90,'2025-12-04 01:44:00');
+INSERT INTO `translation_glial` VALUES (713,'810852f0544fda8a957d2ea99cde9d373f2c93cf','None','en','App/view/Schema/compareModelsUi.view.php',161,'2025-12-04 01:51:01');
+INSERT INTO `translation_glial` VALUES (714,'a4d1d5be7dc14a71887b0ecfd032f14b856459f8','No differences detected between the exported schemas.','en','App/view/Schema/compareModelsUi.view.php',95,'2025-12-04 02:05:56');
+INSERT INTO `translation_glial` VALUES (715,'b794366f9149d456542dca64c2482916f021393f','Please select two different servers.','en','App/Controller/Schema.php',777,'2025-12-04 02:07:17');
+INSERT INTO `translation_glial` VALUES (716,'f82007ee6dfd446fd80c498f87e1aa9eadbc56c5','Databases only found on server #%d:','en','App/view/Schema/compareModelsUi.view.php',111,'2025-12-04 02:08:28');
+INSERT INTO `translation_glial` VALUES (717,'77aca2ec762a180f37083fdfc7160f0723b4f39c','List of images available','en','App/Library/Ariane.php',42,'2025-12-09 16:10:35');
+INSERT INTO `translation_glial` VALUES (718,'31de45358a2bc858d1a57c6ab9ca3fe6eaf5de08','Telegram bots','en','App/view/Telegram/index.view.php',5,'2026-01-02 22:57:40');
+INSERT INTO `translation_glial` VALUES (719,'7eec588b490eb7d7ea163a5de85cf5ce5c9d42bf','Token','en','App/view/Telegram/index.view.php',11,'2026-01-02 22:57:40');
+INSERT INTO `translation_glial` VALUES (720,'3d29e96aadd7b625c053ee1db99af250fe8b6229','Chat ID','en','App/view/Telegram/index.view.php',12,'2026-01-02 22:57:40');
+INSERT INTO `translation_glial` VALUES (721,'814e2383d6c2bda093d7e7d2c2c27e602ebabcaa','Created','en','App/view/Telegram/index.view.php',13,'2026-01-02 22:57:40');
+INSERT INTO `translation_glial` VALUES (722,'1c98719470ef5ca0d3225608c61eddcb67c182e0','Updated','en','App/view/Telegram/index.view.php',14,'2026-01-02 22:57:40');
+INSERT INTO `translation_glial` VALUES (723,'113f01e887bd0300d238bc8ca9fc13d217e7367b','Are you sure?','en','App/view/Telegram/index.view.php',29,'2026-01-02 22:57:40');
+INSERT INTO `translation_glial` VALUES (724,'83163b947e11c15475c32ccd4ef988d3895793dc','Add a bot','en','App/view/Telegram/index.view.php',39,'2026-01-02 22:57:40');
+INSERT INTO `translation_glial` VALUES (725,'a283503c7455841abb665bd4de3ed16435478307','Copier la commande kill de tous les tunnels','en','App/view/Tunnel/index.view.php',139,'2026-02-20 16:31:43');
+INSERT INTO `translation_glial` VALUES (726,'4e607594ca3095d6506b3446851e37b527cd57df','Commande copiée dans le presse-papiers','en','App/view/Tunnel/index.view.php',141,'2026-02-20 16:31:43');
+INSERT INTO `translation_glial` VALUES (727,'0859c524f001d6f6fc7312ad2035dda6bf893219','Show monitored servers only','en','App/view/Server/main.view.php',121,'2026-02-26 11:51:24');
+INSERT INTO `translation_glial` VALUES (728,'a5fdb871e96b2fed1c1445c8c3436e7ddb6e9b6b','Last refresh','en','App/view/Server/main.view.php',176,'2026-02-26 11:51:24');
+INSERT INTO `translation_glial` VALUES (729,'9aeaf219094ab3d325c953bd13ad437527d22729','Legend updated.','en','App/Controller/Color.php',71,'2026-02-27 03:01:16');
+INSERT INTO `translation_glial` VALUES (730,'ffed84b699dec542cba9af90a4faadecb0c3a4cc','Show all servers','en','App/view/Server/main.view.php',125,'2026-02-28 02:25:05');
+INSERT INTO `translation_glial` VALUES (731,'a5fdb871e96b2fed1c1445c8c3436e7ddb6e9b6b','Last refresh','en','App/view/MysqlServer/lastRefresh.view.php',40,'2026-02-28 04:41:25');
+INSERT INTO `translation_glial` VALUES (732,'1d6914a601832acf6508101bae2680085980416b','Date +1','en','App/view/MysqlServer/lastRefresh.view.php',42,'2026-02-28 04:41:25');
+INSERT INTO `translation_glial` VALUES (733,'8f031ac171b62c87aeac6ad3b62aea48400dd674','Date +2','en','App/view/MysqlServer/lastRefresh.view.php',43,'2026-02-28 04:41:25');
+INSERT INTO `translation_glial` VALUES (734,'f25b60b61bd7e132546f0fc71a2bf09249b873a6','Date +3','en','App/view/MysqlServer/lastRefresh.view.php',44,'2026-02-28 04:41:25');
+INSERT INTO `translation_glial` VALUES (735,'23eb6f2406aad2acf3e73e8522fc80a671d95187','Date +4','en','App/view/MysqlServer/lastRefresh.view.php',45,'2026-02-28 04:41:25');
+INSERT INTO `translation_glial` VALUES (736,'bfea4016953d19ec284056a64b2c7e22867e45ed','Listener refresh','en','App/view/MysqlServer/lastRefresh.view.php',46,'2026-02-28 04:41:25');
+INSERT INTO `translation_glial` VALUES (737,'b97dd051ffb7faf27dd71c50dd61259a220ae73b','All types','en','App/Controller/Server.php',338,'2026-03-05 19:39:45');
+INSERT INTO `translation_glial` VALUES (738,'ffed84b699dec542cba9af90a4faadecb0c3a4cc','Show all servers','en','App/view/Server/main.view.php',128,'2026-03-05 19:39:45');
+INSERT INTO `translation_glial` VALUES (739,'a5fdb871e96b2fed1c1445c8c3436e7ddb6e9b6b','Last refresh','en','App/view/Server/main.view.php',195,'2026-03-05 19:39:45');
+INSERT INTO `translation_glial` VALUES (740,'1ab81af8915a03dc6a03a781d104851cd9e47b6c','Delete this alias?','en','App/view/Alias/index.view.php',51,'2026-03-05 21:14:46');
+INSERT INTO `translation_glial` VALUES (741,'1ab81af8915a03dc6a03a781d104851cd9e47b6c','Delete this alias?','en','App/view/Alias/index.view.php',49,'2026-03-05 21:22:39');
+INSERT INTO `translation_glial` VALUES (742,'1ab81af8915a03dc6a03a781d104851cd9e47b6c','Delete this alias?','en','App/view/Alias/index.view.php',48,'2026-03-05 21:29:57');
+INSERT INTO `translation_glial` VALUES (743,'63b6708997fe6bb8937d4afdf00e76d1c1e0297c','The daemon (id=14) with pid : \'2069\' successfully stopped','en','App/Controller/Agent.php',161,'2026-03-06 07:03:15');
+INSERT INTO `translation_glial` VALUES (744,'dea700ea52d1405f0b7d7282cf29f70c91b9bacb','The daemon (id=28) with pid : \'2199\' successfully stopped','en','App/Controller/Agent.php',161,'2026-03-06 07:03:19');
+INSERT INTO `translation_glial` VALUES (745,'5d21aaf7844bd1ca9a7453ad9f9d339a324dca74','The daemon (id=31) with pid : \'2214\' successfully stopped','en','App/Controller/Agent.php',161,'2026-03-06 07:03:21');
+INSERT INTO `translation_glial` VALUES (746,'7a079b9fe4cb4fe600159a4ede16e322ef09d7a2','The daemon (id=32) with pid : \'2241\' successfully stopped','en','App/Controller/Agent.php',161,'2026-03-06 07:03:23');
+INSERT INTO `translation_glial` VALUES (747,'eebf0e25b3a2c6125a7fbebaa87afbe6a368995f','The daemon (id=34) with pid : \'2267\' successfully stopped','en','App/Controller/Agent.php',161,'2026-03-06 07:03:24');
+INSERT INTO `translation_glial` VALUES (748,'6e97ae6b6439dc3c846d7746db26db9c09c1d25e','The daemon (id=35) with pid : \'2281\' successfully stopped','en','App/Controller/Agent.php',161,'2026-03-06 07:03:25');
+INSERT INTO `translation_glial` VALUES (749,'b97dd051ffb7faf27dd71c50dd61259a220ae73b','All types','en','App/Controller/Server.php',391,'2026-03-14 20:20:10');
+INSERT INTO `translation_glial` VALUES (750,'95ffe5bb3eb086073f5cdcee879e29cc8b609c84','Server dashboard','en','App/Library/Ariane.php',129,'2026-03-14 20:20:16');
+INSERT INTO `translation_glial` VALUES (751,'be367fe38351becfd08c7c44c5305c9dbddc9d7f','Show all threads','en','App/view/MysqlServer/processlist.view.php',115,'2026-03-15 04:03:52');
+INSERT INTO `translation_glial` VALUES (752,'1375ec3dcb9ab7075a0ea6e278bfcfca7feb0f91','Proxy','en','App/view/Server/settings.view.php',43,'2026-03-15 15:27:54');
+INSERT INTO `translation_glial` VALUES (753,'ff00e4be02609d2cedd07d82ad34b04811fbea93','VIP','en','App/view/Server/settings.view.php',44,'2026-03-15 15:27:54');
+INSERT INTO `translation_glial` VALUES (754,'172b104199d64502baae9183ae24a9dd2e27d615','Alias à créer','en','App/view/Alias/index.view.php',25,'2026-03-15 15:46:29');
+INSERT INTO `translation_glial` VALUES (755,'d8ea06f1172716f672569486b95fef3df658aea5','Vu sur','en','App/view/Alias/index.view.php',26,'2026-03-15 15:46:29');
+INSERT INTO `translation_glial` VALUES (756,'e6809d2ba741e43e14bd4a4a2f7c51b08d1da79c','Serveur lié','en','App/view/Alias/index.view.php',27,'2026-03-15 15:46:29');
+INSERT INTO `translation_glial` VALUES (757,'f15030b02a0015b2256bbc55cdfb5b6fbe8c8d61','Choose a server','en','App/view/Alias/index.view.php',39,'2026-03-15 15:46:29');
+INSERT INTO `translation_glial` VALUES (758,'fb24b76d21bd16fcb9afd316d0098f90eb581645','Add alias','en','App/view/Alias/index.view.php',57,'2026-03-15 15:46:29');
+INSERT INTO `translation_glial` VALUES (759,'1ab81af8915a03dc6a03a781d104851cd9e47b6c','Delete this alias?','en','App/view/Alias/index.view.php',101,'2026-03-15 15:46:29');
+INSERT INTO `translation_glial` VALUES (760,'172b104199d64502baae9183ae24a9dd2e27d615','Alias à créer','en','App/view/Alias/index.view.php',26,'2026-03-15 15:47:49');
+INSERT INTO `translation_glial` VALUES (761,'d8ea06f1172716f672569486b95fef3df658aea5','Vu sur','en','App/view/Alias/index.view.php',27,'2026-03-15 15:47:49');
+INSERT INTO `translation_glial` VALUES (762,'e6809d2ba741e43e14bd4a4a2f7c51b08d1da79c','Serveur lié','en','App/view/Alias/index.view.php',28,'2026-03-15 15:47:49');
+INSERT INTO `translation_glial` VALUES (763,'f15030b02a0015b2256bbc55cdfb5b6fbe8c8d61','Choose a server','en','App/view/Alias/index.view.php',41,'2026-03-15 15:47:49');
+INSERT INTO `translation_glial` VALUES (764,'fb24b76d21bd16fcb9afd316d0098f90eb581645','Add alias','en','App/view/Alias/index.view.php',60,'2026-03-15 15:47:49');
+INSERT INTO `translation_glial` VALUES (765,'1ab81af8915a03dc6a03a781d104851cd9e47b6c','Delete this alias?','en','App/view/Alias/index.view.php',103,'2026-03-15 15:47:49');
+INSERT INTO `translation_glial` VALUES (766,'1ab81af8915a03dc6a03a781d104851cd9e47b6c','Delete this alias?','en','App/view/Alias/index.view.php',100,'2026-03-15 15:50:20');
+INSERT INTO `translation_glial` VALUES (767,'925c137ae3926981425403b29c2d77433d1fb05e','No unresolved master found from slave/index','en','App/view/Alias/index.view.php',22,'2026-03-15 15:50:50');
+INSERT INTO `translation_glial` VALUES (768,'00ac4e7efd85b8972f513c87a376790f601c991b','Lock mode','en','App/view/MysqlServer/processlist.view.php',200,'2026-03-15 17:14:30');
+INSERT INTO `translation_glial` VALUES (769,'822688a418a0558665af7b67e4a7d16311c06a39','Duration','en','App/view/MysqlServer/processlist.view.php',201,'2026-03-15 17:14:30');
+INSERT INTO `translation_glial` VALUES (770,'4f33423a0abf4afc2f06c65c0a1059a1421697fb','Time (ms)','en','App/view/MysqlServer/processlist.view.php',202,'2026-03-15 17:14:30');
+INSERT INTO `translation_glial` VALUES (771,'a9f99142fa4893376942fe3cde5f20735bfc7112','Catalog','en','App/view/MysqlServer/processlist.view.php',204,'2026-03-15 17:14:30');
+INSERT INTO `translation_glial` VALUES (772,'7982fec6829dfecfe466a1e09abbba3f6a30800d','No metadata locks detected','en','App/view/MysqlServer/processlist.view.php',232,'2026-03-15 17:14:31');
+INSERT INTO `translation_glial` VALUES (773,'ffed84b699dec542cba9af90a4faadecb0c3a4cc','Show all servers','en','App/view/Server/main.view.php',129,'2026-03-15 20:44:01');
+INSERT INTO `translation_glial` VALUES (774,'a5fdb871e96b2fed1c1445c8c3436e7ddb6e9b6b','Last refresh','en','App/view/Server/main.view.php',196,'2026-03-15 20:44:01');
+INSERT INTO `translation_glial` VALUES (775,'1375ec3dcb9ab7075a0ea6e278bfcfca7feb0f91','Proxy','en','App/view/Mysql/add.view.php',73,'2026-03-16 01:48:19');
+INSERT INTO `translation_glial` VALUES (776,'ff00e4be02609d2cedd07d82ad34b04811fbea93','VIP','en','App/view/Mysql/add.view.php',84,'2026-03-16 01:48:19');
+INSERT INTO `translation_glial` VALUES (777,'e4ab4b8fcf1e229d7a3d1439342ad8264ee78224','DOT / Graphviz Viewer','en','App/view/Menu/show.view.php',105,'2026-03-19 03:05:29');
+INSERT INTO `translation_glial` VALUES (778,'b82762c962f2e2c8671fef90a1a84785f1f1eb9f','MySQL Router','en','App/view/Menu/show.view.php',105,'2026-03-19 03:05:29');
+INSERT INTO `translation_glial` VALUES (779,'4af1a5ac3c76b682c664c093b636524fdd84f18d','Server State','en','App/Controller/Server.php',559,'2026-03-19 03:13:02');
+INSERT INTO `translation_glial` VALUES (780,'a83dbd45e54586fac9384f217cdf80ade1afc318','Green = mysql_available=1, Red = mysql_available=0, Grey = no value','en','App/view/Server/state.view.php',21,'2026-03-19 03:13:02');
+INSERT INTO `translation_glial` VALUES (781,'4af1a5ac3c76b682c664c093b636524fdd84f18d','Server State','en','App/Controller/Server.php',560,'2026-03-19 03:18:06');
+INSERT INTO `translation_glial` VALUES (782,'a83dbd45e54586fac9384f217cdf80ade1afc318','Green = mysql_available=1, Red = mysql_available=0, Grey = no value','en','App/view/Server/state.view.php',23,'2026-03-19 03:27:22');
+INSERT INTO `translation_glial` VALUES (783,'a83dbd45e54586fac9384f217cdf80ade1afc318','Green = mysql_available=1, Red = mysql_available=0, Grey = no value','en','App/view/Server/state.view.php',22,'2026-03-19 03:34:07');
+INSERT INTO `translation_glial` VALUES (784,'8835ed483f6981da0d73ff3991de98f13ff838af','Info','en','App/view/MysqlServer/menu.view.php',22,'2026-03-19 03:42:03');
+INSERT INTO `translation_glial` VALUES (785,'a5fdb871e96b2fed1c1445c8c3436e7ddb6e9b6b','Last refresh','en','App/view/MysqlServer/lastRefresh.view.php',52,'2026-03-19 03:42:03');
+INSERT INTO `translation_glial` VALUES (786,'1d6914a601832acf6508101bae2680085980416b','Date +1','en','App/view/MysqlServer/lastRefresh.view.php',54,'2026-03-19 03:42:03');
+INSERT INTO `translation_glial` VALUES (787,'8f031ac171b62c87aeac6ad3b62aea48400dd674','Date +2','en','App/view/MysqlServer/lastRefresh.view.php',55,'2026-03-19 03:42:03');
+INSERT INTO `translation_glial` VALUES (788,'f25b60b61bd7e132546f0fc71a2bf09249b873a6','Date +3','en','App/view/MysqlServer/lastRefresh.view.php',56,'2026-03-19 03:42:03');
+INSERT INTO `translation_glial` VALUES (789,'23eb6f2406aad2acf3e73e8522fc80a671d95187','Date +4','en','App/view/MysqlServer/lastRefresh.view.php',57,'2026-03-19 03:42:03');
+INSERT INTO `translation_glial` VALUES (790,'bfea4016953d19ec284056a64b2c7e22867e45ed','Listener refresh','en','App/view/MysqlServer/lastRefresh.view.php',58,'2026-03-19 03:42:03');
+INSERT INTO `translation_glial` VALUES (791,'67476393fa026a2875759db39cf49c775a52089f','Run','en','App/view/MysqlServer/menu.view.php',49,'2026-03-19 04:01:33');
+INSERT INTO `translation_glial` VALUES (792,'705befe6671374a9c123b4bd9cb203abba10222d','Engine Memory','en','App/Controller/Server.php',759,'2026-03-19 14:50:46');
+INSERT INTO `translation_glial` VALUES (793,'b97dd051ffb7faf27dd71c50dd61259a220ae73b','All types','en','App/Controller/Server.php',394,'2026-03-19 16:13:52');
+INSERT INTO `translation_glial` VALUES (794,'460873912d37936343081a6a384666c8e6f4969f','PMM','en','App/view/MysqlServer/menu.view.php',25,'2026-03-20 18:39:30');
+INSERT INTO `translation_glial` VALUES (795,'6639b75df608099ba758d004dbdc189fcb2dcf37','The daemon (id=38) with pid : \'3337\' successfully stopped','en','App/Controller/Agent.php',210,'2026-03-27 12:54:53');
+INSERT INTO `translation_glial` VALUES (796,'a0bca2744ed99e3d936cf12bd45a7645bc5964bf','The daemon (id=39) with pid : \'3354\' successfully stopped','en','App/Controller/Agent.php',210,'2026-03-27 12:54:59');
+INSERT INTO `translation_glial` VALUES (797,'d5c59693ca9ba0c608b5192d62bc16980b6b1b71','Compare schema exports','en','App/Controller/Schema.php',2679,'2026-03-27 12:56:30');
+INSERT INTO `translation_glial` VALUES (798,'4c8a02986678c054b98e8c3922039cbbc2d00879','Error log','en','App/Controller/MysqlServer.php',811,'2026-03-28 00:01:44');
+INSERT INTO `translation_glial` VALUES (799,'9770887b48eb4b80012d2723f32287a51683851b','Slow query','en','App/Controller/MysqlServer.php',812,'2026-03-28 00:01:44');
+INSERT INTO `translation_glial` VALUES (800,'0b2e1c9aa39045312d3e8699393c05111872de09','SQL error','en','App/Controller/MysqlServer.php',813,'2026-03-28 00:01:44');
+INSERT INTO `translation_glial` VALUES (801,'d0dcc90c6c3838647cbdbe684af97540d4f72aa5','General log','en','App/Controller/MysqlServer.php',814,'2026-03-28 00:01:44');
+INSERT INTO `translation_glial` VALUES (802,'251b7d6250c6140ced56dc059a64d73265388ffc','OOM killer','en','App/Controller/MysqlServer.php',815,'2026-03-28 00:01:44');
+INSERT INTO `translation_glial` VALUES (803,'974ef5f91ba751ea227d6c7f801fa020d13b09a7','Mysql Server','en','App/Controller/MysqlServer.php',851,'2026-03-28 00:01:44');
+INSERT INTO `translation_glial` VALUES (804,'7dfe8f325e6568bfee9e0674db516f0f147a2b7c','Active tab','en','App/view/MysqlServer/logs.view.php',266,'2026-03-28 00:01:44');
+INSERT INTO `translation_glial` VALUES (805,'5e3241493677fb51d94d33b639f495ea0d47c7a4','Log Types','en','App/view/MysqlServer/logs.view.php',271,'2026-03-28 00:01:44');
+INSERT INTO `translation_glial` VALUES (806,'ac49160269b8c2eeadc92fc44838bda4f644d440','Monthly Activity','en','App/view/MysqlServer/logs.view.php',290,'2026-03-28 00:01:44');
+INSERT INTO `translation_glial` VALUES (807,'eec09c3787092eda609c2f93442c101f6fe84387','One bar per day on the last 30 days. Click a day for hourly details, then click an hour for minutes.','en','App/view/MysqlServer/logs.view.php',293,'2026-03-28 00:01:44');
+INSERT INTO `translation_glial` VALUES (808,'c5f0ec1be5e5df6c5606a9d0fae52c406e4cc20d','Back to month','en','App/view/MysqlServer/logs.view.php',294,'2026-03-28 00:01:44');
+INSERT INTO `translation_glial` VALUES (809,'943441a7ff9eebe5d42d15af1593914a3abc0ac4','Log Lines','en','App/view/MysqlServer/logs.view.php',303,'2026-03-28 00:01:44');
+INSERT INTO `translation_glial` VALUES (810,'f25e8a1d74402cd7686ce82312a902bf5a37a3ec','Scope','en','App/view/MysqlServer/logs.view.php',306,'2026-03-28 00:01:44');
+INSERT INTO `translation_glial` VALUES (811,'d08b837aaed200442be547ee7b5b4c1891056ea7','Page','en','App/view/MysqlServer/logs.view.php',309,'2026-03-28 00:01:44');
+INSERT INTO `translation_glial` VALUES (812,'fce3475a8d0ed4e63aed1477ccaa49a2c1af4814','Code','en','App/view/MysqlServer/logs.view.php',336,'2026-03-28 00:01:44');
+INSERT INTO `translation_glial` VALUES (813,'633cf0e5f03db28e31675fad22b872d8bf5122b5','Process','en','App/view/MysqlServer/logs.view.php',337,'2026-03-28 00:01:44');
+INSERT INTO `translation_glial` VALUES (814,'e5b1d459d1feafd0c2c4b0c322ed1b2c71e23c2e','DB','en','App/view/MysqlServer/logs.view.php',340,'2026-03-28 00:01:44');
+INSERT INTO `translation_glial` VALUES (815,'fc9f881edcd475ee736e48751a202a18d19fa48a','Raw','en','App/view/MysqlServer/logs.view.php',342,'2026-03-28 00:01:44');
+INSERT INTO `translation_glial` VALUES (816,'0764559fe177624ad82142efdd2d01d584df7e2e','No log line collected yet','en','App/view/MysqlServer/logs.view.php',348,'2026-03-28 00:01:44');
 /*!40000 ALTER TABLE `translation_glial` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -168698,6 +169030,760 @@ INSERT INTO `translation_google` VALUES (4577,'56af6de971431affb542816fad2e627e5
 INSERT INTO `translation_google` VALUES (4578,'56af6de971431affb542816fad2e627e543476d3','en','Shedule','ru','Расписание');
 INSERT INTO `translation_google` VALUES (4579,'56af6de971431affb542816fad2e627e543476d3','en','Shedule','uk','Розклад');
 INSERT INTO `translation_google` VALUES (4580,'56af6de971431affb542816fad2e627e543476d3','en','Shedule','zh-cn','日程表');
+INSERT INTO `translation_google` VALUES (4581,'b8ed88d85cf1a5f2ab2fd1b64e362f49f2ba27cf','en','Auto configuration','cs','Automatická konfigurace');
+INSERT INTO `translation_google` VALUES (4582,'b8ed88d85cf1a5f2ab2fd1b64e362f49f2ba27cf','en','Auto configuration','da','Automatisk konfiguration');
+INSERT INTO `translation_google` VALUES (4583,'b8ed88d85cf1a5f2ab2fd1b64e362f49f2ba27cf','en','Auto configuration','de','Automatische Konfiguration');
+INSERT INTO `translation_google` VALUES (4584,'b8ed88d85cf1a5f2ab2fd1b64e362f49f2ba27cf','en','Auto configuration','es','Configuración automática');
+INSERT INTO `translation_google` VALUES (4585,'b8ed88d85cf1a5f2ab2fd1b64e362f49f2ba27cf','en','Auto configuration','fi','Automaattinen määritys');
+INSERT INTO `translation_google` VALUES (4586,'b8ed88d85cf1a5f2ab2fd1b64e362f49f2ba27cf','en','Auto configuration','fr','Configuration automatique');
+INSERT INTO `translation_google` VALUES (4587,'b8ed88d85cf1a5f2ab2fd1b64e362f49f2ba27cf','en','Auto configuration','it','Configurazione automatica');
+INSERT INTO `translation_google` VALUES (4588,'b8ed88d85cf1a5f2ab2fd1b64e362f49f2ba27cf','en','Auto configuration','ja','自動構成');
+INSERT INTO `translation_google` VALUES (4589,'b8ed88d85cf1a5f2ab2fd1b64e362f49f2ba27cf','en','Auto configuration','nl','Automatische configuratie');
+INSERT INTO `translation_google` VALUES (4590,'b8ed88d85cf1a5f2ab2fd1b64e362f49f2ba27cf','en','Auto configuration','pl','Konfiguracja automatyczna');
+INSERT INTO `translation_google` VALUES (4591,'b8ed88d85cf1a5f2ab2fd1b64e362f49f2ba27cf','en','Auto configuration','pt','Configuração automática');
+INSERT INTO `translation_google` VALUES (4592,'b8ed88d85cf1a5f2ab2fd1b64e362f49f2ba27cf','en','Auto configuration','ru','Автоматическая конфигурация');
+INSERT INTO `translation_google` VALUES (4593,'b8ed88d85cf1a5f2ab2fd1b64e362f49f2ba27cf','en','Auto configuration','uk','Автоматичне налаштування');
+INSERT INTO `translation_google` VALUES (4594,'b8ed88d85cf1a5f2ab2fd1b64e362f49f2ba27cf','en','Auto configuration','zh-cn','自动配置');
+INSERT INTO `translation_google` VALUES (4595,'120f49b9b8ebe86eff37752a3339d9f9ecd84246','en','Build','cs','Vytvořit');
+INSERT INTO `translation_google` VALUES (4596,'120f49b9b8ebe86eff37752a3339d9f9ecd84246','en','Build','da','Byg');
+INSERT INTO `translation_google` VALUES (4597,'120f49b9b8ebe86eff37752a3339d9f9ecd84246','en','Build','de','Bauen');
+INSERT INTO `translation_google` VALUES (4598,'120f49b9b8ebe86eff37752a3339d9f9ecd84246','en','Build','es','Construir');
+INSERT INTO `translation_google` VALUES (4599,'120f49b9b8ebe86eff37752a3339d9f9ecd84246','en','Build','fi','Rakentaa');
+INSERT INTO `translation_google` VALUES (4600,'120f49b9b8ebe86eff37752a3339d9f9ecd84246','en','Build','fr','Construire');
+INSERT INTO `translation_google` VALUES (4601,'120f49b9b8ebe86eff37752a3339d9f9ecd84246','en','Build','it','Costruire');
+INSERT INTO `translation_google` VALUES (4602,'120f49b9b8ebe86eff37752a3339d9f9ecd84246','en','Build','ja','建てる');
+INSERT INTO `translation_google` VALUES (4603,'120f49b9b8ebe86eff37752a3339d9f9ecd84246','en','Build','nl','Bouwen');
+INSERT INTO `translation_google` VALUES (4604,'120f49b9b8ebe86eff37752a3339d9f9ecd84246','en','Build','pl','Zbudować');
+INSERT INTO `translation_google` VALUES (4605,'120f49b9b8ebe86eff37752a3339d9f9ecd84246','en','Build','pt','Construir');
+INSERT INTO `translation_google` VALUES (4606,'120f49b9b8ebe86eff37752a3339d9f9ecd84246','en','Build','ru','Строить');
+INSERT INTO `translation_google` VALUES (4607,'120f49b9b8ebe86eff37752a3339d9f9ecd84246','en','Build','uk','Збірка');
+INSERT INTO `translation_google` VALUES (4608,'120f49b9b8ebe86eff37752a3339d9f9ecd84246','en','Build','zh-cn','建造');
+INSERT INTO `translation_google` VALUES (4609,'b137c827844c0aed65505b0027a999fb10bdd122','en','Client add','cs','Přidání klienta');
+INSERT INTO `translation_google` VALUES (4610,'b137c827844c0aed65505b0027a999fb10bdd122','en','Client add','da','Klienttilføjelse');
+INSERT INTO `translation_google` VALUES (4611,'b137c827844c0aed65505b0027a999fb10bdd122','en','Client add','de','Client hinzufügen');
+INSERT INTO `translation_google` VALUES (4612,'b137c827844c0aed65505b0027a999fb10bdd122','en','Client add','es','Añadir cliente');
+INSERT INTO `translation_google` VALUES (4613,'b137c827844c0aed65505b0027a999fb10bdd122','en','Client add','fi','Asiakkaan lisääminen');
+INSERT INTO `translation_google` VALUES (4614,'b137c827844c0aed65505b0027a999fb10bdd122','en','Client add','fr','Ajout client');
+INSERT INTO `translation_google` VALUES (4615,'b137c827844c0aed65505b0027a999fb10bdd122','en','Client add','it','Aggiunta del cliente');
+INSERT INTO `translation_google` VALUES (4616,'b137c827844c0aed65505b0027a999fb10bdd122','en','Client add','ja','クライアントの追加');
+INSERT INTO `translation_google` VALUES (4617,'b137c827844c0aed65505b0027a999fb10bdd122','en','Client add','nl','Klant toevoegen');
+INSERT INTO `translation_google` VALUES (4618,'b137c827844c0aed65505b0027a999fb10bdd122','en','Client add','pl','Dodaj klienta');
+INSERT INTO `translation_google` VALUES (4619,'b137c827844c0aed65505b0027a999fb10bdd122','en','Client add','pt','Adicionar cliente');
+INSERT INTO `translation_google` VALUES (4620,'b137c827844c0aed65505b0027a999fb10bdd122','en','Client add','ru','Добавить клиента');
+INSERT INTO `translation_google` VALUES (4621,'b137c827844c0aed65505b0027a999fb10bdd122','en','Client add','uk','Додавання клієнта');
+INSERT INTO `translation_google` VALUES (4622,'b137c827844c0aed65505b0027a999fb10bdd122','en','Client add','zh-cn','客户端添加');
+INSERT INTO `translation_google` VALUES (4623,'7d19581325f71204191244e99d59bfacb6d2947f','en','Comment','cs','Komentář');
+INSERT INTO `translation_google` VALUES (4624,'7d19581325f71204191244e99d59bfacb6d2947f','en','Comment','da','Kommentar');
+INSERT INTO `translation_google` VALUES (4625,'7d19581325f71204191244e99d59bfacb6d2947f','en','Comment','de','Kommentar');
+INSERT INTO `translation_google` VALUES (4626,'7d19581325f71204191244e99d59bfacb6d2947f','en','Comment','es','Comentario');
+INSERT INTO `translation_google` VALUES (4627,'7d19581325f71204191244e99d59bfacb6d2947f','en','Comment','fi','Kommentti');
+INSERT INTO `translation_google` VALUES (4628,'7d19581325f71204191244e99d59bfacb6d2947f','en','Comment','fr','Commentaire');
+INSERT INTO `translation_google` VALUES (4629,'7d19581325f71204191244e99d59bfacb6d2947f','en','Comment','it','Commento');
+INSERT INTO `translation_google` VALUES (4630,'7d19581325f71204191244e99d59bfacb6d2947f','en','Comment','ja','コメント');
+INSERT INTO `translation_google` VALUES (4631,'7d19581325f71204191244e99d59bfacb6d2947f','en','Comment','nl','Opmerking');
+INSERT INTO `translation_google` VALUES (4632,'7d19581325f71204191244e99d59bfacb6d2947f','en','Comment','pl','Komentarz');
+INSERT INTO `translation_google` VALUES (4633,'7d19581325f71204191244e99d59bfacb6d2947f','en','Comment','pt','Comentário');
+INSERT INTO `translation_google` VALUES (4634,'7d19581325f71204191244e99d59bfacb6d2947f','en','Comment','ru','Комментарий');
+INSERT INTO `translation_google` VALUES (4635,'7d19581325f71204191244e99d59bfacb6d2947f','en','Comment','uk','Коментар');
+INSERT INTO `translation_google` VALUES (4636,'7d19581325f71204191244e99d59bfacb6d2947f','en','Comment','zh-cn','评论');
+INSERT INTO `translation_google` VALUES (4637,'797d0cf99993c051b425a9e48052d6d47f596aac','fr','Identity','cs','Identita');
+INSERT INTO `translation_google` VALUES (4638,'797d0cf99993c051b425a9e48052d6d47f596aac','fr','Identity','da','Identitet');
+INSERT INTO `translation_google` VALUES (4639,'797d0cf99993c051b425a9e48052d6d47f596aac','fr','Identity','de','Identität');
+INSERT INTO `translation_google` VALUES (4640,'797d0cf99993c051b425a9e48052d6d47f596aac','fr','Identity','en','Identity');
+INSERT INTO `translation_google` VALUES (4641,'797d0cf99993c051b425a9e48052d6d47f596aac','fr','Identity','es','Identidad');
+INSERT INTO `translation_google` VALUES (4642,'797d0cf99993c051b425a9e48052d6d47f596aac','fr','Identity','fi','Identiteetti');
+INSERT INTO `translation_google` VALUES (4643,'797d0cf99993c051b425a9e48052d6d47f596aac','fr','Identity','it','Identità');
+INSERT INTO `translation_google` VALUES (4644,'797d0cf99993c051b425a9e48052d6d47f596aac','fr','Identity','ja','身元');
+INSERT INTO `translation_google` VALUES (4645,'797d0cf99993c051b425a9e48052d6d47f596aac','fr','Identity','nl','Identiteit');
+INSERT INTO `translation_google` VALUES (4646,'797d0cf99993c051b425a9e48052d6d47f596aac','fr','Identity','pl','Tożsamość');
+INSERT INTO `translation_google` VALUES (4647,'797d0cf99993c051b425a9e48052d6d47f596aac','fr','Identity','pt','Identidade');
+INSERT INTO `translation_google` VALUES (4648,'797d0cf99993c051b425a9e48052d6d47f596aac','fr','Identity','ru','Личность');
+INSERT INTO `translation_google` VALUES (4649,'797d0cf99993c051b425a9e48052d6d47f596aac','fr','Identity','uk','Ідентичність');
+INSERT INTO `translation_google` VALUES (4650,'797d0cf99993c051b425a9e48052d6d47f596aac','fr','Identity','zh-cn','身份');
+INSERT INTO `translation_google` VALUES (4651,'708a2034e8d4950322d01de3003e6e9fb5b9885c','en','MySQL-sys has been uninstalled','cs','MySQL-sys byl odinstalován.');
+INSERT INTO `translation_google` VALUES (4652,'708a2034e8d4950322d01de3003e6e9fb5b9885c','en','MySQL-sys has been uninstalled','da','MySQL-sys er blevet afinstalleret');
+INSERT INTO `translation_google` VALUES (4653,'708a2034e8d4950322d01de3003e6e9fb5b9885c','en','MySQL-sys has been uninstalled','de','MySQL-sys wurde deinstalliert');
+INSERT INTO `translation_google` VALUES (4654,'708a2034e8d4950322d01de3003e6e9fb5b9885c','en','MySQL-sys has been uninstalled','es','MySQL-sys ha sido desinstalado');
+INSERT INTO `translation_google` VALUES (4655,'708a2034e8d4950322d01de3003e6e9fb5b9885c','en','MySQL-sys has been uninstalled','fi','MySQL-sys on poistettu');
+INSERT INTO `translation_google` VALUES (4656,'708a2034e8d4950322d01de3003e6e9fb5b9885c','en','MySQL-sys has been uninstalled','fr','MySQL-sys a été désinstallé');
+INSERT INTO `translation_google` VALUES (4657,'708a2034e8d4950322d01de3003e6e9fb5b9885c','en','MySQL-sys has been uninstalled','it','MySQL-sys è stato disinstallato');
+INSERT INTO `translation_google` VALUES (4658,'708a2034e8d4950322d01de3003e6e9fb5b9885c','en','MySQL-sys has been uninstalled','ja','MySQL-sysがアンインストールされました');
+INSERT INTO `translation_google` VALUES (4659,'708a2034e8d4950322d01de3003e6e9fb5b9885c','en','MySQL-sys has been uninstalled','nl','MySQL-sys is verwijderd');
+INSERT INTO `translation_google` VALUES (4660,'708a2034e8d4950322d01de3003e6e9fb5b9885c','en','MySQL-sys has been uninstalled','pl','MySQL-sys został odinstalowany');
+INSERT INTO `translation_google` VALUES (4661,'708a2034e8d4950322d01de3003e6e9fb5b9885c','en','MySQL-sys has been uninstalled','pt','O MySQL-sys foi desinstalado');
+INSERT INTO `translation_google` VALUES (4662,'708a2034e8d4950322d01de3003e6e9fb5b9885c','en','MySQL-sys has been uninstalled','ru','MySQL-sys был удален');
+INSERT INTO `translation_google` VALUES (4663,'708a2034e8d4950322d01de3003e6e9fb5b9885c','en','MySQL-sys has been uninstalled','uk','MySQL-sys було видалено');
+INSERT INTO `translation_google` VALUES (4664,'708a2034e8d4950322d01de3003e6e9fb5b9885c','en','MySQL-sys has been uninstalled','zh-cn','MySQL-sys 已卸载');
+INSERT INTO `translation_google` VALUES (4665,'c4401a5ed301268a8d95e5c5a48a8ac63cd15c35','en','Number of account with unsecure plugin:','cs','Počet účtů s nezabezpečeným pluginem:');
+INSERT INTO `translation_google` VALUES (4666,'c4401a5ed301268a8d95e5c5a48a8ac63cd15c35','en','Number of account with unsecure plugin:','da','Antal konti med usikkert plugin:');
+INSERT INTO `translation_google` VALUES (4667,'c4401a5ed301268a8d95e5c5a48a8ac63cd15c35','en','Number of account with unsecure plugin:','de','Nummer des Kontos mit unsicherem Plugin:');
+INSERT INTO `translation_google` VALUES (4668,'c4401a5ed301268a8d95e5c5a48a8ac63cd15c35','en','Number of account with unsecure plugin:','es','Número de cuenta con complemento no seguro:');
+INSERT INTO `translation_google` VALUES (4669,'c4401a5ed301268a8d95e5c5a48a8ac63cd15c35','en','Number of account with unsecure plugin:','fi','Suojaamattoman lisäosan sisältävien tilien lukumäärä:');
+INSERT INTO `translation_google` VALUES (4670,'c4401a5ed301268a8d95e5c5a48a8ac63cd15c35','en','Number of account with unsecure plugin:','fr','Numéro de compte avec plugin non sécurisé :');
+INSERT INTO `translation_google` VALUES (4671,'c4401a5ed301268a8d95e5c5a48a8ac63cd15c35','en','Number of account with unsecure plugin:','it','Numero di account con plugin non sicuro:');
+INSERT INTO `translation_google` VALUES (4672,'c4401a5ed301268a8d95e5c5a48a8ac63cd15c35','en','Number of account with unsecure plugin:','ja','安全でないプラグインを持つアカウントの数:');
+INSERT INTO `translation_google` VALUES (4673,'c4401a5ed301268a8d95e5c5a48a8ac63cd15c35','en','Number of account with unsecure plugin:','nl','Aantal accounts met onveilige plug-in:');
+INSERT INTO `translation_google` VALUES (4674,'c4401a5ed301268a8d95e5c5a48a8ac63cd15c35','en','Number of account with unsecure plugin:','pl','Liczba kont z niezabezpieczoną wtyczką:');
+INSERT INTO `translation_google` VALUES (4675,'c4401a5ed301268a8d95e5c5a48a8ac63cd15c35','en','Number of account with unsecure plugin:','pt','Número de contas com plugin inseguro:');
+INSERT INTO `translation_google` VALUES (4676,'c4401a5ed301268a8d95e5c5a48a8ac63cd15c35','en','Number of account with unsecure plugin:','ru','Номер аккаунта с незащищенным плагином:');
+INSERT INTO `translation_google` VALUES (4677,'c4401a5ed301268a8d95e5c5a48a8ac63cd15c35','en','Number of account with unsecure plugin:','uk','Кількість облікових записів із незахищеним плагіном:');
+INSERT INTO `translation_google` VALUES (4678,'c4401a5ed301268a8d95e5c5a48a8ac63cd15c35','en','Number of account with unsecure plugin:','zh-cn','具有不安全插件的帐户数量：');
+INSERT INTO `translation_google` VALUES (4679,'ba776842b91f7f12e45408baa6c5efd28d70e210','en','Organizations','cs','Organizace');
+INSERT INTO `translation_google` VALUES (4680,'ba776842b91f7f12e45408baa6c5efd28d70e210','en','Organizations','da','Organisationer');
+INSERT INTO `translation_google` VALUES (4681,'ba776842b91f7f12e45408baa6c5efd28d70e210','en','Organizations','de','Organisationen');
+INSERT INTO `translation_google` VALUES (4682,'ba776842b91f7f12e45408baa6c5efd28d70e210','en','Organizations','es','Organizaciones');
+INSERT INTO `translation_google` VALUES (4683,'ba776842b91f7f12e45408baa6c5efd28d70e210','en','Organizations','fi','Organisaatiot');
+INSERT INTO `translation_google` VALUES (4684,'ba776842b91f7f12e45408baa6c5efd28d70e210','en','Organizations','fr','Organisations');
+INSERT INTO `translation_google` VALUES (4685,'ba776842b91f7f12e45408baa6c5efd28d70e210','en','Organizations','it','Organizzazioni');
+INSERT INTO `translation_google` VALUES (4686,'ba776842b91f7f12e45408baa6c5efd28d70e210','en','Organizations','ja','組織');
+INSERT INTO `translation_google` VALUES (4687,'ba776842b91f7f12e45408baa6c5efd28d70e210','en','Organizations','nl','Organisaties');
+INSERT INTO `translation_google` VALUES (4688,'ba776842b91f7f12e45408baa6c5efd28d70e210','en','Organizations','pl','Organizacje');
+INSERT INTO `translation_google` VALUES (4689,'ba776842b91f7f12e45408baa6c5efd28d70e210','en','Organizations','pt','Organizações');
+INSERT INTO `translation_google` VALUES (4690,'ba776842b91f7f12e45408baa6c5efd28d70e210','en','Organizations','ru','Организации');
+INSERT INTO `translation_google` VALUES (4691,'ba776842b91f7f12e45408baa6c5efd28d70e210','en','Organizations','uk','Організації');
+INSERT INTO `translation_google` VALUES (4692,'ba776842b91f7f12e45408baa6c5efd28d70e210','en','Organizations','zh-cn','组织');
+INSERT INTO `translation_google` VALUES (4693,'74b86faffba5d6e58cd223964bc592c5e71e36bc','en','Percentage','cs','Procento');
+INSERT INTO `translation_google` VALUES (4694,'74b86faffba5d6e58cd223964bc592c5e71e36bc','en','Percentage','da','Procent');
+INSERT INTO `translation_google` VALUES (4695,'74b86faffba5d6e58cd223964bc592c5e71e36bc','en','Percentage','de','Prozentsatz');
+INSERT INTO `translation_google` VALUES (4696,'74b86faffba5d6e58cd223964bc592c5e71e36bc','en','Percentage','es','Porcentaje');
+INSERT INTO `translation_google` VALUES (4697,'74b86faffba5d6e58cd223964bc592c5e71e36bc','en','Percentage','fi','Prosenttiosuus');
+INSERT INTO `translation_google` VALUES (4698,'74b86faffba5d6e58cd223964bc592c5e71e36bc','en','Percentage','fr','Pourcentage');
+INSERT INTO `translation_google` VALUES (4699,'74b86faffba5d6e58cd223964bc592c5e71e36bc','en','Percentage','it','Percentuale');
+INSERT INTO `translation_google` VALUES (4700,'74b86faffba5d6e58cd223964bc592c5e71e36bc','en','Percentage','ja','パーセンテージ');
+INSERT INTO `translation_google` VALUES (4701,'74b86faffba5d6e58cd223964bc592c5e71e36bc','en','Percentage','nl','Percentage');
+INSERT INTO `translation_google` VALUES (4702,'74b86faffba5d6e58cd223964bc592c5e71e36bc','en','Percentage','pl','Procent');
+INSERT INTO `translation_google` VALUES (4703,'74b86faffba5d6e58cd223964bc592c5e71e36bc','en','Percentage','pt','Percentagem');
+INSERT INTO `translation_google` VALUES (4704,'74b86faffba5d6e58cd223964bc592c5e71e36bc','en','Percentage','ru','Процент');
+INSERT INTO `translation_google` VALUES (4705,'74b86faffba5d6e58cd223964bc592c5e71e36bc','en','Percentage','uk','Відсоток');
+INSERT INTO `translation_google` VALUES (4706,'74b86faffba5d6e58cd223964bc592c5e71e36bc','en','Percentage','zh-cn','百分比');
+INSERT INTO `translation_google` VALUES (4707,'a69e6889177eed2c4f13ed8c2f8ea5cb34ed81dc','en','Query cache','cs','Mezipaměť dotazů');
+INSERT INTO `translation_google` VALUES (4708,'a69e6889177eed2c4f13ed8c2f8ea5cb34ed81dc','en','Query cache','da','Forespørgselscache');
+INSERT INTO `translation_google` VALUES (4709,'a69e6889177eed2c4f13ed8c2f8ea5cb34ed81dc','en','Query cache','de','Abfragecache');
+INSERT INTO `translation_google` VALUES (4710,'a69e6889177eed2c4f13ed8c2f8ea5cb34ed81dc','en','Query cache','es','Caché de consultas');
+INSERT INTO `translation_google` VALUES (4711,'a69e6889177eed2c4f13ed8c2f8ea5cb34ed81dc','en','Query cache','fi','Kyselyvälimuisti');
+INSERT INTO `translation_google` VALUES (4712,'a69e6889177eed2c4f13ed8c2f8ea5cb34ed81dc','en','Query cache','fr','Cache de requêtes');
+INSERT INTO `translation_google` VALUES (4713,'a69e6889177eed2c4f13ed8c2f8ea5cb34ed81dc','en','Query cache','it','Cache delle query');
+INSERT INTO `translation_google` VALUES (4714,'a69e6889177eed2c4f13ed8c2f8ea5cb34ed81dc','en','Query cache','ja','クエリキャッシュ');
+INSERT INTO `translation_google` VALUES (4715,'a69e6889177eed2c4f13ed8c2f8ea5cb34ed81dc','en','Query cache','nl','Querycache');
+INSERT INTO `translation_google` VALUES (4716,'a69e6889177eed2c4f13ed8c2f8ea5cb34ed81dc','en','Query cache','pl','Pamięć podręczna zapytań');
+INSERT INTO `translation_google` VALUES (4717,'a69e6889177eed2c4f13ed8c2f8ea5cb34ed81dc','en','Query cache','pt','Cache de consulta');
+INSERT INTO `translation_google` VALUES (4718,'a69e6889177eed2c4f13ed8c2f8ea5cb34ed81dc','en','Query cache','ru','Кэш запросов');
+INSERT INTO `translation_google` VALUES (4719,'a69e6889177eed2c4f13ed8c2f8ea5cb34ed81dc','en','Query cache','uk','Кеш запитів');
+INSERT INTO `translation_google` VALUES (4720,'a69e6889177eed2c4f13ed8c2f8ea5cb34ed81dc','en','Query cache','zh-cn','查询缓存');
+INSERT INTO `translation_google` VALUES (4721,'08715e460438f8539fc5a2f6310de341dcf4efdf','en','Show only security issue','cs','Zobrazit pouze bezpečnostní problém');
+INSERT INTO `translation_google` VALUES (4722,'08715e460438f8539fc5a2f6310de341dcf4efdf','en','Show only security issue','da','Vis kun sikkerhedsproblem');
+INSERT INTO `translation_google` VALUES (4723,'08715e460438f8539fc5a2f6310de341dcf4efdf','en','Show only security issue','de','Nur Sicherheitsproblem anzeigen');
+INSERT INTO `translation_google` VALUES (4724,'08715e460438f8539fc5a2f6310de341dcf4efdf','en','Show only security issue','es','Mostrar solo problema de seguridad');
+INSERT INTO `translation_google` VALUES (4725,'08715e460438f8539fc5a2f6310de341dcf4efdf','en','Show only security issue','fi','Näytä vain tietoturvaongelma');
+INSERT INTO `translation_google` VALUES (4726,'08715e460438f8539fc5a2f6310de341dcf4efdf','en','Show only security issue','fr','Afficher uniquement les problèmes de sécurité');
+INSERT INTO `translation_google` VALUES (4727,'08715e460438f8539fc5a2f6310de341dcf4efdf','en','Show only security issue','it','Mostra solo il problema di sicurezza');
+INSERT INTO `translation_google` VALUES (4728,'08715e460438f8539fc5a2f6310de341dcf4efdf','en','Show only security issue','ja','セキュリティ上の問題のみを表示');
+INSERT INTO `translation_google` VALUES (4729,'08715e460438f8539fc5a2f6310de341dcf4efdf','en','Show only security issue','nl','Alleen beveiligingsprobleem weergeven');
+INSERT INTO `translation_google` VALUES (4730,'08715e460438f8539fc5a2f6310de341dcf4efdf','en','Show only security issue','pl','Pokaż tylko problem bezpieczeństwa');
+INSERT INTO `translation_google` VALUES (4731,'08715e460438f8539fc5a2f6310de341dcf4efdf','en','Show only security issue','pt','Mostrar apenas problemas de segurança');
+INSERT INTO `translation_google` VALUES (4732,'08715e460438f8539fc5a2f6310de341dcf4efdf','en','Show only security issue','ru','Показать только проблему безопасности');
+INSERT INTO `translation_google` VALUES (4733,'08715e460438f8539fc5a2f6310de341dcf4efdf','en','Show only security issue','uk','Показати лише проблему безпеки');
+INSERT INTO `translation_google` VALUES (4734,'08715e460438f8539fc5a2f6310de341dcf4efdf','en','Show only security issue','zh-cn','仅显示安全问题');
+INSERT INTO `translation_google` VALUES (4735,'987517bbaa01256d7068d34a415b776309a45b75','en','Statement Analysis','cs','Analýza výkazů');
+INSERT INTO `translation_google` VALUES (4736,'987517bbaa01256d7068d34a415b776309a45b75','en','Statement Analysis','da','Analyse af udsagn');
+INSERT INTO `translation_google` VALUES (4737,'987517bbaa01256d7068d34a415b776309a45b75','en','Statement Analysis','de','Anweisungsanalyse');
+INSERT INTO `translation_google` VALUES (4738,'987517bbaa01256d7068d34a415b776309a45b75','en','Statement Analysis','es','Análisis de estados financieros');
+INSERT INTO `translation_google` VALUES (4739,'987517bbaa01256d7068d34a415b776309a45b75','en','Statement Analysis','fi','Lausuntoanalyysi');
+INSERT INTO `translation_google` VALUES (4740,'987517bbaa01256d7068d34a415b776309a45b75','en','Statement Analysis','fr','Analyse des déclarations');
+INSERT INTO `translation_google` VALUES (4741,'987517bbaa01256d7068d34a415b776309a45b75','en','Statement Analysis','it','Analisi della dichiarazione');
+INSERT INTO `translation_google` VALUES (4742,'987517bbaa01256d7068d34a415b776309a45b75','en','Statement Analysis','ja','ステートメント分析');
+INSERT INTO `translation_google` VALUES (4743,'987517bbaa01256d7068d34a415b776309a45b75','en','Statement Analysis','nl','Verklaringanalyse');
+INSERT INTO `translation_google` VALUES (4744,'987517bbaa01256d7068d34a415b776309a45b75','en','Statement Analysis','pl','Analiza oświadczenia');
+INSERT INTO `translation_google` VALUES (4745,'987517bbaa01256d7068d34a415b776309a45b75','en','Statement Analysis','pt','Análise de Declarações');
+INSERT INTO `translation_google` VALUES (4746,'987517bbaa01256d7068d34a415b776309a45b75','en','Statement Analysis','ru','Анализ заявления');
+INSERT INTO `translation_google` VALUES (4747,'437c51e4ba4bb039555694dd3f3f36bf0bdbc617','en','Add an organization','cs','Přidat organizaci');
+INSERT INTO `translation_google` VALUES (4748,'437c51e4ba4bb039555694dd3f3f36bf0bdbc617','en','Add an organization','da','Tilføj en organisation');
+INSERT INTO `translation_google` VALUES (4749,'437c51e4ba4bb039555694dd3f3f36bf0bdbc617','en','Add an organization','de','Hinzufügen einer Organisation');
+INSERT INTO `translation_google` VALUES (4750,'437c51e4ba4bb039555694dd3f3f36bf0bdbc617','en','Add an organization','es','Agregar una organización');
+INSERT INTO `translation_google` VALUES (4751,'437c51e4ba4bb039555694dd3f3f36bf0bdbc617','en','Add an organization','fi','Lisää organisaatio');
+INSERT INTO `translation_google` VALUES (4752,'437c51e4ba4bb039555694dd3f3f36bf0bdbc617','en','Add an organization','fr','Ajouter une organisation');
+INSERT INTO `translation_google` VALUES (4753,'437c51e4ba4bb039555694dd3f3f36bf0bdbc617','en','Add an organization','it','Aggiungi un&#39;organizzazione');
+INSERT INTO `translation_google` VALUES (4754,'437c51e4ba4bb039555694dd3f3f36bf0bdbc617','en','Add an organization','ja','組織を追加する');
+INSERT INTO `translation_google` VALUES (4755,'437c51e4ba4bb039555694dd3f3f36bf0bdbc617','en','Add an organization','nl','Een organisatie toevoegen');
+INSERT INTO `translation_google` VALUES (4756,'437c51e4ba4bb039555694dd3f3f36bf0bdbc617','en','Add an organization','pl','Dodaj organizację');
+INSERT INTO `translation_google` VALUES (4757,'437c51e4ba4bb039555694dd3f3f36bf0bdbc617','en','Add an organization','pt','Adicionar uma organização');
+INSERT INTO `translation_google` VALUES (4758,'437c51e4ba4bb039555694dd3f3f36bf0bdbc617','en','Add an organization','ru','Добавить организацию');
+INSERT INTO `translation_google` VALUES (4759,'437c51e4ba4bb039555694dd3f3f36bf0bdbc617','en','Add an organization','uk','Додати організацію');
+INSERT INTO `translation_google` VALUES (4760,'437c51e4ba4bb039555694dd3f3f36bf0bdbc617','en','Add an organization','zh-cn','添加组织');
+INSERT INTO `translation_google` VALUES (4761,'24fe80ffc5b88421935625150cc25c881c5a9a1c','en','Average  execution time','cs','Průměrná doba provedení');
+INSERT INTO `translation_google` VALUES (4762,'24fe80ffc5b88421935625150cc25c881c5a9a1c','en','Average  execution time','da','Gennemsnitlig udførelsestid');
+INSERT INTO `translation_google` VALUES (4763,'24fe80ffc5b88421935625150cc25c881c5a9a1c','en','Average  execution time','de','Durchschnittliche Ausführungszeit');
+INSERT INTO `translation_google` VALUES (4764,'24fe80ffc5b88421935625150cc25c881c5a9a1c','en','Average  execution time','es','Tiempo medio de ejecución');
+INSERT INTO `translation_google` VALUES (4765,'24fe80ffc5b88421935625150cc25c881c5a9a1c','en','Average  execution time','fi','Keskimääräinen suoritusaika');
+INSERT INTO `translation_google` VALUES (4766,'24fe80ffc5b88421935625150cc25c881c5a9a1c','en','Average  execution time','fr','Temps d&#39;exécution moyen');
+INSERT INTO `translation_google` VALUES (4767,'24fe80ffc5b88421935625150cc25c881c5a9a1c','en','Average  execution time','it','Tempo medio di esecuzione');
+INSERT INTO `translation_google` VALUES (4768,'24fe80ffc5b88421935625150cc25c881c5a9a1c','en','Average  execution time','ja','平均実行時間');
+INSERT INTO `translation_google` VALUES (4769,'24fe80ffc5b88421935625150cc25c881c5a9a1c','en','Average  execution time','nl','Gemiddelde uitvoeringstijd');
+INSERT INTO `translation_google` VALUES (4770,'24fe80ffc5b88421935625150cc25c881c5a9a1c','en','Average  execution time','pl','Średni czas wykonania');
+INSERT INTO `translation_google` VALUES (4771,'24fe80ffc5b88421935625150cc25c881c5a9a1c','en','Average  execution time','pt','Tempo médio de execução');
+INSERT INTO `translation_google` VALUES (4772,'24fe80ffc5b88421935625150cc25c881c5a9a1c','en','Average  execution time','ru','Среднее время выполнения');
+INSERT INTO `translation_google` VALUES (4773,'24fe80ffc5b88421935625150cc25c881c5a9a1c','en','Average  execution time','uk','Середній час виконання');
+INSERT INTO `translation_google` VALUES (4774,'24fe80ffc5b88421935625150cc25c881c5a9a1c','en','Average  execution time','zh-cn','平均执行时间');
+INSERT INTO `translation_google` VALUES (4775,'f88a0c8beb2d2b05ab0f62307cfe264a4061728f','en','Change password','cs','Změnit heslo');
+INSERT INTO `translation_google` VALUES (4776,'f88a0c8beb2d2b05ab0f62307cfe264a4061728f','en','Change password','da','Skift adgangskode');
+INSERT INTO `translation_google` VALUES (4777,'f88a0c8beb2d2b05ab0f62307cfe264a4061728f','en','Change password','de','Kennwort ändern');
+INSERT INTO `translation_google` VALUES (4778,'f88a0c8beb2d2b05ab0f62307cfe264a4061728f','en','Change password','es','Cambiar la contraseña');
+INSERT INTO `translation_google` VALUES (4779,'f88a0c8beb2d2b05ab0f62307cfe264a4061728f','en','Change password','fi','Vaihda salasana');
+INSERT INTO `translation_google` VALUES (4780,'f88a0c8beb2d2b05ab0f62307cfe264a4061728f','en','Change password','fr','Changer le mot de passe');
+INSERT INTO `translation_google` VALUES (4781,'f88a0c8beb2d2b05ab0f62307cfe264a4061728f','en','Change password','it','Cambiare la password');
+INSERT INTO `translation_google` VALUES (4782,'f88a0c8beb2d2b05ab0f62307cfe264a4061728f','en','Change password','ja','パスワードを変更する');
+INSERT INTO `translation_google` VALUES (4783,'f88a0c8beb2d2b05ab0f62307cfe264a4061728f','en','Change password','nl','Wachtwoord wijzigen');
+INSERT INTO `translation_google` VALUES (4784,'f88a0c8beb2d2b05ab0f62307cfe264a4061728f','en','Change password','pl','Zmień hasło');
+INSERT INTO `translation_google` VALUES (4785,'f88a0c8beb2d2b05ab0f62307cfe264a4061728f','en','Change password','pt','Alterar a senha');
+INSERT INTO `translation_google` VALUES (4786,'f88a0c8beb2d2b05ab0f62307cfe264a4061728f','en','Change password','ru','Изменить пароль');
+INSERT INTO `translation_google` VALUES (4787,'f88a0c8beb2d2b05ab0f62307cfe264a4061728f','en','Change password','uk','Змінити пароль');
+INSERT INTO `translation_google` VALUES (4788,'f88a0c8beb2d2b05ab0f62307cfe264a4061728f','en','Change password','zh-cn','更改密码');
+INSERT INTO `translation_google` VALUES (4789,'3797c2dff7106e640490e73b04a9d3441ed72029','en','Change server password','cs','Změna hesla serveru');
+INSERT INTO `translation_google` VALUES (4790,'3797c2dff7106e640490e73b04a9d3441ed72029','en','Change server password','da','Skift serveradgangskode');
+INSERT INTO `translation_google` VALUES (4791,'3797c2dff7106e640490e73b04a9d3441ed72029','en','Change server password','de','Serverkennwort ändern');
+INSERT INTO `translation_google` VALUES (4792,'3797c2dff7106e640490e73b04a9d3441ed72029','en','Change server password','es','Cambiar la contraseña del servidor');
+INSERT INTO `translation_google` VALUES (4793,'3797c2dff7106e640490e73b04a9d3441ed72029','en','Change server password','fi','Vaihda palvelimen salasana');
+INSERT INTO `translation_google` VALUES (4794,'3797c2dff7106e640490e73b04a9d3441ed72029','en','Change server password','fr','Changer le mot de passe du serveur');
+INSERT INTO `translation_google` VALUES (4795,'3797c2dff7106e640490e73b04a9d3441ed72029','en','Change server password','it','Cambia la password del server');
+INSERT INTO `translation_google` VALUES (4796,'3797c2dff7106e640490e73b04a9d3441ed72029','en','Change server password','ja','サーバーのパスワードを変更する');
+INSERT INTO `translation_google` VALUES (4797,'3797c2dff7106e640490e73b04a9d3441ed72029','en','Change server password','nl','Serverwachtwoord wijzigen');
+INSERT INTO `translation_google` VALUES (4798,'3797c2dff7106e640490e73b04a9d3441ed72029','en','Change server password','pl','Zmień hasło serwera');
+INSERT INTO `translation_google` VALUES (4799,'3797c2dff7106e640490e73b04a9d3441ed72029','en','Change server password','pt','Alterar senha do servidor');
+INSERT INTO `translation_google` VALUES (4800,'3797c2dff7106e640490e73b04a9d3441ed72029','en','Change server password','ru','Изменить пароль сервера');
+INSERT INTO `translation_google` VALUES (4801,'3797c2dff7106e640490e73b04a9d3441ed72029','en','Change server password','uk','Зміна пароля сервера');
+INSERT INTO `translation_google` VALUES (4802,'3797c2dff7106e640490e73b04a9d3441ed72029','en','Change server password','zh-cn','更改服务器密码');
+INSERT INTO `translation_google` VALUES (4803,'12b9430008c29011a0fd8eb9770fc08ce6a2f613','en','Connection successfull, ProxySQL Admin Module detected !','cs','Připojení úspěšné, detekován administrátorský modul ProxySQL!');
+INSERT INTO `translation_google` VALUES (4804,'12b9430008c29011a0fd8eb9770fc08ce6a2f613','en','Connection successfull, ProxySQL Admin Module detected !','da','Forbindelse lykkedes, ProxySQL-administratormodul registreret!');
+INSERT INTO `translation_google` VALUES (4805,'12b9430008c29011a0fd8eb9770fc08ce6a2f613','en','Connection successfull, ProxySQL Admin Module detected !','de','Verbindung erfolgreich, ProxySQL-Admin-Modul erkannt!');
+INSERT INTO `translation_google` VALUES (4806,'12b9430008c29011a0fd8eb9770fc08ce6a2f613','en','Connection successfull, ProxySQL Admin Module detected !','es','¡Conexión exitosa, módulo de administración ProxySQL detectado!');
+INSERT INTO `translation_google` VALUES (4807,'12b9430008c29011a0fd8eb9770fc08ce6a2f613','en','Connection successfull, ProxySQL Admin Module detected !','fi','Yhteys onnistui, ProxySQL-hallintamoduuli havaittu!');
+INSERT INTO `translation_google` VALUES (4808,'12b9430008c29011a0fd8eb9770fc08ce6a2f613','en','Connection successfull, ProxySQL Admin Module detected !','fr','Connexion réussie, module d&#39;administration ProxySQL détecté !');
+INSERT INTO `translation_google` VALUES (4809,'12b9430008c29011a0fd8eb9770fc08ce6a2f613','en','Connection successfull, ProxySQL Admin Module detected !','it','Connessione riuscita, rilevato modulo di amministrazione ProxySQL!');
+INSERT INTO `translation_google` VALUES (4810,'12b9430008c29011a0fd8eb9770fc08ce6a2f613','en','Connection successfull, ProxySQL Admin Module detected !','ja','接続に成功しました。ProxySQL 管理モジュールが検出されました。');
+INSERT INTO `translation_google` VALUES (4811,'12b9430008c29011a0fd8eb9770fc08ce6a2f613','en','Connection successfull, ProxySQL Admin Module detected !','nl','Verbinding succesvol, ProxySQL Admin Module gedetecteerd!');
+INSERT INTO `translation_google` VALUES (4812,'12b9430008c29011a0fd8eb9770fc08ce6a2f613','en','Connection successfull, ProxySQL Admin Module detected !','pl','Połączenie pomyślne, wykryto moduł administracyjny ProxySQL!');
+INSERT INTO `translation_google` VALUES (4813,'12b9430008c29011a0fd8eb9770fc08ce6a2f613','en','Connection successfull, ProxySQL Admin Module detected !','pt','Conexão bem-sucedida, módulo de administração ProxySQL detectado!');
+INSERT INTO `translation_google` VALUES (4814,'12b9430008c29011a0fd8eb9770fc08ce6a2f613','en','Connection successfull, ProxySQL Admin Module detected !','ru','Подключение успешно установлено, обнаружен модуль ProxySQL Admin!');
+INSERT INTO `translation_google` VALUES (4815,'12b9430008c29011a0fd8eb9770fc08ce6a2f613','en','Connection successfull, ProxySQL Admin Module detected !','uk','Підключення успішне, виявлено модуль адміністрування ProxySQL!');
+INSERT INTO `translation_google` VALUES (4816,'12b9430008c29011a0fd8eb9770fc08ce6a2f613','en','Connection successfull, ProxySQL Admin Module detected !','zh-cn','连接成功，检测到 ProxySQL 管理模块！');
+INSERT INTO `translation_google` VALUES (4817,'66839374205eb8e73edc5e1b39874922cd66a7b0','en','Count','cs','Počítat');
+INSERT INTO `translation_google` VALUES (4818,'66839374205eb8e73edc5e1b39874922cd66a7b0','en','Count','da','Tælle');
+INSERT INTO `translation_google` VALUES (4819,'66839374205eb8e73edc5e1b39874922cd66a7b0','en','Count','de','Zählen');
+INSERT INTO `translation_google` VALUES (4820,'66839374205eb8e73edc5e1b39874922cd66a7b0','en','Count','es','Contar');
+INSERT INTO `translation_google` VALUES (4821,'66839374205eb8e73edc5e1b39874922cd66a7b0','en','Count','fi','Laskea');
+INSERT INTO `translation_google` VALUES (4822,'66839374205eb8e73edc5e1b39874922cd66a7b0','en','Count','fr','Compter');
+INSERT INTO `translation_google` VALUES (4823,'66839374205eb8e73edc5e1b39874922cd66a7b0','en','Count','it','Contare');
+INSERT INTO `translation_google` VALUES (4824,'66839374205eb8e73edc5e1b39874922cd66a7b0','en','Count','ja','カウント');
+INSERT INTO `translation_google` VALUES (4825,'66839374205eb8e73edc5e1b39874922cd66a7b0','en','Count','nl','Graaf');
+INSERT INTO `translation_google` VALUES (4826,'66839374205eb8e73edc5e1b39874922cd66a7b0','en','Count','pl','Liczyć');
+INSERT INTO `translation_google` VALUES (4827,'66839374205eb8e73edc5e1b39874922cd66a7b0','en','Count','pt','Contar');
+INSERT INTO `translation_google` VALUES (4828,'66839374205eb8e73edc5e1b39874922cd66a7b0','en','Count','ru','Считать');
+INSERT INTO `translation_google` VALUES (4829,'66839374205eb8e73edc5e1b39874922cd66a7b0','en','Count','uk','Кількість');
+INSERT INTO `translation_google` VALUES (4830,'66839374205eb8e73edc5e1b39874922cd66a7b0','en','Count','zh-cn','数数');
+INSERT INTO `translation_google` VALUES (4831,'9de50d1c5aa4a11d9396322565f62f0a62ce57d9','en','Daemon (id=16) was already stopped or in error','cs','Démon (id=16) byl již zastaven nebo se vyskytla chyba.');
+INSERT INTO `translation_google` VALUES (4832,'9de50d1c5aa4a11d9396322565f62f0a62ce57d9','en','Daemon (id=16) was already stopped or in error','da','Daemon (id=16) var allerede stoppet eller havde en fejl');
+INSERT INTO `translation_google` VALUES (4833,'9de50d1c5aa4a11d9396322565f62f0a62ce57d9','en','Daemon (id=16) was already stopped or in error','de','Daemon (id=16) wurde bereits gestoppt oder es liegt ein Fehler vor');
+INSERT INTO `translation_google` VALUES (4834,'9de50d1c5aa4a11d9396322565f62f0a62ce57d9','en','Daemon (id=16) was already stopped or in error','es','Daemon (id=16) ya se detuvo o tenía un error');
+INSERT INTO `translation_google` VALUES (4835,'9de50d1c5aa4a11d9396322565f62f0a62ce57d9','en','Daemon (id=16) was already stopped or in error','fi','Daemon (id=16) oli jo pysäytetty tai virhetilassa');
+INSERT INTO `translation_google` VALUES (4836,'9de50d1c5aa4a11d9396322565f62f0a62ce57d9','en','Daemon (id=16) was already stopped or in error','fr','Le démon (id=16) était déjà arrêté ou en erreur');
+INSERT INTO `translation_google` VALUES (4837,'9de50d1c5aa4a11d9396322565f62f0a62ce57d9','en','Daemon (id=16) was already stopped or in error','it','Il demone (id=16) è già stato arrestato o è in errore');
+INSERT INTO `translation_google` VALUES (4838,'9de50d1c5aa4a11d9396322565f62f0a62ce57d9','en','Daemon (id=16) was already stopped or in error','ja','デーモン (id=16) はすでに停止しているかエラーが発生しています');
+INSERT INTO `translation_google` VALUES (4839,'9de50d1c5aa4a11d9396322565f62f0a62ce57d9','en','Daemon (id=16) was already stopped or in error','nl','Daemon (id=16) is al gestopt of in fout');
+INSERT INTO `translation_google` VALUES (4840,'9de50d1c5aa4a11d9396322565f62f0a62ce57d9','en','Daemon (id=16) was already stopped or in error','pl','Demon (id=16) został już zatrzymany lub wystąpił błąd');
+INSERT INTO `translation_google` VALUES (4841,'9de50d1c5aa4a11d9396322565f62f0a62ce57d9','en','Daemon (id=16) was already stopped or in error','pt','O daemon (id=16) já foi parado ou está com erro');
+INSERT INTO `translation_google` VALUES (4842,'9de50d1c5aa4a11d9396322565f62f0a62ce57d9','en','Daemon (id=16) was already stopped or in error','ru','Демон (id=16) уже остановлен или произошел сбой');
+INSERT INTO `translation_google` VALUES (4843,'9de50d1c5aa4a11d9396322565f62f0a62ce57d9','en','Daemon (id=16) was already stopped or in error','uk','Демон (id=16) вже зупинено або виникла помилка');
+INSERT INTO `translation_google` VALUES (4844,'9de50d1c5aa4a11d9396322565f62f0a62ce57d9','en','Daemon (id=16) was already stopped or in error','zh-cn','守护进程（id=16）已停止或出现错误');
+INSERT INTO `translation_google` VALUES (4845,'403aa1689b2c55e3b8f8a0dbeef3db4a08b284d5','en','Digest','cs','Strávit');
+INSERT INTO `translation_google` VALUES (4846,'403aa1689b2c55e3b8f8a0dbeef3db4a08b284d5','en','Digest','da','Fordøje');
+INSERT INTO `translation_google` VALUES (4847,'403aa1689b2c55e3b8f8a0dbeef3db4a08b284d5','en','Digest','de','Verdauen');
+INSERT INTO `translation_google` VALUES (4848,'403aa1689b2c55e3b8f8a0dbeef3db4a08b284d5','en','Digest','es','Digerir');
+INSERT INTO `translation_google` VALUES (4849,'403aa1689b2c55e3b8f8a0dbeef3db4a08b284d5','en','Digest','fi','Sulattaa');
+INSERT INTO `translation_google` VALUES (4850,'403aa1689b2c55e3b8f8a0dbeef3db4a08b284d5','en','Digest','fr','Digérer');
+INSERT INTO `translation_google` VALUES (4851,'403aa1689b2c55e3b8f8a0dbeef3db4a08b284d5','en','Digest','it','Digerire');
+INSERT INTO `translation_google` VALUES (4852,'403aa1689b2c55e3b8f8a0dbeef3db4a08b284d5','en','Digest','ja','ダイジェスト');
+INSERT INTO `translation_google` VALUES (4853,'403aa1689b2c55e3b8f8a0dbeef3db4a08b284d5','en','Digest','nl','Verteren');
+INSERT INTO `translation_google` VALUES (4854,'403aa1689b2c55e3b8f8a0dbeef3db4a08b284d5','en','Digest','pl','Strawić');
+INSERT INTO `translation_google` VALUES (4855,'403aa1689b2c55e3b8f8a0dbeef3db4a08b284d5','en','Digest','pt','Digerir');
+INSERT INTO `translation_google` VALUES (4856,'403aa1689b2c55e3b8f8a0dbeef3db4a08b284d5','en','Digest','ru','Дайджест');
+INSERT INTO `translation_google` VALUES (4857,'403aa1689b2c55e3b8f8a0dbeef3db4a08b284d5','en','Digest','uk','Дайджест');
+INSERT INTO `translation_google` VALUES (4858,'403aa1689b2c55e3b8f8a0dbeef3db4a08b284d5','en','Digest','zh-cn','消化');
+INSERT INTO `translation_google` VALUES (4859,'8cd479b4211ccfd56368743d85f17669808678bf','en','Host name','cs','Název hostitele');
+INSERT INTO `translation_google` VALUES (4860,'8cd479b4211ccfd56368743d85f17669808678bf','en','Host name','da','Værtsnavn');
+INSERT INTO `translation_google` VALUES (4861,'8cd479b4211ccfd56368743d85f17669808678bf','en','Host name','de','Hostname');
+INSERT INTO `translation_google` VALUES (4862,'8cd479b4211ccfd56368743d85f17669808678bf','en','Host name','es','Nombre de host');
+INSERT INTO `translation_google` VALUES (4863,'8cd479b4211ccfd56368743d85f17669808678bf','en','Host name','fi','Isännän nimi');
+INSERT INTO `translation_google` VALUES (4864,'8cd479b4211ccfd56368743d85f17669808678bf','en','Host name','fr','Nom d&#39;hôte');
+INSERT INTO `translation_google` VALUES (4865,'8cd479b4211ccfd56368743d85f17669808678bf','en','Host name','it','Nome host');
+INSERT INTO `translation_google` VALUES (4866,'8cd479b4211ccfd56368743d85f17669808678bf','en','Host name','ja','ホスト名');
+INSERT INTO `translation_google` VALUES (4867,'8cd479b4211ccfd56368743d85f17669808678bf','en','Host name','nl','Hostnaam');
+INSERT INTO `translation_google` VALUES (4868,'8cd479b4211ccfd56368743d85f17669808678bf','en','Host name','pl','Nazwa hosta');
+INSERT INTO `translation_google` VALUES (4869,'8cd479b4211ccfd56368743d85f17669808678bf','en','Host name','pt','Nome do host');
+INSERT INTO `translation_google` VALUES (4870,'8cd479b4211ccfd56368743d85f17669808678bf','en','Host name','ru','Имя хоста');
+INSERT INTO `translation_google` VALUES (4871,'8cd479b4211ccfd56368743d85f17669808678bf','en','Host name','uk','Ім&#39;я хоста');
+INSERT INTO `translation_google` VALUES (4872,'8cd479b4211ccfd56368743d85f17669808678bf','en','Host name','zh-cn','主机名');
+INSERT INTO `translation_google` VALUES (4873,'56d068441d0033b2d0b2477eb7f0440f4aad28db','en','Impossible to find the daemon (id=16) with the pid :','cs','Nelze najít démona (id=16) s pid:');
+INSERT INTO `translation_google` VALUES (4874,'56d068441d0033b2d0b2477eb7f0440f4aad28db','en','Impossible to find the daemon (id=16) with the pid :','da','Umuligt at finde dæmonen (id=16) med pid&#39;en:');
+INSERT INTO `translation_google` VALUES (4875,'56d068441d0033b2d0b2477eb7f0440f4aad28db','en','Impossible to find the daemon (id=16) with the pid :','de','Es ist unmöglich, den Daemon (id=16) mit der PID zu finden:');
+INSERT INTO `translation_google` VALUES (4876,'56d068441d0033b2d0b2477eb7f0440f4aad28db','en','Impossible to find the daemon (id=16) with the pid :','es','Imposible encontrar el demonio (id=16) con el pid:');
+INSERT INTO `translation_google` VALUES (4877,'56d068441d0033b2d0b2477eb7f0440f4aad28db','en','Impossible to find the daemon (id=16) with the pid :','fi','Daemonia (id=16) ei löydy pid:llä:');
+INSERT INTO `translation_google` VALUES (4878,'56d068441d0033b2d0b2477eb7f0440f4aad28db','en','Impossible to find the daemon (id=16) with the pid :','fr','Impossible de trouver le démon (id=16) avec le pid :');
+INSERT INTO `translation_google` VALUES (4879,'56d068441d0033b2d0b2477eb7f0440f4aad28db','en','Impossible to find the daemon (id=16) with the pid :','it','Impossibile trovare il demone (id=16) con il pid:');
+INSERT INTO `translation_google` VALUES (4880,'56d068441d0033b2d0b2477eb7f0440f4aad28db','en','Impossible to find the daemon (id=16) with the pid :','ja','pid のデーモン (id=16) が見つかりません:');
+INSERT INTO `translation_google` VALUES (4881,'56d068441d0033b2d0b2477eb7f0440f4aad28db','en','Impossible to find the daemon (id=16) with the pid :','nl','Onmogelijk om de daemon (id=16) met de pid te vinden:');
+INSERT INTO `translation_google` VALUES (4882,'56d068441d0033b2d0b2477eb7f0440f4aad28db','en','Impossible to find the daemon (id=16) with the pid :','pl','Nie można znaleźć demona (id=16) z pid:');
+INSERT INTO `translation_google` VALUES (4883,'56d068441d0033b2d0b2477eb7f0440f4aad28db','en','Impossible to find the daemon (id=16) with the pid :','pt','Impossível encontrar o daemon (id=16) com o pid:');
+INSERT INTO `translation_google` VALUES (4884,'56d068441d0033b2d0b2477eb7f0440f4aad28db','en','Impossible to find the daemon (id=16) with the pid :','ru','Невозможно найти демон (id=16) с pid:');
+INSERT INTO `translation_google` VALUES (4885,'56d068441d0033b2d0b2477eb7f0440f4aad28db','en','Impossible to find the daemon (id=16) with the pid :','uk','Неможливо знайти демона (id=16) з pid:');
+INSERT INTO `translation_google` VALUES (4886,'56d068441d0033b2d0b2477eb7f0440f4aad28db','en','Impossible to find the daemon (id=16) with the pid :','zh-cn','无法通过 pid 找到守护进程（id=16）：');
+INSERT INTO `translation_google` VALUES (4887,'7e0baebfbdb1c6cac130c9b6e2f8e16fdf28d49e','en','Load on total time','cs','Celkový čas načítání');
+INSERT INTO `translation_google` VALUES (4888,'7e0baebfbdb1c6cac130c9b6e2f8e16fdf28d49e','en','Load on total time','da','Belastning på samlet tid');
+INSERT INTO `translation_google` VALUES (4889,'7e0baebfbdb1c6cac130c9b6e2f8e16fdf28d49e','en','Load on total time','de','Laden Sie die Gesamtzeit ein');
+INSERT INTO `translation_google` VALUES (4890,'7e0baebfbdb1c6cac130c9b6e2f8e16fdf28d49e','en','Load on total time','es','Carga en tiempo total');
+INSERT INTO `translation_google` VALUES (4891,'7e0baebfbdb1c6cac130c9b6e2f8e16fdf28d49e','en','Load on total time','fi','Kokonaiskuormitusaika');
+INSERT INTO `translation_google` VALUES (4892,'7e0baebfbdb1c6cac130c9b6e2f8e16fdf28d49e','en','Load on total time','fr','Charge sur le temps total');
+INSERT INTO `translation_google` VALUES (4893,'7e0baebfbdb1c6cac130c9b6e2f8e16fdf28d49e','en','Load on total time','it','Carico sul tempo totale');
+INSERT INTO `translation_google` VALUES (4894,'7e0baebfbdb1c6cac130c9b6e2f8e16fdf28d49e','en','Load on total time','ja','合計時間の負荷');
+INSERT INTO `translation_google` VALUES (4895,'7e0baebfbdb1c6cac130c9b6e2f8e16fdf28d49e','en','Load on total time','nl','Belasting op totale tijd');
+INSERT INTO `translation_google` VALUES (4896,'7e0baebfbdb1c6cac130c9b6e2f8e16fdf28d49e','en','Load on total time','pl','Obciążenie w czasie całkowitym');
+INSERT INTO `translation_google` VALUES (4897,'7e0baebfbdb1c6cac130c9b6e2f8e16fdf28d49e','en','Load on total time','pt','Carga no tempo total');
+INSERT INTO `translation_google` VALUES (4898,'7e0baebfbdb1c6cac130c9b6e2f8e16fdf28d49e','en','Load on total time','ru','Нагрузка на общее время');
+INSERT INTO `translation_google` VALUES (4899,'7e0baebfbdb1c6cac130c9b6e2f8e16fdf28d49e','en','Load on total time','uk','Загальний час завантаження');
+INSERT INTO `translation_google` VALUES (4900,'7e0baebfbdb1c6cac130c9b6e2f8e16fdf28d49e','en','Load on total time','zh-cn','按总时间加载');
+INSERT INTO `translation_google` VALUES (4901,'3e537138ddb1d50488e2a48542de282140bb34fe','en','New Maxscale Server','cs','Nový server Maxscale');
+INSERT INTO `translation_google` VALUES (4902,'3e537138ddb1d50488e2a48542de282140bb34fe','en','New Maxscale Server','da','Ny Maxscale-server');
+INSERT INTO `translation_google` VALUES (4903,'3e537138ddb1d50488e2a48542de282140bb34fe','en','New Maxscale Server','de','Neuer Maxscale Server');
+INSERT INTO `translation_google` VALUES (4904,'3e537138ddb1d50488e2a48542de282140bb34fe','en','New Maxscale Server','es','Nuevo servidor Maxscale');
+INSERT INTO `translation_google` VALUES (4905,'3e537138ddb1d50488e2a48542de282140bb34fe','en','New Maxscale Server','fi','Uusi Maxscale-palvelin');
+INSERT INTO `translation_google` VALUES (4906,'3e537138ddb1d50488e2a48542de282140bb34fe','en','New Maxscale Server','fr','Nouveau serveur Maxscale');
+INSERT INTO `translation_google` VALUES (4907,'3e537138ddb1d50488e2a48542de282140bb34fe','en','New Maxscale Server','it','Nuovo server Maxscale');
+INSERT INTO `translation_google` VALUES (4908,'3e537138ddb1d50488e2a48542de282140bb34fe','en','New Maxscale Server','ja','新しいMaxscaleサーバー');
+INSERT INTO `translation_google` VALUES (4909,'3e537138ddb1d50488e2a48542de282140bb34fe','en','New Maxscale Server','nl','Nieuwe Maxscale-server');
+INSERT INTO `translation_google` VALUES (4910,'3e537138ddb1d50488e2a48542de282140bb34fe','en','New Maxscale Server','pl','Nowy serwer Maxscale');
+INSERT INTO `translation_google` VALUES (4911,'3e537138ddb1d50488e2a48542de282140bb34fe','en','New Maxscale Server','pt','Novo servidor Maxscale');
+INSERT INTO `translation_google` VALUES (4912,'3e537138ddb1d50488e2a48542de282140bb34fe','en','New Maxscale Server','ru','Новый сервер Maxscale');
+INSERT INTO `translation_google` VALUES (4913,'3e537138ddb1d50488e2a48542de282140bb34fe','en','New Maxscale Server','uk','Новий сервер Maxscale');
+INSERT INTO `translation_google` VALUES (4914,'3e537138ddb1d50488e2a48542de282140bb34fe','en','New Maxscale Server','zh-cn','新的 Maxscale 服务器');
+INSERT INTO `translation_google` VALUES (4915,'a38b6ff7afb9700db29a424c1aa07bfbe88a95a4','en','OFFLINE_HARD','cs','OFFLINE_HORŠÍ');
+INSERT INTO `translation_google` VALUES (4916,'a38b6ff7afb9700db29a424c1aa07bfbe88a95a4','en','OFFLINE_HARD','da','OFFLINE_HARD');
+INSERT INTO `translation_google` VALUES (4917,'a38b6ff7afb9700db29a424c1aa07bfbe88a95a4','en','OFFLINE_HARD','de','OFFLINE_HARD');
+INSERT INTO `translation_google` VALUES (4918,'a38b6ff7afb9700db29a424c1aa07bfbe88a95a4','en','OFFLINE_HARD','es','DESCONECTADO_DIFÍCIL');
+INSERT INTO `translation_google` VALUES (4919,'a38b6ff7afb9700db29a424c1aa07bfbe88a95a4','en','OFFLINE_HARD','fi','OFFLINE_HARD');
+INSERT INTO `translation_google` VALUES (4920,'a38b6ff7afb9700db29a424c1aa07bfbe88a95a4','en','OFFLINE_HARD','fr','HORS LIGNE_DIFFICILE');
+INSERT INTO `translation_google` VALUES (4921,'a38b6ff7afb9700db29a424c1aa07bfbe88a95a4','en','OFFLINE_HARD','it','OFFLINE_DIFFICILE');
+INSERT INTO `translation_google` VALUES (4922,'a38b6ff7afb9700db29a424c1aa07bfbe88a95a4','en','OFFLINE_HARD','ja','オフライン_ハード');
+INSERT INTO `translation_google` VALUES (4923,'a38b6ff7afb9700db29a424c1aa07bfbe88a95a4','en','OFFLINE_HARD','nl','OFFLINE_HARD');
+INSERT INTO `translation_google` VALUES (4924,'a38b6ff7afb9700db29a424c1aa07bfbe88a95a4','en','OFFLINE_HARD','pl','OFFLINE_TRUDNY');
+INSERT INTO `translation_google` VALUES (4925,'a38b6ff7afb9700db29a424c1aa07bfbe88a95a4','en','OFFLINE_HARD','pt','OFFLINE_DIFÍCIL');
+INSERT INTO `translation_google` VALUES (4926,'a38b6ff7afb9700db29a424c1aa07bfbe88a95a4','en','OFFLINE_HARD','ru','OFFLINE_HARD');
+INSERT INTO `translation_google` VALUES (4927,'a38b6ff7afb9700db29a424c1aa07bfbe88a95a4','en','OFFLINE_HARD','uk','OFFLINE_HARD');
+INSERT INTO `translation_google` VALUES (4928,'a38b6ff7afb9700db29a424c1aa07bfbe88a95a4','en','OFFLINE_HARD','zh-cn','离线_困难');
+INSERT INTO `translation_google` VALUES (4929,'caef313747de09556b8b1d9d6e4add3985392776','en','Queries','cs','Dotazy');
+INSERT INTO `translation_google` VALUES (4930,'caef313747de09556b8b1d9d6e4add3985392776','en','Queries','da','Forespørgsler');
+INSERT INTO `translation_google` VALUES (4931,'caef313747de09556b8b1d9d6e4add3985392776','en','Queries','de','Abfragen');
+INSERT INTO `translation_google` VALUES (4932,'caef313747de09556b8b1d9d6e4add3985392776','en','Queries','es','Consultas');
+INSERT INTO `translation_google` VALUES (4933,'caef313747de09556b8b1d9d6e4add3985392776','en','Queries','fi','Kyselyt');
+INSERT INTO `translation_google` VALUES (4934,'caef313747de09556b8b1d9d6e4add3985392776','en','Queries','fr','Requêtes');
+INSERT INTO `translation_google` VALUES (4935,'caef313747de09556b8b1d9d6e4add3985392776','en','Queries','it','Query');
+INSERT INTO `translation_google` VALUES (4936,'caef313747de09556b8b1d9d6e4add3985392776','en','Queries','ja','クエリ');
+INSERT INTO `translation_google` VALUES (4937,'caef313747de09556b8b1d9d6e4add3985392776','en','Queries','nl','Vragen');
+INSERT INTO `translation_google` VALUES (4938,'caef313747de09556b8b1d9d6e4add3985392776','en','Queries','pl','Zapytania');
+INSERT INTO `translation_google` VALUES (4939,'caef313747de09556b8b1d9d6e4add3985392776','en','Queries','pt','Consultas');
+INSERT INTO `translation_google` VALUES (4940,'caef313747de09556b8b1d9d6e4add3985392776','en','Queries','ru','Запросы');
+INSERT INTO `translation_google` VALUES (4941,'caef313747de09556b8b1d9d6e4add3985392776','en','Queries','uk','Запити');
+INSERT INTO `translation_google` VALUES (4942,'caef313747de09556b8b1d9d6e4add3985392776','en','Queries','zh-cn','查询');
+INSERT INTO `translation_google` VALUES (4943,'55d7c058abe9389fbf2c48ec4c94c2b8cdc3df98','en','Replay','cs','Přehrát znovu');
+INSERT INTO `translation_google` VALUES (4944,'55d7c058abe9389fbf2c48ec4c94c2b8cdc3df98','en','Replay','da','Genafspilning');
+INSERT INTO `translation_google` VALUES (4945,'55d7c058abe9389fbf2c48ec4c94c2b8cdc3df98','en','Replay','de','Wiederholung');
+INSERT INTO `translation_google` VALUES (4946,'55d7c058abe9389fbf2c48ec4c94c2b8cdc3df98','en','Replay','es','Repetición');
+INSERT INTO `translation_google` VALUES (4947,'55d7c058abe9389fbf2c48ec4c94c2b8cdc3df98','en','Replay','fi','Uusinta');
+INSERT INTO `translation_google` VALUES (4948,'55d7c058abe9389fbf2c48ec4c94c2b8cdc3df98','en','Replay','fr','Rejouer');
+INSERT INTO `translation_google` VALUES (4949,'55d7c058abe9389fbf2c48ec4c94c2b8cdc3df98','en','Replay','it','Rigiocare');
+INSERT INTO `translation_google` VALUES (4950,'55d7c058abe9389fbf2c48ec4c94c2b8cdc3df98','en','Replay','ja','リプレイ');
+INSERT INTO `translation_google` VALUES (4951,'55d7c058abe9389fbf2c48ec4c94c2b8cdc3df98','en','Replay','nl','Herhaling');
+INSERT INTO `translation_google` VALUES (4952,'55d7c058abe9389fbf2c48ec4c94c2b8cdc3df98','en','Replay','pl','Powtórna rozgrywka');
+INSERT INTO `translation_google` VALUES (4953,'55d7c058abe9389fbf2c48ec4c94c2b8cdc3df98','en','Replay','pt','Repetição');
+INSERT INTO `translation_google` VALUES (4954,'55d7c058abe9389fbf2c48ec4c94c2b8cdc3df98','en','Replay','ru','Повторить');
+INSERT INTO `translation_google` VALUES (4955,'55d7c058abe9389fbf2c48ec4c94c2b8cdc3df98','en','Replay','uk','Повтор');
+INSERT INTO `translation_google` VALUES (4956,'55d7c058abe9389fbf2c48ec4c94c2b8cdc3df98','en','Replay','zh-cn','重播');
+INSERT INTO `translation_google` VALUES (4957,'8f1c629982f358d7701272f97533f91f5782e0d1','en','SSL','cs','SSL');
+INSERT INTO `translation_google` VALUES (4958,'8f1c629982f358d7701272f97533f91f5782e0d1','en','SSL','da','SSL');
+INSERT INTO `translation_google` VALUES (4959,'8f1c629982f358d7701272f97533f91f5782e0d1','en','SSL','de','SSL');
+INSERT INTO `translation_google` VALUES (4960,'8f1c629982f358d7701272f97533f91f5782e0d1','en','SSL','es','SSL');
+INSERT INTO `translation_google` VALUES (4961,'8f1c629982f358d7701272f97533f91f5782e0d1','en','SSL','fi','SSL-koodi');
+INSERT INTO `translation_google` VALUES (4962,'8f1c629982f358d7701272f97533f91f5782e0d1','en','SSL','fr','SSL');
+INSERT INTO `translation_google` VALUES (4963,'8f1c629982f358d7701272f97533f91f5782e0d1','en','SSL','it','SSL');
+INSERT INTO `translation_google` VALUES (4964,'8f1c629982f358d7701272f97533f91f5782e0d1','en','SSL','ja','SSL');
+INSERT INTO `translation_google` VALUES (4965,'8f1c629982f358d7701272f97533f91f5782e0d1','en','SSL','nl','SSL');
+INSERT INTO `translation_google` VALUES (4966,'8f1c629982f358d7701272f97533f91f5782e0d1','en','SSL','pl','SSL');
+INSERT INTO `translation_google` VALUES (4967,'8f1c629982f358d7701272f97533f91f5782e0d1','en','SSL','pt','SSL');
+INSERT INTO `translation_google` VALUES (4968,'8f1c629982f358d7701272f97533f91f5782e0d1','en','SSL','ru','SSL');
+INSERT INTO `translation_google` VALUES (4969,'8f1c629982f358d7701272f97533f91f5782e0d1','en','SSL','uk','SSL-сертифікат');
+INSERT INTO `translation_google` VALUES (4970,'8f1c629982f358d7701272f97533f91f5782e0d1','en','SSL','zh-cn','SSL');
+INSERT INTO `translation_google` VALUES (4971,'b7ad23d1fc3ef2ccba2817cafb24b9d8b3c0effc','en','Schema name','cs','Název schématu');
+INSERT INTO `translation_google` VALUES (4972,'b7ad23d1fc3ef2ccba2817cafb24b9d8b3c0effc','en','Schema name','da','Skemanavn');
+INSERT INTO `translation_google` VALUES (4973,'b7ad23d1fc3ef2ccba2817cafb24b9d8b3c0effc','en','Schema name','de','Schemaname');
+INSERT INTO `translation_google` VALUES (4974,'b7ad23d1fc3ef2ccba2817cafb24b9d8b3c0effc','en','Schema name','es','Nombre del esquema');
+INSERT INTO `translation_google` VALUES (4975,'b7ad23d1fc3ef2ccba2817cafb24b9d8b3c0effc','en','Schema name','fi','Skeeman nimi');
+INSERT INTO `translation_google` VALUES (4976,'b7ad23d1fc3ef2ccba2817cafb24b9d8b3c0effc','en','Schema name','fr','Nom du schéma');
+INSERT INTO `translation_google` VALUES (4977,'b7ad23d1fc3ef2ccba2817cafb24b9d8b3c0effc','en','Schema name','it','Nome dello schema');
+INSERT INTO `translation_google` VALUES (4978,'b7ad23d1fc3ef2ccba2817cafb24b9d8b3c0effc','en','Schema name','ja','スキーマ名');
+INSERT INTO `translation_google` VALUES (4979,'b7ad23d1fc3ef2ccba2817cafb24b9d8b3c0effc','en','Schema name','nl','Schemanaam');
+INSERT INTO `translation_google` VALUES (4980,'b7ad23d1fc3ef2ccba2817cafb24b9d8b3c0effc','en','Schema name','pl','Nazwa schematu');
+INSERT INTO `translation_google` VALUES (4981,'b7ad23d1fc3ef2ccba2817cafb24b9d8b3c0effc','en','Schema name','pt','Nome do esquema');
+INSERT INTO `translation_google` VALUES (4982,'b7ad23d1fc3ef2ccba2817cafb24b9d8b3c0effc','en','Schema name','ru','Имя схемы');
+INSERT INTO `translation_google` VALUES (4983,'b7ad23d1fc3ef2ccba2817cafb24b9d8b3c0effc','en','Schema name','uk','Назва схеми');
+INSERT INTO `translation_google` VALUES (4984,'b7ad23d1fc3ef2ccba2817cafb24b9d8b3c0effc','en','Schema name','zh-cn','架构名称');
+INSERT INTO `translation_google` VALUES (4985,'223f0e9c52f6ad27a12ba8512555543cb58a34ad','en','The ProxySQL Server has been added','cs','Byl přidán ProxySQL server.');
+INSERT INTO `translation_google` VALUES (4986,'223f0e9c52f6ad27a12ba8512555543cb58a34ad','en','The ProxySQL Server has been added','da','ProxySQL-serveren er blevet tilføjet');
+INSERT INTO `translation_google` VALUES (4987,'223f0e9c52f6ad27a12ba8512555543cb58a34ad','en','The ProxySQL Server has been added','de','Der ProxySQL Server wurde hinzugefügt');
+INSERT INTO `translation_google` VALUES (4988,'223f0e9c52f6ad27a12ba8512555543cb58a34ad','en','The ProxySQL Server has been added','es','Se ha añadido el servidor ProxySQL');
+INSERT INTO `translation_google` VALUES (4989,'223f0e9c52f6ad27a12ba8512555543cb58a34ad','en','The ProxySQL Server has been added','fi','ProxySQL-palvelin on lisätty');
+INSERT INTO `translation_google` VALUES (4990,'223f0e9c52f6ad27a12ba8512555543cb58a34ad','en','The ProxySQL Server has been added','fr','Le serveur ProxySQL a été ajouté');
+INSERT INTO `translation_google` VALUES (4991,'223f0e9c52f6ad27a12ba8512555543cb58a34ad','en','The ProxySQL Server has been added','it','È stato aggiunto il server ProxySQL');
+INSERT INTO `translation_google` VALUES (4992,'223f0e9c52f6ad27a12ba8512555543cb58a34ad','en','The ProxySQL Server has been added','ja','ProxySQL Serverが追加されました');
+INSERT INTO `translation_google` VALUES (4993,'223f0e9c52f6ad27a12ba8512555543cb58a34ad','en','The ProxySQL Server has been added','nl','De ProxySQL-server is toegevoegd');
+INSERT INTO `translation_google` VALUES (4994,'223f0e9c52f6ad27a12ba8512555543cb58a34ad','en','The ProxySQL Server has been added','pl','Dodano serwer ProxySQL');
+INSERT INTO `translation_google` VALUES (4995,'223f0e9c52f6ad27a12ba8512555543cb58a34ad','en','The ProxySQL Server has been added','pt','O servidor ProxySQL foi adicionado');
+INSERT INTO `translation_google` VALUES (4996,'223f0e9c52f6ad27a12ba8512555543cb58a34ad','en','The ProxySQL Server has been added','ru','Добавлен ProxySQL-сервер.');
+INSERT INTO `translation_google` VALUES (4997,'223f0e9c52f6ad27a12ba8512555543cb58a34ad','en','The ProxySQL Server has been added','uk','Додано ProxySQL Server');
+INSERT INTO `translation_google` VALUES (4998,'223f0e9c52f6ad27a12ba8512555543cb58a34ad','en','The ProxySQL Server has been added','zh-cn','ProxySQL 服务器已添加');
+INSERT INTO `translation_google` VALUES (4999,'a4c2d6717b0158293c35e8aa14f0dbc0b4e30f7b','en','User account','cs','Uživatelský účet');
+INSERT INTO `translation_google` VALUES (5000,'a4c2d6717b0158293c35e8aa14f0dbc0b4e30f7b','en','User account','da','Brugerkonto');
+INSERT INTO `translation_google` VALUES (5001,'a4c2d6717b0158293c35e8aa14f0dbc0b4e30f7b','en','User account','de','Benutzerkonto');
+INSERT INTO `translation_google` VALUES (5002,'a4c2d6717b0158293c35e8aa14f0dbc0b4e30f7b','en','User account','es','Cuenta de usuario');
+INSERT INTO `translation_google` VALUES (5003,'a4c2d6717b0158293c35e8aa14f0dbc0b4e30f7b','en','User account','fi','Käyttäjätili');
+INSERT INTO `translation_google` VALUES (5004,'a4c2d6717b0158293c35e8aa14f0dbc0b4e30f7b','en','User account','fr','Compte utilisateur');
+INSERT INTO `translation_google` VALUES (5005,'a4c2d6717b0158293c35e8aa14f0dbc0b4e30f7b','en','User account','it','Account utente');
+INSERT INTO `translation_google` VALUES (5006,'a4c2d6717b0158293c35e8aa14f0dbc0b4e30f7b','en','User account','ja','ユーザーアカウント');
+INSERT INTO `translation_google` VALUES (5007,'a4c2d6717b0158293c35e8aa14f0dbc0b4e30f7b','en','User account','nl','Gebruikersaccount');
+INSERT INTO `translation_google` VALUES (5008,'a4c2d6717b0158293c35e8aa14f0dbc0b4e30f7b','en','User account','pl','Konto użytkownika');
+INSERT INTO `translation_google` VALUES (5009,'a4c2d6717b0158293c35e8aa14f0dbc0b4e30f7b','en','User account','pt','Conta de usuário');
+INSERT INTO `translation_google` VALUES (5010,'a4c2d6717b0158293c35e8aa14f0dbc0b4e30f7b','en','User account','ru','Учетная запись пользователя');
+INSERT INTO `translation_google` VALUES (5011,'a4c2d6717b0158293c35e8aa14f0dbc0b4e30f7b','en','User account','uk','Обліковий запис користувача');
+INSERT INTO `translation_google` VALUES (5012,'a4c2d6717b0158293c35e8aa14f0dbc0b4e30f7b','en','User account','zh-cn','用户帐户');
+INSERT INTO `translation_google` VALUES (5013,'41d63c14af2269cebeefbcf305841b5347b758ca','en','performance_schema is not activated on this server','cs','performance_schema není na tomto serveru aktivováno.');
+INSERT INTO `translation_google` VALUES (5014,'41d63c14af2269cebeefbcf305841b5347b758ca','en','performance_schema is not activated on this server','da','performance_schema er ikke aktiveret på denne server');
+INSERT INTO `translation_google` VALUES (5015,'41d63c14af2269cebeefbcf305841b5347b758ca','en','performance_schema is not activated on this server','de','performance_schema ist auf diesem Server nicht aktiviert');
+INSERT INTO `translation_google` VALUES (5016,'41d63c14af2269cebeefbcf305841b5347b758ca','en','performance_schema is not activated on this server','es','performance_schema no está activado en este servidor');
+INSERT INTO `translation_google` VALUES (5017,'41d63c14af2269cebeefbcf305841b5347b758ca','en','performance_schema is not activated on this server','fi','performance_schema ei ole aktivoitu tällä palvelimella');
+INSERT INTO `translation_google` VALUES (5018,'41d63c14af2269cebeefbcf305841b5347b758ca','en','performance_schema is not activated on this server','fr','performance_schema n&#39;est pas activé sur ce serveur');
+INSERT INTO `translation_google` VALUES (5019,'41d63c14af2269cebeefbcf305841b5347b758ca','en','performance_schema is not activated on this server','it','performance_schema non è attivato su questo server');
+INSERT INTO `translation_google` VALUES (5020,'41d63c14af2269cebeefbcf305841b5347b758ca','en','performance_schema is not activated on this server','ja','このサーバーではperformance_schemaが有効になっていません');
+INSERT INTO `translation_google` VALUES (5021,'41d63c14af2269cebeefbcf305841b5347b758ca','en','performance_schema is not activated on this server','nl','performance_schema is niet geactiveerd op deze server');
+INSERT INTO `translation_google` VALUES (5022,'41d63c14af2269cebeefbcf305841b5347b758ca','en','performance_schema is not activated on this server','pl','performance_schema nie jest aktywowany na tym serwerze');
+INSERT INTO `translation_google` VALUES (5023,'41d63c14af2269cebeefbcf305841b5347b758ca','en','performance_schema is not activated on this server','pt','performance_schema não está ativado neste servidor');
+INSERT INTO `translation_google` VALUES (5024,'41d63c14af2269cebeefbcf305841b5347b758ca','en','performance_schema is not activated on this server','ru','performance_schema не активирована на этом сервере');
+INSERT INTO `translation_google` VALUES (5025,'41d63c14af2269cebeefbcf305841b5347b758ca','en','performance_schema is not activated on this server','uk','performance_schema не активовано на цьому сервері');
+INSERT INTO `translation_google` VALUES (5026,'41d63c14af2269cebeefbcf305841b5347b758ca','en','performance_schema is not activated on this server','zh-cn','此服务器上未激活 performance_schema');
+INSERT INTO `translation_google` VALUES (5027,'be95e242d51f768d75a5b1e02cc1f7d2368d442c','en','Current Sessions','cs','Aktuální relace');
+INSERT INTO `translation_google` VALUES (5028,'be95e242d51f768d75a5b1e02cc1f7d2368d442c','en','Current Sessions','da','Aktuelle sessioner');
+INSERT INTO `translation_google` VALUES (5029,'be95e242d51f768d75a5b1e02cc1f7d2368d442c','en','Current Sessions','de','Aktuelle Sitzungen');
+INSERT INTO `translation_google` VALUES (5030,'be95e242d51f768d75a5b1e02cc1f7d2368d442c','en','Current Sessions','es','Sesiones actuales');
+INSERT INTO `translation_google` VALUES (5031,'be95e242d51f768d75a5b1e02cc1f7d2368d442c','en','Current Sessions','fi','Nykyiset istunnot');
+INSERT INTO `translation_google` VALUES (5032,'be95e242d51f768d75a5b1e02cc1f7d2368d442c','en','Current Sessions','fr','Sessions en cours');
+INSERT INTO `translation_google` VALUES (5033,'be95e242d51f768d75a5b1e02cc1f7d2368d442c','en','Current Sessions','it','Sessioni attuali');
+INSERT INTO `translation_google` VALUES (5034,'be95e242d51f768d75a5b1e02cc1f7d2368d442c','en','Current Sessions','ja','現在のセッション');
+INSERT INTO `translation_google` VALUES (5035,'be95e242d51f768d75a5b1e02cc1f7d2368d442c','en','Current Sessions','nl','Huidige sessies');
+INSERT INTO `translation_google` VALUES (5036,'be95e242d51f768d75a5b1e02cc1f7d2368d442c','en','Current Sessions','pl','Bieżące sesje');
+INSERT INTO `translation_google` VALUES (5037,'be95e242d51f768d75a5b1e02cc1f7d2368d442c','en','Current Sessions','pt','Sessões atuais');
+INSERT INTO `translation_google` VALUES (5038,'be95e242d51f768d75a5b1e02cc1f7d2368d442c','en','Current Sessions','ru','Текущие сеансы');
+INSERT INTO `translation_google` VALUES (5039,'be95e242d51f768d75a5b1e02cc1f7d2368d442c','en','Current Sessions','uk','Поточні сесії');
+INSERT INTO `translation_google` VALUES (5040,'be95e242d51f768d75a5b1e02cc1f7d2368d442c','en','Current Sessions','zh-cn','当前会议');
+INSERT INTO `translation_google` VALUES (5041,'75fed77fa7f1ba3af078504907cdc9c800a86837','en','Filters','cs','Filtry');
+INSERT INTO `translation_google` VALUES (5042,'75fed77fa7f1ba3af078504907cdc9c800a86837','en','Filters','da','Filtre');
+INSERT INTO `translation_google` VALUES (5043,'75fed77fa7f1ba3af078504907cdc9c800a86837','en','Filters','de','Filter');
+INSERT INTO `translation_google` VALUES (5044,'75fed77fa7f1ba3af078504907cdc9c800a86837','en','Filters','es','Filtros');
+INSERT INTO `translation_google` VALUES (5045,'75fed77fa7f1ba3af078504907cdc9c800a86837','en','Filters','fi','Suodattimet');
+INSERT INTO `translation_google` VALUES (5046,'75fed77fa7f1ba3af078504907cdc9c800a86837','en','Filters','fr','Filtres');
+INSERT INTO `translation_google` VALUES (5047,'75fed77fa7f1ba3af078504907cdc9c800a86837','en','Filters','it','Filtri');
+INSERT INTO `translation_google` VALUES (5048,'75fed77fa7f1ba3af078504907cdc9c800a86837','en','Filters','ja','フィルター');
+INSERT INTO `translation_google` VALUES (5049,'75fed77fa7f1ba3af078504907cdc9c800a86837','en','Filters','nl','Filters');
+INSERT INTO `translation_google` VALUES (5050,'75fed77fa7f1ba3af078504907cdc9c800a86837','en','Filters','pl','Filtry');
+INSERT INTO `translation_google` VALUES (5051,'75fed77fa7f1ba3af078504907cdc9c800a86837','en','Filters','pt','Filtros');
+INSERT INTO `translation_google` VALUES (5052,'75fed77fa7f1ba3af078504907cdc9c800a86837','en','Filters','ru','Фильтры');
+INSERT INTO `translation_google` VALUES (5053,'75fed77fa7f1ba3af078504907cdc9c800a86837','en','Filters','uk','Фільтри');
+INSERT INTO `translation_google` VALUES (5054,'75fed77fa7f1ba3af078504907cdc9c800a86837','en','Filters','zh-cn','过滤器');
+INSERT INTO `translation_google` VALUES (5055,'68a84a2a13ff089893450e360d5c019e92136e14','en','Listeners','cs','Posluchači');
+INSERT INTO `translation_google` VALUES (5056,'68a84a2a13ff089893450e360d5c019e92136e14','en','Listeners','da','Lyttere');
+INSERT INTO `translation_google` VALUES (5057,'68a84a2a13ff089893450e360d5c019e92136e14','en','Listeners','de','Zuhörer');
+INSERT INTO `translation_google` VALUES (5058,'68a84a2a13ff089893450e360d5c019e92136e14','en','Listeners','es','Oyentes');
+INSERT INTO `translation_google` VALUES (5059,'68a84a2a13ff089893450e360d5c019e92136e14','en','Listeners','fi','Kuuntelijat');
+INSERT INTO `translation_google` VALUES (5060,'68a84a2a13ff089893450e360d5c019e92136e14','en','Listeners','fr','Auditeurs');
+INSERT INTO `translation_google` VALUES (5061,'68a84a2a13ff089893450e360d5c019e92136e14','en','Listeners','it','Ascoltatori');
+INSERT INTO `translation_google` VALUES (5062,'68a84a2a13ff089893450e360d5c019e92136e14','en','Listeners','ja','リスナー');
+INSERT INTO `translation_google` VALUES (5063,'68a84a2a13ff089893450e360d5c019e92136e14','en','Listeners','nl','Luisteraars');
+INSERT INTO `translation_google` VALUES (5064,'68a84a2a13ff089893450e360d5c019e92136e14','en','Listeners','pl','Słuchacze');
+INSERT INTO `translation_google` VALUES (5065,'68a84a2a13ff089893450e360d5c019e92136e14','en','Listeners','pt','Ouvintes');
+INSERT INTO `translation_google` VALUES (5066,'68a84a2a13ff089893450e360d5c019e92136e14','en','Listeners','ru','Слушатели');
+INSERT INTO `translation_google` VALUES (5067,'68a84a2a13ff089893450e360d5c019e92136e14','en','Listeners','uk','Слухачі');
+INSERT INTO `translation_google` VALUES (5068,'68a84a2a13ff089893450e360d5c019e92136e14','en','Listeners','zh-cn','听众');
+INSERT INTO `translation_google` VALUES (5069,'02e0446b99641afbed4a0f19c93a9b5aa0f8ddf9','en','Services','cs','Služby');
+INSERT INTO `translation_google` VALUES (5070,'02e0446b99641afbed4a0f19c93a9b5aa0f8ddf9','en','Services','da','Tjenester');
+INSERT INTO `translation_google` VALUES (5071,'02e0446b99641afbed4a0f19c93a9b5aa0f8ddf9','en','Services','de','Leistungen');
+INSERT INTO `translation_google` VALUES (5072,'02e0446b99641afbed4a0f19c93a9b5aa0f8ddf9','en','Services','es','Servicios');
+INSERT INTO `translation_google` VALUES (5073,'02e0446b99641afbed4a0f19c93a9b5aa0f8ddf9','en','Services','fi','Palvelut');
+INSERT INTO `translation_google` VALUES (5074,'02e0446b99641afbed4a0f19c93a9b5aa0f8ddf9','en','Services','fr','Services');
+INSERT INTO `translation_google` VALUES (5075,'02e0446b99641afbed4a0f19c93a9b5aa0f8ddf9','en','Services','it','Servizi');
+INSERT INTO `translation_google` VALUES (5076,'02e0446b99641afbed4a0f19c93a9b5aa0f8ddf9','en','Services','ja','サービス');
+INSERT INTO `translation_google` VALUES (5077,'02e0446b99641afbed4a0f19c93a9b5aa0f8ddf9','en','Services','nl','Diensten');
+INSERT INTO `translation_google` VALUES (5078,'02e0446b99641afbed4a0f19c93a9b5aa0f8ddf9','en','Services','pl','Usługi');
+INSERT INTO `translation_google` VALUES (5079,'02e0446b99641afbed4a0f19c93a9b5aa0f8ddf9','en','Services','pt','Serviços');
+INSERT INTO `translation_google` VALUES (5080,'02e0446b99641afbed4a0f19c93a9b5aa0f8ddf9','en','Services','ru','Услуги');
+INSERT INTO `translation_google` VALUES (5081,'02e0446b99641afbed4a0f19c93a9b5aa0f8ddf9','en','Services','uk','Послуги');
+INSERT INTO `translation_google` VALUES (5082,'02e0446b99641afbed4a0f19c93a9b5aa0f8ddf9','en','Services','zh-cn','服务');
+INSERT INTO `translation_google` VALUES (5083,'dbad6bad2fdc41ab23948171f4fad311ecb67327','en','NO DATA','cs','ŽÁDNÁ DATA');
+INSERT INTO `translation_google` VALUES (5084,'dbad6bad2fdc41ab23948171f4fad311ecb67327','en','NO DATA','da','INGEN DATA');
+INSERT INTO `translation_google` VALUES (5085,'dbad6bad2fdc41ab23948171f4fad311ecb67327','en','NO DATA','de','KEINE DATEN');
+INSERT INTO `translation_google` VALUES (5086,'dbad6bad2fdc41ab23948171f4fad311ecb67327','en','NO DATA','es','SIN DATOS');
+INSERT INTO `translation_google` VALUES (5087,'dbad6bad2fdc41ab23948171f4fad311ecb67327','en','NO DATA','fi','EI TIETOJA');
+INSERT INTO `translation_google` VALUES (5088,'dbad6bad2fdc41ab23948171f4fad311ecb67327','en','NO DATA','fr','AUCUNE DONNÉE');
+INSERT INTO `translation_google` VALUES (5089,'dbad6bad2fdc41ab23948171f4fad311ecb67327','en','NO DATA','it','NESSUN DATO');
+INSERT INTO `translation_google` VALUES (5090,'dbad6bad2fdc41ab23948171f4fad311ecb67327','en','NO DATA','ja','データなし');
+INSERT INTO `translation_google` VALUES (5091,'dbad6bad2fdc41ab23948171f4fad311ecb67327','en','NO DATA','nl','GEEN GEGEVENS');
+INSERT INTO `translation_google` VALUES (5092,'dbad6bad2fdc41ab23948171f4fad311ecb67327','en','NO DATA','pl','BRAK DANYCH');
+INSERT INTO `translation_google` VALUES (5093,'dbad6bad2fdc41ab23948171f4fad311ecb67327','en','NO DATA','pt','SEM DADOS');
+INSERT INTO `translation_google` VALUES (5094,'dbad6bad2fdc41ab23948171f4fad311ecb67327','en','NO DATA','ru','НЕТ ДАННЫХ');
+INSERT INTO `translation_google` VALUES (5095,'dbad6bad2fdc41ab23948171f4fad311ecb67327','en','NO DATA','uk','НЕМАЄ ДАНИХ');
+INSERT INTO `translation_google` VALUES (5096,'dbad6bad2fdc41ab23948171f4fad311ecb67327','en','NO DATA','zh-cn','没有数据');
+INSERT INTO `translation_google` VALUES (5097,'9d00744b0b1516f59a720ec4c86ee8902783df44','en','performance_schema is not activated on this server !','cs','performance_schema není na tomto serveru aktivováno!');
+INSERT INTO `translation_google` VALUES (5098,'9d00744b0b1516f59a720ec4c86ee8902783df44','en','performance_schema is not activated on this server !','da','performance_schema er ikke aktiveret på denne server!');
+INSERT INTO `translation_google` VALUES (5099,'9d00744b0b1516f59a720ec4c86ee8902783df44','en','performance_schema is not activated on this server !','de','performance_schema ist auf diesem Server nicht aktiviert!');
+INSERT INTO `translation_google` VALUES (5100,'9d00744b0b1516f59a720ec4c86ee8902783df44','en','performance_schema is not activated on this server !','es','¡performance_schema no está activado en este servidor!');
+INSERT INTO `translation_google` VALUES (5101,'9d00744b0b1516f59a720ec4c86ee8902783df44','en','performance_schema is not activated on this server !','fi','performance_schema ei ole aktivoitu tällä palvelimella!');
+INSERT INTO `translation_google` VALUES (5102,'9d00744b0b1516f59a720ec4c86ee8902783df44','en','performance_schema is not activated on this server !','fr','performance_schema n&#39;est pas activé sur ce serveur !');
+INSERT INTO `translation_google` VALUES (5103,'9d00744b0b1516f59a720ec4c86ee8902783df44','en','performance_schema is not activated on this server !','it','performance_schema non è attivato su questo server!');
+INSERT INTO `translation_google` VALUES (5104,'9d00744b0b1516f59a720ec4c86ee8902783df44','en','performance_schema is not activated on this server !','ja','このサーバーでは performance_schema がアクティブ化されていません。');
+INSERT INTO `translation_google` VALUES (5105,'9d00744b0b1516f59a720ec4c86ee8902783df44','en','performance_schema is not activated on this server !','nl','performance_schema is niet geactiveerd op deze server!');
+INSERT INTO `translation_google` VALUES (5106,'9d00744b0b1516f59a720ec4c86ee8902783df44','en','performance_schema is not activated on this server !','pl','performance_schema nie jest aktywowany na tym serwerze!');
+INSERT INTO `translation_google` VALUES (5107,'9d00744b0b1516f59a720ec4c86ee8902783df44','en','performance_schema is not activated on this server !','pt','performance_schema não está ativado neste servidor!');
+INSERT INTO `translation_google` VALUES (5108,'9d00744b0b1516f59a720ec4c86ee8902783df44','en','performance_schema is not activated on this server !','ru','performance_schema не активирована на этом сервере!');
+INSERT INTO `translation_google` VALUES (5109,'9d00744b0b1516f59a720ec4c86ee8902783df44','en','performance_schema is not activated on this server !','uk','performance_schema не активовано на цьому сервері!');
+INSERT INTO `translation_google` VALUES (5110,'9d00744b0b1516f59a720ec4c86ee8902783df44','en','performance_schema is not activated on this server !','zh-cn','此服务器上的 performance_schema 未激活！');
+INSERT INTO `translation_google` VALUES (5111,'6c620ad13e0307e3432f793c4749bd1cc32ae8b8','en','Date Created','cs','Datum vytvoření');
+INSERT INTO `translation_google` VALUES (5112,'6c620ad13e0307e3432f793c4749bd1cc32ae8b8','en','Date Created','da','Oprettelsesdato');
+INSERT INTO `translation_google` VALUES (5113,'6c620ad13e0307e3432f793c4749bd1cc32ae8b8','en','Date Created','de','Erstellungsdatum');
+INSERT INTO `translation_google` VALUES (5114,'6c620ad13e0307e3432f793c4749bd1cc32ae8b8','en','Date Created','es','Fecha de creación');
+INSERT INTO `translation_google` VALUES (5115,'6c620ad13e0307e3432f793c4749bd1cc32ae8b8','en','Date Created','fi','Luontipäivämäärä');
+INSERT INTO `translation_google` VALUES (5116,'6c620ad13e0307e3432f793c4749bd1cc32ae8b8','en','Date Created','fr','Date de création');
+INSERT INTO `translation_google` VALUES (5117,'6c620ad13e0307e3432f793c4749bd1cc32ae8b8','en','Date Created','it','Data di creazione');
+INSERT INTO `translation_google` VALUES (5118,'6c620ad13e0307e3432f793c4749bd1cc32ae8b8','en','Date Created','ja','作成日');
+INSERT INTO `translation_google` VALUES (5119,'6c620ad13e0307e3432f793c4749bd1cc32ae8b8','en','Date Created','nl','Datum aangemaakt');
+INSERT INTO `translation_google` VALUES (5120,'6c620ad13e0307e3432f793c4749bd1cc32ae8b8','en','Date Created','pl','Data utworzenia');
+INSERT INTO `translation_google` VALUES (5121,'6c620ad13e0307e3432f793c4749bd1cc32ae8b8','en','Date Created','pt','Data de criação');
+INSERT INTO `translation_google` VALUES (5122,'6c620ad13e0307e3432f793c4749bd1cc32ae8b8','en','Date Created','ru','Дата создания');
+INSERT INTO `translation_google` VALUES (5123,'6c620ad13e0307e3432f793c4749bd1cc32ae8b8','en','Date Created','uk','Дата створення');
+INSERT INTO `translation_google` VALUES (5124,'6c620ad13e0307e3432f793c4749bd1cc32ae8b8','en','Date Created','zh-cn','创建日期');
+INSERT INTO `translation_google` VALUES (5125,'2f284e1dd68b470ba6faef1597e7d9004ca6eeae','en','Jump Hosts','cs','Jump Hosts');
+INSERT INTO `translation_google` VALUES (5126,'2f284e1dd68b470ba6faef1597e7d9004ca6eeae','en','Jump Hosts','da','Jump Hosts');
+INSERT INTO `translation_google` VALUES (5127,'2f284e1dd68b470ba6faef1597e7d9004ca6eeae','en','Jump Hosts','de','Jump-Hosts');
+INSERT INTO `translation_google` VALUES (5128,'2f284e1dd68b470ba6faef1597e7d9004ca6eeae','en','Jump Hosts','es','Hosts de salto');
+INSERT INTO `translation_google` VALUES (5129,'2f284e1dd68b470ba6faef1597e7d9004ca6eeae','en','Jump Hosts','fi','Jump-isännät');
+INSERT INTO `translation_google` VALUES (5130,'2f284e1dd68b470ba6faef1597e7d9004ca6eeae','en','Jump Hosts','fr','Hôtes de saut');
+INSERT INTO `translation_google` VALUES (5131,'2f284e1dd68b470ba6faef1597e7d9004ca6eeae','en','Jump Hosts','it','Jump Host');
+INSERT INTO `translation_google` VALUES (5132,'2f284e1dd68b470ba6faef1597e7d9004ca6eeae','en','Jump Hosts','ja','ジャンプホスト');
+INSERT INTO `translation_google` VALUES (5133,'2f284e1dd68b470ba6faef1597e7d9004ca6eeae','en','Jump Hosts','nl','Springhosts');
+INSERT INTO `translation_google` VALUES (5134,'2f284e1dd68b470ba6faef1597e7d9004ca6eeae','en','Jump Hosts','pl','Jump Hosts');
+INSERT INTO `translation_google` VALUES (5135,'2f284e1dd68b470ba6faef1597e7d9004ca6eeae','en','Jump Hosts','pt','Anfitriões de Jump');
+INSERT INTO `translation_google` VALUES (5136,'2f284e1dd68b470ba6faef1597e7d9004ca6eeae','en','Jump Hosts','ru','Хосты прыжков');
+INSERT INTO `translation_google` VALUES (5137,'2f284e1dd68b470ba6faef1597e7d9004ca6eeae','en','Jump Hosts','uk','Хости Jump');
+INSERT INTO `translation_google` VALUES (5138,'2f284e1dd68b470ba6faef1597e7d9004ca6eeae','en','Jump Hosts','zh-cn','跳转主机');
+INSERT INTO `translation_google` VALUES (5139,'6b5554ab44ec2cd73083ce044b8d95df90171af7','en','Local','cs','Místní');
+INSERT INTO `translation_google` VALUES (5140,'6b5554ab44ec2cd73083ce044b8d95df90171af7','en','Local','da','Lokal');
+INSERT INTO `translation_google` VALUES (5141,'6b5554ab44ec2cd73083ce044b8d95df90171af7','en','Local','de','Lokal');
+INSERT INTO `translation_google` VALUES (5142,'6b5554ab44ec2cd73083ce044b8d95df90171af7','en','Local','es','Local');
+INSERT INTO `translation_google` VALUES (5143,'6b5554ab44ec2cd73083ce044b8d95df90171af7','en','Local','fi','Paikallinen');
+INSERT INTO `translation_google` VALUES (5144,'6b5554ab44ec2cd73083ce044b8d95df90171af7','en','Local','fr','Locale');
+INSERT INTO `translation_google` VALUES (5145,'6b5554ab44ec2cd73083ce044b8d95df90171af7','en','Local','it','Locale');
+INSERT INTO `translation_google` VALUES (5146,'6b5554ab44ec2cd73083ce044b8d95df90171af7','en','Local','ja','地元');
+INSERT INTO `translation_google` VALUES (5147,'6b5554ab44ec2cd73083ce044b8d95df90171af7','en','Local','nl','Lokaal');
+INSERT INTO `translation_google` VALUES (5148,'6b5554ab44ec2cd73083ce044b8d95df90171af7','en','Local','pl','Lokalny');
+INSERT INTO `translation_google` VALUES (5149,'6b5554ab44ec2cd73083ce044b8d95df90171af7','en','Local','pt','Local');
+INSERT INTO `translation_google` VALUES (5150,'6b5554ab44ec2cd73083ce044b8d95df90171af7','en','Local','ru','Местный');
+INSERT INTO `translation_google` VALUES (5151,'6b5554ab44ec2cd73083ce044b8d95df90171af7','en','Local','uk','Місцевий');
+INSERT INTO `translation_google` VALUES (5152,'6b5554ab44ec2cd73083ce044b8d95df90171af7','en','Local','zh-cn','当地的');
+INSERT INTO `translation_google` VALUES (5153,'901c007a5f93584a20945980ecda03012094533b','en','Remote','cs','Vzdálený');
+INSERT INTO `translation_google` VALUES (5154,'901c007a5f93584a20945980ecda03012094533b','en','Remote','da','Fjern');
+INSERT INTO `translation_google` VALUES (5155,'901c007a5f93584a20945980ecda03012094533b','en','Remote','de','Fernbedienung');
+INSERT INTO `translation_google` VALUES (5156,'901c007a5f93584a20945980ecda03012094533b','en','Remote','es','Remoto');
+INSERT INTO `translation_google` VALUES (5157,'901c007a5f93584a20945980ecda03012094533b','en','Remote','fi','Kauko');
+INSERT INTO `translation_google` VALUES (5158,'901c007a5f93584a20945980ecda03012094533b','en','Remote','fr','Télécommande');
+INSERT INTO `translation_google` VALUES (5159,'901c007a5f93584a20945980ecda03012094533b','en','Remote','it','Remoto');
+INSERT INTO `translation_google` VALUES (5160,'901c007a5f93584a20945980ecda03012094533b','en','Remote','ja','リモート');
+INSERT INTO `translation_google` VALUES (5161,'901c007a5f93584a20945980ecda03012094533b','en','Remote','nl','Op afstand');
+INSERT INTO `translation_google` VALUES (5162,'901c007a5f93584a20945980ecda03012094533b','en','Remote','pl','Zdalny');
+INSERT INTO `translation_google` VALUES (5163,'901c007a5f93584a20945980ecda03012094533b','en','Remote','pt','Remoto');
+INSERT INTO `translation_google` VALUES (5164,'901c007a5f93584a20945980ecda03012094533b','en','Remote','ru','Удаленный');
+INSERT INTO `translation_google` VALUES (5165,'901c007a5f93584a20945980ecda03012094533b','en','Remote','uk','Віддалений');
+INSERT INTO `translation_google` VALUES (5166,'901c007a5f93584a20945980ecda03012094533b','en','Remote','zh-cn','偏僻的');
+INSERT INTO `translation_google` VALUES (5167,'7fc05cfc686de104b0820fede514227dd78181ea','en','SSH Tunnels','cs','SSH tunely');
+INSERT INTO `translation_google` VALUES (5168,'7fc05cfc686de104b0820fede514227dd78181ea','en','SSH Tunnels','da','SSH-tunneler');
+INSERT INTO `translation_google` VALUES (5169,'7fc05cfc686de104b0820fede514227dd78181ea','en','SSH Tunnels','de','SSH-Tunnel');
+INSERT INTO `translation_google` VALUES (5170,'7fc05cfc686de104b0820fede514227dd78181ea','en','SSH Tunnels','es','Túneles SSH');
+INSERT INTO `translation_google` VALUES (5171,'7fc05cfc686de104b0820fede514227dd78181ea','en','SSH Tunnels','fi','SSH-tunnelit');
+INSERT INTO `translation_google` VALUES (5172,'7fc05cfc686de104b0820fede514227dd78181ea','en','SSH Tunnels','fr','Tunnels SSH');
+INSERT INTO `translation_google` VALUES (5173,'7fc05cfc686de104b0820fede514227dd78181ea','en','SSH Tunnels','it','Tunnel SSH');
+INSERT INTO `translation_google` VALUES (5174,'7fc05cfc686de104b0820fede514227dd78181ea','en','SSH Tunnels','ja','SSHトンネル');
+INSERT INTO `translation_google` VALUES (5175,'7fc05cfc686de104b0820fede514227dd78181ea','en','SSH Tunnels','nl','SSH-tunnels');
+INSERT INTO `translation_google` VALUES (5176,'7fc05cfc686de104b0820fede514227dd78181ea','en','SSH Tunnels','pl','Tunele SSH');
+INSERT INTO `translation_google` VALUES (5177,'7fc05cfc686de104b0820fede514227dd78181ea','en','SSH Tunnels','pt','Túneis SSH');
+INSERT INTO `translation_google` VALUES (5178,'7fc05cfc686de104b0820fede514227dd78181ea','en','SSH Tunnels','ru','SSH-туннели');
+INSERT INTO `translation_google` VALUES (5179,'7fc05cfc686de104b0820fede514227dd78181ea','en','SSH Tunnels','uk','SSH-тунелі');
+INSERT INTO `translation_google` VALUES (5180,'7fc05cfc686de104b0820fede514227dd78181ea','en','SSH Tunnels','zh-cn','SSH 隧道');
+INSERT INTO `translation_google` VALUES (5181,'15818b84e5f9edfaf75795c9be4293e8b20b67ff','en','Choose the SSH key used to connect to this Docker host.','cs','Vyberte klíč SSH, který se použije pro připojení k tomuto hostiteli Dockeru.');
+INSERT INTO `translation_google` VALUES (5182,'15818b84e5f9edfaf75795c9be4293e8b20b67ff','en','Choose the SSH key used to connect to this Docker host.','da','Vælg den SSH-nøgle, der bruges til at oprette forbindelse til denne Docker-vært.');
+INSERT INTO `translation_google` VALUES (5183,'15818b84e5f9edfaf75795c9be4293e8b20b67ff','en','Choose the SSH key used to connect to this Docker host.','de','Wählen Sie den SSH-Schlüssel aus, der zur Verbindung mit diesem Docker-Host verwendet wird.');
+INSERT INTO `translation_google` VALUES (5184,'15818b84e5f9edfaf75795c9be4293e8b20b67ff','en','Choose the SSH key used to connect to this Docker host.','es','Seleccione la clave SSH utilizada para conectarse a este host de Docker.');
+INSERT INTO `translation_google` VALUES (5185,'15818b84e5f9edfaf75795c9be4293e8b20b67ff','en','Choose the SSH key used to connect to this Docker host.','fi','Valitse SSH-avain, jota käytetään yhteyden muodostamiseen tähän Docker-isäntään.');
+INSERT INTO `translation_google` VALUES (5186,'15818b84e5f9edfaf75795c9be4293e8b20b67ff','en','Choose the SSH key used to connect to this Docker host.','fr','Choisissez la clé SSH utilisée pour vous connecter à cet hôte Docker.');
+INSERT INTO `translation_google` VALUES (5187,'15818b84e5f9edfaf75795c9be4293e8b20b67ff','en','Choose the SSH key used to connect to this Docker host.','it','Scegli la chiave SSH utilizzata per connetterti a questo host Docker.');
+INSERT INTO `translation_google` VALUES (5188,'15818b84e5f9edfaf75795c9be4293e8b20b67ff','en','Choose the SSH key used to connect to this Docker host.','ja','この Docker ホストに接続するために使用する SSH キーを選択します。');
+INSERT INTO `translation_google` VALUES (5189,'15818b84e5f9edfaf75795c9be4293e8b20b67ff','en','Choose the SSH key used to connect to this Docker host.','nl','Kies de SSH-sleutel die u wilt gebruiken om verbinding te maken met deze Docker-host.');
+INSERT INTO `translation_google` VALUES (5190,'15818b84e5f9edfaf75795c9be4293e8b20b67ff','en','Choose the SSH key used to connect to this Docker host.','pl','Wybierz klucz SSH używany do łączenia się z tym hostem Docker.');
+INSERT INTO `translation_google` VALUES (5191,'15818b84e5f9edfaf75795c9be4293e8b20b67ff','en','Choose the SSH key used to connect to this Docker host.','pt','Selecione a chave SSH usada para conectar-se a este host Docker.');
+INSERT INTO `translation_google` VALUES (5192,'15818b84e5f9edfaf75795c9be4293e8b20b67ff','en','Choose the SSH key used to connect to this Docker host.','ru','Выберите ключ SSH, используемый для подключения к этому хосту Docker.');
+INSERT INTO `translation_google` VALUES (5193,'15818b84e5f9edfaf75795c9be4293e8b20b67ff','en','Choose the SSH key used to connect to this Docker host.','uk','Виберіть SSH-ключ, який використовується для підключення до цього хоста Docker.');
+INSERT INTO `translation_google` VALUES (5194,'15818b84e5f9edfaf75795c9be4293e8b20b67ff','en','Choose the SSH key used to connect to this Docker host.','zh-cn','选择用于连接到此 Docker 主机的 SSH 密钥。');
+INSERT INTO `translation_google` VALUES (5195,'737e4cc5e83fb783c2de8db0438f6ba47b461e49','en','Connection (SSH)','cs','Připojení (SSH)');
+INSERT INTO `translation_google` VALUES (5196,'737e4cc5e83fb783c2de8db0438f6ba47b461e49','en','Connection (SSH)','da','Forbindelse (SSH)');
+INSERT INTO `translation_google` VALUES (5197,'737e4cc5e83fb783c2de8db0438f6ba47b461e49','en','Connection (SSH)','de','Verbindung (SSH)');
+INSERT INTO `translation_google` VALUES (5198,'737e4cc5e83fb783c2de8db0438f6ba47b461e49','en','Connection (SSH)','es','Conexión (SSH)');
+INSERT INTO `translation_google` VALUES (5199,'737e4cc5e83fb783c2de8db0438f6ba47b461e49','en','Connection (SSH)','fi','Yhteys (SSH)');
+INSERT INTO `translation_google` VALUES (5200,'737e4cc5e83fb783c2de8db0438f6ba47b461e49','en','Connection (SSH)','fr','Connexion (SSH)');
+INSERT INTO `translation_google` VALUES (5201,'737e4cc5e83fb783c2de8db0438f6ba47b461e49','en','Connection (SSH)','it','Connessione (SSH)');
+INSERT INTO `translation_google` VALUES (5202,'737e4cc5e83fb783c2de8db0438f6ba47b461e49','en','Connection (SSH)','ja','接続（SSH）');
+INSERT INTO `translation_google` VALUES (5203,'737e4cc5e83fb783c2de8db0438f6ba47b461e49','en','Connection (SSH)','nl','Verbinding (SSH)');
+INSERT INTO `translation_google` VALUES (5204,'737e4cc5e83fb783c2de8db0438f6ba47b461e49','en','Connection (SSH)','pl','Połączenie (SSH)');
+INSERT INTO `translation_google` VALUES (5205,'737e4cc5e83fb783c2de8db0438f6ba47b461e49','en','Connection (SSH)','pt','Conexão (SSH)');
+INSERT INTO `translation_google` VALUES (5206,'737e4cc5e83fb783c2de8db0438f6ba47b461e49','en','Connection (SSH)','ru','Подключение (SSH)');
+INSERT INTO `translation_google` VALUES (5207,'737e4cc5e83fb783c2de8db0438f6ba47b461e49','en','Connection (SSH)','uk','З&#39;єднання (SSH)');
+INSERT INTO `translation_google` VALUES (5208,'737e4cc5e83fb783c2de8db0438f6ba47b461e49','en','Connection (SSH)','zh-cn','连接（SSH）');
+INSERT INTO `translation_google` VALUES (5209,'459b396a9c55d78a2d4921f07a54bf3004105de1','en','Controles','cs','Ovládací prvky');
+INSERT INTO `translation_google` VALUES (5210,'459b396a9c55d78a2d4921f07a54bf3004105de1','en','Controles','da','Kontroller');
+INSERT INTO `translation_google` VALUES (5211,'459b396a9c55d78a2d4921f07a54bf3004105de1','en','Controles','de','Kontrollen');
+INSERT INTO `translation_google` VALUES (5212,'459b396a9c55d78a2d4921f07a54bf3004105de1','en','Controles','es','Controles');
+INSERT INTO `translation_google` VALUES (5213,'459b396a9c55d78a2d4921f07a54bf3004105de1','en','Controles','fi','Ohjausjärjestelmät');
+INSERT INTO `translation_google` VALUES (5214,'459b396a9c55d78a2d4921f07a54bf3004105de1','en','Controles','fr','Commandes');
+INSERT INTO `translation_google` VALUES (5215,'459b396a9c55d78a2d4921f07a54bf3004105de1','en','Controles','it','Controlli');
+INSERT INTO `translation_google` VALUES (5216,'459b396a9c55d78a2d4921f07a54bf3004105de1','en','Controles','ja','コントロール');
+INSERT INTO `translation_google` VALUES (5217,'459b396a9c55d78a2d4921f07a54bf3004105de1','en','Controles','nl','Controles');
+INSERT INTO `translation_google` VALUES (5218,'459b396a9c55d78a2d4921f07a54bf3004105de1','en','Controles','pl','Sterowanie');
+INSERT INTO `translation_google` VALUES (5219,'459b396a9c55d78a2d4921f07a54bf3004105de1','en','Controles','pt','controles');
+INSERT INTO `translation_google` VALUES (5220,'459b396a9c55d78a2d4921f07a54bf3004105de1','en','Controles','ru','Контроли');
+INSERT INTO `translation_google` VALUES (5221,'459b396a9c55d78a2d4921f07a54bf3004105de1','en','Controles','uk','Контролі');
+INSERT INTO `translation_google` VALUES (5222,'459b396a9c55d78a2d4921f07a54bf3004105de1','en','Controles','zh-cn','控制');
+INSERT INTO `translation_google` VALUES (5223,'f462a8dd948f0e36384ff9fc91593e1fafe7ed55','en','Docker Host Parameters','cs','Parametry hostitele Dockeru');
+INSERT INTO `translation_google` VALUES (5224,'f462a8dd948f0e36384ff9fc91593e1fafe7ed55','en','Docker Host Parameters','da','Docker-værtsparametre');
+INSERT INTO `translation_google` VALUES (5225,'f462a8dd948f0e36384ff9fc91593e1fafe7ed55','en','Docker Host Parameters','de','Docker-Hostparameter');
+INSERT INTO `translation_google` VALUES (5226,'f462a8dd948f0e36384ff9fc91593e1fafe7ed55','en','Docker Host Parameters','es','Parámetros del host de Docker');
+INSERT INTO `translation_google` VALUES (5227,'f462a8dd948f0e36384ff9fc91593e1fafe7ed55','en','Docker Host Parameters','fi','Docker-isännän parametrit');
+INSERT INTO `translation_google` VALUES (5228,'f462a8dd948f0e36384ff9fc91593e1fafe7ed55','en','Docker Host Parameters','fr','Paramètres de l&#39;hôte Docker');
+INSERT INTO `translation_google` VALUES (5229,'f462a8dd948f0e36384ff9fc91593e1fafe7ed55','en','Docker Host Parameters','it','Parametri host Docker');
+INSERT INTO `translation_google` VALUES (5230,'f462a8dd948f0e36384ff9fc91593e1fafe7ed55','en','Docker Host Parameters','ja','Dockerホストパラメータ');
+INSERT INTO `translation_google` VALUES (5231,'f462a8dd948f0e36384ff9fc91593e1fafe7ed55','en','Docker Host Parameters','nl','Docker-hostparameters');
+INSERT INTO `translation_google` VALUES (5232,'f462a8dd948f0e36384ff9fc91593e1fafe7ed55','en','Docker Host Parameters','pl','Parametry hosta Dockera');
+INSERT INTO `translation_google` VALUES (5233,'f462a8dd948f0e36384ff9fc91593e1fafe7ed55','en','Docker Host Parameters','pt','Parâmetros do host Docker');
+INSERT INTO `translation_google` VALUES (5234,'f462a8dd948f0e36384ff9fc91593e1fafe7ed55','en','Docker Host Parameters','ru','Параметры хоста Docker');
+INSERT INTO `translation_google` VALUES (5235,'f462a8dd948f0e36384ff9fc91593e1fafe7ed55','en','Docker Host Parameters','uk','Параметри хоста Docker');
+INSERT INTO `translation_google` VALUES (5236,'f462a8dd948f0e36384ff9fc91593e1fafe7ed55','en','Docker Host Parameters','zh-cn','Docker 主机参数');
+INSERT INTO `translation_google` VALUES (5237,'cc2c66d1d1d94ba5d53dea5a8e4cc1356fef2c8b','en','Docker servers','cs','Docker servery');
+INSERT INTO `translation_google` VALUES (5238,'cc2c66d1d1d94ba5d53dea5a8e4cc1356fef2c8b','en','Docker servers','da','Docker-servere');
+INSERT INTO `translation_google` VALUES (5239,'cc2c66d1d1d94ba5d53dea5a8e4cc1356fef2c8b','en','Docker servers','de','Docker-Server');
+INSERT INTO `translation_google` VALUES (5240,'cc2c66d1d1d94ba5d53dea5a8e4cc1356fef2c8b','en','Docker servers','es','Servidores Docker');
+INSERT INTO `translation_google` VALUES (5241,'cc2c66d1d1d94ba5d53dea5a8e4cc1356fef2c8b','en','Docker servers','fi','Docker-palvelimet');
+INSERT INTO `translation_google` VALUES (5242,'cc2c66d1d1d94ba5d53dea5a8e4cc1356fef2c8b','en','Docker servers','fr','Serveurs Docker');
+INSERT INTO `translation_google` VALUES (5243,'cc2c66d1d1d94ba5d53dea5a8e4cc1356fef2c8b','en','Docker servers','it','Server Docker');
+INSERT INTO `translation_google` VALUES (5244,'cc2c66d1d1d94ba5d53dea5a8e4cc1356fef2c8b','en','Docker servers','ja','Dockerサーバー');
+INSERT INTO `translation_google` VALUES (5245,'cc2c66d1d1d94ba5d53dea5a8e4cc1356fef2c8b','en','Docker servers','nl','Docker-servers');
+INSERT INTO `translation_google` VALUES (5246,'cc2c66d1d1d94ba5d53dea5a8e4cc1356fef2c8b','en','Docker servers','pl','Serwery Docker');
+INSERT INTO `translation_google` VALUES (5247,'cc2c66d1d1d94ba5d53dea5a8e4cc1356fef2c8b','en','Docker servers','pt','Servidores Docker');
+INSERT INTO `translation_google` VALUES (5248,'cc2c66d1d1d94ba5d53dea5a8e4cc1356fef2c8b','en','Docker servers','ru','Docker-серверы');
+INSERT INTO `translation_google` VALUES (5249,'cc2c66d1d1d94ba5d53dea5a8e4cc1356fef2c8b','en','Docker servers','uk','Docker-сервери');
+INSERT INTO `translation_google` VALUES (5250,'cc2c66d1d1d94ba5d53dea5a8e4cc1356fef2c8b','en','Docker servers','zh-cn','Docker 服务器');
+INSERT INTO `translation_google` VALUES (5251,'3d02af15f1d2c33d0a8da23120dccdfc84188075','en','Hostname / IP','cs','Název hostitele / IP adresa');
+INSERT INTO `translation_google` VALUES (5252,'3d02af15f1d2c33d0a8da23120dccdfc84188075','en','Hostname / IP','da','Værtsnavn / IP');
+INSERT INTO `translation_google` VALUES (5253,'3d02af15f1d2c33d0a8da23120dccdfc84188075','en','Hostname / IP','de','Hostname / IP');
+INSERT INTO `translation_google` VALUES (5254,'3d02af15f1d2c33d0a8da23120dccdfc84188075','en','Hostname / IP','es','Nombre de host / IP');
+INSERT INTO `translation_google` VALUES (5255,'3d02af15f1d2c33d0a8da23120dccdfc84188075','en','Hostname / IP','fi','Isäntänimi / IP-osoite');
+INSERT INTO `translation_google` VALUES (5256,'3d02af15f1d2c33d0a8da23120dccdfc84188075','en','Hostname / IP','fr','Nom d&#39;hôte / IP');
+INSERT INTO `translation_google` VALUES (5257,'3d02af15f1d2c33d0a8da23120dccdfc84188075','en','Hostname / IP','it','Nome host / IP');
+INSERT INTO `translation_google` VALUES (5258,'3d02af15f1d2c33d0a8da23120dccdfc84188075','en','Hostname / IP','ja','ホスト名/IP');
+INSERT INTO `translation_google` VALUES (5259,'3d02af15f1d2c33d0a8da23120dccdfc84188075','en','Hostname / IP','nl','Hostnaam / IP');
+INSERT INTO `translation_google` VALUES (5260,'3d02af15f1d2c33d0a8da23120dccdfc84188075','en','Hostname / IP','pl','Nazwa hosta/IP');
+INSERT INTO `translation_google` VALUES (5261,'3d02af15f1d2c33d0a8da23120dccdfc84188075','en','Hostname / IP','pt','Nome do host / IP');
+INSERT INTO `translation_google` VALUES (5262,'3d02af15f1d2c33d0a8da23120dccdfc84188075','en','Hostname / IP','ru','Имя хоста / IP');
+INSERT INTO `translation_google` VALUES (5263,'3d02af15f1d2c33d0a8da23120dccdfc84188075','en','Hostname / IP','uk','Ім&#39;я хоста / IP-адреса');
+INSERT INTO `translation_google` VALUES (5264,'3d02af15f1d2c33d0a8da23120dccdfc84188075','en','Hostname / IP','zh-cn','主机名/IP');
+INSERT INTO `translation_google` VALUES (5265,'eb07fe27d98177b32f49bcd1c79079d5dc289a3a','en','Identification','cs','Identifikace');
+INSERT INTO `translation_google` VALUES (5266,'eb07fe27d98177b32f49bcd1c79079d5dc289a3a','en','Identification','da','Identifikation');
+INSERT INTO `translation_google` VALUES (5267,'eb07fe27d98177b32f49bcd1c79079d5dc289a3a','en','Identification','de','Identifikation');
+INSERT INTO `translation_google` VALUES (5268,'eb07fe27d98177b32f49bcd1c79079d5dc289a3a','en','Identification','es','Identificación');
+INSERT INTO `translation_google` VALUES (5269,'eb07fe27d98177b32f49bcd1c79079d5dc289a3a','en','Identification','fi','Tunnistaminen');
+INSERT INTO `translation_google` VALUES (5270,'eb07fe27d98177b32f49bcd1c79079d5dc289a3a','en','Identification','fr','Identification');
+INSERT INTO `translation_google` VALUES (5271,'eb07fe27d98177b32f49bcd1c79079d5dc289a3a','en','Identification','it','Identificazione');
+INSERT INTO `translation_google` VALUES (5272,'eb07fe27d98177b32f49bcd1c79079d5dc289a3a','en','Identification','ja','識別');
+INSERT INTO `translation_google` VALUES (5273,'eb07fe27d98177b32f49bcd1c79079d5dc289a3a','en','Identification','nl','Identificatie');
+INSERT INTO `translation_google` VALUES (5274,'eb07fe27d98177b32f49bcd1c79079d5dc289a3a','en','Identification','pl','Identyfikacja');
+INSERT INTO `translation_google` VALUES (5275,'eb07fe27d98177b32f49bcd1c79079d5dc289a3a','en','Identification','pt','Identificação');
+INSERT INTO `translation_google` VALUES (5276,'eb07fe27d98177b32f49bcd1c79079d5dc289a3a','en','Identification','ru','Идентификация');
+INSERT INTO `translation_google` VALUES (5277,'eb07fe27d98177b32f49bcd1c79079d5dc289a3a','en','Identification','uk','Ідентифікація');
+INSERT INTO `translation_google` VALUES (5278,'eb07fe27d98177b32f49bcd1c79079d5dc289a3a','en','Identification','zh-cn','鉴别');
+INSERT INTO `translation_google` VALUES (5279,'697f2fa38ab13b7cd9c981eefc5bfb916bf5a6b6','en','Name to identify this Docker host','cs','Název pro identifikaci tohoto hostitele Dockeru');
+INSERT INTO `translation_google` VALUES (5280,'697f2fa38ab13b7cd9c981eefc5bfb916bf5a6b6','en','Name to identify this Docker host','da','Navn til at identificere denne Docker-vært');
+INSERT INTO `translation_google` VALUES (5281,'697f2fa38ab13b7cd9c981eefc5bfb916bf5a6b6','en','Name to identify this Docker host','de','Name zur Identifizierung dieses Docker-Hosts');
+INSERT INTO `translation_google` VALUES (5282,'697f2fa38ab13b7cd9c981eefc5bfb916bf5a6b6','en','Name to identify this Docker host','es','Nombre para identificar este host de Docker');
+INSERT INTO `translation_google` VALUES (5283,'697f2fa38ab13b7cd9c981eefc5bfb916bf5a6b6','en','Name to identify this Docker host','fi','Nimi tämän Docker-isännän tunnistamiseksi');
+INSERT INTO `translation_google` VALUES (5284,'697f2fa38ab13b7cd9c981eefc5bfb916bf5a6b6','en','Name to identify this Docker host','fr','Nom permettant d&#39;identifier cet hôte Docker');
+INSERT INTO `translation_google` VALUES (5285,'697f2fa38ab13b7cd9c981eefc5bfb916bf5a6b6','en','Name to identify this Docker host','it','Nome per identificare questo host Docker');
+INSERT INTO `translation_google` VALUES (5286,'697f2fa38ab13b7cd9c981eefc5bfb916bf5a6b6','en','Name to identify this Docker host','ja','このDockerホストを識別するための名前');
+INSERT INTO `translation_google` VALUES (5287,'697f2fa38ab13b7cd9c981eefc5bfb916bf5a6b6','en','Name to identify this Docker host','nl','Naam om deze Docker-host te identificeren');
+INSERT INTO `translation_google` VALUES (5288,'697f2fa38ab13b7cd9c981eefc5bfb916bf5a6b6','en','Name to identify this Docker host','pl','Nazwa identyfikująca tego hosta Docker');
+INSERT INTO `translation_google` VALUES (5289,'697f2fa38ab13b7cd9c981eefc5bfb916bf5a6b6','en','Name to identify this Docker host','pt','Nome para identificar este host Docker');
+INSERT INTO `translation_google` VALUES (5290,'697f2fa38ab13b7cd9c981eefc5bfb916bf5a6b6','en','Name to identify this Docker host','ru','Имя для идентификации этого хоста Docker');
+INSERT INTO `translation_google` VALUES (5291,'697f2fa38ab13b7cd9c981eefc5bfb916bf5a6b6','en','Name to identify this Docker host','uk','Ім&#39;я для ідентифікації цього хоста Docker');
+INSERT INTO `translation_google` VALUES (5292,'697f2fa38ab13b7cd9c981eefc5bfb916bf5a6b6','en','Name to identify this Docker host','zh-cn','用于标识此 Docker 主机的名称');
+INSERT INTO `translation_google` VALUES (5293,'81b99229edc64366818e6d9f100217db16d6599f','en','Pid','cs','PID');
+INSERT INTO `translation_google` VALUES (5294,'81b99229edc64366818e6d9f100217db16d6599f','en','Pid','da','Pid');
+INSERT INTO `translation_google` VALUES (5295,'81b99229edc64366818e6d9f100217db16d6599f','en','Pid','de','Pid');
+INSERT INTO `translation_google` VALUES (5296,'81b99229edc64366818e6d9f100217db16d6599f','en','Pid','es','PID');
+INSERT INTO `translation_google` VALUES (5297,'81b99229edc64366818e6d9f100217db16d6599f','en','Pid','fi','Pid');
+INSERT INTO `translation_google` VALUES (5298,'81b99229edc64366818e6d9f100217db16d6599f','en','Pid','fr','Pid');
+INSERT INTO `translation_google` VALUES (5299,'81b99229edc64366818e6d9f100217db16d6599f','en','Pid','it','Pid');
+INSERT INTO `translation_google` VALUES (5300,'81b99229edc64366818e6d9f100217db16d6599f','en','Pid','ja','ピッド');
+INSERT INTO `translation_google` VALUES (5301,'81b99229edc64366818e6d9f100217db16d6599f','en','Pid','nl','Pid');
+INSERT INTO `translation_google` VALUES (5302,'81b99229edc64366818e6d9f100217db16d6599f','en','Pid','pl','Pid');
+INSERT INTO `translation_google` VALUES (5303,'81b99229edc64366818e6d9f100217db16d6599f','en','Pid','pt','Pid');
+INSERT INTO `translation_google` VALUES (5304,'81b99229edc64366818e6d9f100217db16d6599f','en','Pid','ru','Пид');
+INSERT INTO `translation_google` VALUES (5305,'81b99229edc64366818e6d9f100217db16d6599f','en','Pid','uk','Під');
+INSERT INTO `translation_google` VALUES (5306,'81b99229edc64366818e6d9f100217db16d6599f','en','Pid','zh-cn','皮德');
+INSERT INTO `translation_google` VALUES (5307,'0183609cb2932f2af1b0ba85b15af261c8ccdfdf','en','SSH Key','cs','SSH klíč');
+INSERT INTO `translation_google` VALUES (5308,'0183609cb2932f2af1b0ba85b15af261c8ccdfdf','en','SSH Key','da','SSH-nøgle');
+INSERT INTO `translation_google` VALUES (5309,'0183609cb2932f2af1b0ba85b15af261c8ccdfdf','en','SSH Key','de','SSH-Schlüssel');
+INSERT INTO `translation_google` VALUES (5310,'0183609cb2932f2af1b0ba85b15af261c8ccdfdf','en','SSH Key','es','Clave SSH');
+INSERT INTO `translation_google` VALUES (5311,'0183609cb2932f2af1b0ba85b15af261c8ccdfdf','en','SSH Key','fi','SSH-avain');
+INSERT INTO `translation_google` VALUES (5312,'0183609cb2932f2af1b0ba85b15af261c8ccdfdf','en','SSH Key','fr','Clé SSH');
+INSERT INTO `translation_google` VALUES (5313,'0183609cb2932f2af1b0ba85b15af261c8ccdfdf','en','SSH Key','it','Chiave SSH');
+INSERT INTO `translation_google` VALUES (5314,'0183609cb2932f2af1b0ba85b15af261c8ccdfdf','en','SSH Key','ja','SSHキー');
+INSERT INTO `translation_google` VALUES (5315,'0183609cb2932f2af1b0ba85b15af261c8ccdfdf','en','SSH Key','nl','SSH-sleutel');
+INSERT INTO `translation_google` VALUES (5316,'0183609cb2932f2af1b0ba85b15af261c8ccdfdf','en','SSH Key','pl','Klucz SSH');
+INSERT INTO `translation_google` VALUES (5317,'0183609cb2932f2af1b0ba85b15af261c8ccdfdf','en','SSH Key','pt','Chave SSH');
+INSERT INTO `translation_google` VALUES (5318,'0183609cb2932f2af1b0ba85b15af261c8ccdfdf','en','SSH Key','ru','SSH-ключ');
+INSERT INTO `translation_google` VALUES (5319,'0183609cb2932f2af1b0ba85b15af261c8ccdfdf','en','SSH Key','uk','SSH-ключ');
+INSERT INTO `translation_google` VALUES (5320,'0183609cb2932f2af1b0ba85b15af261c8ccdfdf','en','SSH Key','zh-cn','SSH密钥');
+INSERT INTO `translation_google` VALUES (5321,'57340f25df59461d52e184d92a74034828ed9e63','en','SSH Port','cs','SSH port');
+INSERT INTO `translation_google` VALUES (5322,'57340f25df59461d52e184d92a74034828ed9e63','en','SSH Port','da','SSH-port');
+INSERT INTO `translation_google` VALUES (5323,'57340f25df59461d52e184d92a74034828ed9e63','en','SSH Port','de','SSH-Port');
+INSERT INTO `translation_google` VALUES (5324,'57340f25df59461d52e184d92a74034828ed9e63','en','SSH Port','es','Puerto SSH');
+INSERT INTO `translation_google` VALUES (5325,'57340f25df59461d52e184d92a74034828ed9e63','en','SSH Port','fi','SSH-portti');
+INSERT INTO `translation_google` VALUES (5326,'57340f25df59461d52e184d92a74034828ed9e63','en','SSH Port','fr','Port SSH');
+INSERT INTO `translation_google` VALUES (5327,'57340f25df59461d52e184d92a74034828ed9e63','en','SSH Port','it','Porta SSH');
+INSERT INTO `translation_google` VALUES (5328,'57340f25df59461d52e184d92a74034828ed9e63','en','SSH Port','ja','SSHポート');
+INSERT INTO `translation_google` VALUES (5329,'57340f25df59461d52e184d92a74034828ed9e63','en','SSH Port','nl','SSH-poort');
+INSERT INTO `translation_google` VALUES (5330,'57340f25df59461d52e184d92a74034828ed9e63','en','SSH Port','pl','Port SSH');
+INSERT INTO `translation_google` VALUES (5331,'57340f25df59461d52e184d92a74034828ed9e63','en','SSH Port','pt','Porta SSH');
+INSERT INTO `translation_google` VALUES (5332,'57340f25df59461d52e184d92a74034828ed9e63','en','SSH Port','ru','SSH-порт');
+INSERT INTO `translation_google` VALUES (5333,'57340f25df59461d52e184d92a74034828ed9e63','en','SSH Port','uk','SSH-порт');
+INSERT INTO `translation_google` VALUES (5334,'57340f25df59461d52e184d92a74034828ed9e63','en','SSH Port','zh-cn','SSH端口');
 /*!40000 ALTER TABLE `translation_google` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -168723,50 +169809,56 @@ CREATE TABLE `ts_file` (
 
 LOCK TABLES `ts_file` WRITE;
 /*!40000 ALTER TABLE `ts_file` DISABLE KEYS */;
-INSERT INTO `ts_file` VALUES (218,'mysql_global',1);
-INSERT INTO `ts_file` VALUES (219,'mysql_global_variable',1);
-INSERT INTO `ts_file` VALUES (220,'mysql_processlist',1);
-INSERT INTO `ts_file` VALUES (221,'mysql_server',1);
-INSERT INTO `ts_file` VALUES (222,'mysql_variable_gtid',1);
-INSERT INTO `ts_file` VALUES (223,'ssh_server',1);
-INSERT INTO `ts_file` VALUES (224,'ssh_hardware',1);
-INSERT INTO `ts_file` VALUES (225,'ssh_stats',1);
-INSERT INTO `ts_file` VALUES (226,'mysql_binlog',1);
-INSERT INTO `ts_file` VALUES (227,'mysql_innodb_metrics',1);
-INSERT INTO `ts_file` VALUES (228,'mysql_schemata',1);
-INSERT INTO `ts_file` VALUES (229,'mysql_statistics',1);
-INSERT INTO `ts_file` VALUES (230,'mysql_table',1);
-INSERT INTO `ts_file` VALUES (231,'proxysql_runtime_mysql_servers',1);
-INSERT INTO `ts_file` VALUES (232,'mysql_meta_data_lock',1);
-INSERT INTO `ts_file` VALUES (233,'innodb_lock_waits',1);
-INSERT INTO `ts_file` VALUES (234,'host_summary',1);
-INSERT INTO `ts_file` VALUES (235,'sys__innodb_lock_waits',1);
-INSERT INTO `ts_file` VALUES (236,'proxysql_connect_error',1);
-INSERT INTO `ts_file` VALUES (237,'proxysql_configuration',1);
-INSERT INTO `ts_file` VALUES (238,'ps_memory_summary_global_by_event_name',1);
-INSERT INTO `ts_file` VALUES (239,'proxysql_runtime_checksums_values',1);
-INSERT INTO `ts_file` VALUES (240,'proxysql_runtime_coredump_filters',1);
-INSERT INTO `ts_file` VALUES (241,'proxysql_runtime_global_variables',1);
-INSERT INTO `ts_file` VALUES (242,'proxysql_runtime_mysql_aws_aurora_hostgroups',1);
-INSERT INTO `ts_file` VALUES (243,'proxysql_runtime_mysql_firewall_whitelist_rules',1);
-INSERT INTO `ts_file` VALUES (244,'proxysql_runtime_mysql_firewall_whitelist_sqli_fin',1);
-INSERT INTO `ts_file` VALUES (245,'proxysql_runtime_mysql_firewall_whitelist_users',1);
-INSERT INTO `ts_file` VALUES (246,'proxysql_runtime_mysql_galera_hostgroups',1);
-INSERT INTO `ts_file` VALUES (247,'proxysql_runtime_mysql_group_replication_hostgroup',1);
-INSERT INTO `ts_file` VALUES (248,'proxysql_runtime_mysql_hostgroup_attributes',1);
-INSERT INTO `ts_file` VALUES (249,'proxysql_runtime_mysql_query_rules',1);
-INSERT INTO `ts_file` VALUES (250,'proxysql_runtime_mysql_query_rules_fast_routing',1);
-INSERT INTO `ts_file` VALUES (251,'proxysql_runtime_mysql_replication_hostgroups',1);
-INSERT INTO `ts_file` VALUES (252,'proxysql_runtime_mysql_servers_ssl_params',1);
-INSERT INTO `ts_file` VALUES (253,'proxysql_runtime_mysql_users',1);
-INSERT INTO `ts_file` VALUES (254,'proxysql_runtime_proxysql_servers',1);
-INSERT INTO `ts_file` VALUES (255,'proxysql_runtime_restapi_routes',1);
-INSERT INTO `ts_file` VALUES (256,'proxysql_runtime_scheduler',1);
-INSERT INTO `ts_file` VALUES (257,'information_schema__plugins',1);
-INSERT INTO `ts_file` VALUES (258,'information_schema__disks',1);
-INSERT INTO `ts_file` VALUES (259,'information_schema__metadata_lock_info',1);
-INSERT INTO `ts_file` VALUES (260,'ps_events_statements_summary_by_digest',1);
-INSERT INTO `ts_file` VALUES (261,'is_tables',1);
+INSERT INTO `ts_file` VALUES (3754,'information_schema__metadata_lock_info',1);
+INSERT INTO `ts_file` VALUES (3755,'mysql_binlog',1);
+INSERT INTO `ts_file` VALUES (3756,'mysql_global',1);
+INSERT INTO `ts_file` VALUES (3757,'mysql_global_variable',1);
+INSERT INTO `ts_file` VALUES (3758,'mysql_innodb_metrics',1);
+INSERT INTO `ts_file` VALUES (3759,'mysql_processlist',1);
+INSERT INTO `ts_file` VALUES (3760,'mysql_schemata',1);
+INSERT INTO `ts_file` VALUES (3761,'mysql_server',1);
+INSERT INTO `ts_file` VALUES (3762,'mysql_variable_gtid',1);
+INSERT INTO `ts_file` VALUES (3763,'maxscale_filters',1);
+INSERT INTO `ts_file` VALUES (3764,'maxscale_listeners',1);
+INSERT INTO `ts_file` VALUES (3765,'maxscale_maxscale',1);
+INSERT INTO `ts_file` VALUES (3766,'maxscale_monitors',1);
+INSERT INTO `ts_file` VALUES (3767,'maxscale_server',1);
+INSERT INTO `ts_file` VALUES (3768,'maxscale_servers',1);
+INSERT INTO `ts_file` VALUES (3769,'maxscale_service_server',1);
+INSERT INTO `ts_file` VALUES (3770,'maxscale_services',1);
+INSERT INTO `ts_file` VALUES (3771,'maxscale_sessions',1);
+INSERT INTO `ts_file` VALUES (3772,'ssh_server',1);
+INSERT INTO `ts_file` VALUES (3773,'maxscale_users',1);
+INSERT INTO `ts_file` VALUES (3774,'proxysql_connect_error',1);
+INSERT INTO `ts_file` VALUES (3775,'proxysql_runtime_checksums_values',1);
+INSERT INTO `ts_file` VALUES (3776,'proxysql_runtime_global_variables',1);
+INSERT INTO `ts_file` VALUES (3777,'proxysql_runtime_mysql_galera_hostgroups',1);
+INSERT INTO `ts_file` VALUES (3778,'proxysql_runtime_mysql_query_rules',1);
+INSERT INTO `ts_file` VALUES (3779,'proxysql_runtime_mysql_servers',1);
+INSERT INTO `ts_file` VALUES (3780,'proxysql_runtime_mysql_users',1);
+INSERT INTO `ts_file` VALUES (3781,'proxysql_runtime_proxysql_servers',1);
+INSERT INTO `ts_file` VALUES (3782,'proxysql_server',1);
+INSERT INTO `ts_file` VALUES (3783,'digest',1);
+INSERT INTO `ts_file` VALUES (3784,'ssh_hardware',1);
+INSERT INTO `ts_file` VALUES (3785,'ssh_stats',1);
+INSERT INTO `ts_file` VALUES (3786,'proxysql_runtime_mysql_replication_hostgroups',1);
+INSERT INTO `ts_file` VALUES (3787,'information_schema__plugins',1);
+INSERT INTO `ts_file` VALUES (3788,'mysql_table',1);
+INSERT INTO `ts_file` VALUES (3789,'is_tables',1);
+INSERT INTO `ts_file` VALUES (3790,'performance_schema',1);
+INSERT INTO `ts_file` VALUES (3791,'ps_sum_summary_by_digest',1);
+INSERT INTO `ts_file` VALUES (3792,'mysql_velocity',1);
+INSERT INTO `ts_file` VALUES (3793,'ps_events_statements_summary_by_digest',1);
+INSERT INTO `ts_file` VALUES (3794,'ps_memory_summary_global_by_event_name',1);
+INSERT INTO `ts_file` VALUES (3795,'mysql_statistics',1);
+INSERT INTO `ts_file` VALUES (3796,'information_schema__engines',1);
+INSERT INTO `ts_file` VALUES (3797,'vip',1);
+INSERT INTO `ts_file` VALUES (3798,'proxysql_runtime_mysql_group_replication_hostgroup',1);
+INSERT INTO `ts_file` VALUES (3799,'mysqlrouter_routes',1);
+INSERT INTO `ts_file` VALUES (3800,'mysqlrouter_metadata_config',1);
+INSERT INTO `ts_file` VALUES (3801,'mysqlrouter_metadata_status',1);
+INSERT INTO `ts_file` VALUES (3802,'mysqlrouter_server',1);
+INSERT INTO `ts_file` VALUES (20135,'mysql_log',1);
 /*!40000 ALTER TABLE `ts_file` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -168838,2260 +169930,3146 @@ CREATE TABLE `ts_variable` (
 
 LOCK TABLES `ts_variable` WRITE;
 /*!40000 ALTER TABLE `ts_variable` DISABLE KEYS */;
-INSERT INTO `ts_variable` VALUES (1,218,'aborted_clients','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2,218,'aborted_connects','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (3,218,'aborted_connects_preauth','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (4,218,'access_denied_errors','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (5,218,'acl_column_grants','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (6,218,'acl_database_grants','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (7,218,'acl_function_grants','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (8,218,'acl_procedure_grants','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (9,218,'acl_package_spec_grants','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (10,218,'acl_package_body_grants','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (11,218,'acl_proxy_users','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (12,218,'acl_role_grants','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (13,218,'acl_roles','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (14,218,'acl_table_grants','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (15,218,'acl_users','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (16,218,'aria_pagecache_blocks_not_flushed','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (17,218,'aria_pagecache_blocks_unused','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (18,218,'aria_pagecache_blocks_used','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (19,218,'aria_pagecache_read_requests','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (20,218,'aria_pagecache_reads','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (21,218,'aria_pagecache_write_requests','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (22,218,'aria_pagecache_writes','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (23,218,'aria_transaction_log_syncs','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (24,218,'binlog_commits','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (25,218,'binlog_group_commits','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (26,218,'binlog_group_commit_trigger_count','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (27,218,'binlog_group_commit_trigger_lock_wait','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (28,218,'binlog_group_commit_trigger_timeout','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (29,218,'binlog_snapshot_file','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (30,218,'binlog_snapshot_position','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (31,218,'binlog_bytes_written','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (32,218,'binlog_cache_disk_use','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (33,218,'binlog_cache_use','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (34,218,'binlog_stmt_cache_disk_use','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (35,218,'binlog_stmt_cache_use','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (36,218,'busy_time','DOUBLE','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (37,218,'bytes_received','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (38,218,'bytes_sent','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (39,218,'column_compressions','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (40,218,'column_decompressions','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (41,218,'com_admin_commands','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (42,218,'com_alter_db','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (43,218,'com_alter_db_upgrade','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (44,218,'com_alter_event','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (45,218,'com_alter_function','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (46,218,'com_alter_procedure','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (47,218,'com_alter_server','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (48,218,'com_alter_sequence','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (49,218,'com_alter_table','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (50,218,'com_alter_tablespace','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (51,218,'com_alter_user','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (52,218,'com_analyze','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (53,218,'com_assign_to_keycache','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (54,218,'com_backup','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (55,218,'com_backup_lock','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (56,218,'com_begin','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (57,218,'com_binlog','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (58,218,'com_call_procedure','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (59,218,'com_change_db','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (60,218,'com_change_master','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (61,218,'com_check','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (62,218,'com_checksum','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (63,218,'com_commit','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (64,218,'com_compound_sql','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (65,218,'com_create_db','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (66,218,'com_create_event','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (67,218,'com_create_function','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (68,218,'com_create_index','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (69,218,'com_create_package','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (70,218,'com_create_package_body','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (71,218,'com_create_procedure','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (72,218,'com_create_role','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (73,218,'com_create_sequence','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (74,218,'com_create_server','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (75,218,'com_create_table','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (76,218,'com_create_temporary_table','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (77,218,'com_create_trigger','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (78,218,'com_create_udf','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (79,218,'com_create_user','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (80,218,'com_create_view','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (81,218,'com_dealloc_sql','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (82,218,'com_delete','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (83,218,'com_delete_multi','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (84,218,'com_do','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (85,218,'com_drop_db','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (86,218,'com_drop_event','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (87,218,'com_drop_function','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (88,218,'com_drop_index','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (89,218,'com_drop_procedure','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (90,218,'com_drop_package','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (91,218,'com_drop_package_body','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (92,218,'com_drop_role','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (93,218,'com_drop_server','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (94,218,'com_drop_sequence','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (95,218,'com_drop_table','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (96,218,'com_drop_temporary_table','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (97,218,'com_drop_trigger','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (98,218,'com_drop_user','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (99,218,'com_drop_view','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (100,218,'com_empty_query','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (101,218,'com_execute_immediate','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (102,218,'com_execute_sql','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (103,218,'com_flush','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (104,218,'com_get_diagnostics','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (105,218,'com_grant','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (106,218,'com_grant_role','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (107,218,'com_ha_close','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (108,218,'com_ha_open','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (109,218,'com_ha_read','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (110,218,'com_help','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (111,218,'com_insert','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (112,218,'com_insert_select','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (113,218,'com_install_plugin','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (114,218,'com_kill','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (115,218,'com_load','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (116,218,'com_lock_tables','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (117,218,'com_optimize','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (118,218,'com_preload_keys','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (119,218,'com_prepare_sql','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (120,218,'com_purge','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (121,218,'com_purge_before_date','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (122,218,'com_release_savepoint','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (123,218,'com_rename_table','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (124,218,'com_rename_user','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (125,218,'com_repair','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (126,218,'com_replace','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (127,218,'com_replace_select','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (128,218,'com_reset','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (129,218,'com_resignal','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (130,218,'com_revoke','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (131,218,'com_revoke_all','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (132,218,'com_revoke_role','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (133,218,'com_rollback','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (134,218,'com_rollback_to_savepoint','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (135,218,'com_savepoint','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (136,218,'com_select','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (137,218,'com_set_option','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (138,218,'com_show_authors','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (139,218,'com_show_binlog_events','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (140,218,'com_show_binlogs','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (141,218,'com_show_charsets','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (142,218,'com_show_collations','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (143,218,'com_show_contributors','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (144,218,'com_show_create_db','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (145,218,'com_show_create_event','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (146,218,'com_show_create_func','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (147,218,'com_show_create_package','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (148,218,'com_show_create_package_body','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (149,218,'com_show_create_proc','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (150,218,'com_show_create_table','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (151,218,'com_show_create_trigger','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (152,218,'com_show_create_user','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (153,218,'com_show_databases','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (154,218,'com_show_engine_logs','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (155,218,'com_show_engine_mutex','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (156,218,'com_show_engine_status','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (157,218,'com_show_errors','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (158,218,'com_show_events','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (159,218,'com_show_explain','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (160,218,'com_show_fields','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (161,218,'com_show_function_status','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (162,218,'com_show_generic','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (163,218,'com_show_grants','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (164,218,'com_show_keys','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (165,218,'com_show_binlog_status','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (166,218,'com_show_open_tables','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (167,218,'com_show_package_status','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (168,218,'com_show_package_body_status','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (169,218,'com_show_plugins','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (170,218,'com_show_privileges','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (171,218,'com_show_procedure_status','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (172,218,'com_show_processlist','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (173,218,'com_show_profile','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (174,218,'com_show_profiles','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (175,218,'com_show_relaylog_events','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (176,218,'com_show_slave_hosts','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (177,218,'com_show_slave_status','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (178,218,'com_show_status','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (179,218,'com_show_storage_engines','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (180,218,'com_show_table_status','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (181,218,'com_show_tables','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (182,218,'com_show_triggers','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (183,218,'com_show_variables','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (184,218,'com_show_warnings','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (185,218,'com_shutdown','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (186,218,'com_signal','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (187,218,'com_start_all_slaves','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (188,218,'com_start_slave','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (189,218,'com_stmt_close','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (190,218,'com_stmt_execute','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (191,218,'com_stmt_fetch','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (192,218,'com_stmt_prepare','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (193,218,'com_stmt_reprepare','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (194,218,'com_stmt_reset','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (195,218,'com_stmt_send_long_data','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (196,218,'com_stop_all_slaves','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (197,218,'com_stop_slave','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (198,218,'com_truncate','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (199,218,'com_uninstall_plugin','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (200,218,'com_unlock_tables','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (201,218,'com_update','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (202,218,'com_update_multi','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (203,218,'com_xa_commit','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (204,218,'com_xa_end','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (205,218,'com_xa_prepare','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (206,218,'com_xa_recover','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (207,218,'com_xa_rollback','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (208,218,'com_xa_start','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (209,218,'compression','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (210,218,'connection_errors_accept','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (211,218,'connection_errors_internal','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (212,218,'connection_errors_max_connections','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (213,218,'connection_errors_peer_address','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (214,218,'connection_errors_select','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (215,218,'connection_errors_tcpwrap','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (216,218,'connections','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (217,218,'cpu_time','DOUBLE','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (218,218,'created_tmp_disk_tables','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (219,218,'created_tmp_files','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (220,218,'created_tmp_tables','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (221,218,'delayed_errors','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (222,218,'delayed_insert_threads','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (223,218,'delayed_writes','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (224,218,'delete_scan','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (225,218,'empty_queries','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (226,218,'executed_events','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (227,218,'executed_triggers','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (228,218,'feature_application_time_periods','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (229,218,'feature_check_constraint','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (230,218,'feature_custom_aggregate_functions','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (231,218,'feature_delay_key_write','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (232,218,'feature_dynamic_columns','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (233,218,'feature_fulltext','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (234,218,'feature_gis','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (235,218,'feature_insert_returning','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (236,218,'feature_invisible_columns','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (237,218,'feature_json','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (238,218,'feature_locale','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (239,218,'feature_subquery','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (240,218,'feature_system_versioning','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (241,218,'feature_timezone','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (242,218,'feature_trigger','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (243,218,'feature_window_functions','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (244,218,'feature_xml','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (245,218,'handler_commit','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (246,218,'handler_delete','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (247,218,'handler_discover','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (248,218,'handler_external_lock','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (249,218,'handler_icp_attempts','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (250,218,'handler_icp_match','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (251,218,'handler_mrr_init','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (252,218,'handler_mrr_key_refills','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (253,218,'handler_mrr_rowid_refills','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (254,218,'handler_prepare','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (255,218,'handler_read_first','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (256,218,'handler_read_key','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (257,218,'handler_read_last','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (258,218,'handler_read_next','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (259,218,'handler_read_prev','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (260,218,'handler_read_retry','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (261,218,'handler_read_rnd','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (262,218,'handler_read_rnd_deleted','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (263,218,'handler_read_rnd_next','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (264,218,'handler_rollback','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (265,218,'handler_savepoint','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (266,218,'handler_savepoint_rollback','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (267,218,'handler_tmp_delete','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (268,218,'handler_tmp_update','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (269,218,'handler_tmp_write','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (270,218,'handler_update','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (271,218,'handler_write','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (272,218,'innodb_adaptive_hash_hash_searches','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (273,218,'innodb_adaptive_hash_non_hash_searches','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (274,218,'innodb_background_log_sync','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (275,218,'innodb_buffer_pool_load_status','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (276,218,'innodb_buffer_pool_load_incomplete','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (277,218,'innodb_buffer_pool_pages_data','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (278,218,'innodb_buffer_pool_bytes_data','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (279,218,'innodb_buffer_pool_pages_dirty','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (280,218,'innodb_buffer_pool_bytes_dirty','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (281,218,'innodb_buffer_pool_pages_flushed','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (282,218,'innodb_buffer_pool_pages_free','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (283,218,'innodb_buffer_pool_pages_made_not_young','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (284,218,'innodb_buffer_pool_pages_made_young','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (285,218,'innodb_buffer_pool_pages_misc','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (286,218,'innodb_buffer_pool_pages_old','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (287,218,'innodb_buffer_pool_pages_total','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (288,218,'innodb_buffer_pool_pages_lru_flushed','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (289,218,'innodb_buffer_pool_pages_lru_freed','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (290,218,'innodb_buffer_pool_pages_split','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (291,218,'innodb_buffer_pool_read_ahead_rnd','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (292,218,'innodb_buffer_pool_read_ahead','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (293,218,'innodb_buffer_pool_read_ahead_evicted','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (294,218,'innodb_buffer_pool_read_requests','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (295,218,'innodb_buffer_pool_reads','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (296,218,'innodb_buffer_pool_wait_free','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (297,218,'innodb_buffer_pool_write_requests','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (298,218,'innodb_checkpoint_age','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (299,218,'innodb_checkpoint_max_age','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (300,218,'innodb_data_fsyncs','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (301,218,'innodb_data_pending_fsyncs','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (302,218,'innodb_data_pending_reads','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (303,218,'innodb_data_pending_writes','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (304,218,'innodb_data_read','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (305,218,'innodb_data_reads','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (306,218,'innodb_data_writes','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (307,218,'innodb_data_written','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (308,218,'innodb_dblwr_pages_written','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (309,218,'innodb_dblwr_writes','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (310,218,'innodb_deadlocks','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (311,218,'innodb_history_list_length','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (312,218,'innodb_ibuf_discarded_delete_marks','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (313,218,'innodb_ibuf_discarded_deletes','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (314,218,'innodb_ibuf_discarded_inserts','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (315,218,'innodb_ibuf_free_list','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (316,218,'innodb_ibuf_merged_delete_marks','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (317,218,'innodb_ibuf_merged_deletes','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (318,218,'innodb_ibuf_merged_inserts','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (319,218,'innodb_ibuf_merges','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (320,218,'innodb_ibuf_segment_size','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (321,218,'innodb_ibuf_size','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (322,218,'innodb_log_waits','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (323,218,'innodb_log_write_requests','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (324,218,'innodb_log_writes','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (325,218,'innodb_lsn_current','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (326,218,'innodb_lsn_flushed','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (327,218,'innodb_lsn_last_checkpoint','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (328,218,'innodb_master_thread_active_loops','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (329,218,'innodb_master_thread_idle_loops','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (330,218,'innodb_max_trx_id','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (331,218,'innodb_mem_adaptive_hash','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (332,218,'innodb_mem_dictionary','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (333,218,'innodb_os_log_fsyncs','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (334,218,'innodb_os_log_pending_fsyncs','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (335,218,'innodb_os_log_pending_writes','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (336,218,'innodb_os_log_written','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (337,218,'innodb_page_size','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (338,218,'innodb_pages_created','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (339,218,'innodb_pages_read','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (340,218,'innodb_pages_written','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (341,218,'innodb_row_lock_current_waits','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (342,218,'innodb_row_lock_time','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (343,218,'innodb_row_lock_time_avg','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (344,218,'innodb_row_lock_time_max','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (345,218,'innodb_row_lock_waits','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (346,218,'innodb_rows_deleted','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (347,218,'innodb_rows_inserted','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (348,218,'innodb_rows_read','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (349,218,'innodb_rows_updated','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (350,218,'innodb_system_rows_deleted','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (351,218,'innodb_system_rows_inserted','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (352,218,'innodb_system_rows_read','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (353,218,'innodb_system_rows_updated','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (354,218,'innodb_num_open_files','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (355,218,'innodb_truncated_status_writes','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (356,218,'innodb_available_undo_logs','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (357,218,'innodb_undo_truncations','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (358,218,'innodb_page_compression_saved','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (359,218,'innodb_num_pages_page_compressed','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (360,218,'innodb_num_page_compressed_trim_op','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (361,218,'innodb_num_pages_page_decompressed','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (362,218,'innodb_num_pages_page_compression_error','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (363,218,'innodb_num_pages_encrypted','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (364,218,'innodb_num_pages_decrypted','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (365,218,'innodb_have_lz4','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (366,218,'innodb_have_lzo','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (367,218,'innodb_have_lzma','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (368,218,'innodb_have_bzip2','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (369,218,'innodb_have_snappy','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (370,218,'innodb_have_punch_hole','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (371,218,'innodb_defragment_compression_failures','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (372,218,'innodb_defragment_failures','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (373,218,'innodb_defragment_count','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (374,218,'innodb_instant_alter_column','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (375,218,'innodb_onlineddl_rowlog_rows','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (376,218,'innodb_onlineddl_rowlog_pct_used','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (377,218,'innodb_onlineddl_pct_progress','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (378,218,'innodb_secondary_index_triggered_cluster_reads','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (379,218,'innodb_secondary_index_triggered_cluster_reads_avoided','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (380,218,'innodb_encryption_rotation_pages_read_from_cache','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (381,218,'innodb_encryption_rotation_pages_read_from_disk','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (382,218,'innodb_encryption_rotation_pages_modified','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (383,218,'innodb_encryption_rotation_pages_flushed','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (384,218,'innodb_encryption_rotation_estimated_iops','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (385,218,'innodb_encryption_n_merge_blocks_encrypted','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (386,218,'innodb_encryption_n_merge_blocks_decrypted','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (387,218,'innodb_encryption_n_rowlog_blocks_encrypted','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (388,218,'innodb_encryption_n_rowlog_blocks_decrypted','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (389,218,'innodb_encryption_n_temp_blocks_encrypted','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (390,218,'innodb_encryption_n_temp_blocks_decrypted','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (391,218,'innodb_encryption_num_key_requests','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (392,218,'innodb_bulk_operations','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (393,218,'key_blocks_not_flushed','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (394,218,'key_blocks_unused','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (395,218,'key_blocks_used','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (396,218,'key_blocks_warm','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (397,218,'key_read_requests','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (398,218,'key_reads','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (399,218,'key_write_requests','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (400,218,'key_writes','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (401,218,'last_query_cost','DOUBLE','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (402,218,'master_gtid_wait_count','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (403,218,'master_gtid_wait_time','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (404,218,'master_gtid_wait_timeouts','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (405,218,'max_statement_time_exceeded','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (406,218,'max_used_connections','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (407,218,'memory_used','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (408,218,'memory_used_initial','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (409,218,'not_flushed_delayed_rows','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (410,218,'open_files','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (411,218,'open_streams','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (412,218,'open_table_definitions','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (413,218,'open_tables','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (414,218,'opened_files','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (415,218,'opened_plugin_libraries','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (416,218,'opened_table_definitions','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (417,218,'opened_tables','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (418,218,'opened_views','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (419,218,'performance_schema_accounts_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (420,218,'performance_schema_cond_classes_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (421,218,'performance_schema_cond_instances_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (422,218,'performance_schema_digest_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (423,218,'performance_schema_file_classes_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (424,218,'performance_schema_file_handles_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (425,218,'performance_schema_file_instances_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (426,218,'performance_schema_hosts_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (427,218,'performance_schema_index_stat_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (428,218,'performance_schema_locker_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (429,218,'performance_schema_memory_classes_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (430,218,'performance_schema_metadata_lock_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (431,218,'performance_schema_mutex_classes_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (432,218,'performance_schema_mutex_instances_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (433,218,'performance_schema_nested_statement_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (434,218,'performance_schema_prepared_statements_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (435,218,'performance_schema_program_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (436,218,'performance_schema_rwlock_classes_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (437,218,'performance_schema_rwlock_instances_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (438,218,'performance_schema_session_connect_attrs_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (439,218,'performance_schema_socket_classes_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (440,218,'performance_schema_socket_instances_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (441,218,'performance_schema_stage_classes_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (442,218,'performance_schema_statement_classes_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (443,218,'performance_schema_table_handles_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (444,218,'performance_schema_table_instances_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (445,218,'performance_schema_table_lock_stat_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (446,218,'performance_schema_thread_classes_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (447,218,'performance_schema_thread_instances_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (448,218,'performance_schema_users_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (449,218,'prepared_stmt_count','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (450,218,'qcache_free_blocks','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (451,218,'qcache_free_memory','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (452,218,'qcache_hits','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (453,218,'qcache_inserts','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (454,218,'qcache_lowmem_prunes','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (455,218,'qcache_not_cached','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (456,218,'qcache_queries_in_cache','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (457,218,'qcache_total_blocks','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (458,218,'queries','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (459,218,'questions','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (460,218,'resultset_metadata_skipped','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (461,218,'rows_read','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (462,218,'rows_sent','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (463,218,'rows_tmp_read','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (464,218,'rpl_semi_sync_master_clients','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (465,218,'rpl_semi_sync_master_get_ack','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (466,218,'rpl_semi_sync_master_net_avg_wait_time','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (467,218,'rpl_semi_sync_master_net_wait_time','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (468,218,'rpl_semi_sync_master_net_waits','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (469,218,'rpl_semi_sync_master_no_times','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (470,218,'rpl_semi_sync_master_no_tx','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (471,218,'rpl_semi_sync_master_request_ack','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (472,218,'rpl_semi_sync_master_status','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (473,218,'rpl_semi_sync_master_timefunc_failures','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (474,218,'rpl_semi_sync_master_tx_avg_wait_time','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (475,218,'rpl_semi_sync_master_tx_wait_time','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (476,218,'rpl_semi_sync_master_tx_waits','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (477,218,'rpl_semi_sync_master_wait_pos_backtraverse','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (478,218,'rpl_semi_sync_master_wait_sessions','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (479,218,'rpl_semi_sync_master_yes_tx','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (480,218,'rpl_semi_sync_slave_send_ack','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (481,218,'rpl_semi_sync_slave_status','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (482,218,'rpl_status','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (483,218,'rpl_transactions_multi_engine','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (484,218,'select_full_join','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (485,218,'select_full_range_join','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (486,218,'select_range','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (487,218,'select_range_check','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (488,218,'select_scan','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (489,218,'server_audit_active','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (490,218,'server_audit_session_filter','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (491,218,'server_audit_writes_failed','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (492,218,'slave_connections','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (493,218,'slave_heartbeat_period','DOUBLE','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (494,218,'slave_open_temp_tables','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (495,218,'slave_received_heartbeats','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (496,218,'slave_retried_transactions','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (497,218,'slave_running','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (498,218,'slave_skipped_errors','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (499,218,'slaves_connected','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (500,218,'slaves_running','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (501,218,'slow_launch_threads','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (502,218,'slow_queries','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (503,218,'sort_merge_passes','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (504,218,'sort_priority_queue_sorts','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (505,218,'sort_range','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (506,218,'sort_rows','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (507,218,'sort_scan','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (508,218,'ssl_accept_renegotiates','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (509,218,'ssl_accepts','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (510,218,'ssl_callback_cache_hits','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (511,218,'ssl_client_connects','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (512,218,'ssl_connect_renegotiates','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (513,218,'ssl_ctx_verify_depth','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (514,218,'ssl_ctx_verify_mode','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (515,218,'ssl_default_timeout','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (516,218,'ssl_finished_accepts','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (517,218,'ssl_finished_connects','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (518,218,'ssl_session_cache_hits','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (519,218,'ssl_session_cache_misses','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (520,218,'ssl_session_cache_mode','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (521,218,'ssl_session_cache_overflows','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (522,218,'ssl_session_cache_size','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (523,218,'ssl_session_cache_timeouts','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (524,218,'ssl_sessions_reused','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (525,218,'ssl_used_session_cache_entries','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (526,218,'ssl_verify_depth','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (527,218,'ssl_verify_mode','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (528,218,'subquery_cache_hit','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (529,218,'subquery_cache_miss','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (530,218,'syncs','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (531,218,'table_locks_immediate','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (532,218,'table_locks_waited','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (533,218,'table_open_cache_active_instances','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (534,218,'table_open_cache_hits','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (535,218,'table_open_cache_misses','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (536,218,'table_open_cache_overflows','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (537,218,'tc_log_max_pages_used','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (538,218,'tc_log_page_size','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (539,218,'tc_log_page_waits','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (540,218,'threadpool_idle_threads','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (541,218,'threadpool_threads','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (542,218,'threads_cached','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (543,218,'threads_connected','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (544,218,'threads_created','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (545,218,'threads_running','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (546,218,'transactions_gtid_foreign_engine','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (547,218,'transactions_multi_engine','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (548,218,'update_scan','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (549,218,'uptime','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (550,218,'uptime_since_flush_status','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (551,218,'wsrep_local_state_uuid','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (552,218,'wsrep_protocol_version','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (553,218,'wsrep_last_committed','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (554,218,'wsrep_replicated','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (555,218,'wsrep_replicated_bytes','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (556,218,'wsrep_repl_keys','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (557,218,'wsrep_repl_keys_bytes','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (558,218,'wsrep_repl_data_bytes','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (559,218,'wsrep_repl_other_bytes','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (560,218,'wsrep_received','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (561,218,'wsrep_received_bytes','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (562,218,'wsrep_local_commits','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (563,218,'wsrep_local_cert_failures','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (564,218,'wsrep_local_replays','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (565,218,'wsrep_local_send_queue','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (566,218,'wsrep_local_send_queue_max','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (567,218,'wsrep_local_send_queue_min','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (568,218,'wsrep_local_send_queue_avg','DOUBLE','status','general',0,0);
-INSERT INTO `ts_variable` VALUES (569,218,'wsrep_local_recv_queue','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (570,218,'wsrep_local_recv_queue_max','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (571,218,'wsrep_local_recv_queue_min','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (572,218,'wsrep_local_recv_queue_avg','DOUBLE','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (573,218,'wsrep_local_cached_downto','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (574,218,'wsrep_flow_control_paused_ns','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (575,218,'wsrep_flow_control_paused','DOUBLE','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (576,218,'wsrep_flow_control_sent','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (577,218,'wsrep_flow_control_recv','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (578,218,'wsrep_flow_control_active','JSON','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (579,218,'wsrep_flow_control_requested','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (580,218,'wsrep_cert_deps_distance','DOUBLE','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (581,218,'wsrep_apply_oooe','DOUBLE','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (582,218,'wsrep_apply_oool','DOUBLE','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (583,218,'wsrep_apply_window','DOUBLE','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (584,218,'wsrep_apply_waits','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (585,218,'wsrep_commit_oooe','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (586,218,'wsrep_commit_oool','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (587,218,'wsrep_commit_window','DOUBLE','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (588,218,'wsrep_local_state','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (589,218,'wsrep_local_state_comment','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (590,218,'wsrep_cert_index_size','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (591,218,'wsrep_causal_reads','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (592,218,'wsrep_cert_interval','DOUBLE','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (593,218,'wsrep_open_transactions','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (594,218,'wsrep_open_connections','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (595,218,'wsrep_incoming_addresses','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (596,218,'wsrep_cluster_weight','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (597,218,'wsrep_desync_count','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (598,218,'wsrep_evs_repl_latency','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (599,218,'wsrep_evs_state','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (600,218,'wsrep_gcomm_uuid','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (601,218,'wsrep_gmcast_segment','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (602,218,'wsrep_applier_thread_count','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (603,218,'wsrep_cluster_conf_id','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (604,218,'wsrep_cluster_size','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (605,218,'wsrep_cluster_state_uuid','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (606,218,'wsrep_cluster_status','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (607,218,'wsrep_connected','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (608,218,'wsrep_local_bf_aborts','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (609,218,'wsrep_local_index','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (610,218,'wsrep_provider_capabilities','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (611,218,'wsrep_provider_name','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (612,218,'wsrep_provider_vendor','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (613,218,'wsrep_provider_version','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (614,218,'wsrep_ready','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (615,218,'wsrep_rollbacker_thread_count','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (616,218,'wsrep_thread_count','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (617,218,'com_show_analyze','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (618,218,'optimizer_join_prefixes_check_calls','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (619,218,'rocksdb_rows_deleted','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (620,218,'rocksdb_rows_inserted','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (621,218,'rocksdb_rows_read','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (622,218,'rocksdb_rows_updated','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (623,218,'rocksdb_rows_deleted_blind','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (624,218,'rocksdb_rows_expired','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (625,218,'rocksdb_rows_filtered','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (626,218,'rocksdb_system_rows_deleted','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (627,218,'rocksdb_system_rows_inserted','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (628,218,'rocksdb_system_rows_read','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (629,218,'rocksdb_system_rows_updated','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (630,218,'rocksdb_memtable_total','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (631,218,'rocksdb_memtable_unflushed','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (632,218,'rocksdb_queries_point','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (633,218,'rocksdb_queries_range','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (634,218,'rocksdb_covered_secondary_key_lookups','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (635,218,'rocksdb_block_cache_add','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (636,218,'rocksdb_block_cache_add_failures','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (637,218,'rocksdb_block_cache_bytes_read','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (638,218,'rocksdb_block_cache_bytes_write','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (639,218,'rocksdb_block_cache_data_add','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (640,218,'rocksdb_block_cache_data_bytes_insert','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (641,218,'rocksdb_block_cache_data_hit','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (642,218,'rocksdb_block_cache_data_miss','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (643,218,'rocksdb_block_cache_filter_add','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (644,218,'rocksdb_block_cache_filter_bytes_evict','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (645,218,'rocksdb_block_cache_filter_bytes_insert','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (646,218,'rocksdb_block_cache_filter_hit','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (647,218,'rocksdb_block_cache_filter_miss','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (648,218,'rocksdb_block_cache_hit','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (649,218,'rocksdb_block_cache_index_add','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (650,218,'rocksdb_block_cache_index_bytes_evict','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (651,218,'rocksdb_block_cache_index_bytes_insert','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (652,218,'rocksdb_block_cache_index_hit','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (653,218,'rocksdb_block_cache_index_miss','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (654,218,'rocksdb_block_cache_miss','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (655,218,'rocksdb_block_cachecompressed_hit','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (656,218,'rocksdb_block_cachecompressed_miss','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (657,218,'rocksdb_bloom_filter_full_positive','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (658,218,'rocksdb_bloom_filter_full_true_positive','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (659,218,'rocksdb_bloom_filter_prefix_checked','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (660,218,'rocksdb_bloom_filter_prefix_useful','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (661,218,'rocksdb_bloom_filter_useful','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (662,218,'rocksdb_bytes_read','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (663,218,'rocksdb_bytes_written','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (664,218,'rocksdb_compact_read_bytes','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (665,218,'rocksdb_compact_write_bytes','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (666,218,'rocksdb_compaction_key_drop_new','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (667,218,'rocksdb_compaction_key_drop_obsolete','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (668,218,'rocksdb_compaction_key_drop_user','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (669,218,'rocksdb_flush_write_bytes','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (670,218,'rocksdb_get_hit_l0','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (671,218,'rocksdb_get_hit_l1','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (672,218,'rocksdb_get_hit_l2_and_up','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (673,218,'rocksdb_getupdatessince_calls','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (674,218,'rocksdb_iter_bytes_read','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (675,218,'rocksdb_manual_compactions_processed','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (676,218,'rocksdb_manual_compactions_running','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (677,218,'rocksdb_memtable_hit','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (678,218,'rocksdb_memtable_miss','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (679,218,'rocksdb_no_file_closes','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (680,218,'rocksdb_no_file_errors','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (681,218,'rocksdb_no_file_opens','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (682,218,'rocksdb_num_iterators','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (683,218,'rocksdb_number_block_not_compressed','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (684,218,'rocksdb_number_db_next','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (685,218,'rocksdb_number_db_next_found','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (686,218,'rocksdb_number_db_prev','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (687,218,'rocksdb_number_db_prev_found','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (688,218,'rocksdb_number_db_seek','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (689,218,'rocksdb_number_db_seek_found','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (690,218,'rocksdb_number_deletes_filtered','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (691,218,'rocksdb_number_keys_read','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (692,218,'rocksdb_number_keys_updated','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (693,218,'rocksdb_number_keys_written','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (694,218,'rocksdb_number_merge_failures','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (695,218,'rocksdb_number_multiget_bytes_read','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (696,218,'rocksdb_number_multiget_get','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (697,218,'rocksdb_number_multiget_keys_read','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (698,218,'rocksdb_number_reseeks_iteration','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (699,218,'rocksdb_number_sst_entry_delete','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (700,218,'rocksdb_number_sst_entry_merge','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (701,218,'rocksdb_number_sst_entry_other','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (702,218,'rocksdb_number_sst_entry_put','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (703,218,'rocksdb_number_sst_entry_singledelete','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (704,218,'rocksdb_number_superversion_acquires','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (705,218,'rocksdb_number_superversion_cleanups','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (706,218,'rocksdb_number_superversion_releases','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (707,218,'rocksdb_row_lock_deadlocks','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (708,218,'rocksdb_row_lock_wait_timeouts','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (709,218,'rocksdb_snapshot_conflict_errors','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (710,218,'rocksdb_stall_l0_file_count_limit_slowdowns','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (711,218,'rocksdb_stall_locked_l0_file_count_limit_slowdowns','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (712,218,'rocksdb_stall_l0_file_count_limit_stops','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (713,218,'rocksdb_stall_locked_l0_file_count_limit_stops','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (714,218,'rocksdb_stall_pending_compaction_limit_stops','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (715,218,'rocksdb_stall_pending_compaction_limit_slowdowns','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (716,218,'rocksdb_stall_memtable_limit_stops','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (717,218,'rocksdb_stall_memtable_limit_slowdowns','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (718,218,'rocksdb_stall_total_stops','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (719,218,'rocksdb_stall_total_slowdowns','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (720,218,'rocksdb_stall_micros','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (721,218,'rocksdb_wal_bytes','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (722,218,'rocksdb_wal_group_syncs','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (723,218,'rocksdb_wal_synced','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (724,218,'rocksdb_write_other','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (725,218,'rocksdb_write_self','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (726,218,'rocksdb_write_timedout','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (727,218,'rocksdb_write_wal','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (728,218,'server_audit_current_log','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (729,218,'wsrep','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (730,219,'alter_algorithm','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (731,219,'analyze_sample_percentage','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (732,219,'aria_block_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (733,219,'aria_checkpoint_interval','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (734,219,'aria_checkpoint_log_activity','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (735,219,'aria_encrypt_tables','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (736,219,'aria_force_start_after_recovery_failures','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (737,219,'aria_group_commit','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (738,219,'aria_group_commit_interval','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (739,219,'aria_log_dir_path','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (740,219,'aria_log_file_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (741,219,'aria_log_purge_type','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (742,219,'aria_max_sort_file_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (743,219,'aria_page_checksum','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (744,219,'aria_pagecache_age_threshold','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (745,219,'aria_pagecache_buffer_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (746,219,'aria_pagecache_division_limit','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (747,219,'aria_pagecache_file_hash_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (748,219,'aria_recover_options','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (749,219,'aria_repair_threads','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (750,219,'aria_sort_buffer_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (751,219,'aria_stats_method','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (752,219,'aria_sync_log_dir','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (753,219,'aria_used_for_temp_tables','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (754,219,'auto_increment_increment','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (755,219,'auto_increment_offset','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (756,219,'autocommit','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (757,219,'automatic_sp_privileges','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (758,219,'back_log','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (759,219,'basedir','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (760,219,'big_tables','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (761,219,'binlog_annotate_row_events','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (762,219,'binlog_cache_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (763,219,'binlog_checksum','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (764,219,'binlog_commit_wait_count','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (765,219,'binlog_commit_wait_usec','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (766,219,'binlog_direct_non_transactional_updates','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (767,219,'binlog_expire_logs_seconds','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (768,219,'binlog_file_cache_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (769,219,'binlog_format','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (770,219,'binlog_optimize_thread_scheduling','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (771,219,'binlog_row_image','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (772,219,'binlog_row_metadata','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (773,219,'binlog_stmt_cache_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (774,219,'bulk_insert_buffer_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (775,219,'character_set_client','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (776,219,'character_set_connection','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (777,219,'character_set_database','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (778,219,'character_set_filesystem','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (779,219,'character_set_results','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (780,219,'character_set_server','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (781,219,'character_set_system','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (782,219,'character_sets_dir','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (783,219,'check_constraint_checks','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (784,219,'collation_connection','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (785,219,'collation_database','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (786,219,'collation_server','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (787,219,'column_compression_threshold','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (788,219,'column_compression_zlib_level','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (789,219,'column_compression_zlib_strategy','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (790,219,'column_compression_zlib_wrap','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (791,219,'completion_type','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (792,219,'concurrent_insert','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (793,219,'connect_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (794,219,'core_file','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (795,219,'datadir','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (796,219,'date_format','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (797,219,'datetime_format','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (798,219,'deadlock_search_depth_long','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (799,219,'deadlock_search_depth_short','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (800,219,'deadlock_timeout_long','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (801,219,'deadlock_timeout_short','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (802,219,'debug_no_thread_alarm','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (803,219,'default_password_lifetime','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (804,219,'default_storage_engine','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (805,219,'default_week_format','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (806,219,'delay_key_write','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (807,219,'delayed_insert_limit','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (808,219,'delayed_insert_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (809,219,'delayed_queue_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (810,219,'disconnect_on_expired_password','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (811,219,'div_precision_increment','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (812,219,'encrypt_binlog','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (813,219,'encrypt_tmp_disk_tables','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (814,219,'encrypt_tmp_files','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (815,219,'eq_range_index_dive_limit','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (816,219,'event_scheduler','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (817,219,'expensive_subquery_limit','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (818,219,'expire_logs_days','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (819,219,'explicit_defaults_for_timestamp','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (820,219,'extra_max_connections','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (821,219,'extra_port','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (822,219,'flush','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (823,219,'flush_time','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (824,219,'foreign_key_checks','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (825,219,'ft_boolean_syntax','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (826,219,'ft_max_word_len','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (827,219,'ft_min_word_len','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (828,219,'ft_query_expansion_limit','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (829,219,'ft_stopword_file','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (830,219,'general_log','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (831,219,'general_log_file','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (832,219,'group_concat_max_len','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (833,219,'gtid_cleanup_batch_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (834,219,'gtid_domain_id','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (835,219,'gtid_ignore_duplicates','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (836,219,'gtid_strict_mode','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (837,219,'have_compress','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (838,219,'have_crypt','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (839,219,'have_dynamic_loading','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (840,219,'have_geometry','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (841,219,'have_openssl','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (842,219,'have_profiling','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (843,219,'have_query_cache','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (844,219,'have_rtree_keys','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (845,219,'have_ssl','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (846,219,'have_symlink','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (847,219,'histogram_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (848,219,'histogram_type','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (849,219,'host_cache_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (850,219,'hostname','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (851,219,'idle_readonly_transaction_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (852,219,'idle_transaction_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (853,219,'idle_write_transaction_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (854,219,'ignore_builtin_innodb','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (855,219,'in_predicate_conversion_threshold','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (856,219,'innodb_adaptive_flushing','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (857,219,'innodb_adaptive_flushing_lwm','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (858,219,'innodb_adaptive_hash_index','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (859,219,'innodb_adaptive_hash_index_parts','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (860,219,'innodb_autoextend_increment','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (861,219,'innodb_autoinc_lock_mode','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (862,219,'innodb_buf_dump_status_frequency','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (863,219,'innodb_buffer_pool_chunk_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (864,219,'innodb_buffer_pool_dump_at_shutdown','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (865,219,'innodb_buffer_pool_dump_now','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (866,219,'innodb_buffer_pool_dump_pct','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (867,219,'innodb_buffer_pool_filename','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (868,219,'innodb_buffer_pool_load_abort','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (869,219,'innodb_buffer_pool_load_at_startup','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (870,219,'innodb_buffer_pool_load_now','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (871,219,'innodb_buffer_pool_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (872,219,'innodb_change_buffer_max_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (873,219,'innodb_change_buffering','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (874,219,'innodb_checksum_algorithm','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (875,219,'innodb_cmp_per_index_enabled','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (876,219,'innodb_compression_algorithm','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (877,219,'innodb_compression_default','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (878,219,'innodb_compression_failure_threshold_pct','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (879,219,'innodb_compression_level','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (880,219,'innodb_compression_pad_pct_max','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (881,219,'innodb_data_file_path','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (882,219,'innodb_deadlock_detect','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (883,219,'innodb_deadlock_report','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (884,219,'innodb_default_encryption_key_id','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (885,219,'innodb_default_row_format','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (886,219,'innodb_defragment','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (887,219,'innodb_defragment_fill_factor','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (888,219,'innodb_defragment_fill_factor_n_recs','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (889,219,'innodb_defragment_frequency','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (890,219,'innodb_defragment_n_pages','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (891,219,'innodb_defragment_stats_accuracy','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (892,219,'innodb_disable_sort_file_cache','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (893,219,'innodb_doublewrite','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (894,219,'innodb_encrypt_log','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (895,219,'innodb_encrypt_tables','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (896,219,'innodb_encrypt_temporary_tables','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (897,219,'innodb_encryption_rotate_key_age','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (898,219,'innodb_encryption_rotation_iops','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (899,219,'innodb_encryption_threads','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (900,219,'innodb_fast_shutdown','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (901,219,'innodb_fatal_semaphore_wait_threshold','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (902,219,'innodb_file_per_table','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (903,219,'innodb_fill_factor','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (904,219,'innodb_flush_log_at_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (905,219,'innodb_flush_log_at_trx_commit','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (906,219,'innodb_flush_method','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (907,219,'innodb_flush_neighbors','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (908,219,'innodb_flush_sync','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (909,219,'innodb_flushing_avg_loops','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (910,219,'innodb_force_primary_key','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (911,219,'innodb_force_recovery','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (912,219,'innodb_ft_cache_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (913,219,'innodb_ft_enable_diag_print','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (914,219,'innodb_ft_enable_stopword','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (915,219,'innodb_ft_max_token_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (916,219,'innodb_ft_min_token_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (917,219,'innodb_ft_num_word_optimize','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (918,219,'innodb_ft_result_cache_limit','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (919,219,'innodb_ft_sort_pll_degree','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (920,219,'innodb_ft_total_cache_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (921,219,'innodb_immediate_scrub_data_uncompressed','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (922,219,'innodb_instant_alter_column_allowed','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (923,219,'innodb_io_capacity','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (924,219,'innodb_io_capacity_max','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (925,219,'innodb_lock_wait_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (926,219,'innodb_log_buffer_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (927,219,'innodb_log_file_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (928,219,'innodb_log_group_home_dir','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (929,219,'innodb_log_write_ahead_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (930,219,'innodb_lru_flush_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (931,219,'innodb_lru_scan_depth','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (932,219,'innodb_max_dirty_pages_pct','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (933,219,'innodb_max_dirty_pages_pct_lwm','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (934,219,'innodb_max_purge_lag','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (935,219,'innodb_max_purge_lag_delay','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (936,219,'innodb_max_purge_lag_wait','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (937,219,'innodb_max_undo_log_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (938,219,'innodb_old_blocks_pct','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (939,219,'innodb_old_blocks_time','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (940,219,'innodb_online_alter_log_max_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (941,219,'innodb_open_files','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (942,219,'innodb_optimize_fulltext_only','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (943,219,'innodb_page_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (944,219,'innodb_prefix_index_cluster_optimization','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (945,219,'innodb_print_all_deadlocks','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (946,219,'innodb_purge_batch_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (947,219,'innodb_purge_rseg_truncate_frequency','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (948,219,'innodb_purge_threads','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (949,219,'innodb_random_read_ahead','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (950,219,'innodb_read_ahead_threshold','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (951,219,'innodb_read_io_threads','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (952,219,'innodb_read_only','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (953,219,'innodb_read_only_compressed','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (954,219,'innodb_rollback_on_timeout','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (955,219,'innodb_snapshot_isolation','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (956,219,'innodb_sort_buffer_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (957,219,'innodb_spin_wait_delay','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (958,219,'innodb_stats_auto_recalc','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (959,219,'innodb_stats_include_delete_marked','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (960,219,'innodb_stats_method','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (961,219,'innodb_stats_modified_counter','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (962,219,'innodb_stats_on_metadata','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (963,219,'innodb_stats_persistent','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (964,219,'innodb_stats_persistent_sample_pages','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (965,219,'innodb_stats_traditional','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (966,219,'innodb_stats_transient_sample_pages','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (967,219,'innodb_status_output','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (968,219,'innodb_status_output_locks','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (969,219,'innodb_strict_mode','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (970,219,'innodb_sync_spin_loops','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (971,219,'innodb_table_locks','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (972,219,'innodb_temp_data_file_path','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (973,219,'innodb_undo_directory','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (974,219,'innodb_undo_log_truncate','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (975,219,'innodb_undo_tablespaces','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (976,219,'innodb_use_atomic_writes','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (977,219,'innodb_use_native_aio','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (978,219,'innodb_version','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (979,219,'innodb_write_io_threads','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (980,219,'interactive_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (981,219,'join_buffer_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (982,219,'join_buffer_space_limit','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (983,219,'join_cache_level','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (984,219,'keep_files_on_create','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (985,219,'key_buffer_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (986,219,'key_cache_age_threshold','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (987,219,'key_cache_block_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (988,219,'key_cache_division_limit','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (989,219,'key_cache_file_hash_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (990,219,'key_cache_segments','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (991,219,'large_files_support','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (992,219,'large_page_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (993,219,'large_pages','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (994,219,'lc_messages','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (995,219,'lc_messages_dir','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (996,219,'lc_time_names','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (997,219,'license','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (998,219,'local_infile','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (999,219,'lock_wait_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1000,219,'locked_in_memory','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1001,219,'log_bin','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1002,219,'log_bin_basename','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1003,219,'log_bin_compress','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1004,219,'log_bin_compress_min_len','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1005,219,'log_bin_index','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1006,219,'log_bin_trust_function_creators','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1007,219,'log_disabled_statements','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1008,219,'log_error','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1009,219,'log_output','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1010,219,'log_queries_not_using_indexes','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1011,219,'log_slave_updates','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1012,219,'log_slow_admin_statements','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1013,219,'log_slow_disabled_statements','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1014,219,'log_slow_filter','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1015,219,'log_slow_max_warnings','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1016,219,'log_slow_rate_limit','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1017,219,'log_slow_slave_statements','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1018,219,'log_slow_verbosity','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1019,219,'log_tc_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1020,219,'log_warnings','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1021,219,'long_query_time','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1022,219,'low_priority_updates','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1023,219,'lower_case_file_system','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1024,219,'lower_case_table_names','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1025,219,'master_verify_checksum','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1026,219,'max_allowed_packet','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1027,219,'max_binlog_cache_size','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1028,219,'max_binlog_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1029,219,'max_binlog_stmt_cache_size','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1030,219,'max_connect_errors','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1031,219,'max_connections','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1032,219,'max_delayed_threads','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1033,219,'max_digest_length','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1034,219,'max_error_count','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1035,219,'max_heap_table_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1036,219,'max_insert_delayed_threads','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1037,219,'max_join_size','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1038,219,'max_length_for_sort_data','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1039,219,'max_password_errors','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1040,219,'max_prepared_stmt_count','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1041,219,'max_recursive_iterations','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1042,219,'max_relay_log_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1043,219,'max_rowid_filter_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1044,219,'max_seeks_for_key','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1045,219,'max_session_mem_used','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1046,219,'max_sort_length','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1047,219,'max_sp_recursion_depth','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1048,219,'max_statement_time','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1049,219,'max_tmp_tables','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1050,219,'max_user_connections','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1051,219,'max_write_lock_count','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1052,219,'metadata_locks_cache_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1053,219,'metadata_locks_hash_instances','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1054,219,'min_examined_row_limit','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1055,219,'mrr_buffer_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1056,219,'myisam_block_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1057,219,'myisam_data_pointer_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1058,219,'myisam_max_sort_file_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1059,219,'myisam_mmap_size','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1060,219,'myisam_recover_options','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1061,219,'myisam_repair_threads','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1062,219,'myisam_sort_buffer_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1063,219,'myisam_stats_method','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1064,219,'myisam_use_mmap','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1065,219,'mysql56_temporal_format','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1066,219,'net_buffer_length','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1067,219,'net_read_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1068,219,'net_retry_count','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1069,219,'net_write_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1070,219,'note_verbosity','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1071,219,'old','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1072,219,'old_alter_table','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1073,219,'old_mode','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1074,219,'old_passwords','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1075,219,'open_files_limit','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1076,219,'optimizer_join_limit_pref_ratio','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1077,219,'optimizer_max_sel_arg_weight','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1078,219,'optimizer_max_sel_args','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1079,219,'optimizer_prune_level','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1080,219,'optimizer_search_depth','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1081,219,'optimizer_selectivity_sampling_limit','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1082,219,'optimizer_switch','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1083,219,'optimizer_trace','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1084,219,'optimizer_trace_max_mem_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1085,219,'optimizer_use_condition_selectivity','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1086,219,'performance_schema','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1087,219,'performance_schema_max_cond_classes','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1088,219,'performance_schema_max_digest_length','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1089,219,'performance_schema_max_file_classes','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1090,219,'performance_schema_max_file_handles','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1091,219,'performance_schema_max_memory_classes','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1092,219,'performance_schema_max_mutex_classes','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1093,219,'performance_schema_max_rwlock_classes','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1094,219,'performance_schema_max_socket_classes','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1095,219,'performance_schema_max_sql_text_length','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1096,219,'performance_schema_max_stage_classes','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1097,219,'performance_schema_max_statement_classes','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1098,219,'performance_schema_max_statement_stack','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1099,219,'performance_schema_max_thread_classes','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1100,219,'pid_file','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1101,219,'plugin_dir','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1102,219,'plugin_maturity','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1103,219,'port','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1104,219,'preload_buffer_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1105,219,'profiling','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1106,219,'profiling_history_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1107,219,'progress_report_time','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1108,219,'protocol_version','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1109,219,'query_alloc_block_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1110,219,'query_cache_limit','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1111,219,'query_cache_min_res_unit','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1112,219,'query_cache_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1113,219,'query_cache_strip_comments','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1114,219,'query_cache_type','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1115,219,'query_cache_wlock_invalidate','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1116,219,'query_prealloc_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1117,219,'range_alloc_block_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1118,219,'read_binlog_speed_limit','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1119,219,'read_buffer_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1120,219,'read_only','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1121,219,'read_rnd_buffer_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1122,219,'relay_log','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1123,219,'relay_log_basename','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1124,219,'relay_log_index','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1125,219,'relay_log_info_file','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1126,219,'relay_log_purge','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1127,219,'relay_log_recovery','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1128,219,'relay_log_space_limit','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1129,219,'replicate_annotate_row_events','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1130,219,'replicate_events_marked_for_skip','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1131,219,'report_port','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1132,219,'require_secure_transport','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1133,219,'rowid_merge_buff_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1134,219,'rpl_semi_sync_master_enabled','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1135,219,'rpl_semi_sync_master_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1136,219,'rpl_semi_sync_master_trace_level','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1137,219,'rpl_semi_sync_master_wait_no_slave','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1138,219,'rpl_semi_sync_master_wait_point','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1139,219,'rpl_semi_sync_slave_delay_master','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1140,219,'rpl_semi_sync_slave_enabled','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1141,219,'rpl_semi_sync_slave_kill_conn_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1142,219,'rpl_semi_sync_slave_trace_level','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1143,219,'secure_auth','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1144,219,'secure_timestamp','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1145,219,'server_audit_file_path','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1146,219,'server_audit_file_rotate_now','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1147,219,'server_audit_file_rotate_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1148,219,'server_audit_file_rotations','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1149,219,'server_audit_load_on_error','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1150,219,'server_audit_logging','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1151,219,'server_audit_mode','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1152,219,'server_audit_output_type','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1153,219,'server_audit_query_log_limit','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1154,219,'server_audit_reload_filters','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1155,219,'server_audit_syslog_facility','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1156,219,'server_audit_syslog_ident','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1157,219,'server_audit_syslog_priority','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1158,219,'server_audit_timestamp_format','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1159,219,'server_id','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1160,219,'server_uid','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1161,219,'session_track_schema','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1162,219,'session_track_state_change','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1163,219,'session_track_system_variables','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1164,219,'session_track_transaction_info','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1165,219,'shutdown_wait_for_slaves','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1166,219,'simple_password_check_digits','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1167,219,'simple_password_check_letters_same_case','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1168,219,'simple_password_check_minimal_length','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1169,219,'simple_password_check_other_characters','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1170,219,'skip_external_locking','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1171,219,'skip_name_resolve','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1172,219,'skip_networking','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1173,219,'skip_show_database','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1174,219,'slave_compressed_protocol','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1175,219,'slave_ddl_exec_mode','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1176,219,'slave_domain_parallel_threads','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1177,219,'slave_exec_mode','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1178,219,'slave_load_tmpdir','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1179,219,'slave_max_allowed_packet','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1180,219,'slave_max_statement_time','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1181,219,'slave_net_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1182,219,'slave_parallel_max_queued','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1183,219,'slave_parallel_mode','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1184,219,'slave_parallel_threads','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1185,219,'slave_parallel_workers','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1186,219,'slave_run_triggers_for_rbr','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1187,219,'slave_skip_errors','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1188,219,'slave_sql_verify_checksum','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1189,219,'slave_transaction_retries','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1190,219,'slave_transaction_retry_errors','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1191,219,'slave_transaction_retry_interval','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1192,219,'slow_launch_time','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1193,219,'slow_query_log','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1194,219,'slow_query_log_file','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1195,219,'socket','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1196,219,'sort_buffer_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1197,219,'sql_auto_is_null','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1198,219,'sql_big_selects','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1199,219,'sql_buffer_result','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1200,219,'sql_error_log_filename','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1201,219,'sql_error_log_rate','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1202,219,'sql_error_log_rotate','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1203,219,'sql_error_log_rotations','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1204,219,'sql_error_log_size_limit','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1205,219,'sql_error_log_with_db_and_thread_info','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1206,219,'sql_if_exists','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1207,219,'sql_log_bin','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1208,219,'sql_log_off','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1209,219,'sql_mode','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1210,219,'sql_notes','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1211,219,'sql_quote_show_create','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1212,219,'sql_safe_updates','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1213,219,'sql_select_limit','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1214,219,'sql_slave_skip_counter','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1215,219,'sql_warnings','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1216,219,'standard_compliant_cte','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1217,219,'storage_engine','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1218,219,'stored_program_cache','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1219,219,'strict_password_validation','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1220,219,'sync_binlog','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1221,219,'sync_frm','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1222,219,'sync_master_info','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1223,219,'sync_relay_log','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1224,219,'sync_relay_log_info','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1225,219,'system_time_zone','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1226,219,'system_versioning_alter_history','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1227,219,'system_versioning_asof','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1228,219,'table_definition_cache','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1229,219,'table_open_cache','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1230,219,'table_open_cache_instances','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1231,219,'tcp_keepalive_interval','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1232,219,'tcp_keepalive_probes','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1233,219,'tcp_keepalive_time','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1234,219,'tcp_nodelay','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1235,219,'thread_cache_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1236,219,'thread_handling','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1237,219,'thread_pool_dedicated_listener','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1238,219,'thread_pool_exact_stats','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1239,219,'thread_pool_idle_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1240,219,'thread_pool_max_threads','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1241,219,'thread_pool_oversubscribe','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1242,219,'thread_pool_prio_kickup_timer','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1243,219,'thread_pool_priority','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1244,219,'thread_pool_reshuffle_group_period','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1245,219,'thread_pool_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1246,219,'thread_pool_stall_limit','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1247,219,'thread_stack','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1248,219,'time_format','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1249,219,'time_zone','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1250,219,'tls_version','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1251,219,'tmp_disk_table_size','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1252,219,'tmp_memory_table_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1253,219,'tmp_table_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1254,219,'tmpdir','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1255,219,'transaction_alloc_block_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1256,219,'transaction_prealloc_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1257,219,'tx_isolation','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1258,219,'tx_read_only','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1259,219,'unique_checks','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1260,219,'updatable_views_with_limit','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1261,219,'use_stat_tables','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1262,219,'userstat','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1263,219,'version','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1264,219,'version_comment','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1265,219,'version_compile_machine','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1266,219,'version_compile_os','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1267,219,'version_malloc_library','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1268,219,'version_source_revision','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1269,219,'version_ssl_library','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1270,219,'wait_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1271,219,'wsrep_osu_method','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1272,219,'wsrep_sr_store','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1273,219,'wsrep_auto_increment_control','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1274,219,'wsrep_black_box_name','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1275,219,'wsrep_black_box_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1276,219,'wsrep_causal_reads','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1277,219,'wsrep_certificate_expiration_hours_warning','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1278,219,'wsrep_certification_rules','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1279,219,'wsrep_certify_nonpk','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1280,219,'wsrep_cluster_address','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1281,219,'wsrep_cluster_name','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1282,219,'wsrep_convert_lock_to_trx','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1283,219,'wsrep_data_home_dir','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1284,219,'wsrep_debug','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1285,219,'wsrep_desync','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1286,219,'wsrep_dirty_reads','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1287,219,'wsrep_drupal_282555_workaround','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1288,219,'wsrep_forced_binlog_format','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1289,219,'wsrep_gtid_domain_id','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1290,219,'wsrep_gtid_mode','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1291,219,'wsrep_ignore_apply_errors','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1292,219,'wsrep_load_data_splitting','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1293,219,'wsrep_log_conflicts','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1294,219,'wsrep_max_ws_rows','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1295,219,'wsrep_max_ws_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1296,219,'wsrep_mysql_replication_bundle','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1297,219,'wsrep_node_address','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1298,219,'wsrep_node_incoming_address','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1299,219,'wsrep_node_name','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1300,219,'wsrep_on','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1301,219,'wsrep_patch_version','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1302,219,'wsrep_provider','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1303,219,'wsrep_provider_options','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1304,219,'wsrep_recover','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1305,219,'wsrep_reject_queries','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1306,219,'wsrep_replicate_myisam','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1307,219,'wsrep_restart_slave','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1308,219,'wsrep_retry_autocommit','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1309,219,'wsrep_slave_fk_checks','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1310,219,'wsrep_slave_uk_checks','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1311,219,'wsrep_slave_threads','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1312,219,'wsrep_ssl_mode','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1313,219,'wsrep_sst_auth','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1314,219,'wsrep_sst_donor_rejects_queries','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1315,219,'wsrep_sst_method','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1316,219,'wsrep_sst_receive_address','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1317,219,'wsrep_start_position','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1318,219,'wsrep_strict_ddl','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1319,219,'wsrep_sync_wait','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1320,219,'wsrep_trx_fragment_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1321,219,'wsrep_trx_fragment_unit','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1322,219,'is_proxysql','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1323,220,'processlist','JSON','mysql_processlist','general',1,1);
-INSERT INTO `ts_variable` VALUES (1324,221,'mysql_available','INT','mysql_server','general',1,1);
-INSERT INTO `ts_variable` VALUES (1325,221,'mysql_ping','DOUBLE','mysql_server','general',1,1);
-INSERT INTO `ts_variable` VALUES (1326,222,'gtid_binlog_pos','TEXT','gtid','general',1,1);
-INSERT INTO `ts_variable` VALUES (1327,222,'gtid_binlog_state','TEXT','gtid','general',1,1);
-INSERT INTO `ts_variable` VALUES (1328,222,'gtid_current_pos','TEXT','gtid','general',1,1);
-INSERT INTO `ts_variable` VALUES (1329,222,'gtid_slave_pos','TEXT','gtid','general',1,1);
-INSERT INTO `ts_variable` VALUES (1332,223,'ssh_available','INT','ssh_server','general',1,1);
-INSERT INTO `ts_variable` VALUES (1333,223,'ssh_ping','DOUBLE','ssh_server','general',1,1);
-INSERT INTO `ts_variable` VALUES (1334,219,'optimizer_adjust_secondary_key_costs','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1335,219,'performance_schema_digests_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1336,219,'performance_schema_events_stages_history_long_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1337,219,'performance_schema_events_stages_history_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1338,219,'performance_schema_events_statements_history_long_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1339,219,'performance_schema_events_statements_history_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1340,219,'performance_schema_events_transactions_history_long_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1341,219,'performance_schema_events_transactions_history_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1342,219,'performance_schema_events_waits_history_long_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1343,219,'performance_schema_events_waits_history_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1344,219,'performance_schema_max_mutex_instances','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1345,219,'performance_schema_session_connect_attrs_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1346,219,'ssl_ca','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1347,219,'ssl_cert','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1348,219,'ssl_key','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1349,219,'wsrep_mode','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1350,224,'cpu_thread_count','INT','ssh_hardware','general',1,1);
-INSERT INTO `ts_variable` VALUES (1351,224,'memory','TEXT','ssh_hardware','general',1,1);
-INSERT INTO `ts_variable` VALUES (1352,224,'cpu_frequency','TEXT','ssh_hardware','general',1,1);
-INSERT INTO `ts_variable` VALUES (1353,224,'distributor','TEXT','ssh_hardware','general',1,1);
-INSERT INTO `ts_variable` VALUES (1354,224,'os','TEXT','ssh_hardware','general',1,1);
-INSERT INTO `ts_variable` VALUES (1355,224,'codename','TEXT','ssh_hardware','general',1,1);
-INSERT INTO `ts_variable` VALUES (1356,224,'product_name','TEXT','ssh_hardware','general',1,1);
-INSERT INTO `ts_variable` VALUES (1357,224,'arch','TEXT','ssh_hardware','general',1,1);
-INSERT INTO `ts_variable` VALUES (1358,224,'kernel','TEXT','ssh_hardware','general',1,1);
-INSERT INTO `ts_variable` VALUES (1359,224,'hostname','TEXT','ssh_hardware','general',1,1);
-INSERT INTO `ts_variable` VALUES (1360,224,'swapiness','INT','ssh_hardware','general',1,1);
-INSERT INTO `ts_variable` VALUES (1361,223,'ping','DOUBLE','ssh_server','general',1,1);
-INSERT INTO `ts_variable` VALUES (1362,225,'memory_total','INT','ssh_stats','general',1,1);
-INSERT INTO `ts_variable` VALUES (1363,225,'memory_used','INT','ssh_stats','general',1,1);
-INSERT INTO `ts_variable` VALUES (1364,225,'memory_free','INT','ssh_stats','general',1,1);
-INSERT INTO `ts_variable` VALUES (1365,225,'memory_shared','INT','ssh_stats','general',1,1);
-INSERT INTO `ts_variable` VALUES (1366,225,'memory_buff/cache','INT','ssh_stats','general',1,1);
-INSERT INTO `ts_variable` VALUES (1367,225,'memory_available','INT','ssh_stats','general',1,1);
-INSERT INTO `ts_variable` VALUES (1368,225,'swap_total','INT','ssh_stats','general',1,1);
-INSERT INTO `ts_variable` VALUES (1369,225,'swap_used','INT','ssh_stats','general',1,1);
-INSERT INTO `ts_variable` VALUES (1370,225,'swap_free','INT','ssh_stats','general',1,1);
-INSERT INTO `ts_variable` VALUES (1371,225,'disks','JSON','ssh_stats','general',1,1);
-INSERT INTO `ts_variable` VALUES (1372,225,'ips','JSON','ssh_stats','general',1,1);
-INSERT INTO `ts_variable` VALUES (1373,225,'cpu_usage','DOUBLE','ssh_stats','general',1,1);
-INSERT INTO `ts_variable` VALUES (1374,225,'cpu_detail','JSON','ssh_stats','general',1,1);
-INSERT INTO `ts_variable` VALUES (1375,223,'ssh_error','TEXT','ssh_server','general',1,1);
-INSERT INTO `ts_variable` VALUES (1376,219,'allow_suspicious_udfs','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1377,219,'bind_address','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1378,219,'binlog_alter_two_phase','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1379,219,'ignore_db_dirs','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1380,219,'innodb_alter_copy_bulk','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1381,219,'innodb_log_file_buffering','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1382,219,'innodb_log_file_mmap','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1383,219,'innodb_log_spin_wait_delay','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1384,219,'log_slow_min_examined_row_limit','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1385,219,'log_slow_query','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1386,219,'log_slow_query_file','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1387,219,'log_slow_query_time','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1388,219,'optimizer_extra_pruning_depth','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1389,219,'report_host','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1390,219,'rocksdb_access_hint_on_compaction_start','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1391,219,'rocksdb_advise_random_on_open','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1392,219,'rocksdb_allow_concurrent_memtable_write','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1393,219,'rocksdb_allow_mmap_reads','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1394,219,'rocksdb_allow_mmap_writes','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1395,219,'rocksdb_allow_to_start_after_corruption','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1396,219,'rocksdb_blind_delete_primary_key','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1397,219,'rocksdb_block_cache_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1398,219,'rocksdb_block_restart_interval','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1399,219,'rocksdb_block_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1400,219,'rocksdb_block_size_deviation','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1401,219,'rocksdb_bulk_load','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1402,219,'rocksdb_bulk_load_allow_sk','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1403,219,'rocksdb_bulk_load_allow_unsorted','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1404,219,'rocksdb_bulk_load_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1405,219,'rocksdb_bytes_per_sync','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1406,219,'rocksdb_cache_dump','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1407,219,'rocksdb_cache_high_pri_pool_ratio','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1408,219,'rocksdb_cache_index_and_filter_blocks','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1409,219,'rocksdb_cache_index_and_filter_with_high_priority','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1410,219,'rocksdb_checksums_pct','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1411,219,'rocksdb_collect_sst_properties','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1412,219,'rocksdb_commit_in_the_middle','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1413,219,'rocksdb_commit_time_batch_for_recovery','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1414,219,'rocksdb_compaction_readahead_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1415,219,'rocksdb_compaction_sequential_deletes','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1416,219,'rocksdb_compaction_sequential_deletes_count_sd','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1417,219,'rocksdb_compaction_sequential_deletes_file_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1418,219,'rocksdb_compaction_sequential_deletes_window','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1419,219,'rocksdb_create_if_missing','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1420,219,'rocksdb_create_missing_column_families','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1421,219,'rocksdb_datadir','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1422,219,'rocksdb_db_write_buffer_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1423,219,'rocksdb_deadlock_detect','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1424,219,'rocksdb_deadlock_detect_depth','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1425,219,'rocksdb_debug_manual_compaction_delay','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1426,219,'rocksdb_debug_optimizer_no_zero_cardinality','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1427,219,'rocksdb_debug_ttl_ignore_pk','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1428,219,'rocksdb_debug_ttl_read_filter_ts','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1429,219,'rocksdb_debug_ttl_rec_ts','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1430,219,'rocksdb_debug_ttl_snapshot_ts','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1431,219,'rocksdb_delayed_write_rate','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1432,219,'rocksdb_delete_obsolete_files_period_micros','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1433,219,'rocksdb_enable_2pc','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1434,219,'rocksdb_enable_bulk_load_api','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1435,219,'rocksdb_enable_insert_with_update_caching','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1436,219,'rocksdb_enable_thread_tracking','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1437,219,'rocksdb_enable_ttl','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1438,219,'rocksdb_enable_ttl_read_filtering','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1439,219,'rocksdb_enable_write_thread_adaptive_yield','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1440,219,'rocksdb_error_if_exists','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1441,219,'rocksdb_error_on_suboptimal_collation','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1442,219,'rocksdb_flush_log_at_trx_commit','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1443,219,'rocksdb_force_compute_memtable_stats','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1444,219,'rocksdb_force_compute_memtable_stats_cachetime','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1445,219,'rocksdb_force_flush_memtable_and_lzero_now','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1446,219,'rocksdb_force_flush_memtable_now','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1447,219,'rocksdb_force_index_records_in_range','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1448,219,'rocksdb_git_hash','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1449,219,'rocksdb_hash_index_allow_collision','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1450,219,'rocksdb_ignore_datadic_errors','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1451,219,'rocksdb_ignore_unknown_options','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1452,219,'rocksdb_index_type','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1453,219,'rocksdb_info_log_level','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1454,219,'rocksdb_io_write_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1455,219,'rocksdb_is_fd_close_on_exec','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1456,219,'rocksdb_keep_log_file_num','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1457,219,'rocksdb_large_prefix','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1458,219,'rocksdb_lock_scanned_rows','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1459,219,'rocksdb_lock_wait_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1460,219,'rocksdb_log_file_time_to_roll','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1461,219,'rocksdb_manifest_preallocation_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1462,219,'rocksdb_manual_compaction_threads','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1463,219,'rocksdb_manual_wal_flush','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1464,219,'rocksdb_master_skip_tx_api','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1465,219,'rocksdb_max_background_jobs','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1466,219,'rocksdb_max_latest_deadlocks','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1467,219,'rocksdb_max_log_file_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1468,219,'rocksdb_max_manifest_file_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1469,219,'rocksdb_max_manual_compactions','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1470,219,'rocksdb_max_open_files','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1471,219,'rocksdb_max_row_locks','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1472,219,'rocksdb_max_subcompactions','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1473,219,'rocksdb_max_total_wal_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1474,219,'rocksdb_merge_buf_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1475,219,'rocksdb_merge_combine_read_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1476,219,'rocksdb_merge_tmp_file_removal_delay_ms','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1477,219,'rocksdb_new_table_reader_for_compaction_inputs','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1478,219,'rocksdb_no_block_cache','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1479,219,'rocksdb_paranoid_checks','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1480,219,'rocksdb_pause_background_work','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1481,219,'rocksdb_perf_context_level','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1482,219,'rocksdb_persistent_cache_size_mb','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1483,219,'rocksdb_pin_l0_filter_and_index_blocks_in_cache','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1484,219,'rocksdb_print_snapshot_conflict_queries','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1485,219,'rocksdb_rate_limiter_bytes_per_sec','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1486,219,'rocksdb_records_in_range','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1487,219,'rocksdb_remove_mariabackup_checkpoint','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1488,219,'rocksdb_reset_stats','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1489,219,'rocksdb_rollback_on_timeout','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1490,219,'rocksdb_seconds_between_stat_computes','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1491,219,'rocksdb_signal_drop_index_thread','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1492,219,'rocksdb_sim_cache_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1493,219,'rocksdb_skip_bloom_filter_on_read','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1494,219,'rocksdb_skip_fill_cache','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1495,219,'rocksdb_skip_unique_check_tables','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1496,219,'rocksdb_sst_mgr_rate_bytes_per_sec','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1497,219,'rocksdb_stats_dump_period_sec','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1498,219,'rocksdb_stats_level','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1499,219,'rocksdb_stats_recalc_rate','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1500,219,'rocksdb_store_row_debug_checksums','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1501,219,'rocksdb_strict_collation_check','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1502,219,'rocksdb_supported_compression_types','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1503,219,'rocksdb_table_cache_numshardbits','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1504,219,'rocksdb_table_stats_sampling_pct','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1505,219,'rocksdb_trace_sst_api','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1506,219,'rocksdb_two_write_queues','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1507,219,'rocksdb_unsafe_for_binlog','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1508,219,'rocksdb_use_adaptive_mutex','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1509,219,'rocksdb_use_clock_cache','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1510,219,'rocksdb_use_direct_io_for_flush_and_compaction','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1511,219,'rocksdb_use_direct_reads','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1512,219,'rocksdb_use_fsync','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1513,219,'rocksdb_validate_tables','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1514,219,'rocksdb_verify_row_debug_checksums','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1515,219,'rocksdb_wal_bytes_per_sync','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1516,219,'rocksdb_wal_recovery_mode','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1517,219,'rocksdb_wal_size_limit_mb','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1518,219,'rocksdb_wal_ttl_seconds','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1519,219,'rocksdb_whole_key_filtering','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1520,219,'rocksdb_write_batch_max_bytes','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1521,219,'rocksdb_write_disable_wal','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1522,219,'rocksdb_write_ignore_missing_column_families','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1523,219,'rocksdb_write_policy','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1524,219,'server_audit_events','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1525,219,'skip_grant_tables','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1526,219,'system_versioning_insert_history','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1527,226,'binlog_file_first','TEXT','mysql_binlog','general',1,1);
-INSERT INTO `ts_variable` VALUES (1528,226,'binlog_file_last','TEXT','mysql_binlog','general',1,1);
-INSERT INTO `ts_variable` VALUES (1529,226,'binlog_files','JSON','mysql_binlog','general',1,1);
-INSERT INTO `ts_variable` VALUES (1530,226,'binlog_sizes','JSON','mysql_binlog','general',1,1);
-INSERT INTO `ts_variable` VALUES (1531,226,'binlog_total_size','INT','mysql_binlog','general',1,1);
-INSERT INTO `ts_variable` VALUES (1532,226,'binlog_nb_files','INT','mysql_binlog','general',1,1);
-INSERT INTO `ts_variable` VALUES (1533,226,'file','TEXT','master_status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1534,226,'position','INT','master_status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1535,227,'lock_deadlocks','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1536,227,'lock_timeouts','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1537,227,'lock_row_lock_current_waits','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1538,227,'lock_row_lock_time','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1539,227,'lock_row_lock_time_max','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1540,227,'lock_row_lock_waits','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1541,227,'lock_row_lock_time_avg','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1542,227,'buffer_pool_size','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1543,227,'buffer_pool_reads','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1544,227,'buffer_pool_read_requests','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1545,227,'buffer_pool_write_requests','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1546,227,'buffer_pool_wait_free','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1547,227,'buffer_pool_read_ahead','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1548,227,'buffer_pool_read_ahead_evicted','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1549,227,'buffer_pool_pages_total','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1550,227,'buffer_pool_pages_misc','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1551,227,'buffer_pool_pages_data','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1552,227,'buffer_pool_bytes_data','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1553,227,'buffer_pool_pages_dirty','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1554,227,'buffer_pool_bytes_dirty','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1555,227,'buffer_pool_pages_free','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1556,227,'buffer_pages_created','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1557,227,'buffer_pages_written','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1558,227,'buffer_pages_read','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1559,227,'buffer_index_sec_rec_cluster_reads','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1560,227,'buffer_index_sec_rec_cluster_reads_avoided','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1561,227,'buffer_data_reads','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1562,227,'buffer_data_written','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1563,227,'buffer_lru_batch_flush_total_pages','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1564,227,'buffer_lru_batch_evict_total_pages','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1565,227,'os_data_reads','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1566,227,'os_data_writes','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1567,227,'os_data_fsyncs','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1568,227,'os_pending_reads','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1569,227,'os_pending_writes','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1570,227,'os_log_bytes_written','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1571,227,'os_log_fsyncs','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1572,227,'os_log_pending_fsyncs','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1573,227,'os_log_pending_writes','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1574,227,'trx_rseg_history_len','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1575,227,'trx_undo_slots_cached','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1576,227,'log_waits','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1577,227,'log_write_requests','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1578,227,'log_writes','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1579,227,'log_padded','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1580,227,'adaptive_hash_searches','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1581,227,'adaptive_hash_searches_btree','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1582,227,'file_num_open_files','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1583,227,'ibuf_merges_insert','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1584,227,'ibuf_merges_delete_mark','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1585,227,'ibuf_merges_delete','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1586,227,'ibuf_merges_discard_insert','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1587,227,'ibuf_merges_discard_delete_mark','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1588,227,'ibuf_merges_discard_delete','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1589,227,'ibuf_merges','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1590,227,'ibuf_size','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1591,227,'innodb_activity_count','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1592,227,'innodb_dblwr_writes','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1593,227,'innodb_dblwr_pages_written','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1594,227,'innodb_page_size','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1595,227,'dml_inserts','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1596,227,'dml_deletes','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1597,227,'dml_updates','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1598,227,'dml_system_reads','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1599,227,'dml_system_inserts','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1600,227,'dml_system_deletes','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1601,227,'dml_system_updates','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1602,228,'database','JSON','mysql_database','general',1,1);
-INSERT INTO `ts_variable` VALUES (1603,229,'query_latency_avg','DOUBLE','mysql_latency','general',1,1);
-INSERT INTO `ts_variable` VALUES (1604,229,'query_latency_µs_95','INT','mysql_latency','general',1,1);
-INSERT INTO `ts_variable` VALUES (1606,230,'mysql_table','JSON','mysql_table','general',1,1);
-INSERT INTO `ts_variable` VALUES (1607,221,'mysql_error','TEXT','mysql_server','general',1,1);
-INSERT INTO `ts_variable` VALUES (1608,219,'wsrep_sst_donor','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1611,218,'innodb_buffer_pool_resize_status','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1612,219,'innodb_tmpdir','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1613,219,'secure_file_priv','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1614,219,'query_response_time_flush','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1615,219,'query_response_time_range_base','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1616,219,'query_response_time_stats','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1617,229,'query_latency_10m','INT','mysql_latency','general',1,1);
-INSERT INTO `ts_variable` VALUES (1618,229,'query_latency_1h','INT','mysql_latency','general',1,1);
-INSERT INTO `ts_variable` VALUES (1619,229,'query_latency_24h','INT','mysql_latency','general',1,1);
-INSERT INTO `ts_variable` VALUES (1620,229,'query_latency_1m','INT','mysql_latency','general',1,1);
-INSERT INTO `ts_variable` VALUES (1622,232,'meta_data_lock','TEXT','mysql_meta_data_lock','general',1,1);
-INSERT INTO `ts_variable` VALUES (1623,218,'max_memory_used','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1624,218,'query_time','DOUBLE','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1625,218,'stack_usage','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1626,233,'innodb_lock_waits','JSON','innodb_lock_waits','general',1,1);
-INSERT INTO `ts_variable` VALUES (1627,234,'host_summary','JSON','sys_host','general',1,1);
-INSERT INTO `ts_variable` VALUES (1628,235,'innodb_lock_waits','JSON','sys','general',1,1);
-INSERT INTO `ts_variable` VALUES (1629,218,'wsrep_protocol_application','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1630,218,'wsrep_protocol_replicator','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1631,218,'wsrep_protocol_gcs','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1632,218,'wsrep_','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1633,236,'proxysql_connect_error','JSON','proxysql_connect_error','general',1,1);
-INSERT INTO `ts_variable` VALUES (1634,218,'connection_name','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1635,218,'slave_sql_state','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1636,218,'slave_io_state','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1637,218,'master_host','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1638,218,'master_user','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1639,218,'master_port','INT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1640,218,'connect_retry','INT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1641,218,'master_log_file','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1642,218,'read_master_log_pos','INT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1643,218,'relay_log_file','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1644,218,'relay_log_pos','INT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1645,218,'relay_master_log_file','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1646,218,'slave_io_running','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1647,218,'slave_sql_running','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1648,218,'replicate_do_db','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1649,218,'replicate_ignore_db','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1650,218,'replicate_do_table','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1651,218,'replicate_ignore_table','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1652,218,'replicate_wild_do_table','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1653,218,'replicate_wild_ignore_table','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1654,218,'last_errno','INT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1655,218,'last_error','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1656,218,'skip_counter','INT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1657,218,'exec_master_log_pos','INT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1658,218,'relay_log_space','INT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1659,218,'until_condition','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1660,218,'until_log_file','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1661,218,'until_log_pos','INT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1662,218,'master_ssl_allowed','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1663,218,'master_ssl_ca_file','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1664,218,'master_ssl_ca_path','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1665,218,'master_ssl_cert','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1666,218,'master_ssl_cipher','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1667,218,'master_ssl_key','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1668,218,'seconds_behind_master','INT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1669,218,'master_ssl_verify_server_cert','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1670,218,'last_io_errno','INT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1671,218,'last_io_error','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1672,218,'last_sql_errno','INT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1673,218,'last_sql_error','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1674,218,'replicate_ignore_server_ids','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1675,218,'master_server_id','INT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1676,218,'master_ssl_crl','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1677,218,'master_ssl_crlpath','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1678,218,'using_gtid','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1679,218,'gtid_io_pos','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1680,218,'replicate_do_domain_ids','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1681,218,'replicate_ignore_domain_ids','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1682,218,'parallel_mode','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1683,218,'sql_delay','INT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1684,218,'sql_remaining_delay','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1685,218,'slave_sql_running_state','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1686,218,'slave_ddl_groups','INT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1687,218,'slave_non_transactional_groups','INT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1688,218,'slave_transactional_groups','INT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1689,218,'retried_transactions','INT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1690,218,'max_relay_log_size','INT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1691,218,'executed_log_entries','INT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1692,218,'slave_received_heartbeats','INT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1693,218,'slave_heartbeat_period','DOUBLE','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1694,218,'gtid_slave_pos','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1695,218,'master_last_event_time','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1696,218,'slave_last_event_time','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1697,218,'master_slave_time_diff','INT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1698,219,'replicate_ignore_db','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1701,225,'memory_mysqld','INT','ssh_stats','general',1,1);
-INSERT INTO `ts_variable` VALUES (1702,225,'memory_detail_kb','JSON','ssh_stats','general',1,1);
-INSERT INTO `ts_variable` VALUES (1703,238,'ps_memory_summary_global_by_event_name','JSON','performance_schema','general',1,1);
-INSERT INTO `ts_variable` VALUES (1722,239,'checksums_values','JSON','proxysql_runtime','general',1,1);
-INSERT INTO `ts_variable` VALUES (1723,241,'global_variables','JSON','proxysql_runtime','general',1,1);
-INSERT INTO `ts_variable` VALUES (1724,246,'mysql_galera_hostgroups','JSON','proxysql_runtime','general',1,1);
-INSERT INTO `ts_variable` VALUES (1725,249,'mysql_query_rules','JSON','proxysql_runtime','general',1,1);
-INSERT INTO `ts_variable` VALUES (1726,253,'mysql_users','JSON','proxysql_runtime','general',1,1);
-INSERT INTO `ts_variable` VALUES (1727,254,'proxysql_servers','JSON','proxysql_runtime','general',1,1);
-INSERT INTO `ts_variable` VALUES (1728,231,'mysql_servers','JSON','proxysql_runtime','general',1,1);
-INSERT INTO `ts_variable` VALUES (1730,218,'com_multi','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1731,218,'com_show_master_status','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1732,218,'flush_commands','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1733,218,'innodb_pages0_read','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1734,218,'innodb_num_index_pages_written','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1735,218,'innodb_num_non_index_pages_written','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1736,218,'innodb_encryption_key_rotation_list_length','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1737,218,'innodb_scrub_background_page_reorganizations','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1738,218,'innodb_scrub_background_page_splits','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1739,218,'innodb_scrub_background_page_split_failures_underflow','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1740,218,'innodb_scrub_background_page_split_failures_out_of_filespace','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1741,218,'innodb_scrub_background_page_split_failures_missing_index','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1742,218,'innodb_scrub_background_page_split_failures_unknown','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1743,218,'innodb_scrub_log','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1744,219,'innodb_adaptive_hash_index_partitions','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1745,219,'innodb_adaptive_max_sleep_delay','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1746,219,'innodb_background_scrub_data_check_interval','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1747,219,'innodb_background_scrub_data_compressed','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1748,219,'innodb_background_scrub_data_interval','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1749,219,'innodb_background_scrub_data_uncompressed','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1750,219,'innodb_buffer_pool_instances','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1751,219,'innodb_buffer_pool_populate','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1752,219,'innodb_checksums','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1753,219,'innodb_cleaner_lsn_age_factor','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1754,219,'innodb_commit_concurrency','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1755,219,'innodb_concurrency_tickets','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1756,219,'innodb_corrupt_table_action','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1757,219,'innodb_disallow_writes','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1758,219,'innodb_empty_free_list_algorithm','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1759,219,'innodb_fake_changes','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1760,219,'innodb_file_format','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1761,219,'innodb_file_format_check','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1762,219,'innodb_file_format_max','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1763,219,'innodb_force_load_corrupted','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1764,219,'innodb_foreground_preflush','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1765,219,'innodb_idle_flush_pct','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1766,219,'innodb_instrument_semaphores','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1767,219,'innodb_kill_idle_transaction','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1768,219,'innodb_large_prefix','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1769,219,'innodb_lock_schedule_algorithm','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1770,219,'innodb_locking_fake_changes','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1771,219,'innodb_locks_unsafe_for_binlog','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1772,219,'innodb_log_arch_expire_sec','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1773,219,'innodb_log_archive','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1774,219,'innodb_log_block_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1775,219,'innodb_log_checksum_algorithm','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1776,219,'innodb_log_checksums','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1777,219,'innodb_log_compressed_pages','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1778,219,'innodb_log_files_in_group','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1779,219,'innodb_log_optimize_ddl','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1780,219,'innodb_max_bitmap_file_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1781,219,'innodb_max_changed_pages','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1782,219,'innodb_mirrored_log_groups','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1783,219,'innodb_mtflush_threads','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1784,219,'innodb_page_cleaners','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1785,219,'innodb_replication_delay','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1786,219,'innodb_rollback_segments','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1787,219,'innodb_safe_truncate','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1788,219,'innodb_sched_priority_cleaner','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1789,219,'innodb_scrub_log','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1790,219,'innodb_scrub_log_speed','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1791,219,'innodb_show_locks_held','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1792,219,'innodb_show_verbose_locks','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1793,219,'innodb_stats_sample_pages','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1794,219,'innodb_support_xa','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1795,219,'innodb_sync_array_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1796,219,'innodb_thread_concurrency','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1797,219,'innodb_thread_sleep_delay','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1798,219,'innodb_track_changed_pages','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1799,219,'innodb_track_redo_log_now','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1800,219,'innodb_undo_logs','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1801,219,'innodb_use_fallocate','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1802,219,'innodb_use_global_flush_log_at_trx_commit','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1803,219,'innodb_use_mtflush','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1804,219,'innodb_use_stacktrace','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1805,219,'innodb_use_trim','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1806,219,'max_long_data_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1807,219,'multi_range_count','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1808,219,'performance_schema_accounts_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1809,219,'performance_schema_hosts_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1810,219,'performance_schema_max_cond_instances','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1811,219,'performance_schema_max_file_instances','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1812,219,'performance_schema_max_rwlock_instances','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1813,219,'performance_schema_max_socket_instances','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1814,219,'performance_schema_max_table_handles','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1815,219,'performance_schema_max_table_instances','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1816,219,'performance_schema_max_thread_instances','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1817,219,'performance_schema_setup_actors_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1818,219,'performance_schema_setup_objects_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1819,219,'performance_schema_users_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1820,219,'thread_concurrency','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1821,219,'timed_mutexes','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1822,218,'feature_into_outfile','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1823,218,'feature_into_variable','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1824,218,'max_used_connections_time','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1825,219,'innodb_data_file_buffering','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1826,219,'innodb_data_file_write_through','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1827,219,'innodb_log_file_write_through','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1828,219,'optimizer_disk_read_cost','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1829,219,'optimizer_disk_read_ratio','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1830,219,'optimizer_index_block_copy_cost','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1831,219,'optimizer_key_compare_cost','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1832,219,'optimizer_key_copy_cost','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1833,219,'optimizer_key_lookup_cost','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1834,219,'optimizer_key_next_find_cost','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1835,219,'optimizer_row_copy_cost','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1836,219,'optimizer_row_lookup_cost','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1837,219,'optimizer_row_next_find_cost','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1838,219,'optimizer_rowid_compare_cost','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1839,219,'optimizer_rowid_copy_cost','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1840,219,'optimizer_scan_setup_cost','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1841,219,'optimizer_where_cost','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1842,218,'binlog_disk_use','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1843,218,'binlog_gtid_index_hit','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1844,218,'binlog_gtid_index_miss','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1845,218,'innodb_async_reads_pending','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1846,218,'innodb_async_reads_tasks_running','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1847,218,'innodb_async_reads_total_count','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1848,218,'innodb_async_reads_total_enqueues','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1849,218,'innodb_async_reads_queue_size','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1850,218,'innodb_async_reads_wait_slot_sec','DOUBLE','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1851,218,'innodb_async_writes_pending','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1852,218,'innodb_async_writes_tasks_running','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1853,218,'innodb_async_writes_total_count','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1854,218,'innodb_async_writes_total_enqueues','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1855,218,'innodb_async_writes_queue_size','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1856,218,'innodb_async_writes_wait_slot_sec','DOUBLE','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1857,218,'max_tmp_space_used','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1858,218,'tmp_space_used','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1859,219,'binlog_row_event_max_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1860,219,'block_encryption_mode','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1861,219,'transaction_isolation','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1862,219,'transaction_read_only','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1863,219,'binlog_gtid_index','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1864,219,'binlog_gtid_index_page_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1865,219,'binlog_gtid_index_span_min','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1866,219,'binlog_legacy_event_pos','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1867,219,'binlog_space_limit','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1868,219,'character_set_collations','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1869,219,'innodb_truncate_temporary_tablespace_now','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1870,219,'max_binlog_total_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1871,219,'max_tmp_session_space_usage','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1872,219,'max_tmp_total_space_usage','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1873,219,'slave_connections_needed_for_purge','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (1874,227,'innodb_rwlock_s_spin_waits','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1875,227,'innodb_rwlock_x_spin_waits','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1876,227,'innodb_rwlock_sx_spin_waits','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1877,227,'innodb_rwlock_s_spin_rounds','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1878,227,'innodb_rwlock_x_spin_rounds','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1879,227,'innodb_rwlock_sx_spin_rounds','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1880,227,'innodb_rwlock_s_os_waits','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1881,227,'innodb_rwlock_x_os_waits','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1882,227,'innodb_rwlock_sx_os_waits','JSON','innodb_metrics','general',1,1);
-INSERT INTO `ts_variable` VALUES (1883,218,'replicate_rewrite_db','TEXT','slave','slave',1,1);
-INSERT INTO `ts_variable` VALUES (1884,218,'acl_cache_items_count','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1885,218,'caching_sha2_password_rsa_public_key','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1886,218,'com_alter_instance','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1887,218,'com_alter_resource_group','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1888,218,'com_alter_user_default_role','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1889,218,'com_change_repl_filter','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1890,218,'com_change_replication_source','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1891,218,'com_clone','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1892,218,'com_create_library','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1893,218,'com_create_resource_group','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1894,218,'com_create_spatial_reference_system','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1895,218,'com_drop_library','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1896,218,'com_drop_resource_group','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1897,218,'com_drop_spatial_reference_system','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1898,218,'com_explain_other','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1899,218,'com_grant_roles','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1900,218,'com_import','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1901,218,'com_install_component','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1902,218,'com_lock_instance','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1903,218,'com_restart','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1904,218,'com_revoke_roles','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1905,218,'com_set_password','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1906,218,'com_set_resource_group','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1907,218,'com_set_role','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1908,218,'com_show_create_library','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1909,218,'com_show_function_code','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1910,218,'com_show_binary_log_status','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1911,218,'com_show_parse_tree','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1912,218,'com_show_procedure_code','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1913,218,'com_show_replicas','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1914,218,'com_show_replica_status','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1915,218,'com_replica_start','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1916,218,'com_replica_stop','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1917,218,'com_group_replication_start','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1918,218,'com_group_replication_stop','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1919,218,'com_uninstall_component','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1920,218,'com_unlock_instance','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1921,218,'count_hit_query_past_connection_memory_status_limit','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1922,218,'count_hit_query_past_global_connection_memory_status_limit','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1923,218,'count_hit_tmp_table_size','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1924,218,'current_tls_ca','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1925,218,'current_tls_cert','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1926,218,'current_tls_key','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1927,218,'current_tls_version','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1928,218,'deprecated_use_fk_on_non_standard_key_count','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1929,218,'deprecated_use_fk_on_non_standard_key_last_timestamp','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1930,218,'deprecated_use_i_s_processlist_count','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1931,218,'deprecated_use_i_s_processlist_last_timestamp','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1932,218,'error_log_buffered_bytes','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1933,218,'error_log_buffered_events','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1934,218,'error_log_expired_events','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1935,218,'error_log_latest_write','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1936,218,'global_connection_memory','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1937,218,'innodb_buffer_pool_dump_status','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1938,218,'innodb_buffer_pool_resize_status_code','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1939,218,'innodb_buffer_pool_resize_status_progress','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1940,218,'innodb_redo_log_read_only','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1941,218,'innodb_redo_log_uuid','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1942,218,'innodb_redo_log_checkpoint_lsn','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1943,218,'innodb_redo_log_current_lsn','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1944,218,'innodb_redo_log_flushed_to_disk_lsn','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1945,218,'innodb_redo_log_logical_size','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1946,218,'innodb_redo_log_physical_size','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1947,218,'innodb_redo_log_capacity_resized','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1948,218,'innodb_redo_log_resize_status','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1949,218,'innodb_redo_log_enabled','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1950,218,'innodb_sampled_pages_read','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1951,218,'innodb_sampled_pages_skipped','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1952,218,'innodb_undo_tablespaces_total','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1953,218,'innodb_undo_tablespaces_implicit','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1954,218,'innodb_undo_tablespaces_explicit','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1955,218,'innodb_undo_tablespaces_active','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1956,218,'locked_connects','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1957,218,'max_execution_time_exceeded','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1958,218,'max_execution_time_set','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1959,218,'max_execution_time_set_failed','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1960,218,'mysqlx_aborted_clients','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1961,218,'mysqlx_address','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1962,218,'mysqlx_bytes_received','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1963,218,'mysqlx_bytes_received_compressed_payload','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1964,218,'mysqlx_bytes_received_uncompressed_frame','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1965,218,'mysqlx_bytes_sent','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1966,218,'mysqlx_bytes_sent_compressed_payload','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1967,218,'mysqlx_bytes_sent_uncompressed_frame','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1968,218,'mysqlx_connection_accept_errors','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1969,218,'mysqlx_connection_errors','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1970,218,'mysqlx_connections_accepted','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1971,218,'mysqlx_connections_closed','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1972,218,'mysqlx_connections_rejected','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1973,218,'mysqlx_crud_create_view','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1974,218,'mysqlx_crud_delete','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1975,218,'mysqlx_crud_drop_view','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1976,218,'mysqlx_crud_find','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1977,218,'mysqlx_crud_insert','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1978,218,'mysqlx_crud_modify_view','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1979,218,'mysqlx_crud_update','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1980,218,'mysqlx_cursor_close','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1981,218,'mysqlx_cursor_fetch','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1982,218,'mysqlx_cursor_open','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1983,218,'mysqlx_errors_sent','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1984,218,'mysqlx_errors_unknown_message_type','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1985,218,'mysqlx_expect_close','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1986,218,'mysqlx_expect_open','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1987,218,'mysqlx_init_error','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1988,218,'mysqlx_messages_sent','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1989,218,'mysqlx_notice_global_sent','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1990,218,'mysqlx_notice_other_sent','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1991,218,'mysqlx_notice_warning_sent','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1992,218,'mysqlx_notified_by_group_replication','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1993,218,'mysqlx_port','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1994,218,'mysqlx_prep_deallocate','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1995,218,'mysqlx_prep_execute','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1996,218,'mysqlx_prep_prepare','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1997,218,'mysqlx_rows_sent','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1998,218,'mysqlx_sessions','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (1999,218,'mysqlx_sessions_accepted','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2000,218,'mysqlx_sessions_closed','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2001,218,'mysqlx_sessions_fatal_error','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2002,218,'mysqlx_sessions_killed','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2003,218,'mysqlx_sessions_rejected','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2004,218,'mysqlx_socket','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2005,218,'mysqlx_ssl_accepts','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2006,218,'mysqlx_ssl_ctx_verify_depth','DOUBLE','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2007,218,'mysqlx_ssl_ctx_verify_mode','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2008,218,'mysqlx_ssl_finished_accepts','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2009,218,'mysqlx_ssl_server_not_after','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2010,218,'mysqlx_ssl_server_not_before','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2011,218,'mysqlx_stmt_create_collection','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2012,218,'mysqlx_stmt_create_collection_index','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2013,218,'mysqlx_stmt_disable_notices','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2014,218,'mysqlx_stmt_drop_collection','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2015,218,'mysqlx_stmt_drop_collection_index','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2016,218,'mysqlx_stmt_enable_notices','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2017,218,'mysqlx_stmt_ensure_collection','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2018,218,'mysqlx_stmt_execute_mysqlx','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2019,218,'mysqlx_stmt_execute_sql','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2020,218,'mysqlx_stmt_execute_xplugin','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2021,218,'mysqlx_stmt_get_collection_options','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2022,218,'mysqlx_stmt_kill_client','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2023,218,'mysqlx_stmt_list_clients','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2024,218,'mysqlx_stmt_list_notices','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2025,218,'mysqlx_stmt_list_objects','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2026,218,'mysqlx_stmt_modify_collection_options','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2027,218,'mysqlx_stmt_ping','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2028,218,'mysqlx_worker_threads','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2029,218,'mysqlx_worker_threads_active','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2030,218,'ongoing_anonymous_transaction_count','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2031,218,'performance_schema_logger_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2032,218,'performance_schema_meter_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2033,218,'performance_schema_metric_lost','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2034,218,'performance_schema_session_connect_attrs_longest_seen','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2035,218,'replica_open_temp_tables','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2036,218,'resource_group_supported','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2037,218,'rsa_public_key','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2038,218,'secondary_engine_execution_count','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2039,218,'ssl_server_not_after','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2040,218,'ssl_server_not_before','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2041,218,'ssl_session_cache_timeout','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2042,218,'table_open_cache_triggers_hits','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2043,218,'table_open_cache_triggers_misses','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2044,218,'table_open_cache_triggers_overflows','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2045,218,'telemetry_logs_supported','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2046,218,'telemetry_metrics_supported','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2047,218,'telemetry_traces_supported','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2048,218,'temptable_count_hit_max_ram','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2049,218,'tls_library_version','TEXT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2050,219,'activate_all_roles_on_login','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2051,219,'admin_port','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2052,219,'admin_tls_version','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2053,219,'authentication_policy','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2054,219,'auto_generate_certs','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2055,219,'binlog_encryption','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2056,219,'binlog_error_action','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2057,219,'binlog_expire_logs_auto_purge','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2058,219,'binlog_group_commit_sync_delay','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2059,219,'binlog_group_commit_sync_no_delay_count','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2060,219,'binlog_gtid_simple_recovery','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2061,219,'binlog_max_flush_queue_time','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2062,219,'binlog_order_commits','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2063,219,'binlog_rotate_encryption_master_key_at_startup','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2064,219,'binlog_rows_query_log_events','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2065,219,'binlog_transaction_compression','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2066,219,'binlog_transaction_compression_level_zstd','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2067,219,'binlog_transaction_dependency_history_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2068,219,'build_id','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2069,219,'caching_sha2_password_auto_generate_rsa_keys','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2070,219,'caching_sha2_password_digest_rounds','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2071,219,'caching_sha2_password_private_key_path','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2072,219,'caching_sha2_password_public_key_path','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2073,219,'check_proxy_users','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2074,219,'connection_memory_chunk_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2075,219,'connection_memory_limit','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2076,219,'connection_memory_status_limit','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2077,219,'create_admin_listener_thread','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2078,219,'cte_max_recursion_depth','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2079,219,'default_collation_for_utf8mb4','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2080,219,'default_table_encryption','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2081,219,'default_tmp_storage_engine','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2082,219,'enable_secondary_engine_statistics','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2083,219,'end_markers_in_json','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2084,219,'enforce_gtid_consistency','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2085,219,'explain_format','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2086,219,'explain_json_format_version','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2087,219,'generated_random_password_length','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2088,219,'global_connection_memory_limit','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2089,219,'global_connection_memory_status_limit','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2090,219,'global_connection_memory_tracking','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2091,219,'group_replication_consistency','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2092,219,'gtid_executed_compression_period','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2093,219,'gtid_mode','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2094,219,'have_statement_timeout','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2095,219,'histogram_generation_max_mem_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2096,219,'information_schema_stats_expiry','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2097,219,'innodb_api_bk_commit_interval','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2098,219,'innodb_api_disable_rowlock','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2099,219,'innodb_api_enable_binlog','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2100,219,'innodb_api_enable_mdl','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2101,219,'innodb_api_trx_level','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2102,219,'innodb_buffer_pool_in_core_file','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2103,219,'innodb_ddl_buffer_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2104,219,'innodb_ddl_threads','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2105,219,'innodb_dedicated_server','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2106,219,'innodb_doublewrite_batch_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2107,219,'innodb_doublewrite_files','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2108,219,'innodb_doublewrite_pages','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2109,219,'innodb_extend_and_initialize','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2110,219,'innodb_fsync_threshold','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2111,219,'innodb_log_spin_cpu_abs_lwm','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2112,219,'innodb_log_spin_cpu_pct_hwm','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2113,219,'innodb_log_wait_for_flush_spin_hwm','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2114,219,'innodb_log_writer_threads','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2115,219,'innodb_parallel_read_threads','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2116,219,'innodb_print_ddl_logs','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2117,219,'innodb_redo_log_capacity','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2118,219,'innodb_redo_log_encrypt','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2119,219,'innodb_segment_reserve_factor','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2120,219,'innodb_spin_wait_pause_multiplier','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2121,219,'innodb_temp_tablespaces_dir','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2122,219,'innodb_undo_log_encrypt','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2123,219,'innodb_use_fdatasync','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2124,219,'innodb_validate_tablespace_paths','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2125,219,'internal_tmp_mem_storage_engine','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2126,219,'keyring_operations','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2127,219,'log_error_services','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2128,219,'log_error_verbosity','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2129,219,'log_raw','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2130,219,'log_replica_updates','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2131,219,'log_slow_extra','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2132,219,'log_slow_replica_statements','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2133,219,'log_statements_unsafe_for_binlog','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2134,219,'log_throttle_queries_not_using_indexes','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2135,219,'log_timestamps','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2136,219,'max_execution_time','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2137,219,'max_points_in_geometry','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2138,219,'mysqlx_bind_address','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2139,219,'mysqlx_compression_algorithms','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2140,219,'mysqlx_connect_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2141,219,'mysqlx_deflate_default_compression_level','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2142,219,'mysqlx_deflate_max_client_compression_level','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2143,219,'mysqlx_document_id_unique_prefix','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2144,219,'mysqlx_enable_hello_notice','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2145,219,'mysqlx_idle_worker_thread_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2146,219,'mysqlx_interactive_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2147,219,'mysqlx_lz4_default_compression_level','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2148,219,'mysqlx_lz4_max_client_compression_level','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2149,219,'mysqlx_max_allowed_packet','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2150,219,'mysqlx_max_connections','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2151,219,'mysqlx_min_worker_threads','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2152,219,'mysqlx_port','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2153,219,'mysqlx_port_open_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2154,219,'mysqlx_read_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2155,219,'mysqlx_socket','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2156,219,'mysqlx_wait_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2157,219,'mysqlx_write_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2158,219,'mysqlx_zstd_default_compression_level','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2159,219,'mysqlx_zstd_max_client_compression_level','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2160,219,'ngram_token_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2161,219,'offline_mode','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2162,219,'optimizer_max_subgraph_pairs','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2163,219,'optimizer_trace_features','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2164,219,'optimizer_trace_limit','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2165,219,'parser_max_mem_size','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2166,219,'partial_revokes','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2167,219,'password_history','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2168,219,'password_require_current','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2169,219,'password_reuse_interval','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2170,219,'performance_schema_error_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2171,219,'performance_schema_max_digest_sample_age','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2172,219,'performance_schema_max_logger_classes','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2173,219,'performance_schema_max_meter_classes','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2174,219,'performance_schema_max_metric_classes','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2175,219,'performance_schema_show_processlist','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2176,219,'persist_sensitive_variables_in_plaintext','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2177,219,'persisted_globals_load','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2178,219,'print_identified_with_as_hex','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2179,219,'protocol_compression_algorithms','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2180,219,'range_optimizer_max_mem_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2181,219,'rbr_exec_mode','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2182,219,'regexp_stack_limit','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2183,219,'regexp_time_limit','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2184,219,'replica_allow_batching','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2185,219,'replica_checkpoint_group','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2186,219,'replica_checkpoint_period','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2187,219,'replica_compressed_protocol','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2188,219,'replica_exec_mode','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2189,219,'replica_load_tmpdir','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2190,219,'replica_max_allowed_packet','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2191,219,'replica_net_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2192,219,'replica_parallel_type','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2193,219,'replica_parallel_workers','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2194,219,'replica_pending_jobs_size_max','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2195,219,'replica_preserve_commit_order','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2196,219,'replica_skip_errors','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2197,219,'replica_sql_verify_checksum','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2198,219,'replica_transaction_retries','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2199,219,'replication_optimize_for_static_plugin_config','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2200,219,'replication_sender_observe_commit_only','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2201,219,'restrict_fk_on_non_standard_key','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2202,219,'rpl_read_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2203,219,'rpl_stop_replica_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2204,219,'rpl_stop_slave_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2205,219,'schema_definition_cache','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2206,219,'secondary_engine_cost_threshold','DOUBLE','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2207,219,'select_into_buffer_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2208,219,'select_into_disk_sync','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2209,219,'select_into_disk_sync_delay','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2210,219,'server_id_bits','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2211,219,'server_uuid','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2212,219,'session_track_gtids','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2213,219,'set_operations_buffer_size','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2214,219,'sha256_password_auto_generate_rsa_keys','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2215,219,'sha256_password_private_key_path','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2216,219,'sha256_password_proxy_users','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2217,219,'sha256_password_public_key_path','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2218,219,'show_create_table_verbosity','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2219,219,'show_gipk_in_create_table_and_information_schema','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2220,219,'skip_replica_start','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2221,219,'skip_slave_start','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2222,219,'slave_allow_batching','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2223,219,'slave_checkpoint_group','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2224,219,'slave_checkpoint_period','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2225,219,'slave_parallel_type','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2226,219,'slave_pending_jobs_size_max','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2227,219,'slave_preserve_commit_order','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2228,219,'source_verify_checksum','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2229,219,'sql_generate_invisible_primary_key','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2230,219,'sql_replica_skip_counter','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2231,219,'sql_require_primary_key','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2232,219,'ssl_fips_mode','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2233,219,'ssl_session_cache_mode','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2234,219,'ssl_session_cache_timeout','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2235,219,'stored_program_definition_cache','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2236,219,'super_read_only','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2237,219,'sync_source_info','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2238,219,'table_encryption_privilege_check','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2239,219,'table_open_cache_triggers','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2240,219,'tablespace_definition_cache','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2241,219,'temptable_max_mmap','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2242,219,'temptable_max_ram','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2243,219,'temptable_use_mmap','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2244,219,'terminology_use_previous','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2245,219,'tls_certificates_enforced_validation','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2246,219,'version_compile_zlib','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2247,219,'windowing_use_high_precision','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2248,219,'xa_detach_on_prepare','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2249,219,'mysql_native_password_proxy_users','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2250,218,'com_slave_start','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2251,218,'com_slave_stop','INT','status','general',1,1);
-INSERT INTO `ts_variable` VALUES (2252,219,'avoid_temporal_upgrade','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2253,219,'binlog_transaction_dependency_tracking','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2254,219,'default_authentication_plugin','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2255,219,'log_bin_use_v1_row_events','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2256,219,'master_info_repository','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2257,219,'new','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2258,219,'relay_log_info_repository','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2259,219,'show_old_temporals','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2260,219,'slave_rows_search_algorithms','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2261,219,'transaction_write_set_extraction','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2262,219,'innodb_numa_interleave','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2263,219,'internal_tmp_disk_storage_engine','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2264,219,'log_builtin_as_identified_by_password','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2265,219,'log_syslog','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2266,219,'log_syslog_facility','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2267,219,'log_syslog_include_pid','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2268,219,'show_compatibility_56','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2269,257,'plugins','JSON','information_schema','general',1,1);
-INSERT INTO `ts_variable` VALUES (2271,258,'disks','JSON','information_schema','general',1,1);
-INSERT INTO `ts_variable` VALUES (2273,259,'metadata_lock_info','JSON','information_schema','general',1,1);
-INSERT INTO `ts_variable` VALUES (2274,260,'events_statements_summary_by_digest','JSON','performance_schema','general',1,1);
-INSERT INTO `ts_variable` VALUES (2275,238,'memory_summary_global_by_event_name','JSON','performance_schema','general',1,1);
-INSERT INTO `ts_variable` VALUES (2276,261,'tables','JSON','information_schema','general',1,1);
-INSERT INTO `ts_variable` VALUES (2277,261,'create_tables','TEXT','information_schema','general',1,1);
-INSERT INTO `ts_variable` VALUES (2278,219,'init_connect','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2279,219,'slave_type_conversions','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2280,219,'sql_error_log_warnings','TEXT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2281,219,'innodb_buffer_pool_size_auto_min','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2282,219,'innodb_buffer_pool_size_max','INT','variables','general',1,1);
-INSERT INTO `ts_variable` VALUES (2283,219,'innodb_log_checkpoint_now','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (2145,3755,'binlog_file_first','TEXT','mysql_binlog','general',1,1);
+INSERT INTO `ts_variable` VALUES (2146,3755,'binlog_file_last','TEXT','mysql_binlog','general',1,1);
+INSERT INTO `ts_variable` VALUES (2147,3755,'binlog_files','JSON','mysql_binlog','general',1,1);
+INSERT INTO `ts_variable` VALUES (2148,3755,'binlog_sizes','JSON','mysql_binlog','general',1,1);
+INSERT INTO `ts_variable` VALUES (2149,3755,'binlog_total_size','INT','mysql_binlog','general',1,1);
+INSERT INTO `ts_variable` VALUES (2150,3755,'binlog_nb_files','INT','mysql_binlog','general',1,1);
+INSERT INTO `ts_variable` VALUES (2151,3755,'file','TEXT','master_status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2152,3755,'position','INT','master_status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2153,3756,'aborted_clients','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2154,3756,'aborted_connects','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2155,3756,'aborted_connects_preauth','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2156,3756,'access_denied_errors','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2157,3756,'acl_column_grants','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2158,3756,'acl_database_grants','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2159,3756,'acl_function_grants','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2160,3756,'acl_procedure_grants','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2161,3756,'acl_package_spec_grants','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2162,3756,'acl_package_body_grants','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2163,3756,'acl_proxy_users','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2164,3756,'acl_role_grants','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2165,3756,'acl_roles','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2166,3756,'acl_table_grants','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2167,3756,'acl_users','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2168,3756,'aria_pagecache_blocks_not_flushed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2169,3756,'aria_pagecache_blocks_unused','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2170,3756,'aria_pagecache_blocks_used','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2171,3756,'aria_pagecache_read_requests','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2172,3756,'aria_pagecache_reads','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2173,3756,'aria_pagecache_write_requests','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2174,3756,'aria_pagecache_writes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2175,3756,'aria_transaction_log_syncs','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2176,3756,'binlog_commits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2177,3756,'binlog_group_commits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2178,3756,'binlog_group_commit_trigger_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2179,3756,'binlog_group_commit_trigger_lock_wait','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2180,3756,'binlog_group_commit_trigger_timeout','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2181,3756,'binlog_snapshot_file','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2182,3756,'binlog_snapshot_position','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2183,3756,'binlog_bytes_written','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2184,3756,'binlog_cache_disk_use','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2185,3756,'binlog_cache_use','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2186,3756,'binlog_stmt_cache_disk_use','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2187,3756,'binlog_stmt_cache_use','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2188,3756,'busy_time','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2189,3756,'bytes_received','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2190,3756,'bytes_sent','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2191,3756,'column_compressions','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2192,3756,'column_decompressions','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2193,3756,'com_admin_commands','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2194,3756,'com_alter_db','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2195,3756,'com_alter_db_upgrade','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2196,3756,'com_alter_event','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2197,3756,'com_alter_function','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2198,3756,'com_alter_procedure','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2199,3756,'com_alter_server','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2200,3756,'com_alter_sequence','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2201,3756,'com_alter_table','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2202,3756,'com_alter_user','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2203,3756,'com_analyze','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2204,3756,'com_assign_to_keycache','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2205,3756,'com_backup','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2206,3756,'com_backup_lock','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2207,3756,'com_begin','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2208,3756,'com_binlog','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2209,3756,'com_call_procedure','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2210,3756,'com_change_db','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2211,3756,'com_change_master','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2212,3756,'com_check','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2213,3756,'com_checksum','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2214,3756,'com_commit','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2215,3756,'com_compound_sql','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2216,3756,'com_create_db','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2217,3756,'com_create_event','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2218,3756,'com_create_function','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2219,3756,'com_create_index','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2220,3756,'com_create_package','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2221,3756,'com_create_package_body','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2222,3756,'com_create_procedure','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2223,3756,'com_create_role','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2224,3756,'com_create_sequence','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2225,3756,'com_create_server','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2226,3756,'com_create_table','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2227,3756,'com_create_temporary_table','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2228,3756,'com_create_trigger','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2229,3756,'com_create_udf','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2230,3756,'com_create_user','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2231,3756,'com_create_view','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2232,3756,'com_dealloc_sql','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2233,3756,'com_delete','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2234,3756,'com_delete_multi','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2235,3756,'com_do','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2236,3756,'com_drop_db','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2237,3756,'com_drop_event','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2238,3756,'com_drop_function','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2239,3756,'com_drop_index','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2240,3756,'com_drop_procedure','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2241,3756,'com_drop_package','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2242,3756,'com_drop_package_body','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2243,3756,'com_drop_role','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2244,3756,'com_drop_server','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2245,3756,'com_drop_sequence','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2246,3756,'com_drop_table','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2247,3756,'com_drop_temporary_table','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2248,3756,'com_drop_trigger','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2249,3756,'com_drop_user','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2250,3756,'com_drop_view','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2251,3756,'com_empty_query','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2252,3756,'com_execute_immediate','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2253,3756,'com_execute_sql','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2254,3756,'com_flush','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2255,3756,'com_get_diagnostics','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2256,3756,'com_grant','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2257,3756,'com_grant_role','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2258,3756,'com_ha_close','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2259,3756,'com_ha_open','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2260,3756,'com_ha_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2261,3756,'com_help','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2262,3756,'com_insert','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2263,3756,'com_insert_select','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2264,3756,'com_install_plugin','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2265,3756,'com_kill','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2266,3756,'com_load','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2267,3756,'com_lock_tables','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2268,3756,'com_optimize','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2269,3756,'com_preload_keys','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2270,3756,'com_prepare_sql','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2271,3756,'com_purge','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2272,3756,'com_purge_before_date','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2273,3756,'com_release_savepoint','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2274,3756,'com_rename_table','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2275,3756,'com_rename_user','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2276,3756,'com_repair','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2277,3756,'com_replace','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2278,3756,'com_replace_select','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2279,3756,'com_reset','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2280,3756,'com_resignal','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2281,3756,'com_revoke','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2282,3756,'com_revoke_all','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2283,3756,'com_revoke_role','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2284,3756,'com_rollback','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2285,3756,'com_rollback_to_savepoint','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2286,3756,'com_savepoint','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2287,3756,'com_select','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2288,3756,'com_set_option','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2289,3756,'com_show_authors','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2290,3756,'com_show_binlog_events','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2291,3756,'com_show_binlogs','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2292,3756,'com_show_charsets','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2293,3756,'com_show_collations','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2294,3756,'com_show_contributors','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2295,3756,'com_show_create_db','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2296,3756,'com_show_create_event','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2297,3756,'com_show_create_func','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2298,3756,'com_show_create_package','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2299,3756,'com_show_create_package_body','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2300,3756,'com_show_create_proc','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2301,3756,'com_show_create_table','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2302,3756,'com_show_create_trigger','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2303,3756,'com_show_create_user','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2304,3756,'com_show_databases','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2305,3756,'com_show_engine_logs','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2306,3756,'com_show_engine_mutex','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2307,3756,'com_show_engine_status','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2308,3756,'com_show_errors','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2309,3756,'com_show_events','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2310,3756,'com_show_explain','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2311,3756,'com_show_fields','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2312,3756,'com_show_function_status','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2313,3756,'com_show_generic','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2314,3756,'com_show_grants','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2315,3756,'com_show_keys','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2316,3756,'com_show_binlog_status','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2317,3756,'com_show_open_tables','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2318,3756,'com_show_package_status','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2319,3756,'com_show_package_body_status','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2320,3756,'com_show_plugins','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2321,3756,'com_show_privileges','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2322,3756,'com_show_procedure_status','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2323,3756,'com_show_processlist','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2324,3756,'com_show_profile','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2325,3756,'com_show_profiles','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2326,3756,'com_show_relaylog_events','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2327,3756,'com_show_slave_hosts','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2328,3756,'com_show_slave_status','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2329,3756,'com_show_status','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2330,3756,'com_show_storage_engines','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2331,3756,'com_show_table_status','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2332,3756,'com_show_tables','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2333,3756,'com_show_triggers','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2334,3756,'com_show_variables','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2335,3756,'com_show_warnings','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2336,3756,'com_shutdown','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2337,3756,'com_signal','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2338,3756,'com_start_all_slaves','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2339,3756,'com_start_slave','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2340,3756,'com_stmt_close','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2341,3756,'com_stmt_execute','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2342,3756,'com_stmt_fetch','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2343,3756,'com_stmt_prepare','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2344,3756,'com_stmt_reprepare','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2345,3756,'com_stmt_reset','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2346,3756,'com_stmt_send_long_data','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2347,3756,'com_stop_all_slaves','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2348,3756,'com_stop_slave','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2349,3756,'com_truncate','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2350,3756,'com_uninstall_plugin','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2351,3756,'com_unlock_tables','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2352,3756,'com_update','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2353,3756,'com_update_multi','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2354,3756,'com_xa_commit','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2355,3756,'com_xa_end','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2356,3756,'com_xa_prepare','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2357,3756,'com_xa_recover','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2358,3756,'com_xa_rollback','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2359,3756,'com_xa_start','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2360,3756,'compression','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2361,3756,'connection_errors_accept','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2362,3756,'connection_errors_internal','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2363,3756,'connection_errors_max_connections','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2364,3756,'connection_errors_peer_address','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2365,3756,'connection_errors_select','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2366,3756,'connection_errors_tcpwrap','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2367,3756,'connections','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2368,3756,'cpu_time','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2369,3756,'created_tmp_disk_tables','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2370,3756,'created_tmp_files','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2371,3756,'created_tmp_tables','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2372,3756,'delayed_errors','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2373,3756,'delayed_insert_threads','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2374,3756,'delayed_writes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2375,3756,'delete_scan','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2376,3756,'empty_queries','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2377,3756,'executed_events','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2378,3756,'executed_triggers','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2379,3756,'feature_application_time_periods','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2380,3756,'feature_check_constraint','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2381,3756,'feature_custom_aggregate_functions','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2382,3756,'feature_delay_key_write','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2383,3756,'feature_dynamic_columns','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2384,3756,'feature_fulltext','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2385,3756,'feature_gis','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2386,3756,'feature_insert_returning','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2387,3756,'feature_invisible_columns','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2388,3756,'feature_json','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2389,3756,'feature_locale','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2390,3756,'feature_subquery','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2391,3756,'feature_system_versioning','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2392,3756,'feature_timezone','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2393,3756,'feature_trigger','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2394,3756,'feature_window_functions','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2395,3756,'feature_xml','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2396,3756,'handler_commit','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2397,3756,'handler_delete','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2398,3756,'handler_discover','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2399,3756,'handler_external_lock','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2400,3756,'handler_icp_attempts','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2401,3756,'handler_icp_match','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2402,3756,'handler_mrr_init','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2403,3756,'handler_mrr_key_refills','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2404,3756,'handler_mrr_rowid_refills','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2405,3756,'handler_prepare','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2406,3756,'handler_read_first','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2407,3756,'handler_read_key','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2408,3756,'handler_read_last','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2409,3756,'handler_read_next','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2410,3756,'handler_read_prev','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2411,3756,'handler_read_retry','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2412,3756,'handler_read_rnd','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2413,3756,'handler_read_rnd_deleted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2414,3756,'handler_read_rnd_next','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2415,3756,'handler_rollback','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2416,3756,'handler_savepoint','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2417,3756,'handler_savepoint_rollback','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2418,3756,'handler_tmp_delete','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2419,3756,'handler_tmp_update','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2420,3756,'handler_tmp_write','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2421,3756,'handler_update','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2422,3756,'handler_write','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2423,3756,'innodb_adaptive_hash_hash_searches','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2424,3756,'innodb_adaptive_hash_non_hash_searches','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2425,3756,'innodb_background_log_sync','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2426,3756,'innodb_buffer_pool_load_status','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2427,3756,'innodb_buffer_pool_load_incomplete','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2428,3756,'innodb_buffer_pool_pages_data','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2429,3756,'innodb_buffer_pool_bytes_data','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2430,3756,'innodb_buffer_pool_pages_dirty','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2431,3756,'innodb_buffer_pool_bytes_dirty','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2432,3756,'innodb_buffer_pool_pages_flushed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2433,3756,'innodb_buffer_pool_pages_free','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2434,3756,'innodb_buffer_pool_pages_made_not_young','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2435,3756,'innodb_buffer_pool_pages_made_young','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2436,3756,'innodb_buffer_pool_pages_misc','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2437,3756,'innodb_buffer_pool_pages_old','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2438,3756,'innodb_buffer_pool_pages_total','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2439,3756,'innodb_buffer_pool_pages_lru_flushed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2440,3756,'innodb_buffer_pool_pages_lru_freed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2441,3756,'innodb_buffer_pool_pages_split','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2442,3756,'innodb_buffer_pool_read_ahead_rnd','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2443,3756,'innodb_buffer_pool_read_ahead','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2444,3756,'innodb_buffer_pool_read_ahead_evicted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2445,3756,'innodb_buffer_pool_read_requests','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2446,3756,'innodb_buffer_pool_reads','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2447,3756,'innodb_buffer_pool_wait_free','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2448,3756,'innodb_buffer_pool_write_requests','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2449,3756,'innodb_checkpoint_age','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2450,3756,'innodb_checkpoint_max_age','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2451,3756,'innodb_data_fsyncs','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2452,3756,'innodb_data_pending_fsyncs','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2453,3756,'innodb_data_pending_reads','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2454,3756,'innodb_data_pending_writes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2455,3756,'innodb_data_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2456,3756,'innodb_data_reads','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2457,3756,'innodb_data_writes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2458,3756,'innodb_data_written','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2459,3756,'innodb_dblwr_pages_written','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2460,3756,'innodb_dblwr_writes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2461,3756,'innodb_deadlocks','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2462,3756,'innodb_history_list_length','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2463,3756,'innodb_ibuf_discarded_delete_marks','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2464,3756,'innodb_ibuf_discarded_deletes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2465,3756,'innodb_ibuf_discarded_inserts','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2466,3756,'innodb_ibuf_free_list','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2467,3756,'innodb_ibuf_merged_delete_marks','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2468,3756,'innodb_ibuf_merged_deletes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2469,3756,'innodb_ibuf_merged_inserts','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2470,3756,'innodb_ibuf_merges','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2471,3756,'innodb_ibuf_segment_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2472,3756,'innodb_ibuf_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2473,3756,'innodb_log_waits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2474,3756,'innodb_log_write_requests','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2475,3756,'innodb_log_writes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2476,3756,'innodb_lsn_current','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2477,3756,'innodb_lsn_flushed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2478,3756,'innodb_lsn_last_checkpoint','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2479,3756,'innodb_master_thread_active_loops','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2480,3756,'innodb_master_thread_idle_loops','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2481,3756,'innodb_max_trx_id','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2482,3756,'innodb_mem_adaptive_hash','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2483,3756,'innodb_mem_dictionary','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2484,3756,'innodb_os_log_written','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2485,3756,'innodb_page_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2486,3756,'innodb_pages_created','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2487,3756,'innodb_pages_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2488,3756,'innodb_pages_written','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2489,3756,'innodb_row_lock_current_waits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2490,3756,'innodb_row_lock_time','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2491,3756,'innodb_row_lock_time_avg','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2492,3756,'innodb_row_lock_time_max','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2493,3756,'innodb_row_lock_waits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2494,3756,'innodb_rows_deleted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2495,3756,'innodb_rows_inserted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2496,3756,'innodb_rows_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2497,3756,'innodb_rows_updated','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2498,3756,'innodb_system_rows_deleted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2499,3756,'innodb_system_rows_inserted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2500,3756,'innodb_system_rows_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2501,3756,'innodb_system_rows_updated','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2502,3756,'innodb_num_open_files','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2503,3756,'innodb_truncated_status_writes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2504,3756,'innodb_available_undo_logs','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2505,3756,'innodb_undo_truncations','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2506,3756,'innodb_page_compression_saved','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2507,3756,'innodb_num_pages_page_compressed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2508,3756,'innodb_num_page_compressed_trim_op','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2509,3756,'innodb_num_pages_page_decompressed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2510,3756,'innodb_num_pages_page_compression_error','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2511,3756,'innodb_num_pages_encrypted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2512,3756,'innodb_num_pages_decrypted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2513,3756,'innodb_have_lz4','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2514,3756,'innodb_have_lzo','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2515,3756,'innodb_have_lzma','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2516,3756,'innodb_have_bzip2','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2517,3756,'innodb_have_snappy','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2518,3756,'innodb_have_punch_hole','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2519,3756,'innodb_defragment_compression_failures','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2520,3756,'innodb_defragment_failures','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2521,3756,'innodb_defragment_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2522,3756,'innodb_instant_alter_column','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2523,3756,'innodb_onlineddl_rowlog_rows','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2524,3756,'innodb_onlineddl_rowlog_pct_used','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2525,3756,'innodb_onlineddl_pct_progress','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2526,3756,'innodb_secondary_index_triggered_cluster_reads','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2527,3756,'innodb_secondary_index_triggered_cluster_reads_avoided','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2528,3756,'innodb_encryption_rotation_pages_read_from_cache','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2529,3756,'innodb_encryption_rotation_pages_read_from_disk','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2530,3756,'innodb_encryption_rotation_pages_modified','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2531,3756,'innodb_encryption_rotation_pages_flushed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2532,3756,'innodb_encryption_rotation_estimated_iops','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2533,3756,'innodb_encryption_n_merge_blocks_encrypted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2534,3756,'innodb_encryption_n_merge_blocks_decrypted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2535,3756,'innodb_encryption_n_rowlog_blocks_encrypted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2536,3756,'innodb_encryption_n_rowlog_blocks_decrypted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2537,3756,'innodb_encryption_n_temp_blocks_encrypted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2538,3756,'innodb_encryption_n_temp_blocks_decrypted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2539,3756,'innodb_encryption_num_key_requests','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2540,3756,'key_blocks_not_flushed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2541,3756,'key_blocks_unused','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2542,3756,'key_blocks_used','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2543,3756,'key_blocks_warm','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2544,3756,'key_read_requests','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2545,3756,'key_reads','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2546,3756,'key_write_requests','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2547,3756,'key_writes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2548,3756,'last_query_cost','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2549,3756,'master_gtid_wait_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2550,3756,'master_gtid_wait_time','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2551,3756,'master_gtid_wait_timeouts','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2552,3756,'max_statement_time_exceeded','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2553,3756,'max_used_connections','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2554,3756,'memory_used','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2555,3756,'memory_used_initial','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2556,3756,'not_flushed_delayed_rows','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2557,3756,'open_files','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2558,3756,'open_streams','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2559,3756,'open_table_definitions','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2560,3756,'open_tables','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2561,3756,'opened_files','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2562,3756,'opened_plugin_libraries','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2563,3756,'opened_table_definitions','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2564,3756,'opened_tables','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2565,3756,'opened_views','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2566,3756,'performance_schema_accounts_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2567,3756,'performance_schema_cond_classes_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2568,3756,'performance_schema_cond_instances_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2569,3756,'performance_schema_digest_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2570,3756,'performance_schema_file_classes_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2571,3756,'performance_schema_file_handles_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2572,3756,'performance_schema_file_instances_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2573,3756,'performance_schema_hosts_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2574,3756,'performance_schema_index_stat_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2575,3756,'performance_schema_locker_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2576,3756,'performance_schema_memory_classes_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2577,3756,'performance_schema_metadata_lock_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2578,3756,'performance_schema_mutex_classes_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2579,3756,'performance_schema_mutex_instances_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2580,3756,'performance_schema_nested_statement_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2581,3756,'performance_schema_prepared_statements_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2582,3756,'performance_schema_program_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2583,3756,'performance_schema_rwlock_classes_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2584,3756,'performance_schema_rwlock_instances_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2585,3756,'performance_schema_session_connect_attrs_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2586,3756,'performance_schema_socket_classes_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2587,3756,'performance_schema_socket_instances_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2588,3756,'performance_schema_stage_classes_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2589,3756,'performance_schema_statement_classes_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2590,3756,'performance_schema_table_handles_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2591,3756,'performance_schema_table_instances_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2592,3756,'performance_schema_table_lock_stat_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2593,3756,'performance_schema_thread_classes_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2594,3756,'performance_schema_thread_instances_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2595,3756,'performance_schema_users_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2596,3756,'prepared_stmt_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2597,3756,'qcache_free_blocks','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2598,3756,'qcache_free_memory','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2599,3756,'qcache_hits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2600,3756,'qcache_inserts','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2601,3756,'qcache_lowmem_prunes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2602,3756,'qcache_not_cached','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2603,3756,'qcache_queries_in_cache','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2604,3756,'qcache_total_blocks','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2605,3756,'queries','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2606,3756,'questions','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2607,3756,'resultset_metadata_skipped','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2608,3756,'rows_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2609,3756,'rows_sent','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2610,3756,'rows_tmp_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2611,3756,'rpl_semi_sync_master_clients','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2612,3756,'rpl_semi_sync_master_get_ack','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2613,3756,'rpl_semi_sync_master_net_avg_wait_time','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2614,3756,'rpl_semi_sync_master_net_wait_time','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2615,3756,'rpl_semi_sync_master_net_waits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2616,3756,'rpl_semi_sync_master_no_times','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2617,3756,'rpl_semi_sync_master_no_tx','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2618,3756,'rpl_semi_sync_master_request_ack','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2619,3756,'rpl_semi_sync_master_status','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2620,3756,'rpl_semi_sync_master_timefunc_failures','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2621,3756,'rpl_semi_sync_master_tx_avg_wait_time','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2622,3756,'rpl_semi_sync_master_tx_wait_time','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2623,3756,'rpl_semi_sync_master_tx_waits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2624,3756,'rpl_semi_sync_master_wait_pos_backtraverse','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2625,3756,'rpl_semi_sync_master_wait_sessions','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2626,3756,'rpl_semi_sync_master_yes_tx','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2627,3756,'rpl_semi_sync_slave_send_ack','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2628,3756,'rpl_semi_sync_slave_status','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2629,3756,'rpl_status','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2630,3756,'rpl_transactions_multi_engine','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2631,3756,'select_full_join','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2632,3756,'select_full_range_join','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2633,3756,'select_range','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2634,3756,'select_range_check','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2635,3756,'select_scan','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2636,3756,'slave_connections','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2637,3756,'slave_heartbeat_period','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2638,3756,'slave_open_temp_tables','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2639,3756,'slave_received_heartbeats','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2640,3756,'slave_retried_transactions','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2641,3756,'slave_running','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2642,3756,'slave_skipped_errors','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2643,3756,'slaves_connected','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2644,3756,'slaves_running','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2645,3756,'slow_launch_threads','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2646,3756,'slow_queries','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2647,3756,'sort_merge_passes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2648,3756,'sort_priority_queue_sorts','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2649,3756,'sort_range','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2650,3756,'sort_rows','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2651,3756,'sort_scan','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2652,3756,'ssl_accept_renegotiates','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2653,3756,'ssl_accepts','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2654,3756,'ssl_callback_cache_hits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2655,3756,'ssl_client_connects','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2656,3756,'ssl_connect_renegotiates','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2657,3756,'ssl_ctx_verify_depth','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2658,3756,'ssl_ctx_verify_mode','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2659,3756,'ssl_default_timeout','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2660,3756,'ssl_finished_accepts','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2661,3756,'ssl_finished_connects','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2662,3756,'ssl_session_cache_hits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2663,3756,'ssl_session_cache_misses','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2664,3756,'ssl_session_cache_mode','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2665,3756,'ssl_session_cache_overflows','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2666,3756,'ssl_session_cache_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2667,3756,'ssl_session_cache_timeouts','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2668,3756,'ssl_sessions_reused','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2669,3756,'ssl_used_session_cache_entries','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2670,3756,'ssl_verify_depth','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2671,3756,'ssl_verify_mode','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2672,3756,'subquery_cache_hit','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2673,3756,'subquery_cache_miss','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2674,3756,'syncs','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2675,3756,'table_locks_immediate','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2676,3756,'table_locks_waited','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2677,3756,'table_open_cache_active_instances','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2678,3756,'table_open_cache_hits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2679,3756,'table_open_cache_misses','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2680,3756,'table_open_cache_overflows','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2681,3756,'tc_log_max_pages_used','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2682,3756,'tc_log_page_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2683,3756,'tc_log_page_waits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2684,3756,'threadpool_idle_threads','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2685,3756,'threadpool_threads','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2686,3756,'threads_cached','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2687,3756,'threads_connected','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2688,3756,'threads_created','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2689,3756,'threads_running','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2690,3756,'transactions_gtid_foreign_engine','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2691,3756,'transactions_multi_engine','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2692,3756,'update_scan','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2693,3756,'uptime','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2694,3756,'uptime_since_flush_status','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2695,3756,'wsrep','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2696,3756,'wsrep_applier_thread_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2697,3756,'wsrep_cluster_conf_id','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2698,3756,'wsrep_cluster_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2699,3756,'wsrep_cluster_status','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2700,3756,'wsrep_connected','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2701,3756,'wsrep_local_bf_aborts','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2702,3756,'wsrep_local_index','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2703,3756,'wsrep_ready','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2704,3756,'wsrep_rollbacker_thread_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2705,3756,'wsrep_thread_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2706,3756,'com_show_analyze','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2707,3756,'optimizer_join_prefixes_check_calls','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2708,3756,'innodb_bulk_operations','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2709,3756,'max_memory_used','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2710,3756,'query_time','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2711,3756,'stack_usage','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2712,3756,'feature_into_outfile','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2713,3756,'feature_into_variable','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2714,3756,'max_used_connections_time','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2715,3756,'connection_name','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2716,3756,'slave_sql_state','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2717,3756,'slave_io_state','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2718,3756,'master_host','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2719,3756,'master_user','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2720,3756,'master_port','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2721,3756,'connect_retry','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2722,3756,'master_log_file','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2723,3756,'read_master_log_pos','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2724,3756,'relay_log_file','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2725,3756,'relay_log_pos','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2726,3756,'relay_master_log_file','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2727,3756,'slave_io_running','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2728,3756,'slave_sql_running','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2729,3756,'replicate_do_db','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2730,3756,'replicate_ignore_db','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2731,3756,'replicate_do_table','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2732,3756,'replicate_ignore_table','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2733,3756,'replicate_wild_do_table','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2734,3756,'replicate_wild_ignore_table','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2735,3756,'last_errno','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2736,3756,'last_error','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2737,3756,'skip_counter','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2738,3756,'exec_master_log_pos','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2739,3756,'relay_log_space','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2740,3756,'until_condition','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2741,3756,'until_log_file','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2742,3756,'until_log_pos','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2743,3756,'master_ssl_allowed','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2744,3756,'master_ssl_ca_file','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2745,3756,'master_ssl_ca_path','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2746,3756,'master_ssl_cert','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2747,3756,'master_ssl_cipher','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2748,3756,'master_ssl_key','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2749,3756,'seconds_behind_master','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2750,3756,'master_ssl_verify_server_cert','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2751,3756,'last_io_errno','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2752,3756,'last_io_error','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2753,3756,'last_sql_errno','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2754,3756,'last_sql_error','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2755,3756,'replicate_ignore_server_ids','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2756,3756,'master_server_id','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2757,3756,'master_ssl_crl','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2758,3756,'master_ssl_crlpath','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2759,3756,'using_gtid','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2760,3756,'gtid_io_pos','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2761,3756,'replicate_do_domain_ids','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2762,3756,'replicate_ignore_domain_ids','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2763,3756,'parallel_mode','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2764,3756,'sql_delay','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2765,3756,'sql_remaining_delay','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2766,3756,'slave_sql_running_state','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2767,3756,'slave_ddl_groups','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2768,3756,'slave_non_transactional_groups','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2769,3756,'slave_transactional_groups','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2770,3756,'replicate_rewrite_db','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2771,3756,'retried_transactions','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2772,3756,'max_relay_log_size','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2773,3756,'executed_log_entries','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2774,3756,'slave_received_heartbeats','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2775,3756,'slave_heartbeat_period','DOUBLE','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2776,3756,'gtid_slave_pos','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2777,3756,'binlog_disk_use','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2778,3756,'binlog_gtid_index_hit','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2779,3756,'binlog_gtid_index_miss','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2780,3756,'innodb_async_reads_pending','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2781,3756,'innodb_async_reads_tasks_running','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2782,3756,'innodb_async_reads_total_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2783,3756,'innodb_async_reads_total_enqueues','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2784,3756,'innodb_async_reads_queue_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2785,3756,'innodb_async_reads_wait_slot_sec','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2786,3756,'innodb_async_writes_pending','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2787,3756,'innodb_async_writes_tasks_running','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2788,3756,'innodb_async_writes_total_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2789,3756,'innodb_async_writes_total_enqueues','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2790,3756,'innodb_async_writes_queue_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2791,3756,'innodb_async_writes_wait_slot_sec','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2792,3756,'max_tmp_space_used','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2793,3756,'tmp_space_used','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2794,3756,'master_last_event_time','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2795,3756,'slave_last_event_time','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2796,3756,'master_slave_time_diff','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2797,3756,'com_show_create_server','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2798,3756,'connects_tried','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2799,3756,'master_retry_count','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (2800,3756,'com_alter_tablespace','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2801,3756,'com_multi','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2802,3756,'com_show_master_status','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2803,3756,'flush_commands','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2804,3756,'innodb_os_log_fsyncs','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2805,3756,'innodb_os_log_pending_fsyncs','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2806,3756,'innodb_os_log_pending_writes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2807,3756,'innodb_pages0_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2808,3756,'innodb_scrub_background_page_reorganizations','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2809,3756,'innodb_scrub_background_page_splits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2810,3756,'innodb_scrub_background_page_split_failures_underflow','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2811,3756,'innodb_scrub_background_page_split_failures_out_of_filespace','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2812,3756,'innodb_scrub_background_page_split_failures_missing_index','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2813,3756,'innodb_scrub_background_page_split_failures_unknown','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2814,3756,'innodb_scrub_log','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2815,3756,'server_audit_active','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2816,3756,'server_audit_current_log','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2817,3756,'server_audit_writes_failed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2818,3756,'ssl_cipher','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2819,3756,'ssl_cipher_list','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2820,3756,'ssl_server_not_after','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2821,3756,'ssl_server_not_before','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2822,3756,'ssl_version','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2823,3756,'columnstore_commit_hash','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2824,3756,'columnstore_version','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2825,3756,'rocksdb_rows_deleted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2826,3756,'rocksdb_rows_inserted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2827,3756,'rocksdb_rows_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2828,3756,'rocksdb_rows_updated','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2829,3756,'rocksdb_rows_deleted_blind','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2830,3756,'rocksdb_rows_expired','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2831,3756,'rocksdb_rows_filtered','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2832,3756,'rocksdb_system_rows_deleted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2833,3756,'rocksdb_system_rows_inserted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2834,3756,'rocksdb_system_rows_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2835,3756,'rocksdb_system_rows_updated','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2836,3756,'rocksdb_memtable_total','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2837,3756,'rocksdb_memtable_unflushed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2838,3756,'rocksdb_queries_point','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2839,3756,'rocksdb_queries_range','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2840,3756,'rocksdb_covered_secondary_key_lookups','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2841,3756,'rocksdb_block_cache_add','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2842,3756,'rocksdb_block_cache_add_failures','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2843,3756,'rocksdb_block_cache_bytes_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2844,3756,'rocksdb_block_cache_bytes_write','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2845,3756,'rocksdb_block_cache_data_add','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2846,3756,'rocksdb_block_cache_data_bytes_insert','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2847,3756,'rocksdb_block_cache_data_hit','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2848,3756,'rocksdb_block_cache_data_miss','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2849,3756,'rocksdb_block_cache_filter_add','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2850,3756,'rocksdb_block_cache_filter_bytes_evict','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2851,3756,'rocksdb_block_cache_filter_bytes_insert','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2852,3756,'rocksdb_block_cache_filter_hit','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2853,3756,'rocksdb_block_cache_filter_miss','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2854,3756,'rocksdb_block_cache_hit','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2855,3756,'rocksdb_block_cache_index_add','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2856,3756,'rocksdb_block_cache_index_bytes_evict','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2857,3756,'rocksdb_block_cache_index_bytes_insert','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2858,3756,'rocksdb_block_cache_index_hit','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2859,3756,'rocksdb_block_cache_index_miss','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2860,3756,'rocksdb_block_cache_miss','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2861,3756,'rocksdb_block_cachecompressed_hit','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2862,3756,'rocksdb_block_cachecompressed_miss','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2863,3756,'rocksdb_bloom_filter_full_positive','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2864,3756,'rocksdb_bloom_filter_full_true_positive','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2865,3756,'rocksdb_bloom_filter_prefix_checked','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2866,3756,'rocksdb_bloom_filter_prefix_useful','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2867,3756,'rocksdb_bloom_filter_useful','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2868,3756,'rocksdb_bytes_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2869,3756,'rocksdb_bytes_written','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2870,3756,'rocksdb_compact_read_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2871,3756,'rocksdb_compact_write_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2872,3756,'rocksdb_compaction_key_drop_new','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2873,3756,'rocksdb_compaction_key_drop_obsolete','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2874,3756,'rocksdb_compaction_key_drop_user','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2875,3756,'rocksdb_flush_write_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2876,3756,'rocksdb_get_hit_l0','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2877,3756,'rocksdb_get_hit_l1','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2878,3756,'rocksdb_get_hit_l2_and_up','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2879,3756,'rocksdb_getupdatessince_calls','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2880,3756,'rocksdb_iter_bytes_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2881,3756,'rocksdb_manual_compactions_processed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2882,3756,'rocksdb_manual_compactions_running','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2883,3756,'rocksdb_memtable_hit','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2884,3756,'rocksdb_memtable_miss','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2885,3756,'rocksdb_no_file_closes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2886,3756,'rocksdb_no_file_errors','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2887,3756,'rocksdb_no_file_opens','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2888,3756,'rocksdb_num_iterators','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2889,3756,'rocksdb_number_block_not_compressed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2890,3756,'rocksdb_number_db_next','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2891,3756,'rocksdb_number_db_next_found','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2892,3756,'rocksdb_number_db_prev','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2893,3756,'rocksdb_number_db_prev_found','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2894,3756,'rocksdb_number_db_seek','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2895,3756,'rocksdb_number_db_seek_found','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2896,3756,'rocksdb_number_deletes_filtered','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2897,3756,'rocksdb_number_keys_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2898,3756,'rocksdb_number_keys_updated','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2899,3756,'rocksdb_number_keys_written','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2900,3756,'rocksdb_number_merge_failures','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2901,3756,'rocksdb_number_multiget_bytes_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2902,3756,'rocksdb_number_multiget_get','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2903,3756,'rocksdb_number_multiget_keys_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2904,3756,'rocksdb_number_reseeks_iteration','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2905,3756,'rocksdb_number_sst_entry_delete','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2906,3756,'rocksdb_number_sst_entry_merge','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2907,3756,'rocksdb_number_sst_entry_other','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2908,3756,'rocksdb_number_sst_entry_put','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2909,3756,'rocksdb_number_sst_entry_singledelete','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2910,3756,'rocksdb_number_superversion_acquires','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2911,3756,'rocksdb_number_superversion_cleanups','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2912,3756,'rocksdb_number_superversion_releases','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2913,3756,'rocksdb_row_lock_deadlocks','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2914,3756,'rocksdb_row_lock_wait_timeouts','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2915,3756,'rocksdb_snapshot_conflict_errors','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2916,3756,'rocksdb_stall_l0_file_count_limit_slowdowns','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2917,3756,'rocksdb_stall_locked_l0_file_count_limit_slowdowns','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2918,3756,'rocksdb_stall_l0_file_count_limit_stops','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2919,3756,'rocksdb_stall_locked_l0_file_count_limit_stops','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2920,3756,'rocksdb_stall_pending_compaction_limit_stops','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2921,3756,'rocksdb_stall_pending_compaction_limit_slowdowns','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2922,3756,'rocksdb_stall_memtable_limit_stops','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2923,3756,'rocksdb_stall_memtable_limit_slowdowns','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2924,3756,'rocksdb_stall_total_stops','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2925,3756,'rocksdb_stall_total_slowdowns','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2926,3756,'rocksdb_stall_micros','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2927,3756,'rocksdb_wal_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2928,3756,'rocksdb_wal_group_syncs','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2929,3756,'rocksdb_wal_synced','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2930,3756,'rocksdb_write_other','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2931,3756,'rocksdb_write_self','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2932,3756,'rocksdb_write_timedout','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2933,3756,'rocksdb_write_wal','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2934,3756,'wsrep_local_state_uuid','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2935,3756,'wsrep_protocol_version','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2936,3756,'wsrep_protocol_application','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2937,3756,'wsrep_protocol_replicator','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2938,3756,'wsrep_protocol_gcs','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2939,3756,'wsrep_last_committed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2940,3756,'wsrep_replicated','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2941,3756,'wsrep_replicated_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2942,3756,'wsrep_repl_keys','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2943,3756,'wsrep_repl_keys_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2944,3756,'wsrep_repl_data_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2945,3756,'wsrep_repl_other_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2946,3756,'wsrep_received','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2947,3756,'wsrep_received_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2948,3756,'wsrep_local_commits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2949,3756,'wsrep_local_cert_failures','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2950,3756,'wsrep_local_replays','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2951,3756,'wsrep_local_send_queue','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2952,3756,'wsrep_local_send_queue_max','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2953,3756,'wsrep_local_send_queue_min','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2954,3756,'wsrep_local_send_queue_avg','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2955,3756,'wsrep_local_recv_queue','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2956,3756,'wsrep_local_recv_queue_max','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2957,3756,'wsrep_local_recv_queue_min','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2958,3756,'wsrep_local_recv_queue_avg','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2959,3756,'wsrep_local_cached_downto','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2960,3756,'wsrep_flow_control_paused_ns','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2961,3756,'wsrep_flow_control_paused','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2962,3756,'wsrep_flow_control_sent','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2963,3756,'wsrep_flow_control_recv','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2964,3756,'wsrep_flow_control_active','JSON','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2965,3756,'wsrep_flow_control_requested','JSON','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2966,3756,'wsrep_cert_deps_distance','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2967,3756,'wsrep_apply_oooe','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2968,3756,'wsrep_apply_oool','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2969,3756,'wsrep_apply_window','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2970,3756,'wsrep_apply_waits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2971,3756,'wsrep_commit_oooe','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2972,3756,'wsrep_commit_oool','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2973,3756,'wsrep_commit_window','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2974,3756,'wsrep_local_state','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2975,3756,'wsrep_local_state_comment','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2976,3756,'wsrep_cert_index_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2977,3756,'wsrep_causal_reads','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2978,3756,'wsrep_cert_interval','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2979,3756,'wsrep_open_transactions','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2980,3756,'wsrep_open_connections','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2981,3756,'wsrep_incoming_addresses','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2982,3756,'wsrep_cluster_weight','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2983,3756,'wsrep_desync_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2984,3756,'wsrep_evs_repl_latency','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2985,3756,'wsrep_evs_state','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2986,3756,'wsrep_gcomm_uuid','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2987,3756,'wsrep_gmcast_segment','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2988,3756,'wsrep_cluster_state_uuid','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2989,3756,'wsrep_provider_capabilities','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2990,3756,'wsrep_provider_name','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2991,3756,'wsrep_provider_vendor','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2992,3756,'wsrep_provider_version','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2993,3756,'acl_cache_items_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2994,3756,'caching_sha2_password_rsa_public_key','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2995,3756,'com_alter_instance','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2996,3756,'com_alter_resource_group','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2997,3756,'com_alter_user_default_role','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2998,3756,'com_change_repl_filter','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (2999,3756,'com_change_replication_source','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3000,3756,'com_clone','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3001,3756,'com_create_resource_group','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3002,3756,'com_create_spatial_reference_system','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3003,3756,'com_drop_resource_group','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3004,3756,'com_drop_spatial_reference_system','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3005,3756,'com_explain_other','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3006,3756,'com_grant_roles','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3007,3756,'com_import','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3008,3756,'com_install_component','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3009,3756,'com_lock_instance','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3010,3756,'com_restart','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3011,3756,'com_revoke_roles','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3012,3756,'com_set_password','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3013,3756,'com_set_resource_group','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3014,3756,'com_set_role','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3015,3756,'com_show_function_code','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3016,3756,'com_show_binary_log_status','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3017,3756,'com_show_parse_tree','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3018,3756,'com_show_procedure_code','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3019,3756,'com_show_replicas','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3020,3756,'com_show_replica_status','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3021,3756,'com_replica_start','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3022,3756,'com_replica_stop','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3023,3756,'com_group_replication_start','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3024,3756,'com_group_replication_stop','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3025,3756,'com_uninstall_component','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3026,3756,'com_unlock_instance','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3027,3756,'current_tls_ca','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3028,3756,'current_tls_cert','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3029,3756,'current_tls_key','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3030,3756,'current_tls_version','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3031,3756,'deprecated_use_fk_on_non_standard_key_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3032,3756,'deprecated_use_fk_on_non_standard_key_last_timestamp','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3033,3756,'deprecated_use_i_s_processlist_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3034,3756,'deprecated_use_i_s_processlist_last_timestamp','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3035,3756,'error_log_buffered_bytes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3036,3756,'error_log_buffered_events','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3037,3756,'error_log_expired_events','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3038,3756,'error_log_latest_write','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3039,3756,'global_connection_memory','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3040,3756,'innodb_buffer_pool_dump_status','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3041,3756,'innodb_buffer_pool_resize_status_code','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3042,3756,'innodb_buffer_pool_resize_status_progress','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3043,3756,'innodb_redo_log_read_only','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3044,3756,'innodb_redo_log_uuid','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3045,3756,'innodb_redo_log_checkpoint_lsn','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3046,3756,'innodb_redo_log_current_lsn','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3047,3756,'innodb_redo_log_flushed_to_disk_lsn','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3048,3756,'innodb_redo_log_logical_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3049,3756,'innodb_redo_log_physical_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3050,3756,'innodb_redo_log_capacity_resized','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3051,3756,'innodb_redo_log_resize_status','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3052,3756,'innodb_redo_log_enabled','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3053,3756,'innodb_sampled_pages_read','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3054,3756,'innodb_sampled_pages_skipped','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3055,3756,'innodb_undo_tablespaces_total','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3056,3756,'innodb_undo_tablespaces_implicit','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3057,3756,'innodb_undo_tablespaces_explicit','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3058,3756,'innodb_undo_tablespaces_active','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3059,3756,'locked_connects','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3060,3756,'max_execution_time_exceeded','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3061,3756,'max_execution_time_set','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3062,3756,'max_execution_time_set_failed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3063,3756,'mysqlx_aborted_clients','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3064,3756,'mysqlx_address','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3065,3756,'mysqlx_bytes_received','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3066,3756,'mysqlx_bytes_received_compressed_payload','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3067,3756,'mysqlx_bytes_received_uncompressed_frame','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3068,3756,'mysqlx_bytes_sent','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3069,3756,'mysqlx_bytes_sent_compressed_payload','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3070,3756,'mysqlx_bytes_sent_uncompressed_frame','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3071,3756,'mysqlx_connection_accept_errors','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3072,3756,'mysqlx_connection_errors','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3073,3756,'mysqlx_connections_accepted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3074,3756,'mysqlx_connections_closed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3075,3756,'mysqlx_connections_rejected','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3076,3756,'mysqlx_crud_create_view','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3077,3756,'mysqlx_crud_delete','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3078,3756,'mysqlx_crud_drop_view','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3079,3756,'mysqlx_crud_find','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3080,3756,'mysqlx_crud_insert','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3081,3756,'mysqlx_crud_modify_view','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3082,3756,'mysqlx_crud_update','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3083,3756,'mysqlx_cursor_close','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3084,3756,'mysqlx_cursor_fetch','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3085,3756,'mysqlx_cursor_open','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3086,3756,'mysqlx_errors_sent','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3087,3756,'mysqlx_errors_unknown_message_type','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3088,3756,'mysqlx_expect_close','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3089,3756,'mysqlx_expect_open','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3090,3756,'mysqlx_init_error','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3091,3756,'mysqlx_messages_sent','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3092,3756,'mysqlx_notice_global_sent','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3093,3756,'mysqlx_notice_other_sent','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3094,3756,'mysqlx_notice_warning_sent','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3095,3756,'mysqlx_notified_by_group_replication','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3096,3756,'mysqlx_port','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3097,3756,'mysqlx_prep_deallocate','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3098,3756,'mysqlx_prep_execute','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3099,3756,'mysqlx_prep_prepare','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3100,3756,'mysqlx_rows_sent','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3101,3756,'mysqlx_sessions','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3102,3756,'mysqlx_sessions_accepted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3103,3756,'mysqlx_sessions_closed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3104,3756,'mysqlx_sessions_fatal_error','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3105,3756,'mysqlx_sessions_killed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3106,3756,'mysqlx_sessions_rejected','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3107,3756,'mysqlx_socket','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3108,3756,'mysqlx_ssl_accepts','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3109,3756,'mysqlx_ssl_ctx_verify_depth','DOUBLE','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3110,3756,'mysqlx_ssl_ctx_verify_mode','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3111,3756,'mysqlx_ssl_finished_accepts','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3112,3756,'mysqlx_ssl_server_not_after','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3113,3756,'mysqlx_ssl_server_not_before','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3114,3756,'mysqlx_stmt_create_collection','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3115,3756,'mysqlx_stmt_create_collection_index','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3116,3756,'mysqlx_stmt_disable_notices','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3117,3756,'mysqlx_stmt_drop_collection','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3118,3756,'mysqlx_stmt_drop_collection_index','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3119,3756,'mysqlx_stmt_enable_notices','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3120,3756,'mysqlx_stmt_ensure_collection','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3121,3756,'mysqlx_stmt_execute_mysqlx','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3122,3756,'mysqlx_stmt_execute_sql','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3123,3756,'mysqlx_stmt_execute_xplugin','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3124,3756,'mysqlx_stmt_get_collection_options','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3125,3756,'mysqlx_stmt_kill_client','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3126,3756,'mysqlx_stmt_list_clients','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3127,3756,'mysqlx_stmt_list_notices','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3128,3756,'mysqlx_stmt_list_objects','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3129,3756,'mysqlx_stmt_modify_collection_options','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3130,3756,'mysqlx_stmt_ping','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3131,3756,'mysqlx_worker_threads','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3132,3756,'mysqlx_worker_threads_active','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3133,3756,'ongoing_anonymous_transaction_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3134,3756,'performance_schema_meter_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3135,3756,'performance_schema_metric_lost','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3136,3756,'performance_schema_session_connect_attrs_longest_seen','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3137,3756,'replica_open_temp_tables','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3138,3756,'resource_group_supported','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3139,3756,'rsa_public_key','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3140,3756,'secondary_engine_execution_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3141,3756,'ssl_session_cache_timeout','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3142,3756,'telemetry_metrics_supported','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3143,3756,'telemetry_traces_supported','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3144,3756,'tls_library_version','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3145,3757,'alter_algorithm','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3146,3757,'analyze_sample_percentage','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3147,3757,'aria_block_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3148,3757,'aria_checkpoint_interval','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3149,3757,'aria_checkpoint_log_activity','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3150,3757,'aria_encrypt_tables','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3151,3757,'aria_force_start_after_recovery_failures','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3152,3757,'aria_group_commit','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3153,3757,'aria_group_commit_interval','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3154,3757,'aria_log_dir_path','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3155,3757,'aria_log_file_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3156,3757,'aria_log_purge_type','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3157,3757,'aria_max_sort_file_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3158,3757,'aria_page_checksum','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3159,3757,'aria_pagecache_age_threshold','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3160,3757,'aria_pagecache_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3161,3757,'aria_pagecache_division_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3162,3757,'aria_pagecache_file_hash_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3163,3757,'aria_recover_options','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3164,3757,'aria_repair_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3165,3757,'aria_sort_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3166,3757,'aria_stats_method','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3167,3757,'aria_sync_log_dir','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3168,3757,'aria_used_for_temp_tables','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3169,3757,'auto_increment_increment','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3170,3757,'auto_increment_offset','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3171,3757,'autocommit','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3172,3757,'automatic_sp_privileges','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3173,3757,'back_log','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3174,3757,'basedir','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3175,3757,'big_tables','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3176,3757,'binlog_alter_two_phase','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3177,3757,'binlog_annotate_row_events','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3178,3757,'binlog_cache_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3179,3757,'binlog_checksum','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3180,3757,'binlog_commit_wait_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3181,3757,'binlog_commit_wait_usec','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3182,3757,'binlog_direct_non_transactional_updates','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3183,3757,'binlog_expire_logs_seconds','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3184,3757,'binlog_file_cache_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3185,3757,'binlog_format','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3186,3757,'binlog_optimize_thread_scheduling','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3187,3757,'binlog_row_image','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3188,3757,'binlog_row_metadata','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3189,3757,'binlog_stmt_cache_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3190,3757,'bulk_insert_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3191,3757,'character_set_client','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3192,3757,'character_set_connection','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3193,3757,'character_set_database','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3194,3757,'character_set_filesystem','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3195,3757,'character_set_results','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3196,3757,'character_set_server','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3197,3757,'character_set_system','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3198,3757,'character_sets_dir','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3199,3757,'check_constraint_checks','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3200,3757,'collation_connection','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3201,3757,'collation_database','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3202,3757,'collation_server','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3203,3757,'column_compression_threshold','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3204,3757,'column_compression_zlib_level','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3205,3757,'column_compression_zlib_strategy','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3206,3757,'column_compression_zlib_wrap','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3207,3757,'completion_type','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3208,3757,'concurrent_insert','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3209,3757,'connect_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3210,3757,'core_file','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3211,3757,'datadir','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3212,3757,'date_format','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3213,3757,'datetime_format','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3214,3757,'deadlock_search_depth_long','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3215,3757,'deadlock_search_depth_short','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3216,3757,'deadlock_timeout_long','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3217,3757,'deadlock_timeout_short','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3218,3757,'debug_no_thread_alarm','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3219,3757,'default_password_lifetime','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3220,3757,'default_storage_engine','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3221,3757,'default_week_format','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3222,3757,'delay_key_write','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3223,3757,'delayed_insert_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3224,3757,'delayed_insert_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3225,3757,'delayed_queue_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3226,3757,'disconnect_on_expired_password','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3227,3757,'div_precision_increment','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3228,3757,'encrypt_binlog','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3229,3757,'encrypt_tmp_disk_tables','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3230,3757,'encrypt_tmp_files','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3231,3757,'eq_range_index_dive_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3232,3757,'event_scheduler','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3233,3757,'expensive_subquery_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3234,3757,'expire_logs_days','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3235,3757,'explicit_defaults_for_timestamp','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3236,3757,'extra_max_connections','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3237,3757,'extra_port','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3238,3757,'flush','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3239,3757,'flush_time','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3240,3757,'foreign_key_checks','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3241,3757,'ft_boolean_syntax','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3242,3757,'ft_max_word_len','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3243,3757,'ft_min_word_len','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3244,3757,'ft_query_expansion_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3245,3757,'ft_stopword_file','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3246,3757,'general_log','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3247,3757,'general_log_file','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3248,3757,'group_concat_max_len','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3249,3757,'gtid_cleanup_batch_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3250,3757,'gtid_domain_id','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3251,3757,'gtid_ignore_duplicates','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3252,3757,'gtid_strict_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3253,3757,'have_compress','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3254,3757,'have_crypt','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3255,3757,'have_dynamic_loading','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3256,3757,'have_geometry','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3257,3757,'have_openssl','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3258,3757,'have_profiling','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3259,3757,'have_query_cache','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3260,3757,'have_rtree_keys','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3261,3757,'have_ssl','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3262,3757,'have_symlink','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3263,3757,'histogram_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3264,3757,'histogram_type','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3265,3757,'host_cache_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3266,3757,'hostname','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3267,3757,'idle_readonly_transaction_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3268,3757,'idle_transaction_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3269,3757,'idle_write_transaction_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3270,3757,'ignore_builtin_innodb','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3271,3757,'in_predicate_conversion_threshold','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3272,3757,'innodb_adaptive_flushing','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3273,3757,'innodb_adaptive_flushing_lwm','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3274,3757,'innodb_adaptive_hash_index','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3275,3757,'innodb_adaptive_hash_index_parts','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3276,3757,'innodb_autoextend_increment','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3277,3757,'innodb_autoinc_lock_mode','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3278,3757,'innodb_buf_dump_status_frequency','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3279,3757,'innodb_buffer_pool_chunk_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3280,3757,'innodb_buffer_pool_dump_at_shutdown','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3281,3757,'innodb_buffer_pool_dump_now','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3282,3757,'innodb_buffer_pool_dump_pct','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3283,3757,'innodb_buffer_pool_filename','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3284,3757,'innodb_buffer_pool_load_abort','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3285,3757,'innodb_buffer_pool_load_at_startup','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3286,3757,'innodb_buffer_pool_load_now','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3287,3757,'innodb_buffer_pool_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3288,3757,'innodb_change_buffer_max_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3289,3757,'innodb_change_buffering','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3290,3757,'innodb_checksum_algorithm','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3291,3757,'innodb_cmp_per_index_enabled','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3292,3757,'innodb_compression_algorithm','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3293,3757,'innodb_compression_default','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3294,3757,'innodb_compression_failure_threshold_pct','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3295,3757,'innodb_compression_level','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3296,3757,'innodb_compression_pad_pct_max','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3297,3757,'innodb_data_file_path','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3298,3757,'innodb_deadlock_detect','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3299,3757,'innodb_deadlock_report','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3300,3757,'innodb_default_encryption_key_id','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3301,3757,'innodb_default_row_format','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3302,3757,'innodb_defragment','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3303,3757,'innodb_defragment_fill_factor','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3304,3757,'innodb_defragment_fill_factor_n_recs','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3305,3757,'innodb_defragment_frequency','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3306,3757,'innodb_defragment_n_pages','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3307,3757,'innodb_defragment_stats_accuracy','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3308,3757,'innodb_disable_sort_file_cache','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3309,3757,'innodb_doublewrite','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3310,3757,'innodb_encrypt_log','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3311,3757,'innodb_encrypt_tables','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3312,3757,'innodb_encrypt_temporary_tables','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3313,3757,'innodb_encryption_rotate_key_age','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3314,3757,'innodb_encryption_rotation_iops','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3315,3757,'innodb_encryption_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3316,3757,'innodb_fast_shutdown','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3317,3757,'innodb_fatal_semaphore_wait_threshold','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3318,3757,'innodb_file_per_table','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3319,3757,'innodb_fill_factor','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3320,3757,'innodb_flush_log_at_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3321,3757,'innodb_flush_log_at_trx_commit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3322,3757,'innodb_flush_method','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3323,3757,'innodb_flush_neighbors','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3324,3757,'innodb_flush_sync','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3325,3757,'innodb_flushing_avg_loops','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3326,3757,'innodb_force_primary_key','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3327,3757,'innodb_force_recovery','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3328,3757,'innodb_ft_cache_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3329,3757,'innodb_ft_enable_diag_print','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3330,3757,'innodb_ft_enable_stopword','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3331,3757,'innodb_ft_max_token_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3332,3757,'innodb_ft_min_token_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3333,3757,'innodb_ft_num_word_optimize','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3334,3757,'innodb_ft_result_cache_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3335,3757,'innodb_ft_sort_pll_degree','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3336,3757,'innodb_ft_total_cache_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3337,3757,'innodb_immediate_scrub_data_uncompressed','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3338,3757,'innodb_instant_alter_column_allowed','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3339,3757,'innodb_io_capacity','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3340,3757,'innodb_io_capacity_max','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3341,3757,'innodb_lock_wait_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3342,3757,'innodb_log_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3343,3757,'innodb_log_file_buffering','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3344,3757,'innodb_log_file_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3345,3757,'innodb_log_group_home_dir','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3346,3757,'innodb_lru_flush_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3347,3757,'innodb_lru_scan_depth','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3348,3757,'innodb_max_dirty_pages_pct','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3349,3757,'innodb_max_dirty_pages_pct_lwm','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3350,3757,'innodb_max_purge_lag','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3351,3757,'innodb_max_purge_lag_delay','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3352,3757,'innodb_max_purge_lag_wait','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3353,3757,'innodb_max_undo_log_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3354,3757,'innodb_old_blocks_pct','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3355,3757,'innodb_old_blocks_time','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3356,3757,'innodb_online_alter_log_max_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3357,3757,'innodb_open_files','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3358,3757,'innodb_optimize_fulltext_only','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3359,3757,'innodb_page_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3360,3757,'innodb_prefix_index_cluster_optimization','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3361,3757,'innodb_print_all_deadlocks','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3362,3757,'innodb_purge_batch_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3363,3757,'innodb_purge_rseg_truncate_frequency','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3364,3757,'innodb_purge_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3365,3757,'innodb_random_read_ahead','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3366,3757,'innodb_read_ahead_threshold','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3367,3757,'innodb_read_io_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3368,3757,'innodb_read_only','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3369,3757,'innodb_read_only_compressed','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3370,3757,'innodb_rollback_on_timeout','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3371,3757,'innodb_sort_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3372,3757,'innodb_spin_wait_delay','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3373,3757,'innodb_stats_auto_recalc','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3374,3757,'innodb_stats_include_delete_marked','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3375,3757,'innodb_stats_method','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3376,3757,'innodb_stats_modified_counter','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3377,3757,'innodb_stats_on_metadata','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3378,3757,'innodb_stats_persistent','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3379,3757,'innodb_stats_persistent_sample_pages','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3380,3757,'innodb_stats_traditional','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3381,3757,'innodb_stats_transient_sample_pages','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3382,3757,'innodb_status_output','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3383,3757,'innodb_status_output_locks','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3384,3757,'innodb_strict_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3385,3757,'innodb_sync_spin_loops','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3386,3757,'innodb_table_locks','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3387,3757,'innodb_temp_data_file_path','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3388,3757,'innodb_undo_directory','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3389,3757,'innodb_undo_log_truncate','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3390,3757,'innodb_undo_tablespaces','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3391,3757,'innodb_use_atomic_writes','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3392,3757,'innodb_use_native_aio','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3393,3757,'innodb_version','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3394,3757,'innodb_write_io_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3395,3757,'interactive_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3396,3757,'join_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3397,3757,'join_buffer_space_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3398,3757,'join_cache_level','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3399,3757,'keep_files_on_create','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3400,3757,'key_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3401,3757,'key_cache_age_threshold','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3402,3757,'key_cache_block_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3403,3757,'key_cache_division_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3404,3757,'key_cache_file_hash_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3405,3757,'key_cache_segments','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3406,3757,'large_files_support','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3407,3757,'large_page_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3408,3757,'large_pages','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3409,3757,'lc_messages','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3410,3757,'lc_time_names','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3411,3757,'license','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3412,3757,'local_infile','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3413,3757,'lock_wait_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3414,3757,'locked_in_memory','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3415,3757,'log_bin','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3416,3757,'log_bin_basename','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3417,3757,'log_bin_compress','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3418,3757,'log_bin_compress_min_len','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3419,3757,'log_bin_index','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3420,3757,'log_bin_trust_function_creators','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3421,3757,'log_disabled_statements','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3422,3757,'log_output','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3423,3757,'log_queries_not_using_indexes','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3424,3757,'log_slave_updates','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3425,3757,'log_slow_admin_statements','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3426,3757,'log_slow_disabled_statements','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3427,3757,'log_slow_filter','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3428,3757,'log_slow_rate_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3429,3757,'log_slow_slave_statements','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3430,3757,'log_tc_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3431,3757,'log_warnings','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3432,3757,'long_query_time','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3433,3757,'low_priority_updates','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3434,3757,'lower_case_file_system','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3435,3757,'lower_case_table_names','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3436,3757,'master_verify_checksum','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3437,3757,'max_allowed_packet','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3438,3757,'max_binlog_cache_size','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3439,3757,'max_binlog_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3440,3757,'max_binlog_stmt_cache_size','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3441,3757,'max_connect_errors','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3442,3757,'max_connections','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3443,3757,'max_delayed_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3444,3757,'max_digest_length','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3445,3757,'max_error_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3446,3757,'max_heap_table_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3447,3757,'max_insert_delayed_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3448,3757,'max_join_size','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3449,3757,'max_length_for_sort_data','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3450,3757,'max_password_errors','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3451,3757,'max_prepared_stmt_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3452,3757,'max_recursive_iterations','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3453,3757,'max_relay_log_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3454,3757,'max_rowid_filter_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3455,3757,'max_seeks_for_key','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3456,3757,'max_session_mem_used','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3457,3757,'max_sort_length','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3458,3757,'max_sp_recursion_depth','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3459,3757,'max_statement_time','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3460,3757,'max_tmp_tables','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3461,3757,'max_user_connections','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3462,3757,'max_write_lock_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3463,3757,'metadata_locks_cache_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3464,3757,'metadata_locks_hash_instances','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3465,3757,'min_examined_row_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3466,3757,'mrr_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3467,3757,'myisam_block_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3468,3757,'myisam_data_pointer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3469,3757,'myisam_max_sort_file_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3470,3757,'myisam_mmap_size','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3471,3757,'myisam_recover_options','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3472,3757,'myisam_repair_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3473,3757,'myisam_sort_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3474,3757,'myisam_stats_method','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3475,3757,'myisam_use_mmap','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3476,3757,'mysql56_temporal_format','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3477,3757,'net_buffer_length','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3478,3757,'net_read_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3479,3757,'net_retry_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3480,3757,'net_write_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3481,3757,'old','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3482,3757,'old_alter_table','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3483,3757,'old_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3484,3757,'old_passwords','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3485,3757,'open_files_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3486,3757,'optimizer_max_sel_arg_weight','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3487,3757,'optimizer_prune_level','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3488,3757,'optimizer_search_depth','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3489,3757,'optimizer_selectivity_sampling_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3490,3757,'optimizer_switch','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3491,3757,'optimizer_trace','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3492,3757,'optimizer_trace_max_mem_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3493,3757,'optimizer_use_condition_selectivity','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3494,3757,'performance_schema','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3495,3757,'performance_schema_digests_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3496,3757,'performance_schema_events_stages_history_long_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3497,3757,'performance_schema_events_stages_history_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3498,3757,'performance_schema_events_statements_history_long_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3499,3757,'performance_schema_events_statements_history_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3500,3757,'performance_schema_events_transactions_history_long_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3501,3757,'performance_schema_events_transactions_history_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3502,3757,'performance_schema_events_waits_history_long_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3503,3757,'performance_schema_events_waits_history_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3504,3757,'performance_schema_max_cond_classes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3505,3757,'performance_schema_max_digest_length','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3506,3757,'performance_schema_max_file_classes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3507,3757,'performance_schema_max_file_handles','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3508,3757,'performance_schema_max_memory_classes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3509,3757,'performance_schema_max_mutex_classes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3510,3757,'performance_schema_max_rwlock_classes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3511,3757,'performance_schema_max_socket_classes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3512,3757,'performance_schema_max_sql_text_length','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3513,3757,'performance_schema_max_stage_classes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3514,3757,'performance_schema_max_statement_classes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3515,3757,'performance_schema_max_statement_stack','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3516,3757,'performance_schema_max_thread_classes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3517,3757,'performance_schema_session_connect_attrs_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3518,3757,'pid_file','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3519,3757,'plugin_dir','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3520,3757,'plugin_maturity','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3521,3757,'port','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3522,3757,'preload_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3523,3757,'profiling','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3524,3757,'profiling_history_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3525,3757,'progress_report_time','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3526,3757,'protocol_version','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3527,3757,'query_alloc_block_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3528,3757,'query_cache_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3529,3757,'query_cache_min_res_unit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3530,3757,'query_cache_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3531,3757,'query_cache_strip_comments','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3532,3757,'query_cache_type','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3533,3757,'query_cache_wlock_invalidate','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3534,3757,'query_prealloc_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3535,3757,'range_alloc_block_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3536,3757,'read_binlog_speed_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3537,3757,'read_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3538,3757,'read_only','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3539,3757,'read_rnd_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3540,3757,'relay_log_info_file','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3541,3757,'relay_log_purge','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3542,3757,'relay_log_recovery','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3543,3757,'relay_log_space_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3544,3757,'replicate_annotate_row_events','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3545,3757,'replicate_events_marked_for_skip','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3546,3757,'report_port','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3547,3757,'require_secure_transport','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3548,3757,'rowid_merge_buff_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3549,3757,'rpl_semi_sync_master_enabled','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3550,3757,'rpl_semi_sync_master_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3551,3757,'rpl_semi_sync_master_trace_level','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3552,3757,'rpl_semi_sync_master_wait_no_slave','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3553,3757,'rpl_semi_sync_master_wait_point','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3554,3757,'rpl_semi_sync_slave_delay_master','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3555,3757,'rpl_semi_sync_slave_enabled','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3556,3757,'rpl_semi_sync_slave_kill_conn_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3557,3757,'rpl_semi_sync_slave_trace_level','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3558,3757,'secure_auth','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3559,3757,'secure_timestamp','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3560,3757,'server_id','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3561,3757,'session_track_schema','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3562,3757,'session_track_state_change','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3563,3757,'session_track_system_variables','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3564,3757,'session_track_transaction_info','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3565,3757,'skip_external_locking','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3566,3757,'skip_name_resolve','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3567,3757,'skip_networking','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3568,3757,'skip_show_database','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3569,3757,'slave_compressed_protocol','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3570,3757,'slave_ddl_exec_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3571,3757,'slave_domain_parallel_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3572,3757,'slave_exec_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3573,3757,'slave_load_tmpdir','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3574,3757,'slave_max_allowed_packet','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3575,3757,'slave_net_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3576,3757,'slave_parallel_max_queued','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3577,3757,'slave_parallel_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3578,3757,'slave_parallel_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3579,3757,'slave_parallel_workers','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3580,3757,'slave_run_triggers_for_rbr','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3581,3757,'slave_skip_errors','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3582,3757,'slave_sql_verify_checksum','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3583,3757,'slave_transaction_retries','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3584,3757,'slave_transaction_retry_errors','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3585,3757,'slave_transaction_retry_interval','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3586,3757,'slow_launch_time','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3587,3757,'slow_query_log','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3588,3757,'slow_query_log_file','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3589,3757,'socket','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3590,3757,'sort_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3591,3757,'sql_auto_is_null','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3592,3757,'sql_big_selects','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3593,3757,'sql_buffer_result','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3594,3757,'sql_if_exists','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3595,3757,'sql_log_bin','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3596,3757,'sql_log_off','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3597,3757,'sql_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3598,3757,'sql_notes','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3599,3757,'sql_quote_show_create','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3600,3757,'sql_safe_updates','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3601,3757,'sql_select_limit','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3602,3757,'sql_slave_skip_counter','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3603,3757,'sql_warnings','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3604,3757,'standard_compliant_cte','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3605,3757,'storage_engine','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3606,3757,'stored_program_cache','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3607,3757,'strict_password_validation','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3608,3757,'sync_binlog','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3609,3757,'sync_frm','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3610,3757,'sync_master_info','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3611,3757,'sync_relay_log','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3612,3757,'sync_relay_log_info','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3613,3757,'system_time_zone','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3614,3757,'system_versioning_alter_history','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3615,3757,'system_versioning_asof','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3616,3757,'table_definition_cache','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3617,3757,'table_open_cache','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3618,3757,'table_open_cache_instances','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3619,3757,'tcp_keepalive_interval','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3620,3757,'tcp_keepalive_probes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3621,3757,'tcp_keepalive_time','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3622,3757,'tcp_nodelay','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3623,3757,'thread_cache_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3624,3757,'thread_handling','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3625,3757,'thread_pool_dedicated_listener','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3626,3757,'thread_pool_exact_stats','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3627,3757,'thread_pool_idle_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3628,3757,'thread_pool_max_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3629,3757,'thread_pool_oversubscribe','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3630,3757,'thread_pool_prio_kickup_timer','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3631,3757,'thread_pool_priority','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3632,3757,'thread_pool_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3633,3757,'thread_pool_stall_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3634,3757,'thread_stack','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3635,3757,'time_format','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3636,3757,'time_zone','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3637,3757,'tls_version','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3638,3757,'tmp_disk_table_size','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3639,3757,'tmp_memory_table_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3640,3757,'tmp_table_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3641,3757,'tmpdir','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3642,3757,'transaction_alloc_block_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3643,3757,'transaction_prealloc_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3644,3757,'tx_isolation','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3645,3757,'tx_read_only','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3646,3757,'unique_checks','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3647,3757,'updatable_views_with_limit','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3648,3757,'use_stat_tables','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3649,3757,'userstat','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3650,3757,'version','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3651,3757,'version_comment','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3652,3757,'version_compile_machine','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3653,3757,'version_compile_os','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3654,3757,'version_malloc_library','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3655,3757,'version_source_revision','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3656,3757,'version_ssl_library','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3657,3757,'wait_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3658,3757,'wsrep_osu_method','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3659,3757,'wsrep_sr_store','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3660,3757,'wsrep_auto_increment_control','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3661,3757,'wsrep_causal_reads','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3662,3757,'wsrep_certification_rules','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3663,3757,'wsrep_certify_nonpk','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3664,3757,'wsrep_cluster_name','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3665,3757,'wsrep_convert_lock_to_trx','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3666,3757,'wsrep_data_home_dir','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3667,3757,'wsrep_debug','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3668,3757,'wsrep_desync','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3669,3757,'wsrep_dirty_reads','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3670,3757,'wsrep_drupal_282555_workaround','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3671,3757,'wsrep_forced_binlog_format','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3672,3757,'wsrep_gtid_domain_id','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3673,3757,'wsrep_gtid_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3674,3757,'wsrep_ignore_apply_errors','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3675,3757,'wsrep_load_data_splitting','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3676,3757,'wsrep_log_conflicts','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3677,3757,'wsrep_max_ws_rows','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3678,3757,'wsrep_max_ws_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3679,3757,'wsrep_mysql_replication_bundle','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3680,3757,'wsrep_node_incoming_address','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3681,3757,'wsrep_node_name','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3682,3757,'wsrep_on','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3683,3757,'wsrep_patch_version','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3684,3757,'wsrep_provider','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3685,3757,'wsrep_recover','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3686,3757,'wsrep_reject_queries','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3687,3757,'wsrep_restart_slave','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3688,3757,'wsrep_retry_autocommit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3689,3757,'wsrep_slave_fk_checks','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3690,3757,'wsrep_slave_uk_checks','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3691,3757,'wsrep_slave_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3692,3757,'wsrep_sst_donor_rejects_queries','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3693,3757,'wsrep_sst_method','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3694,3757,'wsrep_sst_receive_address','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3695,3757,'wsrep_start_position','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3696,3757,'wsrep_sync_wait','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3697,3757,'wsrep_trx_fragment_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3698,3757,'wsrep_trx_fragment_unit','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3699,3757,'is_proxysql','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3700,3757,'allow_suspicious_udfs','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3701,3757,'log_slow_max_warnings','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3702,3757,'note_verbosity','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3703,3757,'optimizer_extra_pruning_depth','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3704,3757,'optimizer_max_sel_args','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3705,3757,'skip_grant_tables','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3706,3757,'slave_max_statement_time','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3707,3757,'analyze_max_length','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3708,3757,'innodb_alter_copy_bulk','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3709,3757,'innodb_buffer_pool_size_auto_min','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3710,3757,'innodb_buffer_pool_size_max','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3711,3757,'innodb_linux_aio','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3712,3757,'innodb_log_checkpoint_now','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3713,3757,'innodb_log_file_mmap','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3714,3757,'innodb_log_spin_wait_delay','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3715,3757,'innodb_log_write_ahead_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3716,3757,'innodb_snapshot_isolation','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3717,3757,'log_slow_min_examined_row_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3718,3757,'log_slow_query','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3719,3757,'log_slow_query_file','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3720,3757,'log_slow_query_time','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3721,3757,'optimizer_adjust_secondary_key_costs','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3722,3757,'optimizer_join_limit_pref_ratio','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3723,3757,'server_uid','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3724,3757,'system_versioning_insert_history','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3725,3757,'innodb_data_file_buffering','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3726,3757,'innodb_data_file_write_through','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3727,3757,'innodb_log_file_write_through','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3728,3757,'optimizer_disk_read_cost','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3729,3757,'optimizer_disk_read_ratio','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3730,3757,'optimizer_index_block_copy_cost','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3731,3757,'optimizer_key_compare_cost','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3732,3757,'optimizer_key_copy_cost','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3733,3757,'optimizer_key_lookup_cost','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3734,3757,'optimizer_key_next_find_cost','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3735,3757,'optimizer_row_copy_cost','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3736,3757,'optimizer_row_lookup_cost','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3737,3757,'optimizer_row_next_find_cost','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3738,3757,'optimizer_rowid_compare_cost','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3739,3757,'optimizer_rowid_copy_cost','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3740,3757,'optimizer_scan_setup_cost','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3741,3757,'optimizer_where_cost','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3742,3757,'transaction_isolation','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3743,3757,'transaction_read_only','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3744,3757,'binlog_row_event_max_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3745,3757,'block_encryption_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3746,3757,'innodb_truncate_temporary_tablespace_now','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3747,3757,'binlog_gtid_index','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3748,3757,'binlog_gtid_index_page_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3749,3757,'binlog_gtid_index_span_min','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3750,3757,'binlog_legacy_event_pos','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3751,3757,'binlog_space_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3752,3757,'character_set_collations','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3753,3757,'max_binlog_total_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3754,3757,'slave_connections_needed_for_purge','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3755,3757,'max_tmp_session_space_usage','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3756,3757,'max_tmp_total_space_usage','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3757,3757,'binlog_large_commit_threshold','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3758,3757,'ignore_db_dirs','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3759,3757,'log_slow_always_query_time','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3760,3757,'mhnsw_default_distance','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3761,3757,'mhnsw_default_m','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3762,3757,'mhnsw_ef_search','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3763,3757,'mhnsw_max_cache_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3764,3757,'slave_abort_blocking_timeout','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3765,3757,'create_tmp_table_binlog_formats','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3766,3757,'master_info_file','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3767,3757,'max_open_cursors','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3768,3757,'replicate_same_server_id','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3769,3757,'show_slave_auth_info','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3770,3757,'bind_address','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3771,3757,'innodb_adaptive_max_sleep_delay','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3772,3757,'innodb_background_scrub_data_check_interval','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3773,3757,'innodb_background_scrub_data_compressed','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3774,3757,'innodb_background_scrub_data_interval','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3775,3757,'innodb_background_scrub_data_uncompressed','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3776,3757,'innodb_buffer_pool_instances','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3777,3757,'innodb_checksums','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3778,3757,'innodb_commit_concurrency','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3779,3757,'innodb_concurrency_tickets','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3780,3757,'innodb_force_load_corrupted','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3781,3757,'innodb_idle_flush_pct','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3782,3757,'innodb_lock_schedule_algorithm','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3783,3757,'innodb_locks_unsafe_for_binlog','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3784,3757,'innodb_log_checksums','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3785,3757,'innodb_log_compressed_pages','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3786,3757,'innodb_log_files_in_group','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3787,3757,'innodb_log_optimize_ddl','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3788,3757,'innodb_page_cleaners','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3789,3757,'innodb_replication_delay','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3790,3757,'innodb_rollback_segments','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3791,3757,'innodb_scrub_log','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3792,3757,'innodb_scrub_log_speed','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3793,3757,'innodb_stats_sample_pages','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3794,3757,'innodb_sync_array_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3795,3757,'innodb_thread_concurrency','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3796,3757,'innodb_thread_sleep_delay','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3797,3757,'innodb_undo_logs','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3798,3757,'log_error','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3799,3757,'max_long_data_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3800,3757,'multi_range_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3801,3757,'performance_schema_setup_actors_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3802,3757,'performance_schema_setup_objects_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3803,3757,'sql_error_log_filename','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3804,3757,'sql_error_log_rate','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3805,3757,'sql_error_log_rotate','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3806,3757,'sql_error_log_rotations','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3807,3757,'sql_error_log_size_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3808,3757,'thread_concurrency','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3809,3757,'timed_mutexes','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3810,3757,'wsrep_replicate_myisam','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3811,3757,'lc_messages_dir','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3812,3757,'log_slow_verbosity','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3813,3757,'relay_log','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3814,3757,'relay_log_basename','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3815,3757,'relay_log_index','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3816,3757,'report_host','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3817,3757,'server_audit_events','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3818,3757,'server_audit_file_path','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3819,3757,'server_audit_file_rotate_now','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3820,3757,'server_audit_file_rotate_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3821,3757,'server_audit_file_rotations','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3822,3757,'server_audit_logging','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3823,3757,'server_audit_mode','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3824,3757,'server_audit_output_type','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3825,3757,'server_audit_query_log_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3826,3757,'server_audit_syslog_facility','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3827,3757,'server_audit_syslog_ident','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3828,3757,'server_audit_syslog_priority','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3829,3757,'ssl_ca','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3830,3757,'ssl_cert','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3831,3757,'ssl_key','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3832,3757,'wsrep_cluster_address','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3833,3757,'wsrep_node_address','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3834,3757,'wsrep_provider_options','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3835,3757,'wsrep_sst_auth','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3836,3758,'lock_deadlocks','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3837,3758,'lock_timeouts','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3838,3758,'lock_row_lock_current_waits','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3839,3758,'lock_row_lock_time','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3840,3758,'lock_row_lock_time_max','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3841,3758,'lock_row_lock_waits','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3842,3758,'lock_row_lock_time_avg','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3843,3758,'buffer_pool_size','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3844,3758,'buffer_pool_reads','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3845,3758,'buffer_pool_read_requests','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3846,3758,'buffer_pool_write_requests','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3847,3758,'buffer_pool_wait_free','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3848,3758,'buffer_pool_read_ahead','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3849,3758,'buffer_pool_read_ahead_evicted','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3850,3758,'buffer_pool_pages_total','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3851,3758,'buffer_pool_pages_misc','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3852,3758,'buffer_pool_pages_data','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3853,3758,'buffer_pool_bytes_data','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3854,3758,'buffer_pool_pages_dirty','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3855,3758,'buffer_pool_bytes_dirty','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3856,3758,'buffer_pool_pages_free','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3857,3758,'buffer_pages_created','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3858,3758,'buffer_pages_written','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3859,3758,'buffer_pages_read','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3860,3758,'buffer_data_reads','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3861,3758,'buffer_data_written','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3862,3758,'buffer_lru_batch_flush_total_pages','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3863,3758,'buffer_lru_batch_evict_total_pages','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3864,3758,'os_data_reads','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3865,3758,'os_data_writes','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3866,3758,'os_data_fsyncs','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3867,3758,'os_pending_reads','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3868,3758,'os_pending_writes','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3869,3758,'os_log_bytes_written','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3870,3758,'trx_rseg_history_len','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3871,3758,'trx_undo_slots_cached','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3872,3758,'log_waits','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3873,3758,'log_write_requests','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3874,3758,'log_writes','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3875,3758,'adaptive_hash_searches','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3876,3758,'adaptive_hash_searches_btree','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3877,3758,'file_num_open_files','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3878,3758,'ibuf_merges_insert','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3879,3758,'ibuf_merges_delete_mark','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3880,3758,'ibuf_merges_delete','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3881,3758,'ibuf_merges_discard_insert','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3882,3758,'ibuf_merges_discard_delete_mark','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3883,3758,'ibuf_merges_discard_delete','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3884,3758,'ibuf_merges','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3885,3758,'ibuf_size','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3886,3758,'innodb_activity_count','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3887,3758,'innodb_dblwr_writes','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3888,3758,'innodb_dblwr_pages_written','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3889,3758,'innodb_page_size','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3890,3758,'buffer_index_sec_rec_cluster_reads','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3891,3758,'buffer_index_sec_rec_cluster_reads_avoided','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3892,3758,'os_log_fsyncs','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3893,3758,'os_log_pending_fsyncs','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3894,3758,'os_log_pending_writes','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3895,3758,'log_padded','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3896,3758,'dml_inserts','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3897,3758,'dml_deletes','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3898,3758,'dml_updates','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3899,3758,'dml_system_reads','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3900,3758,'dml_system_inserts','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3901,3758,'dml_system_deletes','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3902,3758,'dml_system_updates','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (3903,3759,'processlist','JSON','mysql_processlist','general',1,1);
+INSERT INTO `ts_variable` VALUES (3904,3760,'database','JSON','mysql_database','general',1,1);
+INSERT INTO `ts_variable` VALUES (3905,3761,'mysql_available','INT','mysql_server','general',1,1);
+INSERT INTO `ts_variable` VALUES (3906,3761,'mysql_ping','DOUBLE','mysql_server','general',1,1);
+INSERT INTO `ts_variable` VALUES (3907,3761,'mysql_error','TEXT','mysql_server','general',1,1);
+INSERT INTO `ts_variable` VALUES (3908,3762,'gtid_binlog_pos','TEXT','gtid','general',1,1);
+INSERT INTO `ts_variable` VALUES (3909,3762,'gtid_binlog_state','TEXT','gtid','general',1,1);
+INSERT INTO `ts_variable` VALUES (3910,3762,'gtid_current_pos','TEXT','gtid','general',1,1);
+INSERT INTO `ts_variable` VALUES (3911,3762,'gtid_slave_pos','TEXT','gtid','general',1,1);
+INSERT INTO `ts_variable` VALUES (3937,3772,'ssh_available','INT','ssh_server','general',1,1);
+INSERT INTO `ts_variable` VALUES (3938,3772,'ssh_ping','DOUBLE','ssh_server','general',1,1);
+INSERT INTO `ts_variable` VALUES (3939,3754,'metadata_lock_info','JSON','information_schema','general',1,1);
+INSERT INTO `ts_variable` VALUES (3940,3772,'ping','DOUBLE','ssh_server','general',1,1);
+INSERT INTO `ts_variable` VALUES (3967,3763,'maxscale_filters','JSON','maxscale','general',1,1);
+INSERT INTO `ts_variable` VALUES (3968,3764,'maxscale_listeners','JSON','maxscale','general',1,1);
+INSERT INTO `ts_variable` VALUES (3969,3765,'maxscale_maxscale','JSON','maxscale','general',1,1);
+INSERT INTO `ts_variable` VALUES (3970,3766,'maxscale_monitors','JSON','maxscale','general',1,1);
+INSERT INTO `ts_variable` VALUES (3971,3767,'maxscale_available','INT','maxscale_server','general',1,1);
+INSERT INTO `ts_variable` VALUES (3972,3767,'maxscale_ping','DOUBLE','maxscale_server','general',1,1);
+INSERT INTO `ts_variable` VALUES (3973,3768,'maxscale_servers','JSON','maxscale','general',1,1);
+INSERT INTO `ts_variable` VALUES (3974,3769,'maxscale_service_available','INT','maxscale_service_server','general',1,1);
+INSERT INTO `ts_variable` VALUES (3975,3769,'maxscale_service_ping','DOUBLE','maxscale_service_server','general',1,1);
+INSERT INTO `ts_variable` VALUES (3976,3770,'maxscale_services','JSON','maxscale','general',1,1);
+INSERT INTO `ts_variable` VALUES (3977,3771,'maxscale_sessions','JSON','maxscale','general',1,1);
+INSERT INTO `ts_variable` VALUES (3978,3774,'proxysql_connect_error','JSON','proxysql_connect_error','general',1,1);
+INSERT INTO `ts_variable` VALUES (3979,3775,'checksums_values','JSON','proxysql_runtime','general',1,1);
+INSERT INTO `ts_variable` VALUES (3980,3776,'global_variables','JSON','proxysql_runtime','general',1,1);
+INSERT INTO `ts_variable` VALUES (3981,3778,'mysql_query_rules','JSON','proxysql_runtime','general',1,1);
+INSERT INTO `ts_variable` VALUES (3982,3779,'mysql_servers','JSON','proxysql_runtime','general',1,1);
+INSERT INTO `ts_variable` VALUES (3983,3780,'mysql_users','JSON','proxysql_runtime','general',1,1);
+INSERT INTO `ts_variable` VALUES (3984,3781,'proxysql_servers','JSON','proxysql_runtime','general',1,1);
+INSERT INTO `ts_variable` VALUES (3985,3782,'proxysql_available','INT','proxysql_server','general',1,1);
+INSERT INTO `ts_variable` VALUES (3986,3782,'proxysql_ping','DOUBLE','proxysql_server','general',1,1);
+INSERT INTO `ts_variable` VALUES (3988,3756,'innodb_num_index_pages_written','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3989,3756,'innodb_num_non_index_pages_written','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3990,3756,'innodb_encryption_key_rotation_list_length','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (3991,3757,'is_proxy','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3992,3757,'is_maxscale','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (3993,3784,'cpu_thread_count','INT','ssh_hardware','general',1,1);
+INSERT INTO `ts_variable` VALUES (3994,3784,'memory','TEXT','ssh_hardware','general',1,1);
+INSERT INTO `ts_variable` VALUES (3995,3784,'cpu_frequency','TEXT','ssh_hardware','general',1,1);
+INSERT INTO `ts_variable` VALUES (3996,3784,'distributor','TEXT','ssh_hardware','general',1,1);
+INSERT INTO `ts_variable` VALUES (3997,3784,'os','TEXT','ssh_hardware','general',1,1);
+INSERT INTO `ts_variable` VALUES (3998,3784,'codename','TEXT','ssh_hardware','general',1,1);
+INSERT INTO `ts_variable` VALUES (3999,3784,'product_name','TEXT','ssh_hardware','general',1,1);
+INSERT INTO `ts_variable` VALUES (4000,3784,'arch','TEXT','ssh_hardware','general',1,1);
+INSERT INTO `ts_variable` VALUES (4001,3784,'kernel','TEXT','ssh_hardware','general',1,1);
+INSERT INTO `ts_variable` VALUES (4002,3784,'hostname','TEXT','ssh_hardware','general',1,1);
+INSERT INTO `ts_variable` VALUES (4003,3784,'swapiness','INT','ssh_hardware','general',1,1);
+INSERT INTO `ts_variable` VALUES (4004,3785,'memory_total','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (4005,3785,'memory_used','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (4006,3785,'memory_free','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (4007,3785,'memory_shared','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (4008,3785,'memory_buff/cache','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (4009,3785,'memory_available','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (4010,3785,'swap_total','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (4011,3785,'swap_used','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (4012,3785,'swap_free','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (4013,3785,'disks','JSON','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (4015,3785,'cpu_usage','DOUBLE','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (4016,3785,'cpu_detail','JSON','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (4017,3785,'memory_mysqld','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (4018,3785,'memory_detail_kb','JSON','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (4019,3773,'maxscale_users','JSON','maxscale','general',1,1);
+INSERT INTO `ts_variable` VALUES (4020,3786,'mysql_replication_hostgroups','JSON','proxysql_runtime','general',1,1);
+INSERT INTO `ts_variable` VALUES (4021,3757,'columnstore_cache_flush_threshold','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4022,3757,'columnstore_cache_inserts','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4023,3757,'columnstore_cache_use_import','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4024,3757,'columnstore_compression_type','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4025,3757,'columnstore_decimal_overflow_check','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4026,3757,'columnstore_decimal_scale','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4027,3757,'columnstore_derived_handler','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4028,3757,'columnstore_diskjoin_bucketsize','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4029,3757,'columnstore_diskjoin_largesidelimit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4030,3757,'columnstore_diskjoin_smallsidelimit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4031,3757,'columnstore_double_for_decimal_math','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4032,3757,'columnstore_group_by_handler','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4033,3757,'columnstore_import_for_batchinsert_delimiter','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4034,3757,'columnstore_import_for_batchinsert_enclosed_by','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4035,3757,'columnstore_local_query','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4036,3757,'columnstore_orderby_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4037,3757,'columnstore_ordered_only','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4038,3757,'columnstore_replication_slave','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4039,3757,'columnstore_select_handler','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4040,3757,'columnstore_select_handler_in_stored_procedures','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4041,3757,'columnstore_string_scan_threshold','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4042,3757,'columnstore_stringtable_threshold','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4043,3757,'columnstore_um_mem_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4044,3757,'columnstore_use_decimal_scale','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4045,3757,'columnstore_use_import_for_batchinsert','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4046,3757,'columnstore_varbin_always_hex','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4047,3757,'query_response_time_flush','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4048,3757,'query_response_time_range_base','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4049,3757,'query_response_time_stats','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4050,3757,'rocksdb_access_hint_on_compaction_start','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4051,3757,'rocksdb_advise_random_on_open','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4052,3757,'rocksdb_allow_concurrent_memtable_write','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4053,3757,'rocksdb_allow_mmap_reads','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4054,3757,'rocksdb_allow_mmap_writes','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4055,3757,'rocksdb_allow_to_start_after_corruption','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4056,3757,'rocksdb_blind_delete_primary_key','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4057,3757,'rocksdb_block_cache_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4058,3757,'rocksdb_block_restart_interval','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4059,3757,'rocksdb_block_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4060,3757,'rocksdb_block_size_deviation','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4061,3757,'rocksdb_bulk_load','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4062,3757,'rocksdb_bulk_load_allow_sk','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4063,3757,'rocksdb_bulk_load_allow_unsorted','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4064,3757,'rocksdb_bulk_load_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4065,3757,'rocksdb_bytes_per_sync','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4066,3757,'rocksdb_cache_dump','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4067,3757,'rocksdb_cache_high_pri_pool_ratio','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4068,3757,'rocksdb_cache_index_and_filter_blocks','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4069,3757,'rocksdb_cache_index_and_filter_with_high_priority','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4070,3757,'rocksdb_checksums_pct','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4071,3757,'rocksdb_collect_sst_properties','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4072,3757,'rocksdb_commit_in_the_middle','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4073,3757,'rocksdb_commit_time_batch_for_recovery','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4074,3757,'rocksdb_compaction_readahead_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4075,3757,'rocksdb_compaction_sequential_deletes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4076,3757,'rocksdb_compaction_sequential_deletes_count_sd','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4077,3757,'rocksdb_compaction_sequential_deletes_file_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4078,3757,'rocksdb_compaction_sequential_deletes_window','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4079,3757,'rocksdb_create_if_missing','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4080,3757,'rocksdb_create_missing_column_families','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4081,3757,'rocksdb_datadir','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4082,3757,'rocksdb_db_write_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4083,3757,'rocksdb_deadlock_detect','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4084,3757,'rocksdb_deadlock_detect_depth','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4085,3757,'rocksdb_debug_manual_compaction_delay','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4086,3757,'rocksdb_debug_optimizer_no_zero_cardinality','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4087,3757,'rocksdb_debug_ttl_ignore_pk','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4088,3757,'rocksdb_debug_ttl_read_filter_ts','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4089,3757,'rocksdb_debug_ttl_rec_ts','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4090,3757,'rocksdb_debug_ttl_snapshot_ts','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4091,3757,'rocksdb_delayed_write_rate','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4092,3757,'rocksdb_delete_obsolete_files_period_micros','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4093,3757,'rocksdb_enable_2pc','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4094,3757,'rocksdb_enable_bulk_load_api','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4095,3757,'rocksdb_enable_insert_with_update_caching','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4096,3757,'rocksdb_enable_thread_tracking','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4097,3757,'rocksdb_enable_ttl','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4098,3757,'rocksdb_enable_ttl_read_filtering','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4099,3757,'rocksdb_enable_write_thread_adaptive_yield','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4100,3757,'rocksdb_error_if_exists','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4101,3757,'rocksdb_error_on_suboptimal_collation','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4102,3757,'rocksdb_flush_log_at_trx_commit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4103,3757,'rocksdb_force_compute_memtable_stats','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4104,3757,'rocksdb_force_compute_memtable_stats_cachetime','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4105,3757,'rocksdb_force_flush_memtable_and_lzero_now','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4106,3757,'rocksdb_force_flush_memtable_now','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4107,3757,'rocksdb_force_index_records_in_range','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4108,3757,'rocksdb_git_hash','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4109,3757,'rocksdb_hash_index_allow_collision','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4110,3757,'rocksdb_ignore_datadic_errors','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4111,3757,'rocksdb_ignore_unknown_options','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4112,3757,'rocksdb_index_type','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4113,3757,'rocksdb_info_log_level','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4114,3757,'rocksdb_io_write_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4115,3757,'rocksdb_is_fd_close_on_exec','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4116,3757,'rocksdb_keep_log_file_num','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4117,3757,'rocksdb_large_prefix','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4118,3757,'rocksdb_lock_scanned_rows','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4119,3757,'rocksdb_lock_wait_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4120,3757,'rocksdb_log_file_time_to_roll','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4121,3757,'rocksdb_manifest_preallocation_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4122,3757,'rocksdb_manual_compaction_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4123,3757,'rocksdb_manual_wal_flush','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4124,3757,'rocksdb_master_skip_tx_api','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4125,3757,'rocksdb_max_background_jobs','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4126,3757,'rocksdb_max_latest_deadlocks','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4127,3757,'rocksdb_max_log_file_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4128,3757,'rocksdb_max_manifest_file_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4129,3757,'rocksdb_max_manual_compactions','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4130,3757,'rocksdb_max_open_files','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4131,3757,'rocksdb_max_row_locks','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4132,3757,'rocksdb_max_subcompactions','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4133,3757,'rocksdb_max_total_wal_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4134,3757,'rocksdb_merge_buf_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4135,3757,'rocksdb_merge_combine_read_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4136,3757,'rocksdb_merge_tmp_file_removal_delay_ms','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4137,3757,'rocksdb_new_table_reader_for_compaction_inputs','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4138,3757,'rocksdb_no_block_cache','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4139,3757,'rocksdb_paranoid_checks','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4140,3757,'rocksdb_pause_background_work','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4141,3757,'rocksdb_perf_context_level','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4142,3757,'rocksdb_persistent_cache_size_mb','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4143,3757,'rocksdb_pin_l0_filter_and_index_blocks_in_cache','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4144,3757,'rocksdb_print_snapshot_conflict_queries','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4145,3757,'rocksdb_rate_limiter_bytes_per_sec','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4146,3757,'rocksdb_records_in_range','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4147,3757,'rocksdb_remove_mariabackup_checkpoint','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4148,3757,'rocksdb_reset_stats','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4149,3757,'rocksdb_rollback_on_timeout','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4150,3757,'rocksdb_seconds_between_stat_computes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4151,3757,'rocksdb_signal_drop_index_thread','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4152,3757,'rocksdb_sim_cache_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4153,3757,'rocksdb_skip_bloom_filter_on_read','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4154,3757,'rocksdb_skip_fill_cache','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4155,3757,'rocksdb_skip_unique_check_tables','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4156,3757,'rocksdb_sst_mgr_rate_bytes_per_sec','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4157,3757,'rocksdb_stats_dump_period_sec','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4158,3757,'rocksdb_stats_level','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4159,3757,'rocksdb_stats_recalc_rate','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4160,3757,'rocksdb_store_row_debug_checksums','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4161,3757,'rocksdb_strict_collation_check','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4162,3757,'rocksdb_supported_compression_types','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4163,3757,'rocksdb_table_cache_numshardbits','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4164,3757,'rocksdb_table_stats_sampling_pct','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4165,3757,'rocksdb_trace_sst_api','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4166,3757,'rocksdb_two_write_queues','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4167,3757,'rocksdb_unsafe_for_binlog','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4168,3757,'rocksdb_use_adaptive_mutex','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4169,3757,'rocksdb_use_clock_cache','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4170,3757,'rocksdb_use_direct_io_for_flush_and_compaction','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4171,3757,'rocksdb_use_direct_reads','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4172,3757,'rocksdb_use_fsync','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4173,3757,'rocksdb_validate_tables','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4174,3757,'rocksdb_verify_row_debug_checksums','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4175,3757,'rocksdb_wal_bytes_per_sync','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4176,3757,'rocksdb_wal_recovery_mode','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4177,3757,'rocksdb_wal_size_limit_mb','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4178,3757,'rocksdb_wal_ttl_seconds','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4179,3757,'rocksdb_whole_key_filtering','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4180,3757,'rocksdb_write_batch_max_bytes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4181,3757,'rocksdb_write_disable_wal','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4182,3757,'rocksdb_write_ignore_missing_column_families','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4183,3757,'rocksdb_write_policy','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4184,3757,'sql_error_log_warnings','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4185,3757,'sql_error_log_with_db_and_thread_info','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4186,3757,'performance_schema_max_mutex_instances','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4187,3757,'wsrep_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4188,3757,'wsrep_strict_ddl','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4189,3757,'simple_password_check_digits','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4190,3757,'simple_password_check_letters_same_case','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4191,3757,'simple_password_check_minimal_length','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4192,3757,'simple_password_check_other_characters','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4193,3757,'activate_all_roles_on_login','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4194,3757,'admin_port','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4195,3757,'admin_tls_version','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4196,3757,'authentication_policy','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4197,3757,'auto_generate_certs','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4198,3757,'binlog_encryption','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4199,3757,'binlog_error_action','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4200,3757,'binlog_expire_logs_auto_purge','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4201,3757,'binlog_group_commit_sync_delay','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4202,3757,'binlog_group_commit_sync_no_delay_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4203,3757,'binlog_gtid_simple_recovery','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4204,3757,'binlog_max_flush_queue_time','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4205,3757,'binlog_order_commits','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4206,3757,'binlog_rotate_encryption_master_key_at_startup','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4207,3757,'binlog_rows_query_log_events','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4208,3757,'binlog_transaction_compression','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4209,3757,'binlog_transaction_compression_level_zstd','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4210,3757,'binlog_transaction_dependency_history_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4211,3757,'build_id','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4212,3757,'caching_sha2_password_auto_generate_rsa_keys','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4213,3757,'caching_sha2_password_digest_rounds','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4214,3757,'caching_sha2_password_private_key_path','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4215,3757,'caching_sha2_password_public_key_path','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4216,3757,'check_proxy_users','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4217,3757,'connection_memory_chunk_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4218,3757,'connection_memory_limit','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4219,3757,'create_admin_listener_thread','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4220,3757,'cte_max_recursion_depth','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4221,3757,'default_collation_for_utf8mb4','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4222,3757,'default_table_encryption','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4223,3757,'default_tmp_storage_engine','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4224,3757,'end_markers_in_json','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4225,3757,'enforce_gtid_consistency','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4226,3757,'explain_format','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4227,3757,'explain_json_format_version','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4228,3757,'generated_random_password_length','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4229,3757,'global_connection_memory_limit','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4230,3757,'global_connection_memory_tracking','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4231,3757,'group_replication_consistency','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4232,3757,'gtid_executed_compression_period','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4233,3757,'gtid_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4234,3757,'have_statement_timeout','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4235,3757,'histogram_generation_max_mem_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4236,3757,'information_schema_stats_expiry','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4237,3757,'innodb_api_bk_commit_interval','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4238,3757,'innodb_api_disable_rowlock','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4239,3757,'innodb_api_enable_binlog','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4240,3757,'innodb_api_enable_mdl','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4241,3757,'innodb_api_trx_level','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4242,3757,'innodb_buffer_pool_in_core_file','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4243,3757,'innodb_ddl_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4244,3757,'innodb_ddl_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4245,3757,'innodb_dedicated_server','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4246,3757,'innodb_doublewrite_batch_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4247,3757,'innodb_doublewrite_files','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4248,3757,'innodb_doublewrite_pages','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4249,3757,'innodb_extend_and_initialize','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4250,3757,'innodb_fsync_threshold','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4251,3757,'innodb_log_spin_cpu_abs_lwm','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4252,3757,'innodb_log_spin_cpu_pct_hwm','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4253,3757,'innodb_log_wait_for_flush_spin_hwm','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4254,3757,'innodb_log_writer_threads','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4255,3757,'innodb_parallel_read_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4256,3757,'innodb_print_ddl_logs','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4257,3757,'innodb_redo_log_capacity','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4258,3757,'innodb_redo_log_encrypt','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4259,3757,'innodb_segment_reserve_factor','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4260,3757,'innodb_spin_wait_pause_multiplier','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4261,3757,'innodb_temp_tablespaces_dir','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4262,3757,'innodb_undo_log_encrypt','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4263,3757,'innodb_use_fdatasync','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4264,3757,'innodb_validate_tablespace_paths','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4265,3757,'internal_tmp_mem_storage_engine','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4266,3757,'keyring_operations','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4267,3757,'log_error_services','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4268,3757,'log_error_verbosity','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4269,3757,'log_raw','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4270,3757,'log_replica_updates','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4271,3757,'log_slow_extra','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4272,3757,'log_slow_replica_statements','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4273,3757,'log_statements_unsafe_for_binlog','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4274,3757,'log_throttle_queries_not_using_indexes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4275,3757,'log_timestamps','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4276,3757,'max_execution_time','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4277,3757,'max_points_in_geometry','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4278,3757,'mysql_native_password_proxy_users','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4279,3757,'mysqlx_bind_address','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4280,3757,'mysqlx_compression_algorithms','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4281,3757,'mysqlx_connect_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4282,3757,'mysqlx_deflate_default_compression_level','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4283,3757,'mysqlx_deflate_max_client_compression_level','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4284,3757,'mysqlx_document_id_unique_prefix','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4285,3757,'mysqlx_enable_hello_notice','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4286,3757,'mysqlx_idle_worker_thread_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4287,3757,'mysqlx_interactive_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4288,3757,'mysqlx_lz4_default_compression_level','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4289,3757,'mysqlx_lz4_max_client_compression_level','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4290,3757,'mysqlx_max_allowed_packet','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4291,3757,'mysqlx_max_connections','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4292,3757,'mysqlx_min_worker_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4293,3757,'mysqlx_port','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4294,3757,'mysqlx_port_open_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4295,3757,'mysqlx_read_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4296,3757,'mysqlx_socket','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4297,3757,'mysqlx_wait_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4298,3757,'mysqlx_write_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4299,3757,'mysqlx_zstd_default_compression_level','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4300,3757,'mysqlx_zstd_max_client_compression_level','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4301,3757,'ngram_token_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4302,3757,'offline_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4303,3757,'optimizer_max_subgraph_pairs','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4304,3757,'optimizer_trace_features','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4305,3757,'optimizer_trace_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4306,3757,'parser_max_mem_size','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4307,3757,'partial_revokes','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4308,3757,'password_history','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4309,3757,'password_require_current','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4310,3757,'password_reuse_interval','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4311,3757,'performance_schema_error_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4312,3757,'performance_schema_max_digest_sample_age','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4313,3757,'performance_schema_max_meter_classes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4314,3757,'performance_schema_max_metric_classes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4315,3757,'performance_schema_show_processlist','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4316,3757,'persist_sensitive_variables_in_plaintext','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4317,3757,'persisted_globals_load','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4318,3757,'print_identified_with_as_hex','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4319,3757,'protocol_compression_algorithms','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4320,3757,'range_optimizer_max_mem_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4321,3757,'rbr_exec_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4322,3757,'regexp_stack_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4323,3757,'regexp_time_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4324,3757,'replica_allow_batching','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4325,3757,'replica_checkpoint_group','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4326,3757,'replica_checkpoint_period','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4327,3757,'replica_compressed_protocol','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4328,3757,'replica_exec_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4329,3757,'replica_load_tmpdir','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4330,3757,'replica_max_allowed_packet','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4331,3757,'replica_net_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4332,3757,'replica_parallel_type','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4333,3757,'replica_parallel_workers','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4334,3757,'replica_pending_jobs_size_max','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4335,3757,'replica_preserve_commit_order','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4336,3757,'replica_skip_errors','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4337,3757,'replica_sql_verify_checksum','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4338,3757,'replica_transaction_retries','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4339,3757,'replication_optimize_for_static_plugin_config','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4340,3757,'replication_sender_observe_commit_only','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4341,3757,'restrict_fk_on_non_standard_key','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4342,3757,'rpl_read_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4343,3757,'rpl_stop_replica_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4344,3757,'rpl_stop_slave_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4345,3757,'schema_definition_cache','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4346,3757,'secondary_engine_cost_threshold','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4347,3757,'secure_file_priv','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4348,3757,'select_into_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4349,3757,'select_into_disk_sync','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4350,3757,'select_into_disk_sync_delay','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4351,3757,'server_id_bits','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4352,3757,'server_uuid','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4353,3757,'session_track_gtids','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4354,3757,'set_operations_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4355,3757,'sha256_password_auto_generate_rsa_keys','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4356,3757,'sha256_password_private_key_path','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4357,3757,'sha256_password_proxy_users','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4358,3757,'sha256_password_public_key_path','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4359,3757,'show_create_table_verbosity','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4360,3757,'show_gipk_in_create_table_and_information_schema','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4361,3757,'skip_replica_start','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4362,3757,'skip_slave_start','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4363,3757,'slave_allow_batching','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4364,3757,'slave_checkpoint_group','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4365,3757,'slave_checkpoint_period','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4366,3757,'slave_parallel_type','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4367,3757,'slave_pending_jobs_size_max','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4368,3757,'slave_preserve_commit_order','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4369,3757,'source_verify_checksum','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4370,3757,'sql_generate_invisible_primary_key','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4371,3757,'sql_replica_skip_counter','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4372,3757,'sql_require_primary_key','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4373,3757,'ssl_fips_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4374,3757,'ssl_session_cache_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4375,3757,'ssl_session_cache_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4376,3757,'stored_program_definition_cache','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4377,3757,'super_read_only','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4378,3757,'sync_source_info','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4379,3757,'table_encryption_privilege_check','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4380,3757,'tablespace_definition_cache','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4381,3757,'temptable_max_mmap','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4382,3757,'temptable_max_ram','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4383,3757,'temptable_use_mmap','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4384,3757,'terminology_use_previous','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4385,3757,'tls_certificates_enforced_validation','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4386,3757,'version_compile_zlib','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4387,3757,'windowing_use_high_precision','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4388,3757,'xa_detach_on_prepare','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4389,3757,'innodb_tmpdir','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4390,3757,'shutdown_wait_for_slaves','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4391,3757,'thread_pool_reshuffle_group_period','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4392,3757,'wsrep_black_box_name','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4393,3757,'wsrep_black_box_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4394,3757,'wsrep_certificate_expiration_hours_warning','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4395,3757,'wsrep_ssl_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4396,3757,'replicate_ignore_db','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4397,3757,'innodb_adaptive_hash_index_partitions','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4398,3757,'innodb_buffer_pool_populate','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4399,3757,'innodb_cleaner_lsn_age_factor','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4400,3757,'innodb_corrupt_table_action','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4401,3757,'innodb_disallow_writes','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4402,3757,'innodb_empty_free_list_algorithm','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4403,3757,'innodb_fake_changes','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4404,3757,'innodb_file_format','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4405,3757,'innodb_file_format_check','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4406,3757,'innodb_file_format_max','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4407,3757,'innodb_foreground_preflush','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4408,3757,'innodb_instrument_semaphores','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4409,3757,'innodb_kill_idle_transaction','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4410,3757,'innodb_large_prefix','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4411,3757,'innodb_locking_fake_changes','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4412,3757,'innodb_log_arch_expire_sec','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4413,3757,'innodb_log_archive','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4414,3757,'innodb_log_block_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4415,3757,'innodb_log_checksum_algorithm','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4416,3757,'innodb_max_bitmap_file_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4417,3757,'innodb_max_changed_pages','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4418,3757,'innodb_mirrored_log_groups','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4419,3757,'innodb_mtflush_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4420,3757,'innodb_safe_truncate','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4421,3757,'innodb_sched_priority_cleaner','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4422,3757,'innodb_show_locks_held','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4423,3757,'innodb_show_verbose_locks','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4424,3757,'innodb_support_xa','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4425,3757,'innodb_track_changed_pages','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4426,3757,'innodb_track_redo_log_now','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4427,3757,'innodb_use_fallocate','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4428,3757,'innodb_use_global_flush_log_at_trx_commit','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4429,3757,'innodb_use_mtflush','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4430,3757,'innodb_use_stacktrace','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4431,3757,'innodb_use_trim','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4432,3757,'performance_schema_accounts_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4433,3757,'performance_schema_hosts_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4434,3757,'performance_schema_max_cond_instances','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4435,3757,'performance_schema_max_file_instances','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4436,3757,'performance_schema_max_rwlock_instances','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4437,3757,'performance_schema_max_socket_instances','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4438,3757,'performance_schema_max_table_handles','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4439,3757,'performance_schema_max_table_instances','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4440,3757,'performance_schema_max_thread_instances','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4441,3757,'performance_schema_users_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4442,3758,'innodb_rwlock_s_spin_waits','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (4443,3758,'innodb_rwlock_x_spin_waits','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (4444,3758,'innodb_rwlock_sx_spin_waits','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (4445,3758,'innodb_rwlock_s_spin_rounds','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (4446,3758,'innodb_rwlock_x_spin_rounds','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (4447,3758,'innodb_rwlock_sx_spin_rounds','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (4448,3758,'innodb_rwlock_s_os_waits','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (4449,3758,'innodb_rwlock_x_os_waits','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (4450,3758,'innodb_rwlock_sx_os_waits','JSON','innodb_metrics','general',1,1);
+INSERT INTO `ts_variable` VALUES (4476,3777,'mysql_galera_hostgroups','JSON','proxysql_runtime','general',1,1);
+INSERT INTO `ts_variable` VALUES (4479,3787,'plugins','JSON','information_schema','general',1,1);
+INSERT INTO `ts_variable` VALUES (4480,3788,'mysql_table','JSON','mysql_table','general',1,1);
+INSERT INTO `ts_variable` VALUES (4484,3789,'disks','JSON','information_schema','general',1,1);
+INSERT INTO `ts_variable` VALUES (4485,3789,'tables','JSON','information_schema','general',1,1);
+INSERT INTO `ts_variable` VALUES (4486,3789,'create_tables','TEXT','information_schema','general',1,1);
+INSERT INTO `ts_variable` VALUES (4497,3782,'proxysql_error','TEXT','proxysql_server','general',1,1);
+INSERT INTO `ts_variable` VALUES (4499,3790,'events_statements_summary_by_digest','JSON','performance_schema','general',1,1);
+INSERT INTO `ts_variable` VALUES (4500,3756,'sum_lock_time','INT','summary_by_digest','general',1,1);
+INSERT INTO `ts_variable` VALUES (4501,3756,'sum_errors','INT','summary_by_digest','general',1,1);
+INSERT INTO `ts_variable` VALUES (4502,3756,'sum_warnings','INT','summary_by_digest','general',1,1);
+INSERT INTO `ts_variable` VALUES (4504,3756,'sum_rows_affected','INT','summary_by_digest','general',1,1);
+INSERT INTO `ts_variable` VALUES (4505,3756,'sum_rows_sent','INT','summary_by_digest','general',1,1);
+INSERT INTO `ts_variable` VALUES (4506,3756,'sum_rows_examined','INT','summary_by_digest','general',1,1);
+INSERT INTO `ts_variable` VALUES (4507,3756,'sum_no_index_used','INT','summary_by_digest','general',1,1);
+INSERT INTO `ts_variable` VALUES (4508,3756,'sum_no_good_index_used','INT','summary_by_digest','general',1,1);
+INSERT INTO `ts_variable` VALUES (4509,3756,'sum_count_star','INT','summary_by_digest','general',1,1);
+INSERT INTO `ts_variable` VALUES (4510,3791,'sum_duration','INT','summary_by_digest','general',1,1);
+INSERT INTO `ts_variable` VALUES (4511,3791,'avg_lock_time','INT','summary_by_digest','general',1,1);
+INSERT INTO `ts_variable` VALUES (4512,3791,'avg_latency','INT','summary_by_digest','general',1,1);
+INSERT INTO `ts_variable` VALUES (4513,3791,'delta_sum_timer_wait','INT','summary_by_digest','general',1,1);
+INSERT INTO `ts_variable` VALUES (4514,3791,'delta_sum_lock_time','INT','summary_by_digest','general',1,1);
+INSERT INTO `ts_variable` VALUES (4515,3756,'server_audit_session_filter','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4516,3757,'server_audit_load_on_error','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4517,3757,'server_audit_reload_filters','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4518,3757,'server_audit_timestamp_format','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4519,3756,'innodb_have_atomic_builtins','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4520,3756,'innodb_mem_total','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4521,3756,'innodb_mutex_os_waits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4522,3756,'innodb_mutex_spin_rounds','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4523,3756,'innodb_mutex_spin_waits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4524,3756,'innodb_oldest_view_low_limit_trx_id','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4525,3756,'innodb_purge_trx_id','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4526,3756,'innodb_purge_undo_no','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4527,3756,'innodb_read_views_memory','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4528,3756,'innodb_s_lock_os_waits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4529,3756,'innodb_s_lock_spin_rounds','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4530,3756,'innodb_s_lock_spin_waits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4531,3756,'innodb_x_lock_os_waits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4532,3756,'innodb_x_lock_spin_rounds','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4533,3756,'innodb_x_lock_spin_waits','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4534,3756,'innodb_page_compression_trim_sect512','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4535,3756,'innodb_page_compression_trim_sect1024','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4536,3756,'innodb_page_compression_trim_sect2048','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4537,3756,'innodb_page_compression_trim_sect4096','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4538,3756,'innodb_page_compression_trim_sect8192','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4539,3756,'innodb_page_compression_trim_sect16384','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4540,3756,'innodb_page_compression_trim_sect32768','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4541,3756,'innodb_num_page_compressed_trim_op_saved','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4542,3756,'innodb_buffered_aio_submitted','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4543,3757,'wsrep_sst_donor','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4544,3757,'aria_recover','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4545,3757,'innodb_additional_mem_pool_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4546,3757,'innodb_log_arch_dir','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4547,3757,'innodb_print_lock_wait_timeout_info','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4548,3757,'innodb_simulate_comp_failures','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4549,3757,'innodb_use_sys_malloc','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4550,3757,'aria_pagecache_segments','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4551,3757,'innodb_numa_interleave','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4552,3757,'file_key_management_encryption_algorithm','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4553,3757,'file_key_management_filekey','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4554,3757,'file_key_management_filename','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4555,3767,'maxscale_error','TEXT','maxscale_server','general',1,1);
+INSERT INTO `ts_variable` VALUES (4556,3769,'maxscale_service_error','TEXT','maxscale_service_server','general',1,1);
+INSERT INTO `ts_variable` VALUES (4557,3772,'ssh_error','TEXT','ssh_server','general',1,1);
+INSERT INTO `ts_variable` VALUES (4558,3757,'replicate_do_db','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4559,3757,'innodb_adaptive_hash_index_cells','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4560,3757,'metadata_locks_instances','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4561,3757,'new_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4562,3757,'server_audit_file_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4563,3757,'server_audit_sync_log_file','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4564,3757,'wsrep_sync_wait_timeout','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4565,3757,'wsrep_provider_base_dir','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4566,3757,'wsrep_provider_base_host','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4567,3757,'wsrep_provider_base_port','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4568,3757,'wsrep_provider_cert_log_conflicts','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4569,3757,'wsrep_provider_cert_optimistic_pa','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4570,3757,'wsrep_provider_debug','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4571,3757,'wsrep_provider_evs_auto_evict','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4572,3757,'wsrep_provider_evs_causal_keepalive_period','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4573,3757,'wsrep_provider_evs_debug_log_mask','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4574,3757,'wsrep_provider_evs_delay_margin','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4575,3757,'wsrep_provider_evs_delayed_keep_period','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4576,3757,'wsrep_provider_evs_inactive_check_period','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4577,3757,'wsrep_provider_evs_inactive_timeout','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4578,3757,'wsrep_provider_evs_info_log_mask','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4579,3757,'wsrep_provider_evs_install_timeout','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4580,3757,'wsrep_provider_evs_join_retrans_period','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4581,3757,'wsrep_provider_evs_keepalive_period','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4582,3757,'wsrep_provider_evs_max_install_timeouts','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4583,3757,'wsrep_provider_evs_send_window','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4584,3757,'wsrep_provider_evs_stats_report_period','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4585,3757,'wsrep_provider_evs_suspect_timeout','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4586,3757,'wsrep_provider_evs_use_aggregate','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4587,3757,'wsrep_provider_evs_user_send_window','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4588,3757,'wsrep_provider_evs_version','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4589,3757,'wsrep_provider_evs_view_forget_timeout','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4590,3757,'wsrep_provider_gcache_dir','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4591,3757,'wsrep_provider_gcache_keep_pages_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4592,3757,'wsrep_provider_gcache_keep_plaintext_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4593,3757,'wsrep_provider_gcache_mem_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4594,3757,'wsrep_provider_gcache_name','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4595,3757,'wsrep_provider_gcache_page_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4596,3757,'wsrep_provider_gcache_recover','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4597,3757,'wsrep_provider_gcache_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4598,3757,'wsrep_provider_gcs_fc_debug','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4599,3757,'wsrep_provider_gcs_fc_factor','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4600,3757,'wsrep_provider_gcs_fc_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4601,3757,'wsrep_provider_gcs_fc_master_slave','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4602,3757,'wsrep_provider_gcs_fc_single_primary','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4603,3757,'wsrep_provider_gcs_max_packet_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4604,3757,'wsrep_provider_gcs_max_throttle','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4605,3757,'wsrep_provider_gcs_recv_q_hard_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4606,3757,'wsrep_provider_gcs_recv_q_soft_limit','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4607,3757,'wsrep_provider_gcs_stateless','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4608,3757,'wsrep_provider_gcs_sync_donor','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4609,3757,'wsrep_provider_gcs_vote_policy','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4610,3757,'wsrep_provider_gmcast_listen_addr','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4611,3757,'wsrep_provider_gmcast_mcast_ttl','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4612,3757,'wsrep_provider_gmcast_peer_timeout','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4613,3757,'wsrep_provider_gmcast_segment','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4614,3757,'wsrep_provider_gmcast_time_wait','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4615,3757,'wsrep_provider_gmcast_version','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4616,3757,'wsrep_provider_ist_recv_addr','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4617,3757,'wsrep_provider_pc_announce_timeout','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4618,3757,'wsrep_provider_pc_bootstrap','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4619,3757,'wsrep_provider_pc_checksum','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4620,3757,'wsrep_provider_pc_ignore_quorum','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4621,3757,'wsrep_provider_pc_ignore_sb','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4622,3757,'wsrep_provider_pc_linger','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4623,3757,'wsrep_provider_pc_npvo','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4624,3757,'wsrep_provider_pc_recovery','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4625,3757,'wsrep_provider_pc_version','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4626,3757,'wsrep_provider_pc_wait_prim','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4627,3757,'wsrep_provider_pc_wait_prim_timeout','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4628,3757,'wsrep_provider_pc_weight','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4629,3757,'wsrep_provider_protonet_backend','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4630,3757,'wsrep_provider_protonet_version','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4631,3757,'wsrep_provider_repl_causal_read_timeout','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4632,3757,'wsrep_provider_repl_commit_order','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4633,3757,'wsrep_provider_repl_key_format','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4634,3757,'wsrep_provider_repl_max_ws_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4635,3757,'wsrep_provider_repl_proto_max','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4636,3757,'wsrep_provider_socket_checksum','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4637,3757,'wsrep_provider_socket_dynamic','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4638,3757,'wsrep_provider_socket_recv_buf_size','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4639,3757,'wsrep_provider_socket_send_buf_size','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4640,3757,'wsrep_provider_socket_ssl','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4641,3757,'wsrep_provider_socket_ssl_compression','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4642,3757,'wsrep_provider_socket_ssl_reload','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4643,3756,'com_create_compression_dictionary','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4644,3756,'com_drop_compression_dictionary','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4645,3756,'com_lock_tables_for_backup','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4646,3756,'com_lock_binlog_for_backup','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4647,3756,'com_purge_archived','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4648,3756,'com_purge_archived_before_date','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4649,3756,'com_show_client_statistics','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4650,3756,'com_show_index_statistics','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4651,3756,'com_show_slave_status_nolock','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4652,3756,'com_show_table_statistics','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4653,3756,'com_show_thread_statistics','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4654,3756,'com_show_user_statistics','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4655,3756,'com_slave_start','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4656,3756,'com_slave_stop','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4657,3756,'com_unlock_binlog','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4658,3756,'innodb_current_row_locks','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4659,3756,'innodb_descriptors_memory','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4660,3756,'innodb_scan_pages_contiguous','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4661,3756,'innodb_scan_pages_disjointed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4662,3756,'innodb_scan_pages_total_seek_distance','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4663,3756,'innodb_scan_data_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4664,3756,'innodb_scan_deleted_recs_size','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4665,3756,'last_query_partial_plans','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4666,3756,'max_statement_time_set','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4667,3756,'max_statement_time_set_failed','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4668,3757,'avoid_temporal_upgrade','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4669,3757,'binlog_skip_flush_commands','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4670,3757,'binlogging_impossible_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4671,3757,'expand_fast_index_creation','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4672,3757,'gtid_deployment_step','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4673,3757,'have_backup_locks','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4674,3757,'have_backup_safe_binlog_info','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4675,3757,'have_elliptic_curve_crypto','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4676,3757,'have_snapshot_cloning','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4677,3757,'have_tlsv1_2','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4678,3757,'innodb_compressed_columns_threshold','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4679,3757,'innodb_compressed_columns_zip_level','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4680,3757,'kill_idle_transaction','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4681,3757,'log_bin_use_v1_row_events','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4682,3757,'log_slow_rate_type','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4683,3757,'log_slow_sp_statements','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4684,3757,'master_info_repository','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4685,3757,'max_binlog_files','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4686,3757,'max_slowlog_files','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4687,3757,'max_slowlog_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4688,3757,'new','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4689,3757,'relay_log_info_repository','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4690,3757,'show_old_temporals','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4691,3757,'simplified_binlog_gtid_recovery','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4692,3757,'slave_rows_search_algorithms','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4693,3757,'slow_query_log_always_write_time','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4694,3757,'slow_query_log_timestamp_always','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4695,3757,'slow_query_log_timestamp_precision','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4696,3757,'thread_pool_high_prio_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4697,3757,'thread_pool_high_prio_tickets','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4698,3757,'thread_statistics','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4699,3792,'ps_sum_timer_wait_µs','INT','velocity','general',1,1);
+INSERT INTO `ts_variable` VALUES (4700,3792,'ps_nb_query','INT','velocity','general',1,1);
+INSERT INTO `ts_variable` VALUES (4701,3792,'pma_statement_type_summary','JSON','velocity','general',1,1);
+INSERT INTO `ts_variable` VALUES (4702,3794,'memory_summary_global_by_event_name','JSON','performance_schema','general',1,1);
+INSERT INTO `ts_variable` VALUES (4703,3795,'query_latency_1m','INT','mysql_latency','general',1,1);
+INSERT INTO `ts_variable` VALUES (4704,3795,'query_latency_10m','INT','mysql_latency','general',1,1);
+INSERT INTO `ts_variable` VALUES (4705,3795,'query_latency_1h','INT','mysql_latency','general',1,1);
+INSERT INTO `ts_variable` VALUES (4706,3795,'query_latency_24h','INT','mysql_latency','general',1,1);
+INSERT INTO `ts_variable` VALUES (4707,3756,'spider_direct_aggregate','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4708,3756,'spider_direct_delete','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4709,3756,'spider_direct_order_limit','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4710,3756,'spider_direct_update','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4711,3756,'spider_mon_table_cache_version','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4712,3756,'spider_mon_table_cache_version_req','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4713,3756,'spider_parallel_search','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (4714,3757,'spider_auto_increment_mode','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4715,3757,'spider_bgs_first_read','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4716,3757,'spider_bgs_mode','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4717,3757,'spider_bgs_second_read','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4718,3757,'spider_bka_mode','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4719,3757,'spider_bka_table_name_type','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4720,3757,'spider_block_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4721,3757,'spider_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4722,3757,'spider_bulk_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4723,3757,'spider_bulk_update_mode','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4724,3757,'spider_bulk_update_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4725,3757,'spider_casual_read','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4726,3757,'spider_conn_recycle_mode','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4727,3757,'spider_conn_recycle_strict','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4728,3757,'spider_conn_wait_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4729,3757,'spider_connect_error_interval','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4730,3757,'spider_connect_mutex','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4731,3757,'spider_connect_retry_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4732,3757,'spider_connect_retry_interval','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4733,3757,'spider_connect_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4734,3757,'spider_crd_bg_mode','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4735,3757,'spider_crd_interval','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4736,3757,'spider_crd_mode','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4737,3757,'spider_crd_sync','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4738,3757,'spider_crd_type','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4739,3757,'spider_crd_weight','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4740,3757,'spider_delete_all_rows_type','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4741,3757,'spider_direct_aggregate','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4742,3757,'spider_direct_dup_insert','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4743,3757,'spider_direct_order_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4744,3757,'spider_disable_group_by_handler','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4745,3757,'spider_dry_access','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4746,3757,'spider_error_read_mode','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4747,3757,'spider_error_write_mode','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4748,3757,'spider_first_read','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4749,3757,'spider_force_commit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4750,3757,'spider_general_log','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4751,3757,'spider_index_hint_pushdown','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4752,3757,'spider_init_sql_alloc_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4753,3757,'spider_internal_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4754,3757,'spider_internal_offset','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4755,3757,'spider_internal_optimize','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4756,3757,'spider_internal_optimize_local','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4757,3757,'spider_internal_unlock','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4758,3757,'spider_internal_xa','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4759,3757,'spider_internal_xa_id_type','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4760,3757,'spider_internal_xa_snapshot','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4761,3757,'spider_load_crd_at_startup','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4762,3757,'spider_load_sts_at_startup','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4763,3757,'spider_local_lock_table','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4764,3757,'spider_lock_exchange','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4765,3757,'spider_log_result_error_with_sql','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4766,3757,'spider_log_result_errors','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4767,3757,'spider_low_mem_read','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4768,3757,'spider_max_connections','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4769,3757,'spider_max_order','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4770,3757,'spider_multi_split_read','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4771,3757,'spider_net_read_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4772,3757,'spider_net_write_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4773,3757,'spider_ping_interval_at_trx_start','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4774,3757,'spider_quick_mode','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4775,3757,'spider_quick_page_byte','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4776,3757,'spider_quick_page_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4777,3757,'spider_read_only_mode','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4778,3757,'spider_reset_sql_alloc','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4779,3757,'spider_same_server_link','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4780,3757,'spider_second_read','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4781,3757,'spider_select_column_mode','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4782,3757,'spider_selupd_lock_mode','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4783,3757,'spider_semi_split_read','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4784,3757,'spider_semi_split_read_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4785,3757,'spider_semi_table_lock','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4786,3757,'spider_semi_table_lock_connection','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4787,3757,'spider_semi_trx','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4788,3757,'spider_skip_default_condition','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4789,3757,'spider_skip_parallel_search','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4790,3757,'spider_split_read','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4791,3757,'spider_store_last_crd','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4792,3757,'spider_store_last_sts','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4793,3757,'spider_strict_group_by','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4794,3757,'spider_sts_bg_mode','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4795,3757,'spider_sts_interval','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4796,3757,'spider_sts_mode','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4797,3757,'spider_sts_sync','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4798,3757,'spider_support_xa','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4799,3757,'spider_sync_autocommit','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4800,3757,'spider_sync_sql_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4801,3757,'spider_sync_trx_isolation','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4802,3757,'spider_table_crd_thread_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4803,3757,'spider_table_init_error_interval','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4804,3757,'spider_table_sts_thread_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4805,3757,'spider_use_all_conns_snapshot','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4806,3757,'spider_use_cond_other_than_pk_for_update','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4807,3757,'spider_use_consistent_snapshot','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4808,3757,'spider_use_default_database','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4809,3757,'spider_use_flash_logs','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4810,3757,'spider_use_pushdown_udf','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4811,3757,'spider_use_snapshot_with_flush_tables','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4812,3757,'spider_use_table_charset','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4813,3757,'spider_wait_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4814,3757,'spider_xa_register_mode','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4815,3757,'active_query_users_blacklist','JSON','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4816,3757,'activities_delta_sleep_s','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4817,3757,'advanced_hdfs_pipelines','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4818,3757,'aes_default_encryption_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4819,3757,'aggregator_failure_detection','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4820,3757,'allow_ipv6','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4821,3757,'allow_newer_to_older_replication','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4822,3757,'allow_proc_cpuinfo_errors','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4823,3757,'allow_user_db_with_cluster_replica_like_name','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4824,3757,'assume_udfs_deterministic','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4825,3757,'attach_voting_member_wait_promotion_timeout_s','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4826,3757,'auditlog_disk_sync','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4827,3757,'auditlog_level','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4828,3757,'auditlog_retention_period','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4829,3757,'auditlog_retention_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4830,3757,'auditlog_root_only','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4831,3757,'auditlog_rotation_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4832,3757,'auditlog_rotation_time','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4833,3757,'auto_replicate','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4834,3757,'autostats_flush_interval_secs','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4835,3757,'background_vector_index_merger','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4836,3757,'backup_max_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4837,3757,'backup_multipart_upload_concurrency','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4838,3757,'batch_external_functions','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4839,3757,'batch_external_functions_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4840,3757,'blob_cache_eviction_policy','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4841,3757,'blob_cache_threadpool_max_concurrent','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4842,3757,'bottle_api_grpc_background_deadline_secs','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4843,3757,'bottle_api_grpc_foreground_deadline_secs','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4844,3757,'bottle_api_heavy_rate_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4845,3757,'bottle_grpc_client_refresh_frequency_s','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4846,3757,'bottle_service_skip_create_link_heartbeat','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4847,3757,'bottomless_alter_compute_frequency_s','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4848,3757,'bottomless_attach_wait_ref_db_online_timeout_s','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4849,3757,'bottomless_blob_compression_level','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4850,3757,'bottomless_compression_level','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4851,3757,'bottomless_experimental_blobstore_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4852,3757,'bottomless_gc_retention_period_minutes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4853,3757,'bottomless_idle_upload_ms','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4854,3757,'bottomless_incremental_download_max_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4855,3757,'bottomless_skip_create_database_api_checks','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4856,3757,'bottomless_snapshot_trigger_log_chunks','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4857,3757,'bottomless_upload_max_concurrent','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4858,3757,'bottomless_upload_throttle_hard_limit_cache_usability','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4859,3757,'bottomless_upload_throttle_hard_limit_secs','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4860,3757,'bottomless_upload_throttle_min_disk_limit_mb','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4861,3757,'bottomless_upload_throttle_soft_limit_cache_usability','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4862,3757,'bottomless_upload_throttle_soft_limit_secs','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4863,3757,'cardinality_estimation_level','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4864,3757,'cluster_bottle_service_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4865,3757,'cluster_name','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4866,3757,'collect_average_size','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4867,3757,'columnstore_flush_bytes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4868,3757,'columnstore_ingest_management_queue_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4869,3757,'columnstore_segment_rows','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4870,3757,'columnstore_validate_blob_before_merge','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4871,3757,'columnstore_window_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4872,3757,'compile_only','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4873,3757,'compiled_images_eviction_memory_limit_mb','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4874,3757,'compiled_images_eviction_memory_limit_percent','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4875,3757,'consensus_enabled','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4876,3757,'consensus_leadership_transfer_timeout_s','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4877,3757,'core_file_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4878,3757,'core_on_bad_errnos_in_file_io_apis','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4879,3757,'core_on_stack_overflow','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4880,3757,'costing_max_djo_tables','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4881,3757,'critical_diagnostics','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4882,3757,'critical_diagnostics_max_payload_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4883,3757,'csi_cross_segment_slices_prefetch_queue_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4884,3757,'custom_java_pipelines','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4885,3757,'data_conversion_compatibility_level','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4886,3757,'default_autostats_enabled','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4887,3757,'default_distributed_ddl_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4888,3757,'default_partitions_per_leaf','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4889,3757,'default_table_type','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4890,3757,'default_user_require_ssl','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4891,3757,'detect_ppv2_mysql_handshake','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4892,3757,'disconnect_client_on_invalid_connection_state','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4893,3757,'disk_plan_expiration_minutes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4894,3757,'disk_plan_gc_pause_minutes_for_detached_tables','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4895,3757,'disk_plan_gc_pause_seconds_on_startup','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4896,3757,'dist_txn_outcomes_keepalive_secs','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4897,3757,'distributed_commit_lock_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4898,3757,'distributed_plancache_agg_sync_s','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4899,3757,'distributed_plancache_max_download_plans','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4900,3757,'distributed_plancache_worker_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4901,3757,'dr_min_connection_timeout_ms','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4902,3757,'dr_repl_max_chunk_size_kb','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4903,3757,'dr_repl_network_buffer_size_mb','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4904,3757,'drain_async_upgrade_timeout_sec','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4905,3757,'early_snapshot_timeout_seconds','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4906,3757,'enable_alias_space_trim','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4907,3757,'enable_background_plan_invalidation','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4908,3757,'enable_bottle_service_compute_validation','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4909,3757,'enable_columnstore_ingest_management','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4910,3757,'enable_compiled_images_eviction','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4911,3757,'enable_dac_port_for_cluster_ops','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4912,3757,'enable_disk_plan_expiration','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4913,3757,'enable_disk_plan_explain','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4914,3757,'enable_distributed_plancache','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4915,3757,'enable_dml_query_forwarding','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4916,3757,'enable_engine_idle_time_tracking','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4917,3757,'enable_experimental_metrics','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4918,3757,'enable_external_functions','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4919,3757,'enable_gc_events','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4920,3757,'enable_iceberg_ingest','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4921,3757,'enable_idle_table_eviction','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4922,3757,'enable_idle_table_optimizations','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4923,3757,'enable_managed_functions','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4924,3757,'enable_observe_queries','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4925,3757,'enable_periodic_distributed_plancache_agg_sync','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4926,3757,'enable_query_forwarding','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4927,3757,'enable_replicate_from_bottomless','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4928,3757,'enable_rowstore_flush_in_shallow_copy','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4929,3757,'enable_spilling','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4930,3757,'enable_subprocess_tracing','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4931,3757,'enable_synchronous_dpc_lookup','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4932,3757,'enable_use_of_stale_incremental_stats','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4933,3757,'enable_varbuffer_dictionary_compression','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4934,3757,'enable_wasm','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4935,3757,'error_on_compilation_failure','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4936,3757,'expected_leaf_core_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4937,3757,'explain_expression_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4938,3757,'exporter_port','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4939,3757,'exporter_use_https','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4940,3757,'exporter_user','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4941,3757,'external_functions_batch_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4942,3757,'failover_on_low_disk','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4943,3757,'flush_before_replicate','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4944,3757,'force_bushy_join_table_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4945,3757,'forwarded_query','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4946,3757,'fts2_java_home','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4947,3757,'fts2_java_path','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4948,3757,'fts2_query_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4949,3757,'geo_sphere_radius','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4950,3757,'highlight_allow_ascii_binary_strings','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4951,3757,'highlight_fragment_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4952,3757,'highlight_max_number_fragments','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4953,3757,'http_api','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4954,3757,'http_api_max_idle_seconds','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4955,3757,'http_api_max_lifetime_seconds','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4956,3757,'http_api_pool_capacity','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4957,3757,'http_api_pool_max_idle','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4958,3757,'http_proxy_debug_port','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4959,3757,'http_proxy_port','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4960,3757,'https_proxy_port','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4961,3757,'identity','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4962,3757,'ignore_foreign_keys','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4963,3757,'info_schema_show_null_dbs','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4964,3757,'ingest_errors_max_disk_space_mb','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4965,3757,'internal_enable_csi_batch_execution','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4966,3757,'internal_enable_csi_bitmap_storage','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4967,3757,'interpreter_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4968,3757,'java_extractor_max_memory','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4969,3757,'java_pipelines_heap_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4970,3757,'java_pipelines_java11_path','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4971,3757,'json_collation','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4972,3757,'json_compatibility_level','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4973,3757,'json_extract_string_collation','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4974,3757,'jwks_update_interval','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4975,3757,'jwt_auth_config_file','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4976,3757,'killall_queries_case_insensitive','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4977,3757,'leaf_failover_fanout','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4978,3757,'leaf_failure_detection','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4979,3757,'load_data_errors_retention_minutes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4980,3757,'load_data_internal_compression','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4981,3757,'load_data_max_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4982,3757,'load_data_read_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4983,3757,'load_data_write_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4984,3757,'lockfree_backup','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4985,3757,'log_file_size_partitions','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4986,3757,'log_file_size_ref_dbs','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4987,3757,'managed_functions_batch_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4988,3757,'managed_functions_connect_timeout_ms','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4989,3757,'managed_functions_credentials_refresh_grace_period_ms','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4990,3757,'managed_functions_max_connections','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4991,3757,'managed_functions_request_timeout_ms','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4992,3757,'master_aggregator','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4993,3757,'master_promote_kill_timeout_seconds','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4994,3757,'max_async_compilation_concurrency','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4995,3757,'max_autostats_update_workers','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4996,3757,'max_compilation_memory_mb','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4997,3757,'max_compilation_time_s','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4998,3757,'max_connection_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (4999,3757,'max_dedicated_admin_connections','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5000,3757,'max_extension_package_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5001,3757,'max_optimizer_join_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5002,3757,'max_pipelines_per_database','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5003,3757,'max_pooled_connections','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5004,3757,'max_pooled_dacs','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5005,3757,'max_prefetch_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5006,3757,'max_recursive_cte_iterations','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5007,3757,'max_sys_mem_usage_for_load_data','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5008,3757,'max_table_memory_room_mb','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5009,3757,'max_tables_per_database','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5010,3757,'max_vector_index_cache_memory_mb','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5011,3757,'max_vector_index_cache_memory_percent','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5012,3757,'maximum_blob_cache_percent_for_prioritized_blobs','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5013,3757,'maximum_blob_cache_shrink_percent_under_default_spilling_max','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5014,3757,'maximum_blob_cache_size_mb','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5015,3757,'maximum_blob_cache_size_percent','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5016,3757,'maximum_memory','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5017,3757,'maximum_table_memory','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5018,3757,'memsql_build_flavor','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5019,3757,'memsql_id','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5020,3757,'memsql_original_server_version','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5021,3757,'memsql_snapshot_trigger_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5022,3757,'memsql_version','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5023,3757,'memsql_version_date','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5024,3757,'memsql_version_hash','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5025,3757,'minimal_disk_space','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5026,3757,'monitoring_retention_period','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5027,3757,'multi_insert_tuple_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5028,3757,'multi_statement_xact_idle_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5029,3757,'node_degree_of_parallelism','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5030,3757,'node_replication_ssl_only','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5031,3757,'noop_delay_ms','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5032,3757,'null_timestamps_for_testing','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5033,3757,'num_background_merger_threads','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5034,3757,'parametrize_json_keys','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5035,3757,'parametrizer_query_max_params','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5036,3757,'password_expiration_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5037,3757,'password_max_consec_repeat_chars','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5038,3757,'password_max_consec_sequential_chars','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5039,3757,'password_min_length','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5040,3757,'password_min_lowercase_chars','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5041,3757,'password_min_numeric_chars','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5042,3757,'password_min_special_chars','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5043,3757,'password_min_uppercase_chars','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5044,3757,'pipelines_batch_interval','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5045,3757,'pipelines_batches_metadata_to_keep','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5046,3757,'pipelines_cdc_enable_pooling','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5047,3757,'pipelines_cdc_java_heap_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5048,3757,'pipelines_cdc_max_extractors','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5049,3757,'pipelines_cdc_min_extractor_lifetime_s','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5050,3757,'pipelines_cdc_row_emit_delay_us','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5051,3757,'pipelines_deskew_batch_partitions_threshold','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5052,3757,'pipelines_errors_retention_minutes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5053,3757,'pipelines_extractor_core_on_timeout','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5054,3757,'pipelines_extractor_debug_logging','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5055,3757,'pipelines_extractor_max_memory','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5056,3757,'pipelines_gc_max_files','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5057,3757,'pipelines_iceberg_data_workers_heap_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5058,3757,'pipelines_iceberg_heap_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5059,3757,'pipelines_kafka_version','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5060,3757,'pipelines_max_concurrent','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5061,3757,'pipelines_max_concurrent_batch_partitions','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5062,3757,'pipelines_max_errors_per_partition','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5063,3757,'pipelines_max_offsets_per_batch_partition','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5064,3757,'pipelines_max_pooled_extractors','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5065,3757,'pipelines_max_retries_per_batch_partition','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5066,3757,'pipelines_offsets_gc_skew_time_minutes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5067,3757,'pipelines_parse_errors_threshold','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5068,3757,'pipelines_pooled_extractor_batches','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5069,3757,'pipelines_stderr_bufsize','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5070,3757,'pipelines_stop_on_error','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5071,3757,'pipelines_stored_proc_exactly_once','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5072,3757,'plan_expiration_minutes','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5073,3757,'plan_gc_max_plan_num_per_iteration','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5074,3757,'privilege_caches_update_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5075,3757,'privilege_transfer_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5076,3757,'processlist_rpc_json_max_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5077,3757,'promote_aggregator_timeout_ms','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5078,3757,'query_parallelism','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5079,3757,'query_parallelism_per_leaf_core','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5080,3757,'query_shape_serialization_enabled','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5081,3757,'query_shape_serialization_file_size_cap','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5082,3757,'query_shape_serialization_show_parameters','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5083,3757,'read_advanced_counters','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5084,3757,'read_only_attach_default_bottomless','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5085,3757,'recovery_concurrency','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5086,3757,'redundancy_level','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5087,3757,'regexp_compile_mem_mb','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5088,3757,'regexp_error_handling_level','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5089,3757,'regexp_format','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5090,3757,'regexp_output_validation_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5091,3757,'repl_io_buffer_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5092,3757,'repl_max_chunk_size_kb','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5093,3757,'repl_network_buffer_size_mb','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5094,3757,'repl_page_desc_limit_before_stall','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5095,3757,'replicate_from_bottomless_polling_interval_seconds','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5096,3757,'resource_governor_cpu_limit_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5097,3757,'resource_pool','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5098,3757,'resource_usage_model','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5099,3757,'result_table_error_lifetime','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5100,3757,'result_table_stats_lifetime','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5101,3757,'rowstore_gc_thread_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5102,3757,'saml_require_encryption','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5103,3757,'saml_require_signature_validation','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5104,3757,'saml_use_nameid','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5105,3757,'sampling_estimate_approach','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5106,3757,'scheduler_slow_loop_seconds','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5107,3757,'scheduler_slow_ready_queue_seconds','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5108,3757,'selectivity_estimation_min_sample_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5109,3757,'send_usage_telemetry','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5110,3757,'sequence_cache_refresh_timeout_ms','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5111,3757,'sequence_cache_resize_down_time_us','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5112,3757,'sequence_cache_resize_up_time_us','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5113,3757,'sequence_max_cache_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5114,3757,'sequence_min_cache_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5115,3757,'service_edition','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5116,3757,'show_database_status_timeout_seconds','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5117,3757,'show_query_parameters','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5118,3757,'show_with_portability_comments','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5119,3757,'singlestoredb_build_flavor','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5120,3757,'singlestoredb_version','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5121,3757,'singlestoredb_version_date','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5122,3757,'singlestoredb_version_hash','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5123,3757,'skip_incremental_backup_safety_checks','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5124,3757,'skip_segelim_with_inlist_threshold','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5125,3757,'snapshot_trigger_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5126,3757,'snapshot_wait_for_blob_gc_seconds','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5127,3757,'snapshots_to_keep','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5128,3757,'sp_query_dynamic_param','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5129,3757,'spilling_maximum_disk_percent','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5130,3757,'spilling_minimal_disk_space','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5131,3757,'spilling_node_memory_threshold_ratio','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5132,3757,'spilling_query_operator_memory_threshold','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5133,3757,'ssl_ca_for_client_cert','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5134,3757,'ssl_system_capath','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5135,3757,'st_max_aggregates_per_database','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5136,3757,'st_max_functions_per_database','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5137,3757,'st_max_links_per_database','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5138,3757,'st_max_storage_per_database_partition','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5139,3757,'sub_to_physical_partition_ratio','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5140,3757,'subproc_abridged_errors','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5141,3757,'subprocess_azure_retries','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5142,3757,'subprocess_backup_retries','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5143,3757,'subprocess_ec2_metadata_timeout_ms','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5144,3757,'subprocess_io_idle_timeout_ms','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5145,3757,'subprocess_max_retries','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5146,3757,'suppress_dml_warnings','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5147,3757,'sync_partitions_timeout_sec','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5148,3757,'sync_permissions','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5149,3757,'sync_slave_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5150,3757,'table_name_case_sensitivity','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5151,3757,'thread_stackoverflow_guard_size_factor','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5152,3757,'throttle_replay_behind_tail_mb','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5153,3757,'trace_events_queue_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5154,3757,'tracelog_retention_period','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5155,3757,'tracelog_retention_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5156,3757,'tracelog_rotation_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5157,3757,'tracelog_rotation_time','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5158,3757,'transaction_buffer','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5159,3757,'trim_malloc','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5160,3757,'two_phase_commit','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5161,3757,'upgraded_variables','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5162,3757,'use_join_bucket_bit_vector','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5163,3757,'use_user_provided_index_types_in_show','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5164,3757,'use_vectorized_join','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5165,3757,'varchar_column_string_optimization_length','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5166,3757,'vector_index_fallback_non_index_scan','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5167,3757,'vector_join_optimization','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5168,3757,'vector_type_project_format','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5169,3757,'verbose_time_heartbeat_thread','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5170,3757,'warn_level','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5171,3757,'wasm_alloc_max_flex_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5172,3757,'wasm_alloc_retry_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5173,3757,'wasm_alloc_retry_interval','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5174,3757,'wasm_create_from_url','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5175,3757,'wasm_max_compiled_module_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5176,3757,'wasm_max_image_cache_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5177,3757,'wasm_max_linear_memory_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5178,3757,'wasm_max_raw_module_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5179,3757,'websocket_proxy_stdin_conf','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5180,3757,'workload_management','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5181,3757,'workload_management_available_leaf_memory_ratio','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5182,3757,'workload_management_dynamic_resource_allocation','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5183,3757,'workload_management_enable_large_memory_classification','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5184,3757,'workload_management_enable_static_partitioning','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5185,3757,'workload_management_expected_aggregators','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5186,3757,'workload_management_max_connections_per_leaf','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5187,3757,'workload_management_max_queue_depth','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5188,3757,'workload_management_max_threads_per_leaf','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5189,3757,'workload_management_memory_queue_threshold','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5190,3757,'workload_management_memory_queuing','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5191,3757,'workload_management_min_sample_based_memory_estimation_runs','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5192,3757,'workload_management_queue_size_allow_upgrade','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5193,3757,'workload_management_queue_time_warning_ratio','DOUBLE','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5194,3757,'workload_management_queue_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5195,3756,'active_queries_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5196,3756,'engine_idle_time_s','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5197,3756,'aggregator_id','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5198,3756,'aggregator_auto_inc_id','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5199,3756,'query_compilations','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5200,3756,'query_compilation_failures','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5201,3756,'inflight_async_compilations','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5202,3756,'gced_versions_last_sweep','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5203,3756,'average_garbage_collection_duration','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5204,3756,'total_server_memory','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5205,3756,'total_io_pool_memory','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5206,3756,'free_io_pool_memory','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5207,3756,'alloc_thread_stacks','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5208,3756,'malloc_active_memory','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5209,3756,'alloc_variable_cached_buffers','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5210,3756,'plans_in_cache_with_evicted_images','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5211,3756,'evicted_compiled_images_average','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5212,3756,'evicted_compiled_images_cumulative','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5213,3756,'blob_cache_max_size_mb_adjusted_for_low_disk','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5214,3756,'blob_cache_max_size_mb_adjusted_for_low_disk_and_spilling','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5215,3756,'disk_spilling_usage_limit_mb','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5216,3756,'jwks_update_status','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5217,3756,'jwks_update_time','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5218,3756,'distributed_transactions_auto_retries','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5219,3756,'effective_compiled_images_eviction_memory_limit_mb','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5220,3756,'queued_dpc_populatedownloads','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5221,3756,'queued_dpc_downloads','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5222,3756,'queued_dpc_uploads','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5223,3756,'queued_dpc_deletes','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5224,3756,'dpc_worker_threads','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5225,3757,'is_single_store','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5227,3796,'engines','JSON','information_schema','general',1,1);
+INSERT INTO `ts_variable` VALUES (5228,3785,'mysql_datadir_path','TEXT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (5229,3785,'mysql_datadir_total_size','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (5230,3785,'mysql_datadir_clean_size','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (5231,3785,'mysql_sst_elapsed_sec','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (5232,3785,'mysql_sst_in_progress','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (5237,3797,'ip','TEXT','vip','general',1,1);
+INSERT INTO `ts_variable` VALUES (5238,3797,'port','INT','vip','general',1,1);
+INSERT INTO `ts_variable` VALUES (5239,3797,'destination_id','INT','vip','general',1,1);
+INSERT INTO `ts_variable` VALUES (5240,3797,'destination_date','TEXT','vip','general',1,1);
+INSERT INTO `ts_variable` VALUES (5241,3797,'destination_previous_id','INT','vip','general',1,1);
+INSERT INTO `ts_variable` VALUES (5242,3797,'destination_previous_date','TEXT','vip','general',1,1);
+INSERT INTO `ts_variable` VALUES (5243,3797,'is_vip','INT','vip','general',1,1);
+INSERT INTO `ts_variable` VALUES (5245,3784,'ips','JSON','ssh_hardware','general',1,1);
+INSERT INTO `ts_variable` VALUES (5246,3756,'innodb_buffer_pool_resize_status','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5247,3755,'executed_gtid_set','TEXT','master_status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5248,3756,'gr_all_consensus_proposals_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5249,3756,'gr_all_consensus_time_sum','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5250,3756,'gr_certification_garbage_collector_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5251,3756,'gr_certification_garbage_collector_time_sum','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5252,3756,'gr_consensus_bytes_received_sum','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5253,3756,'gr_consensus_bytes_sent_sum','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5254,3756,'gr_control_messages_sent_bytes_sum','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5255,3756,'gr_control_messages_sent_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5256,3756,'gr_control_messages_sent_roundtrip_time_sum','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5257,3756,'gr_data_messages_sent_bytes_sum','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5258,3756,'gr_data_messages_sent_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5259,3756,'gr_data_messages_sent_roundtrip_time_sum','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5260,3756,'gr_empty_consensus_proposals_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5261,3756,'gr_extended_consensus_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5262,3756,'gr_last_consensus_end_timestamp','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5263,3756,'gr_total_messages_sent_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5264,3756,'gr_transactions_consistency_after_sync_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5265,3756,'gr_transactions_consistency_after_sync_time_sum','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5266,3756,'gr_transactions_consistency_after_termination_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5267,3756,'gr_transactions_consistency_after_termination_time_sum','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5268,3756,'gr_transactions_consistency_before_begin_count','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5269,3756,'gr_transactions_consistency_before_begin_time_sum','INT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (5270,3757,'clone_autotune_concurrency','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5271,3757,'clone_block_ddl','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5272,3757,'clone_buffer_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5273,3757,'clone_ddl_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5274,3757,'clone_delay_after_data_drop','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5275,3757,'clone_donor_timeout_after_network_failure','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5276,3757,'clone_enable_compression','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5277,3757,'clone_max_concurrency','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5278,3757,'clone_max_data_bandwidth','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5279,3757,'clone_max_network_bandwidth','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5280,3757,'group_replication_advertise_recovery_endpoints','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5281,3757,'group_replication_allow_local_lower_version_join','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5282,3757,'group_replication_auto_increment_increment','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5283,3757,'group_replication_autorejoin_tries','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5284,3757,'group_replication_bootstrap_group','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5285,3757,'group_replication_clone_threshold','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5286,3757,'group_replication_communication_debug_options','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5287,3757,'group_replication_communication_max_message_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5288,3757,'group_replication_communication_stack','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5289,3757,'group_replication_components_stop_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5290,3757,'group_replication_compression_threshold','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5291,3757,'group_replication_enforce_update_everywhere_checks','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5292,3757,'group_replication_exit_state_action','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5293,3757,'group_replication_flow_control_applier_threshold','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5294,3757,'group_replication_flow_control_certifier_threshold','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5295,3757,'group_replication_flow_control_hold_percent','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5296,3757,'group_replication_flow_control_max_quota','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5297,3757,'group_replication_flow_control_member_quota_percent','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5298,3757,'group_replication_flow_control_min_quota','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5299,3757,'group_replication_flow_control_min_recovery_quota','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5300,3757,'group_replication_flow_control_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5301,3757,'group_replication_flow_control_period','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5302,3757,'group_replication_flow_control_release_percent','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5303,3757,'group_replication_group_name','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5304,3757,'group_replication_group_seeds','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5305,3757,'group_replication_gtid_assignment_block_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5306,3757,'group_replication_ip_allowlist','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5307,3757,'group_replication_local_address','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5308,3757,'group_replication_member_expel_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5309,3757,'group_replication_member_weight','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5310,3757,'group_replication_message_cache_size','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5311,3757,'group_replication_paxos_single_leader','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5312,3757,'group_replication_poll_spin_loops','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5313,3757,'group_replication_preemptive_garbage_collection','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5314,3757,'group_replication_preemptive_garbage_collection_rows_threshold','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5315,3757,'group_replication_recovery_compression_algorithms','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5316,3757,'group_replication_recovery_get_public_key','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5317,3757,'group_replication_recovery_reconnect_interval','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5318,3757,'group_replication_recovery_retry_count','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5319,3757,'group_replication_recovery_ssl_verify_server_cert','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5320,3757,'group_replication_recovery_tls_version','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5321,3757,'group_replication_recovery_use_ssl','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5322,3757,'group_replication_recovery_zstd_compression_level','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5323,3757,'group_replication_single_primary_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5324,3757,'group_replication_ssl_mode','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5325,3757,'group_replication_start_on_boot','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5326,3757,'group_replication_tls_source','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5327,3757,'group_replication_transaction_size_limit','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5328,3757,'group_replication_unreachable_majority_timeout','INT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5329,3757,'group_replication_view_change_uuid','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5330,3757,'gtid_purged','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (5331,3762,'gtid_executed','TEXT','gtid','general',1,1);
+INSERT INTO `ts_variable` VALUES (5332,3757,'gtid_owned','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (6910,3756,'slave_last_heartbeat','TEXT','status','general',1,1);
+INSERT INTO `ts_variable` VALUES (6911,3757,'version_suffix','TEXT','variables','general',1,1);
+INSERT INTO `ts_variable` VALUES (6912,3756,'master_uuid','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (6913,3756,'master_info_file','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (6914,3756,'master_bind','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (6915,3756,'last_io_error_timestamp','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (6916,3756,'last_sql_error_timestamp','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (6917,3756,'retrieved_gtid_set','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (6918,3756,'executed_gtid_set','TEXT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (6919,3756,'auto_position','INT','slave','slave',1,1);
+INSERT INTO `ts_variable` VALUES (6920,3799,'mysqlrouter_routes','JSON','mysqlrouter','general',1,1);
+INSERT INTO `ts_variable` VALUES (6921,3800,'mysqlrouter_metadata_config','JSON','mysqlrouter','general',1,1);
+INSERT INTO `ts_variable` VALUES (6922,3801,'mysqlrouter_metadata_status','JSON','mysqlrouter','general',1,1);
+INSERT INTO `ts_variable` VALUES (6923,3802,'mysqlrouter_available','INT','mysqlrouter_server','general',1,1);
+INSERT INTO `ts_variable` VALUES (6924,3802,'mysqlrouter_ping','DOUBLE','mysqlrouter_server','general',1,1);
+INSERT INTO `ts_variable` VALUES (6925,3802,'mysqlrouter_error','TEXT','mysqlrouter_server','general',1,1);
+INSERT INTO `ts_variable` VALUES (15226,3791,'sum_timer_wait','INT','summary_by_digest','general',1,1);
+INSERT INTO `ts_variable` VALUES (15640,3785,'proc_stat_detail','JSON','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15641,3785,'system_interrupts_total','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15642,3785,'system_context_switches_total','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15643,3785,'system_process_forks_total','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15644,3785,'system_processes_running','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15645,3785,'system_processes_blocked','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15646,3785,'system_softirq_total','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15647,3785,'network_detail','JSON','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15648,3785,'network_protocol_detail','JSON','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15649,3785,'network_rx_bytes_total','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15650,3785,'network_tx_bytes_total','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15651,3785,'network_rx_packets_total','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15652,3785,'network_tx_packets_total','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15653,3785,'network_rx_errors_total','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15654,3785,'network_tx_errors_total','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15655,3785,'network_rx_drop_total','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15656,3785,'network_tx_drop_total','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15657,3785,'network_tcp_retrans_segs_total','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15658,3785,'network_tcp_in_errs_total','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15659,3785,'network_tcp_out_rsts_total','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15660,3785,'network_udp_in_errors_total','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15661,3785,'disk_io_detail','JSON','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15662,3785,'disk_reads_completed_total','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15663,3785,'disk_writes_completed_total','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15664,3785,'disk_read_bytes_total','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15665,3785,'disk_write_bytes_total','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15666,3785,'disk_io_time_ms_total','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15667,3785,'disk_weighted_io_time_ms_total','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15668,3785,'process_state_detail','JSON','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15669,3785,'process_total','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15670,3785,'process_running','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15671,3785,'process_sleeping','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15672,3785,'process_disk_sleep','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15673,3785,'process_stopped','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15674,3785,'process_zombie','INT','ssh_stats','general',1,1);
+INSERT INTO `ts_variable` VALUES (15675,3785,'process_idle','INT','ssh_stats','general',1,1);
 /*!40000 ALTER TABLE `ts_variable` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -171116,6 +173094,7 @@ CREATE TABLE `worker_queue` (
   `query` text NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_daemon_main` (`id_daemon_main`) USING BTREE,
+  UNIQUE KEY `name` (`name`),
   CONSTRAINT `worker_queue_ibfk_1` FOREIGN KEY (`id_daemon_main`) REFERENCES `daemon_main` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -171126,9 +173105,13 @@ CREATE TABLE `worker_queue` (
 
 LOCK TABLES `worker_queue` WRITE;
 /*!40000 ALTER TABLE `worker_queue` DISABLE KEYS */;
-INSERT INTO `worker_queue` VALUES (1,20,'mysql_server','worker_mysql',10,10,1234567,'Aspirateur','tryMysqlConnection',15,'select a.id,a.name from mysql_server a             INNER JOIN client b on a.id_client =b.id             WHERE a.is_monitored =1 and b.is_monitored=1');
-INSERT INTO `worker_queue` VALUES (2,22,'ssh_server','worker_ssh',5,10,34572,'Aspirateur','trySshConnection',15,'select \'ssh\' as name, min(a.id) as id from mysql_server a \nINNER JOIN link__mysql_server__ssh_key b ON a.id = b.id_mysql_server \nINNER JOIN client c on a.id_client =c.id\nWHERE a.is_monitored =1 and c.is_monitored=1\ngroup by ip, ssh_port;');
-INSERT INTO `worker_queue` VALUES (3,21,'proxysql_server','worker_proxysql',2,2,4582,'Aspirateur','tryProxySqlConnection',15,'select CONCAT(\'proxysql_\',id)as name , id from proxysql_server;');
+INSERT INTO `worker_queue` VALUES (1,20,'mysql_server','worker_mysql',20,10,1234567,'Aspirateur','tryMysqlConnection',15,'select a.id,a.name from mysql_server a INNER JOIN client b on a.id_client =b.id WHERE a.is_monitored =1 and b.is_monitored=1 and is_deleted=0');
+INSERT INTO `worker_queue` VALUES (2,22,'ssh_server','worker_ssh',26,10,34572,'Aspirateur','trySshConnection',15,'select \'ssh\' as name, min(a.id) as id from mysql_server a \nINNER JOIN link__mysql_server__ssh_key b ON a.id = b.id_mysql_server \nINNER JOIN client c on a.id_client =c.id\nWHERE a.is_monitored =1 and c.is_monitored=1 and a.is_vip =0 and a.is_deleted = 0\ngroup by ip, ssh_port;');
+INSERT INTO `worker_queue` VALUES (3,21,'proxysql_server','worker_proxysql',10,2,4582,'Aspirateur','tryProxySqlConnection',15,'select CONCAT(\'proxysql_\',a.id) as name , a.id from proxysql_server a\nINNER JOIN mysql_server b ON b.id = a.id_mysql_server\nINNER JOIN client c ON c.id = b.id_client \nWHERE c.is_monitored = 1 and b.is_monitored =1 and b.is_deleted=0;');
+INSERT INTO `worker_queue` VALUES (4,25,'maxscale_server','worker_maxscale',20,2,158848,'Aspirateur','tryMaxScaleConnection',2,'select group_concat(b.id_mysql_server) as name, a.`id` as `id` from maxscale_server a \nINNER JOIN maxscale_server__mysql_server b ON a.id=b.id_maxscale_server\nINNER JOIN mysql_server c ON b.id_mysql_server = c.id\nINNER JOIN client d ON d.id = c.id_client\nWHERE d.is_monitored = 1 and c.is_monitored = 1 and c.is_deleted=0\ngroup by a.id;');
+INSERT INTO `worker_queue` VALUES (5,36,'mysqlrouter_server','worker_mysqlrouter',10,3,158849,'Aspirateur','tryMysqlRouterConnection',5,'select group_concat(b.id_mysql_server) as name, a.`id` as `id` from mysqlrouter_server a INNER JOIN mysqlrouter_server__mysql_server b ON a.id=b.id_mysqlrouter_server INNER JOIN mysql_server c ON b.id_mysql_server = c.id INNER JOIN client d ON d.id = c.id_client WHERE d.is_monitored = 1 group by a.id;');
+INSERT INTO `worker_queue` VALUES (6,37,'logs','worker_mysql_log',1,30,158850,'Aspirateur','tryMysqlLogCollection',30,'select a.id as name, a.id from mysql_server a inner join client b on a.id_client=b.id where a.is_monitored=1 and b.is_monitored=1');
+INSERT INTO `worker_queue` VALUES (7,39,'aggregate_metric','worker_aggregate_metric',1,60,158851,'AggregateMetric','aggregateRecentByServer',120,'select a.id as name, a.id from mysql_server a inner join client b on a.id_client=b.id where a.is_monitored=1 and b.is_monitored=1 and a.id = 1');
 /*!40000 ALTER TABLE `worker_queue` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -171143,11 +173126,11 @@ UNLOCK TABLES;
 
 -- Dump completed
 /*M!999999\- enable the sandbox mode */ 
--- MariaDB dump 10.19  Distrib 10.11.13-MariaDB, for debian-linux-gnu (x86_64)
+-- MariaDB dump 10.19  Distrib 10.11.16-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: 127.0.0.1    Database: pmacontrol
 -- ------------------------------------------------------
--- Server version	10.11.13-MariaDB-deb12-log
+-- Server version	10.11.16-MariaDB-deb12-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -171161,6 +173144,211 @@ UNLOCK TABLES;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
+-- Sequence structure for `contener_id_seq`
+--
+
+DROP SEQUENCE IF EXISTS `contener_id_seq`;
+CREATE SEQUENCE `contener_id_seq` start with 1 minvalue 1 maxvalue 9999 increment by 1 cache 1000 cycle ENGINE=InnoDB;
+DO SETVAL(`contener_id_seq`, 3001, 0);
+
+--
+-- Table structure for table `aggregate_metric_10m`
+--
+
+DROP TABLE IF EXISTS `aggregate_metric_10m`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `aggregate_metric_10m` (
+  `bucket_start` datetime NOT NULL,
+  `id_mysql_server` int(11) NOT NULL,
+  `id_ts_variable` int(11) NOT NULL,
+  `source_scope` varchar(16) NOT NULL,
+  `series_key` varchar(96) NOT NULL DEFAULT '',
+  `sample_count` int(10) unsigned NOT NULL DEFAULT 0,
+  `value_last` double DEFAULT NULL,
+  `value_avg` double DEFAULT NULL,
+  `value_stddev` double DEFAULT NULL,
+  `value_min` double DEFAULT NULL,
+  `value_max` double DEFAULT NULL,
+  `value_sum` double DEFAULT NULL,
+  `value_sum_squares` double DEFAULT NULL,
+  `first_ts` datetime DEFAULT NULL,
+  `last_ts` datetime DEFAULT NULL,
+  `date_updated` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`bucket_start`,`id_mysql_server`,`id_ts_variable`,`source_scope`,`series_key`),
+  KEY `idx_server_bucket` (`id_mysql_server`,`bucket_start`),
+  KEY `idx_server_metric_bucket` (`id_mysql_server`,`id_ts_variable`,`bucket_start`),
+  KEY `idx_scope_series_bucket` (`source_scope`,`series_key`,`bucket_start`)
+) ENGINE=ROCKSDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
+ PARTITION BY RANGE (to_days(`bucket_start`))
+(PARTITION `p740062` VALUES LESS THAN (740062) ENGINE = ROCKSDB,
+ PARTITION `p740063` VALUES LESS THAN (740063) ENGINE = ROCKSDB,
+ PARTITION `p740064` VALUES LESS THAN (740064) ENGINE = ROCKSDB,
+ PARTITION `p740065` VALUES LESS THAN (740065) ENGINE = ROCKSDB,
+ PARTITION `p740066` VALUES LESS THAN (740066) ENGINE = ROCKSDB,
+ PARTITION `p740068` VALUES LESS THAN (740068) ENGINE = ROCKSDB,
+ PARTITION `p740069` VALUES LESS THAN (740069) ENGINE = ROCKSDB,
+ PARTITION `p740070` VALUES LESS THAN (740070) ENGINE = ROCKSDB,
+ PARTITION `p740072` VALUES LESS THAN (740072) ENGINE = ROCKSDB,
+ PARTITION `p740073` VALUES LESS THAN (740073) ENGINE = ROCKSDB,
+ PARTITION `p740074` VALUES LESS THAN (740074) ENGINE = ROCKSDB,
+ PARTITION `p740075` VALUES LESS THAN (740075) ENGINE = ROCKSDB);
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `aggregate_metric_10s`
+--
+
+DROP TABLE IF EXISTS `aggregate_metric_10s`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `aggregate_metric_10s` (
+  `bucket_start` datetime NOT NULL,
+  `id_mysql_server` int(11) NOT NULL,
+  `id_ts_variable` int(11) NOT NULL,
+  `source_scope` varchar(16) NOT NULL,
+  `series_key` varchar(96) NOT NULL DEFAULT '',
+  `sample_count` int(10) unsigned NOT NULL DEFAULT 0,
+  `value_last` double DEFAULT NULL,
+  `value_avg` double DEFAULT NULL,
+  `value_stddev` double DEFAULT NULL,
+  `value_min` double DEFAULT NULL,
+  `value_max` double DEFAULT NULL,
+  `value_sum` double DEFAULT NULL,
+  `value_sum_squares` double DEFAULT NULL,
+  `first_ts` datetime DEFAULT NULL,
+  `last_ts` datetime DEFAULT NULL,
+  `date_updated` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`bucket_start`,`id_mysql_server`,`id_ts_variable`,`source_scope`,`series_key`),
+  KEY `idx_server_bucket` (`id_mysql_server`,`bucket_start`),
+  KEY `idx_server_metric_bucket` (`id_mysql_server`,`id_ts_variable`,`bucket_start`),
+  KEY `idx_scope_series_bucket` (`source_scope`,`series_key`,`bucket_start`)
+) ENGINE=ROCKSDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
+ PARTITION BY RANGE (to_days(`bucket_start`))
+(PARTITION `p740062` VALUES LESS THAN (740062) ENGINE = ROCKSDB,
+ PARTITION `p740063` VALUES LESS THAN (740063) ENGINE = ROCKSDB,
+ PARTITION `p740064` VALUES LESS THAN (740064) ENGINE = ROCKSDB,
+ PARTITION `p740065` VALUES LESS THAN (740065) ENGINE = ROCKSDB,
+ PARTITION `p740066` VALUES LESS THAN (740066) ENGINE = ROCKSDB,
+ PARTITION `p740068` VALUES LESS THAN (740068) ENGINE = ROCKSDB,
+ PARTITION `p740069` VALUES LESS THAN (740069) ENGINE = ROCKSDB,
+ PARTITION `p740070` VALUES LESS THAN (740070) ENGINE = ROCKSDB,
+ PARTITION `p740072` VALUES LESS THAN (740072) ENGINE = ROCKSDB,
+ PARTITION `p740073` VALUES LESS THAN (740073) ENGINE = ROCKSDB,
+ PARTITION `p740074` VALUES LESS THAN (740074) ENGINE = ROCKSDB,
+ PARTITION `p740075` VALUES LESS THAN (740075) ENGINE = ROCKSDB);
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `aggregate_metric_1h`
+--
+
+DROP TABLE IF EXISTS `aggregate_metric_1h`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `aggregate_metric_1h` (
+  `bucket_start` datetime NOT NULL,
+  `id_mysql_server` int(11) NOT NULL,
+  `id_ts_variable` int(11) NOT NULL,
+  `source_scope` varchar(16) NOT NULL,
+  `series_key` varchar(96) NOT NULL DEFAULT '',
+  `sample_count` int(10) unsigned NOT NULL DEFAULT 0,
+  `value_last` double DEFAULT NULL,
+  `value_avg` double DEFAULT NULL,
+  `value_stddev` double DEFAULT NULL,
+  `value_min` double DEFAULT NULL,
+  `value_max` double DEFAULT NULL,
+  `value_sum` double DEFAULT NULL,
+  `value_sum_squares` double DEFAULT NULL,
+  `first_ts` datetime DEFAULT NULL,
+  `last_ts` datetime DEFAULT NULL,
+  `date_updated` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`bucket_start`,`id_mysql_server`,`id_ts_variable`,`source_scope`,`series_key`),
+  KEY `idx_server_bucket` (`id_mysql_server`,`bucket_start`),
+  KEY `idx_server_metric_bucket` (`id_mysql_server`,`id_ts_variable`,`bucket_start`),
+  KEY `idx_scope_series_bucket` (`source_scope`,`series_key`,`bucket_start`)
+) ENGINE=ROCKSDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
+ PARTITION BY RANGE (to_days(`bucket_start`))
+(PARTITION `p740062` VALUES LESS THAN (740062) ENGINE = ROCKSDB,
+ PARTITION `p740063` VALUES LESS THAN (740063) ENGINE = ROCKSDB,
+ PARTITION `p740064` VALUES LESS THAN (740064) ENGINE = ROCKSDB,
+ PARTITION `p740065` VALUES LESS THAN (740065) ENGINE = ROCKSDB,
+ PARTITION `p740066` VALUES LESS THAN (740066) ENGINE = ROCKSDB,
+ PARTITION `p740068` VALUES LESS THAN (740068) ENGINE = ROCKSDB,
+ PARTITION `p740069` VALUES LESS THAN (740069) ENGINE = ROCKSDB,
+ PARTITION `p740070` VALUES LESS THAN (740070) ENGINE = ROCKSDB,
+ PARTITION `p740072` VALUES LESS THAN (740072) ENGINE = ROCKSDB,
+ PARTITION `p740073` VALUES LESS THAN (740073) ENGINE = ROCKSDB,
+ PARTITION `p740074` VALUES LESS THAN (740074) ENGINE = ROCKSDB,
+ PARTITION `p740075` VALUES LESS THAN (740075) ENGINE = ROCKSDB);
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `aggregate_metric_1m`
+--
+
+DROP TABLE IF EXISTS `aggregate_metric_1m`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `aggregate_metric_1m` (
+  `bucket_start` datetime NOT NULL,
+  `id_mysql_server` int(11) NOT NULL,
+  `id_ts_variable` int(11) NOT NULL,
+  `source_scope` varchar(16) NOT NULL,
+  `series_key` varchar(96) NOT NULL DEFAULT '',
+  `sample_count` int(10) unsigned NOT NULL DEFAULT 0,
+  `value_last` double DEFAULT NULL,
+  `value_avg` double DEFAULT NULL,
+  `value_stddev` double DEFAULT NULL,
+  `value_min` double DEFAULT NULL,
+  `value_max` double DEFAULT NULL,
+  `value_sum` double DEFAULT NULL,
+  `value_sum_squares` double DEFAULT NULL,
+  `first_ts` datetime DEFAULT NULL,
+  `last_ts` datetime DEFAULT NULL,
+  `date_updated` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`bucket_start`,`id_mysql_server`,`id_ts_variable`,`source_scope`,`series_key`),
+  KEY `idx_server_bucket` (`id_mysql_server`,`bucket_start`),
+  KEY `idx_server_metric_bucket` (`id_mysql_server`,`id_ts_variable`,`bucket_start`),
+  KEY `idx_scope_series_bucket` (`source_scope`,`series_key`,`bucket_start`)
+) ENGINE=ROCKSDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
+ PARTITION BY RANGE (to_days(`bucket_start`))
+(PARTITION `p740062` VALUES LESS THAN (740062) ENGINE = ROCKSDB,
+ PARTITION `p740063` VALUES LESS THAN (740063) ENGINE = ROCKSDB,
+ PARTITION `p740064` VALUES LESS THAN (740064) ENGINE = ROCKSDB,
+ PARTITION `p740065` VALUES LESS THAN (740065) ENGINE = ROCKSDB,
+ PARTITION `p740066` VALUES LESS THAN (740066) ENGINE = ROCKSDB,
+ PARTITION `p740068` VALUES LESS THAN (740068) ENGINE = ROCKSDB,
+ PARTITION `p740069` VALUES LESS THAN (740069) ENGINE = ROCKSDB,
+ PARTITION `p740070` VALUES LESS THAN (740070) ENGINE = ROCKSDB,
+ PARTITION `p740072` VALUES LESS THAN (740072) ENGINE = ROCKSDB,
+ PARTITION `p740073` VALUES LESS THAN (740073) ENGINE = ROCKSDB,
+ PARTITION `p740074` VALUES LESS THAN (740074) ENGINE = ROCKSDB,
+ PARTITION `p740075` VALUES LESS THAN (740075) ENGINE = ROCKSDB);
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `aggregate_metric_policy`
+--
+
+DROP TABLE IF EXISTS `aggregate_metric_policy`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `aggregate_metric_policy` (
+  `id_ts_variable` int(11) NOT NULL,
+  `variable_name` varchar(100) NOT NULL,
+  `value_type` varchar(16) NOT NULL,
+  `variable_from` varchar(64) NOT NULL,
+  `radical` char(10) NOT NULL,
+  `display_policy` varchar(16) NOT NULL,
+  `stats_policy` varchar(32) NOT NULL,
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id_ts_variable`),
+  KEY `idx_from_radical` (`variable_from`,`radical`)
+) ENGINE=ROCKSDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `alias_dns`
 --
 
@@ -171169,14 +173357,16 @@ DROP TABLE IF EXISTS `alias_dns`;
 /*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `alias_dns` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_mysql_server` int(11) NOT NULL,
+  `id_mysql_server` int(11) DEFAULT NULL,
   `dns` varchar(200) NOT NULL,
   `port` int(11) NOT NULL,
+  `is_from_ssh` int(11) DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `dns` (`dns`,`port`),
-  KEY `id_mysql_server` (`id_mysql_server`),
-  CONSTRAINT `alias_dns_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci ROW_FORMAT=COMPACT WITH SYSTEM VERSIONING;
+  KEY `id_mysql_server` (`id_mysql_server`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci ROW_FORMAT=COMPACT WITH SYSTEM VERSIONING
+ PARTITION BY SYSTEM_TIME 
+PARTITIONS 2;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -171271,6 +173461,46 @@ CREATE TABLE `archive_load_detail` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `azerty`
+--
+
+DROP TABLE IF EXISTS `azerty`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `azerty` (
+  `a` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `azerty2`
+--
+
+DROP TABLE IF EXISTS `azerty2`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `azerty2` (
+  `a` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `azerty3`
+--
+
+DROP TABLE IF EXISTS `azerty3`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `azerty3` (
+  `a` int(11) DEFAULT NULL,
+  `b` int(11) DEFAULT NULL,
+  `c` int(11) DEFAULT NULL,
+  `d` int(11) DEFAULT NULL,
+  `d2` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `backup_database`
 --
 
@@ -171322,7 +173552,6 @@ CREATE TABLE `backup_dump` (
   KEY `id_backup_database` (`id_mysql_server`),
   KEY `id_job` (`id_job`),
   KEY `id_backup_main` (`id_backup_main`),
-  CONSTRAINT `backup_dump_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `backup_dump_ibfk_2` FOREIGN KEY (`id_job`) REFERENCES `job` (`id`),
   CONSTRAINT `backup_dump_ibfk_3` FOREIGN KEY (`id_backup_main`) REFERENCES `backup_main` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -171354,8 +173583,7 @@ CREATE TABLE `backup_main` (
   KEY `id_mysql_server` (`id_mysql_server`) USING BTREE,
   CONSTRAINT `backup_main_ibfk_1` FOREIGN KEY (`id_backup_storage_area`) REFERENCES `backup_storage_area` (`id`),
   CONSTRAINT `backup_main_ibfk_2` FOREIGN KEY (`id_backup_type`) REFERENCES `backup_type` (`id`),
-  CONSTRAINT `backup_main_ibfk_3` FOREIGN KEY (`id_crontab`) REFERENCES `crontab` (`id`),
-  CONSTRAINT `backup_main_ibfk_4` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
+  CONSTRAINT `backup_main_ibfk_3` FOREIGN KEY (`id_crontab`) REFERENCES `crontab` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -171427,8 +173655,7 @@ CREATE TABLE `benchmark_main` (
   `status` varchar(20) NOT NULL,
   `progression` float NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `id_mysql_server` (`id_mysql_server`),
-  CONSTRAINT `benchmark_main_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `id_mysql_server` (`id_mysql_server`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -171478,8 +173705,7 @@ CREATE TABLE `binlog_backup` (
   `md5` char(32) NOT NULL,
   `date_backup` datetime NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`logfile_name`),
-  CONSTRAINT `binlog_backup_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
+  UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`logfile_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -171516,6 +173742,20 @@ CREATE TABLE `binlog_max` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_mysql_server` (`id_mysql_server`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `binlogsize`
+--
+
+DROP TABLE IF EXISTS `binlogsize`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `binlogsize` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `max_size_gb` decimal(10,2) NOT NULL DEFAULT 10.00,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -171566,8 +173806,7 @@ CREATE TABLE `cleaner_main` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`libelle`),
   KEY `id_mysql_server` (`id_mysql_server`),
-  KEY `id_mysql_database` (`database`),
-  CONSTRAINT `cleaner_main_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
+  KEY `id_mysql_database` (`database`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -171584,8 +173823,10 @@ CREATE TABLE `client` (
   `logo` varchar(250) NOT NULL DEFAULT '',
   `date` datetime NOT NULL DEFAULT current_timestamp(),
   `is_monitored` int(11) NOT NULL DEFAULT 1,
+  `is_display` int(11) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `libelle` (`libelle`)
+  UNIQUE KEY `libelle` (`libelle`),
+  KEY `is_monitored` (`is_monitored`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -171645,18 +173886,29 @@ CREATE TABLE `crontab_history` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `dba_test`
+-- Table structure for table `docker_database_instance`
 --
 
-DROP TABLE IF EXISTS `dba_test`;
+DROP TABLE IF EXISTS `docker_database_instance`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8mb4 */;
-CREATE TABLE `dba_test` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `date` datetime NOT NULL DEFAULT current_timestamp(),
-  `libelle` varchar(30) NOT NULL DEFAULT 'ggerfgeqsg',
-  `test2` varchar(20) NOT NULL DEFAULT 'swdrgqedrg',
-  PRIMARY KEY (`id`)
+CREATE TABLE `docker_database_instance` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `id_docker_server` int(11) unsigned DEFAULT NULL,
+  `id_docker_image` int(11) unsigned NOT NULL,
+  `container_name` char(64) NOT NULL,
+  `exposed_port` int(11) unsigned NOT NULL,
+  `internal_port` int(11) unsigned NOT NULL DEFAULT 3306,
+  `status` enum('running','exited','paused','unknown') NOT NULL DEFAULT 'unknown',
+  `db_user` varchar(32) DEFAULT NULL,
+  `db_password` varchar(32) DEFAULT NULL,
+  `date_inserted` timestamp NOT NULL DEFAULT current_timestamp(),
+  `date_modified` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `cold_config` text NOT NULL,
+  `hot_config` text NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_docker_host` (`id_docker_server`),
+  KEY `fk_image` (`id_docker_image`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -171675,6 +173927,27 @@ CREATE TABLE `docker_image` (
   `created` datetime NOT NULL DEFAULT current_timestamp(),
   `size` varchar(32) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `docker_image__docker_server`
+--
+
+DROP TABLE IF EXISTS `docker_image__docker_server`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `docker_image__docker_server` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_docker_image` int(11) NOT NULL,
+  `id_docker_server` int(11) NOT NULL,
+  `date_inserted` timestamp NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_link` (`id_docker_image`,`id_docker_server`),
+  KEY `idx_image` (`id_docker_image`),
+  KEY `idx_server` (`id_docker_server`),
+  CONSTRAINT `fk_img` FOREIGN KEY (`id_docker_image`) REFERENCES `docker_image` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_srv` FOREIGN KEY (`id_docker_server`) REFERENCES `docker_server` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -171701,6 +173974,30 @@ CREATE TABLE `docker_mysql_instance` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `docker_server`
+--
+
+DROP TABLE IF EXISTS `docker_server`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `docker_server` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_ssh_key` int(11) NOT NULL,
+  `id_mysql_server` int(11) DEFAULT NULL,
+  `display_name` varchar(128) NOT NULL,
+  `hostname` varchar(255) NOT NULL,
+  `port` int(11) NOT NULL DEFAULT 22,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `date_inserted` datetime NOT NULL DEFAULT current_timestamp(),
+  `date_modified` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id_mysql_server` (`id_mysql_server`),
+  KEY `id_ssh_key` (`id_ssh_key`),
+  CONSTRAINT `docker_server_ibfk_1` FOREIGN KEY (`id_ssh_key`) REFERENCES `ssh_key` (`id`) ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `dot3_cluster`
 --
 
@@ -171714,7 +174011,9 @@ CREATE TABLE `dot3_cluster` (
   `date_inserted` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_dot3_information_2` (`id_dot3_information`,`id_dot3_graph`),
-  CONSTRAINT `dot3_cluster_ibfk_1` FOREIGN KEY (`id_dot3_information`) REFERENCES `dot3_information` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `id_dot3_graph` (`id_dot3_graph`),
+  CONSTRAINT `dot3_cluster_ibfk_1` FOREIGN KEY (`id_dot3_information`) REFERENCES `dot3_information` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `dot3_cluster_ibfk_2` FOREIGN KEY (`id_dot3_graph`) REFERENCES `dot3_graph` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -171733,8 +174032,7 @@ CREATE TABLE `dot3_cluster__mysql_server` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_dot3_cluster` (`id_dot3_cluster`,`id_mysql_server`),
   KEY `id_mysql_server` (`id_mysql_server`,`date_inserted`),
-  CONSTRAINT `dot3_cluster__mysql_server_ibfk_1` FOREIGN KEY (`id_dot3_cluster`) REFERENCES `dot3_cluster` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `dot3_cluster__mysql_server_ibfk_2` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
+  CONSTRAINT `dot3_cluster__mysql_server_ibfk_1` FOREIGN KEY (`id_dot3_cluster`) REFERENCES `dot3_cluster` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -171799,6 +174097,29 @@ CREATE TABLE `dot3_information_extra` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `event_log`
+--
+
+DROP TABLE IF EXISTS `event_log`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `event_log` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_mysql_server` int(11) DEFAULT NULL,
+  `id_proxysql_server` int(11) DEFAULT NULL,
+  `id_maxscale_server` int(11) DEFAULT NULL,
+  `id_docker_host` int(11) DEFAULT NULL,
+  `type` varchar(64) NOT NULL,
+  `message` text NOT NULL,
+  `date_start` datetime(6) NOT NULL,
+  `date_end` datetime(6) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_open_incidents` (`date_end`),
+  KEY `idx_type` (`type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `event_main`
 --
 
@@ -171838,8 +174159,7 @@ CREATE TABLE `foreign_key_blacklist` (
   `is_automatic` int(11) NOT NULL DEFAULT 1,
   `date_inserted` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
-  UNIQUE KEY `id_mysql_server_36` (`id_mysql_server`,`constraint_schema`,`constraint_table`,`constraint_column`),
-  CONSTRAINT `id_mysql_server_ibfk_16` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
+  UNIQUE KEY `id_mysql_server_36` (`id_mysql_server`,`constraint_schema`,`constraint_table`,`constraint_column`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -171863,8 +174183,7 @@ CREATE TABLE `foreign_key_proposal` (
   `is_automatic` int(11) NOT NULL DEFAULT 1,
   `date_inserted` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
-  UNIQUE KEY `id_mysql_server_35` (`id_mysql_server`,`constraint_schema`,`constraint_table`,`constraint_column`),
-  CONSTRAINT `id_mysql_server_ibfk_13` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
+  UNIQUE KEY `id_mysql_server_35` (`id_mysql_server`,`constraint_schema`,`constraint_table`,`constraint_column`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -171906,8 +174225,7 @@ CREATE TABLE `foreign_key_remove_prefix` (
   `database_name` varchar(255) NOT NULL,
   `prefix` varchar(255) NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `id_mysql_server` (`id_mysql_server`),
-  CONSTRAINT `foreign_key_remove_prefix_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
+  KEY `id_mysql_server` (`id_mysql_server`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -171936,8 +174254,7 @@ CREATE TABLE `foreign_key_virtual` (
   UNIQUE KEY `constraint_column` (`constraint_column`,`constraint_table`,`constraint_schema`,`id_mysql_server`),
   KEY `id_mysql_server` (`id_mysql_server`),
   KEY `constraint_schema` (`constraint_schema`,`constraint_table`,`constraint_column`),
-  KEY `referenced_schema` (`referenced_schema`,`referenced_table`,`referenced_column`),
-  CONSTRAINT `id_mysql_server_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `referenced_schema` (`referenced_schema`,`referenced_table`,`referenced_column`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci WITH SYSTEM VERSIONING;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -172093,6 +174410,20 @@ CREATE TABLE `history_table` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `id_distribution`
+--
+
+DROP TABLE IF EXISTS `id_distribution`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `id_distribution` (
+  `id` int(11) NOT NULL,
+  `cnt` bigint(20) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `index_stats`
 --
 
@@ -172124,6 +174455,51 @@ CREATE TABLE `index_stats` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `infra_vip_dns`
+--
+
+DROP TABLE IF EXISTS `infra_vip_dns`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `infra_vip_dns` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_mysql_server` int(11) DEFAULT NULL,
+  `id_mysql_server__target` int(11) NOT NULL,
+  `id_mysql_server__previous` int(11) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `port` int(11) NOT NULL DEFAULT 3306,
+  `type` enum('VIP','DNS') NOT NULL DEFAULT 'VIP',
+  `ip_address` varchar(45) DEFAULT NULL,
+  `last_resolved_ip` varchar(45) DEFAULT NULL,
+  `last_checked` datetime DEFAULT NULL,
+  `status` enum('OK','CHANGED','UNKNOWN','ERROR') DEFAULT 'UNKNOWN',
+  `note` text DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `fk_vip_dns_mysql_server` (`id_mysql_server`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `integrate_all_run_time`
+--
+
+DROP TABLE IF EXISTS `integrate_all_run_time`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `integrate_all_run_time` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `loop` int(11) NOT NULL,
+  `files` varchar(255) CHARACTER SET latin1 COLLATE latin1_general_ci DEFAULT NULL,
+  `date_start` datetime(6) NOT NULL,
+  `date_end` datetime(6) DEFAULT current_timestamp(6),
+  `duration` int(11) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `job`
 --
 
@@ -172144,6 +174520,406 @@ CREATE TABLE `job` (
   `status` varchar(32) NOT NULL DEFAULT 'NOT STARTED',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `kb_assessment`
+--
+
+DROP TABLE IF EXISTS `kb_assessment`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `kb_assessment` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `id_mysql_server` bigint(20) unsigned NOT NULL,
+  `id_engine` bigint(20) unsigned NOT NULL,
+  `detected_version_str` varchar(64) DEFAULT NULL,
+  `target_engine_version_id` bigint(20) unsigned DEFAULT NULL,
+  `mode` enum('upgrade','compat','migration','hardening') NOT NULL DEFAULT 'upgrade',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `created_by` bigint(20) unsigned DEFAULT NULL,
+  `status` enum('running','done','failed') NOT NULL DEFAULT 'running',
+  `error` text DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `k_assess_server` (`id_mysql_server`,`created_at`),
+  KEY `fk_assess_engine` (`id_engine`),
+  KEY `fk_assess_target` (`target_engine_version_id`),
+  CONSTRAINT `fk_assess_engine` FOREIGN KEY (`id_engine`) REFERENCES `kb_engine` (`id`),
+  CONSTRAINT `fk_assess_target` FOREIGN KEY (`target_engine_version_id`) REFERENCES `kb_engine_version` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `kb_assessment_finding`
+--
+
+DROP TABLE IF EXISTS `kb_assessment_finding`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `kb_assessment_finding` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `id_assessment` bigint(20) unsigned NOT NULL,
+  `id_rule` bigint(20) unsigned NOT NULL,
+  `result` enum('pass','fail','skip','error') NOT NULL,
+  `severity` enum('info','low','medium','high','critical') NOT NULL,
+  `message` text DEFAULT NULL,
+  `evidence_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`evidence_json`)),
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `k_find_assess` (`id_assessment`,`result`,`severity`),
+  KEY `fk_find_rule` (`id_rule`),
+  CONSTRAINT `fk_find_assess` FOREIGN KEY (`id_assessment`) REFERENCES `kb_assessment` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_find_rule` FOREIGN KEY (`id_rule`) REFERENCES `kb_rule` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `kb_document`
+--
+
+DROP TABLE IF EXISTS `kb_document`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `kb_document` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `id_source` bigint(20) unsigned NOT NULL,
+  `id_engine` bigint(20) unsigned DEFAULT NULL,
+  `id_engine_version` bigint(20) unsigned DEFAULT NULL,
+  `url` varchar(1024) NOT NULL,
+  `title` varchar(512) DEFAULT NULL,
+  `doc_type` enum('html','pdf','md','rst','txt','other') NOT NULL DEFAULT 'html',
+  `published_at` datetime DEFAULT NULL,
+  `fetched_at` datetime DEFAULT NULL,
+  `content_hash` binary(32) DEFAULT NULL,
+  `lang` varchar(8) NOT NULL DEFAULT 'en',
+  `status` enum('new','fetched','parsed','failed','ignored') NOT NULL DEFAULT 'new',
+  `http_status` smallint(6) DEFAULT NULL,
+  `etag` varchar(255) DEFAULT NULL,
+  `last_modified` varchar(255) DEFAULT NULL,
+  `error` text DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_doc_url` (`url`(255)),
+  KEY `k_doc_source_status` (`id_source`,`status`),
+  KEY `k_doc_engine_ver` (`id_engine`,`id_engine_version`),
+  KEY `fk_doc_ver` (`id_engine_version`),
+  CONSTRAINT `fk_doc_engine` FOREIGN KEY (`id_engine`) REFERENCES `kb_engine` (`id`),
+  CONSTRAINT `fk_doc_source` FOREIGN KEY (`id_source`) REFERENCES `kb_source` (`id`),
+  CONSTRAINT `fk_doc_ver` FOREIGN KEY (`id_engine_version`) REFERENCES `kb_engine_version` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `kb_document_chunk`
+--
+
+DROP TABLE IF EXISTS `kb_document_chunk`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `kb_document_chunk` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `id_document` bigint(20) unsigned NOT NULL,
+  `chunk_no` int(11) NOT NULL,
+  `heading` varchar(512) DEFAULT NULL,
+  `content` mediumtext NOT NULL,
+  `content_hash` binary(32) DEFAULT NULL,
+  `loc_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`loc_json`)),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_doc_chunk` (`id_document`,`chunk_no`),
+  FULLTEXT KEY `ft_chunk` (`content`),
+  CONSTRAINT `fk_chunk_doc` FOREIGN KEY (`id_document`) REFERENCES `kb_document` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `kb_engine`
+--
+
+DROP TABLE IF EXISTS `kb_engine`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `kb_engine` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `slug` varchar(64) NOT NULL,
+  `name` varchar(128) NOT NULL,
+  `vendor` varchar(128) DEFAULT NULL,
+  `category` enum('server','proxy','router','distributed','analytical','tool') NOT NULL DEFAULT 'server',
+  `mysql_protocol_level` enum('full','partial','gateway','unknown') NOT NULL DEFAULT 'unknown',
+  `homepage_url` varchar(512) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `slug` (`slug`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `kb_engine_feature_support`
+--
+
+DROP TABLE IF EXISTS `kb_engine_feature_support`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `kb_engine_feature_support` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `id_engine` bigint(20) unsigned NOT NULL,
+  `id_feature` bigint(20) unsigned NOT NULL,
+  `version_from_id` bigint(20) unsigned DEFAULT NULL,
+  `version_to_id` bigint(20) unsigned DEFAULT NULL,
+  `support` enum('yes','no','partial','unknown') NOT NULL DEFAULT 'unknown',
+  `notes` text DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `k_efs_engine_feature` (`id_engine`,`id_feature`),
+  KEY `fk_efs_feature` (`id_feature`),
+  KEY `fk_efs_vfrom` (`version_from_id`),
+  KEY `fk_efs_vto` (`version_to_id`),
+  CONSTRAINT `fk_efs_engine` FOREIGN KEY (`id_engine`) REFERENCES `kb_engine` (`id`),
+  CONSTRAINT `fk_efs_feature` FOREIGN KEY (`id_feature`) REFERENCES `kb_feature` (`id`),
+  CONSTRAINT `fk_efs_vfrom` FOREIGN KEY (`version_from_id`) REFERENCES `kb_engine_version` (`id`),
+  CONSTRAINT `fk_efs_vto` FOREIGN KEY (`version_to_id`) REFERENCES `kb_engine_version` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `kb_engine_version`
+--
+
+DROP TABLE IF EXISTS `kb_engine_version`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `kb_engine_version` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `id_engine` bigint(20) unsigned NOT NULL,
+  `version_str` varchar(64) NOT NULL,
+  `version_semver_major` int(11) DEFAULT NULL,
+  `version_semver_minor` int(11) DEFAULT NULL,
+  `version_semver_patch` int(11) DEFAULT NULL,
+  `release_date` date DEFAULT NULL,
+  `is_lts` tinyint(1) NOT NULL DEFAULT 0,
+  `support_end_date` date DEFAULT NULL,
+  `doc_url` varchar(512) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_engine_version` (`id_engine`,`version_str`),
+  KEY `k_engine_release` (`id_engine`,`release_date`),
+  CONSTRAINT `fk_ev_engine` FOREIGN KEY (`id_engine`) REFERENCES `kb_engine` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `kb_feature`
+--
+
+DROP TABLE IF EXISTS `kb_feature`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `kb_feature` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `code` varchar(128) NOT NULL,
+  `label` varchar(255) NOT NULL,
+  `domain` enum('protocol','auth','security','sql','replication','storage','optimizer','observability','tooling') NOT NULL,
+  `description` text DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `code` (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `kb_item`
+--
+
+DROP TABLE IF EXISTS `kb_item`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `kb_item` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `id_engine` bigint(20) unsigned DEFAULT NULL,
+  `id_engine_version` bigint(20) unsigned DEFAULT NULL,
+  `id_document` bigint(20) unsigned NOT NULL,
+  `id_chunk` bigint(20) unsigned DEFAULT NULL,
+  `item_type` enum('breaking_change','deprecation','new_feature','default_change','bugfix','performance','security','limitation','compatibility','howto') NOT NULL,
+  `severity` enum('info','low','medium','high','critical') NOT NULL DEFAULT 'info',
+  `title` varchar(512) NOT NULL,
+  `summary` text DEFAULT NULL,
+  `details` mediumtext DEFAULT NULL,
+  `affected_component` varchar(255) DEFAULT NULL,
+  `affected_object` varchar(255) DEFAULT NULL,
+  `old_value` varchar(255) DEFAULT NULL,
+  `new_value` varchar(255) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `k_item_engine_ver` (`id_engine`,`id_engine_version`,`item_type`),
+  KEY `k_item_doc` (`id_document`),
+  KEY `fk_item_ver` (`id_engine_version`),
+  KEY `fk_item_chunk` (`id_chunk`),
+  CONSTRAINT `fk_item_chunk` FOREIGN KEY (`id_chunk`) REFERENCES `kb_document_chunk` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_item_doc` FOREIGN KEY (`id_document`) REFERENCES `kb_document` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_item_engine` FOREIGN KEY (`id_engine`) REFERENCES `kb_engine` (`id`),
+  CONSTRAINT `fk_item_ver` FOREIGN KEY (`id_engine_version`) REFERENCES `kb_engine_version` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `kb_item_feature_map`
+--
+
+DROP TABLE IF EXISTS `kb_item_feature_map`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `kb_item_feature_map` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `id_item` bigint(20) unsigned NOT NULL,
+  `id_feature` bigint(20) unsigned NOT NULL,
+  `relation` enum('adds','removes','changes','limits','requires','affects') NOT NULL,
+  `notes` text DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `k_ifm` (`id_feature`,`relation`),
+  KEY `fk_ifm_item` (`id_item`),
+  CONSTRAINT `fk_ifm_feat` FOREIGN KEY (`id_feature`) REFERENCES `kb_feature` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_ifm_item` FOREIGN KEY (`id_item`) REFERENCES `kb_item` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `kb_item_tag`
+--
+
+DROP TABLE IF EXISTS `kb_item_tag`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `kb_item_tag` (
+  `id_item` bigint(20) unsigned NOT NULL,
+  `id_tag` bigint(20) unsigned NOT NULL,
+  PRIMARY KEY (`id_item`,`id_tag`),
+  KEY `fk_it_tag` (`id_tag`),
+  CONSTRAINT `fk_it_item` FOREIGN KEY (`id_item`) REFERENCES `kb_item` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_it_tag` FOREIGN KEY (`id_tag`) REFERENCES `kb_tag` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `kb_rule`
+--
+
+DROP TABLE IF EXISTS `kb_rule`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `kb_rule` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `code` varchar(128) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `id_engine` bigint(20) unsigned DEFAULT NULL,
+  `applies_to` enum('server','proxy','client','migration') NOT NULL DEFAULT 'server',
+  `severity` enum('info','low','medium','high','critical') NOT NULL DEFAULT 'medium',
+  `enabled` tinyint(1) NOT NULL DEFAULT 1,
+  `version_from_id` bigint(20) unsigned DEFAULT NULL,
+  `version_to_id` bigint(20) unsigned DEFAULT NULL,
+  `logic_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`logic_json`)),
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `code` (`code`),
+  KEY `k_rule_engine` (`id_engine`,`enabled`),
+  KEY `fk_rule_vfrom` (`version_from_id`),
+  KEY `fk_rule_vto` (`version_to_id`),
+  CONSTRAINT `fk_rule_engine` FOREIGN KEY (`id_engine`) REFERENCES `kb_engine` (`id`),
+  CONSTRAINT `fk_rule_vfrom` FOREIGN KEY (`version_from_id`) REFERENCES `kb_engine_version` (`id`),
+  CONSTRAINT `fk_rule_vto` FOREIGN KEY (`version_to_id`) REFERENCES `kb_engine_version` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `kb_rule_item`
+--
+
+DROP TABLE IF EXISTS `kb_rule_item`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `kb_rule_item` (
+  `id_rule` bigint(20) unsigned NOT NULL,
+  `id_item` bigint(20) unsigned NOT NULL,
+  PRIMARY KEY (`id_rule`,`id_item`),
+  KEY `fk_ri_item` (`id_item`),
+  CONSTRAINT `fk_ri_item` FOREIGN KEY (`id_item`) REFERENCES `kb_item` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_ri_rule` FOREIGN KEY (`id_rule`) REFERENCES `kb_rule` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `kb_rule_probe`
+--
+
+DROP TABLE IF EXISTS `kb_rule_probe`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `kb_rule_probe` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `id_rule` bigint(20) unsigned NOT NULL,
+  `step_no` int(11) NOT NULL,
+  `probe_type` enum('sql','variable','status','performance_schema','sys_schema','shell') NOT NULL DEFAULT 'sql',
+  `query_text` mediumtext NOT NULL,
+  `expect_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`expect_json`)),
+  `on_fail_message` text DEFAULT NULL,
+  `on_pass_message` text DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_rule_step` (`id_rule`,`step_no`),
+  CONSTRAINT `fk_probe_rule` FOREIGN KEY (`id_rule`) REFERENCES `kb_rule` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `kb_rule_remediation`
+--
+
+DROP TABLE IF EXISTS `kb_rule_remediation`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `kb_rule_remediation` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `id_rule` bigint(20) unsigned NOT NULL,
+  `remediation_type` enum('sql','config','procedure','link') NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `content` mediumtext NOT NULL,
+  `risk` enum('safe','caution','danger') NOT NULL DEFAULT 'caution',
+  PRIMARY KEY (`id`),
+  KEY `fk_rem_rule` (`id_rule`),
+  CONSTRAINT `fk_rem_rule` FOREIGN KEY (`id_rule`) REFERENCES `kb_rule` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `kb_source`
+--
+
+DROP TABLE IF EXISTS `kb_source`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `kb_source` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `slug` varchar(128) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `source_type` enum('docs','release_notes','blog','github','rss','pdf','other') NOT NULL,
+  `base_url` varchar(512) DEFAULT NULL,
+  `trust_score` tinyint(3) unsigned NOT NULL DEFAULT 70,
+  `enabled` tinyint(1) NOT NULL DEFAULT 1,
+  `fetch_strategy` enum('crawl','rss','github_release','manual') NOT NULL DEFAULT 'manual',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `slug` (`slug`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `kb_tag`
+--
+
+DROP TABLE IF EXISTS `kb_tag`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `kb_tag` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `slug` varchar(128) NOT NULL,
+  `label` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `slug` (`slug`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -172177,8 +174953,7 @@ CREATE TABLE `link__haproxy_main_output__mysql_server` (
   PRIMARY KEY (`id`),
   KEY `id_haproxy_output` (`id_haproxy_output`),
   KEY `id_mysql_server` (`id_mysql_server`),
-  CONSTRAINT `link__haproxy_main_output__mysql_server_ibfk_1` FOREIGN KEY (`id_haproxy_output`) REFERENCES `haproxy_main_output` (`id`),
-  CONSTRAINT `link__haproxy_main_output__mysql_server_ibfk_2` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
+  CONSTRAINT `link__haproxy_main_output__mysql_server_ibfk_1` FOREIGN KEY (`id_haproxy_output`) REFERENCES `haproxy_main_output` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -172198,8 +174973,7 @@ CREATE TABLE `link__mysql_server__ssh_key` (
   PRIMARY KEY (`id`),
   KEY `id_mysql_server` (`id_mysql_server`),
   KEY `id_ssh_key` (`id_ssh_key`),
-  CONSTRAINT `link__mysql_server__ssh_key_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `link__mysql_server__ssh_key_ibfk_2` FOREIGN KEY (`id_ssh_key`) REFERENCES `ssh_key` (`id`) ON DELETE CASCADE
+  CONSTRAINT `link__mysql_server__ssh_key_ibfk_2` FOREIGN KEY (`id_ssh_key`) REFERENCES `ssh_key` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -172217,9 +174991,28 @@ CREATE TABLE `link__mysql_server__tag` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`id_tag`),
   KEY `id_tag` (`id_tag`),
-  CONSTRAINT `link__mysql_server__tag_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `link__mysql_server__tag_ibfk_2` FOREIGN KEY (`id_tag`) REFERENCES `tag` (`id`)
+  CONSTRAINT `link__mysql_server__tag_ibfk_2` FOREIGN KEY (`id_tag`) REFERENCES `tag` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `listener_main`
+--
+
+DROP TABLE IF EXISTS `listener_main`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `listener_main` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_ts_file` int(11) NOT NULL,
+  `class` varchar(64) NOT NULL,
+  `method` varchar(64) NOT NULL,
+  `is activated` int(11) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `class` (`class`,`method`),
+  KEY `id_ts_file` (`id_ts_file`),
+  CONSTRAINT `listener_main_ibfk_1` FOREIGN KEY (`id_ts_file`) REFERENCES `ts_file` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -172248,16 +175041,34 @@ DROP TABLE IF EXISTS `maxscale_server`;
 /*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `maxscale_server` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_mysql_server` int(11) DEFAULT NULL,
   `display_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `is_ssl` int(11) NOT NULL DEFAULT 0,
   `hostname` varchar(100) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
   `port` int(11) NOT NULL,
   `login` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `password` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `date_inserted` datetime NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `id_mysql_server` (`id_mysql_server`)
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci WITH SYSTEM VERSIONING;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `maxscale_server__mysql_server`
+--
+
+DROP TABLE IF EXISTS `maxscale_server__mysql_server`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `maxscale_server__mysql_server` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_maxscale_server` int(11) NOT NULL,
+  `id_mysql_server` int(11) NOT NULL,
+  `date` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id_maxscale_server` (`id_maxscale_server`,`id_mysql_server`),
+  KEY `maxscale_server__mysql_server_ibfk_2` (`id_mysql_server`),
+  CONSTRAINT `maxscale_server__mysql_server_ibfk_1` FOREIGN KEY (`id_maxscale_server`) REFERENCES `maxscale_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -172276,16 +175087,58 @@ CREATE TABLE `mysql_database` (
   `data_length` bigint(20) NOT NULL DEFAULT 0,
   `data_free` bigint(20) NOT NULL DEFAULT 0,
   `index_length` bigint(20) NOT NULL DEFAULT 0,
-  `collation_name` varchar(64) NOT NULL,
-  `character_set_name` varchar(32) NOT NULL,
+  `collation_name` varchar(64) NOT NULL DEFAULT '',
+  `character_set_name` varchar(64) NOT NULL DEFAULT '',
   `binlog_do_db` int(11) NOT NULL DEFAULT 0,
   `binlog_ignore_db` int(11) NOT NULL DEFAULT 0,
   `default_encryption` varchar(64) NOT NULL DEFAULT 'NO',
   PRIMARY KEY (`id`),
   UNIQUE KEY `schema_name` (`schema_name`,`id_mysql_server`),
-  KEY `id_mysql_server` (`id_mysql_server`),
-  CONSTRAINT `mysql_database_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `id_mysql_server` (`id_mysql_server`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci WITH SYSTEM VERSIONING;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `mysql_database__mysql_digest`
+--
+
+DROP TABLE IF EXISTS `mysql_database__mysql_digest`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `mysql_database__mysql_digest` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id_mysql_server` int(11) NOT NULL,
+  `id_mysql_database` int(11) NOT NULL,
+  `id_mysql_digest` int(10) unsigned NOT NULL,
+  `schema_name` varchar(64) NOT NULL,
+  `first_seen` datetime NOT NULL DEFAULT current_timestamp(),
+  `last_seen` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id_mysql_digest` (`id_mysql_digest`,`id_mysql_database`,`id_mysql_server`),
+  KEY `idx_digest` (`id_mysql_digest`),
+  KEY `id_mysql_server` (`id_mysql_server`) USING BTREE,
+  KEY `id_mysql_database` (`id_mysql_database`),
+  CONSTRAINT `fk_digest_schema_digest` FOREIGN KEY (`id_mysql_digest`) REFERENCES `mysql_digest` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `mysql_digest`
+--
+
+DROP TABLE IF EXISTS `mysql_digest`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `mysql_digest` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `digest` varchar(64) NOT NULL,
+  `digest_text` longtext NOT NULL,
+  `digest_mysql` longtext NOT NULL DEFAULT '',
+  `digest_text_md5` char(32) NOT NULL,
+  `tables` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_digest` (`digest`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -172314,8 +175167,7 @@ CREATE TABLE `mysql_dump` (
   PRIMARY KEY (`id`),
   KEY `id_mysql_serveur` (`id_mysql_server`),
   KEY `date_end` (`date_end`),
-  KEY `id_backup_database` (`id_backup_database`),
-  CONSTRAINT `mysql_dump_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `id_backup_database` (`id_backup_database`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -172343,11 +175195,13 @@ DROP TABLE IF EXISTS `mysql_query`;
 /*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `mysql_query` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `digest_text_md5` char(32) NOT NULL,
   `query_mariadb` text NOT NULL,
   `digest_mariadb` char(32) DEFAULT NULL,
   `query_mysql` text NOT NULL,
-  `digest_mysql` varchar(200) DEFAULT NULL,
+  `digest_mysql` char(64) DEFAULT NULL,
   `date` datetime NOT NULL DEFAULT current_timestamp(),
+  `tables` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`tables`)),
   PRIMARY KEY (`id`),
   UNIQUE KEY `digest_mysql` (`digest_mysql`),
   UNIQUE KEY `digest_mariadb` (`digest_mariadb`),
@@ -172364,33 +175218,42 @@ DROP TABLE IF EXISTS `mysql_server`;
 /*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `mysql_server` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `is_deleted` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `id_client` int(11) NOT NULL,
   `id_environment` int(11) NOT NULL,
   `name` varchar(100) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
   `display_name` varchar(100) NOT NULL,
-  `ip` char(15) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
+  `ip` varchar(255) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
   `hostname` varchar(200) NOT NULL DEFAULT '',
   `login` varchar(32) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
   `passwd` varchar(255) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
   `database` varchar(64) NOT NULL,
   `is_password_crypted` int(11) NOT NULL,
+  `is_ssl` int(11) NOT NULL DEFAULT 0,
   `port` int(11) NOT NULL,
+  `ssh_nat` varchar(64) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
   `ssh_port` int(11) NOT NULL DEFAULT 22,
   `ssh_login` text CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '\'\'',
   `is_sudo` int(11) NOT NULL DEFAULT 0,
   `is_root` int(11) NOT NULL DEFAULT 1,
   `is_monitored` int(11) NOT NULL DEFAULT 1,
   `is_proxy` int(11) NOT NULL DEFAULT 0,
+  `is_ndb_cluster_node` tinyint(1) NOT NULL DEFAULT 0,
+  `is_vip` tinyint(1) NOT NULL DEFAULT 0,
   `is_acknowledged` int(11) NOT NULL DEFAULT 0,
+  `timeout` int(11) GENERATED ALWAYS AS (case when `is_proxy` = 1 then 11 else 1 end) VIRTUAL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`),
   UNIQUE KEY `ip` (`ip`,`port`),
   KEY `id_client` (`id_client`),
   KEY `id_environment` (`id_environment`),
-  KEY `is_monitored` (`is_monitored`,`id_client`),
-  CONSTRAINT `mysql_server_ibfk_1` FOREIGN KEY (`id_client`) REFERENCES `client` (`id`),
-  CONSTRAINT `mysql_server_ibfk_2` FOREIGN KEY (`id_environment`) REFERENCES `environment` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci WITH SYSTEM VERSIONING;
+  KEY `is_monitored` (`id_client`,`is_monitored`,`is_deleted`) USING BTREE,
+  KEY `is_deleted` (`is_deleted`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci WITH SYSTEM VERSIONING
+ PARTITION BY SYSTEM_TIME 
+PARTITIONS 2;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -172413,6 +175276,45 @@ CREATE TABLE `mysql_table` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `mysqlrouter_server`
+--
+
+DROP TABLE IF EXISTS `mysqlrouter_server`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `mysqlrouter_server` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `display_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `is_ssl` int(11) NOT NULL DEFAULT 0,
+  `hostname` varchar(100) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
+  `port` int(11) NOT NULL,
+  `login` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `password` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `date_inserted` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci WITH SYSTEM VERSIONING;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `mysqlrouter_server__mysql_server`
+--
+
+DROP TABLE IF EXISTS `mysqlrouter_server__mysql_server`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `mysqlrouter_server__mysql_server` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_mysqlrouter_server` int(11) NOT NULL,
+  `id_mysql_server` int(11) NOT NULL,
+  `date` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id_mysqlrouter_server` (`id_mysqlrouter_server`,`id_mysql_server`),
+  KEY `mysqlrouter_server__mysql_server_ibfk_2` (`id_mysql_server`),
+  CONSTRAINT `mysqlrouter_server__mysql_server_ibfk_1` FOREIGN KEY (`id_mysqlrouter_server`) REFERENCES `mysqlrouter_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `myxplain`
 --
 
@@ -172429,6 +175331,84 @@ CREATE TABLE `myxplain` (
   `json` text NOT NULL DEFAULT '' COMMENT 'used in future for explain format=json',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `ndb_cluster`
+--
+
+DROP TABLE IF EXISTS `ndb_cluster`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ndb_cluster` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `display_name` varchar(100) NOT NULL,
+  `mgmd_host` varchar(100) NOT NULL DEFAULT '',
+  `mgmd_port` smallint(5) unsigned NOT NULL DEFAULT 1186,
+  `ssh_target_host` varchar(100) NOT NULL DEFAULT '',
+  `ssh_target_port` smallint(5) unsigned NOT NULL DEFAULT 22,
+  `ssh_login` varchar(64) NOT NULL DEFAULT 'root',
+  `command_template` varchar(255) NOT NULL DEFAULT 'ndb_mgm -h {{mgmd_host}}:{{mgmd_port}} -e show',
+  `id_mysql_server_sql` int(11) DEFAULT NULL,
+  `ndb_version` varchar(40) DEFAULT NULL,
+  `no_of_replicas` tinyint(4) DEFAULT NULL,
+  `is_deleted` tinyint(1) NOT NULL DEFAULT 0,
+  `date_inserted` datetime NOT NULL DEFAULT current_timestamp(),
+  `date_updated` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `u_ndb_cluster_name` (`display_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=COMPRESSED;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `ndb_cluster__mysql_server`
+--
+
+DROP TABLE IF EXISTS `ndb_cluster__mysql_server`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ndb_cluster__mysql_server` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id_ndb_cluster` int(10) unsigned NOT NULL,
+  `id_mysql_server` int(11) NOT NULL,
+  `date` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `u_ndb_cluster_mysql_server` (`id_ndb_cluster`,`id_mysql_server`),
+  KEY `idx_ndb_cluster_mysql_server_msid` (`id_mysql_server`),
+  CONSTRAINT `fk_ndb_cluster_mysql_server` FOREIGN KEY (`id_ndb_cluster`) REFERENCES `ndb_cluster` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `ndb_node`
+--
+
+DROP TABLE IF EXISTS `ndb_node`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ndb_node` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id_ndb_cluster` int(10) unsigned NOT NULL,
+  `ndb_node_id` smallint(5) unsigned NOT NULL,
+  `role` enum('mgmd','data','sql') NOT NULL,
+  `hostname` varchar(100) NOT NULL DEFAULT '',
+  `ip` varchar(45) NOT NULL DEFAULT '',
+  `port` smallint(5) unsigned DEFAULT NULL,
+  `node_group` smallint(6) DEFAULT NULL,
+  `is_primary` tinyint(1) NOT NULL DEFAULT 0,
+  `status` varchar(40) NOT NULL DEFAULT 'UNKNOWN',
+  `ndb_version` varchar(40) DEFAULT NULL,
+  `uptime_sec` int(10) unsigned DEFAULT NULL,
+  `memory_used_mb` int(10) unsigned DEFAULT NULL,
+  `memory_total_mb` int(10) unsigned DEFAULT NULL,
+  `data_memory_used_mb` int(10) unsigned DEFAULT NULL,
+  `index_memory_used_mb` int(10) unsigned DEFAULT NULL,
+  `date_seen` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `u_ndb_node_clusterid_nodeid` (`id_ndb_cluster`,`ndb_node_id`),
+  KEY `idx_ndb_node_role_status` (`id_ndb_cluster`,`role`,`status`),
+  CONSTRAINT `fk_ndb_node_cluster` FOREIGN KEY (`id_ndb_cluster`) REFERENCES `ndb_cluster` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=COMPRESSED;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -172506,6 +175486,8 @@ CREATE TABLE `plugin_main` (
   `fichier` varchar(255) NOT NULL,
   `date_installation` datetime NOT NULL,
   `md5_zip` varchar(32) NOT NULL,
+  `sha256_zip` char(64) NOT NULL DEFAULT '',
+  `signature_zip` text DEFAULT NULL,
   `version` char(10) NOT NULL,
   `est_actif` int(11) NOT NULL DEFAULT 0,
   `type_licence` varchar(50) NOT NULL,
@@ -172569,9 +175551,48 @@ CREATE TABLE `pmacli_drain_process` (
   `time_by_item` float NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `id_mysql_server` (`id_mysql_server`),
-  KEY `date_end` (`date_end`),
-  CONSTRAINT `pmacli_drain_process_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `date_end` (`date_end`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `pmc_event_alert`
+--
+
+DROP TABLE IF EXISTS `pmc_event_alert`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `pmc_event_alert` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `scope` enum('system','user') NOT NULL DEFAULT 'system',
+  `id_user_main` bigint(20) unsigned DEFAULT NULL,
+  `kind` enum('event','alert') NOT NULL,
+  `severity` enum('debug','info','notice','warning','error','critical','alert','emergency') DEFAULT NULL,
+  `status` enum('open','acknowledged','resolved','closed') NOT NULL DEFAULT 'open',
+  `date_start` datetime(6) NOT NULL,
+  `date_end` datetime(6) DEFAULT NULL,
+  `title` varchar(190) NOT NULL,
+  `message` mediumtext DEFAULT NULL,
+  `source` varchar(64) DEFAULT NULL,
+  `category` varchar(64) DEFAULT NULL,
+  `fingerprint` binary(32) DEFAULT NULL,
+  `entity_type` varchar(64) DEFAULT NULL,
+  `entity_id` bigint(20) unsigned DEFAULT NULL,
+  `labels` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`labels`)),
+  `context` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`context`)),
+  `ack_by` bigint(20) unsigned DEFAULT NULL,
+  `ack_at` datetime(6) DEFAULT NULL,
+  `ack_note` varchar(255) DEFAULT NULL,
+  `created_at` datetime(6) NOT NULL DEFAULT current_timestamp(6),
+  `updated_at` datetime(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),
+  PRIMARY KEY (`id`),
+  KEY `idx_kind_status_dates` (`kind`,`status`,`date_start`,`date_end`),
+  KEY `idx_scope_user_active` (`scope`,`id_user_main`,`date_start`,`date_end`),
+  KEY `idx_entity` (`entity_type`,`entity_id`),
+  KEY `idx_fingerprint_open` (`fingerprint`,`status`),
+  CONSTRAINT `chk_user_scope` CHECK (`scope` = 'system' and `id_user_main` is null or `scope` = 'user' and `id_user_main` is not null),
+  CONSTRAINT `chk_severity_only_for_alert` CHECK (`kind` = 'event' and `severity` is null or `kind` = 'alert' and `severity` is not null)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -172591,9 +175612,26 @@ CREATE TABLE `proxysql_server` (
   `password` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `date_inserted` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
-  UNIQUE KEY `id_mysql_server` (`id_mysql_server`),
-  CONSTRAINT `proxysql_server_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`)
+  UNIQUE KEY `id_mysql_server` (`id_mysql_server`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci WITH SYSTEM VERSIONING;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `query_sample`
+--
+
+DROP TABLE IF EXISTS `query_sample`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `query_sample` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `query` mediumtext NOT NULL,
+  `digest_text` mediumtext NOT NULL,
+  `digest` char(32) NOT NULL,
+  `truncated` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `digest` (`digest`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -172640,6 +175678,23 @@ CREATE TABLE `recover_table` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `rocksdb_compact`
+--
+
+DROP TABLE IF EXISTS `rocksdb_compact`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `rocksdb_compact` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `table_name` varchar(64) NOT NULL,
+  `date_start` datetime NOT NULL,
+  `date_end` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `table_name` (`table_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `scan`
 --
 
@@ -172678,6 +175733,203 @@ CREATE TABLE `ssh_key` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `fingerprint` (`fingerprint`,`user`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `ssh_log_mysql_agg_day`
+--
+
+DROP TABLE IF EXISTS `ssh_log_mysql_agg_day`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ssh_log_mysql_agg_day` (
+  `id_mysql_server` int(11) NOT NULL,
+  `log_type` varchar(32) NOT NULL,
+  `bucket_start` datetime NOT NULL,
+  `count_total` int(10) unsigned NOT NULL DEFAULT 0,
+  PRIMARY KEY (`bucket_start`,`id_mysql_server`,`log_type`),
+  KEY `idx_server_type_bucket` (`id_mysql_server`,`log_type`,`bucket_start`)
+) ENGINE=ROCKSDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+ PARTITION BY RANGE (to_days(`bucket_start`))
+(PARTITION `p740061` VALUES LESS THAN (740061) ENGINE = ROCKSDB,
+ PARTITION `p740062` VALUES LESS THAN (740062) ENGINE = ROCKSDB,
+ PARTITION `p740063` VALUES LESS THAN (740063) ENGINE = ROCKSDB,
+ PARTITION `p740064` VALUES LESS THAN (740064) ENGINE = ROCKSDB,
+ PARTITION `p740065` VALUES LESS THAN (740065) ENGINE = ROCKSDB,
+ PARTITION `p740066` VALUES LESS THAN (740066) ENGINE = ROCKSDB,
+ PARTITION `p740068` VALUES LESS THAN (740068) ENGINE = ROCKSDB,
+ PARTITION `p740069` VALUES LESS THAN (740069) ENGINE = ROCKSDB,
+ PARTITION `p740070` VALUES LESS THAN (740070) ENGINE = ROCKSDB,
+ PARTITION `p740072` VALUES LESS THAN (740072) ENGINE = ROCKSDB,
+ PARTITION `p740073` VALUES LESS THAN (740073) ENGINE = ROCKSDB,
+ PARTITION `p740074` VALUES LESS THAN (740074) ENGINE = ROCKSDB,
+ PARTITION `p740075` VALUES LESS THAN (740075) ENGINE = ROCKSDB);
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `ssh_log_mysql_agg_hour`
+--
+
+DROP TABLE IF EXISTS `ssh_log_mysql_agg_hour`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ssh_log_mysql_agg_hour` (
+  `id_mysql_server` int(11) NOT NULL,
+  `log_type` varchar(32) NOT NULL,
+  `bucket_start` datetime NOT NULL,
+  `count_total` int(10) unsigned NOT NULL DEFAULT 0,
+  PRIMARY KEY (`bucket_start`,`id_mysql_server`,`log_type`),
+  KEY `idx_server_type_bucket` (`id_mysql_server`,`log_type`,`bucket_start`)
+) ENGINE=ROCKSDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+ PARTITION BY RANGE (to_days(`bucket_start`))
+(PARTITION `p740061` VALUES LESS THAN (740061) ENGINE = ROCKSDB,
+ PARTITION `p740062` VALUES LESS THAN (740062) ENGINE = ROCKSDB,
+ PARTITION `p740063` VALUES LESS THAN (740063) ENGINE = ROCKSDB,
+ PARTITION `p740064` VALUES LESS THAN (740064) ENGINE = ROCKSDB,
+ PARTITION `p740065` VALUES LESS THAN (740065) ENGINE = ROCKSDB,
+ PARTITION `p740066` VALUES LESS THAN (740066) ENGINE = ROCKSDB,
+ PARTITION `p740068` VALUES LESS THAN (740068) ENGINE = ROCKSDB,
+ PARTITION `p740069` VALUES LESS THAN (740069) ENGINE = ROCKSDB,
+ PARTITION `p740070` VALUES LESS THAN (740070) ENGINE = ROCKSDB,
+ PARTITION `p740072` VALUES LESS THAN (740072) ENGINE = ROCKSDB,
+ PARTITION `p740073` VALUES LESS THAN (740073) ENGINE = ROCKSDB,
+ PARTITION `p740074` VALUES LESS THAN (740074) ENGINE = ROCKSDB,
+ PARTITION `p740075` VALUES LESS THAN (740075) ENGINE = ROCKSDB);
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `ssh_log_mysql_agg_minute`
+--
+
+DROP TABLE IF EXISTS `ssh_log_mysql_agg_minute`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ssh_log_mysql_agg_minute` (
+  `id_mysql_server` int(11) NOT NULL,
+  `log_type` varchar(32) NOT NULL,
+  `bucket_start` datetime NOT NULL,
+  `count_total` int(10) unsigned NOT NULL DEFAULT 0,
+  PRIMARY KEY (`bucket_start`,`id_mysql_server`,`log_type`),
+  KEY `idx_server_type_bucket` (`id_mysql_server`,`log_type`,`bucket_start`)
+) ENGINE=ROCKSDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+ PARTITION BY RANGE (to_days(`bucket_start`))
+(PARTITION `p740061` VALUES LESS THAN (740061) ENGINE = ROCKSDB,
+ PARTITION `p740062` VALUES LESS THAN (740062) ENGINE = ROCKSDB,
+ PARTITION `p740063` VALUES LESS THAN (740063) ENGINE = ROCKSDB,
+ PARTITION `p740064` VALUES LESS THAN (740064) ENGINE = ROCKSDB,
+ PARTITION `p740065` VALUES LESS THAN (740065) ENGINE = ROCKSDB,
+ PARTITION `p740066` VALUES LESS THAN (740066) ENGINE = ROCKSDB,
+ PARTITION `p740068` VALUES LESS THAN (740068) ENGINE = ROCKSDB,
+ PARTITION `p740069` VALUES LESS THAN (740069) ENGINE = ROCKSDB,
+ PARTITION `p740070` VALUES LESS THAN (740070) ENGINE = ROCKSDB,
+ PARTITION `p740072` VALUES LESS THAN (740072) ENGINE = ROCKSDB,
+ PARTITION `p740073` VALUES LESS THAN (740073) ENGINE = ROCKSDB,
+ PARTITION `p740074` VALUES LESS THAN (740074) ENGINE = ROCKSDB,
+ PARTITION `p740075` VALUES LESS THAN (740075) ENGINE = ROCKSDB);
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `ssh_log_mysql_cursor`
+--
+
+DROP TABLE IF EXISTS `ssh_log_mysql_cursor`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ssh_log_mysql_cursor` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `id_mysql_server` int(11) NOT NULL,
+  `log_type` varchar(32) NOT NULL,
+  `source_kind` varchar(16) NOT NULL,
+  `source_name` varchar(1024) NOT NULL,
+  `inode` bigint(20) unsigned DEFAULT NULL,
+  `last_offset` bigint(20) unsigned DEFAULT NULL,
+  `last_event_time` datetime DEFAULT NULL,
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_cursor` (`id_mysql_server`,`log_type`,`source_kind`,`source_name`(191))
+) ENGINE=ROCKSDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `ssh_log_mysql_line`
+--
+
+DROP TABLE IF EXISTS `ssh_log_mysql_line`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ssh_log_mysql_line` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `id_mysql_server` int(11) NOT NULL,
+  `log_type` varchar(32) NOT NULL,
+  `source_kind` varchar(16) NOT NULL,
+  `log_path` varchar(1024) NOT NULL,
+  `event_time` datetime NOT NULL,
+  `inode` bigint(20) unsigned DEFAULT NULL,
+  `offset_start` bigint(20) unsigned DEFAULT NULL,
+  `offset_end` bigint(20) unsigned DEFAULT NULL,
+  `user_name` varchar(255) DEFAULT NULL,
+  `host_name` varchar(255) DEFAULT NULL,
+  `process_name` varchar(255) DEFAULT NULL,
+  `level` varchar(32) DEFAULT NULL,
+  `error_code` varchar(32) DEFAULT NULL,
+  `message` mediumtext NOT NULL,
+  `raw_line` mediumtext NOT NULL,
+  `meta_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`meta_json`)),
+  `dedup_key` char(40) NOT NULL,
+  `date_inserted` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`,`event_time`),
+  UNIQUE KEY `uniq_dedup_key` (`dedup_key`,`event_time`),
+  KEY `idx_server_type_date` (`id_mysql_server`,`log_type`,`event_time`),
+  KEY `idx_date_type` (`event_time`,`log_type`)
+) ENGINE=ROCKSDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+ PARTITION BY RANGE (to_days(`event_time`))
+(PARTITION `p740061` VALUES LESS THAN (740061) ENGINE = ROCKSDB,
+ PARTITION `p740062` VALUES LESS THAN (740062) ENGINE = ROCKSDB,
+ PARTITION `p740063` VALUES LESS THAN (740063) ENGINE = ROCKSDB,
+ PARTITION `p740064` VALUES LESS THAN (740064) ENGINE = ROCKSDB,
+ PARTITION `p740065` VALUES LESS THAN (740065) ENGINE = ROCKSDB,
+ PARTITION `p740066` VALUES LESS THAN (740066) ENGINE = ROCKSDB,
+ PARTITION `p740068` VALUES LESS THAN (740068) ENGINE = ROCKSDB,
+ PARTITION `p740069` VALUES LESS THAN (740069) ENGINE = ROCKSDB,
+ PARTITION `p740070` VALUES LESS THAN (740070) ENGINE = ROCKSDB,
+ PARTITION `p740072` VALUES LESS THAN (740072) ENGINE = ROCKSDB,
+ PARTITION `p740073` VALUES LESS THAN (740073) ENGINE = ROCKSDB,
+ PARTITION `p740074` VALUES LESS THAN (740074) ENGINE = ROCKSDB,
+ PARTITION `p740075` VALUES LESS THAN (740075) ENGINE = ROCKSDB);
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `ssh_tunnel`
+--
+
+DROP TABLE IF EXISTS `ssh_tunnel`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ssh_tunnel` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id_mysql_server` int(11) DEFAULT NULL,
+  `id_maxscale_server` int(11) DEFAULT NULL,
+  `id_proxysql_server` int(11) DEFAULT NULL,
+  `date_created` datetime NOT NULL,
+  `date_end` datetime DEFAULT NULL,
+  `local_host` varchar(64) NOT NULL,
+  `local_port` int(10) unsigned NOT NULL,
+  `servers_jump` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`servers_jump`)),
+  `remote_host` varchar(64) NOT NULL,
+  `remote_port` int(10) unsigned NOT NULL,
+  `pid` int(10) unsigned DEFAULT NULL,
+  `user` varchar(64) DEFAULT NULL,
+  `command` text DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id_maxscale_server` (`id_maxscale_server`),
+  UNIQUE KEY `id_proxysql_server` (`id_proxysql_server`),
+  UNIQUE KEY `pid_2` (`pid`,`local_host`,`local_port`,`remote_host`,`remote_port`),
+  KEY `idx_remote` (`remote_host`,`remote_port`),
+  KEY `idx_local` (`local_host`,`local_port`),
+  KEY `idx_server` (`id_mysql_server`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci WITH SYSTEM VERSIONING
+ PARTITION BY SYSTEM_TIME 
+PARTITIONS 2;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -172744,6 +175996,24 @@ CREATE TABLE `table_columns` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `telegram_bot`
+--
+
+DROP TABLE IF EXISTS `telegram_bot`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `telegram_bot` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `token` varchar(255) NOT NULL,
+  `chat_id` varchar(255) NOT NULL,
+  `insert_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_token_chat` (`token`,`chat_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `ts_max_date`
 --
 
@@ -172753,11 +176023,11 @@ DROP TABLE IF EXISTS `ts_max_date`;
 CREATE TABLE `ts_max_date` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `id_mysql_server` int(11) NOT NULL,
-  `date` datetime NOT NULL,
-  `date_p1` datetime NOT NULL,
-  `date_p2` datetime NOT NULL,
-  `date_p3` datetime NOT NULL,
-  `date_p4` datetime NOT NULL,
+  `date` datetime DEFAULT NULL,
+  `date_p1` datetime DEFAULT NULL,
+  `date_p2` datetime DEFAULT NULL,
+  `date_p3` datetime DEFAULT NULL,
+  `date_p4` datetime DEFAULT NULL,
   `id_ts_file` int(11) NOT NULL,
   `last_date_listener` datetime DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
@@ -172767,9 +176037,59 @@ CREATE TABLE `ts_max_date` (
   KEY `id_ts_file` (`id_ts_file`),
   KEY `id_mysql_server_4` (`id_mysql_server`,`date`),
   KEY `date_2` (`date`,`last_date_listener`),
-  CONSTRAINT `ts_max_date_ibfk_2` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`) ON DELETE CASCADE,
   CONSTRAINT `ts_max_date_ibfk_3` FOREIGN KEY (`id_ts_file`) REFERENCES `ts_file` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `ts_mysql_digest_stat`
+--
+
+DROP TABLE IF EXISTS `ts_mysql_digest_stat`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ts_mysql_digest_stat` (
+  `date` datetime NOT NULL,
+  `id_mysql_database__mysql_digest` int(10) unsigned NOT NULL COMMENT 'fk vers ts_mysql_digest_schema',
+  `count_star` bigint(20) unsigned NOT NULL COMMENT 'Number of summarized events',
+  `sum_timer_wait` bigint(20) unsigned NOT NULL COMMENT 'Total wait time of the summarized events that are timed.',
+  `min_timer_wait` bigint(20) unsigned NOT NULL COMMENT 'Minimum wait time of the summarized events that are timed.',
+  `avg_timer_wait` bigint(20) unsigned NOT NULL COMMENT 'Average wait time of the summarized events that are timed.',
+  `max_timer_wait` bigint(20) unsigned NOT NULL COMMENT 'Maximum wait time of the summarized events that are timed.',
+  `sum_lock_time` bigint(20) unsigned NOT NULL COMMENT 'Sum of the LOCK_TIME column in the events_statements_current table.',
+  `sum_errors` bigint(20) unsigned NOT NULL COMMENT 'Sum of the ERRORS column in the events_statements_current table.',
+  `sum_warnings` bigint(20) unsigned NOT NULL COMMENT 'Sum of the WARNINGS column in the events_statements_current table.',
+  `sum_rows_affected` bigint(20) unsigned NOT NULL COMMENT 'Sum of the ROWS_AFFECTED column in the events_statements_current table.',
+  `sum_rows_sent` bigint(20) unsigned NOT NULL COMMENT 'Sum of the ROWS_SENT column in the events_statements_current table.',
+  `sum_rows_examined` bigint(20) unsigned NOT NULL COMMENT 'Sum of the ROWS_EXAMINED column in the events_statements_current table.',
+  `sum_created_tmp_disk_tables` bigint(20) unsigned NOT NULL COMMENT 'Sum of the CREATED_TMP_DISK_TABLES column in the events_statements_current table.',
+  `sum_created_tmp_tables` bigint(20) unsigned NOT NULL COMMENT 'Sum of the CREATED_TMP_TABLES column in the events_statements_current table.',
+  `sum_select_full_join` bigint(20) unsigned NOT NULL COMMENT 'Sum of the SELECT_FULL_JOIN column in the events_statements_current table.',
+  `sum_select_full_range_join` bigint(20) unsigned NOT NULL COMMENT 'Sum of the SELECT_FULL_RANGE_JOIN column in the events_statements_current table.',
+  `sum_select_range` bigint(20) unsigned NOT NULL COMMENT 'Sum of the SELECT_RANGE column in the events_statements_current table.',
+  `sum_select_range_check` bigint(20) unsigned NOT NULL COMMENT 'Sum of the SELECT_RANGE_CHECK column in the events_statements_current table.',
+  `sum_select_scan` bigint(20) unsigned NOT NULL COMMENT 'Sum of the SELECT_SCAN column in the events_statements_current table.',
+  `sum_sort_merge_passes` bigint(20) unsigned NOT NULL COMMENT 'Sum of the SORT_MERGE_PASSES column in the events_statements_current table.',
+  `sum_sort_range` bigint(20) unsigned NOT NULL COMMENT 'Sum of the SORT_RANGE column in the events_statements_current table.',
+  `sum_sort_rows` bigint(20) unsigned NOT NULL COMMENT 'Sum of the SORT_ROWS column in the events_statements_current table.',
+  `sum_sort_scan` bigint(20) unsigned NOT NULL COMMENT 'Sum of the SORT_SCAN column in the events_statements_current table.',
+  `sum_no_index_used` bigint(20) unsigned NOT NULL COMMENT 'Sum of the NO_INDEX_USED column in the events_statements_current table.',
+  `sum_no_good_index_used` bigint(20) unsigned NOT NULL COMMENT 'Sum of the NO_GOOD_INDEX_USED column in the events_statements_current table.',
+  `sum_cpu_time` bigint(11) unsigned NOT NULL DEFAULT 0,
+  `max_controlled_memory` bigint(20) unsigned NOT NULL DEFAULT 0,
+  `max_total_memory` bigint(20) unsigned NOT NULL DEFAULT 0,
+  `count_secondary` bigint(20) unsigned NOT NULL DEFAULT 0,
+  `quantile_95` bigint(20) unsigned NOT NULL DEFAULT 0,
+  `quantile_99` bigint(20) unsigned NOT NULL DEFAULT 0,
+  `quantile_999` bigint(20) unsigned NOT NULL DEFAULT 0,
+  `query_sample_text` text NOT NULL DEFAULT '',
+  `query_sample_seen` text NOT NULL DEFAULT '',
+  `query_sample_timer_wait` bigint(20) unsigned NOT NULL DEFAULT 0,
+  `first_seen` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' COMMENT 'Time at which the digest was first seen.',
+  `last_seen` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' COMMENT 'Time at which the digest was most recently seen.',
+  PRIMARY KEY (`date`,`id_mysql_database__mysql_digest`),
+  KEY `idx_digest_schema` (`id_mysql_database__mysql_digest`,`date`)
+) ENGINE=ROCKSDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -172780,36 +176100,20 @@ DROP TABLE IF EXISTS `ts_mysql_query`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `ts_mysql_query` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_mysql_query` int(11) NOT NULL,
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `id_mysql_server` int(11) NOT NULL,
-  `id_mysql_database` int(11) DEFAULT 0,
-  `date` datetime NOT NULL,
-  `count_star` bigint(20) NOT NULL,
-  `sum_timer_wait` bigint(20) NOT NULL,
-  `sum_lock_time` bigint(20) NOT NULL,
-  `sum_errors` bigint(20) NOT NULL,
-  `sum_warnings` bigint(20) NOT NULL,
-  `sum_rows_affected` bigint(20) NOT NULL,
-  `sum_rows_sent` bigint(20) NOT NULL,
-  `sum_rows_examined` bigint(20) NOT NULL,
-  `sum_created_tmp_disk_tables` bigint(20) NOT NULL,
-  `sum_created_tmp_tables` bigint(20) NOT NULL,
-  `sum_select_full_join` bigint(20) NOT NULL,
-  `sum_select_full_range_join` bigint(20) NOT NULL,
-  `sum_select_range` bigint(20) NOT NULL,
-  `sum_select_range_check` bigint(20) NOT NULL,
-  `sum_select_scan` bigint(20) NOT NULL,
-  `sum_sort_merge_passes` bigint(20) NOT NULL,
-  `sum_sort_range` bigint(20) NOT NULL,
-  `sum_sort_rows` bigint(20) NOT NULL,
-  `sum_sort_scan` bigint(20) NOT NULL,
-  `sum_no_index_used` bigint(20) NOT NULL,
-  `sum_no_good_index_used` bigint(20) NOT NULL,
+  `digest` varchar(64) NOT NULL,
+  `digest_pmacontrol` char(32) DEFAULT NULL,
+  `schema_name` varchar(64) DEFAULT NULL,
+  `digest_text` text NOT NULL,
+  `first_seen` datetime NOT NULL,
+  `last_seen` datetime NOT NULL,
+  `tables` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `id_mysql_query_2` (`id_mysql_query`,`date`,`id_mysql_server`,`id_mysql_database`),
-  KEY `id_mysql_query` (`id_mysql_query`)
-) ENGINE=ROCKSDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  UNIQUE KEY `id_mysql_server` (`id_mysql_server`,`digest`,`schema_name`),
+  KEY `idx_schema` (`schema_name`,`digest`),
+  KEY `idx_digest` (`digest`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -172835,6 +176139,10 @@ CREATE TABLE `user_main` (
   `date_last_connected` datetime NOT NULL,
   `date_created` datetime NOT NULL,
   `key_auth` char(40) NOT NULL,
+  `confirm_token_hash` char(64) DEFAULT NULL,
+  `confirm_token_expires_at` datetime DEFAULT NULL,
+  `reset_token_hash` char(64) DEFAULT NULL,
+  `reset_token_expires_at` datetime DEFAULT NULL,
   `id_group` int(11) NOT NULL DEFAULT 1,
   `avatar` varchar(100) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
@@ -172843,9 +176151,42 @@ CREATE TABLE `user_main` (
   KEY `id_geolocalisation_country` (`id_geolocalisation_country`),
   KEY `id_geolocalisation_city` (`id_geolocalisation_city`),
   KEY `id_group` (`id_group`),
+  KEY `idx_user_main_confirm_token_expires_at` (`confirm_token_expires_at`),
+  KEY `idx_user_main_reset_token_expires_at` (`reset_token_expires_at`),
   CONSTRAINT `user_main_ibfk_1` FOREIGN KEY (`id_group`) REFERENCES `group` (`id`),
   CONSTRAINT `user_main_ibfk_2` FOREIGN KEY (`id_geolocalisation_country`) REFERENCES `geolocalisation_country` (`id`),
   CONSTRAINT `user_main_ibfk_3` FOREIGN KEY (`id_geolocalisation_city`) REFERENCES `geolocalisation_city` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `user_persistent_auth_session`
+--
+
+DROP TABLE IF EXISTS `user_persistent_auth_session`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `user_persistent_auth_session` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `id_user_main` int(11) NOT NULL,
+  `selector` char(32) NOT NULL,
+  `token_hash` char(64) NOT NULL,
+  `previous_token_hash` char(64) DEFAULT NULL,
+  `previous_token_expires` datetime DEFAULT NULL,
+  `user_agent_hash` char(64) DEFAULT NULL,
+  `ip_hash` char(64) DEFAULT NULL,
+  `date_created` datetime NOT NULL,
+  `date_last_used` datetime DEFAULT NULL,
+  `date_expires` datetime NOT NULL,
+  `date_absolute_expires` datetime NOT NULL,
+  `date_revoked` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_user_persistent_auth_selector` (`selector`),
+  KEY `idx_user_persistent_auth_user` (`id_user_main`),
+  KEY `idx_user_persistent_auth_expires` (`date_expires`),
+  KEY `idx_user_persistent_auth_absolute_expires` (`date_absolute_expires`),
+  KEY `idx_user_persistent_auth_active` (`id_user_main`,`date_revoked`,`date_expires`),
+  CONSTRAINT `user_persistent_auth_session_ibfk_1` FOREIGN KEY (`id_user_main`) REFERENCES `user_main` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -172889,6 +176230,34 @@ CREATE TABLE `version` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `vip_server`
+--
+
+DROP TABLE IF EXISTS `vip_server`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `vip_server` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_mysql_server` int(11) NOT NULL COMMENT 'VIP (mysql_server.id)',
+  `dns` varchar(255) NOT NULL COMMENT 'copie mysql_server.ip (host VIP)',
+  `ip` varchar(45) DEFAULT NULL COMMENT 'IP résolue (IPv4/IPv6)',
+  `id_mysql_server__actual` int(11) DEFAULT NULL,
+  `id_mysql_server__previous` int(11) DEFAULT NULL,
+  `date__actual` datetime DEFAULT NULL COMMENT 'date de détection du changement actual',
+  `date__previous` datetime DEFAULT NULL COMMENT 'date de détection du changement previous',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_infra_vip_route__id_mysql_server` (`id_mysql_server`),
+  KEY `idx_infra_vip_route__dns` (`dns`),
+  KEY `idx_infra_vip_route__actual` (`id_mysql_server__actual`),
+  KEY `idx_infra_vip_route__previous` (`id_mysql_server__previous`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci WITH SYSTEM VERSIONING
+ PARTITION BY SYSTEM_TIME 
+PARTITIONS 2;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `webservice_history_main`
 --
 
@@ -172899,7 +176268,7 @@ CREATE TABLE `webservice_history_main` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `id_user_main` int(11) NOT NULL,
   `user` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL COMMENT 'redacted legacy field; Basic Auth password is never stored',
   `date` datetime NOT NULL,
   `logon` int(11) NOT NULL,
   `message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
@@ -172907,6 +176276,28 @@ CREATE TABLE `webservice_history_main` (
   KEY `id_user_main` (`id_user_main`),
   CONSTRAINT `webservice_history_main_ibfk_1` FOREIGN KEY (`id_user_main`) REFERENCES `user_main` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `webservice_auth_failure`
+--
+
+DROP TABLE IF EXISTS `webservice_auth_failure`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `webservice_auth_failure` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `remote_addr` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `failure_count` int(11) NOT NULL DEFAULT 0,
+  `window_started_at` datetime NOT NULL,
+  `last_failed_at` datetime NOT NULL,
+  `blocked_until` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_webservice_auth_failure_user_remote` (`user`,`remote_addr`),
+  KEY `idx_webservice_auth_failure_blocked_until` (`blocked_until`),
+  KEY `idx_webservice_auth_failure_last_failed_at` (`last_failed_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -172943,9 +176334,9 @@ CREATE TABLE `worker_execution` (
   `date_end` datetime DEFAULT NULL,
   `execution_time` int(11) DEFAULT NULL COMMENT 'in ms',
   PRIMARY KEY (`id`),
-  KEY `id_mysql_server` (`id_mysql_server`),
   KEY `id_worker_run` (`id_worker_run`),
-  CONSTRAINT `worker_execution_ibfk_1` FOREIGN KEY (`id_mysql_server`) REFERENCES `mysql_server` (`id`),
+  KEY `date_started` (`date_started`,`id_mysql_server`),
+  KEY `idx_mysql_server_date_started_run` (`id_mysql_server`,`date_started`,`id_worker_run`),
   CONSTRAINT `worker_execution_ibfk_2` FOREIGN KEY (`id_worker_run`) REFERENCES `worker_run` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -172969,6 +176360,7 @@ CREATE TABLE `worker_run` (
   KEY `pid` (`pid`),
   KEY `is_working` (`is_working`),
   KEY `is_working_2` (`is_working`,`id_worker_queue`),
+  KEY `is_working_3` (`is_working`,`id_worker_queue`,`pid`),
   CONSTRAINT `worker_run_ibfk_1` FOREIGN KEY (`id_worker_queue`) REFERENCES `worker_queue` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;

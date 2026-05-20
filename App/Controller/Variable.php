@@ -15,10 +15,46 @@ use \Glial\Synapse\Controller;
 use \Glial\Sgbd\Sgbd;
 use App\Library\Extraction2;
 use App\Library\Debug;
+use App\Library\Security\Identifier;
 
+/**
+ * Class responsible for variable workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Variable extends Controller
 {
 
+/**
+ * Render variable state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/variable/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index($param)
     {
         Debug::parseDebug($param);
@@ -27,39 +63,83 @@ class Variable extends Controller
 
         //$testArray = Extraction2::display(array("variables::is_proxysql"));
 
-        // on retire les PROXY
-        $servers = array();
-        $list_server = "SELECT distinct ID FROM mysql_server WHERE is_proxy=0";
+        $filters = self::evaluateIndexFilters($_GET, [$db, 'sql_real_escape_string']);
 
-        if (!empty($_GET['id_mysql_server'])) {
-            $list_server = intval($_GET['id_mysql_server']);
-        }
-
-
-        $variable = '';
-        if (!empty($_GET['variable'])) {
-            $variable = ' AND `variable_name` ="'.$_GET['variable'].'" ';
-        }
-
-
-
-        $sql = "with z as (select id_mysql_server,variable_name from global_variable FOR SYSTEM_TIME ALL WHERE id_mysql_server IN (".$list_server.")
-        $variable
+        $sql = "with z as (select id_mysql_server,variable_name from global_variable FOR SYSTEM_TIME ALL WHERE id_mysql_server IN (".$filters['list_server'].")
+        ".$filters['variable_where']."
 GROUP BY id_mysql_server,variable_name having count(1) > 1)
- SELECT a.id_mysql_server, a.variable_name, a.value,date(ROW_START) as date, DATE_FORMAT(ROW_START, '%H:%i:%s') as time, DATE_FORMAT(ROW_START, '%W') as day
- FROM global_variable FOR SYSTEM_TIME ALL a
+	 SELECT a.id_mysql_server, a.variable_name, a.value,date(ROW_START) as date, DATE_FORMAT(ROW_START, '%H:%i:%s') as time, DATE_FORMAT(ROW_START, '%W') as day
+	 FROM global_variable FOR SYSTEM_TIME ALL a
  INNER JOIN z ON a.id_mysql_server=z.id_mysql_server and a.variable_name=z.variable_name
- order by a.ROW_START,a.id_mysql_server, a.variable_name;";
+ order by a.ROW_START DESC,a.id_mysql_server, a.variable_name LIMIT 1000;";
 
         Debug::sql($sql);
 
         $res              = $db->sql_query($sql);
-        $data['variable'] = array();
+        $data = [
+            'filter_id_mysql_server' => $filters['filter_id_mysql_server'],
+            'filter_variable' => $filters['filter_variable'],
+            'variable' => array(),
+        ];
         while ($arr              = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['variable'][] = $arr;
         }
         
         $this->set('data', $data);
+    }
+
+    public static function evaluateIndexFilters(array $get, callable $escape): array
+    {
+        $filterIdMysqlServer = null;
+        $listServer = "SELECT distinct ID FROM mysql_server PARTITION(pn) WHERE is_proxy=0";
+
+        if (!empty($get['id_mysql_server']) && is_scalar($get['id_mysql_server'])) {
+            $idMysqlServer = (int) $get['id_mysql_server'];
+            if ($idMysqlServer > 0) {
+                $filterIdMysqlServer = $idMysqlServer;
+                $listServer = (string) $idMysqlServer;
+            }
+        }
+
+        $filterVariable = Identifier::normalizeMysqlVariableName($get['variable'] ?? null);
+        $variableWhere = '';
+        if ($filterVariable !== null) {
+            $variableWhere = ' AND `variable_name` ="'.$escape($filterVariable).'" ';
+        }
+
+        return [
+            'filter_id_mysql_server' => $filterIdMysqlServer,
+            'filter_variable' => $filterVariable,
+            'list_server' => $listServer,
+            'variable_where' => $variableWhere,
+        ];
+    }
+
+
+/**
+ * Handle variable state through `tsVariable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for tsVariable.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::tsVariable()
+ * @example /fr/variable/tsVariable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public function tsVariable($param)
+    {
+
     }
 }
 

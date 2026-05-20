@@ -2,6 +2,56 @@
 
 use \App\Library\Display;
 
+$escape = static function ($value): string {
+    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+};
+
+$isSettingsMenuItem = static function (array $item): bool {
+    if (($item['code'] ?? '') === 'settings') {
+        return true;
+    }
+
+    return (string) ($item['parent_id'] ?? '') === '92' && ($item['title'] ?? '') === 'Settings';
+};
+
+$renderLanguageMenu = static function (array $languageMenu, callable $escape): void {
+    if (empty($languageMenu['items'])) {
+        return;
+    }
+
+    $currentFlag      = $languageMenu['current_flag'] ?? '';
+    $currentShortCode = $languageMenu['current_short_code'] ?? '';
+
+    echo '<li class="dropdown-submenu pmacontrol-language-submenu" role="presentation">';
+    echo '<a id="drop-language-settings" href="#" class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" role="button" aria-expanded="false">';
+    echo '<span class="glyphicon glyphicon-globe" aria-hidden="true"></span> ';
+    if ($currentFlag !== '') {
+        echo '<span class="pmacontrol-language-emoji" aria-hidden="true">'.$escape($currentFlag).'</span>';
+    }
+    echo __("Languages");
+    if ($currentShortCode !== '') {
+        echo ' <span class="pmacontrol-language-current-code">'.$escape($currentShortCode).'</span>';
+    }
+    echo '</a>';
+    echo '<ul class="dropdown-menu pmacontrol-language-menu" role="menu" aria-labelledby="drop-language-settings">';
+
+    foreach ($languageMenu['items'] as $language) {
+        $active    = !empty($language['active']) ? ' active' : '';
+        $flag      = $language['flag'] ?? '';
+        $shortCode = $language['short_code'] ?? strtoupper((string) $language['code']);
+
+        echo '<li class="'.$active.'" role="presentation"><a class="pmacontrol-language-item" role="menuitem" tabindex="-1" href="'.$escape($language['url']).'" aria-label="'.$escape($language['label']).'">';
+        if ($flag !== '') {
+            echo '<span class="pmacontrol-language-emoji" aria-hidden="true">'.$escape($flag).'</span>';
+        }
+        echo '<span class="pmacontrol-language-code">'.$escape($shortCode).'</span>';
+        echo '<span class="pmacontrol-language-name">'.$escape($language['label']).'</span>';
+        echo '</a></li>'."\n";
+    }
+
+    echo '</ul></li>'."\n";
+};
+
 ?>
 <div>
     <nav class="navbar navbar-inverse navbar-static navbar-fixed-<?= $data['position'] ?>">
@@ -87,6 +137,10 @@ use \App\Library\Display;
 
                             echo '</a>
                                 <ul class="dropdown-menu" role="menu" aria-labelledby="drop'.$i.'">';
+
+                            if ($data['position'] === "top" && $isSettingsMenuItem($item)) {
+                                $renderLanguageMenu($data['language_menu'] ?? [], $escape);
+                            }
 
                             $close_at[] = $item['bd'];
                             $i++;

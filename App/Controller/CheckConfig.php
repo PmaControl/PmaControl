@@ -5,21 +5,87 @@ namespace App\Controller;
 use \Glial\Synapse\Controller;
 use \App\Library\Debug;
 use \App\Library\Mysql;
+use App\Library\MysqlServer;
+use App\Library\Security\ServerIdSelection;
+use App\Library\SelectorOptions;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Extraction;
 
 //version de 14 octobre 2020, comparaison de tableau multidimensions avec agregation des entetes
 //ne servait a rien ici car chaque serveur au moins un element different
 
+/**
+ * Class responsible for check config workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class CheckConfig extends Controller
 {
+/**
+ * Stores `$should_be_different` for should be different.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $should_be_different = array("server_id", "report_host", "wsrep_node_name");
+/**
+ * Stores `$not_important` for not important.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $not_important       = array("general_log_file", "gtid_binlog_state");
+/**
+ * Stores `$master_master` for master master.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $master_master       = array("");
+/**
+ * Stores `$human_readable` for human readable.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $human_readable      = array("aria_log_file_size", "aria_pagecache_buffer_size", "aria_max_sort_file_size", "binlog_cache_size", "innodb_buffer_pool_size", "innodb_log_file_size", "max_heap_table_size",
         "query_cache_size",
         "tmp_memory_table_size", "tmp_table_size");
 
+/**
+ * Render check config state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/checkconfig/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index($param)
     {
 
@@ -34,34 +100,22 @@ class CheckConfig extends Controller
 
         Debug::parseDebug($param);
 
+        $indexRequest = self::evaluateIndexRequest($_GET, $_SERVER);
+        if ($indexRequest['status'] !== 200) {
+            $this->view = false;
+            $this->layout_name = false;
+            self::sendIndexError($indexRequest['status'], $indexRequest['body'], $indexRequest['headers']);
+            return;
+        }
+
+        $selection = $indexRequest['selection'];
+        self::applyIndexSelectionToGet($selection);
+
         $db = Sgbd::sql(DB_DEFAULT);
 
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
-            if (!empty($_POST['mysql_cluster']['id'])) {
-
-                header('location: '.LINK.$this->getClass().'/'.__FUNCTION__.'/mysql_cluster:id:'.$_POST['mysql_cluster']['id']);
-            }
-
-            if (!empty($_POST['mysql_server']['id'])) {
-
-                header('location: '.LINK.$this->getClass().'/'.__FUNCTION__.'/mysql_server:id:'.implode(',', $_POST['mysql_server']['id']));
-            }
-        } else {
-
-            if (!empty($_GET['mysql_cluster']['id']) || !empty($_GET['mysql_server']['id'])) {
-
-
-                if (!empty($_GET['mysql_cluster']['id'])) {
-                    $sql = "SELECT * FROM mysql_server WHERE id in (".$_GET['mysql_cluster']['id'].")";
-
-                    $id_mysql_servers = explode(",", $_GET['mysql_cluster']['id']);
-                }
-
-                if (!empty($_GET['mysql_server']['id'])) {
-                    $sql = "SELECT * FROM mysql_server WHERE id in (".$_GET['mysql_server']['id'].")";
-
-                    $id_mysql_servers = explode(',', $_GET['mysql_server']['id']);
-                }
+        if ($selection['ids'] !== []) {
+                $sql = "SELECT * FROM mysql_server WHERE id in (".$selection['id_list'].")";
+                $id_mysql_servers = $selection['ids'];
 
                 $res = $db->sql_query($sql);
 
@@ -70,13 +124,7 @@ class CheckConfig extends Controller
                 //debug($_GET['mysql_cluster']);
                 //debug($_GET['mysql_server']);
 
-                if (! empty( $_GET['mysql_cluster']['id'])) {
-                    $mysql_servers = explode(",", $_GET['mysql_cluster']['id']);
-                }
-
-                if (! empty( $_GET['mysql_server']['id'])) {
-                    $mysql_servers = explode(",",$_GET['mysql_server']['id']);
-                }
+                $mysql_servers = $selection['ids'];
 
                 
                 $available = Extraction::display(array("mysql_available"), $mysql_servers);
@@ -142,8 +190,8 @@ class CheckConfig extends Controller
                     //in case server is not available we looking for in cache
                     if (in_array($id_mysql_server, $server_note_available) || ($alone === true && $step1 === false)) {
 
-                        $sql = "SELECT variable_name as Variable_name, value as Value 
-                        FROM global_variable WHERE id_mysql_server=".$id_mysql_server." ORDER BY 1;";
+                        $sql = "SELECT variable_name as Variable_name, value as Value
+                        FROM global_variable PARTITION(pn) WHERE id_mysql_server=".$id_mysql_server." ORDER BY 1;";
 
                         $res = $db->sql_query($sql);
                         //debug($sql);
@@ -225,7 +273,6 @@ class CheckConfig extends Controller
                 $data['resultat'] = $resultat;
 
                 //debug($data);
-            }
         }
 
         //generate liste of cluster (for select)
@@ -274,46 +321,169 @@ class CheckConfig extends Controller
         $this->set('data', $data);
     }
 
+    public static function evaluateIndexRequest(array $get, array $server): array
+    {
+        $method = strtoupper((string) ($server['REQUEST_METHOD'] ?? 'GET'));
+        if ($method !== 'GET' && $method !== 'HEAD') {
+            return self::buildIndexOutcome(405, 'Method Not Allowed', ['Allow' => 'GET, HEAD']);
+        }
+
+        $selection = self::normalizeIndexSelection($get);
+        if ($selection === null) {
+            return self::buildIndexOutcome(400, 'Invalid check config selection');
+        }
+
+        return self::buildIndexOutcome(200, '', [], $selection);
+    }
+
+    public static function normalizeIndexSelection(array $get): ?array
+    {
+        $hasCluster = array_key_exists('mysql_cluster', $get);
+        $hasServer = array_key_exists('mysql_server', $get);
+
+        if (!$hasCluster && !$hasServer) {
+            return self::emptyIndexSelection();
+        }
+
+        if ($hasCluster && $hasServer) {
+            return null;
+        }
+
+        $source = $hasCluster ? 'mysql_cluster' : 'mysql_server';
+        if (!isset($get[$source]) || !is_array($get[$source]) || !array_key_exists('id', $get[$source])) {
+            return null;
+        }
+
+        if ($get[$source]['id'] === '' || $get[$source]['id'] === []) {
+            return self::emptyIndexSelection();
+        }
+
+        $ids = ServerIdSelection::normalizeList($get[$source]['id']);
+        if ($ids === null) {
+            return null;
+        }
+
+        return [
+            'source' => $source,
+            'ids' => $ids,
+            'id_list' => ServerIdSelection::toCsv($ids),
+        ];
+    }
+
+    private static function applyIndexSelectionToGet(array $selection): void
+    {
+        if ($selection['ids'] === []) {
+            unset($_GET['mysql_cluster'], $_GET['mysql_server']);
+            return;
+        }
+
+        if ($selection['source'] === 'mysql_cluster') {
+            $_GET['mysql_cluster'] = ['id' => $selection['id_list']];
+            unset($_GET['mysql_server']);
+            return;
+        }
+
+        $_GET['mysql_server'] = ['id' => array_map('strval', $selection['ids'])];
+        unset($_GET['mysql_cluster']);
+    }
+
+    private static function emptyIndexSelection(): array
+    {
+        return [
+            'source' => null,
+            'ids' => [],
+            'id_list' => '',
+        ];
+    }
+
+    private static function buildIndexOutcome(int $statusCode, string $message, array $headers = [], ?array $selection = null): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'selection' => $selection,
+        ];
+    }
+
+    private static function sendIndexError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+
+        if ($message !== '') {
+            echo $message;
+        }
+    }
+
+/**
+ * Retrieve check config state through `getDatabasesByServers`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getDatabasesByServers.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getDatabasesByServers()
+ * @example /fr/checkconfig/getDatabasesByServers
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getDatabasesByServers($param)
     {
 
         $this->layout_name = false;
 
-        if (empty($param[0])) {
+        $id_mysql_servers = ServerIdSelection::normalizeList($param[0] ?? null);
+        if ($id_mysql_servers === null) {
             $data['databases'] = array();
             $this->set("data", $data);
             return true;
         }
-        $id_mysql_servers = explode(",", $param[0]);
 
-        $max = count($id_mysql_servers);
-
-        $data['db'] = array();
-        foreach ($id_mysql_servers as $id_mysql_server) {
-            $db_to_get_db = $this->getDbLinkFromId($id_mysql_server);
-
-            $sql  = "SHOW DATABASES";
-            $res2 = $db_to_get_db->sql_query($sql);
-
-
-            while ($ob = $db_to_get_db->sql_fetch_object($res2)) {
-                $data['db'][] = $ob->Database;
+        $data['databases'] = SelectorOptions::sharedDatabaseNamesByServerIds(
+            $id_mysql_servers,
+            function ($id_mysql_server) {
+                return $this->getDbLinkFromId($id_mysql_server);
             }
-        }
-
-        $database = array_count_values($data['db']);
-
-        foreach ($database as $db => $count) {
-            $tmp                 = [];
-            $tmp['id']           = $db;
-            $tmp['libelle']      = "(".$count."/".$max.") ".$db;
-            $data['databases'][] = $tmp;
-        }
+        );
 
         $this->set("data", $data);
         return $data;
     }
 
+/**
+ * Retrieve check config state through `getDbLinkFromId`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_db Input value for `id_db`.
+ * @phpstan-param int $id_db
+ * @psalm-param int $id_db
+ * @return mixed Returned value for getDbLinkFromId.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getDbLinkFromId()
+ * @example /fr/checkconfig/getDbLinkFromId
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getDbLinkFromId($id_db)
     {
 
@@ -321,17 +491,33 @@ class CheckConfig extends Controller
             $this->layout_name = false;
         }
 
-        $db  = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT id,name FROM mysql_server WHERE id = '".$db->sql_real_escape_string($id_db)."';";
-        $res = $db->sql_query($sql);
-
-        while ($ob = $db->sql_fetch_object($res)) {
-            $db_link = Sgbd::sql($ob->name);
-        }
-
-        return $db_link;
+        // TODO #561: CheckConfig did not filter mysql_server.is_deleted=0
+        // before the #559 mutualization. Preserve the legacy behavior with
+        // excludeDeleted=false until the followup audits the workflow.
+        return MysqlServer::getDbLinkFromId($id_db, false);
     }
 
+/**
+ * Handle check config state through `see`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for see.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::see()
+ * @example /fr/checkconfig/see
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function see($param)
     {
         $db = Sgbd::sql(DB_DEFAULT);

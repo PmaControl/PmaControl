@@ -1,0 +1,1753 @@
+<?php
+/**
+ * BlackholeRelay — convert a supervised MySQL/MariaDB server into a
+ * BLACKHOLE binlog-relay node. Issue #1212 (lots #1213-#1217).
+ *
+ * Shared core between the UI controller (App\Controller\Blackhole) and
+ * the CLI runner (`php App/Webroot/index.php Blackhole runConvertCli <id>`).
+ * Progress is streamed to the `blackhole_conversion.progress` JSON column
+ * so the UI can poll a live step-by-step log.
+ */
+
+namespace App\Library;
+
+use \Glial\Sgbd\Sgbd;
+
+class BlackholeRelay
+{
+    private const SYSTEM_SCHEMAS = [
+        'mysql', 'sys', 'performance_schema', 'information_schema',
+    ];
+
+    /** @var \Glial\Sgbd\Sgbd */
+    private $db;
+    private int $conversionId;
+    private array $steps = [];
+
+    public function __construct(int $conversionId)
+    {
+        $this->db = Sgbd::sql(DB_DEFAULT);
+        $this->conversionId = $conversionId;
+    }
+
+    // ------------------------------------------------------------------
+    //  Public API
+    // ------------------------------------------------------------------
+
+    /**
+     * Run the full conversion pipeline. Status + steps are updated as we
+     * go so the UI can poll the row.
+     */
+    public function run(): bool
+    {
+        $this->updateStatus('running');
+
+        try {
+            $this->addStep('init', 'Loading conversion parameters...');
+            $row = $this->loadConversion();
+            if (!$row) {
+                throw new \RuntimeException("blackhole_conversion #{$this->conversionId} not found");
+            }
+            $mode = ((string) ($row['provision_mode'] ?? 'convert')) === 'greenfield'
+                ? 'greenfield' : 'convert';
+            $this->updateLastStep("Conversion #{$this->conversionId} — mode=$mode"
+                . ((int) $row['dry_run'] === 1 ? ' (DRY-RUN)' : ''));
+
+            $ok = $mode === 'greenfield'
+                ? $this->runGreenfield($row)
+                : $this->runConvert($row);
+
+            $this->updateStatus($ok ? 'done' : 'failed');
+            return $ok;
+        } catch (\Throwable $e) {
+            $this->updateLastStep('ERROR: ' . $e->getMessage(), 'error');
+            $this->setError($e->getMessage());
+            $this->updateStatus('failed');
+            return false;
+        }
+    }
+
+    // ------------------------------------------------------------------
+    //  Pipeline A — convert an already-replicating slave in place
+    // ------------------------------------------------------------------
+
+    private function runConvert(array $row): bool
+    {
+        $serverId = (int) $row['id_mysql_server'];
+        $dryRun   = (int) $row['dry_run'] === 1;
+        $server   = $this->loadServer($serverId);
+        if (!$server) {
+            throw new \RuntimeException("mysql_server #{$serverId} not found or deleted");
+        }
+
+        $this->addStep('connect', "Connecting to target via Sgbd::sql('{$server['name']}')...");
+        $link = Sgbd::sql($server['name']);
+        if (!$link) {
+            throw new \RuntimeException("Unable to open Sgbd connection {$server['name']}");
+        }
+        $this->updateLastStep('Connected');
+
+        $this->addStep('guard', 'Checking pre-conditions (target must be a replica)...');
+        if (!$this->targetIsReplica($link)) {
+            throw new \RuntimeException(
+                'Target has no configured replication channel — refusing. '
+                . 'For a fresh node, use the "Create new relay from scratch" '
+                . 'form (greenfield mode) instead.'
+            );
+        }
+        $this->updateLastStep('Target is a replica — ok');
+
+        $this->ensureBlackholeEngineAvailable($link, $dryRun, $serverId);
+
+        $this->addStep('stop_slave', 'Stopping replication on all channels...');
+        $this->stopAllReplication($link, $dryRun);
+        $this->updateLastStep('Replication stopped' . ($dryRun ? ' (dry-run: skipped)' : ''));
+
+        $this->addStep('discover', 'Enumerating non-system tables...');
+        $tables = $this->discoverTables($link);
+        $this->setTableCounts(count($tables), 0);
+        $this->updateLastStep('Found ' . count($tables) . ' candidate tables');
+
+        $parallelism = $this->clampedParallelism((int) ($row['parallelism'] ?? 1));
+        $this->addStep('convert', 'Converting tables to ENGINE=BLACKHOLE'
+            . ($parallelism > 1 ? " (parallelism={$parallelism})" : '') . '...');
+        $converted = $this->convertTablesDispatch($server, $link, $tables, $dryRun, $parallelism);
+        $this->setTableCounts(count($tables), $converted);
+        $this->updateLastStep("Converted {$converted}/" . count($tables) . ' tables'
+            . ($dryRun ? ' (dry-run: ALTER statements only logged)' : ''));
+
+        $this->addStep('persist', 'Setting runtime variables (default engine, binlog_format, read_only)...');
+        $this->persistRuntimeConfig($link, $dryRun);
+        $this->updateLastStep('Runtime config applied' . ($dryRun ? ' (dry-run)' : ''));
+
+        $this->addStep('flag', 'Marking mysql_server.is_binlog_relay = 1...');
+        if (!$dryRun) {
+            $this->db->sql_query(
+                "UPDATE mysql_server SET is_binlog_relay = 1 WHERE id = {$serverId}"
+            );
+        }
+        $this->updateLastStep('Inventory updated' . ($dryRun ? ' (dry-run)' : ''));
+
+        $this->addStep('start_slave', 'Restarting replication...');
+        $this->startAllReplication($link, $dryRun);
+        $this->updateLastStep('Replication restarted' . ($dryRun ? ' (dry-run)' : ''));
+
+        $this->finalizeBlackholeCount($link, $dryRun);
+
+        return true;
+    }
+
+    // ------------------------------------------------------------------
+    //  Pipeline B — provision a relay from scratch (greenfield)
+    // ------------------------------------------------------------------
+
+    private function runGreenfield(array $row): bool
+    {
+        $serverId = (int) $row['id_mysql_server'];
+        $masterId = (int) $row['id_mysql_server__master'];
+        $dryRun   = (int) $row['dry_run'] === 1;
+
+        $server = $this->loadServer($serverId);
+        $master = $masterId > 0 ? $this->loadServer($masterId) : null;
+        if (!$server) {
+            throw new \RuntimeException("Target mysql_server #{$serverId} not found");
+        }
+        if (!$master) {
+            throw new \RuntimeException("Master mysql_server #{$masterId} not found");
+        }
+
+        $targetLabel = $server['display_name'] ?: $server['name'];
+        $masterLabel = $master['display_name'] ?: $master['name'];
+
+        $this->addStep('connect_target', "Connecting to target via Sgbd::sql('{$server['name']}')...");
+        $tgt = Sgbd::sql($server['name']);
+        if (!$tgt) {
+            throw new \RuntimeException("Unable to open Sgbd connection {$server['name']}");
+        }
+        $this->updateLastStep('Connected to target ' . $targetLabel);
+
+        $this->addStep('connect_master', "Connecting to master via Sgbd::sql('{$master['name']}')...");
+        $src = Sgbd::sql($master['name']);
+        if (!$src) {
+            throw new \RuntimeException("Unable to open Sgbd connection {$master['name']}");
+        }
+        $this->updateLastStep('Connected to master ' . $masterLabel);
+
+        // ── Activity guard on target ─────────────────────────────────
+        $this->addStep('guard_idle', 'Asserting target is idle (no user databases / no non-monitoring sessions)...');
+        $idle = $this->assertTargetIsIdle($tgt);
+        if ($idle !== true) {
+            throw new \RuntimeException("Target is not idle: {$idle}");
+        }
+        $this->updateLastStep('Target is idle — ok');
+
+        // ── Master must have binlog ──────────────────────────────────
+        $this->addStep('guard_master', 'Verifying master has binary logging enabled...');
+        $masterStatus = $this->fetchMasterStatus($src);
+        if ($masterStatus === null) {
+            throw new \RuntimeException('Master has no binary log (SHOW MASTER STATUS empty). Enable log_bin first.');
+        }
+        $this->updateLastStep("Master at {$masterStatus['File']}:{$masterStatus['Position']}");
+
+        // ── Dump schema from master, restore on target ───────────────
+        $this->addStep('dump_restore', "Dumping schema from {$masterLabel} and piping into {$targetLabel}...");
+        if ($dryRun) {
+            $this->updateLastStep('Skipped (dry-run): would mysqldump --no-data --master-data=2 …');
+        } else {
+            $dumpResult = $this->dumpAndRestoreSchema($master, $server);
+            if (!$dumpResult['ok']) {
+                throw new \RuntimeException('mysqldump|mysql failed: ' . $dumpResult['error']);
+            }
+            $this->updateLastStep('Schema replicated (' . $dumpResult['stderr_tail'] . ')');
+        }
+
+        // ── Make sure the BLACKHOLE engine is loaded on the target ───
+        $this->ensureBlackholeEngineAvailable($tgt, $dryRun, $serverId);
+
+        // ── Enumerate + convert all just-copied tables to BLACKHOLE ──
+        $this->addStep('discover', 'Enumerating freshly-created tables on target...');
+        $tables = $this->discoverTables($tgt);
+        $this->setTableCounts(count($tables), 0);
+        $this->updateLastStep('Found ' . count($tables) . ' tables to convert');
+
+        $parallelism = $this->clampedParallelism((int) ($row['parallelism'] ?? 1));
+        $this->addStep('convert', 'Converting every table to ENGINE=BLACKHOLE'
+            . ($parallelism > 1 ? " (parallelism={$parallelism})" : '') . '...');
+        $converted = $this->convertTablesDispatch($server, $tgt, $tables, $dryRun, $parallelism);
+        $this->setTableCounts(count($tables), $converted);
+        $this->updateLastStep("Converted {$converted}/" . count($tables) . ' tables'
+            . ($dryRun ? ' (dry-run)' : ''));
+
+        // ── Wire replication ─────────────────────────────────────────
+        $replicationUser = (string) ($row['replication_user'] ?? '');
+        if ($replicationUser === '') {
+            $replicationUser = (string) $master['login']; // fallback
+        }
+        // Replication password: dedicated column overrides master's stored
+        // pw. Empty → use master's pw (the legacy MVP behavior, which
+        // requires the replication user to share the master pw — a real
+        // limitation surfaced during multi-host testing).
+        $replicationPassword = '';
+        $storedReplPw = (string) ($row['replication_password'] ?? '');
+        if ($storedReplPw !== '') {
+            $replicationPassword = \Glial\Security\Crypt\Crypt::decrypt($storedReplPw);
+        }
+        if ($replicationPassword === '') {
+            $replicationPassword = $this->decryptServerPassword($master);
+        }
+        $this->addStep('change_master', "Pointing target at {$master['ip']}:{$master['port']} (user=" . $replicationUser . ')...');
+        $this->configureReplication(
+            $tgt,
+            $master,
+            $masterStatus,
+            $replicationUser,
+            $replicationPassword,
+            $dryRun
+        );
+        $this->updateLastStep('CHANGE MASTER TO issued' . ($dryRun ? ' (dry-run)' : ''));
+
+        // ── Apply runtime config + mark inventory ────────────────────
+        $this->addStep('persist', 'Setting runtime variables (default engine, binlog_format, read_only)...');
+        $this->persistRuntimeConfig($tgt, $dryRun);
+        $this->updateLastStep('Runtime config applied' . ($dryRun ? ' (dry-run)' : ''));
+
+        $this->addStep('flag', 'Marking mysql_server.is_binlog_relay = 1...');
+        if (!$dryRun) {
+            $this->db->sql_query(
+                "UPDATE mysql_server SET is_binlog_relay = 1 WHERE id = {$serverId}"
+            );
+        }
+        $this->updateLastStep('Inventory updated' . ($dryRun ? ' (dry-run)' : ''));
+
+        $this->addStep('start_slave', 'Starting replication...');
+        $this->startAllReplication($tgt, $dryRun);
+        $this->updateLastStep('Replication started' . ($dryRun ? ' (dry-run)' : ''));
+
+        $this->finalizeBlackholeCount($tgt, $dryRun);
+
+        return true;
+    }
+
+    // ------------------------------------------------------------------
+    //  Greenfield helpers
+    // ------------------------------------------------------------------
+
+    /**
+     * Returns `true` if the target server has only system schemas and
+     * no non-monitoring sessions. Otherwise returns a human description
+     * of what blocks the provisioning.
+     *
+     * @return true|string
+     */
+    private function assertTargetIsIdle($link)
+    {
+        // 1. user databases
+        $excluded = "'" . implode("','", self::SYSTEM_SCHEMAS) . "'";
+        // `schemas` and `n` are reserved words in newer MariaDB (11.x+) when
+        // used as bare column aliases — backtick-quote both so the parser
+        // doesn't choke. Also rename in the read path below.
+        $res = $link->sql_query(
+            "SELECT GROUP_CONCAT(DISTINCT table_schema) AS `schemas`, COUNT(*) AS `n`
+             FROM information_schema.tables
+             WHERE table_schema NOT IN ({$excluded})"
+        );
+        $row = $link->sql_fetch_array($res, MYSQLI_ASSOC);
+        $tableCount = (int) ($row['n'] ?? 0);
+        if ($tableCount > 0) {
+            $schemas = (string) ($row['schemas'] ?? '');
+            return "target already has {$tableCount} non-system tables in schema(s) [{$schemas}]";
+        }
+
+        // 2. active non-monitoring sessions
+        $res = $link->sql_query(
+            "SELECT user, host, command, state, info
+             FROM information_schema.processlist
+             WHERE command NOT IN ('Daemon', 'Sleep', 'Binlog Dump')
+               AND user NOT IN ('system user', 'event_scheduler')
+               AND id <> CONNECTION_ID()"
+        );
+        $offending = [];
+        $monitoringUsers = $this->monitoringUserAllowlist($link);
+        while ($r = $link->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            if (in_array((string) $r['user'], $monitoringUsers, true)) continue;
+            $offending[] = $r['user'] . '@' . preg_replace('/:\d+$/', '', (string) $r['host'])
+                . ' [' . $r['command'] . '/' . ($r['state'] ?: '-') . ']';
+        }
+        if (!empty($offending)) {
+            return 'active non-monitoring sessions: ' . implode('; ', array_slice($offending, 0, 5));
+        }
+
+        return true;
+    }
+
+    /**
+     * Sessions opened by the PmaControl monitoring user are tolerated
+     * by `assertTargetIsIdle()`. The allowlist also includes 'root' on
+     * loopback because the operator may have a maintenance shell open.
+     *
+     * @return list<string>
+     */
+    private function monitoringUserAllowlist($link): array
+    {
+        // The login pmacontrol uses to monitor this server lives on
+        // mysql_server.login. Pull every distinct login currently set
+        // on supervised servers (typically one or two distinct values).
+        $res = $this->db->sql_query(
+            "SELECT DISTINCT login FROM mysql_server WHERE is_deleted = 0 AND login <> ''"
+        );
+        $out = ['root', 'mariadb.session', 'mysql.session'];
+        while ($r = $this->db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $out[] = (string) $r['login'];
+        }
+        return array_values(array_unique($out));
+    }
+
+    /**
+     * Master binary-log status on the master. Returns null when binary
+     * logging is disabled.
+     *
+     * MySQL 8.4 removed `SHOW MASTER STATUS` in favour of
+     * `SHOW BINARY LOG STATUS`. The greenfield pipeline of #1212
+     * silently failed against MySQL 8.4 primaries before this fix —
+     * `sql_query_silent('SHOW MASTER STATUS')` returned false on the
+     * parser error and the guard reported "Master has no binary log".
+     *
+     * Pick the right SQL up front via `ServerCapabilities::supports()`
+     * — never probe with a try-and-fall-back, because that always
+     * sends the wrong statement first on one of the two version axes
+     * and pollutes the slow / error log on every call. Same shape
+     * `(File, Position)` is returned by both statements.
+     *
+     * See docs/database_conventions.md § "Version-gated SQL" for the
+     * project convention this follows.
+     *
+     * @return array{File:string,Position:int}|null
+     */
+    private function fetchMasterStatus($link): ?array
+    {
+        $sql = \App\Library\ServerCapabilities::masterStatusSql($link);
+        $res = $link->sql_query_silent($sql);
+        if (!$res) return null;
+        $row = $link->sql_fetch_array($res, MYSQLI_ASSOC);
+        if (!$row || empty($row['File'])) return null;
+        return ['File' => (string) $row['File'], 'Position' => (int) $row['Position']];
+    }
+
+    /**
+     * Hard pre-condition: the BLACKHOLE engine must be loaded on the
+     * target. Without this every ALTER fails with ER_UNKNOWN_STORAGE_
+     * ENGINE (errno 1286) — the cause of the 2000+ identical "Unknown
+     * storage engine" errors observed before this guard existed.
+     *
+     * The guard runs BEFORE the SET sql_log_bin / SHOW VARIABLES /
+     * ALTER loop so we never start a doomed conversion. If the engine
+     * is missing we attempt `INSTALL SONAME 'ha_blackhole'` (covers
+     * both MariaDB and MySQL builds that ship the plugin), then re-
+     * check. If still unavailable, abort with the human-readable
+     * remediation steps.
+     */
+    private function ensureBlackholeEngineAvailable($link, bool $dryRun, ?int $serverId = null): void
+    {
+        // Aspirateur already collects `information_schema::engines`
+        // for every supervised server (see MysqlServer::extractSupportedEngines
+        // and the column list around App/Controller/MysqlServer.php:2059).
+        // Hit that cache first — it avoids an extra round-trip to the
+        // target on the happy path.
+        if ($serverId !== null) {
+            $this->addStep('engine_probe', "Aspirateur cache (Extraction2 'information_schema::engines') — looking for BLACKHOLE on server #{$serverId}...");
+            $cached = self::cachedEngineSupport($serverId, 'BLACKHOLE');
+            if (in_array($cached, ['YES', 'DEFAULT'], true)) {
+                $this->updateLastStep("Aspirateur cache → BLACKHOLE support = '{$cached}' — ok (no live query needed)");
+                return;
+            }
+            if ($cached === null) {
+                $this->updateLastStep("Aspirateur cache empty for server #{$serverId} — falling back to live SHOW ENGINES");
+            } else {
+                $this->updateLastStep("Aspirateur cache → BLACKHOLE support = '{$cached}' — falling back to live check + INSTALL");
+            }
+        }
+
+        $this->addStep('engine_probe_live', "SHOW ENGINES (live) — verifying BLACKHOLE is loaded on the target...");
+        $support = $this->blackholeEngineSupport($link);
+        if (in_array($support, ['YES', 'DEFAULT'], true)) {
+            $this->updateLastStep("BLACKHOLE engine support = '{$support}' — ok");
+            return;
+        }
+
+        if ($support === null) {
+            $this->updateLastStep("SHOW ENGINES failed (cannot determine BLACKHOLE availability) — aborting", 'error');
+            throw new \RuntimeException(
+                "Cannot read SHOW ENGINES on the target — refusing to ALTER without proof "
+                . "the BLACKHOLE engine is loaded."
+            );
+        }
+
+        // Support reported as 'NO' (plugin compiled-in but disabled),
+        // or BLACKHOLE not in the list at all → try to load it.
+        $this->updateLastStep("BLACKHOLE engine support = '{$support}' — attempting INSTALL SONAME 'ha_blackhole'");
+        $this->addStep('engine_install', "INSTALL SONAME 'ha_blackhole'");
+        $installed = false;
+        if (!$dryRun) {
+            // INSTALL SONAME is the modern (MariaDB + MySQL) form;
+            // INSTALL PLUGIN works on older MySQL builds.
+            foreach ([
+                "INSTALL SONAME 'ha_blackhole'",
+                "INSTALL PLUGIN blackhole SONAME 'ha_blackhole.so'",
+            ] as $stmt) {
+                if ($link->sql_query_silent($stmt)) { $installed = true; break; }
+            }
+        }
+        if ($dryRun) {
+            $this->updateLastStep("Skipped (dry-run) — would have run INSTALL SONAME 'ha_blackhole'");
+            return;
+        }
+        if (!$installed) {
+            $err = self::linkErrorMessage($link);
+            $this->updateLastStep("INSTALL SONAME 'ha_blackhole' — FAILED: {$err}", 'error');
+            throw new \RuntimeException(
+                "BLACKHOLE engine is not loaded on the target and the runtime install failed: {$err}. "
+                . "Remediation: install the plugin package on the target host (Debian/Ubuntu: "
+                . "`apt install mariadb-plugin-blackhole` or equivalent for MySQL) and re-run the conversion. "
+                . "On a stripped-down build you may need to enable the plugin in my.cnf "
+                . "(`plugin-load-add=ha_blackhole.so`)."
+            );
+        }
+        $this->updateLastStep("INSTALL SONAME 'ha_blackhole' — ok");
+
+        // Re-verify — `INSTALL` returning success without actually
+        // exposing the engine is rare but documented on partial
+        // builds; fail-closed if SHOW ENGINES still doesn't see it.
+        $support = $this->blackholeEngineSupport($link);
+        if (!in_array($support, ['YES', 'DEFAULT'], true)) {
+            $this->addStep('engine_reverify',
+                "SHOW ENGINES again → support = '" . ($support ?? 'NULL') . "'");
+            $this->updateLastStep(
+                "BLACKHOLE engine still unavailable after INSTALL — aborting before any ALTER.",
+                'error'
+            );
+            throw new \RuntimeException(
+                "INSTALL SONAME succeeded but BLACKHOLE still not exposed by SHOW ENGINES. "
+                . "Inspect the target's plugin directory and error log."
+            );
+        }
+        $this->addStep('engine_reverify',
+            "SHOW ENGINES again → support = '{$support}' — ok, proceeding with ALTER loop");
+        $this->updateLastStep("BLACKHOLE engine support = '{$support}' — ok");
+    }
+
+    /**
+     * Returns the value of the `Support` column for ENGINE='BLACKHOLE'
+     * in `SHOW ENGINES` ('YES', 'NO', 'DEFAULT', 'DISABLED'), or
+     * `null` when the row isn't present at all (engine not compiled
+     * in) or when the query fails.
+     */
+    private function blackholeEngineSupport($link): ?string
+    {
+        $res = $link->sql_query_silent('SHOW ENGINES');
+        if (!$res) return null;
+        while ($row = $link->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            if (strcasecmp((string) ($row['Engine'] ?? ''), 'BLACKHOLE') === 0) {
+                return strtoupper((string) ($row['Support'] ?? 'NO'));
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Same return contract as `blackholeEngineSupport()`, but reads
+     * from the Aspirateur-collected `information_schema::engines`
+     * blob via `Extraction2::display(['information_schema::engines'])`
+     * — no round-trip to the target. Returns `null` when the cache
+     * has no row for this server (Aspirateur hasn't run yet, or the
+     * server was just added).
+     */
+    private static function cachedEngineSupport(int $serverId, string $engineName): ?string
+    {
+        try {
+            $blob = \App\Library\Extraction2::display(
+                ['information_schema::engines'],
+                [$serverId]
+            );
+        } catch (\Throwable $e) {
+            return null;
+        }
+
+        // Extraction2 returns a per-server-id map; the engines payload
+        // sits at $blob[$serverId]['information_schema']['engines'].
+        // We accept both the JSON-string form (raw extraction value)
+        // and the already-decoded array form, since either appears
+        // depending on which collector touched the row last.
+        $value = $blob[$serverId]['information_schema']['engines'] ?? null;
+        if ($value === null) return null;
+
+        $rows = is_array($value) ? $value : (json_decode((string) $value, true) ?: []);
+        if (!is_array($rows)) return null;
+
+        $needle = strtoupper($engineName);
+        foreach ($rows as $row) {
+            if (!is_array($row)) continue;
+            $engine = strtoupper((string) ($row['engine'] ?? $row['ENGINE'] ?? ''));
+            if ($engine !== $needle) continue;
+            $support = strtoupper((string) ($row['support'] ?? $row['SUPPORT'] ?? ''));
+            return $support !== '' ? $support : 'NO';
+        }
+        return null;
+    }
+
+    /**
+     * Pipe `mysqldump --no-data --routines --triggers --events
+     * --master-data=2 --single-transaction` from the master into a
+     * `mysql` client targeting the new relay. Schema-only because the
+     * relay only needs table definitions (BLACKHOLE drops every row
+     * anyway). Replication will fill the binlog from `--master-data=2`'s
+     * recorded position onwards.
+     *
+     * @return array{ok:bool,error:string,stderr_tail:string}
+     */
+    private function dumpAndRestoreSchema(array $master, array $target): array
+    {
+        $masterPwd = $this->decryptServerPassword($master);
+        $targetPwd = $this->decryptServerPassword($target);
+
+        // Defcred files avoid leaking passwords on the command line.
+        $masterDef = tempnam(sys_get_temp_dir(), 'bh_m_');
+        $targetDef = tempnam(sys_get_temp_dir(), 'bh_t_');
+        file_put_contents($masterDef, "[client]\nuser={$master['login']}\npassword=\"" . addcslashes($masterPwd, '"\\') . "\"\nhost={$master['ip']}\nport={$master['port']}\n");
+        file_put_contents($targetDef, "[client]\nuser={$target['login']}\npassword=\"" . addcslashes($targetPwd, '"\\') . "\"\nhost={$target['ip']}\nport={$target['port']}\n");
+        chmod($masterDef, 0600);
+        chmod($targetDef, 0600);
+
+        $errFile = tempnam(sys_get_temp_dir(), 'bh_err_');
+        try {
+            // --init-command on the receiving `mysql` client disables
+            // binary logging for the import session — the CREATE TABLE
+            // statements from the master must NOT land in the relay's
+            // own binlog, otherwise any downstream slave connecting
+            // later would receive them as if they were master DDL.
+            $cmd = sprintf(
+                "mysqldump --defaults-extra-file=%s "
+                . "--no-data --routines --triggers --events "
+                . "--single-transaction --master-data=2 --all-databases "
+                . "--ignore-database=mysql --ignore-database=sys "
+                . "--ignore-database=performance_schema --ignore-database=information_schema "
+                . "2>%s "
+                . "| mysql --defaults-extra-file=%s --init-command='SET sql_log_bin=0' 2>>%s",
+                escapeshellarg($masterDef),
+                escapeshellarg($errFile),
+                escapeshellarg($targetDef),
+                escapeshellarg($errFile)
+            );
+            $ret = null;
+            $out = [];
+            exec($cmd . '; echo __RC=$?', $out, $ret);
+            $rc = 0;
+            foreach ($out as $line) {
+                if (preg_match('/^__RC=(\d+)$/', $line, $m)) {
+                    $rc = (int) $m[1];
+                }
+            }
+            $stderr = is_readable($errFile) ? (string) file_get_contents($errFile) : '';
+            $tail = substr(trim($stderr), -400);
+            if ($rc !== 0) {
+                return ['ok' => false, 'error' => "exit=$rc; " . $tail, 'stderr_tail' => $tail];
+            }
+            return ['ok' => true, 'error' => '', 'stderr_tail' => $tail !== '' ? $tail : 'no stderr'];
+        } finally {
+            @unlink($masterDef);
+            @unlink($targetDef);
+            @unlink($errFile);
+        }
+    }
+
+    /**
+     * Issue CHANGE MASTER TO + the matching grants prerequisite on the
+     * target. `master_use_gtid=slave_pos` would be cleaner but requires
+     * the master to be on GTID; fall back to MASTER_LOG_FILE/POS which
+     * works on every supported version.
+     *
+     * @param array{File:string,Position:int} $pos
+     */
+    private function configureReplication($link, array $master, array $pos, string $user, string $password, bool $dryRun): void
+    {
+        $stmt = sprintf(
+            "CHANGE MASTER TO "
+            . "MASTER_HOST='%s', MASTER_PORT=%d, "
+            . "MASTER_USER='%s', MASTER_PASSWORD='%s', "
+            . "MASTER_LOG_FILE='%s', MASTER_LOG_POS=%d, "
+            . "MASTER_CONNECT_RETRY=10",
+            addcslashes((string) $master['ip'], "'\\"),
+            (int) $master['port'],
+            addcslashes($user, "'\\"),
+            addcslashes($password, "'\\"),
+            addcslashes((string) $pos['File'], "'\\"),
+            (int) $pos['Position']
+        );
+        // Log a redacted version so the password never lands in the
+        // progress JSON.
+        $redacted = preg_replace("/MASTER_PASSWORD='[^']*'/", "MASTER_PASSWORD='********'", $stmt);
+        $this->addStep('change_master_sql', $redacted);
+        if (!$dryRun) {
+            if (!$link->sql_query_silent($stmt)) {
+                $err = self::linkErrorMessage($link);
+                throw new \RuntimeException('CHANGE MASTER TO failed: ' . $err);
+            }
+        }
+        $this->updateLastStep($redacted . ($dryRun ? ' (dry-run)' : ' — ok'));
+    }
+
+    /**
+     * Decrypt mysql_server.passwd if marked is_password_crypted=1.
+     * Falls back to the raw string otherwise.
+     */
+    private function decryptServerPassword(array $server): string
+    {
+        $raw = (string) ($server['passwd'] ?? '');
+        if ((int) ($server['is_password_crypted'] ?? 0) !== 1) {
+            return $raw;
+        }
+        if (class_exists(\App\Library\Chiffrement::class)
+            && method_exists(\App\Library\Chiffrement::class, 'decrypt')
+        ) {
+            return (string) \App\Library\Chiffrement::decrypt($raw);
+        }
+        return $raw;
+    }
+
+    // ------------------------------------------------------------------
+    //  Pipeline steps
+    // ------------------------------------------------------------------
+
+    /**
+     * Returns true if the target has any configured replication source
+     * (SHOW REPLICA STATUS / SHOW SLAVE STATUS / SHOW ALL SLAVES STATUS
+     * on MariaDB returns at least one row).
+     */
+    private function targetIsReplica($link): bool
+    {
+        foreach (['SHOW ALL SLAVES STATUS', 'SHOW REPLICA STATUS', 'SHOW SLAVE STATUS'] as $sql) {
+            $res = $link->sql_query_silent($sql);
+            if ($res === false || $res === null) continue;
+            if (method_exists($link, 'sql_num_rows')) {
+                if ((int) $link->sql_num_rows($res) > 0) return true;
+            } else {
+                if ($link->sql_fetch_array($res, MYSQLI_ASSOC)) return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Threshold above which we DROP + CREATE TABLE … ENGINE=BLACKHOLE
+     * instead of `ALTER TABLE … ENGINE=BLACKHOLE`. ALTER rebuilds the
+     * whole tablespace (full copy of data + index pages) — minutes per
+     * GB of InnoDB. DROP + CREATE is O(ms) regardless of size and the
+     * relay never stores rows anyway, so we lose nothing. Below the
+     * threshold ALTER is fine (and atomic, less risk if anything goes
+     * wrong mid-way).
+     */
+    private const DROP_AND_RECREATE_BYTES = 100 * 1024 * 1024; // 100 MiB
+
+    /**
+     * @return list<array{schema:string,table:string,engine:string,size_bytes:int}>
+     */
+    private function discoverTables($link): array
+    {
+        $excluded = "'" . implode("','", self::SYSTEM_SCHEMAS) . "'";
+        $sql = "SELECT table_schema, table_name, engine,
+                       COALESCE(data_length, 0) + COALESCE(index_length, 0) AS size_bytes
+                FROM information_schema.tables
+                WHERE table_type = 'BASE TABLE'
+                  AND table_schema NOT IN ({$excluded})
+                  AND COALESCE(engine, '') <> 'BLACKHOLE'
+                ORDER BY table_schema, table_name";
+        $res = $link->sql_query($sql);
+        $out = [];
+        while ($r = $link->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $out[] = [
+                'schema'     => (string) $r['table_schema'],
+                'table'      => (string) $r['table_name'],
+                'engine'     => (string) ($r['engine'] ?? ''),
+                'size_bytes' => (int)    ($r['size_bytes'] ?? 0),
+            ];
+        }
+        return $out;
+    }
+
+    private function convertTables($link, array $tables, bool $dryRun): int
+    {
+        // CRITICAL: keep the ALTERs out of this server's binary log.
+        // Otherwise log_slave_updates would forward them to every
+        // downstream consumer — they'd ENGINE=BLACKHOLE their own
+        // tables, which is a disaster.
+        $this->addStep('no_binlog', 'SET SESSION sql_log_bin = 0 — keep ALTERs out of the relay binlog');
+        if (!$dryRun) {
+            if (!$link->sql_query_silent('SET SESSION sql_log_bin = 0')) {
+                $err = self::linkErrorMessage($link);
+                $this->updateLastStep('SET SESSION sql_log_bin = 0 — FAILED: ' . $err
+                    . ' (refusing to ALTER without sql_log_bin=0 — downstream slaves would inherit the BLACKHOLE conversion)', 'error');
+                return 0;
+            }
+        }
+        $this->updateLastStep('SET SESSION sql_log_bin = 0' . ($dryRun ? ' (dry-run)' : ' — ok'));
+
+        // BLACKHOLE doesn't enforce foreign keys. Converting a parent or
+        // child table while FK checks are on makes InnoDB reject the
+        // ALTER (errno 1217 / 1452): converting a parent would orphan
+        // child rows; converting a child first leaves dangling refs the
+        // parent's FK index can't validate. Disable for the conversion
+        // window — session-scoped, restored alongside sql_log_bin in
+        // the finally below.
+        $this->addStep('fk_off', 'SET SESSION foreign_key_checks = 0 — BLACKHOLE ignores FKs anyway');
+        if (!$dryRun) {
+            if (!$link->sql_query_silent('SET SESSION foreign_key_checks = 0')) {
+                $err = self::linkErrorMessage($link);
+                $this->updateLastStep('SET SESSION foreign_key_checks = 0 — FAILED: ' . $err, 'error');
+                return 0;
+            }
+        }
+        $this->updateLastStep('SET SESSION foreign_key_checks = 0' . ($dryRun ? ' (dry-run)' : ' — ok'));
+
+        // foreign_key_checks=0 doesn't help with ALTER ENGINE=BLACKHOLE.
+        // MariaDB/MySQL still raises errno 1217 because converting a
+        // table to BLACKHOLE empties its rows, and InnoDB's referential
+        // metadata refuses the conversion as long as any FK references
+        // the table. The plugin doesn't enforce FKs anyway, so drop
+        // every FK on every candidate table before the ALTER loop. We
+        // don't re-add them — that's the whole point of going to
+        // BLACKHOLE.
+        $fks = $this->discoverForeignKeys($link, $tables);
+        if (!empty($fks)) {
+            $this->addStep('fk_drop', 'Dropping ' . count($fks) . ' foreign-key constraint(s) before ENGINE=BLACKHOLE (1217 guard)');
+            foreach ($fks as $fk) {
+                $stmt = sprintf(
+                    'ALTER TABLE `%s`.`%s` DROP FOREIGN KEY `%s`',
+                    str_replace('`', '``', $fk['schema']),
+                    str_replace('`', '``', $fk['table']),
+                    str_replace('`', '``', $fk['name'])
+                );
+                $this->addStep('fk_drop_one', '[sql_log_bin=OFF] ' . $stmt);
+                if (!$dryRun) {
+                    if (!$link->sql_query_silent($stmt)) {
+                        $err = self::linkErrorMessage($link);
+                        $this->updateLastStep('[sql_log_bin=OFF] ' . $stmt . ' — FAILED: ' . $err, 'error');
+                        // Non-fatal: a follow-up ALTER will surface the error too.
+                        continue;
+                    }
+                }
+                $this->updateLastStep('[sql_log_bin=OFF] ' . $stmt . ($dryRun ? ' (dry-run)' : ' — ok'));
+            }
+            $this->updateLastStep('Dropped ' . count($fks) . ' FK(s)' . ($dryRun ? ' (dry-run)' : ''));
+        } else {
+            $this->addStep('fk_drop', 'No foreign-key constraints on candidate tables — nothing to drop');
+            $this->updateLastStep('No foreign-key constraints on candidate tables — nothing to drop');
+        }
+
+        // Verify the session really shows sql_log_bin=OFF. This is the
+        // user-visible proof — surfaced in the log so the operator
+        // sees the value before the first ALTER. Fail-closed if the
+        // SET silently didn't take (sql_log_bin is not settable when
+        // gtid_strict_mode + a transaction is open on some MariaDB
+        // builds, for instance).
+        if (!$dryRun) {
+            $current = $this->readSqlLogBin($link);
+            $this->addStep('no_binlog_verify',
+                "SHOW VARIABLES LIKE 'sql_log_bin' → " . ($current ?? 'NULL'));
+            if (strcasecmp((string) $current, 'OFF') !== 0) {
+                $this->updateLastStep(
+                    "SHOW VARIABLES LIKE 'sql_log_bin' returned '" . ($current ?? 'NULL')
+                    . "' — expected 'OFF'. Aborting before any ALTER.",
+                    'error'
+                );
+                return 0;
+            }
+            $this->updateLastStep("SHOW VARIABLES LIKE 'sql_log_bin' → OFF — ok");
+        }
+
+        $converted = 0;
+        try {
+            foreach ($tables as $t) {
+                // Per-ALTER guard: re-check sql_log_bin right before
+                // the statement. Cheap, and gives an iron-clad proof
+                // for every single ALTER in the progress log.
+                if (!$dryRun) {
+                    $current = $this->readSqlLogBin($link);
+                    if (strcasecmp((string) $current, 'OFF') !== 0) {
+                        $this->addStep('no_binlog_drift',
+                            "sql_log_bin drifted to '" . ($current ?? 'NULL')
+                            . "' — aborting BLACKHOLE conversion.");
+                        $this->updateLastStep(
+                            "sql_log_bin drifted to '" . ($current ?? 'NULL')
+                            . "' — aborting BLACKHOLE conversion.",
+                            'error'
+                        );
+                        break;
+                    }
+                }
+                $strategy = ((int) ($t['size_bytes'] ?? 0)) >= self::DROP_AND_RECREATE_BYTES
+                    ? 'DROP+CREATE' : 'ALTER';
+                $label = sprintf('[sql_log_bin=OFF] %s `%s`.`%s` → ENGINE=BLACKHOLE (%s, %s)',
+                    $strategy === 'DROP+CREATE' ? 'DROP + CREATE' : 'ALTER',
+                    $t['schema'], $t['table'], $strategy,
+                    self::humanBytes((int) ($t['size_bytes'] ?? 0)));
+                $this->addStep('alter', $label);
+                if (!$dryRun) {
+                    if (!self::convertOneTableToBlackhole($link, $t)) {
+                        $err = self::linkErrorMessage($link);
+                        $this->updateLastStep($label . ' — FAILED: ' . $err, 'error');
+                        continue;
+                    }
+                }
+                $this->updateLastStep($label . ($dryRun ? ' (dry-run)' : ' — ok'));
+                $converted++;
+                if ($converted % 25 === 0) {
+                    $this->setTableCounts(count($tables), $converted);
+                }
+            }
+        } finally {
+            // Restore the defaults so any future query on this session
+            // behaves normally. (Sgbd::sql() may pool / reuse the
+            // connection — leaving sql_log_bin=0 or fk_checks=0 would
+            // be wrong.)
+            $this->addStep('no_binlog_restore', 'SET SESSION sql_log_bin = 1, foreign_key_checks = 1 — restore defaults');
+            if (!$dryRun) {
+                $link->sql_query_silent('SET SESSION sql_log_bin = 1');
+                $link->sql_query_silent('SET SESSION foreign_key_checks = 1');
+            }
+            $this->updateLastStep('SET SESSION sql_log_bin = 1' . ($dryRun ? ' (dry-run)' : ' — ok'));
+        }
+        return $converted;
+    }
+
+    // ------------------------------------------------------------------
+    //  Parallel ALTER dispatch (Issue #1250)
+    //
+    //  When parallelism>1 we spawn N child PHP processes (one per CPU by
+    //  default) instead of looping in a single connection. Each child
+    //  opens its own Sgbd link, applies SET SESSION sql_log_bin=0 +
+    //  foreign_key_checks=0, then ALTERs its assigned slice of tables.
+    //  Slices are striped round-robin (worker i handles indices i, i+N,
+    //  i+2N, …) so a hot schema with a handful of huge tables doesn't
+    //  pile up on a single worker.
+    //
+    //  The parent still owns FK discovery + DROP (must complete before
+    //  any worker starts, or InnoDB will reject the ENGINE=BLACKHOLE
+    //  with errno 1217). The parent also restores `sql_log_bin=1` on
+    //  its own connection at the end of the serial preamble, even
+    //  though workers manage their own.
+    // ------------------------------------------------------------------
+
+    private function clampedParallelism(int $n): int
+    {
+        if ($n < 1)  return 1;
+        if ($n > 32) return 32;
+        return $n;
+    }
+
+    /**
+     * Convert one table to BLACKHOLE.
+     *
+     * For tables above DROP_AND_RECREATE_BYTES we DROP + recreate the
+     * table with ENGINE=BLACKHOLE substituted in the original
+     * CREATE TABLE statement, which is O(ms) regardless of size.
+     * Smaller tables use `ALTER ENGINE=BLACKHOLE` (atomic, cheap on
+     * small data sets, and safer if anything throws mid-statement).
+     *
+     * Caller MUST already have set `sql_log_bin = 0` and
+     * `foreign_key_checks = 0` on `$link`, and replication MUST be
+     * stopped — DROP TABLE on a binlog-relay with an active SQL
+     * thread races against incoming replicated DDL/DML.
+     *
+     * Returns true if the table is now ENGINE=BLACKHOLE, false on any
+     * error (caller logs).
+     */
+    public static function convertOneTableToBlackhole($link, array $t): bool
+    {
+        $bigEnough = ((int) ($t['size_bytes'] ?? 0)) >= self::DROP_AND_RECREATE_BYTES;
+        if (!$bigEnough) {
+            $stmt = sprintf('ALTER TABLE `%s`.`%s` ENGINE=BLACKHOLE',
+                str_replace('`', '``', $t['schema']),
+                str_replace('`', '``', $t['table']));
+            return (bool) $link->sql_query_silent($stmt);
+        }
+
+        // 1) Capture CREATE TABLE so we keep every column / index / option.
+        $sql = sprintf('SHOW CREATE TABLE `%s`.`%s`',
+            str_replace('`', '``', $t['schema']),
+            str_replace('`', '``', $t['table']));
+        $res = $link->sql_query_silent($sql);
+        if (!$res) return false;
+        $row = $link->sql_fetch_array($res, MYSQLI_ASSOC);
+        if (!$row || empty($row['Create Table'])) return false;
+        $createStmt = (string) $row['Create Table'];
+
+        // 2) Force ENGINE=BLACKHOLE. SHOW CREATE always emits an
+        //    ENGINE=… clause; replace it case-insensitively. Also strip
+        //    AUTO_INCREMENT=… and ROW_FORMAT clauses that don't apply
+        //    to BLACKHOLE and would cause warnings.
+        $createStmt = preg_replace('/\bENGINE\s*=\s*\w+/i', 'ENGINE=BLACKHOLE', $createStmt, 1);
+        $createStmt = preg_replace('/\bAUTO_INCREMENT\s*=\s*\d+\s*/i', '', $createStmt);
+        $createStmt = preg_replace('/\bROW_FORMAT\s*=\s*\w+\s*/i', '', $createStmt);
+
+        // 3) Switch to the right schema so the CREATE TABLE statement's
+        //    bare table name lands in the right database.
+        $useStmt = sprintf('USE `%s`', str_replace('`', '``', $t['schema']));
+        if (!$link->sql_query_silent($useStmt)) return false;
+
+        // 4) DROP + CREATE under the caller's session guards.
+        $drop = sprintf('DROP TABLE IF EXISTS `%s`.`%s`',
+            str_replace('`', '``', $t['schema']),
+            str_replace('`', '``', $t['table']));
+        if (!$link->sql_query_silent($drop)) return false;
+
+        if (!$link->sql_query_silent($createStmt)) {
+            // Best-effort recovery attempt: if CREATE fails the table
+            // is gone — surface false so caller logs the error.
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Top-level dispatch: serial or parallel ALTER loop depending on the
+     * conversion row's `parallelism` column. The serial path is the
+     * unchanged single-connection loop; the parallel path forks worker
+     * subprocesses and reaps their exit codes.
+     */
+    private function convertTablesDispatch(array $server, $link, array $tables, bool $dryRun, int $parallelism): int
+    {
+        if ($parallelism <= 1 || count($tables) <= 1 || $dryRun) {
+            return $this->convertTables($link, $tables, $dryRun);
+        }
+        return $this->convertTablesParallel($server, $link, $tables, $parallelism);
+    }
+
+    /**
+     * Parallel ALTER loop. Parent does the serial preamble (sql_log_bin
+     * guard + FK drop), spawns `$parallelism` workers, waits, sums
+     * results. Each worker is a fresh `php Blackhole runConvertWorker`
+     * subprocess so it gets its own mysqli handle (forking the existing
+     * one would share file descriptors → corruption).
+     */
+    private function convertTablesParallel(array $server, $link, array $tables, int $parallelism): int
+    {
+        // 1) Parent does the same preamble as the serial path. After
+        //    this returns we DROP FKs on the parent connection so
+        //    workers see a clean slate.
+        $this->addStep('par_preamble', 'Preamble (sql_log_bin=0, FK drop) on parent connection — workers='. $parallelism);
+        if (!$link->sql_query_silent('SET SESSION sql_log_bin = 0')) {
+            $this->updateLastStep('SET SESSION sql_log_bin = 0 — FAILED: ' . self::linkErrorMessage($link), 'error');
+            return 0;
+        }
+        $link->sql_query_silent('SET SESSION foreign_key_checks = 0');
+        $fks = $this->discoverForeignKeys($link, $tables);
+        foreach ($fks as $fk) {
+            $stmt = sprintf('ALTER TABLE `%s`.`%s` DROP FOREIGN KEY `%s`',
+                str_replace('`', '``', $fk['schema']),
+                str_replace('`', '``', $fk['table']),
+                str_replace('`', '``', $fk['name']));
+            $link->sql_query_silent($stmt); // best-effort, identical to serial path
+        }
+        $this->updateLastStep('Preamble done — dropped ' . count($fks) . ' FK(s)');
+
+        // 2) Workers read their slice from a working file so we don't
+        //    have to pass thousands of names on the argv.
+        $tablesPath = ROOT . '/tmp/blackhole_conv_' . $this->conversionId . '_tables.json';
+        @file_put_contents($tablesPath, json_encode($tables));
+
+        // 3) Spawn workers. Each child writes its log to its own file
+        //    so failures are diagnosable post-mortem.
+        $this->addStep('par_spawn', "Spawning {$parallelism} worker process(es)…");
+        $procs = [];
+        for ($i = 0; $i < $parallelism; $i++) {
+            $logPath = ROOT . '/tmp/log/blackhole_conv_' . $this->conversionId . '_w' . $i . '.log';
+            $cmd = 'cd ' . escapeshellarg(ROOT)
+                 . ' && nohup php App/Webroot/index.php Blackhole runConvertWorker '
+                 . $this->conversionId . ' ' . $i . ' ' . $parallelism
+                 . ' > ' . escapeshellarg($logPath) . ' 2>&1 & echo $!';
+            $pid = (int) trim((string) shell_exec($cmd));
+            $procs[$i] = ['pid' => $pid, 'log' => $logPath];
+        }
+        $this->updateLastStep('Workers spawned: ' . implode(',', array_column($procs, 'pid')));
+
+        // 4) Wait for all workers. We poll /proc/<pid>/cmdline rather
+        //    than pcntl_waitpid — those are detached background
+        //    processes, not children of this php process.
+        $remaining = $procs;
+        $startedAt = time();
+        $timeoutAt = $startedAt + 6 * 3600; // 6h hard cap (large schemas)
+        while (!empty($remaining)) {
+            usleep(500000);
+            foreach ($remaining as $i => $info) {
+                if (self::pidStillAlive((int) $info['pid']) === false) {
+                    unset($remaining[$i]);
+                }
+            }
+            if (time() > $timeoutAt) {
+                $this->addStep('par_timeout', 'Worker timeout (>6h) — abandoning poll, surfacing partial results');
+                $this->updateLastStep('Worker timeout (>6h)', 'error');
+                break;
+            }
+        }
+
+        // 5) Aggregate `tables_converted`. Workers updated the row
+        //    atomically via UPDATE … SET tables_converted = tables_converted + 1,
+        //    so we just read it back.
+        $res = $this->db->sql_query("SELECT tables_converted FROM blackhole_conversion WHERE id = " . $this->conversionId);
+        $row = $res ? $this->db->sql_fetch_array($res, MYSQLI_ASSOC) : null;
+        $converted = $row ? (int) $row['tables_converted'] : 0;
+
+        $this->addStep('par_done', "All workers exited — total tables_converted={$converted}");
+        $this->updateLastStep("Workers done — tables_converted={$converted}");
+
+        // 6) Restore parent session vars.
+        $link->sql_query_silent('SET SESSION sql_log_bin = 1');
+        $link->sql_query_silent('SET SESSION foreign_key_checks = 1');
+
+        @unlink($tablesPath);
+
+        return $converted;
+    }
+
+    /**
+     * Worker entrypoint. Called from Blackhole::runConvertWorker via
+     * `php Blackhole runConvertWorker <conv_id> <worker_idx> <total>`.
+     * Reads the table list dumped by the parent, picks the indices it
+     * owns (round-robin), opens a fresh Sgbd link, applies the session
+     * guards, ALTERs each table, and increments `tables_converted`
+     * atomically.
+     */
+    public function runWorkerSlice(int $workerIdx, int $totalWorkers): int
+    {
+        $row = $this->loadConversion();
+        if (!$row) return 0;
+        $server = $this->loadServer((int) $row['id_mysql_server']);
+        if (!$server) return 0;
+
+        $tablesPath = ROOT . '/tmp/blackhole_conv_' . $this->conversionId . '_tables.json';
+        $raw = @file_get_contents($tablesPath);
+        if ($raw === false) return 0;
+        $tables = json_decode($raw, true);
+        if (!is_array($tables)) return 0;
+
+        // Round-robin slice.
+        $mySlice = [];
+        foreach ($tables as $idx => $t) {
+            if ($idx % $totalWorkers === $workerIdx) $mySlice[] = $t;
+        }
+        if (empty($mySlice)) return 0;
+
+        $link = Sgbd::sql($server['name']);
+        if (!$link) return 0;
+
+        if (!$link->sql_query_silent('SET SESSION sql_log_bin = 0')) {
+            return 0; // refuse to run without the guarantee
+        }
+        $link->sql_query_silent('SET SESSION foreign_key_checks = 0');
+
+        // Per-statement verify mirrors the serial path. We don't append
+        // to the JSON progress column from workers (last-writer-wins
+        // would silently lose updates); the parent surfaces an
+        // aggregate step instead.
+        $converted = 0;
+        try {
+            foreach ($mySlice as $t) {
+                $current = $this->readSqlLogBin($link);
+                if (strcasecmp((string) $current, 'OFF') !== 0) {
+                    break;
+                }
+                if (!self::convertOneTableToBlackhole($link, $t)) {
+                    continue;
+                }
+                $converted++;
+                // The app-DB connection has been idle the entire ALTER
+                // (which can take minutes on a large InnoDB rebuild),
+                // so it may have been reaped by the server's
+                // wait_timeout. Force a fresh handle via Sgbd::sql()
+                // — Glial's pool gives us a healthy one — before the
+                // counter UPDATE so workers don't bail out with
+                // "MySQL server has gone away". (#1250 follow-up:
+                // crashed 4/8 workers on the 2004-table sweep before
+                // this guard.)
+                $this->db = Sgbd::sql(DB_DEFAULT);
+                if (!$this->db->sql_query_silent(
+                    "UPDATE blackhole_conversion
+                     SET tables_converted = tables_converted + 1
+                     WHERE id = " . $this->conversionId
+                )) {
+                    // Last resort: reopen explicitly and retry once.
+                    $this->db = Sgbd::sql(DB_DEFAULT);
+                    $this->db->sql_query_silent(
+                        "UPDATE blackhole_conversion
+                         SET tables_converted = tables_converted + 1
+                         WHERE id = " . $this->conversionId
+                    );
+                }
+            }
+        } finally {
+            $link->sql_query_silent('SET SESSION sql_log_bin = 1');
+            $link->sql_query_silent('SET SESSION foreign_key_checks = 1');
+        }
+        return $converted;
+    }
+
+    // ------------------------------------------------------------------
+    //  End-of-run BLACKHOLE table count (Issue #1250)
+    // ------------------------------------------------------------------
+
+    /**
+     * Re-count tables actually sitting on ENGINE=BLACKHOLE after the
+     * conversion completes and persist in `tables_blackhole_after`.
+     * The discrepancy with `tables_converted` is the operator-visible
+     * "did anything slip through?" check (DDL replicated mid-conversion,
+     * a table created with explicit ENGINE=InnoDB, …).
+     */
+    private function finalizeBlackholeCount($link, bool $dryRun): void
+    {
+        if ($dryRun) return;
+        $this->addStep('count_blackhole', 'Counting tables now on ENGINE=BLACKHOLE…');
+        $n = self::countBlackholeTables($link);
+        $this->db->sql_query(
+            "UPDATE blackhole_conversion
+             SET tables_blackhole_after = " . (int) $n . "
+             WHERE id = " . $this->conversionId
+        );
+        $this->updateLastStep("ENGINE=BLACKHOLE tables on target: {$n}");
+    }
+
+    public static function countBlackholeTables($link): int
+    {
+        $excluded = "'" . implode("','", self::SYSTEM_SCHEMAS) . "'";
+        $sql = "SELECT COUNT(*) AS n
+                FROM information_schema.tables
+                WHERE table_type = 'BASE TABLE'
+                  AND table_schema NOT IN ({$excluded})
+                  AND engine = 'BLACKHOLE'";
+        $res = $link->sql_query_silent($sql);
+        if (!$res) return 0;
+        $row = $link->sql_fetch_array($res, MYSQLI_ASSOC);
+        return (int) ($row['n'] ?? 0);
+    }
+
+    private static function pidStillAlive(int $pid): bool
+    {
+        if ($pid <= 0) return false;
+        return @is_dir('/proc/' . $pid);
+    }
+
+    private static function humanBytes(int $n): string
+    {
+        if ($n <= 0) return '0B';
+        $units = ['B','KiB','MiB','GiB','TiB'];
+        $i = 0;
+        $v = (float) $n;
+        while ($v >= 1024 && $i < count($units) - 1) { $v /= 1024; $i++; }
+        return sprintf($v >= 100 ? '%.0f%s' : '%.1f%s', $v, $units[$i]);
+    }
+
+    /**
+     * One-shot sweep: scan the target for every BASE TABLE in a
+     * user schema that is *not* BLACKHOLE, drop its incoming FKs,
+     * then ALTER ... ENGINE=BLACKHOLE. Used to recover after a DDL
+     * with an explicit ENGINE=InnoDB (or similar) replicated from
+     * the master — the SQL thread applies it verbatim, so the
+     * relay temporarily stores rows. Running this sweep restores
+     * the BLACKHOLE-only invariant.
+     *
+     * Returns ['converted'=>N, 'skipped'=>N, 'errors'=>[ {table,error}, ... ]]
+     * for the calling controller to surface to the operator.
+     */
+    public static function sweepRelay(int $serverId): array
+    {
+        $db  = Sgbd::sql(DB_DEFAULT);
+        $res = $db->sql_query("SELECT name, ip FROM mysql_server WHERE id = " . (int) $serverId . " AND is_deleted = 0");
+        $row = $res ? $db->sql_fetch_array($res, MYSQLI_ASSOC) : null;
+        if (!$row) {
+            return ['converted' => 0, 'skipped' => 0, 'errors' => [['table' => '', 'error' => "mysql_server #{$serverId} not found"]]];
+        }
+        $link = Sgbd::sql($row['name']);
+        if (!$link) {
+            return ['converted' => 0, 'skipped' => 0, 'errors' => [['table' => '', 'error' => "cannot open Sgbd link for {$row['name']}"]]];
+        }
+
+        // Same session guards as the conversion pipeline: keep ALTERs
+        // out of the relay binlog and bypass FK enforcement.
+        if (!$link->sql_query_silent('SET SESSION sql_log_bin = 0')) {
+            return ['converted' => 0, 'skipped' => 0, 'errors' => [['table' => '', 'error' => 'SET sql_log_bin=0 failed: ' . self::linkErrorMessage($link)]]];
+        }
+        $link->sql_query_silent('SET SESSION foreign_key_checks = 0');
+
+        // STOP every replication channel for the duration of the sweep.
+        // We're going to DROP TABLE on big candidates; if the SQL thread
+        // is racing in with replicated DML on the same row, the DROP
+        // either deadlocks or executes against a moving target. Restart
+        // replication in the finally so the relay resumes.
+        $link->sql_query_silent('STOP ALL SLAVES');
+        $link->sql_query_silent('STOP SLAVE');
+
+        $errors = [];
+        $converted = 0;
+        $skipped = 0;
+        try {
+            $excluded = "'" . implode("','", self::SYSTEM_SCHEMAS) . "'";
+            $sql = "SELECT table_schema, table_name, engine,
+                           COALESCE(data_length, 0) + COALESCE(index_length, 0) AS size_bytes
+                    FROM information_schema.tables
+                    WHERE table_type = 'BASE TABLE'
+                      AND table_schema NOT IN ({$excluded})
+                      AND COALESCE(engine, '') <> 'BLACKHOLE'";
+            $res = $link->sql_query_silent($sql);
+            $candidates = [];
+            if ($res) {
+                while ($r = $link->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                    $candidates[] = [
+                        'schema'     => (string) $r['table_schema'],
+                        'table'      => (string) $r['table_name'],
+                        'size_bytes' => (int)    ($r['size_bytes'] ?? 0),
+                    ];
+                }
+            }
+            if (empty($candidates)) {
+                return ['converted' => 0, 'skipped' => 0, 'errors' => []];
+            }
+
+            // Drop FKs on candidates first (1217 guard, same as convertTables).
+            $pairs = [];
+            foreach ($candidates as $t) {
+                $pairs[] = "('" . str_replace("'", "''", $t['schema']) . "','"
+                              . str_replace("'", "''", $t['table'])  . "')";
+            }
+            $sql2 = "SELECT CONSTRAINT_SCHEMA s, TABLE_NAME t, CONSTRAINT_NAME n
+                     FROM information_schema.TABLE_CONSTRAINTS
+                     WHERE CONSTRAINT_TYPE = 'FOREIGN KEY'
+                       AND (CONSTRAINT_SCHEMA, TABLE_NAME) IN (" . implode(',', $pairs) . ")";
+            $rfk = $link->sql_query_silent($sql2);
+            if ($rfk) {
+                while ($f = $link->sql_fetch_array($rfk, MYSQLI_ASSOC)) {
+                    $stmt = sprintf('ALTER TABLE `%s`.`%s` DROP FOREIGN KEY `%s`',
+                        str_replace('`', '``', $f['s']),
+                        str_replace('`', '``', $f['t']),
+                        str_replace('`', '``', $f['n']));
+                    $link->sql_query_silent($stmt); // best-effort; surfaced via per-ALTER failures below if it bites
+                }
+            }
+
+            foreach ($candidates as $t) {
+                if (!self::convertOneTableToBlackhole($link, $t)) {
+                    $errors[] = ['table' => "`{$t['schema']}`.`{$t['table']}`", 'error' => self::linkErrorMessage($link)];
+                    $skipped++;
+                    continue;
+                }
+                $converted++;
+            }
+        } finally {
+            // Resume replication FIRST so the relay is not left frozen
+            // even if a SET SESSION restore fails.
+            $link->sql_query_silent('START ALL SLAVES');
+            $link->sql_query_silent('START SLAVE');
+            $link->sql_query_silent('SET SESSION sql_log_bin = 1');
+            $link->sql_query_silent('SET SESSION foreign_key_checks = 1');
+        }
+
+        return ['converted' => $converted, 'skipped' => $skipped, 'errors' => $errors];
+    }
+
+    /**
+     * Returns the list of foreign-key constraints declared on the
+     * candidate tables, as `[ ['schema'=>..,'table'=>..,'name'=>..], ... ]`.
+     * Used to DROP them before ENGINE=BLACKHOLE so MariaDB doesn't
+     * raise errno 1217. Empty list when there are no FKs (e.g. all
+     * MyISAM, all already BLACKHOLE).
+     */
+    private function discoverForeignKeys($link, array $tables): array
+    {
+        if (empty($tables)) return [];
+        $pairs = [];
+        foreach ($tables as $t) {
+            $pairs[] = "('" . str_replace("'", "''", $t['schema']) . "','"
+                          . str_replace("'", "''", $t['table'])  . "')";
+        }
+        $sql = "SELECT CONSTRAINT_SCHEMA AS s, TABLE_NAME AS t, CONSTRAINT_NAME AS n
+                FROM information_schema.TABLE_CONSTRAINTS
+                WHERE CONSTRAINT_TYPE = 'FOREIGN KEY'
+                  AND (CONSTRAINT_SCHEMA, TABLE_NAME) IN (" . implode(',', $pairs) . ")";
+        $res = $link->sql_query_silent($sql);
+        if (!$res) return [];
+        $out = [];
+        while ($row = $link->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $out[] = ['schema' => $row['s'], 'table' => $row['t'], 'name' => $row['n']];
+        }
+        return $out;
+    }
+
+    /**
+     * Best-effort extraction of a *string* error from a Glial Sgbd
+     * link. `_error()` exposes the underlying `mysqli_error(...)`
+     * (always a string); `sql_error()` returns the Glial validation
+     * array which stringifies to "Array" — useless in a log line.
+     */
+    private static function linkErrorMessage($link): string
+    {
+        if (method_exists($link, '_error')) {
+            $msg = $link->_error();
+            if (is_string($msg) && $msg !== '') {
+                $errno = method_exists($link, '_error_num') ? (int) $link->_error_num() : 0;
+                return $errno > 0 ? "[errno=$errno] $msg" : $msg;
+            }
+        }
+        if (method_exists($link, 'sql_error')) {
+            $msg = $link->sql_error();
+            if (is_string($msg) && $msg !== '') return $msg;
+            if (is_array($msg) && !empty($msg)) {
+                return trim(implode(' | ', array_map(static function ($v) {
+                    return is_scalar($v) ? (string) $v : json_encode($v);
+                }, $msg)));
+            }
+        }
+        return 'sql_query failed (no driver error available)';
+    }
+
+    /**
+     * Returns the current `sql_log_bin` session value as reported by
+     * `SHOW VARIABLES LIKE 'sql_log_bin'`. `null` when the query
+     * fails. Used to prove (and log) that the session is bin-log-off
+     * before every ALTER … ENGINE=BLACKHOLE.
+     */
+    private function readSqlLogBin($link): ?string
+    {
+        $res = $link->sql_query_silent("SHOW VARIABLES LIKE 'sql_log_bin'");
+        if (!$res) return null;
+        $row = $link->sql_fetch_array($res, MYSQLI_ASSOC);
+        if (!$row || !isset($row['Value'])) return null;
+        return (string) $row['Value'];
+    }
+
+    private function persistRuntimeConfig($link, bool $dryRun): void
+    {
+        $statements = [
+            "SET GLOBAL default_storage_engine = 'BLACKHOLE'",
+            "SET GLOBAL binlog_format = 'ROW'",
+            "SET GLOBAL read_only = ON",
+            "SET GLOBAL super_read_only = ON",
+        ];
+        foreach ($statements as $stmt) {
+            $this->addStep('runtime', $stmt);
+            if (!$dryRun) {
+                $link->sql_query_silent($stmt);
+            }
+            $this->updateLastStep($stmt . ($dryRun ? ' (dry-run)' : ' — ok'));
+        }
+    }
+
+    private function stopAllReplication($link, bool $dryRun): void
+    {
+        if ($dryRun) return;
+        // STOP ALL SLAVES works on MariaDB; STOP REPLICA on MySQL 8+;
+        // fall back to plain STOP SLAVE.
+        foreach (['STOP ALL SLAVES', 'STOP REPLICA', 'STOP SLAVE'] as $sql) {
+            if ($link->sql_query_silent($sql)) {
+                return;
+            }
+        }
+    }
+
+    private function startAllReplication($link, bool $dryRun): void
+    {
+        if ($dryRun) return;
+        foreach (['START ALL SLAVES', 'START REPLICA', 'START SLAVE'] as $sql) {
+            if ($link->sql_query_silent($sql)) {
+                return;
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------
+    //  Progress / status helpers — mirror BinlogAnalyzer's pattern
+    // ------------------------------------------------------------------
+
+    private function addStep(string $key, string $message): void
+    {
+        $this->steps[] = [
+            'key'        => $key,
+            'message'    => $message,
+            'status'     => 'running',
+            'time_start' => date('H:i:s'),
+            'time_end'   => null,
+        ];
+        $this->flushProgress();
+    }
+
+    private function updateLastStep(string $message, string $status = 'done'): void
+    {
+        if (empty($this->steps)) return;
+        $i = count($this->steps) - 1;
+        $this->steps[$i]['message']  = $message;
+        $this->steps[$i]['status']   = $status;
+        $this->steps[$i]['time_end'] = date('H:i:s');
+        $this->flushProgress();
+    }
+
+    private function flushProgress(): void
+    {
+        $json = json_encode($this->steps, JSON_UNESCAPED_UNICODE);
+        $this->db->sql_query(
+            "UPDATE blackhole_conversion SET progress = '"
+            . $this->db->sql_real_escape_string((string) $json)
+            . "' WHERE id = " . $this->conversionId
+        );
+    }
+
+    private function updateStatus(string $status): void
+    {
+        $completed = in_array($status, ['done', 'failed', 'rolledback'], true)
+            ? ", completed_at = NOW()"
+            : "";
+        $this->db->sql_query(
+            "UPDATE blackhole_conversion
+             SET status = '" . $this->db->sql_real_escape_string($status) . "'"
+             . $completed .
+            " WHERE id = " . $this->conversionId
+        );
+    }
+
+    private function setError(string $message): void
+    {
+        $this->db->sql_query(
+            "UPDATE blackhole_conversion
+             SET error_message = '" . $this->db->sql_real_escape_string($message) . "'
+             WHERE id = " . $this->conversionId
+        );
+    }
+
+    private function setTableCounts(int $total, int $converted): void
+    {
+        $this->db->sql_query(
+            "UPDATE blackhole_conversion
+             SET tables_total = {$total}, tables_converted = {$converted}
+             WHERE id = " . $this->conversionId
+        );
+    }
+
+    // ------------------------------------------------------------------
+    //  Lookups
+    // ------------------------------------------------------------------
+
+    private function loadConversion(): ?array
+    {
+        $res = $this->db->sql_query(
+            "SELECT * FROM blackhole_conversion WHERE id = " . $this->conversionId
+        );
+        $row = $res ? $this->db->sql_fetch_array($res, MYSQLI_ASSOC) : null;
+        return $row ?: null;
+    }
+
+    private function loadServer(int $id): ?array
+    {
+        $res = $this->db->sql_query(
+            "SELECT id, name, display_name, ip, hostname, port,
+                    login, passwd, is_password_crypted, is_binlog_relay
+             FROM mysql_server WHERE id = {$id} AND is_deleted = 0"
+        );
+        $row = $res ? $this->db->sql_fetch_array($res, MYSQLI_ASSOC) : null;
+        return $row ?: null;
+    }
+
+    // ------------------------------------------------------------------
+    //  Inventory helpers — used by the controller's index page so we
+    //  keep the SQL in one place.
+    // ------------------------------------------------------------------
+
+    /**
+     * List servers usable as a BLACKHOLE relay candidate, with one row
+     * per (server, replication_channel). A server qualifies when it has
+     * at least one channel with a resolvable upstream master, and is
+     * not part of a 2-cycle master ↔ master topology.
+     *
+     * Each row also carries `downstream_slaves` — the number of other
+     * monitored servers replicating *from* this one, computed in a
+     * single pass over the same Extraction2 result.
+     */
+    public static function listCandidateServers(): array
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        // Inventory keyed by id for fast lookup of names + flags.
+        $res = $db->sql_query(
+            "SELECT id, name, display_name, ip, hostname, is_binlog_relay
+             FROM mysql_server
+             WHERE is_deleted = 0 AND is_proxy = 0 AND is_vip = 0"
+        );
+        $servers = [];
+        while ($r = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $servers[(int) $r['id']] = $r;
+        }
+        if (empty($servers)) return [];
+
+        // master_host + master_port per (server, connection_name).
+        // Extraction2 returns ['@slave' => [cn => [field => value, ...]]]
+        $slaveData = \App\Library\Extraction2::display([
+            'slave::master_host', 'slave::master_port',
+        ]);
+
+        // First pass: resolve every (server, cn) → upstream master_id.
+        $upstream = [];        // [server_id][cn] = master_id (or 0)
+        $downstreamCount = []; // [master_id] = count of distinct (slave_id, cn) pairs
+        foreach ($slaveData as $sid => $row) {
+            $sid = (int) $sid;
+            if (!isset($servers[$sid])) continue;
+            if (!isset($row['@slave']) || !is_array($row['@slave'])) continue;
+
+            foreach ($row['@slave'] as $cn => $channel) {
+                if (!is_array($channel)) continue;
+                $host = (string) ($channel['master_host'] ?? '');
+                $port = (int)    ($channel['master_port'] ?? 0);
+                if ($host === '' || $port === 0) continue;
+
+                $masterId = self::resolveServerByHostPort($db, $servers, $host, $port);
+                if ($masterId === 0) continue;
+                $upstream[$sid][(string) $cn] = $masterId;
+                $downstreamCount[$masterId] = ($downstreamCount[$masterId] ?? 0) + 1;
+            }
+        }
+
+        // Second pass: emit one row per (server, cn) where the server is
+        // a replica and is *not* in a master↔master 2-cycle with its
+        // upstream. A server already flagged as relay is always shown
+        // so the operator can inspect it.
+        $out = [];
+        foreach ($servers as $sid => $srv) {
+            $isRelay = (int) $srv['is_binlog_relay'] === 1;
+            $hasChannel = !empty($upstream[$sid]);
+            if (!$isRelay && !$hasChannel) continue;
+
+            $channels = $upstream[$sid] ?? ['' => 0];
+            foreach ($channels as $cn => $masterId) {
+                if ($masterId > 0 && self::isMutualReplica($upstream, $sid, $masterId)) {
+                    continue;
+                }
+                $masterDisplay = $masterId > 0 && isset($servers[$masterId])
+                    ? ($servers[$masterId]['display_name'] ?: $servers[$masterId]['name'])
+                    : '';
+                $out[] = [
+                    'id'                => (int) $srv['id'],
+                    'name'              => (string) $srv['name'],
+                    'display_name'      => (string) $srv['display_name'],
+                    'ip'                => (string) $srv['ip'],
+                    'hostname'          => (string) $srv['hostname'],
+                    'is_binlog_relay'   => (int) $srv['is_binlog_relay'],
+                    'connection_name'   => (string) $cn,
+                    'master_id'         => (int) $masterId,
+                    'master_display'    => $masterDisplay,
+                    'downstream_slaves' => (int) ($downstreamCount[(int) $srv['id']] ?? 0),
+                ];
+            }
+        }
+
+        // Stable order: relays first, then by downstream desc, then by name.
+        usort($out, static function ($a, $b) {
+            if ($a['is_binlog_relay'] !== $b['is_binlog_relay']) {
+                return $b['is_binlog_relay'] <=> $a['is_binlog_relay'];
+            }
+            if ($a['downstream_slaves'] !== $b['downstream_slaves']) {
+                return $b['downstream_slaves'] <=> $a['downstream_slaves'];
+            }
+            return strcasecmp($a['display_name'] ?: $a['name'], $b['display_name'] ?: $b['name']);
+        });
+
+        return $out;
+    }
+
+    /**
+     * Best-effort host:port → mysql_server.id resolver. Tries the
+     * canonical Mysql::getIdFromDns helper first, falls back to a
+     * direct SELECT on (ip, port), then a hostname scan.
+     */
+    private static function resolveServerByHostPort($db, array $servers, string $host, int $port): int
+    {
+        if (class_exists(\App\Library\Mysql::class) && method_exists(\App\Library\Mysql::class, 'getIdFromDns')) {
+            $resolved = (int) \App\Library\Mysql::getIdFromDns($host . ':' . $port);
+            if ($resolved > 0) return $resolved;
+        }
+        $h = $db->sql_real_escape_string($host);
+        $sql = "SELECT id FROM mysql_server WHERE ip = '{$h}' AND port = {$port} AND is_deleted = 0 LIMIT 1";
+        $res = $db->sql_query_silent($sql);
+        if ($res && ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC))) {
+            return (int) $row['id'];
+        }
+        foreach ($servers as $s) {
+            if (((string) $s['hostname']) === $host) {
+                // hostname match — port already filtered upstream.
+                return (int) $s['id'];
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * True iff $a replicates from $b AND $b replicates from $a on any
+     * channel — the master ↔ master pattern we want to hide.
+     */
+    private static function isMutualReplica(array $upstream, int $a, int $b): bool
+    {
+        $aMasters = $upstream[$a] ?? [];
+        $bMasters = $upstream[$b] ?? [];
+        return in_array($b, $aMasters, true) && in_array($a, $bMasters, true);
+    }
+
+    // ------------------------------------------------------------------
+    //  Greenfield UI helpers
+    // ------------------------------------------------------------------
+
+    /**
+     * Engine spread on a supervised server: `BLACKHOLE / total base
+     * tables` (excluding system schemas), with a derived percentage.
+     * Used by /Blackhole/index to render a progress bar on the Active
+     * BLACKHOLE relays card (#1252).
+     *
+     * Returns:
+     *   ['reachable' => true,  'blackhole' => int, 'total' => int, 'pct' => int]
+     *   ['reachable' => false, 'blackhole' => 0,   'total' => 0,   'pct' => 0, 'error' => string]
+     *
+     * Failures (server down, auth issue) are swallowed and reported via
+     * `reachable=false` so the page never breaks because of one dead
+     * relay.
+     */
+    public static function relayEngineSpread(int $serverId): array
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+        $res = $db->sql_query(
+            "SELECT name FROM mysql_server WHERE id = " . (int) $serverId . " AND is_deleted = 0"
+        );
+        $row = $res ? $db->sql_fetch_array($res, MYSQLI_ASSOC) : null;
+        if (!$row) {
+            return ['reachable' => false, 'blackhole' => 0, 'total' => 0, 'pct' => 0, 'error' => 'server not found'];
+        }
+        try {
+            $link = @Sgbd::sql($row['name']);
+        } catch (\Throwable $e) {
+            return ['reachable' => false, 'blackhole' => 0, 'total' => 0, 'pct' => 0, 'error' => $e->getMessage()];
+        }
+        if (!$link) {
+            return ['reachable' => false, 'blackhole' => 0, 'total' => 0, 'pct' => 0, 'error' => 'cannot open Sgbd link'];
+        }
+
+        $excluded = "'" . implode("','", self::SYSTEM_SCHEMAS) . "'";
+        $sql = "SELECT
+                    SUM(engine = 'BLACKHOLE')                            AS blackhole,
+                    COUNT(*)                                             AS total
+                FROM information_schema.tables
+                WHERE table_type = 'BASE TABLE'
+                  AND table_schema NOT IN ({$excluded})";
+        $r = @$link->sql_query_silent($sql);
+        if (!$r) {
+            return ['reachable' => false, 'blackhole' => 0, 'total' => 0, 'pct' => 0, 'error' => 'count query failed'];
+        }
+        $row = $link->sql_fetch_array($r, MYSQLI_ASSOC);
+        $bh    = (int) ($row['blackhole'] ?? 0);
+        $total = (int) ($row['total'] ?? 0);
+        $pct   = $total > 0 ? (int) floor($bh * 100 / $total) : 0;
+        return ['reachable' => true, 'blackhole' => $bh, 'total' => $total, 'pct' => $pct];
+    }
+
+    /**
+     * Supervised servers eligible to be provisioned as a fresh
+     * BLACKHOLE relay (not already a relay, not a proxy/VIP). The
+     * actual idleness check runs at conversion time; this list is the
+     * raw inventory the dropdown shows.
+     */
+    public static function listIdleTargets(): array
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+        $res = $db->sql_query(
+            "SELECT id, name, display_name, hostname, ip, port
+             FROM mysql_server
+             WHERE is_deleted = 0 AND is_proxy = 0 AND is_vip = 0
+               AND is_monitored = 1 AND is_binlog_relay = 0
+             ORDER BY display_name, name"
+        );
+        $out = [];
+        while ($r = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $out[] = $r;
+        }
+        return $out;
+    }
+
+    /**
+     * One-shot idleness probe used by the AJAX preflight endpoint so
+     * the UI can warn before launching the pipeline. Returns the same
+     * tri-state as the private `assertTargetIsIdle()`.
+     *
+     * @return true|string
+     */
+    public static function probeIdle(int $serverId)
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+        $res = $db->sql_query("SELECT name FROM mysql_server WHERE id = {$serverId} AND is_deleted = 0");
+        $row = $res ? $db->sql_fetch_array($res, MYSQLI_ASSOC) : null;
+        if (!$row) return 'server not found';
+        $link = Sgbd::sql($row['name']);
+        if (!$link) return 'unreachable';
+        $self = new self(0);
+        return $self->assertTargetIsIdle($link);
+    }
+
+    /**
+     * Servers that can act as the upstream master for a fresh relay:
+     * any monitored MySQL/MariaDB server that is not itself a relay.
+     */
+    public static function listMasterCandidates(): array
+    {
+        $db = Sgbd::sql(DB_DEFAULT);
+        $res = $db->sql_query(
+            "SELECT id, name, display_name, hostname, ip, port
+             FROM mysql_server
+             WHERE is_deleted = 0 AND is_proxy = 0 AND is_vip = 0
+               AND is_monitored = 1 AND is_binlog_relay = 0
+             ORDER BY display_name, name"
+        );
+        $out = [];
+        while ($r = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $out[] = $r;
+        }
+        return $out;
+    }
+}

@@ -16,8 +16,50 @@ use App\Library\Debug;
 use \Glial\Sgbd\Sgbd;
 
 
+/**
+ * Trait responsible for scp workflows.
+ *
+ * This trait belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 trait Scp {
 
+/**
+ * Handle scp state through `sendFile`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param int $id_backup_storage_area Input value for `id_backup_storage_area`.
+ * @phpstan-param int $id_backup_storage_area
+ * @psalm-param int $id_backup_storage_area
+ * @param mixed $src Input value for `src`.
+ * @phpstan-param mixed $src
+ * @psalm-param mixed $src
+ * @param mixed $dst Input value for `dst`.
+ * @phpstan-param mixed $dst
+ * @psalm-param mixed $dst
+ * @return mixed Returned value for sendFile.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::sendFile()
+ * @example /fr/scp/sendFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function sendFile($id_backup_storage_area, $src, $dst) {
 
         $db = Sgbd::sql(DB_DEFAULT);
@@ -38,6 +80,7 @@ trait Scp {
             $dst = $ob->path . "/" . $dst;
 
             
+            $key = null;
             if (!empty($ob->private_key)) {
                 $pv_key = Chiffrement::decrypt($ob->private_key);
             }
@@ -66,7 +109,7 @@ trait Scp {
 
             Debug::debug(pathinfo($dst), "Path_info");
 
-            $ssh->exec("mkdir -p " . $dst_dir);
+            $sftp->mkdir($dst_dir, -1, true);
 
             Debug::debug($dst_dir, "mkdir -p");
 
@@ -77,7 +120,7 @@ trait Scp {
 
             $data['size'] = $sftp->size($dst);
 
-            $md5 = $ssh->exec("md5sum " . $dst);
+            $md5 = $ssh->exec(ShellCommand::remoteMd5sum($dst));
 
             $data['md5'] = explode(" ", $md5)[0];
             $data['pathfile'] = $dst;
@@ -101,6 +144,34 @@ trait Scp {
         } //end while
     }
 
+/**
+ * Retrieve scp state through `getFile`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param int $id_backup_storage_area Input value for `id_backup_storage_area`.
+ * @phpstan-param int $id_backup_storage_area
+ * @psalm-param int $id_backup_storage_area
+ * @param mixed $src Input value for `src`.
+ * @phpstan-param mixed $src
+ * @psalm-param mixed $src
+ * @param mixed $dst Input value for `dst`.
+ * @phpstan-param mixed $dst
+ * @psalm-param mixed $dst
+ * @return mixed Returned value for getFile.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::getFile()
+ * @example /fr/scp/getFile
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getFile($id_backup_storage_area, $src, $dst) {
 
         $db = Sgbd::sql(DB_DEFAULT);
@@ -119,6 +190,7 @@ trait Scp {
                 exit;
             }
 
+            $key = null;
             if (!empty($ob->private_key)) {
                 $pv_key = Chiffrement::decrypt($ob->private_key, CRYPT_KEY);
             }
@@ -146,7 +218,7 @@ trait Scp {
 
             $data['size'] = $sftp->size($src);
 
-            $md5 = $ssh->exec("md5sum " . $src . " 2>1 >> /dev/null");
+            $md5 = $ssh->exec(ShellCommand::remoteMd5sum($src));
 
             $data['md5'] = explode(" ", $md5)[0];
 

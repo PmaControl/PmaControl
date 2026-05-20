@@ -2,12 +2,26 @@
 
 use \Glial\Synapse\FactoryController;
 use phpseclib3\File\ASN1\Maps\ExtKeyUsageSyntax;
+
 if (empty($_GET['ajax'])){
 
         ?>
         <div >
-        <div style="float:left; padding-right:10px;"><?= FactoryController::addNode("MysqlServer", "menu", $data['param']); ?></div>
-        </div> 
+
+        <!--enterprise -->
+        <div style="float: left;">
+        <?= FactoryController::addNode("MysqlServer", "menu", $param); ?>
+        </div>
+        <div style="float: right; display:inline-flex; align-items:center; gap:8px; white-space:nowrap;">
+        <span style="display:inline-block; vertical-align:middle;">
+        <?= FactoryController::addNode("Cluster", "replay", $data['param']); ?>
+        </span>
+        <a style="display:inline-block; vertical-align:middle; margin-left:0;" href="<?= LINK ?>Cluster/viewDot/<?= (int) ($param[0] ?? 0) ?>/" class="btn btn-default" role="button">
+            View DOT
+        </a>
+        </div>
+        <!--enterprise -->
+        </div>
         <div style="clear:both"></div>
         <?php
 
@@ -28,7 +42,7 @@ if (empty($_GET['ajax'])){
 
     echo '<div id="svg">';
     echo '<div style="float:right; border:#000 0px solid">';
-    \Glial\Synapse\FactoryController::addNode("Dot3", "legend", array());
+    FactoryController::addNode("Dot3", "legend", array());
     echo '</div>';
 
     echo '<div id="graph" style="float:left; border:#000 0px solid">';

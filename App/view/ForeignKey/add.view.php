@@ -1,8 +1,13 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 use Glial\Html\Form\Form;
+$foreignKeyAddCsrfField = CsrfRender::field($data, 'foreign_key_add');
+$foreignKeyAddCsrfToken = CsrfRender::token($data, 'foreign_key_add');
 ?>
 <form action="" method="post">
+    <input type="hidden" name="<?= $foreignKeyAddCsrfField ?>" value="<?= $foreignKeyAddCsrfToken ?>">
     <div class="panel panel-primary">
         <div class="panel-heading">
             <h3 class="panel-title"><?= __('Add a prefix') ?></h3>

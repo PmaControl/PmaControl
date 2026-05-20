@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>install_pmacontrol_10.68.68.78_2026-04-02</title>
+  <style>
+    html {
+      line-height: 1.5;
+      font-family: Georgia, serif;
+      font-size: 20px;
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 1em;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+      font-size: 85%;
+      margin: 0;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1 id="installation-report-pmacontrol-on-10.68.68.78">Installation
+Report: PmaControl on <code>10.68.68.78</code></h1>
+<p>Date: <code>2026-04-02</code><br />
+Target host: <code>10.68.68.78</code><br />
+Hostname: <code>debian13-srv-136</code><br />
+OS: <code>Debian GNU/Linux 13 (trixie)</code></p>
+<h2 id="objective">Objective</h2>
+<p>Install PmaControl on <code>10.68.68.78</code> and make
+<code>/srv/www/pmacontrol/install/debian13.sh</code> work on:</p>
+<ul>
+<li>Debian 13</li>
+<li>MariaDB 11.8</li>
+<li>PHP 8.5</li>
+</ul>
+<h2 id="final-status">Final Status</h2>
+<p>Installation completed successfully.</p>
+<p>Working components:</p>
+<ul>
+<li>Apache: <code>active</code></li>
+<li>MariaDB: <code>active</code></li>
+<li>PHP-FPM <code>8.5</code>: <code>active</code></li>
+<li>Cron: <code>active</code></li>
+<li>HTTP entrypoint:
+<ul>
+<li><code>http://10.68.68.78/pmacontrol/</code></li>
+</ul></li>
+</ul>
+<p>Observed HTTP response:</p>
+<ul>
+<li><code>301 Moved Permanently</code></li>
+<li>redirect target: <code>/pmacontrol/en/server/main</code></li>
+</ul>
+<p>This confirms Apache and the PmaControl front controller are both
+responding.</p>
+<h2 id="versions-installed">Versions Installed</h2>
+<ul>
+<li>Debian: <code>13.4</code></li>
+<li>MariaDB: <code>11.8.6-MariaDB-0+deb13u1</code></li>
+<li>PHP CLI: <code>8.5.4</code></li>
+<li>Apache: <code>2.4.66</code></li>
+</ul>
+<h2 id="changes-applied-to-installdebian13.sh">Changes Applied To
+<code>install/debian13.sh</code></h2>
+<p>The Debian 13 installer was updated so it works on the target
+host.</p>
+<h3 id="native-mariadb-11.8-on-debian-13">1. Native MariaDB 11.8 on
+Debian 13</h3>
+<p>The script now installs MariaDB from the native Debian 13
+repository:</p>
+<ul>
+<li><code>mariadb-server</code></li>
+<li><code>mariadb-client</code></li>
+<li><code>mariadb-plugin-rocksdb</code></li>
+</ul>
+<p>This matches the target requirement and avoids an unnecessary
+external MariaDB repo.</p>
+<h3 id="php-8.5-via-sury-on-debian-13">2. PHP 8.5 via Sury on Debian
+13</h3>
+<p>Debian 13 provides PHP 8.4 by default.<br />
+To satisfy the requested PHP 8.5 requirement, the script now adds:</p>
+<ul>
+<li><code>https://packages.sury.org/php</code></li>
+</ul>
+<p>and installs:</p>
+<ul>
+<li><code>php8.5</code></li>
+<li><code>php8.5-cli</code></li>
+<li><code>php8.5-fpm</code></li>
+<li><code>libapache2-mod-php8.5</code></li>
+<li><code>php8.5-mysql</code></li>
+<li><code>php8.5-curl</code></li>
+<li><code>php8.5-ldap</code></li>
+<li><code>php8.5-mbstring</code></li>
+<li><code>php8.5-intl</code></li>
+<li><code>php8.5-gd</code></li>
+<li><code>php8.5-xml</code></li>
+<li><code>php8.5-gmp</code></li>
+</ul>
+<h3 id="full-non-interactive-package-installation">3. Full
+non-interactive package installation</h3>
+<p>The script now exports:</p>
+<ul>
+<li><code>DEBIAN_FRONTEND=noninteractive</code></li>
+<li><code>UCF_FORCE_CONFOLD=1</code></li>
+<li><code>UCF_FORCE_CONFFNEW=1</code></li>
+<li><code>NEEDRESTART_MODE=a</code></li>
+</ul>
+<p>This was necessary because the first run got stuck during package
+configuration in a <code>ucf</code>-driven postinst path.</p>
+<h3 id="srvwww-creation-before-apache-rewrite">4. <code>/srv/www</code>
+creation before Apache rewrite</h3>
+<p>The script now ensures <code>/srv/www</code> exists before rewriting
+Apache paths.</p>
+<h3 id="cron-added-to-base-packages">5. <code>cron</code> added to base
+packages</h3>
+<p><code>install.sh</code> expects <code>crontab</code>.<br />
+The first run reported:</p>
+<ul>
+<li><code>./install.sh: line 157: crontab: command not found</code></li>
+<li><code>./install.sh: line 162: crontab: command not found</code></li>
+</ul>
+<p>To prevent that on future runs, <code>cron</code> was added to the
+base packages in <code>install/debian13.sh</code>.</p>
+<h2 id="problems-encountered">Problems Encountered</h2>
+<h3 id="problem-1.-missing-etcsysctl.conf">Problem 1. Missing
+<code>/etc/sysctl.conf</code></h3>
+<p>The first run encountered a missing sysctl file path assumption.</p>
+<p>Fix:</p>
+<ul>
+<li>explicitly create <code>/etc/sysctl.conf</code></li>
+<li>then append <code>vm.swappiness=1</code> only if needed</li>
+</ul>
+<h3 id="problem-2.-software-properties-common-package-mismatch">Problem
+2. <code>software-properties-common</code> package mismatch</h3>
+<p>The original package list assumed an older Debian package
+pattern.</p>
+<p>Fix:</p>
+<ul>
+<li>remove <code>software-properties-common</code></li>
+<li>keep the smaller Debian 13-compatible package set</li>
+</ul>
+<h3 id="problem-3.-package-installation-blocked-in-ucf">Problem 3.
+Package installation blocked in <code>ucf</code></h3>
+<p>The first real blocker was an interactive package configuration path
+while installing PHP packages.</p>
+<p>Observed state:</p>
+<ul>
+<li><code>apt-get install ... php8.5-*</code></li>
+<li><code>dpkg --configure --pending</code></li>
+<li><code>php8.5-curl.postinst</code></li>
+<li><code>ucf ... /etc/php/8.5/mods-available/curl.ini</code></li>
+</ul>
+<p>Fix:</p>
+<ul>
+<li>enforce non-interactive env in the script</li>
+<li>recover with <code>dpkg --configure -a</code></li>
+</ul>
+<h3 id="problem-4.-broken-unrelated-package-php8.4-litespeed">Problem 4.
+Broken unrelated package: <code>php8.4-litespeed</code></h3>
+<p>The target host had an unrelated package state causing
+<code>dpkg</code> failures:</p>
+<ul>
+<li><code>php8.4-litespeed</code></li>
+</ul>
+<p>Observed error:</p>
+<ul>
+<li><code>php8.4-litespeed.service failed because a timeout was exceeded</code></li>
+<li>package remained half-configured</li>
+</ul>
+<p>Fix:</p>
+<ul>
+<li>disable the service</li>
+<li>purge <code>php8.4-litespeed</code></li>
+<li>rerun:
+<ul>
+<li><code>dpkg --configure -a</code></li>
+<li><code>apt-get -f install -y</code></li>
+</ul></li>
+</ul>
+<p>This package is not required for PmaControl and was the main
+package-system blocker once Apache/PHP 8.5 was otherwise correct.</p>
+<h2 id="installation-sequence-executed">Installation Sequence
+Executed</h2>
+<p>After the package-system cleanup:</p>
+<ol type="1">
+<li>install base packages</li>
+<li>install MariaDB 11.8</li>
+<li>install PHP 8.5 + Apache</li>
+<li>configure Apache for <code>/srv/www</code></li>
+<li>clone <code>https://github.com/PmaControl/PmaControl.git</code></li>
+<li>run <code>composer install</code></li>
+<li>configure MySQL local access for PmaControl</li>
+<li>generate <code>/tmp/config.json</code></li>
+<li>run
+<code>/srv/www/pmacontrol/install.sh -c /tmp/config.json</code></li>
+<li>restart Apache</li>
+<li>install cron</li>
+<li>verify services and HTTP</li>
+</ol>
+<h2 id="verification">Verification</h2>
+<p>Verified locally on the target host:</p>
+<ul>
+<li><code>systemctl is-active mariadb</code> =&gt;
+<code>active</code></li>
+<li><code>systemctl is-active apache2</code> =&gt;
+<code>active</code></li>
+<li><code>systemctl is-active php8.5-fpm</code> =&gt;
+<code>active</code></li>
+<li><code>systemctl is-active cron</code> =&gt; <code>active</code></li>
+<li><code>php8.5 -v</code> =&gt; <code>8.5.4</code></li>
+<li><code>mysql -Nse "SELECT VERSION()"</code> =&gt;
+<code>11.8.6-MariaDB-0+deb13u1 from Debian</code></li>
+<li><code>curl -I http://127.0.0.1/pmacontrol/</code> =&gt; redirect to
+<code>/pmacontrol/en/server/main</code></li>
+<li><code>curl -I http://10.68.68.78/pmacontrol/</code> =&gt; same
+result</li>
+</ul>
+<p>Generated configuration files detected under:</p>
+<ul>
+<li><code>/srv/www/pmacontrol/configuration/</code></li>
+</ul>
+<p>including:</p>
+<ul>
+<li><code>db.config.ini.php</code></li>
+<li><code>auth.config.php</code></li>
+<li><code>crypt.config.php</code></li>
+<li><code>pmacontrol.config.php</code></li>
+</ul>
+<h2 id="generated-credentials">Generated Credentials</h2>
+<p>Installer output returned:</p>
+<h3 id="mysql-account">MySQL account</h3>
+<ul>
+<li>Login: <code>pmacontrol</code></li>
+<li>Password: <code>ZDdlMmNiZGFlMmU3OTA5MDgxZDhhODgw</code></li>
+</ul>
+<h3 id="pmacontrol-superadmin">PmaControl SuperAdmin</h3>
+<ul>
+<li>Login: <code>admin</code></li>
+<li>Password: <code>ZDdlMmNiZGFlMmU3OTA5MDgxZDhhODgw</code></li>
+</ul>
+<h2 id="recommendation">Recommendation</h2>
+<p>The current <code>install/debian13.sh</code> is now suitable for
+Debian 13 on hosts like <code>10.68.68.78</code>.</p>
+<p>Recommended follow-up:</p>
+<ul>
+<li>keep <code>cron</code> in the installer permanently</li>
+<li>keep PHP 8.5 on Sury for Debian 13 until Debian ships the requested
+version natively</li>
+<li>document that a stray <code>php8.4-litespeed</code> package can
+break <code>dpkg</code> on reused hosts</li>
+<li>if this installer is reused on non-clean hosts, consider adding a
+preflight check for:
+<ul>
+<li>broken packages</li>
+<li>half-configured PHP service packages</li>
+</ul></li>
+</ul>
+<h2 id="conclusion">Conclusion</h2>
+<p>PmaControl is installed and reachable on
+<code>10.68.68.78</code>.</p>
+<p>Main technical adjustments required for Debian 13 were:</p>
+<ul>
+<li>MariaDB 11.8 from Debian native packages</li>
+<li>PHP 8.5 from Sury</li>
+<li>non-interactive package handling</li>
+<li>explicit <code>cron</code> dependency</li>
+<li>recovery from an unrelated broken <code>php8.4-litespeed</code>
+package on the target</li>
+</ul>
+</body>
+</html>

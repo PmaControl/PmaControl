@@ -1,5 +1,7 @@
 ALTER TABLE mysql_server MODIFY ip varchar(64) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL;
 
+ALTER TABLE mysql_server MODIFY ssh_nat varchar(64) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '';
+
 
 ALTER TABLE mysql_server ADD COLUMN `id_mysql_type` int(11) NOT NULL DEFAULT 1 AFTER id_environment;
 
@@ -18,5 +20,4 @@ update mysql_server set id_mysql_type= 1;
 
 
 ALTER TABLE `mysql_server` ADD  FOREIGN KEY (`id_mysql_type`) REFERENCES `mysql_type`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
-
 

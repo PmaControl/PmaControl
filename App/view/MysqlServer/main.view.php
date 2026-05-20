@@ -1,0 +1,412 @@
+<?php
+
+use App\Library\Security\CsrfRender;
+use \App\Library\Display;
+use \Glial\Synapse\FactoryController;
+
+FactoryController::addNode("MysqlServer", "menu", $param);
+
+
+
+//debug($data);
+/** @var array $data */
+$id = (int)$data['id_mysql_server'];
+$isProxy = !empty($data['is_proxy']) && (string)$data['is_proxy'] !== '0';
+$isVip = !empty($data['is_vip']) && (string)$data['is_vip'] !== '0';
+?>
+
+<style>
+/*
+ * Stabilise l'affichage en 3 colonnes sur desktop,
+ * avec une petite marge de sécurité pour éviter les retours à la ligne
+ * dus aux arrondis ou aux contenus un peu longs.
+ */
+@media (min-width: 992px) {
+    .grid-row-third {
+        display: flex;
+        flex-wrap: wrap;
+        margin-left: -6px;
+        margin-right: -6px;
+    }
+
+    .grid-row-third > .grid-item {
+        float: none;
+        width: calc(33.3333% - 1px);
+        padding-left: 6px;
+        padding-right: 6px;
+        margin-bottom: 10px;
+    }
+}
+
+.grid-item .table {
+    table-layout: fixed;
+}
+
+.grid-item .table td {
+    word-break: break-word;
+}
+
+.usage-meter-wrap {
+    text-align: right;
+}
+
+.usage-meter-wrap--left {
+    text-align: left;
+}
+
+.usage-meter-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: flex-end;
+    max-width: 100%;
+}
+
+.usage-meter-text--left {
+    justify-content: flex-start;
+}
+
+.usage-meter-icon {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 auto;
+}
+
+.usage-meter-progress {
+    margin-top: 4px;
+    width: 100%;
+    height: 4px;
+    background: #e8edf3;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.usage-meter-progress-value {
+    height: 100%;
+    background: #5cb85c;
+}
+
+.cmd-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.cmd-link {
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.btn[disabled],
+.btn.disabled {
+    cursor: not-allowed !important;
+    pointer-events: none;
+    opacity: .65;
+}
+
+</style>
+
+
+  <?php
+  // Panels simples pour chaque catégorie
+  if ($isProxy || $isVip) {
+      $groups = [];
+
+      if (!empty($data['summary']) && is_array($data['summary'])) {
+          $groups["Résumé"] = $data['summary'];
+      }
+      if (!empty($data['os']) && is_array($data['os'])) {
+          $groups["OS / Système"] = $data['os'];
+      }
+      if (!empty($data['vip']) && is_array($data['vip'])) {
+          $groups["VIP"] = $data['vip'];
+      }
+  } else {
+      $groups = [];
+
+      if (!empty($data['summary']) && is_array($data['summary'])) {
+          $groups["Résumé"] = $data['summary'];
+      }
+      if (!empty($data['os']) && is_array($data['os'])) {
+          $groups["OS / Système"] = $data['os'];
+      }
+
+      if (!empty($data['ssh_sst_metrics']) && is_array($data['ssh_sst_metrics'])) {
+          $groups['SSH / SST'] = $data['ssh_sst_metrics'];
+      }
+
+      if (!empty($data['innodb']) && is_array($data['innodb'])) {
+          $groups['InnoDB'] = $data['innodb'];
+      }
+
+      if (!empty($data['aria']) && is_array($data['aria'])) {
+          $groups['Aria'] = $data['aria'];
+      }
+
+      if (!empty($data['connections']) && is_array($data['connections'])) {
+          $groups['Connexions'] = $data['connections'];
+      }
+
+      if (!empty($data['binlog']) && is_array($data['binlog'])) {
+          $groups['Binlog'] = $data['binlog'];
+      }
+
+      if (!empty($data['galera_cluster']) && is_array($data['galera_cluster'])) {
+          $groups['GaleraCluster'] = $data['galera_cluster'];
+      }
+
+      if (!empty($data['galera_cluster_flow']) && is_array($data['galera_cluster_flow'])) {
+          $groups['GaleraCluster / Flow-Control'] = $data['galera_cluster_flow'];
+      }
+
+      if (!empty($data['galera_cluster_provider']) && is_array($data['galera_cluster_provider'])) {
+          $groups['GaleraCluster / Provider'] = $data['galera_cluster_provider'];
+      }
+
+      if (!empty($data['galera_cluster_config']) && is_array($data['galera_cluster_config'])) {
+          $groups['GaleraCluster / Configuration'] = $data['galera_cluster_config'];
+      }
+
+      if (!empty($data['ssl']) && is_array($data['ssl'])) {
+          $groups['SSL'] = $data['ssl'];
+      }
+
+      if (!empty($data['rocksdb']) && is_array($data['rocksdb'])) {
+          $groups['RocksDB'] = $data['rocksdb'];
+      }
+
+      if (!empty($data['myisam']) && is_array($data['myisam'])) {
+          $groups['MyISAM'] = $data['myisam'];
+      }
+
+      if (!empty($data['columnstore']) && is_array($data['columnstore'])) {
+          $groups['ColumnStore'] = $data['columnstore'];
+      }
+
+      if (!empty($data['spider']) && is_array($data['spider'])) {
+          $groups['Spider'] = $data['spider'];
+      }
+  }
+  ?>
+
+<div style="padding-right:20px">
+    <div class="grid row grid-row-third" style="margin-top:20px;">
+        <?php foreach ($groups as $title => $items): ?>
+        <?php if (!is_array($items) || empty($items)) { continue; } ?>
+        <?php $isGaleraPanel = in_array($title, ['GaleraCluster', 'GaleraCluster / Flow-Control', 'GaleraCluster / Provider', 'GaleraCluster / Configuration'], true); ?>
+        <?php $isSummaryPanel = ($title === 'Résumé'); ?>
+        <?php $isMysqlUnavailable = isset($data['mysql_available']) && (string)$data['mysql_available'] === '0'; ?>
+        <?php $panelClass = ($isSummaryPanel && $isMysqlUnavailable) ? 'panel panel-danger' : 'panel panel-default'; ?>
+        <?php $panelBodyStyle = ($isSummaryPanel && $isMysqlUnavailable) ? 'background-color:#f2dede;' : ''; ?>
+        <div class="col-md-4 grid-item" style="margin-bottom:0px;">
+            <div class="<?= $panelClass ?>">
+            <div class="panel-heading"><strong><?= htmlspecialchars($title) ?></strong></div>
+            <div class="panel-body" style="<?= $panelBodyStyle ?>">
+                <table class="table table-condensed table-striped" style="margin:0">
+                <tbody>
+                <?php foreach ($items as $k => $v): ?>
+                    <?php $isGaleraCluster = $isGaleraPanel; ?>
+                    <?php $valueAlign = $isGaleraCluster ? 'left' : 'right'; ?>
+                    <?php $rowClass = (is_array($v) && !empty($v['row_class'])) ? (string)$v['row_class'] : ''; ?>
+                    <tr<?= $rowClass !== '' ? ' class="'.htmlspecialchars($rowClass, ENT_QUOTES, 'UTF-8').'"' : '' ?>>
+                    <td style="width:50%"><?= $k ?></td>
+                    <td style="width:50%; text-align:<?= $valueAlign ?>">
+                        <?php if (is_array($v) && ($v['type'] ?? '') === 'usage_meter'): ?>
+                            <?php $percent = max(0, min(100, (float)($v['percent'] ?? 0))); ?>
+                            <?php $meterColor = $v['color'] ?? '#5cb85c'; ?>
+                            <?php $metric = $v['metric'] ?? 'ram'; ?>
+                            <div class="usage-meter-wrap">
+                                <div class="usage-meter-text">
+
+                                    <span><?= htmlspecialchars((string)($v['text'] ?? 'RAM usage : n/a')) ?></span>
+                                </div>
+                                <div class="usage-meter-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= $percent ?>">
+                                    <div class="usage-meter-progress-value" style="width: <?= $percent ?>%; background: <?= htmlspecialchars($meterColor) ?>;"></div>
+                                </div>
+                            </div>
+                        <?php elseif (is_array($v) && ($v['type'] ?? '') === 'copy_clipboard'): ?>
+                            <span
+                                data-clipboard-text="<?= htmlspecialchars((string)($v['text'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+                                onclick="copyMysqlCmd(<?= htmlspecialchars(json_encode((string)($v['text'] ?? '')), ENT_QUOTES, 'UTF-8') ?>); return false;"
+                                class="copy-button clipboard badge badge-info"
+                                style="font-variant: small-caps; font-size: 14px; vertical-align: middle; background-color: #4384c7; cursor:pointer;"
+                                title="Copy">
+                                <?= $v['icon'] ?? '<i class="fa fa-files-o" aria-hidden="true"></i>' ?>
+                            </span>
+                        <?php elseif ($k === 'Cmd' && is_string($v)): ?>
+                            <div class="cmd-actions">
+
+                                <button type="button" class="btn btn-xs btn-success" onclick="copyMysqlCmd(<?= htmlspecialchars(json_encode($v), ENT_QUOTES, 'UTF-8') ?>)">Copy</button>
+                            </div>
+                        <?php elseif (is_array($v) && ($v['type'] ?? '') === 'action_button'): ?>
+                            <?php
+                                $statusClass = (string)($v['status_class'] ?? 'label label-default');
+                                $url = (string)($v['url'] ?? '');
+                                $buttonClass = (string)($v['class'] ?? 'btn btn-xs btn-default');
+                                $disabled = !empty($v['disabled']) || $url === '' || $url === '#';
+                                $titleAttr = (string)($v['title'] ?? '');
+                                $method = strtolower((string)($v['method'] ?? 'get'));
+                                $csrfScope = (string)($v['csrf_scope'] ?? '');
+                                $postFields = is_array($v['post_fields'] ?? null) ? $v['post_fields'] : [];
+                                $confirm = (string)($v['confirm'] ?? '');
+                                $confirmAttr = htmlspecialchars($confirm, ENT_QUOTES, 'UTF-8');
+                            ?>
+                            <div class="cmd-actions">
+                                <span class="<?= htmlspecialchars($statusClass, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string)($v['status'] ?? 'n/a')) ?></span>
+                                <?php if ($disabled): ?>
+                                    <button
+                                        type="button"
+                                        class="<?= htmlspecialchars($buttonClass, ENT_QUOTES, 'UTF-8') ?>"
+                                        disabled="disabled"
+                                        title="<?= htmlspecialchars($titleAttr, ENT_QUOTES, 'UTF-8') ?>">
+                                        <?= htmlspecialchars((string)($v['label'] ?? 'Action')) ?>
+                                    </button>
+                                <?php elseif ($method === 'post'): ?>
+                                    <form
+                                        method="post"
+                                        action="<?= htmlspecialchars($url, ENT_QUOTES, 'UTF-8') ?>"
+                                        style="display:inline"
+                                        <?= $confirm !== '' ? 'data-confirm="'.$confirmAttr.'" onsubmit="return confirm(this.getAttribute(\'data-confirm\'));"' : '' ?>>
+                                        <?= $csrfScope !== '' ? CsrfRender::hiddenInput($data, $csrfScope) : '' ?>
+                                        <?php foreach ($postFields as $field => $value): ?>
+                                            <input type="hidden" name="<?= htmlspecialchars((string)$field, ENT_QUOTES, 'UTF-8') ?>" value="<?= htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8') ?>">
+                                        <?php endforeach; ?>
+                                        <button
+                                            type="submit"
+                                            class="<?= htmlspecialchars($buttonClass, ENT_QUOTES, 'UTF-8') ?>"
+                                            title="<?= htmlspecialchars($titleAttr, ENT_QUOTES, 'UTF-8') ?>">
+                                            <?= htmlspecialchars((string)($v['label'] ?? 'Action')) ?>
+                                        </button>
+                                    </form>
+                                <?php else: ?>
+                                    <a
+                                        href="<?= htmlspecialchars($url, ENT_QUOTES, 'UTF-8') ?>"
+                                        class="<?= htmlspecialchars($buttonClass, ENT_QUOTES, 'UTF-8') ?>"
+                                        title="<?= htmlspecialchars($titleAttr, ENT_QUOTES, 'UTF-8') ?>">
+                                        <?= htmlspecialchars((string)($v['label'] ?? 'Action')) ?>
+                                    </a>
+                                <?php endif; ?>
+                            </div>
+                        <?php elseif (is_array($v) && ($v['type'] ?? '') === 'status_text'): ?>
+                            <?= (string)($v['value'] ?? '') ?>
+                        <?php else: ?>
+                            <?= (string)$v ?>
+                        <?php endif; ?>
+                    </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+                </table>
+            </div>
+            </div>
+        </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+
+  <!-- DISQUES -->
+  <?php if (!$isProxy && !$isVip && !empty($data['disks']) && is_array($data['disks'])): ?>
+  <div class="row">
+    <div class="col-md-12">
+      <div class="panel panel-info">
+        <div class="panel-heading"><strong>Disques</strong></div>
+        <div class="panel-body" style="padding:0; overflow:auto">
+          <table class="table table-condensed table-bordered table-striped" style="margin:0">
+            <thead>
+              <tr>
+                <th>Mount</th>
+                <th>Filesystem</th>
+                <th>Taille</th>
+                <th>Utilisé</th>
+                <th>Libre</th>
+                <th>%</th>
+                <th>Point de montage</th>
+              </tr>
+            </thead>
+            <tbody>
+            <?php foreach ($data['disks'] as $mount => $info): ?>
+              <tr>
+                <td><?= htmlspecialchars($mount) ?></td>
+                <td><?= htmlspecialchars($info[0] ?? '') ?></td>
+                <td><?= htmlspecialchars($info[1] ?? '') ?></td>
+                <td><?= htmlspecialchars($info[2] ?? '') ?></td>
+                <td><?= htmlspecialchars($info[3] ?? '') ?></td>
+                <td><?= htmlspecialchars($info[4] ?? '') ?></td>
+                <td><?= htmlspecialchars($info[5] ?? '') ?></td>
+              </tr>
+            <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <?php endif; ?>
+
+
+  <!-- PROCESSLIST -->
+  <?php if (!$isProxy && !$isVip && !empty($data['processlist']) && is_array($data['processlist'])): ?>
+  <div class="row">
+    <div class="col-md-12">
+      <div class="panel panel-warning">
+        <div class="panel-heading"><strong>Processlist</strong></div>
+        <div class="panel-body" style="overflow:auto; max-height:600px; padding:0">
+          <table class="table table-condensed table-bordered table-striped">
+            <thead>
+            <tr>
+              <?php $first = reset($data['processlist']); ?>
+              <?php if ($first && is_array($first)): ?>
+                <?php foreach (array_keys($first) as $col): ?>
+                  <th><?= htmlspecialchars($col) ?></th>
+                <?php endforeach; ?>
+              <?php endif; ?>
+            </tr>
+            </thead>
+            <tbody>
+            <?php foreach ($data['processlist'] as $row): ?>
+              <tr>
+                <?php foreach ($row as $val): ?>
+                  <td>
+                    <?php
+                      $text = (string)$val;
+                      if (strlen($text) > 200) {
+                          $text = substr($text, 0, 200) . "…";
+                      }
+                      echo nl2br(htmlspecialchars($text));
+                    ?>
+                  </td>
+                <?php endforeach; ?>
+              </tr>
+            <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <?php endif; ?>
+
+
+
+<?php
+FactoryController::addNode("MysqlServer", "lastRefresh", $param);
+?>
+
+<script>
+function copyMysqlCmd(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text);
+        return;
+    }
+
+    var temp = document.createElement('textarea');
+    temp.value = text;
+    document.body.appendChild(temp);
+    temp.select();
+    document.execCommand('copy');
+    document.body.removeChild(temp);
+}
+</script>

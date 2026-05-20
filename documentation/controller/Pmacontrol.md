@@ -1,0 +1,36 @@
+# Pmacontrol
+
+- Type: class
+- Namespace: `App\Controller`
+- Source: `App/Controller/Pmacontrol.php`
+
+- `before($param)`: Prepare pmacontrol state through `before`.
+- `setPageMeta($title, $ariane, $meta)`: Handle pmacontrol state through `setPageMeta`.
+- `index()`: Render pmacontrol state through `index`.
+- `product()`: Handle pmacontrol state through `product`.
+- `monitoring()`: Handle pmacontrol state through `monitoring`.
+- `performance()`: Handle pmacontrol state through `performance`.
+- `backups()`: Handle pmacontrol state through `backups`.
+- `galera()`: Handle pmacontrol state through `galera`.
+- `proxysql()`: Handle pmacontrol state through `proxysql`.
+- `schema()`: Handle pmacontrol state through `schema`.
+- `security()`: Handle pmacontrol state through `security`.
+- `automation()`: Handle pmacontrol state through `automation`.
+- `solutions()`: Handle pmacontrol state through `solutions`.
+- `integrations()`: Handle pmacontrol state through `integrations`.
+- `pricing()`: Handle pmacontrol state through `pricing`.
+- `docs()`: Handle pmacontrol state through `docs`.
+- `resources()`: Handle pmacontrol state through `resources`.
+- `blog()`: Handle pmacontrol state through `blog`.
+- `blog_article()`: Handle pmacontrol state through `blog_article`.
+- `case_studies()`: Handle pmacontrol state through `case_studies`.
+- `whitepapers()`: Handle pmacontrol state through `whitepapers`.
+- `webinars()`: Handle pmacontrol state through `webinars`.
+- `company()`: Handle pmacontrol state through `company`.
+- `roadmap()`: Handle pmacontrol state through `roadmap`.
+- `security_page()`: Handle pmacontrol state through `security_page`.
+- `contact()`: Handle pmacontrol state through `contact`.
+- `privacy()`: Handle pmacontrol state through `privacy`.
+- `terms()`: Handle pmacontrol state through `terms`.
+- `cookies()`: Handle pmacontrol state through `cookies`.
+- `ai()`: Handle pmacontrol state through `ai`.

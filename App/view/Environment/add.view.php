@@ -1,4 +1,7 @@
 <?php
+
+use App\Library\Security\CsrfRender;
+
 /* 
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -6,8 +9,13 @@
  */
 
 use Glial\Html\Form\Form;
+
+$environmentAddCsrfField = CsrfRender::field($data, 'environment_add');
+$environmentAddCsrfToken = CsrfRender::token($data, 'environment_add');
 ?>
 <form action="" method="post">
+    <input type="hidden" name="<?= $environmentAddCsrfField ?>" value="<?= $environmentAddCsrfToken ?>">
+
     <div class="panel panel-primary">
         <div class="panel-heading">
             <h3 class="panel-title"><?= __('Add a environment') ?></h3>

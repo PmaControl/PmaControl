@@ -13,10 +13,55 @@ use \Glial\Sgbd\Sgbd;
 use \App\Library\Debug;
 use App\Library\Extraction2;
 
+/**
+ * Class responsible for alert workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Alert extends Controller
 {
+/**
+ * Stores `$to_check` for to check.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $to_check = array("wsrep_cluster_size", "wsrep_cluster_name", "wsrep_on");
 
+/**
+ * Handle alert state through `check`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $date Input value for `date`.
+ * @phpstan-param mixed $date
+ * @psalm-param mixed $date
+ * @param int $id_servers Input value for `id_servers`.
+ * @phpstan-param int $id_servers
+ * @psalm-param int $id_servers
+ * @return void Returned value for check.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::check()
+ * @example /fr/alert/check
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function check($date, $id_servers)
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -28,6 +73,27 @@ class Alert extends Controller
         }
     }
 
+/**
+ * Handle alert state through `reboot`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for reboot.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::reboot()
+ * @example /fr/alert/reboot
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function reboot($param)
     {
         Debug::parseDebug($param);

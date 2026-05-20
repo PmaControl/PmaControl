@@ -3,6 +3,11 @@
 namespace App\Controller;
 
 use \App\Library\Debug;
+use App\Library\Security\BenchmarkBenchRequest;
+use App\Library\Security\ControllerActionSelection;
+use App\Library\Security\CsrfGuard;
+use App\Library\Security\PositiveIntegerSelection;
+use Glial\Security\Csrf;
 
 use \Glial\Synapse\Controller;
 use \Glial\Security\Crypt\Crypt;
@@ -13,6 +18,20 @@ use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
 use \Monolog\Handler\StreamHandler;
 
+/**
+ * Class responsible for benchmark workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Benchmark extends Controller
 {
     const COLOR_GREEN               = "75,215,134";
@@ -23,10 +42,33 @@ class Benchmark extends Controller
     const SHADOW                    = "0.2";
     const DIRECTORY_LUA_SYSBENCH_05 = "/usr/local/sysbench/tests/db/";
     const DIRECTORY_LUA_SYSBENCH_1  = "/usr/share/sysbench/";
+    private const BENCHMARK_INDEX_DEFAULT_TAB = 'graph';
+    private const BENCHMARK_BENCH_CSRF_SCOPE = 'benchmark.bench';
 
+/**
+ * Stores `$debug` for debug.
+ *
+ * @var bool
+ * @phpstan-var bool
+ * @psalm-var bool
+ */
     var $debug = false;
+/**
+ * Stores `$count` for count.
+ *
+ * @var int
+ * @phpstan-var int
+ * @psalm-var int
+ */
     var $count = 1;
 
+/**
+ * Stores `$logger` for logger.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $logger;
     /*
      * @brand-primary: darken(#428bca, 6.5%); // #337ab7
@@ -41,6 +83,27 @@ class Benchmark extends Controller
     //var $colors = array(self::COLOR_BLUE, self::COLOR_RED, self::COLOR_YELLOW, self::COLOR_GREEN, self::COLOR_GREY);
 
 
+/**
+ * Prepare benchmark state through `before`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for before.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::before()
+ * @example /fr/benchmark/before
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function before($param)
     {
         
@@ -53,6 +116,27 @@ class Benchmark extends Controller
 
 
 
+/**
+ * Handle benchmark state through `run`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for run.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::run()
+ * @example /fr/benchmark/run
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function run($param)
     {
         $this->view = false;
@@ -224,6 +308,27 @@ class Benchmark extends Controller
         }
     }
 
+/**
+ * Retrieve benchmark state through `getQueriesPerformedRead`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $input_lines Input value for `input_lines`.
+ * @phpstan-param mixed $input_lines
+ * @psalm-param mixed $input_lines
+ * @return mixed Returned value for getQueriesPerformedRead.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getQueriesPerformedRead()
+ * @example /fr/benchmark/getQueriesPerformedRead
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getQueriesPerformedRead($input_lines)
     {
         preg_match_all("/queries\sperformed:[\s]+read:[\s]+([\d]+)[\s]+/Ux", $input_lines, $output_array);
@@ -235,6 +340,27 @@ class Benchmark extends Controller
         }
     }
 
+/**
+ * Retrieve benchmark state through `getQueriesPerformedWrite`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $input_lines Input value for `input_lines`.
+ * @phpstan-param mixed $input_lines
+ * @psalm-param mixed $input_lines
+ * @return mixed Returned value for getQueriesPerformedWrite.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getQueriesPerformedWrite()
+ * @example /fr/benchmark/getQueriesPerformedWrite
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getQueriesPerformedWrite($input_lines)
     {
         preg_match_all("/queries\sperformed:[\s]+read:[\s]+[\d]+[\s]+write:[\s]+([\d]+)[\s]+/Ux", $input_lines, $output_array);
@@ -246,6 +372,27 @@ class Benchmark extends Controller
         }
     }
 
+/**
+ * Retrieve benchmark state through `getQueriesPerformedOther`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $input_lines Input value for `input_lines`.
+ * @phpstan-param mixed $input_lines
+ * @psalm-param mixed $input_lines
+ * @return mixed Returned value for getQueriesPerformedOther.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getQueriesPerformedOther()
+ * @example /fr/benchmark/getQueriesPerformedOther
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getQueriesPerformedOther($input_lines)
     {
         preg_match_all("/queries\sperformed:[\s]+read:[\s]+[\d]+[\s]+write:[\s]+[\d]+[\s]+other:[\s]+([\d]+)[\s]+/Ux", $input_lines, $output_array);
@@ -257,6 +404,27 @@ class Benchmark extends Controller
         }
     }
 
+/**
+ * Retrieve benchmark state through `getQueriesPerformedTotal`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $input_lines Input value for `input_lines`.
+ * @phpstan-param mixed $input_lines
+ * @psalm-param mixed $input_lines
+ * @return mixed Returned value for getQueriesPerformedTotal.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getQueriesPerformedTotal()
+ * @example /fr/benchmark/getQueriesPerformedTotal
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getQueriesPerformedTotal($input_lines)
     {
         preg_match_all("/queries\sperformed:[\s]+read:[\s]+[\d]+[\s]+write:[\s]+[\d]+[\s]+other:[\s]+[\d]+[\s]+total:[\s]+([\d]+)[\s]+/Ux", $input_lines,
@@ -269,6 +437,27 @@ class Benchmark extends Controller
         }
     }
 
+/**
+ * Retrieve benchmark state through `getTransactions`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $input_lines Input value for `input_lines`.
+ * @phpstan-param mixed $input_lines
+ * @psalm-param mixed $input_lines
+ * @return mixed Returned value for getTransactions.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getTransactions()
+ * @example /fr/benchmark/getTransactions
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getTransactions($input_lines)
     {
         preg_match_all("/transactions:[\s]+([\d]+)[\s]+/Ux", $input_lines, $output_array);
@@ -280,6 +469,27 @@ class Benchmark extends Controller
         }
     }
 
+/**
+ * Retrieve benchmark state through `getErrors`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $input_lines Input value for `input_lines`.
+ * @phpstan-param mixed $input_lines
+ * @psalm-param mixed $input_lines
+ * @return mixed Returned value for getErrors.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getErrors()
+ * @example /fr/benchmark/getErrors
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getErrors($input_lines)
     {
         preg_match_all("/ignored\serrors:[\s]+([\d]+)[\s]+/Ux", $input_lines, $output_array);
@@ -291,6 +501,27 @@ class Benchmark extends Controller
         }
     }
 
+/**
+ * Retrieve benchmark state through `getTotalTime`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $input_lines Input value for `input_lines`.
+ * @phpstan-param mixed $input_lines
+ * @psalm-param mixed $input_lines
+ * @return mixed Returned value for getTotalTime.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getTotalTime()
+ * @example /fr/benchmark/getTotalTime
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getTotalTime($input_lines)
     {
         preg_match_all("/total\stime:[\s]+([\S]+)[\s]+/Ux", $input_lines, $output_array);
@@ -302,6 +533,27 @@ class Benchmark extends Controller
         }
     }
 
+/**
+ * Retrieve benchmark state through `getReponseTimeMin`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $input_lines Input value for `input_lines`.
+ * @phpstan-param mixed $input_lines
+ * @psalm-param mixed $input_lines
+ * @return mixed Returned value for getReponseTimeMin.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getReponseTimeMin()
+ * @example /fr/benchmark/getReponseTimeMin
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getReponseTimeMin($input_lines)
     {
         preg_match_all("/min:[\s]+([\S]+)[\s]+/Ux", $input_lines, $output_array);
@@ -313,6 +565,27 @@ class Benchmark extends Controller
         }
     }
 
+/**
+ * Retrieve benchmark state through `getReponseTimeMax`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $input_lines Input value for `input_lines`.
+ * @phpstan-param mixed $input_lines
+ * @psalm-param mixed $input_lines
+ * @return mixed Returned value for getReponseTimeMax.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getReponseTimeMax()
+ * @example /fr/benchmark/getReponseTimeMax
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getReponseTimeMax($input_lines)
     {
         preg_match_all("/max:[\s]+([\S]+)[\s]+/Ux", $input_lines, $output_array);
@@ -324,6 +597,27 @@ class Benchmark extends Controller
         }
     }
 
+/**
+ * Retrieve benchmark state through `getReponseTimeAvg`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $input_lines Input value for `input_lines`.
+ * @phpstan-param mixed $input_lines
+ * @psalm-param mixed $input_lines
+ * @return mixed Returned value for getReponseTimeAvg.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getReponseTimeAvg()
+ * @example /fr/benchmark/getReponseTimeAvg
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getReponseTimeAvg($input_lines)
     {
         preg_match_all("/avg:[\s]+([\S]+)[\s]+/Ux", $input_lines, $output_array);
@@ -336,6 +630,27 @@ class Benchmark extends Controller
         }
     }
 
+/**
+ * Retrieve benchmark state through `getReponseTime95percent`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $input_lines Input value for `input_lines`.
+ * @phpstan-param mixed $input_lines
+ * @psalm-param mixed $input_lines
+ * @return mixed Returned value for getReponseTime95percent.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getReponseTime95percent()
+ * @example /fr/benchmark/getReponseTime95percent
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getReponseTime95percent($input_lines)
     {
         $output_array = array();
@@ -349,6 +664,27 @@ class Benchmark extends Controller
         }
     }
 
+/**
+ * Handle benchmark state through `testMoc`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for testMoc.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::testMoc()
+ * @example /fr/benchmark/testMoc
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function testMoc($param)
     {
         Debug::parseDebug($param);
@@ -371,6 +707,24 @@ class Benchmark extends Controller
 // 13 benchmark_thread
     }
 
+/**
+ * Handle benchmark state through `moc`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for moc.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::moc()
+ * @example /fr/benchmark/moc
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function moc()
     {
         return "LTP test statistics:
@@ -400,6 +754,24 @@ Threads fairness:
     execution time (avg/stddev):   29.0808/0.04";
     }
 
+/**
+ * Handle benchmark state through `moc2`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for moc2.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::moc2()
+ * @example /fr/benchmark/moc2
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function moc2()
     {
         return "WARNING: --max-time is deprecated, use --time instead
@@ -441,6 +813,24 @@ Threads fairness:
     execution time (avg/stddev):   29.9955/0.00";
     }
 
+/**
+ * Handle benchmark state through `moc3`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for moc3.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::moc3()
+ * @example /fr/benchmark/moc3
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function moc3()
     {
         return "sysbench 1.0.18 (using system LuaJIT 2.1.0-beta3)
@@ -482,6 +872,27 @@ Threads fairness:
 ";
     }
 
+/**
+ * Render benchmark state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/benchmark/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index($param)
     {
 
@@ -525,24 +936,52 @@ Threads fairness:
         $data['menu']['graph']['icone'] = '<i class="fa fa-area-chart" aria-hidden="true"></i>';
         $data['menu']['graph']['path']  = LINK.$this->getClass().'/'.__FUNCTION__.'/graph';
 
-        if (!empty($param[0])) {
-            if (in_array($param[0], array_keys($data['menu']))) {
-                $_GET['path'] = LINK.$this->getClass().'/'.__FUNCTION__.'/'.$param[0];
-            }
-        }
-
-        if (empty($_GET['path']) && empty($param[0])) {
-            $_GET['path'] = $data['menu']['graph']['path'];
-            $param[0]     = 'graph';
-        }
-
-        if (empty($_GET['path'])) {
-            $_GET['path'] = 'graph';
-        }
+        $selectedTab = self::evaluateIndexTab($param, array_keys($data['menu']), self::BENCHMARK_INDEX_DEFAULT_TAB);
+        $data['selected_benchmark_tab']  = $selectedTab;
+        $data['selected_benchmark_path'] = $data['menu'][$selectedTab]['path'];
 
         $this->set("data", $data);
     }
 
+    public static function benchmarkIndexTabs(): array
+    {
+        return array('bench', 'current', 'graph');
+    }
+
+    public static function evaluateIndexTab(
+        array $param,
+        ?array $allowedTabs = null,
+        string $defaultTab = self::BENCHMARK_INDEX_DEFAULT_TAB
+    ): string
+    {
+        return ControllerActionSelection::normalize(
+            $param[0] ?? null,
+            $allowedTabs ?? self::benchmarkIndexTabs(),
+            $defaultTab
+        );
+    }
+
+/**
+ * Handle benchmark state through `testError`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $input_lines Input value for `input_lines`.
+ * @phpstan-param mixed $input_lines
+ * @psalm-param mixed $input_lines
+ * @return mixed Returned value for testError.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::testError()
+ * @example /fr/benchmark/testError
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function testError($input_lines)
     {
         $pos = strpos($input_lines, "FATAL:");
@@ -555,16 +994,70 @@ Threads fairness:
 
 
 
+/**
+ * Handle benchmark state through `install`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for install.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::install()
+ * @example /fr/benchmark/install
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function install()
     {
 
     }
 
+/**
+ * Handle benchmark state through `uninstall`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for uninstall.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::uninstall()
+ * @example /fr/benchmark/uninstall
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function uninstall()
     {
 
     }
 
+/**
+ * Handle benchmark state through `graph`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for graph.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::graph()
+ * @example /fr/benchmark/graph
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function graph()
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -572,34 +1065,34 @@ Threads fairness:
 
         $data = array();
 
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
-
-            if (!empty($_POST['benchmark'])) {
-
-                if (!empty($_POST['benchmark_main']['id'])) {
-                    $ret = "";
-                    $ret .= "benchmark/index/benchmark_main:id:".json_encode($_POST['benchmark_main']['id']);
-                } else {
-
-                    $ret = "";
-                    $ret .= "benchmark/index/";
-                }
-
-                header("location: ".LINK.$ret);
-
-                exit;
-            }
+        $outcome = self::evaluateGraphRequest($_GET, $_SERVER);
+        if ($outcome['status'] !== 200) {
+            $this->view = false;
+            $this->layout_name = false;
+            self::sendGraphError($outcome['status'], $outcome['body'], $outcome['headers']);
+            return;
         }
 
-        if (!empty($_GET['benchmark_main']['id'])) {
-            $id_to_take = implode(",", json_decode($_GET['benchmark_main']['id']));
+        $selection = $outcome['selection'];
+        if (!empty($selection['ids'])) {
+            $id_to_take = $selection['id_list'];
+            self::applyGraphSelectionToGet($selection);
         } else {
             $sql = "SELECT max(id) as id FROM `benchmark_main` WHERE status = 'COMPLETED'";
             $res = $db->sql_query($sql);
 
             while ($ob = $db->sql_fetch_object($res)) {
-                $id_to_take                   = $ob->id;
-                $_GET['benchmark_main']['id'] = json_encode(array($id_to_take));
+                $defaultBenchmarkId = (int) $ob->id;
+                if ($defaultBenchmarkId < 1) {
+                    continue;
+                }
+
+                $id_to_take = (string) $defaultBenchmarkId;
+                self::applyGraphSelectionToGet([
+                    'ids' => [$defaultBenchmarkId],
+                    'id_list' => $id_to_take,
+                    'query_value' => PositiveIntegerSelection::toBracketedList([$defaultBenchmarkId]),
+                ]);
             }
         }
 
@@ -608,7 +1101,7 @@ Threads fairness:
             return;
         }
 
-        $sql = "select a.*,b.display_name from `benchmark_main` a
+        $sql = "select a.*,b.display_name, b.port from `benchmark_main` a
          INNER JOIN mysql_server b ON a.id_mysql_server = b.id
          ORDER BY a.date_end DESC LIMIT 100";
         $res = $db->sql_query($sql);
@@ -620,12 +1113,12 @@ Threads fairness:
             $tmp = array();
 
             $tmp['id']      = $ob->id;
-            $tmp['libelle'] = $ob->display_name." (".$ob->date_end.")";
+            $tmp['libelle'] = $ob->display_name.":".$ob->port." (".$ob->date_end.")";
 
             $data['select_bench'][] = $tmp;
         }
 
-        $sql = "SELECT a.display_name, b.`date`,b.id
+        $sql = "SELECT a.display_name, a.port, b.`date`,b.id
             FROM mysql_server a
             INNER JOIN `benchmark_main` b ON a.id = b.id_mysql_server
             WHERE b.id IN (".$id_to_take.")
@@ -634,7 +1127,7 @@ Threads fairness:
 
         $benchmark = array();
         while ($ob        = $db->sql_fetch_object($res)) {
-            $benchmark[$ob->id] = $ob->display_name." (".$ob->date.")";
+            $benchmark[$ob->id] = $ob->display_name.":".$ob->port." (".$ob->date.")";
         }
 
         $sql = "SELECT id_benchmark_main,
@@ -739,11 +1232,141 @@ Threads fairness:
         }
     }
 
+    public static function evaluateGraphRequest(array $get, array $server): array
+    {
+        $method = strtoupper((string) ($server['REQUEST_METHOD'] ?? 'GET'));
+        if ($method !== 'GET' && $method !== 'HEAD') {
+            return self::buildGraphOutcome(405, 'Method Not Allowed', ['Allow' => 'GET, HEAD']);
+        }
+
+        $selection = self::normalizeGraphSelection($get);
+        if ($selection === null) {
+            return self::buildGraphOutcome(400, 'Invalid benchmark graph selection');
+        }
+
+        return self::buildGraphOutcome(200, '', [], $selection);
+    }
+
+    public static function normalizeGraphSelection(array $get): ?array
+    {
+        if (!array_key_exists('benchmark_main', $get)) {
+            return self::emptyGraphSelection();
+        }
+
+        if (!is_array($get['benchmark_main']) || array_diff(array_keys($get['benchmark_main']), ['id']) !== []) {
+            return null;
+        }
+
+        if (!array_key_exists('id', $get['benchmark_main'])) {
+            return null;
+        }
+
+        if ($get['benchmark_main']['id'] === '' || $get['benchmark_main']['id'] === []) {
+            return self::emptyGraphSelection();
+        }
+
+        $ids = PositiveIntegerSelection::normalizeList($get['benchmark_main']['id'], 100);
+        if ($ids === null) {
+            return null;
+        }
+
+        return [
+            'ids' => $ids,
+            'id_list' => PositiveIntegerSelection::toCsv($ids),
+            'query_value' => PositiveIntegerSelection::toBracketedList($ids),
+        ];
+    }
+
+    private static function applyGraphSelectionToGet(array $selection): void
+    {
+        if ($selection['ids'] === []) {
+            unset($_GET['benchmark_main']);
+            return;
+        }
+
+        $_GET['benchmark_main'] = ['id' => $selection['query_value']];
+    }
+
+    private static function emptyGraphSelection(): array
+    {
+        return [
+            'ids' => [],
+            'id_list' => '',
+            'query_value' => '',
+        ];
+    }
+
+    private static function buildGraphOutcome(
+        int $statusCode,
+        string $message,
+        array $headers = [],
+        ?array $selection = null
+    ): array {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'selection' => $selection,
+        ];
+    }
+
+    private static function sendGraphError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+
+        if ($message !== '') {
+            echo $message;
+        }
+    }
+
+/**
+ * Handle benchmark state through `config`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for config.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::config()
+ * @example /fr/benchmark/config
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function config()
     {
         $db = Sgbd::sql(DB_DEFAULT);
     }
 
+/**
+ * Handle benchmark state through `bench`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for bench.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::bench()
+ * @example /fr/benchmark/bench
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function bench($param)
     {
 
@@ -751,83 +1374,66 @@ Threads fairness:
 
         $db = Sgbd::sql(DB_DEFAULT);
 
-        if (! IS_CLI && $_SERVER['REQUEST_METHOD'] == "POST") {
+        if (! IS_CLI && CsrfGuard::isPost($_SERVER)) {
+            $outcome = self::evaluateBenchRequest($_POST, $_SERVER, $_SESSION, $this->getLua());
+            if ($outcome['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendBenchError($outcome['status'], $outcome['body'], $outcome['headers']);
+                return;
+            }
 
-            if (!empty($_POST['benchmark'])) {
-                if (!empty($_POST['mysql_server']['id'])) {
+            $benchmark = $outcome['benchmark'];
+            $idUserMain = (int) $this->di['auth']->getuser()->id;
+            $sysbenchVersion = (string) $this->getSysbenchVersion();
+            $date = date("Y-m-d H:i:s");
 
-                    //boucler sur tous les cas à prévoir
-                    foreach ($_POST['benchmark_main']['mode'] as $mode) {
-                        foreach ($_POST['mysql_server']['id'] as $id_mysql_server) {
+            foreach ($benchmark['modes'] as $mode) {
+                foreach ($benchmark['server_ids'] as $id_mysql_server) {
+                    $db->sql_query(self::buildBenchInsertSql($benchmark, $id_mysql_server, $mode, $idUserMain, $sysbenchVersion, $date));
+                }
+            }
 
-                            if (empty($id_mysql_server)) {
-                                continue;
-                            }
+            $sql = "SELECT * FROM benchmark_config where id=1";
+            $res = $db->sql_query($sql);
 
-                            $sql = "INSERT INTO benchmark_main
-                            SET id_mysql_server = '".$id_mysql_server."',
-                            id_user_main = '".$this->di['auth']->getuser()->id."',
-                            date = '".date("Y-m-d H:i:s")."',
-                            sysbench_version = '".$this->getSysbenchVersion()."',
-                            threads = '".implode(',', $_POST['benchmark_main']['threads'])."',
-                            tables_count = '".$_POST['benchmark_main']['tables_count']."',
-                            table_size = '".$_POST['benchmark_main']['tables_count']."',
-                            mode = '".$mode."',
-                            max_time = '".$_POST['benchmark_main']['max_time']."',
-                            status = 'NOT STARTED',
-                            date_start='0000-00-00 00:00:00',
-                            date_end='0000-00-00 00:00:00',
-                            progression=0
-                            ";
+            // system de queue
+            while ($ob = $db->sql_fetch_object($res)) {
 
-                            $db->sql_query($sql);
-                        }
+                $start_queue = true;
+                if (!empty($ob->pid)) {
+                    $cmd   = "ps -p ".(int) $ob->pid;
+                    $alive = shell_exec($cmd);
+
+                    if (strpos((string) $alive, (string) (int) $ob->pid) !== false) {
+                        $start_queue = false;
                     }
+                }
 
-                    $sql = "SELECT * FROM benchmark_config where id=1";
-                    $res = $db->sql_query($sql);
+                if ($start_queue) {
 
-                    // system de queue
-                    while ($ob = $db->sql_fetch_object($res)) {
+                    $php = explode(" ", shell_exec("whereis php"))[1];
+                    $cmd = $php." ".GLIAL_INDEX." Benchmark queue >> /tmp/queue & echo $!";
 
-                        $start_queue = true;
-                        if (!empty($ob->pid)) {
-                            $cmd   = "ps -p ".$ob->pid;
-                            $alive = shell_exec($cmd);
+                    $pid = 0;
+                    $pid = trim(shell_exec($cmd));
 
-                            if (strpos($alive, $ob->pid) !== false) {
-                                $start_queue = false;
-                            }
-                        }
+                    $this->logger->warning("STARTED QUEUE : $pid");
 
-                        if ($start_queue) {
+                    $sql = "UPDATE `benchmark_config` SET pid = '".(int) $pid."' WHERE id = 1";
+                    $db->sql_query($sql);
 
-                            $php = explode(" ", shell_exec("whereis php"))[1];
-                            $cmd = $php." ".GLIAL_INDEX." Benchmark queue >> /tmp/queue & echo $!";
-
-                            $pid = 0;
-                            $pid = trim(shell_exec($cmd));
-
-                            $this->logger->warning("STARTED QUEUE : $pid");
-
-                            $sql = "UPDATE `benchmark_config` SET pid = '".$pid."' WHERE id = 1";
-                            $db->sql_query($sql);
-
-                            set_flash("success", "Daemon", "Benchmark started in background, check onglet current");
-                        } else {
-                            set_flash("caution", "Daemon", "Daemon already started, benchmark added in queue, check onglet current");
-                        }
-                    }
+                    set_flash("success", "Daemon", "Benchmark started in background, check onglet current");
                 } else {
-                    set_flash("error", "Server", "Please select the server(s) you want to bench");
-
-                    header("location: ".LINK.$this->getClass()."/index/".__FUNCTION__);
+                    set_flash("caution", "Daemon", "Daemon already started, benchmark added in queue, check onglet current");
                 }
             }
         }
 
         // version de sysbench
         $data['sysbench'] = $this->getSysbenchVersion();
+        $data['benchmark_bench_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['benchmark_bench_csrf_token'] = Csrf::issueToken($_SESSION, self::BENCHMARK_BENCH_CSRF_SCOPE);
 
 
         // chargement de la config
@@ -913,6 +1519,59 @@ Threads fairness:
         $this->set("data", $data);
     }
 
+    public static function evaluateBenchRequest(
+        array $post,
+        array $server,
+        array $session,
+        array $allowedModes = []
+    ): array {
+        return BenchmarkBenchRequest::evaluate($post, $server, $session, self::BENCHMARK_BENCH_CSRF_SCOPE, $allowedModes);
+    }
+
+    public static function normalizeBenchPayload(array $post, array $allowedModes = []): ?array
+    {
+        return BenchmarkBenchRequest::normalize($post, $allowedModes);
+    }
+
+    public static function buildBenchInsertSql(
+        array $payload,
+        int $idMysqlServer,
+        string $mode,
+        int $idUserMain,
+        string $sysbenchVersion,
+        string $date
+    ): string {
+        return BenchmarkBenchRequest::buildInsertSql($payload, $idMysqlServer, $mode, $idUserMain, $sysbenchVersion, $date);
+    }
+
+    private static function sendBenchError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
+    }
+
+/**
+ * Handle benchmark state through `current`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for current.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::current()
+ * @example /fr/benchmark/current
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function current()
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -944,6 +1603,24 @@ Threads fairness:
     }
 
     // to move
+/**
+ * Retrieve benchmark state through `getFilter`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for getFilter.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getFilter()
+ * @example /fr/benchmark/getFilter
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getFilter()
     {
 
@@ -978,6 +1655,27 @@ Threads fairness:
         return $where;
     }
 
+/**
+ * Handle benchmark state through `queue`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for queue.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::queue()
+ * @example /fr/benchmark/queue
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function queue($param)
     {
         /*
@@ -1049,6 +1747,27 @@ Threads fairness:
         $db->sql_query($sql);
     }
 
+/**
+ * Handle benchmark state through `debug`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $string Input value for `string`.
+ * @phpstan-param mixed $string
+ * @psalm-param mixed $string
+ * @return void Returned value for debug.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::debug()
+ * @example /fr/benchmark/debug
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function debug($string)
     {
         if (Debug::$debug) {
@@ -1065,6 +1784,27 @@ Threads fairness:
         }
     }
 
+/**
+ * Retrieve benchmark state through `getSysbenchVersion`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getSysbenchVersion.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getSysbenchVersion()
+ * @example /fr/benchmark/getSysbenchVersion
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getSysbenchVersion($param = array())
     {
 
@@ -1083,6 +1823,28 @@ Threads fairness:
         return $data['sysbench'];
     }
 
+/**
+ * Retrieve benchmark state through `getScriptLua`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getScriptLua.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::getScriptLua()
+ * @example /fr/benchmark/getScriptLua
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getScriptLua($param)
     {
         Debug::parseDebug($param);
@@ -1110,6 +1872,27 @@ Threads fairness:
         return $lua;
     }
 
+/**
+ * Retrieve benchmark state through `getDirectoryLua`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getDirectoryLua.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getDirectoryLua()
+ * @example /fr/benchmark/getDirectoryLua
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getDirectoryLua($param)
     {
         Debug::parseDebug($param);

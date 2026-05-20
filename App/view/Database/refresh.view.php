@@ -1,4 +1,7 @@
 <?php
+
+use App\Library\Security\CsrfRender;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -6,6 +9,9 @@
  */
 
 use Glial\Html\Form\Form;
+
+$databaseRefreshCsrfField = CsrfRender::field($data, 'database_refresh');
+$databaseRefreshCsrfToken = CsrfRender::token($data, 'database_refresh');
 ?>
 
 
@@ -13,6 +19,7 @@ use Glial\Html\Form\Form;
 
 
 <form action="<?= LINK ?>database/refresh" method="POST">
+    <input type="hidden" name="<?= $databaseRefreshCsrfField ?>" value="<?= $databaseRefreshCsrfToken ?>">
     <?= Form::input("database", "refresh", array("type" => "hidden", "value"=>"1")); ?>
     <div class="panel panel-primary">
         <div class="panel-heading">

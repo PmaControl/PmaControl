@@ -2,14 +2,21 @@
 
 use Glial\Html\Form\Form;
 
-if (empty($_GET['ssh']['password'])) {
-    $_GET['ssh']['password'] = 22;
+$deploySshPort = '22';
+if (isset($_GET['ssh']['port']) && is_scalar($_GET['ssh']['port']) && preg_match('/^\d{1,5}$/', (string) $_GET['ssh']['port'])) {
+    $deploySshPortValue = (int) $_GET['ssh']['port'];
+    if ($deploySshPortValue > 0 && $deploySshPortValue <= 65535) {
+        $deploySshPort = (string) $deploySshPortValue;
+    }
 }
+
+$_GET['ssh'] = array('port' => $deploySshPort);
+unset($_GET['galera'], $_GET['general']);
 ?>
 
 
 
-<form action="" method="post">
+<form action="" method="get">
 
 
     <div class="panel panel-primary">
@@ -33,7 +40,7 @@ if (empty($_GET['ssh']['password'])) {
                 </div>
                 <div class="col-md-4">
                     Sudo Password <i class="fa fa-info-circle" aria-hidden="true"></i>
-                    <?= Form::input("ssh", "password", array("class" => "form-control", "placeholder" => "Enter Sudo Password", "type" => "password")) ?>
+                    <?= Form::input("ssh", "password", array("class" => "form-control", "placeholder" => "Enter Sudo Password", "type" => "password", "disabled" => "disabled")) ?>
                 </div>
             </div>
 
@@ -137,7 +144,7 @@ if (empty($_GET['ssh']['password'])) {
                 <div class="col-md-5">
                     <div class="form-inline">
                         <?= Form::input("galera", "port", array("class" => "form-control", "placeholder" => "127.0.0.1 or DNS")) ?>
-                        <button type="submit" class="btn btn-primary">Add</button>
+                        <button type="button" class="btn btn-primary">Add</button>
                     </div>
                 </div>
                 <div class="col-md-2">
@@ -150,7 +157,7 @@ if (empty($_GET['ssh']['password'])) {
                 <div class="col-md-5">
                     <div class="form-inline">
                         <?= Form::input("galera", "port", array("class" => "form-control", "placeholder" => "127.0.0.1 or DNS")) ?>
-                        <button type="submit" class="btn btn-primary">Add</button>
+                        <button type="button" class="btn btn-primary">Add</button>
                     </div>
                 </div>
             </div>
@@ -251,6 +258,6 @@ if (empty($_GET['ssh']['password'])) {
 
     </div>
 
-    <button class="btn btn-primary">Deploy</button>
+    <button type="button" class="btn btn-primary">Deploy</button>
 
 </form>

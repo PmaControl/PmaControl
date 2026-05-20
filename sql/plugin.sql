@@ -50,6 +50,8 @@ CREATE TABLE `plugin_main` (
   `fichier` varchar(255) NOT NULL,
   `date_installation` datetime NOT NULL,
   `md5_zip` varchar(32) NOT NULL,
+  `sha256_zip` char(64) NOT NULL DEFAULT '',
+  `signature_zip` text DEFAULT NULL,
   `version` char(10) NOT NULL,
   `est_actif` int(11) NOT NULL DEFAULT 0,
   `type_licence` varchar(50) NOT NULL,

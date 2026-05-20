@@ -1,4 +1,7 @@
 <?php
+
+use App\Library\Security\CsrfRender;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -6,6 +9,9 @@
  */
 
 use Glial\Html\Form\Form;
+
+$benchmarkBenchCsrfField = CsrfRender::field($data, 'benchmark_bench');
+$benchmarkBenchCsrfToken = CsrfRender::token($data, 'benchmark_bench');
 
 //Debug::debug($data);
 
@@ -19,6 +25,7 @@ if (version_compare($data['sysbench'], '0.5', ">=")) {
         //echo $data['sql'];
 
         echo '<form class="form-inline" action="" method="post">';
+        echo '<input type="hidden" name="'.$benchmarkBenchCsrfField.'" value="'.$benchmarkBenchCsrfToken.'">';
         echo ' <div class="form-group" role="group" aria-label="Default button group">';
 
         echo __("Server : ");

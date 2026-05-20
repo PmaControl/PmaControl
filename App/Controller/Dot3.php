@@ -8,11 +8,14 @@
 namespace App\Controller;
 
 use App\Library\Graphviz;
+use App\Library\Kpi\Dot3KpiRecorder;
+use Exception;
 use \Glial\Synapse\Controller;
 use App\Library\Extraction;
 use App\Library\Extraction2;
 use \App\Library\Debug;
 use App\Library\Country;
+use App\Library\Color;
 
 use \Monolog\Logger;
 use \Monolog\Formatter\LineFormatter;
@@ -20,6 +23,8 @@ use \Monolog\Handler\StreamHandler;
 
 
 use \Glial\Sgbd\Sgbd;
+
+// #01a31c green
 
 // ""	&#9635;   ▣
 // "□"	&#9633;	&#x25A1;
@@ -32,8 +37,23 @@ use \Glial\Sgbd\Sgbd;
 //add virtual_ip
 // ha proxy
 // https://renenyffenegger.ch/notes/tools/Graphviz/examples/index  <= to check for GTID (nice idea)
+/**
+ * Class responsible for dot3 workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class Dot3 extends Controller
 {
+    private const OFFLINE_EDGE_COLOR = '#FF0000';
 
     /*
     * récupére toutes les infomations du serveur à un date t   
@@ -41,24 +61,189 @@ class Dot3 extends Controller
     use \App\Library\Filter;
     use \App\Library\Dot;
 
+    const TARGET = 'target';
+    const VIP_ACTIVE_PORT = 'vip_active';
+    const VIP_PREVIOUS_PORT = 'vip_previous';
+
+
+/**
+ * Stores `$id_dot3_information` for id dot3 information.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
+    static $id_dot3_information;
+
+/**
+ * Stores `$information` for information.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $information = array();
 
     // build link MasterSlave
+/**
+ * Stores `$build_ms` for build ms.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $build_ms = array();
 
     // build server
+/**
+ * Stores `$build_server` for build server.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $build_server = array();
 
+/**
+ * Stores `$build_galera` for build galera.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $build_galera = array();
 
+/**
+ * Stores `$build_innodb_cluster` for build innodb cluster.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
+    static $build_innodb_cluster = array();
+
+/**
+ * Stores `$build_mysqlrouter` for build mysqlrouter.
+ *
+ * @var array<int|string,mixed>
+ */
+    static $build_mysqlrouter = array();
+
+/**
+ * Stores `$config` for config.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $config = array();
 
+/**
+ * Stores `$galera` for galera.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $galera = array();
 
+/**
+ * Stores `$innodb_cluster` for innodb cluster.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
+    static $innodb_cluster = array();
+
+/**
+ * Stores `$mysqlrouter` for mysqlrouter.
+ *
+ * @var array<int|string,mixed>
+ */
+    static $mysqlrouter = array();
+
+/**
+ * Stores `$ndb_cluster` for ndb cluster discovery (epic #799 / lot 5).
+ *
+ * @var array<int|string,mixed>
+ */
+    static $ndb_cluster = array();
+
+/**
+ * Stores `$build_ndb_cluster` once a per-group build pass populates it.
+ *
+ * @var array<int|string,mixed>
+ */
+    static $build_ndb_cluster = array();
+
+/**
+ * Run-level set of cluster keys whose orphan (no-SQL/API) render has
+ * already happened in the current Dot3 generation, so a SQL-less NDB
+ * cluster is rendered exactly once per Dot3 run instead of being
+ * stamped into every per-group output (review #1023 P2 / epic #799).
+ *
+ * @var array<string,bool>
+ */
+    static $build_ndb_cluster_orphan_rendered = array();
+
+/**
+ * Stores `$rank_same` for rank same.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     static $rank_same = array();
 
+/**
+ * Stores `$unknown_proxy_nodes` for unknown proxy nodes.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
+    static $unknown_proxy_nodes = array();
+
+/**
+ * Stores `$missing_mapping` for missing mapping.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
+    static $missing_mapping = array();
+
+/**
+ * Stores `$logger` for logger.
+ *
+ * @var mixed
+ * @phpstan-var mixed
+ * @psalm-var mixed
+ */
     var $logger;
 
+/**
+ * Prepare dot3 state through `before`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for before.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::before()
+ * @example /fr/dot3/before
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function before($param)
     {
         $this->loadConfigColor();
@@ -69,6 +254,27 @@ class Dot3 extends Controller
         $this->logger = $monolog;
     }
 
+/**
+ * Handle dot3 state through `generateInformation`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for generateInformation.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateInformation()
+ * @example /fr/dot3/generateInformation
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function generateInformation($param)
     {
         
@@ -79,51 +285,123 @@ class Dot3 extends Controller
 
         $date_request = $param[0] ?? "";
         $versioning = " WHERE 1=1 ";
-        $versioning2 = "  ";
-        $versioning3 = "  ";
+        $versioning2 = " WHERE 1=1 ";
+        $versioning3 = " WHERE 1=1 ";
 
         //to prevent id of daemon in comment
         if (! is_a($date_request, 'DateTime')) {
             $date_request ="";
         }
 
+        $remove_not_monitored = false;
+
         if ( ! empty($date_request))
         {
             $versioning = "WHERE '".$date_request."' between a.row_start and a.row_end ";
             $versioning2 = "WHERE '".$date_request."' between b.row_start and b.row_end AND '".$date_request."' between c.row_start and c.row_end ";
-            $versioning3 = "WHERE '".$date_request."' between d.row_start and d.row_end ";
+            $versioning3 = "WHERE '".$date_request."' between d.row_start and d.row_end AND '".$date_request."' between e.row_start and e.row_end ";
             $date_request = array($date_request);
+        }
+        else{
+            $remove_not_monitored = true;
         }
 
         //Debug::debug($date_request, "Date");
 
         $db  = Sgbd::sql(DB_DEFAULT);
 
+        $sql2 = "SELECT a.id, a.is_proxy, a.is_vip
+        FROM mysql_server a
+        INNER JOIN client x ON x.id = a.id_client
+        ".$versioning."
+        AND x.is_monitored = 1";
+
+        $id_mysql_servers = [];
+        $id_mysql_servers__proxy = [];
+        $id_mysql_servers__vip = [];
+        $id_mysql_servers__real = [];
+
+        $res2 = $db->sql_query($sql2);
+        while ($arr = $db->sql_fetch_array($res2, MYSQLI_ASSOC)) {
+            $id_mysql_servers[] = $arr['id'];
+
+            if ($arr['is_proxy'] === "1")
+            {
+                $id_mysql_servers__proxy[] = $arr['id'];
+            }
+            else if ($arr['is_vip'] === "1")
+            {
+                $id_mysql_servers__vip[] = $arr['id'];
+            }
+            else{
+                $id_mysql_servers__real[] = $arr['id'];
+            }
+        }
+
+       //Debug::debug($id_mysql_servers__real, "id_mysql_servers__real");
+
+        //$id_mysql_servers = [87,88,116];
         // "status::wsrep_cluster_status"  => not exist anymore ?
+
+        $all = [];
+
+        // to split en 3 morceau
         $all = Extraction2::display(array("variables::hostname", "variables::binlog_format", "variables::time_zone", "variables::version",
-                "variables::system_time_zone", "variables::port", "variables::is_proxysql", "variables::wsrep_cluster_address",
-                "variables::wsrep_cluster_name", "variables::wsrep_provider_options", "variables::wsrep_on", "variables::wsrep_sst_method",
+                "variables::system_time_zone", "variables::port", "variables::is_proxysql", "variables::is_proxy", "variables::is_maxscale",
+                "variables::wsrep_cluster_address","slave::connection_name",
+                "variables::wsrep_node_address", "variables::wsrep_cluster_name", "variables::wsrep_provider_options", "variables::wsrep_on", "variables::wsrep_sst_method",
                 "variables::wsrep_desync", "status::wsrep_local_state", "status::wsrep_local_state_comment", "status::wsrep_cluster_status",
                 "status::wsrep_incoming_addresses", "variables::wsrep_patch_version", "mysql_ping", "mysql_server::error",
                 "status::wsrep_cluster_size", "status::wsrep_cluster_state_uuid", "status::wsrep_gcomm_uuid", "status::wsrep_local_state_uuid",
                 "slave::master_host", "slave::master_port", "slave::seconds_behind_master", "slave::slave_io_running","variables::wsrep_slave_threads",
                 "slave::slave_sql_running", "slave::replicate_do_db", "slave::replicate_ignore_db", "slave::last_io_errno", "slave::last_io_error",
-                "mysql_available", "mysql_error","variables::version_comment","is_proxy", "variables::server_id","read_only",
-                "slave::last_sql_error", "slave::last_sql_errno", "slave::using_gtid", "variables::is_proxysql","variables::binlog_row_image",
+                "mysql_available", "mysql_error","variables::version_comment","variables::is_single_store","is_proxy", "variables::server_id","read_only","gr_member_role","gr_member_state",
+                "slave::last_sql_error", "slave::last_sql_errno", "slave::using_gtid", "variables::binlog_row_image",
                 "proxysql_runtime::global_variables","proxysql_runtime::mysql_servers", "proxysql_runtime::mysql_galera_hostgroups", 
-                "proxysql_connect_error::proxysql_connect_error", "proxysql_runtime::mysql_servers", "proxysql_runtime::proxysql_servers",
-                "proxysql_runtime::runtime_mysql_query_rules", "proxysql_runtime::runtime_mysql_replication_hostgroups",
-                "auto_increment_increment", "auto_increment_offset", "log_slave_updates", "variables::system_time_zone", "status::wsrep_provider_version"
-            ),array() , $date_request);
+                "proxysql_connect_error::proxysql_connect_error", "proxysql_runtime::proxysql_servers",
+                "proxysql_runtime::runtime_mysql_query_rules", "proxysql_runtime::mysql_replication_hostgroups",
+                "proxysql_runtime::mysql_group_replication_hostgroups", "master_ssl_allowed",
+                "variables::group_replication_group_name", "variables::group_replication_group_seeds",
+                "variables::group_replication_local_address", "variables::group_replication_single_primary_mode",
+                "variables::group_replication_bootstrap_group", "variables::group_replication_consistency",
+                "variables::group_replication_autorejoin_tries", "variables::group_replication_member_expel_timeout",
+                "variables::group_replication_recovery_use_ssl", "variables::group_replication_ssl_mode",
+                "variables::group_replication_start_on_boot", "variables::report_host", "variables::report_port",
+                "variables::server_uuid", "variables::super_read_only",
+                "maxscale::maxscale_listeners", "maxscale::maxscale_servers","maxscale::maxscale_services", "maxscale::maxscale_monitors", 
+                "mysqlrouter::mysqlrouter_routes", "mysqlrouter::mysqlrouter_metadata_config", "mysqlrouter::mysqlrouter_metadata_status",
+                "mysqlrouter_server::mysqlrouter_available", "mysqlrouter_server::mysqlrouter_ping", "mysqlrouter_server::mysqlrouter_error",
+                "auto_increment_increment", "auto_increment_offset", "log_slave_updates", "variables::system_time_zone", "status::wsrep_provider_version",
+                "ssh_stats::mysql_datadir_path", "ssh_stats::mysql_datadir_total_size", "ssh_stats::mysql_datadir_clean_size",
+                "ssh_stats::mysql_sst_elapsed_sec", "ssh_stats::mysql_sst_in_progress",
+            ),$id_mysql_servers , $date_request);
+/***/
 
-        $sql = "SELECT id as id_mysql_server, ip, port, display_name, is_proxy, ip as ip_real, port as port_real
-                FROM mysql_server a ".$versioning."
-                UNION select b.id_mysql_server, b.dns as ip, b.port, c.display_name, c.is_proxy, c.ip as ip_real, c.port as port_real
-                from alias_dns b INNER JOIN mysql_server c ON b.id_mysql_server =c.id ".$versioning2."
-                UNION select d.id_mysql_server, d.hostname, d.port,d.display_name ,  1,d.hostname, d.port FROM proxysql_server d
+        $this->mergeVipServerDataInInformation($all, $id_mysql_servers__vip);
+
+
+
+        // only valid server
+        $sql = "SELECT a.id as id_mysql_server, ip, port, display_name, is_proxy, is_vip ,ip as ip_real, port as port_real
+                FROM mysql_server a
+                INNER JOIN client x ON x.id = a.id_client
+                ".$versioning."
+                AND x.is_monitored = 1 AND a.is_deleted=0
+                UNION select b.id_mysql_server, b.dns as ip, b.port, c.display_name, c.is_proxy,c.is_vip, c.ip as ip_real, c.port as port_real
+                FROM alias_dns b 
+                INNER JOIN mysql_server c ON b.id_mysql_server =c.id 
+                INNER JOIN client y ON y.id = c.id_client ".$versioning2." AND y.is_monitored = 1 and c.is_deleted = 0
+                UNION select d.id_mysql_server,
+                    e.ip, e.port,e.display_name,
+                    e.is_proxy, e.is_vip,
+                    e.ip,
+                    e.port as port_real
+                FROM proxysql_server d
+                INNER JOIN mysql_server e ON e.id = d.id_mysql_server
+                INNER JOIN client z ON z.id = e.id_client
                 ".$versioning3.";";
 
-        Debug::sql($sql, "GET SERVER LIST");
+        //Debug::sql($sql, "GET SERVER LIST");
 
         $res = $db->sql_query($sql);
 
@@ -132,20 +410,56 @@ class Dot3 extends Controller
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $server_mysql[$arr['id_mysql_server']] = $arr;
 
-            //TODO add alias_dns and virtual_ip
-            $data['mapping'][$arr['ip'].':'.$arr['port']] = $arr['id_mysql_server'];
-        }
-        $data['servers'] = array_replace_recursive($all, $server_mysql);
+            //pas d'alias pour les VIP
+            if (in_array($arr['id_mysql_server'], $id_mysql_servers__vip))
+            {
+                continue;
+            }
 
+            $data['mapping'][$arr['ip'].':'.$arr['port']] = $arr['id_mysql_server'];
+            // add tunnel 
+        }
+
+        $data['tunnel'] =  Tunnel::getTunnelsMapping([$date_request]);
+
+        //Debug::debug($data['tunnel'], "TUNNEL");
+        ksort($data['mapping']);
+
+        //Debug::debug(MaxScale::removeArraysDeeperThan($all['125'], 4), "YYYYYYYYYYYYYYYYY");
+        $data['servers'] = array_replace_recursive($all, $server_mysql);
+        //Debug::debug($data['servers'][125]);
+
+        //Debug::debug(MaxScale::removeArraysDeeperThan($data['servers']['125'], 5), "XXXXXXXXXXXXXXXXXXXXXXXXXXX");
 
         // ca sert a rien en fait car on recupère les élements du serveur mysql_server associé
         // just interessant pour faire des traitements spécifique
         $sql = "select `id`, `id_mysql_server`, `hostname`, `port` from proxysql_server a $versioning AND a.id_mysql_server IS NOT NULL;";
-        Debug::debug($sql);
+       //Debug::debug($sql);
 
         $res = $db->sql_query($sql);
         while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $data['servers'][$arr['id_mysql_server']] = array_merge($arr, $data['servers'][$arr['id_mysql_server']]);
+
+            // Keep an explicit mapping for ProxySQL admin endpoints (typically :6032)
+            // because mysql_server.ip:port may now point to the client/listener endpoint.
+            $admin_port = trim((string)($arr['port'] ?? ''));
+            if ($admin_port !== '') {
+                $admin_hosts = array(
+                    $arr['hostname'] ?? '',
+                    $data['servers'][$arr['id_mysql_server']]['hostname'] ?? '',
+                    $data['servers'][$arr['id_mysql_server']]['ip'] ?? '',
+                    $data['servers'][$arr['id_mysql_server']]['ip_real'] ?? '',
+                );
+
+                foreach ($admin_hosts as $admin_host) {
+                    $admin_host = trim((string)$admin_host);
+                    if ($admin_host === '') {
+                        continue;
+                    }
+
+                    $data['mapping'][$admin_host.':'.$admin_port] = $arr['id_mysql_server'];
+                }
+            }
 
             if (! empty($data['servers'][$arr['id_mysql_server']]['global_variables']))
             {
@@ -156,11 +470,14 @@ class Dot3 extends Controller
                 $data['servers'][$arr['id_mysql_server']]['version_comment'] = "ProxySQL"; 
 
             }
-
             //json decode in same time
             //Debug::debug($data['servers'][$arr['id_mysql_server']], "JSON");
             //exit;
             //$data['servers'][$arr['id_mysql_server']]['mysql_servers'] = json_decode($data['servers'][$arr['id_mysql_server']]['mysql_servers'], true);
+        }
+
+        if (!empty($data['mapping']) && is_array($data['mapping'])) {
+            ksort($data['mapping']);
         }
 
         //TO REMOVE just for TEST proxysql
@@ -180,7 +497,11 @@ class Dot3 extends Controller
         //stats_mysql_processlist
         //end
 
-        $sql = "select * from mysql_database WHERE schema_name not in ('performance_schema','information_schema')";
+        $sql = "select * from mysql_database a
+        INNER JOIN mysql_server b ON b.id = a.id_mysql_server
+        WHERE a.schema_name not in ('performance_schema','information_schema')
+        AND b.is_deleted = 0 AND b.is_vip = 0 AND b.is_proxy = 0 AND b.is_monitored
+        AND schema_name not in ('performance_schema','information_schema')";
         $res = $db->sql_query($sql);
         while($ob = $db->sql_fetch_object($res))
         {
@@ -194,6 +515,9 @@ class Dot3 extends Controller
 
         //insert to DB
         $data_for_md5 = $data;
+
+
+        //Debug::debug(MaxScale::removeArraysDeeperThan($data['servers']['124'], 5), "DATA");
 
         //remove all date to be able to compare data with date
         array_walk_recursive($data_for_md5, function(&$value, $key) use (&$array) {
@@ -211,11 +535,12 @@ class Dot3 extends Controller
         $previous_md5 = '';
         $dot3_information = self::getInformation('');
 
-        Debug::debug($dot3_information, 'Dot_information');
+        //Debug::debug($dot3_information, 'Dot_information');
         
         if (!empty($dot3_information['md5'])) {
             $previous_md5 = $dot3_information['md5'];
             $id_dot3_information = $dot3_information['id'];
+            self::$id_dot3_information = $dot3_information['id'];
         }
 
         if ($previous_md5 != $md5)
@@ -225,6 +550,7 @@ class Dot3 extends Controller
             $dot3['dot3_information']['information'] = $json;
             $dot3['dot3_information']['md5'] = $md5;
             $id_dot3_information =  $db->sql_save($dot3);
+            self::$id_dot3_information = $id_dot3_information;
         }
 
         $this->logger->notice("id_dot3_information : $id_dot3_information");
@@ -232,6 +558,27 @@ class Dot3 extends Controller
         return $id_dot3_information;
     }
 
+/**
+ * Handle dot3 state through `generateGroupMasterSlave`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $information Input value for `information`.
+ * @phpstan-param mixed $information
+ * @psalm-param mixed $information
+ * @return mixed Returned value for generateGroupMasterSlave.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateGroupMasterSlave()
+ * @example /fr/dot3/generateGroupMasterSlave
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function generateGroupMasterSlave($information)
     {
         $id_group = 1;
@@ -240,6 +587,10 @@ class Dot3 extends Controller
         foreach($information['servers'] as $server)
         {
             //Debug::debug($server, "SERVER");
+
+            if (!empty($server['is_garb'])) {
+                continue;
+            }
 
             if (empty($server['@slave'])) {
                 continue;
@@ -259,18 +610,41 @@ class Dot3 extends Controller
                     $tmp_group[$id_group][] = $information['mapping'][$master];
                 }
                 else {
-                    echo "This master was not found : ".$master."\n";
+                    echo "SCRIPT KILLED [ERROR] This master was not found : ".$master."\n";
+                    //Debug::debug($information['mapping'], "MAPPING");
+                    
                 }
                 $id_group++;
                 
             }   
         }
 
-        Debug::debug($tmp_group, "MASTER SLAVE");
-
+        //Debug::debug($tmp_group, "MASTER SLAVE");
+        //die();
         return $tmp_group;
     }
 
+/**
+ * Handle dot3 state through `generateGroupProxySQL`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $information Input value for `information`.
+ * @phpstan-param mixed $information
+ * @psalm-param mixed $information
+ * @return mixed Returned value for generateGroupProxySQL.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateGroupProxySQL()
+ * @example /fr/dot3/generateGroupProxySQL
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function generateGroupProxySQL($information)
     {
         $tmp_group = array();
@@ -301,32 +675,450 @@ class Dot3 extends Controller
         return $tmp_group;
     }
 
+    /**
+     * Discover NDB clusters from `ndb_cluster__mysql_server` and emit groups
+     * keyed by cluster id. Each group contains the SQL/API mysql_server ids
+     * attached to the cluster (operator-managed link). The mgmd/data nodes
+     * have no `id_mysql_server` so they are not grouped here — they are
+     * rendered as standalone graphviz nodes by `Graphviz::generateNdbCluster`
+     * once `buildNdbCluster` has populated the build state.
+     *
+     * Side effect: stores the resulting tmp_group in `self::$ndb_cluster`
+     * for the per-group build pass to consume.
+     */
+    public function generateGroupNdbCluster($information)
+    {
+        $tmp_group = array();
 
+        if (empty($information['servers']) || !is_array($information['servers'])) {
+            return $tmp_group;
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT c.id AS id_ndb_cluster, l.id_mysql_server "
+            . "FROM `ndb_cluster` c "
+            . "LEFT JOIN `ndb_cluster__mysql_server` l ON l.id_ndb_cluster = c.id "
+            . "WHERE c.is_deleted = 0";
+        $res = $db->sql_query($sql);
+        if (!$res) {
+            return $tmp_group;
+        }
+
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $clusterKey = 'ndb_'.(int)$row['id_ndb_cluster'];
+            if (!isset($tmp_group[$clusterKey])) {
+                $tmp_group[$clusterKey] = array();
+            }
+            if (!empty($row['id_mysql_server'])) {
+                $idSrv = (int)$row['id_mysql_server'];
+                if (isset($information['servers'][$idSrv])) {
+                    $tmp_group[$clusterKey][] = $idSrv;
+                }
+            }
+        }
+
+        // Review #1023 P2: a SQL/API-less NDB cluster (mgmd + data nodes
+        // only) must keep its entry in $tmp_group so the orphan
+        // rendering path in buildNdbCluster() is reachable. The previous
+        // unset() dropped the cluster entirely and the no-SQL render
+        // path was dead code. We now retain empty entries; the
+        // self::$build_ndb_cluster_orphan_rendered set in
+        // buildNdbCluster() ensures an orphan cluster is rendered
+        // exactly once per Dot3 run rather than duplicated across every
+        // per-group page.
+        foreach ($tmp_group as $key => $members) {
+            $tmp_group[$key] = array_values(array_unique(array_map('intval', $members)));
+        }
+
+        self::$ndb_cluster = $tmp_group;
+
+        return $tmp_group;
+    }
+
+    public function generateGroupInnoDBCluster($information)
+    {
+        $tmp_group = array();
+
+        if (empty($information['servers']) || !is_array($information['servers'])) {
+            return $tmp_group;
+        }
+
+        $groupReplicationEndpointMap = self::buildGroupReplicationEndpointMap($information['servers']);
+        $sqlEndpointMap = self::buildNormalizedEndpointMap($information['mapping'] ?? array());
+        $hostCandidates = self::buildGroupReplicationHostCandidates($information['servers']);
+
+        foreach ($information['servers'] as $id_mysql_server => $server) {
+            $group_name = trim((string)($server['group_replication_group_name'] ?? ''));
+            $group_seeds = trim((string)($server['group_replication_group_seeds'] ?? ''));
+            $local_address = trim((string)($server['group_replication_local_address'] ?? ''));
+
+            if ($group_name === '' && $group_seeds === '' && $local_address === '') {
+                continue;
+            }
+
+            $clusterKey = $group_name !== '' ? $group_name : '__innodb_cluster__'.$id_mysql_server;
+
+            if (empty($tmp_group[$clusterKey])) {
+                $tmp_group[$clusterKey] = array();
+            }
+
+            $tmp_group[$clusterKey][] = (int)$id_mysql_server;
+
+            $endpoints = array_merge(
+                self::extractGroupReplicationEndpoints($group_seeds),
+                self::extractGroupReplicationEndpoints($local_address)
+            );
+
+            foreach ($endpoints as $endpoint) {
+                $matchedId = self::resolveGroupReplicationEndpoint(
+                    $endpoint,
+                    $groupReplicationEndpointMap,
+                    $sqlEndpointMap,
+                    $hostCandidates
+                );
+
+                if ($matchedId !== null) {
+                    $tmp_group[$clusterKey][] = (int)$matchedId;
+                }
+            }
+
+            $tmp_group[$clusterKey] = array_values(array_unique(array_map('intval', $tmp_group[$clusterKey])));
+            self::$innodb_cluster[$clusterKey] = $tmp_group[$clusterKey];
+        }
+
+        return $tmp_group;
+    }
+
+    private static function buildGroupReplicationEndpointMap(array $servers): array
+    {
+        $map = array();
+
+        foreach ($servers as $id_mysql_server => $server) {
+            $local_address = trim((string)($server['group_replication_local_address'] ?? ''));
+            if ($local_address === '') {
+                continue;
+            }
+
+            foreach (self::extractGroupReplicationEndpoints($local_address) as $endpoint) {
+                $normalized = self::normalizeEndpoint($endpoint);
+                if ($normalized !== '') {
+                    $map[$normalized] = (int)$id_mysql_server;
+                }
+            }
+        }
+
+        return $map;
+    }
+
+    private static function buildNormalizedEndpointMap(array $mapping): array
+    {
+        $normalized = array();
+
+        foreach ($mapping as $endpoint => $id_mysql_server) {
+            $normalizedEndpoint = self::normalizeEndpoint((string)$endpoint);
+            if ($normalizedEndpoint === '') {
+                continue;
+            }
+
+            $normalized[$normalizedEndpoint] = (int)$id_mysql_server;
+        }
+
+        return $normalized;
+    }
+
+    private static function buildGroupReplicationHostCandidates(array $servers): array
+    {
+        $hosts = array();
+
+        foreach ($servers as $id_mysql_server => $server) {
+            foreach (['report_host', 'hostname', 'ip_real', 'ip'] as $field) {
+                $host = strtolower(trim((string)($server[$field] ?? '')));
+                if ($host === '') {
+                    continue;
+                }
+
+                $hosts[$host][] = (int)$id_mysql_server;
+            }
+        }
+
+        foreach ($hosts as $host => $ids) {
+            $hosts[$host] = array_values(array_unique(array_map('intval', $ids)));
+        }
+
+        return $hosts;
+    }
+
+    private static function resolveGroupReplicationEndpoint(
+        string $endpoint,
+        array $groupReplicationEndpointMap,
+        array $sqlEndpointMap,
+        array $hostCandidates
+    ): ?int {
+        $normalizedEndpoint = self::normalizeEndpoint($endpoint);
+        if ($normalizedEndpoint === '') {
+            return null;
+        }
+
+        if (!empty($groupReplicationEndpointMap[$normalizedEndpoint])) {
+            return (int)$groupReplicationEndpointMap[$normalizedEndpoint];
+        }
+
+        if (!empty($sqlEndpointMap[$normalizedEndpoint])) {
+            return (int)$sqlEndpointMap[$normalizedEndpoint];
+        }
+
+        [$host] = self::splitHostPort($normalizedEndpoint);
+        if ($host === '') {
+            return null;
+        }
+
+        $normalizedHost = strtolower($host);
+        if (!empty($hostCandidates[$normalizedHost]) && count($hostCandidates[$normalizedHost]) === 1) {
+            return (int)$hostCandidates[$normalizedHost][0];
+        }
+
+        return null;
+    }
+
+    private static function splitHostPort(string $endpoint): array
+    {
+        $endpoint = trim($endpoint);
+        if ($endpoint === '') {
+            return array('', '');
+        }
+
+        if ($endpoint[0] === '[') {
+            $closingPos = strpos($endpoint, ']');
+            if ($closingPos === false) {
+                return array('', '');
+            }
+
+            $host = substr($endpoint, 1, $closingPos - 1);
+            $port = '';
+
+            if (isset($endpoint[$closingPos + 1]) && $endpoint[$closingPos + 1] === ':') {
+                $port = substr($endpoint, $closingPos + 2);
+            }
+
+            return array($host, $port);
+        }
+
+        $pos = strrpos($endpoint, ':');
+        if ($pos === false) {
+            return array($endpoint, '');
+        }
+
+        return array(substr($endpoint, 0, $pos), substr($endpoint, $pos + 1));
+    }
+
+    private static function normalizeEndpoint(string $endpoint): string
+    {
+        [$host, $port] = self::splitHostPort(trim((string)$endpoint));
+
+        $host = strtolower(trim($host));
+        $port = trim($port);
+
+        if ($host === '' || $port === '') {
+            return '';
+        }
+
+        return $host.':'.$port;
+    }
+
+    private static function extractGroupReplicationEndpoints($raw_endpoints)
+    {
+        $raw = trim((string)$raw_endpoints);
+        if ($raw === '') {
+            return array();
+        }
+
+        $parts = array_filter(array_map('trim', explode(',', $raw)), static function ($part) {
+            return $part !== '';
+        });
+
+        $result = array();
+        foreach ($parts as $part) {
+            $clean = preg_replace('/^mysqlx?:\/\//i', '', $part);
+            $normalized = self::normalizeEndpoint($clean);
+
+            if ($normalized === '') {
+                continue;
+            }
+
+            $result[] = $normalized;
+        }
+
+        return array_values(array_unique($result));
+    }
+
+/**
+ * Handle dot3 state through `generateGroupVip`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $information Input value for `information`.
+ * @phpstan-param mixed $information
+ * @psalm-param mixed $information
+ * @return mixed Returned value for generateGroupVip.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateGroupVip()
+ * @example /fr/dot3/generateGroupVip
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public function generateGroupVip($information)
+    {
+        $tmp_group = array();
+
+        if (empty($information['servers']) || !is_array($information['servers'])) {
+            return $tmp_group;
+        }
+
+        foreach ($information['servers'] as $id_mysql_server => $server)
+        {
+            if (!$this->isVipServer($server)) {
+                continue;
+            }
+
+            $id_source = (int) $id_mysql_server;
+
+            $vip_destinations = $this->getVipRenderDestinations($server, $information['servers']);
+            $vip_links = array(
+                $vip_destinations['active_id'],
+                $vip_destinations['previous_id'],
+            );
+
+            foreach ($vip_links as $id_destination)
+            {
+                if ($id_destination === null || $id_destination === '' || $id_destination === '0') {
+                    continue;
+                }
+
+                if (!is_numeric($id_destination)) {
+                    continue;
+                }
+
+                $id_destination = (int) $id_destination;
+
+                if ($id_destination <= 0) {
+                    continue;
+                }
+
+                // Keep only links pointing to known/monitored servers.
+                if (empty($information['servers'][$id_destination])) {
+                    continue;
+                }
+
+                $tmp_group[$id_source][] = $id_source;
+                $tmp_group[$id_source][] = $id_destination;
+            }
+
+            if (!empty($tmp_group[$id_source])) {
+                $tmp_group[$id_source] = array_values(array_unique($tmp_group[$id_source]));
+            }
+        }
+
+        return $tmp_group;
+    }
+
+
+/**
+ * Handle dot3 state through `generateGroupGalera`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $information Input value for `information`.
+ * @phpstan-param mixed $information
+ * @psalm-param mixed $information
+ * @return mixed Returned value for generateGroupGalera.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::generateGroupGalera()
+ * @example /fr/dot3/generateGroupGalera
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function generateGroupGalera($information)
     {
         $tmp_group = array();
 
         //$id_group = 0;  // replaced by $server['id_mysql_server'] for test
+
+        //Debug::debug($information['servers'], "SFGTHSFHGFG");
+
         foreach($information['servers'] as $id_mysql_server => $server)
         {
+            $server['id_mysql_server'] = $id_mysql_server;
+
+            //Debug::debug($server, "GOOD");
             //$id_group++;
             //$tmp_group[$idproxy] = array();
-            if (!empty($server['wsrep_on']) && strtolower($server['wsrep_on']) === "on") {
+            if (self::isGaleraLikeNode($server)) {
+
+                //Debug::debug($server, "CLUSTER");
+
                 $servers = self::getIdMysqlServerFromGalera($server['wsrep_cluster_address']);
-                $servers2 = self::getIdMysqlServerFromGalera($server['wsrep_incoming_addresses']);
+
+                $incoming_raw = trim((string)($server['wsrep_incoming_addresses'] ?? ''));
+                $servers2 = $incoming_raw !== ''
+                    ? self::getIdMysqlServerFromGalera($incoming_raw)
+                    : array();
+
+                $wsrep_cluster_status = strtolower(trim((string)($server['wsrep_cluster_status'] ?? '')));
+                $wsrep_local_state_comment = strtolower(trim((string)($server['wsrep_local_state_comment'] ?? '')));
+                $is_disconnected_inconsistent = ($wsrep_cluster_status === 'disconnected' && $wsrep_local_state_comment === 'inconsistent');
+                $is_available = isset($server['mysql_available']) && (string)$server['mysql_available'] === '1';
+                $allow_garb_detection = $is_available && !$is_disconnected_inconsistent && $incoming_raw !== '';
+
+                //Debug::debug($servers, "SERVERS");
 
                 foreach($servers as $ip_port)
                 {
                     if (!empty($information['mapping'][$ip_port])) {
-                        $tmp_group[$server['id_mysql_server']][] = $information['mapping'][$ip_port];
+                        
+                        $id_mysql_server_galera = $information['mapping'][$ip_port];
+                        //Debug::debug($id_mysql_server_galera, "ID MYSQL SERVER GALERA ({$server['id_mysql_server']})");
+                        //Debug::debug($information['servers'][$id_mysql_server_galera], "GALERA MEMBER");
+
+                        if (self::isGaleraLikeNode($information['servers'][$id_mysql_server_galera] ?? array())) {
+
+                            $tmp_group[$server['id_mysql_server']][] = $information['mapping'][$ip_port];
+                            //TODO generate Alert instead of a debug 
+                            //Debug::debug("WARNING: The server $ip_port (ID: $id_mysql_server_galera) is part of the Galera cluster but has wsrep_on set to OFF.", "GALERA CONFIGURATION WARNING");
+                        }
+
+                        //Debug::debug($information['mapping'][$ip_port], "MAPPING");
+
+                        
                     }
                     else {
                         //autodetect autoadd Mysql::autodetect($server['id_mysql_server'], $ip_port);
                     }
                 }
                 //$id_group++;
+                //Debug::debug($servers2, "SERVERS2");
+
+
                 foreach($servers2 as $ip_port)
                 {
+                    //Debug::debug($ip_port, "IP:PORT");
+                    if ($allow_garb_detection && $ip_port !== '' && $ip_port[0] === ':') {
+                        //detection arbitre
+                        $id_garb = $this->createGarb($information, $id_mysql_server);
+                        $tmp_group[$server['id_mysql_server']][] = $id_garb;
+                    } 
+
                     if (!empty($information['mapping'][$ip_port])) {
                         $tmp_group[$server['id_mysql_server']][] = $information['mapping'][$ip_port];
                     }
@@ -354,33 +1146,253 @@ class Dot3 extends Controller
 
     static function getIdMysqlServerFromGalera($cluster_address)
     {
-        $addresses = str_replace('gcomm://', '', $cluster_address);
-        $addressList = explode(',', $addresses);
+        $addresses = str_replace('gcomm://', '', (string)$cluster_address);
+        $addressList = array_filter(array_map('trim', explode(',', $addresses)), static function ($value) {
+            return $value !== '';
+        });
 
         // Initialiser le tableau de résultat
         $resultArray = array();
-        
+
         // Parcourir chaque élément du tableau des adresses
-        foreach ($addressList as $key => $value) {
+        foreach ($addressList as $value) {
             // Séparer l'adresse IP du port
-            $parts = explode(':', $value);
-            $ip = $parts[0];
-            $port = isset($parts[1]) ? $parts[1] : 3306; // Définir le port à 3306 si non spécifié ou 0
-        
-            // Remplacer le port par 3306 si c'est 0
-            if ($port == 0) {
+            $parts = explode(':', $value, 2);
+            $ip = trim((string)($parts[0] ?? ''));
+            $port = isset($parts[1]) ? trim((string)$parts[1]) : '';
+
+            if ($ip === '' && $port === '') {
+                continue;
+            }
+
+            // Remplacer le port par 3306 si c'est 0 ou non spécifié
+            if ($port === '' || $port == 0) {
                 $port = 3306;
             }
-        
+
             // Ajouter au tableau de résultat
-            $resultArray[$key + 1] = "$ip:$port";
+            if ($ip === '') {
+                $resultArray[] = ":$port";
+            } else {
+                $resultArray[] = "$ip:$port";
+            }
         }
         //Debug::debug($resultArray);
 
         return $resultArray;
     }
 
+    private static function isGaleraLikeNode(array $server): bool
+    {
+        $wsrep_on = strtolower(trim((string)($server['wsrep_on'] ?? '')));
+        if (in_array($wsrep_on, array('on', '1', 'true', 'yes'), true)) {
+            return true;
+        }
 
+        $cluster_status = strtolower(trim((string)($server['wsrep_cluster_status'] ?? '')));
+        $local_state_comment = trim((string)($server['wsrep_local_state_comment'] ?? ''));
+        $cluster_size = (int)($server['wsrep_cluster_size'] ?? 0);
+        $cluster_name = trim((string)($server['wsrep_cluster_name'] ?? ''));
+        $cluster_address = trim((string)($server['wsrep_cluster_address'] ?? ''));
+        $incoming_addresses = trim((string)($server['wsrep_incoming_addresses'] ?? ''));
+        $provider_version = trim((string)($server['wsrep_provider_version'] ?? ''));
+
+        if ($cluster_status !== ''
+            && in_array($cluster_status, array('primary', 'non-primary', 'disconnected'), true)) {
+            return true;
+        }
+
+        return $cluster_size > 0
+            || $local_state_comment !== ''
+            || $provider_version !== ''
+            || ($cluster_name !== '' && ($cluster_address !== '' || $incoming_addresses !== ''));
+    }
+
+
+
+/**
+ * Handle dot3 state through `generateGroupMaxScale`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $information Input value for `information`.
+ * @phpstan-param mixed $information
+ * @psalm-param mixed $information
+ * @return mixed Returned value for generateGroupMaxScale.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::generateGroupMaxScale()
+ * @example /fr/dot3/generateGroupMaxScale
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public function generateGroupMaxScale($information)
+    {
+        $tmp_group = array();
+        //Debug::debug($information['servers'][65]);
+        
+        foreach($information['servers'] as $id_mysql_server => $server)
+        {
+            if (self::isMysqlRouterNode($server)) {
+                continue;
+            }
+            
+            if ( empty($server['is_maxscale']) ) {
+                continue;
+            }
+
+            //Debug::debug("#####################################");
+
+
+            $tmp_group[$id_mysql_server][] = $id_mysql_server;
+            $maxcale_ip_port = trim($server['ip_real']).":".trim($server['port_real']);
+
+            //Debug::debug($maxcale_ip_port, "IP:PORT");
+
+            $maxscale = MaxScale::rewriteJson($server);
+
+            $resolvedBackends = array();
+            if (count($maxscale) != 0)
+            {
+                $maxscale = self::resolveMaxScaleConnection($maxscale,  $maxcale_ip_port);
+
+                if (!empty($maxscale[$maxcale_ip_port]['servers'])) {
+                    $resolvedBackends = $maxscale[$maxcale_ip_port]['servers'];
+                }
+            }
+
+            // MaxScale offline path: REST returned no usable servers section
+            // (config vide, listener pas exposé, tunnel cassé, …). We do not
+            // throw any more — that used to abort the whole Dot3::run() and
+            // freeze Architecture/index. Same contract as MySQL offline: keep
+            // the last known topology and surface the node in red on the graph.
+            // See issue #1226.
+            if (empty($resolvedBackends)) {
+                if (isset($this->logger)) {
+                    $this->logger->warning(
+                        "[PMACONTROL-4001] MaxScale listener '$maxcale_ip_port' returned no servers — treating MaxScale id_mysql_server=$id_mysql_server as offline"
+                    );
+                }
+
+                $information['servers'][$id_mysql_server]['maxscale_offline'] = true;
+                $resolvedBackends = self::findLastKnownMaxScaleBackends((int) $id_mysql_server, $maxcale_ip_port);
+            }
+
+            foreach($resolvedBackends as $server => $srv) {
+
+                if (!empty($information['mapping'][$server]))
+                {
+                    $tmp_group[$id_mysql_server][] = $information['mapping'][$server];
+                }
+                elseif (empty($information['servers'][$id_mysql_server]['maxscale_offline'])) {
+                    // Live MaxScale exposed a backend we don't know yet —
+                    // register it as an alias. Skipped on the offline path
+                    // because the "known backends" come from a past snapshot
+                    // and the alias entries are already there.
+                    $elems = explode(":", $server);
+
+                    $db = Sgbd::sql(DB_DEFAULT);
+
+                    $sql = " INSERT INTO alias_dns (id_mysql_server, dns, port) VALUES (NULL, '".$elems[0]."', ".$elems[1].")";
+                    $db->sql_query($sql);
+                }
+            }
+        }
+
+        return $tmp_group;
+    }
+
+    /**
+     * Look back through dot3_information snapshots to find the last one where
+     * the given MaxScale id_mysql_server had a non-empty `servers` resolution
+     * for the same listener. Returns the same shape as
+     * $maxscale[$listener]['servers'] (ip:port => attributes) or an empty
+     * array if nothing usable is found.
+     *
+     * Why: when the live MaxScale curl returns no data we want the graph to
+     * stay visible with its previous backends rendered in red, not vanish.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private static function findLastKnownMaxScaleBackends(int $id_mysql_server, string $listener_ip_port): array
+    {
+        if ($id_mysql_server <= 0) {
+            return array();
+        }
+
+        try {
+            $db = Sgbd::sql(DB_DEFAULT);
+        } catch (\Throwable $e) {
+            return array();
+        }
+
+        $sql = "SELECT id, information FROM dot3_information
+                WHERE id < " . ((int) (self::$id_dot3_information ?: PHP_INT_MAX)) . "
+                ORDER BY id DESC LIMIT 20";
+
+        $res = $db->sql_query($sql);
+        if (!$res) {
+            return array();
+        }
+
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $raw = $row['information'] ?? '';
+            if (!is_string($raw) || $raw === '' || $raw === 'null') {
+                continue;
+            }
+
+            $decoded = json_decode($raw, true);
+            if (!is_array($decoded)) {
+                continue;
+            }
+
+            $previousServer = $decoded['servers'][$id_mysql_server] ?? null;
+            if (!is_array($previousServer)) {
+                continue;
+            }
+
+            $previousMaxscale = MaxScale::rewriteJson($previousServer);
+            if (empty($previousMaxscale)) {
+                continue;
+            }
+
+            $previousMaxscale = self::resolveMaxScaleConnection($previousMaxscale, $listener_ip_port);
+            if (!empty($previousMaxscale[$listener_ip_port]['servers'])) {
+                return $previousMaxscale[$listener_ip_port]['servers'];
+            }
+        }
+
+        return array();
+    }
+
+
+/**
+ * Handle dot3 state through `test2`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for test2.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::test2()
+ * @example /fr/dot3/test2
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function test2($param)
     {
         Debug::parseDebug($param);
@@ -389,59 +1401,377 @@ class Dot3 extends Controller
     }
 
 
+/**
+ * Handle dot3 state through `run`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for run.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::run()
+ * @example /fr/dot3/run
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function run($param)
     {
         Debug::parseDebug($param);
-        $db = Sgbd::sql(DB_DEFAULT);
+        $dot3KpiStartedAt = microtime(true);
+        $idDot3Run = Dot3KpiRecorder::startRun([
+            'started_at' => $dot3KpiStartedAt,
+        ]);
+        $dot3Kpi = array(
+            'groups_total' => null,
+            'nodes_total' => null,
+            'edges_total' => null,
+            'dot_size_bytes' => 0,
+            'svg_size_bytes' => 0,
+        );
 
-        $id_dot3_information = $this->generateInformation($param);
+        try {
+            // reset volatile cache for each run
+            self::$unknown_proxy_nodes = array();
+            self::$missing_mapping = array();
+
+            $id_dot3_information = $this->generateInformation($param);
         
-        //$id_dot3_information = 2356819;
-        $info = self::getInformation($id_dot3_information);
+            //$id_dot3_information = 2356819;
+            $info = self::getInformation($id_dot3_information);
 
-        //TODO : add if date > now => return true to not was time to regenerate dot for nothing
+            //TODO : add if date > now => return true to not was time to regenerate dot for nothing
 
-        $groups = $this->getGroup(array($id_dot3_information));
+            $groups = $this->getGroup(array($id_dot3_information, $idDot3Run));
+            $groupMetrics = Dot3KpiRecorder::measureGroups($groups);
+            $dot3Kpi['groups_total'] = count($groups);
+            $dot3Kpi['nodes_total'] = $groupMetrics['nodes'];
+            $dot3Kpi['edges_total'] = $groupMetrics['edges'];
 
-        //Debug::debug($groups, "List of group ");
+            //Debug::debug($groups, "List of group ");
 
-        foreach($groups as $group)
-        {
-            self::$build_galera = array();
-            self::$build_ms = array();
-            self::$build_server = array();
+            $saved_graphs = 0;
 
-            //Debug::debug($group);
-            
-            //Debug::debug(self::$build_galera);
+            foreach($groups as $group)
+            {
+                //echo "##########################################################\n";
 
-            $this->buildServer(array($id_dot3_information, $group));
+                if (! in_array(149, $group))
+                {
+                    //continue;
+                }
 
-            // il faut builder les serveur avant Galera => Galera va surcharger le noeud en cas de desync / donor / non-primary
-            $this->buildGaleraCluster(array($id_dot3_information, $group));
 
-            $this->buildLink(array($id_dot3_information, $group));
-            //Debug::debug($group, "GROUP");
+                self::$rank_same = array();
+                self::$build_galera = array();
+                self::$build_innodb_cluster = array();
+                self::$build_ndb_cluster = array();
+                self::$build_mysqlrouter = array();
+                self::$build_ms = array();
+                self::$build_server = array();
 
-            $this->buildLinkBetweenProxySQL(array($id_dot3_information, $group));
+                //Debug::debug($group, "GROUP");
 
-            //$this->linkProxySQLAdmin(array($id_dot3_information, $group));
-            $this->linkHostGroup(array($id_dot3_information, $group));
+                //Debug::debug(self::$build_galera);
 
-            $dot = $this->writeDot();
+                $this->buildServer(array($id_dot3_information, $group));
 
-            $reference = md5(json_encode($group));
-            $file_name = Graphviz::generateDot($reference, $dot);
+                // il faut builder les serveur avant Galera => Galera va surcharger le noeud en cas de desync / donor / non-primary
+                $this->buildGaleraCluster(array($id_dot3_information, $group));
+                $this->buildInnoDBCluster(array($id_dot3_information, $group));
+                $this->buildNdbCluster(array($id_dot3_information, $group));
+                $this->buildGroupMysqlRouter(array($id_dot3_information, $group));
 
-            $this->saveGraph($id_dot3_information, $file_name, $dot, $group);
+                // Edge informative pour SST (joiner offline vu dans incoming_addresses d'un noeud actif)
+                // constraint=false pour ne pas déformer le layout du cluster.
+                $this->buildGaleraSstHintLink(array($id_dot3_information, $group));
+
+                $this->buildLink(array($id_dot3_information, $group));
+                $this->buildLinkVIP(array($id_dot3_information, $group));
+                //Debug::debug($group, "GROUP");
+
+                $this->buildLinkBetweenProxySQL(array($id_dot3_information, $group));
+                $this->linkMysqlRouter(array($id_dot3_information, $group));
+
+                //$this->linkProxySQLAdmin(array($id_dot3_information, $group));
+                $this->linkHostGroup(array($id_dot3_information, $group));
+
+                $this->linkMaxScale(array($id_dot3_information, $group));
+
+                $dot = $this->writeDot();
+
+                //Debug::debug($dot, "DOT");
+
+                $reference = md5(json_encode($group));
+                $file_name = Graphviz::generateDot($reference, $dot);
+                $sizes = Dot3KpiRecorder::measureGraphFiles($file_name, $dot);
+                $dot3Kpi['dot_size_bytes'] += (int)$sizes['dot_size_bytes'];
+                $dot3Kpi['svg_size_bytes'] += (int)($sizes['svg_size_bytes'] ?? 0);
+
+                $this->saveGraph($id_dot3_information, $file_name, $dot, $group);
+                $saved_graphs++;
+            }
+
+            if (self::shouldMarkSvgGenerated((int) $id_dot3_information, $saved_graphs)) {
+                $this->markSvgGenerated((int) $id_dot3_information);
+            }
+        } finally {
+            Dot3KpiRecorder::finishRun($idDot3Run, array_merge($dot3Kpi, [
+                'started_at' => $dot3KpiStartedAt,
+                'ended_at' => microtime(true),
+            ]));
         }
     }
 
+    private static function shouldMarkSvgGenerated(int $id_dot3_information, int $saved_graphs): bool
+    {
+        return $id_dot3_information > 0 && $saved_graphs > 0;
+    }
+
+    private function markSvgGenerated(int $id_dot3_information): void
+    {
+        if ($id_dot3_information <= 0) {
+            return;
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT, "RUN");
+        foreach (self::buildMarkSvgGeneratedStatements($id_dot3_information) as $sql) {
+            $db->sql_query($sql);
+        }
+    }
+
+    private static function buildMarkSvgGeneratedSql(int $id_dot3_information): string
+    {
+        return "UPDATE dot3_information SET is_svg_generated = " . $id_dot3_information
+            . " WHERE id = " . $id_dot3_information;
+    }
+
+    /**
+     * @return array<int,string>
+     *
+     * Why: saveGraph() leaves the shared "RUN" connection with AUTOCOMMIT=0, and the
+     * daemon launches each Dot3 cycle as a one-shot PHP process — without an explicit
+     * COMMIT here the UPDATE is rolled back on process exit and is_svg_generated never
+     * persists, so Architecture::buildLatestReadyDot3InformationSql() always falls back
+     * to the previous (stale) snapshot.
+     */
+    private static function buildMarkSvgGeneratedStatements(int $id_dot3_information): array
+    {
+        return [
+            self::buildMarkSvgGeneratedSql($id_dot3_information),
+            'COMMIT',
+        ];
+    }
+
+    private static function buildGraphCacheMd5(string $dot): string
+    {
+        return md5($dot . "\n# dot3-assets\n" . self::buildDotAssetFingerprint($dot));
+    }
+
+    private static function buildDotAssetFingerprint(string $dot): string
+    {
+        if ($dot === '' || stripos($dot, '<IMG') === false) {
+            return '';
+        }
+
+        if (!preg_match_all('/<IMG\b[^>]*\bSRC="([^"]+)"/i', $dot, $matches)) {
+            return '';
+        }
+
+        $fingerprints = array();
+        foreach (array_unique($matches[1]) as $src) {
+            $path = self::resolveDotAssetPath((string) $src);
+            if ($path === null) {
+                $fingerprints[] = 'missing:' . $src;
+                continue;
+            }
+
+            $hash = hash_file('sha256', $path);
+            if ($hash === false) {
+                $fingerprints[] = 'unreadable:' . $path;
+                continue;
+            }
+
+            $fingerprints[] = $path . ':' . $hash;
+        }
+
+        sort($fingerprints, SORT_STRING);
+        return hash('sha256', implode("\n", $fingerprints));
+    }
+
+    private static function resolveDotAssetPath(string $src): ?string
+    {
+        if ($src === '') {
+            return null;
+        }
+
+        $parsedPath = parse_url($src, PHP_URL_PATH);
+        $path = is_string($parsedPath) && $parsedPath !== '' ? $parsedPath : $src;
+        if ($path === '') {
+            return null;
+        }
+
+        $candidates = array();
+        if ($path[0] === '/') {
+            $candidates[] = $path;
+        }
+
+        $basename = basename($path);
+        if ($basename !== '' && defined('ROOT')) {
+            $candidates[] = ROOT . '/App/Webroot/image/dot/' . $basename;
+            $candidates[] = ROOT . '/App/Webroot/image/icon/' . $basename;
+        }
+
+        foreach ($candidates as $candidate) {
+            if (is_string($candidate) && $candidate !== '' && is_file($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    public function renderImportedGraphs(array $dot3Information): array
+    {
+        if (empty($dot3Information['information']) || !is_array($dot3Information['information'])) {
+            throw new Exception('Invalid imported dot3 payload: missing information block.');
+        }
+
+        $virtualInformationId = 'import:' . md5(json_encode($dot3Information['information']));
+
+        self::$unknown_proxy_nodes = array();
+        self::$missing_mapping = array();
+        self::$information[$virtualInformationId] = array(
+            'id' => $dot3Information['id'] ?? $virtualInformationId,
+            'date_generated' => $dot3Information['date_generated'] ?? '',
+            'date_inserted' => $dot3Information['date_inserted'] ?? ($dot3Information['date_generated'] ?? ''),
+            'md5' => $dot3Information['md5'] ?? md5(json_encode($dot3Information['information'])),
+            'information' => $dot3Information['information'],
+        );
+        self::$id_dot3_information = $virtualInformationId;
+
+        $graphs = array();
+        $groups = $this->getGroup(array($virtualInformationId));
+
+        foreach ($groups as $index => $group) {
+            if (empty($group) || !is_array($group)) {
+                continue;
+            }
+
+            $graphs[] = $this->renderImportedGraphGroup($virtualInformationId, array_values(array_unique($group)), (int) $index);
+        }
+
+        return array(
+            'information_id' => $virtualInformationId,
+            'graphs' => $graphs,
+        );
+    }
+
+    private function renderImportedGraphGroup($id_dot3_information, array $group, int $index): array
+    {
+        self::$id_dot3_information = $id_dot3_information;
+        self::$rank_same = array();
+        self::$build_galera = array();
+        self::$build_innodb_cluster = array();
+        self::$build_ndb_cluster = array();
+        self::$build_mysqlrouter = array();
+        self::$build_ms = array();
+        self::$build_server = array();
+
+        $this->buildServer(array($id_dot3_information, $group));
+        $this->buildGaleraCluster(array($id_dot3_information, $group));
+        $this->buildInnoDBCluster(array($id_dot3_information, $group));
+        $this->buildNdbCluster(array($id_dot3_information, $group));
+        $this->buildGroupMysqlRouter(array($id_dot3_information, $group));
+        $this->buildGaleraSstHintLink(array($id_dot3_information, $group));
+        $this->buildLink(array($id_dot3_information, $group));
+        $this->buildLinkVIP(array($id_dot3_information, $group));
+        $this->buildLinkBetweenProxySQL(array($id_dot3_information, $group));
+        $this->linkMysqlRouter(array($id_dot3_information, $group));
+        $this->linkHostGroup(array($id_dot3_information, $group));
+        $this->linkMaxScale(array($id_dot3_information, $group));
+
+        $dot = $this->writeDot();
+        $reference = 'import-dot3-' . $index . '-' . md5(json_encode($group)) . '-' . bin2hex(random_bytes(8));
+        $file_name = Graphviz::generateDot($reference, $dot);
+        $svgPayload = '';
+        $graphvizError = trim(Graphviz::getLastGenerateDotError());
+
+        if (is_string($file_name) && $file_name !== '' && file_exists($file_name)) {
+            $svgPayload = (string) file_get_contents($file_name);
+        }
+
+        if ($graphvizError !== '' || stripos(ltrim($svgPayload), '<svg') === false) {
+            if ($graphvizError === '') {
+                $graphvizError = 'Unable to render DOT as SVG.';
+            }
+            $svgPayload = '';
+        }
+
+        self::cleanupGeneratedGraphArtifacts($reference);
+
+        return array(
+            'group' => array_values(array_unique($group)),
+            'dot' => $dot,
+            'svg' => $svgPayload,
+            'md5' => md5($dot),
+            'filename' => is_string($file_name) ? basename($file_name) : '',
+            'render_error' => $graphvizError,
+        );
+    }
+
+    private static function cleanupGeneratedGraphArtifacts(string $reference): void
+    {
+        foreach (array('dot', 'svg', 'png') as $extension) {
+            $file = TMP . 'dot/' . $reference . '.' . $extension;
+            if (file_exists($file)) {
+                @unlink($file);
+            }
+        }
+    }
+
+/**
+ * Update dot3 state through `saveGraph`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_dot3_information Input value for `id_dot3_information`.
+ * @phpstan-param int $id_dot3_information
+ * @psalm-param int $id_dot3_information
+ * @param mixed $file_name Input value for `file_name`.
+ * @phpstan-param mixed $file_name
+ * @psalm-param mixed $file_name
+ * @param mixed $dot Input value for `dot`.
+ * @phpstan-param mixed $dot
+ * @psalm-param mixed $dot
+ * @param mixed $group Input value for `group`.
+ * @phpstan-param mixed $group
+ * @psalm-param mixed $group
+ * @return void Returned value for saveGraph.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::saveGraph()
+ * @example /fr/dot3/saveGraph
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function saveGraph($id_dot3_information, $file_name, $dot, $group)
     {
         $db = Sgbd::sql(DB_DEFAULT, "RUN");
 
-        $md5 = md5($dot);
+        $md5 = self::buildGraphCacheMd5($dot);
         $dot3_graph = array();
 
         $sql = "SET AUTOCOMMIT=0;";
@@ -460,17 +1790,43 @@ class Dot3 extends Controller
             $dot3_graph['dot3_graph']['id'] = $id_dot3_graph;
             $this->logger->notice("ID : ".$id_dot3_graph);
         }
-        
+
         if (empty($id_dot3_graph))
         {
             $images = getimagesize(str_replace(".svg",".png",$file_name));
 
             $width= $images[0];
             $height= $images[1];
+            $svgPayload = file_get_contents($file_name);
+
+            if ($svgPayload === false || $svgPayload === '') {
+                $this->logger->emergency('[DOT3-SVG-EMPTY] Graphviz returned an empty payload for a supposed SVG file: '
+                    . $file_name . ' md5=' . $md5 . ' id_dot3_information=' . $id_dot3_information);
+                $svgPayload = '';
+            } elseif (strncmp($svgPayload, "\x89PNG\r\n\x1a\n", 8) === 0) {
+                $this->logger->emergency('[DOT3-SVG-PNG-MISMATCH] PNG binary detected in SVG pipeline: '
+                    . $file_name . ' md5=' . $md5 . ' id_dot3_information=' . $id_dot3_information);
+            } elseif (stripos(ltrim($svgPayload), '<svg') !== 0) {
+                $this->logger->emergency('[DOT3-SVG-INVALID] Non-SVG payload detected in SVG pipeline: '
+                    . $file_name . ' md5=' . $md5 . ' id_dot3_information=' . $id_dot3_information);
+            } elseif (
+                stripos($svgPayload, '<image') === false
+                && stripos($svgPayload, 'pmac-icon-') === false
+            ) {
+                // Issue #772: well-formed SVG but no <image> tags and no
+                // post-processed <symbol id="pmac-icon-…"> either. That's
+                // exactly the cairo-fallback shape (text rendered as
+                // glyph paths, all icons silently dropped). Surfacing
+                // it loudly lets us catch the next regression of this
+                // class instead of letting users see iconless graphs
+                // for weeks.
+                $this->logger->emergency('[DOT3-SVG-NO-ICONS] SVG without <image> nor pmac-icon-* — likely Graphviz cairo fallback dropped all icons: '
+                    . $file_name . ' md5=' . $md5 . ' id_dot3_information=' . $id_dot3_information . ' size=' . strlen($svgPayload));
+            }
 
             $dot3_graph['dot3_graph']['filename'] = $file_name;
             $dot3_graph['dot3_graph']['dot'] = $dot;
-            $dot3_graph['dot3_graph']['svg'] = file_get_contents($file_name);
+            $dot3_graph['dot3_graph']['svg'] = $svgPayload;
             $dot3_graph['dot3_graph']['md5'] = $md5;
             $dot3_graph['dot3_graph']['width'] = $width;
             $dot3_graph['dot3_graph']['height'] = $height;
@@ -478,13 +1834,13 @@ class Dot3 extends Controller
         }
 
         $dot3_cluster = array();
+        $id_dot3_cluster = null;
         $sql = "SELECT id FROM dot3_cluster WHERE id_dot3_graph = ".$id_dot3_graph." AND id_dot3_information = ".$id_dot3_information."";
         $res = $db->sql_query($sql);
         while($ob = $db->sql_fetch_object($res))
         {
-            $id_dot3_graph = $ob->id;
-            //Debug::debug($id_dot3_graph, "id_dot3_graph");
-            $dot3_cluster['dot3_cluster']['id'] = $id_dot3_graph;
+            $id_dot3_cluster = $ob->id;
+            $dot3_cluster['dot3_cluster']['id'] = $id_dot3_cluster;
         }
 
         $dot3_cluster['dot3_cluster']['id_dot3_graph'] = $id_dot3_graph;
@@ -492,7 +1848,7 @@ class Dot3 extends Controller
 
         $id_dot3_cluster = $db->sql_save($dot3_cluster);
 
-        foreach($group as $id_mysql_server)
+        foreach(array_values(array_unique($group)) as $id_mysql_server)
         {
             $dot3_cluster__mysql_server = array();
             $dot3_cluster__mysql_server['dot3_cluster__mysql_server']['id_mysql_server'] = $id_mysql_server;
@@ -506,18 +1862,62 @@ class Dot3 extends Controller
         $res = $db->sql_query($sql);
     }
 
+/**
+ * Handle dot3 state through `writeDot`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for writeDot.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::writeDot()
+ * @example /fr/dot3/writeDot
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function writeDot()
     {
         $dot = '';
         $dot .= Graphviz::generateStart();
 
+
+        //Debug::debug(self::$build_server, "BUILD_SERVER");
+
+        // Inject GR role/state into server nodes for display in generateServer()
+        $grRoleMap = [];
+        foreach (self::$build_innodb_cluster as $cluster) {
+            foreach ($cluster['node'] as $idSrv => $nodeInfo) {
+                $grRoleMap[$idSrv] = [
+                    'gr_role'  => $nodeInfo['member_role'] ?? '',
+                    'gr_state' => $nodeInfo['member_state'] ?? '',
+                    'gr_mode'  => $cluster['mode'] ?? '',
+                ];
+            }
+        }
+
         foreach(self::$build_server as $server) {
+
+            if (! empty($server['is_proxysql']) && empty($server['mysql_servers'])) {
+                $this->logMissingProxySqlMysqlServers($server, 'writeDot');
+                $server['mysql_servers'] = array();
+            }
+
+            if (isset($grRoleMap[$server['id_mysql_server']])) {
+                $server = array_merge($server, $grRoleMap[$server['id_mysql_server']]);
+            }
 
             //Debug::debug($server);
             $dot .= Graphviz::generateServer($server);
         }
 
         $dot .= Graphviz::generateGalera(self::$build_galera);
+        $dot .= Graphviz::generateInnoDBCluster(self::$build_innodb_cluster);
+        $dot .= Graphviz::generateNdbCluster(self::$build_ndb_cluster);
     
         foreach(self::$build_ms as $edge) {
             $dot .= Graphviz::generateEdge($edge);
@@ -535,6 +1935,65 @@ class Dot3 extends Controller
 
     }
 
+/**
+ * Handle dot3 state through `logMissingProxySqlMysqlServers`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $server Input value for `server`.
+ * @phpstan-param array $server
+ * @psalm-param array $server
+ * @param string $context Input value for `context`.
+ * @phpstan-param string $context
+ * @psalm-param string $context
+ * @return void Returned value for logMissingProxySqlMysqlServers.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::logMissingProxySqlMysqlServers()
+ * @example /fr/dot3/logMissingProxySqlMysqlServers
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function logMissingProxySqlMysqlServers(array $server, string $context)
+    {
+        $idMysqlServer = $server['id_mysql_server'] ?? 'N/A';
+        $displayName = $server['display_name'] ?? ($server['name'] ?? 'N/A');
+        $host = ($server['hostname'] ?? $server['ip'] ?? 'N/A') . ':' . ($server['port'] ?? 'N/A');
+
+        $this->logger->emergency(
+            '[Dot3][' . $context . '] Missing ProxySQL runtime mysql_servers for '
+            . 'id_mysql_server:' . $idMysqlServer
+            . ' display_name:' . $displayName
+            . ' endpoint:' . $host
+        );
+    }
+
+/**
+ * Handle dot3 state through `array_merge_group`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $array Input value for `array`.
+ * @phpstan-param mixed $array
+ * @psalm-param mixed $array
+ * @return mixed Returned value for array_merge_group.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::array_merge_group()
+ * @example /fr/dot3/array_merge_group
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function array_merge_group($array)
     {
         $all_values  = $this->array_values_recursive($array);
@@ -553,6 +2012,27 @@ class Dot3 extends Controller
         return $array;
     }
 
+/**
+ * Handle dot3 state through `array_values_recursive`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $ary Input value for `ary`.
+ * @phpstan-param mixed $ary
+ * @psalm-param mixed $ary
+ * @return mixed Returned value for array_values_recursive.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::array_values_recursive()
+ * @example /fr/dot3/array_values_recursive
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function array_values_recursive($ary)
     {
         $lst = array();
@@ -567,26 +2047,119 @@ class Dot3 extends Controller
         return $lst;
     }
 
+/**
+ * Retrieve dot3 state through `getGroup`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getGroup.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getGroup()
+ * @example /fr/dot3/getGroup
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getGroup($param)
     {
-        Debug::parseDebug($param);
+        //Debug::parseDebug($param);
 
         $id_dot3_information = $param[0];
+        $idDot3Run = !empty($param[1]) ? (int)$param[1] : null;
         $dot3_information = self::getInformation($id_dot3_information);
 
-        $galera = $this->generateGroupGalera($dot3_information['information']);
+        self::$galera = array();
+        self::$innodb_cluster = array();
+        self::$ndb_cluster = array();
+        self::$build_ndb_cluster_orphan_rendered = array();
+        self::$mysqlrouter = array();
+
+        $galera = $this->generateMeasuredGroup('galera', $idDot3Run, function () use ($dot3_information) {
+            return $this->generateGroupGalera($dot3_information['information']);
+        });
         //Debug::debug($galera, "GALERA");
 
-        $master_slave = $this->generateGroupMasterSlave($dot3_information['information']);
-        $proxysql = $this->generateGroupProxySQL($dot3_information['information']);
+        $innodb_cluster = $this->generateMeasuredGroup('innodb_cluster', $idDot3Run, function () use ($dot3_information) {
+            return $this->generateGroupInnoDBCluster($dot3_information['information']);
+        });
+        $ndb_cluster = $this->generateMeasuredGroup('ndb_cluster', $idDot3Run, function () use ($dot3_information) {
+            return $this->generateGroupNdbCluster($dot3_information['information']);
+        });
+        $mysqlrouter = $this->generateMeasuredGroup('mysqlrouter', $idDot3Run, function () use ($dot3_information) {
+            return $this->generateGroupMysqlRouter($dot3_information['information']);
+        });
 
-        $group = $this->array_merge_group(array_merge($galera, $master_slave, $proxysql));
+        $master_slave = $this->generateMeasuredGroup('master_slave', $idDot3Run, function () use ($dot3_information) {
+            return $this->generateGroupMasterSlave($dot3_information['information']);
+        });
+        $proxysql = $this->generateMeasuredGroup('proxysql', $idDot3Run, function () use ($dot3_information) {
+            return $this->generateGroupProxySQL($dot3_information['information']);
+        });
 
-        //Debug::debug($group, "GROUP");
+        $maxscale = $this->generateMeasuredGroup('maxscale', $idDot3Run, function () use ($dot3_information) {
+            return $this->generateGroupMaxScale($dot3_information['information']);
+        });
+
+        $vip = $this->generateMeasuredGroup('vip', $idDot3Run, function () use ($dot3_information) {
+            return $this->generateGroupVip($dot3_information['information']);
+        });
+        
+
+        $group = $this->array_merge_group(array_merge($galera, $innodb_cluster, $ndb_cluster, $mysqlrouter, $master_slave, $proxysql, $maxscale, $vip));
+
+       //Debug::debug($group, "GROUP");
         //die();
         return $group;
     }
 
+    private function generateMeasuredGroup(string $kind, ?int $idDot3Run, callable $callback): array
+    {
+        $startedAt = microtime(true);
+        $groups = $callback();
+        if (!is_array($groups)) {
+            $groups = array();
+        }
+
+        $endedAt = microtime(true);
+        $metrics = Dot3KpiRecorder::measureGroups($groups);
+        Dot3KpiRecorder::recordGroup($idDot3Run, $kind, [
+            'duration_ms' => Dot3KpiRecorder::durationMs($startedAt, $endedAt),
+            'nodes' => $metrics['nodes'],
+            'edges' => $metrics['edges'],
+        ]);
+
+        return $groups;
+    }
+
+/**
+ * Handle dot3 state through `buildLink`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for buildLink.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::buildLink()
+ * @example /fr/dot3/buildLink
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function buildLink($param)
     {
         $id_dot3_information = $param[0];
@@ -596,30 +2169,67 @@ class Dot3 extends Controller
 
         foreach($group as $id_mysql_server)
         {
+            if (!empty($dot3_information['information']['servers'][$id_mysql_server]['is_garb'])) {
+                continue;
+            }
+
             if (! empty($dot3_information['information']['servers'][$id_mysql_server]['@slave']))
             {
 
+                //Debug::debug($dot3_information['information']['servers'][$id_mysql_server]['@slave'], "@@SLAVE");
                 foreach($dot3_information['information']['servers'][$id_mysql_server]['@slave'] as $key => $slave)
                 {
+                    //Debug::debug($slave, "SLAVE");
+                    //Debug::debug($key, "KEY");
 
+                  
                     $host = $slave['master_host'].':'.$slave['master_port'];
                     $id_master = self::findIdMysqlServer($host, $id_dot3_information);
+                    if (empty($id_master)) {
+                        continue;
+                    }
 
                     $tmp = array();
+
 
                     //ALL OK
                     if (strtolower($slave['slave_io_running']) == 'yes' 
                     && strtolower($slave['slave_sql_running']) == 'yes' 
                     && $slave['seconds_behind_master'] == "0")
                     {
+                        if (!empty($slave['connection_name'] ))
+                        {
+                            $tmp['tooltip'] = $slave['connection_name'];
+                        }
+                        else
+                        {
+                            $tmp['tooltip'] = "[default]";
+                        }
+
+
                         $tmp = self::$config['REPLICATION_OK'];
-                        $tmp['tooltip'] = "OK";
+                        
+                        
+
+                        if (!empty($slave['master_ssl_allowed']) && $slave['master_ssl_allowed'] === "Yes")
+                        {
+                            $tmp['options']['label'] = "SSL 🔒";
+                            $tmp['tooltip'] = "SSL 🔒";
+                        }
+
+
                     }
                     //replication STOPED
                     elseif(strtolower($slave['slave_io_running']) == 'yes' 
                     && strtolower($slave['slave_sql_running']) == 'yes' 
                     && $slave['seconds_behind_master'] == "NULL")
                     {
+                        if (!empty($slave['master_ssl_allowed']) && $slave['master_ssl_allowed'] === "Yes")
+                        {
+                            $tmp['options']['label'] = "SSL 🔒";
+                        }
+                        
+
                         $tmp = self::$config['REPLICATION_STOPPED'];
                         $tmp['tooltip'] = "STOPPED";
                     }
@@ -691,8 +2301,24 @@ class Dot3 extends Controller
                     }
 
                     $tmp['options']['arrowsize'] = "1.5";
-                    
-                    $tmp['arrow'] = $id_master.":target -> ".$id_mysql_server.":target";
+
+                    $connection_name = '';
+                    if (!empty($slave['connection_name'] ))
+                    {
+                        $connection_name = $slave['connection_name'];
+                    }
+
+                    $tmp['options']['edgeURL'] = LINK."slave/show/".$id_mysql_server."/".$connection_name."/";
+
+                    $tmp['arrow'] = $id_master.":".self::TARGET." -> ".$id_mysql_server.":".self::TARGET."";
+
+                    if ($this->isMutualMasterReplication($dot3_information['information']['servers'], (int) $id_master, (int) $id_mysql_server, $id_dot3_information)) {
+                        $tmp['options']['constraint'] = 'false';
+                        $tmp['options']['label'] = ' ';
+                        if ((int) $id_master > (int) $id_mysql_server) {
+                            $tmp['options']['dir'] = 'back';
+                        }
+                    }
 
                     self::$build_ms[] = $tmp;
                 }
@@ -701,10 +2327,763 @@ class Dot3 extends Controller
         }
 
 
-        //Debug::debug($group , "debug");
+        //Debug::debug(self::$build_ms , "LINK MASTER SLAVE");
 
     }
 
+    /**
+     * @param int|string $idDot3Information Numeric snapshot id, or virtual
+     *        "import:<md5>" id forwarded by renderImportedGraphGroup() through
+     *        the Cluster::viewDot preview_key flow (#757).
+     */
+    private function isMutualMasterReplication(array $servers, int $idMaster, int $idSlave, $idDot3Information): bool
+    {
+        if ($idMaster <= 0 || $idSlave <= 0 || empty($servers[$idMaster]['@slave'])) {
+            return false;
+        }
+
+        foreach ($servers[$idMaster]['@slave'] as $replicationLink) {
+            $host = ($replicationLink['master_host'] ?? '').':'.($replicationLink['master_port'] ?? '');
+            $reverseMasterId = (int) self::findIdMysqlServer($host, $idDot3Information);
+
+            if ($reverseMasterId === $idSlave) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+/**
+ * Handle dot3 state through `buildLinkVIP`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for buildLinkVIP.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::buildLinkVIP()
+ * @example /fr/dot3/buildLinkVIP
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public function buildLinkVIP($param)
+    {
+        $id_dot3_information = $param[0];
+        $group = $param[1];
+
+        $dot3_information = self::getInformation($id_dot3_information);
+
+        foreach ($group as $id_mysql_server)
+        {
+            if (empty($dot3_information['information']['servers'][$id_mysql_server])) {
+                continue;
+            }
+
+            $server = $dot3_information['information']['servers'][$id_mysql_server];
+            if (!$this->isVipServer($server)) {
+                continue;
+            }
+
+            $vip_destinations = $this->getVipRenderDestinations($server, $dot3_information['information']['servers']);
+
+            $vip_links = array(
+                'active' => array(
+                    'id_destination' => $vip_destinations['active_id'],
+                    'theme' => 'VIP_LINK_ACTIVE',
+                    'tooltip' => 'VIP active destination',
+                    'default_style' => 'filled',
+                    'force_style' => 'filled',
+                    'source_port' => self::VIP_ACTIVE_PORT,
+                ),
+                'previous' => array(
+                    'id_destination' => $vip_destinations['previous_id'],
+                    'theme' => 'VIP_LINK_PREVIOUS',
+                    'tooltip' => 'VIP previous destination',
+                    'default_style' => 'dashed',
+                    'force_style' => 'dashed',
+                    'source_port' => self::VIP_PREVIOUS_PORT,
+                ),
+            );
+
+            foreach ($vip_links as $field => $settings)
+            {
+                $id_destination = (int)($settings['id_destination'] ?? 0);
+                if ($id_destination <= 0) {
+                    continue;
+                }
+
+                // destination_previous_id must be ignored when equal to 0
+                if ($field === 'previous' && $id_destination === 0) {
+                    continue;
+                }
+
+                if (empty($dot3_information['information']['servers'][$id_destination])) {
+                    continue;
+                }
+
+                $destination_server = $dot3_information['information']['servers'][$id_destination];
+                $destination_name = trim((string)($destination_server['display_name'] ?? ''));
+                if ($destination_name === '') {
+                    $destination_name = '#'.$id_destination;
+                }
+
+                $destination_port = $this->getServerPort($destination_server);
+                $destination_label = $destination_name;
+                if ($destination_port !== '') {
+                    $destination_label .= ':'.$destination_port;
+                }
+
+                $theme = $settings['theme'];
+                $tmp = self::$config[$theme] ?? array(
+                    'color' => '#008000',
+                    'style' => $settings['default_style'],
+                    'options' => array(),
+                );
+
+                if (empty($tmp['options']) || !is_array($tmp['options'])) {
+                    $tmp['options'] = array();
+                }
+
+                $tmp['tooltip'] = $settings['tooltip'].' : '.$destination_label;
+                $style = $tmp['style'] ?? $settings['default_style'];
+                if (!empty($settings['force_style'])) {
+                    $style = $settings['force_style'];
+                }
+                $tmp['style'] = $style;
+                $tmp['options']['style'] = $style;
+                $tmp['options']['arrowsize'] = '1.5';
+                $tmp['arrow'] = $id_mysql_server . ':' . $settings['source_port'] . ' -> ' . $id_destination . ':' . self::TARGET;
+
+                if ($this->isServerOfflineForGraph($server)) {
+                    $tmp['color'] = self::OFFLINE_EDGE_COLOR;
+                    $tmp['options']['color'] = self::OFFLINE_EDGE_COLOR;
+                }
+
+                self::$build_ms[] = $tmp;
+            }
+        }
+    }
+
+    /**
+     * Ajoute une flèche SST "hint" sans impacter la mise en page Graphviz.
+     *
+     * Règle métier demandée:
+     * - Si un noeud Galera actif A voit B dans wsrep_incoming_addresses
+     * - et que B existe bien côté inventaire comme membre Galera/PXC mais mysql_available=0
+     * => on affiche une flèche supplémentaire A -> B (donor -> joiner)
+     *
+     * NB: l'edge est purement visuelle (constraint=false + weight=0).
+     */
+    public function buildGaleraSstHintLink($param)
+    {
+        $id_dot3_information = $param[0];
+        $group = $param[1];
+        $dot3_information = self::getInformation($id_dot3_information);
+
+        if (empty($dot3_information['information']['servers']) || empty($dot3_information['information']['mapping'])) {
+            return;
+        }
+
+        $servers = $dot3_information['information']['servers'];
+        $mapping = $dot3_information['information']['mapping'];
+        $groupLookup = array_fill_keys(array_map('intval', $group), true);
+
+        // Candidats donor par joiner (on choisira ensuite UN seul donor par joiner)
+        $candidateByJoiner = array();
+
+        foreach ($group as $viewerId) {
+            $viewerId = (int)$viewerId;
+            if (empty($servers[$viewerId])) {
+                continue;
+            }
+
+            $viewer = $servers[$viewerId];
+            if (!self::isGaleraLikeNode($viewer)) {
+                continue;
+            }
+
+            if (empty($viewer['mysql_available']) || (string)$viewer['mysql_available'] !== '1') {
+                continue;
+            }
+
+            if (empty($viewer['wsrep_incoming_addresses'])) {
+                continue;
+            }
+
+            $viewerClusterName = trim((string)($viewer['wsrep_cluster_name'] ?? ''));
+            $viewerSegment = $this->getGaleraSegmentFromNode($viewer);
+            $incoming = self::getIdMysqlServerFromGalera((string)$viewer['wsrep_incoming_addresses']);
+
+            foreach ($incoming as $ipPort) {
+                if (empty($mapping[$ipPort])) {
+                    continue;
+                }
+
+                $joinerId = (int)$mapping[$ipPort];
+                if ($joinerId === $viewerId) {
+                    continue;
+                }
+
+                if (empty($groupLookup[$joinerId]) || empty($servers[$joinerId])) {
+                    continue;
+                }
+
+                $joiner = $servers[$joinerId];
+                if (!self::isGaleraLikeNode($joiner)) {
+                    continue;
+                }
+
+                // Joiner attendu: noeud Galera offline
+                if (!isset($joiner['mysql_available']) || (string)$joiner['mysql_available'] !== '0') {
+                    continue;
+                }
+
+                $joinerClusterName = trim((string)($joiner['wsrep_cluster_name'] ?? ''));
+                if ($viewerClusterName !== '' && $joinerClusterName !== ''
+                    && strcasecmp($viewerClusterName, $joinerClusterName) !== 0) {
+                    continue;
+                }
+
+                $joinerSegment = $this->getGaleraSegmentFromNode($joiner);
+
+                // Règle métier demandée : le donor doit être dans le même segment que le joiner
+                if ($viewerSegment !== $joinerSegment) {
+                    continue;
+                }
+
+                $score = $this->scoreSstDonorCandidate($viewer, $joinerSegment);
+
+                $candidateByJoiner[$joinerId][] = array(
+                    'donor_id' => $viewerId,
+                    'joiner_id' => $joinerId,
+                    'joiner_cluster_name' => $joinerClusterName,
+                    'score' => $score,
+                );
+            }
+        }
+
+        foreach ($candidateByJoiner as $joinerId => $candidates) {
+            if (empty($candidates)) {
+                continue;
+            }
+
+            usort($candidates, function ($a, $b) {
+                if ($a['score'] === $b['score']) {
+                    return $a['donor_id'] <=> $b['donor_id'];
+                }
+                return $b['score'] <=> $a['score'];
+            });
+
+            $winner = $candidates[0];
+            $donorId = (int)$winner['donor_id'];
+            $joinerId = (int)$winner['joiner_id'];
+
+            // Le noeud offline est considéré comme receveur SST (joiner)
+            if (!empty(self::$build_server[$joinerId])) {
+                if (!empty(self::$config['NODE_WAITING'])) {
+                    self::setThemeToServer('NODE_WAITING', $joinerId);
+                }
+
+                self::$build_server[$joinerId]['galera_status_override'] = 'Joiner';
+                self::$build_server[$joinerId]['wsrep_local_state_comment'] = 'Joiner';
+                self::$build_server[$joinerId]['is_sst_receiver'] = '1';
+
+                // Compléter les valeurs auto_increment manquantes du joiner
+                // en se basant sur les autres noeuds Galera du même cluster.
+                [$suggestedOffset, $suggestedIncrement] = $this->guessGaleraAutoIncrement(
+                    $servers,
+                    $group,
+                    $joinerId,
+                    $winner['joiner_cluster_name']
+                );
+
+                // Règle demandée: en mode joiner, on recalcule systématiquement
+                // les paramètres auto_increment pour rester cohérent avec le cluster.
+                if ($suggestedOffset > 0) {
+                    self::$build_server[$joinerId]['auto_increment_offset'] = (string) $suggestedOffset;
+                }
+
+                if ($suggestedIncrement > 0) {
+                    self::$build_server[$joinerId]['auto_increment_increment'] = (string) $suggestedIncrement;
+                }
+            }
+
+            $tmp = self::$config['REPLICATION_SST'] ?? array(
+                'color' => '#e3ea12',
+                'style' => 'dashed',
+                'options' => array(),
+            );
+
+            if (empty($tmp['options']) || !is_array($tmp['options'])) {
+                $tmp['options'] = array();
+            }
+
+            $sstLabel = $this->buildSstEdgeLabel($servers[$donorId] ?? array(), $servers[$joinerId] ?? array());
+
+            $tmp['arrow'] = $donorId . ':' . self::TARGET . ' -> ' . $joinerId . ':' . self::TARGET;
+            $tmp['tooltip'] = 'SST probable : donor -> joiner';
+            if ($sstLabel !== 'SST') {
+                $tmp['tooltip'] .= ' (' . $sstLabel . ')';
+            }
+            //$tmp['options']['constraint'] = 'false';
+            //$tmp['options']['weight'] = '0';
+            //$tmp['options']['penwidth'] = '2';
+            $tmp['options']['arrowsize'] = '1.5';
+            $tmp['options']['style'] = $tmp['style'] ?? 'dashed';
+            $tmp['options']['label'] = $sstLabel;
+
+            self::$build_ms[] = $tmp;
+        }
+    }
+
+/**
+ * Retrieve dot3 state through `getGaleraSegmentFromNode`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $node Input value for `node`.
+ * @phpstan-param array $node
+ * @psalm-param array $node
+ * @return int Returned value for getGaleraSegmentFromNode.
+ * @phpstan-return int
+ * @psalm-return int
+ * @see self::getGaleraSegmentFromNode()
+ * @example /fr/dot3/getGaleraSegmentFromNode
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function getGaleraSegmentFromNode(array $node): int
+    {
+        $providerOptions = (string)($node['wsrep_provider_options'] ?? '');
+        if ($providerOptions === '') {
+            return 0;
+        }
+
+        $segment = self::extractProviderOption($providerOptions, 'gmcast.segment');
+        return (int)$segment;
+    }
+
+/**
+ * Handle dot3 state through `scoreSstDonorCandidate`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $donorNode Input value for `donorNode`.
+ * @phpstan-param array $donorNode
+ * @psalm-param array $donorNode
+ * @param int $joinerSegment Input value for `joinerSegment`.
+ * @phpstan-param int $joinerSegment
+ * @psalm-param int $joinerSegment
+ * @return int Returned value for scoreSstDonorCandidate.
+ * @phpstan-return int
+ * @psalm-return int
+ * @see self::scoreSstDonorCandidate()
+ * @example /fr/dot3/scoreSstDonorCandidate
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function scoreSstDonorCandidate(array $donorNode, int $joinerSegment): int
+    {
+        $score = 0;
+
+        $donorSegment = $this->getGaleraSegmentFromNode($donorNode);
+        if ($donorSegment === $joinerSegment) {
+            $score += 100;
+        }
+
+        $comment = strtolower(trim((string)($donorNode['wsrep_local_state_comment'] ?? '')));
+        if (strpos($comment, 'donor') !== false) {
+            $score += 40;
+        }
+
+        if ((string)($donorNode['wsrep_local_state'] ?? '') === '2') {
+            $score += 20;
+        }
+
+        if (strtolower((string)($donorNode['wsrep_desync'] ?? '')) === 'on') {
+            $score += 10;
+        }
+
+        return $score;
+    }
+
+/**
+ * Handle dot3 state through `buildSstEdgeLabel`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $donorNode Input value for `donorNode`.
+ * @phpstan-param array $donorNode
+ * @psalm-param array $donorNode
+ * @param array $joinerNode Input value for `joinerNode`.
+ * @phpstan-param array $joinerNode
+ * @psalm-param array $joinerNode
+ * @return string Returned value for buildSstEdgeLabel.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::buildSstEdgeLabel()
+ * @example /fr/dot3/buildSstEdgeLabel
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function buildSstEdgeLabel(array $donorNode, array $joinerNode): string
+    {
+        $elapsedSec = $this->estimateSstElapsedSeconds($donorNode, $joinerNode);
+        $progress = $this->estimateSstProgressPercent($donorNode, $joinerNode, $elapsedSec);
+        $elapsedLabel = $elapsedSec !== null ? $this->formatSstElapsedLabel($elapsedSec) : null;
+
+        if ($progress === null && $elapsedLabel === null) {
+            return 'SST';
+        }
+
+        if ($progress !== null && $elapsedLabel !== null) {
+            return 'SST ' . $progress . '% (' . $elapsedLabel . ')';
+        }
+
+        if ($progress !== null) {
+            return 'SST ' . $progress . '%';
+        }
+
+        return 'SST (' . $elapsedLabel . ')';
+    }
+
+/**
+ * Handle dot3 state through `estimateSstProgressPercent`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $donorNode Input value for `donorNode`.
+ * @phpstan-param array $donorNode
+ * @psalm-param array $donorNode
+ * @param array $joinerNode Input value for `joinerNode`.
+ * @phpstan-param array $joinerNode
+ * @psalm-param array $joinerNode
+ * @param ?int|null $elapsedSec Input value for `elapsedSec`.
+ * @phpstan-param ?int|null $elapsedSec
+ * @psalm-param ?int|null $elapsedSec
+ * @return ?int Returned value for estimateSstProgressPercent.
+ * @phpstan-return ?int
+ * @psalm-return ?int
+ * @see self::estimateSstProgressPercent()
+ * @example /fr/dot3/estimateSstProgressPercent
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function estimateSstProgressPercent(array $donorNode, array $joinerNode, ?int $elapsedSec = null): ?int
+    {
+        $expectedSize = $this->getPositiveIntMetric($donorNode, 'mysql_datadir_clean_size');
+        if ($expectedSize <= 0) {
+            $expectedSize = $this->getPositiveIntMetric($donorNode, 'mysql_datadir_total_size');
+        }
+
+        $receivedSize = $this->getPositiveIntMetric($joinerNode, 'mysql_datadir_clean_size');
+        if ($receivedSize <= 0) {
+            $receivedSize = $this->getPositiveIntMetric($joinerNode, 'mysql_datadir_total_size');
+        }
+
+        if ($expectedSize <= 0 || $receivedSize < 0) {
+            return null;
+        }
+
+        $pct = (int) round(($receivedSize / $expectedSize) * 100);
+
+        if ($pct < 0) {
+            $pct = 0;
+        } elseif ($pct > 100) {
+            $pct = 100;
+        }
+
+        // Règle métier demandée : ne pas afficher 100% si on n'a pas encore de temps SST.
+        if (($elapsedSec === null || $elapsedSec <= 0) && $pct >= 100) {
+            return null;
+        }
+
+        return $pct;
+    }
+
+/**
+ * Handle dot3 state through `estimateSstElapsedSeconds`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $donorNode Input value for `donorNode`.
+ * @phpstan-param array $donorNode
+ * @psalm-param array $donorNode
+ * @param array $joinerNode Input value for `joinerNode`.
+ * @phpstan-param array $joinerNode
+ * @psalm-param array $joinerNode
+ * @return ?int Returned value for estimateSstElapsedSeconds.
+ * @phpstan-return ?int
+ * @psalm-return ?int
+ * @see self::estimateSstElapsedSeconds()
+ * @example /fr/dot3/estimateSstElapsedSeconds
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function estimateSstElapsedSeconds(array $donorNode, array $joinerNode): ?int
+    {
+        $joinerElapsed = $this->getPositiveIntMetric($joinerNode, 'mysql_sst_elapsed_sec');
+        $donorElapsed = $this->getPositiveIntMetric($donorNode, 'mysql_sst_elapsed_sec');
+        $elapsedSec = max($joinerElapsed, $donorElapsed);
+
+        if ($elapsedSec <= 0) {
+            return null;
+        }
+
+        return $elapsedSec;
+    }
+
+/**
+ * Handle dot3 state through `formatSstElapsedLabel`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $elapsedSec Input value for `elapsedSec`.
+ * @phpstan-param int $elapsedSec
+ * @psalm-param int $elapsedSec
+ * @return string Returned value for formatSstElapsedLabel.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::formatSstElapsedLabel()
+ * @example /fr/dot3/formatSstElapsedLabel
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function formatSstElapsedLabel(int $elapsedSec): string
+    {
+        if ($elapsedSec < 60) {
+            return $elapsedSec . 'sec';
+        }
+
+        if ($elapsedSec < 3600) {
+            $minutes = (int) floor($elapsedSec / 60);
+            if ($minutes <= 0) {
+                $minutes = 1;
+            }
+            return $minutes . 'min';
+        }
+
+        $hours = intdiv($elapsedSec, 3600);
+        $minutes = intdiv($elapsedSec % 3600, 60);
+        return $hours . ' h ' . $minutes . ' min';
+    }
+
+/**
+ * Retrieve dot3 state through `getPositiveIntMetric`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $node Input value for `node`.
+ * @phpstan-param array $node
+ * @psalm-param array $node
+ * @param string $key Input value for `key`.
+ * @phpstan-param string $key
+ * @psalm-param string $key
+ * @return int Returned value for getPositiveIntMetric.
+ * @phpstan-return int
+ * @psalm-return int
+ * @see self::getPositiveIntMetric()
+ * @example /fr/dot3/getPositiveIntMetric
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function getPositiveIntMetric(array $node, string $key): int
+    {
+        if (!isset($node[$key])) {
+            return 0;
+        }
+
+        $value = $node[$key];
+        if (is_array($value) && isset($value['count'])) {
+            $value = $value['count'];
+        }
+
+        if (!is_numeric($value)) {
+            return 0;
+        }
+
+        $intValue = (int)$value;
+        if ($intValue <= 0) {
+            return 0;
+        }
+
+        return $intValue;
+    }
+
+/**
+ * Handle dot3 state through `guessGaleraAutoIncrement`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $servers Input value for `servers`.
+ * @phpstan-param array $servers
+ * @psalm-param array $servers
+ * @param array $group Input value for `group`.
+ * @phpstan-param array $group
+ * @psalm-param array $group
+ * @param int $joinerId Input value for `joinerId`.
+ * @phpstan-param int $joinerId
+ * @psalm-param int $joinerId
+ * @param string $clusterName Input value for `clusterName`.
+ * @phpstan-param string $clusterName
+ * @psalm-param string $clusterName
+ * @return array Returned value for guessGaleraAutoIncrement.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::guessGaleraAutoIncrement()
+ * @example /fr/dot3/guessGaleraAutoIncrement
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function guessGaleraAutoIncrement(array $servers, array $group, int $joinerId, string $clusterName): array
+    {
+        $increments = array();
+        $usedOffsets = array();
+        $onlinePeerCount = 0;
+
+        foreach ($group as $peerId) {
+            $peerId = (int)$peerId;
+            if ($peerId === $joinerId || empty($servers[$peerId])) {
+                continue;
+            }
+
+            $peer = $servers[$peerId];
+            if (!self::isGaleraLikeNode($peer)) {
+                continue;
+            }
+
+            // Règle métier: on se base uniquement sur les autres noeuds ONLINE
+            // pour éviter de réutiliser un offset stale d'un noeud offline.
+            if (empty($peer['mysql_available']) || (string)$peer['mysql_available'] !== '1') {
+                continue;
+            }
+
+            $peerClusterName = trim((string)($peer['wsrep_cluster_name'] ?? ''));
+            if ($clusterName !== '' && $peerClusterName !== '' && strcasecmp($clusterName, $peerClusterName) !== 0) {
+                continue;
+            }
+
+            $onlinePeerCount++;
+
+            $inc = (int)($peer['auto_increment_increment'] ?? 0);
+            if ($inc > 0) {
+                if (!isset($increments[$inc])) {
+                    $increments[$inc] = 0;
+                }
+                $increments[$inc]++;
+            }
+
+            $offset = (int)($peer['auto_increment_offset'] ?? 0);
+            if ($offset > 0) {
+                $usedOffsets[$offset] = true;
+            }
+        }
+
+        $increment = 0;
+        if (!empty($increments)) {
+            arsort($increments);
+            $increment = (int)array_key_first($increments);
+        } elseif ($onlinePeerCount > 0) {
+            // fallback: cluster courant (peers + joiner)
+            $increment = max(1, $onlinePeerCount + 1);
+        }
+
+        if ($increment <= 0) {
+            $increment = 1;
+        }
+
+        $offset = 0;
+        if ($increment > 0) {
+            for ($i = 1; $i <= $increment; $i++) {
+                if (empty($usedOffsets[$i])) {
+                    $offset = $i;
+                    break;
+                }
+            }
+
+            if ($offset === 0 && !empty($usedOffsets)) {
+                $knownOffsets = array_keys($usedOffsets);
+                sort($knownOffsets);
+                $offset = (int)$knownOffsets[0];
+            }
+        }
+
+        if ($offset <= 0) {
+            $offset = 1;
+        }
+
+        return array($offset, $increment);
+    }
+
+/**
+ * Handle dot3 state through `buildServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for buildServer.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::buildServer()
+ * @example /fr/dot3/buildServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function buildServer($param)
     {
         $id_dot3_information = $param[0];
@@ -714,20 +3093,36 @@ class Dot3 extends Controller
 
         foreach($group as $id_mysql_server)
         {
-            $server = $dot3_information['information']['servers'][$id_mysql_server];
-            $tmp = array();
-            
-            if ($server['mysql_available'] == "1")
+            // to remove old server with empty data
+            if (empty($dot3_information['information']['servers'][$id_mysql_server]))
             {
-                $tmp = self::$config['NODE_OK'];
+                continue;
             }
-            elseif($server['mysql_available'] == "0"){
-                $tmp = self::$config['NODE_ERROR'];
-                $tmp['error'] = $server['mysql_error'];
+
+            $server = $dot3_information['information']['servers'][$id_mysql_server];
+            $is_vip_server = $this->isVipServer($server);
+
+            // Issue #735: a monitored server that is unreachable for longer than the
+            // ts_value_general_text retention window keeps `mysql_available=0` and
+            // `mysql_error` fresh, but its `version` was purged from the partition.
+            // Skipping on missing `version` alone made these nodes silently disappear
+            // from /architecture/index. Skip only when we have nothing to display.
+            $hasMonitoringSignal = self::hasGraphMonitoringSignal($server);
+            if (!$hasMonitoringSignal && !$is_vip_server) {
+                continue;
             }
-            else
-            { // il faudrait ajouter si ok et +1 minute sans monitoring (avec le serveur le récent)
-                $tmp = self::$config['NODE_BUSY'];
+
+            if ($is_vip_server)
+            {
+                $server = $this->enrichVipServerForGraph($server, $dot3_information['information']['servers']);
+            }
+
+            //Debug::debug($dot3_information['information']['servers'][$id_mysql_server],"INFO_SERVER");
+            $tmp = array();
+
+            $tmp = self::resolveServerGraphNodeState($server);
+            if ($tmp === null) {
+                continue;
             }
 
             // ADD there color for Galera Cluster
@@ -739,6 +3134,558 @@ class Dot3 extends Controller
 
             self::$build_server[$id_mysql_server] = $tmp;
         }
+    }
+
+    private static function hasGraphMonitoringSignal(array $server): bool
+    {
+        return !empty($server['version'])
+            || isset($server['mysql_available'])
+            || !empty($server['mysql_error'])
+            || self::hasMysqlRouterGraphSignal($server);
+    }
+
+    private static function hasMysqlRouterGraphSignal(array $server): bool
+    {
+        return isset($server['mysqlrouter_available'])
+            || !empty($server['mysqlrouter_error'])
+            || !empty($server['mysqlrouter_routes'])
+            || !empty($server['mysqlrouter_metadata_status'])
+            || !empty($server['mysqlrouter_metadata_config']);
+    }
+
+    private static function resolveServerGraphNodeState(array $server): ?array
+    {
+        $availability = $server['mysql_available'] ?? null;
+        $error = (string)($server['mysql_error'] ?? $server['mysqlrouter_error'] ?? '');
+
+        if ($availability === null && self::isMysqlRouterNode($server)) {
+            $availability = $server['mysqlrouter_available'] ?? null;
+            $error = (string)($server['mysqlrouter_error'] ?? $error);
+        }
+
+        if ($availability === null) {
+            if (self::isMysqlRouterNode($server) && self::hasMysqlRouterGraphSignal($server)) {
+                return self::$config['NODE_BUSY'];
+            }
+
+            return null;
+        }
+
+        if ((string)$availability === "1") {
+            return self::$config['NODE_OK'];
+        }
+
+        if ((string)$availability === "0") {
+            $tmp = self::$config['NODE_ERROR'];
+            $tmp['error'] = $error;
+            return $tmp;
+        }
+
+        // il faudrait ajouter si ok et +1 minute sans monitoring (avec le serveur le récent)
+        return self::$config['NODE_BUSY'];
+    }
+
+/**
+ * Handle dot3 state through `mergeVipServerDataInInformation`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array & $all Input value for `all`.
+ * @phpstan-param array & $all
+ * @psalm-param array & $all
+ * @param array $vipServerIds Input value for `vipServerIds`.
+ * @phpstan-param array $vipServerIds
+ * @psalm-param array $vipServerIds
+ * @param mixed $date_request Input value for `date_request`.
+ * @phpstan-param mixed $date_request
+ * @psalm-param mixed $date_request
+ * @return void Returned value for mergeVipServerDataInInformation.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::mergeVipServerDataInInformation()
+ * @example /fr/dot3/mergeVipServerDataInInformation
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function mergeVipServerDataInInformation(array &$all, array $vipServerIds): void
+    {
+        if (empty($vipServerIds)) {
+            return;
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+        $sql = "SELECT id_mysql_server, dns, ip, id_mysql_server__actual, id_mysql_server__previous, date__actual, date__previous
+                FROM vip_server PARTITION (pn)
+                WHERE id_mysql_server IN (".implode(',', array_map('intval', $vipServerIds)).")";
+
+        $res = $db->sql_query($sql);
+        $vipData = array();
+
+        while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $vipData[(int) $row['id_mysql_server']] = $row;
+        }
+
+        foreach ($vipServerIds as $id_mysql_server) {
+            if (empty($vipData[$id_mysql_server]) || !is_array($vipData[$id_mysql_server])) {
+                continue;
+            }
+
+            if (empty($all[$id_mysql_server]) || !is_array($all[$id_mysql_server])) {
+                $all[$id_mysql_server] = array();
+            }
+
+            $vipRow = $vipData[$id_mysql_server];
+            $all[$id_mysql_server]['vip_server'] = $vipRow;
+
+            $vip_ip = trim((string)($vipRow['ip'] ?? ''));
+            if ($vip_ip !== '') {
+                $all[$id_mysql_server]['vip_dns_ip'] = $vip_ip;
+            }
+
+            $vip_dns = trim((string)($vipRow['dns'] ?? ''));
+            if ($vip_dns !== '') {
+                $all[$id_mysql_server]['vip_dns'] = $vip_dns;
+            }
+
+            $all[$id_mysql_server]['destination_id'] = (int)($vipRow['id_mysql_server__actual'] ?? 0);
+            $all[$id_mysql_server]['destination_previous_id'] = (int)($vipRow['id_mysql_server__previous'] ?? 0);
+            $all[$id_mysql_server]['destination_date'] = $vipRow['date__actual'] ?? '';
+            $all[$id_mysql_server]['destination_previous_date'] = $vipRow['date__previous'] ?? '';
+        }
+    }
+
+/**
+ * Handle dot3 state through `isVipServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $server Input value for `server`.
+ * @phpstan-param array $server
+ * @psalm-param array $server
+ * @return bool Returned value for isVipServer.
+ * @phpstan-return bool
+ * @psalm-return bool
+ * @see self::isVipServer()
+ * @example /fr/dot3/isVipServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function isVipServer(array $server): bool
+    {
+        return !empty($server['is_vip']) && (string)$server['is_vip'] === '1';
+    }
+
+/**
+ * Handle dot3 state through `enrichVipServerForGraph`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $server Input value for `server`.
+ * @phpstan-param array $server
+ * @psalm-param array $server
+ * @param array $allServers Input value for `allServers`.
+ * @phpstan-param array $allServers
+ * @psalm-param array $allServers
+ * @return array Returned value for enrichVipServerForGraph.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::enrichVipServerForGraph()
+ * @example /fr/dot3/enrichVipServerForGraph
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function enrichVipServerForGraph(array $server, array $allServers): array
+    {
+        $server['version'] = 'VIP';
+        $server['version_comment'] = 'VIP';
+
+        $vip_destinations = $this->getVipRenderDestinations($server, $allServers);
+
+        if (empty($server['vip_dns_ip'])) {
+            $vip_ip = trim((string)($server['ip'] ?? ''));
+            if ($vip_ip === '') {
+                $vip_ip = trim((string)($server['ip_real'] ?? ''));
+            }
+
+            if ($vip_ip !== '') {
+                $server['vip_dns_ip'] = $vip_ip;
+            }
+        }
+
+        if (empty($server['vip_dns_port'])) {
+            $vip_port = trim((string)($server['port'] ?? ''));
+            if ($vip_port === '') {
+                $vip_port = trim((string)($server['port_real'] ?? ''));
+            }
+
+            if ($vip_port !== '') {
+                $server['vip_dns_port'] = $vip_port;
+            }
+        }
+
+        $active = $this->buildVipDestinationLabel($allServers, $vip_destinations['active_id']);
+        $previous_id = $vip_destinations['previous_id'];
+        $previous = $this->buildVipDestinationLabel($allServers, $previous_id);
+
+        $server['vip_active_label'] = $active['label'];
+        $server['vip_previous_label'] = $previous['label'];
+
+        if ($previous_id <= 0) {
+            $server['vip_previous_label'] = 'N/A';
+            $server['vip_last_switch'] = 'N/A';
+        } else {
+            $last_switch = trim((string)($server['destination_previous_date'] ?? ''));
+            $server['vip_last_switch'] = $last_switch !== '' ? $last_switch : 'N/A';
+        }
+
+        return $server;
+    }
+
+/**
+ * Retrieve dot3 state through `getVipRenderDestinations`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $server Input value for `server`.
+ * @phpstan-param array $server
+ * @psalm-param array $server
+ * @param array $allServers Input value for `allServers`.
+ * @phpstan-param array $allServers
+ * @psalm-param array $allServers
+ * @return array Returned value for getVipRenderDestinations.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::getVipRenderDestinations()
+ * @example /fr/dot3/getVipRenderDestinations
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function getVipRenderDestinations(array $server, array $allServers = array()): array
+    {
+        $active_id = (int)($server['destination_id'] ?? 0);
+        $previous_id = (int)($server['destination_previous_id'] ?? 0);
+
+        // Cas observé en production : destination_id peut repasser à 0 alors que
+        // destination_previous_id contient toujours la destination actuellement active.
+        // Dans ce cas, on promeut previous -> active pour l'affichage et le point
+        // de départ de la flèche.
+        if ($active_id <= 0 && $previous_id > 0) {
+            $active_id = $previous_id;
+            $previous_id = 0;
+        }
+
+        if (!empty($allServers)) {
+            $active_id = $this->resolveVipDestinationId($active_id, $allServers);
+            $previous_id = $this->resolveVipDestinationId($previous_id, $allServers);
+
+            if ($active_id > 0 && $previous_id === $active_id) {
+                $previous_id = 0;
+            }
+        }
+
+        return array(
+            'active_id' => $active_id,
+            'previous_id' => $previous_id,
+        );
+    }
+
+/**
+ * Handle dot3 state through `resolveVipDestinationId`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $idDestination Input value for `idDestination`.
+ * @phpstan-param int $idDestination
+ * @psalm-param int $idDestination
+ * @param array $allServers Input value for `allServers`.
+ * @phpstan-param array $allServers
+ * @psalm-param array $allServers
+ * @param int $maxDepth Input value for `maxDepth`.
+ * @phpstan-param int $maxDepth
+ * @psalm-param int $maxDepth
+ * @return int Returned value for resolveVipDestinationId.
+ * @phpstan-return int
+ * @psalm-return int
+ * @see self::resolveVipDestinationId()
+ * @example /fr/dot3/resolveVipDestinationId
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function resolveVipDestinationId(int $idDestination, array $allServers, int $maxDepth = 6): int
+    {
+        if ($idDestination <= 0) {
+            return 0;
+        }
+
+        $current = $idDestination;
+        $visited = array();
+        $depth = 0;
+
+        while ($current > 0 && $depth < $maxDepth) {
+            if (!empty($visited[$current])) {
+                return 0;
+            }
+
+            $visited[$current] = true;
+
+            if (empty($allServers[$current])) {
+                return 0;
+            }
+
+            $candidate = $allServers[$current];
+            if (!$this->isVipServer($candidate)) {
+                return $current;
+            }
+
+            $nextActive = (int)($candidate['destination_id'] ?? 0);
+            $nextPrevious = (int)($candidate['destination_previous_id'] ?? 0);
+
+            if ($nextActive <= 0 && $nextPrevious > 0) {
+                $nextActive = $nextPrevious;
+            }
+
+            if ($nextActive <= 0) {
+                return 0;
+            }
+
+            $current = $nextActive;
+            $depth++;
+        }
+
+        return 0;
+    }
+
+/**
+ * Handle dot3 state through `buildVipDestinationLabel`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $allServers Input value for `allServers`.
+ * @phpstan-param array $allServers
+ * @psalm-param array $allServers
+ * @param int $idDestination Input value for `idDestination`.
+ * @phpstan-param int $idDestination
+ * @psalm-param int $idDestination
+ * @return array Returned value for buildVipDestinationLabel.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::buildVipDestinationLabel()
+ * @example /fr/dot3/buildVipDestinationLabel
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function buildVipDestinationLabel(array $allServers, int $idDestination): array
+    {
+        if ($idDestination <= 0 || empty($allServers[$idDestination])) {
+            return array('label' => 'N/A');
+        }
+
+        $destination_server = $allServers[$idDestination];
+        $destination_endpoint = $this->buildVipDestinationEndpointLabel($destination_server);
+        if ($destination_endpoint !== '') {
+            return array('label' => $destination_endpoint);
+        }
+
+        $fallback_host = trim((string)($destination_server['ip_real'] ?? $destination_server['ip'] ?? ''));
+        $fallback_port = $this->getServerPort($destination_server);
+
+        if ($fallback_host !== '' && $fallback_port !== '') {
+            return array('label' => $fallback_host.':'.$fallback_port);
+        }
+
+        return array('label' => 'N/A');
+    }
+
+    private function buildVipDestinationEndpointLabel(array $server): string
+    {
+        $host = trim((string)($server['ip_real'] ?? $server['ip'] ?? ''));
+        $port = trim((string)($server['port_real'] ?? $server['port'] ?? ''));
+
+        if ($host === '' || $port === '') {
+            return '';
+        }
+
+        $endpoint = $host.':'.$port;
+        if (preg_match('/^(\d{1,3}\.){3}\d{1,3}:\d{1,5}$/', $endpoint)) {
+            $dot3Information = self::getInformation(self::$id_dot3_information);
+            $tunnel = $dot3Information['information']['tunnel'] ?? array();
+
+            if (!empty($tunnel[$endpoint])) {
+                return '🔀'.$tunnel[$endpoint];
+            }
+        }
+
+        return $endpoint;
+    }
+
+/**
+ * Retrieve dot3 state through `getServerPort`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $server Input value for `server`.
+ * @phpstan-param array $server
+ * @psalm-param array $server
+ * @return string Returned value for getServerPort.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::getServerPort()
+ * @example /fr/dot3/getServerPort
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function getServerPort(array $server): string
+    {
+        $port = trim((string)($server['port_real'] ?? ''));
+        if ($port !== '') {
+            return $port;
+        }
+
+        return trim((string)($server['port'] ?? ''));
+    }
+
+/**
+ * Retrieve dot3 state through `getOrCreateUnknownProxySqlServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $host Input value for `host`.
+ * @phpstan-param string $host
+ * @psalm-param string $host
+ * @param int $referenceId Input value for `referenceId`.
+ * @phpstan-param int $referenceId
+ * @psalm-param int $referenceId
+ * @return string Returned value for getOrCreateUnknownProxySqlServer.
+ * @phpstan-return string
+ * @psalm-return string
+ * @see self::getOrCreateUnknownProxySqlServer()
+ * @example /fr/dot3/getOrCreateUnknownProxySqlServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function getOrCreateUnknownProxySqlServer(string $host, int $referenceId): string
+    {
+        $normalizedHost = strtolower(trim($host));
+        if ($normalizedHost === '') {
+            $normalizedHost = 'unknown';
+        }
+
+        if (!empty(self::$unknown_proxy_nodes[$normalizedHost])) {
+            return self::$unknown_proxy_nodes[$normalizedHost];
+        }
+
+        $placeholderId = 'unknown_proxysql_' . crc32($normalizedHost);
+        self::$unknown_proxy_nodes[$normalizedHost] = $placeholderId;
+
+        $referenceServer = self::$build_server[$referenceId] ?? array();
+        $version = $referenceServer['version'] ?? '0';
+        $versionComment = $referenceServer['version_comment'] ?? 'ProxySQL';
+        $versionLabel = $versionComment;
+        if (!empty($referenceServer['version'])) {
+            $versionLabel .= ' : '.$referenceServer['version'];
+        }
+
+        [$ip, $port] = array_pad(explode(':', $normalizedHost, 2), 2, '');
+        $ip = $ip !== '' ? $ip : $normalizedHost;
+        $port = $port !== '' ? $port : '6032';
+
+        self::$build_server[$placeholderId] = array(
+            'id_mysql_server' => $placeholderId,
+            'display_name' => $ip . ':' . $port,
+            'color' => '#9e9e9e',
+            'version' => '',
+            'version_comment' => '',
+            'version_label_override' => 'Not monitored',
+            'is_unknown_proxysql' => '1',
+            'is_proxysql' => '0',
+            'is_proxy' => '0',
+            'ip_real' => $ip,
+            'port_real' => $port,
+            'ip' => $ip,
+            'port' => $port,
+            'mysql_available' => '0',
+        );
+
+        $this->logger->warning(
+            'ProxySQL backend missing in inventory: ' . $normalizedHost
+            . ' (linked from ProxySQL id ' . $referenceId . ')'
+        );
+
+        return $placeholderId;
+    }
+
+/**
+ * Handle dot3 state through `isUnknownProxySqlNode`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @return bool Returned value for isUnknownProxySqlNode.
+ * @phpstan-return bool
+ * @psalm-return bool
+ * @see self::isUnknownProxySqlNode()
+ * @example /fr/dot3/isUnknownProxySqlNode
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function isUnknownProxySqlNode($id_mysql_server): bool
+    {
+        if (is_string($id_mysql_server) && strpos($id_mysql_server, 'unknown_proxysql_') === 0) {
+            return true;
+        }
+
+        if (!empty(self::$build_server[$id_mysql_server]['is_unknown_proxysql'])) {
+            return true;
+        }
+
+        return false;
     }
 
     /*
@@ -760,13 +3707,35 @@ class Dot3 extends Controller
                     //Debug::debug($proxysql['id_mysql_server']." == ". $id_mysql_server, "TEST OK ?");
                     if ($proxysql['id_mysql_server'] == $id_mysql_server){
                         self::$build_server[$id_mysql_server]['proxysql'] = $proxysql;
-                        //Debug::debug(self::$build_server);
+                        Debug::debug(self::$build_server);
                     }
                 }
+                Debug::debug(self::$build_server);
             }
         }
     }
 
+/**
+ * Handle dot3 state through `linkHostGroup`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for linkHostGroup.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::linkHostGroup()
+ * @example /fr/dot3/linkHostGroup
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function linkHostGroup($param)
     {
         $id_dot3_information = $param[0];
@@ -785,6 +3754,16 @@ class Dot3 extends Controller
             }
 
             $i = 0;
+
+            if (empty($server['mysql_servers']))
+            {
+                $this->logMissingProxySqlMysqlServers($server, 'linkHostGroup');
+                continue;
+            }
+
+            //Debug::debug($server,"PROXYSQL -------------");
+
+
             foreach($server['mysql_servers'] as $hostgroup) {
                 $i++;
 
@@ -815,13 +3794,16 @@ class Dot3 extends Controller
                 }
                 
                 $id_mysql_server_target = self::findIdMysqlServer($host, $id_dot3_information);
+                if (empty($id_mysql_server_target)) {
+                    $id_mysql_server_target = $this->getOrCreateUnknownProxySqlServer($host, $id_mysql_server);
+                }
                 //headlabel="*", taillabel="1"
                 
                 $port = crc32($hostgroup['hostgroup_id'].':'.$host);
                 
                 //$tmp['arrow'] = '"'.$id_mysql_server.':hg'.$i.'" -> "'.
-                $id_mysql_server_target.':target"';
-                $tmp['arrow'] = $id_mysql_server.':'.$port.' -> '.$id_mysql_server_target.':target';
+                $id_mysql_server_target.':'.self::TARGET.'"';
+                $tmp['arrow'] = $id_mysql_server.':'.$port.' -> '.$id_mysql_server_target.':'.self::TARGET.'';
                 $tmp['options']['dir'] = 'both';
                 $tmp['options']['style'] = $tmp['style'];
                 $tmp['options']['arrowtail']= 'crow';
@@ -843,31 +3825,285 @@ class Dot3 extends Controller
                     
                 }
 
+                $hostGroupMap = self::getProxySqlHostGroupMap($server);
+                $hostGroupRole = $hostGroupMap[$hostgroup['hostgroup_id']] ?? '';
+
+                if (strpos($hostGroupRole, 'reader') !== false)
+                {
+                    $tmp['options']['style'] = "filled";
+                    $tmp['options']['color'] = "#32CD32";
+                }
+
+
                 if (in_array($hostgroup['hostgroup_id'], array(1,2,100)))
                 {
                     if (in_array($hostgroup['hostgroup_id'], array(2)))
                     {
-                        $tmp['options']['style'] = "fill";
+                        $tmp['options']['style'] = "filled";
                         $tmp['options']['color'] = "#32CD32";
                     }
 
 
                     if (in_array($hostgroup['hostgroup_id'], array(100)))
                     {
-                        $tmp['options']['style'] = "fill";
+                        $tmp['options']['style'] = "filled";
                         $tmp['options']['color'] = "#17a2b8";
                     }
 
 
-                    self::$build_ms[] = $tmp;
+                    
                 }
-                
+
+                if ($this->isUnknownProxySqlNode($id_mysql_server_target)) {
+                    $tmp['color'] = '#9e9e9e';
+                    $tmp['options']['color'] = '#9e9e9e';
+                }
+
+                if (($hostgroup['status'] ?? '') !== 'ONLINE') {
+                    $tmp['color'] = self::OFFLINE_EDGE_COLOR;
+                    $tmp['options']['color'] = self::OFFLINE_EDGE_COLOR;
+                }
+
+                if ($this->isServerOfflineForGraph($server)) {
+                    $tmp['color'] = self::OFFLINE_EDGE_COLOR;
+                    $tmp['options']['color'] = self::OFFLINE_EDGE_COLOR;
+                }
+                self::$build_ms[] = $tmp;
             }
         }
 
         //Debug::debug(self::$build_ms);
     }
 
+    public function linkMysqlRouter($param)
+    {
+        $id_dot3_information = $param[0];
+        $dot3_information = self::getInformation($id_dot3_information);
+
+        foreach (self::$build_server as $id_mysql_server => $server) {
+            if (!self::isMysqlRouterNode($server)) {
+                continue;
+            }
+
+            $matchedRoute = self::resolveMysqlRouterRouteForServer($server);
+            $destinations = $matchedRoute['destinations_payload']['items'] ?? array();
+            if (!is_array($destinations) || empty($destinations)) {
+                continue;
+            }
+
+            $routeConfig = $matchedRoute['config'] ?? array();
+            $connectionSharing = (string)($routeConfig['connection_sharing'] ?? $matchedRoute['connection_sharing'] ?? '0');
+            $isConnectionSharing = in_array(strtolower($connectionSharing), array('1', 'on', 'true', 'yes'), true);
+
+            foreach ($destinations as $destination) {
+                if (!is_array($destination)) {
+                    continue;
+                }
+
+                $host = trim((string)($destination['address'] ?? $destination['hostname'] ?? ''));
+                $port = trim((string)($destination['port'] ?? '3306'));
+                if ($host === '') {
+                    continue;
+                }
+
+                if ($port === '') {
+                    $port = '3306';
+                }
+
+                $id_mysql_server_target = self::findIdMysqlServer($host.':'.$port, $id_dot3_information, true);
+                if (empty($id_mysql_server_target)) {
+                    continue;
+                }
+
+                $targetServer = $dot3_information['information']['servers'][$id_mysql_server_target] ?? array();
+                $targetRole = $this->resolveMysqlRouterBackendRole($targetServer);
+                $graphPort = crc32($id_mysql_server.':'.$host.':'.$port);
+
+                if (empty(self::$build_server[$id_mysql_server]['mysqlrouter_route_destinations'])) {
+                    self::$build_server[$id_mysql_server]['mysqlrouter_route_destinations'] = array();
+                }
+
+                self::$build_server[$id_mysql_server]['mysqlrouter_route_destinations'][$host.':'.$port] = array(
+                    'id_mysql_server' => $id_mysql_server_target,
+                    'role' => $targetRole,
+                    'graph_port' => $graphPort,
+                );
+
+                $tmp = array();
+                $tmp['arrow'] = $id_mysql_server.':'.$graphPort.' -> '.$id_mysql_server_target.':'.self::TARGET;
+                $tmp['options']['style'] = 'filled';
+                $tmp['options']['color'] = $targetRole === 'PRIMARY' ? '#008000' : '#00B33C';
+                $tmp['tooltip'] = 'MySQL Router '.$host.':'.$port.' connection_sharing='.( $isConnectionSharing ? '1' : '0');
+
+                if ($isConnectionSharing) {
+                    $tmp['options']['dir'] = 'both';
+                    $tmp['options']['arrowtail'] = 'crow';
+                    $tmp['options']['arrowhead'] = 'none';
+                } else {
+                    $tmp['options']['arrowhead'] = 'none';
+                }
+
+                if ($this->isServerOfflineForGraph($server)) {
+                    $tmp['color'] = self::OFFLINE_EDGE_COLOR;
+                    $tmp['options']['color'] = self::OFFLINE_EDGE_COLOR;
+                }
+
+                self::$build_ms[] = $tmp;
+            }
+        }
+    }
+
+    private function resolveMysqlRouterBackendRole(array $server): string
+    {
+        $readOnly = strtolower((string)($server['read_only'] ?? 'on'));
+        $superReadOnly = strtolower((string)($server['super_read_only'] ?? 'on'));
+
+        if (in_array($readOnly, array('off', '0'), true) || in_array($superReadOnly, array('off', '0'), true)) {
+            return 'PRIMARY';
+        }
+
+        return 'REPLICA';
+    }
+
+
+/**
+ * Handle dot3 state through `linkMaxScale`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for linkMaxScale.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::linkMaxScale()
+ * @example /fr/dot3/linkMaxScale
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public function linkMaxScale($param)
+    {
+        Debug::parseDebug($param);
+
+        $id_dot3_information = $param[0];
+        $group = $param[1];
+        $dot3_information = self::getInformation($id_dot3_information);
+
+        foreach(self::$build_server as $id_mysql_server => $server)
+        {
+            if (self::isMysqlRouterNode($server)) {
+                continue;
+            }
+
+            if (empty($server['is_maxscale']))
+            {
+                continue;
+            }
+
+            if (empty($server['is_maxscale']) && $server['is_maxscale'] != "1") {
+                continue;
+            }
+
+            $i = 0;
+            $maxscale = MaxScale::rewriteJson($server);
+
+            $listener_maxscale = $server['ip_real'].':'.$server['port_real'];
+
+            $ret_max = Dot3::resolveMaxScaleConnection($maxscale,  $listener_maxscale);
+
+            // faire le match
+
+            if (empty($ret_max[$listener_maxscale]))
+            {
+               //Debug::debug($ret_max, "MAXSCALE");
+                $this->logger->warning($server['display_name']. "[$listener_maxscale] Impossible to find informations from Maxscale Admin (empty)");
+
+                continue;
+            }
+
+            foreach($ret_max[$listener_maxscale]['servers'] as $elem)
+            {
+                //Debug::debug($elem['parameters'], "SERVER");
+
+                $id_mysql_server_target = self::findIdMysqlServer($elem['parameters']['address'].":".$elem['parameters']['port'], $id_dot3_information);
+                if (empty($id_mysql_server_target)) {
+                    continue;
+                }
+
+                $tmp = [];
+
+
+
+                if (in_array("Master",explode(", ",$elem['state']) )){
+                    $tmp['options']['style'] = "filled";
+                }
+                else{
+                    $tmp['options']['style'] = "dashed";
+                    $tmp['options']['style'] = "filled";
+                }
+
+                $port = crc32($server['ip_real'].':'.$server['port_real'].':'.$elem['parameters']['address'].":".$elem['parameters']['port']);
+                $tmp['arrow'] = $id_mysql_server.':'.$port.' -> '.$id_mysql_server_target.':'.self::TARGET.'';
+                $tmp['options']['arrowhead'] = 'none';
+                
+                if ($server['mysql_available'] == "1")
+                {
+                    if (in_array("Master",explode(", ",$elem['state']) )){
+                        $tmp['color'] = "#008000";
+                        $tmp['options']['color'] = "#008000";
+                    }
+                    else{
+                        $tmp['color'] = "#00B33C";
+                        $tmp['options']['color'] = "#00B33C";
+                    }
+
+                    if (in_array("Donor/Desynced",explode(", ",$elem['state']) )){
+                        $tmp['color'] = "#337ab7";
+                        $tmp['options']['color'] = "#337ab7";
+                    }
+                    if (in_array("Down", explode(", ", $elem['state']))) {
+                        $tmp['color'] = self::OFFLINE_EDGE_COLOR;
+                        $tmp['options']['color'] = self::OFFLINE_EDGE_COLOR;
+                    }
+
+                }
+                else{
+                    $tmp['color'] = self::OFFLINE_EDGE_COLOR;
+                    $tmp['options']['color'] = self::OFFLINE_EDGE_COLOR;
+                }
+
+                self::$build_ms[] = $tmp;
+            }
+            
+
+
+        }
+    }
+
+/**
+ * Handle dot3 state through `loadConfigColor`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for loadConfigColor.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::loadConfigColor()
+ * @example /fr/dot3/loadConfigColor
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function loadConfigColor()
     {
         $db = Sgbd::sql(DB_DEFAULT);
@@ -875,59 +4111,204 @@ class Dot3 extends Controller
         $sql = "SELECT * FROM `dot3_legend` order by `order`;";
         $res = $db->sql_query($sql);
 
+        //$to_test = ['font','color','background'];
+
         while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+
+            unset($arr['id']);
+            /*
+            foreach ($arr as $key => $value) {
+                // Si la clé est dans le tableau $to_test
+                if (in_array($key, $to_test)) {
+
+                    $value = strtolower($value);
+                    // Si la valeur existe dans la colorMap, on remplace
+                    if (isset(self::$colorMap[$value])) {
+                        $arr[$key] = self::$colorMap[$value];
+                    }
+                }
+            }*/
+
+            
             self::$config[$arr['const']] = $arr;
         }
+
+        //Debug::$debug = true;
+        //Debug::debug(self::$config, "DOT3_LEGEND");
+        //die('wdfgdf');
     }
 
-    private static function findIdMysqlServer($host, $id_dot3_information)
+/**
+ * Handle dot3 state through `findIdMysqlServer`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param mixed $host Input value for `host`.
+ * @phpstan-param mixed $host
+ * @psalm-param mixed $host
+ * @param int $id_dot3_information Input value for `id_dot3_information`.
+ * @phpstan-param int $id_dot3_information
+ * @psalm-param int $id_dot3_information
+ * @param mixed $silent Input value for `silent`.
+ * @phpstan-param mixed $silent
+ * @psalm-param mixed $silent
+ * @return mixed Returned value for findIdMysqlServer.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::findIdMysqlServer()
+ * @example /fr/dot3/findIdMysqlServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private static function findIdMysqlServer($host, $id_dot3_information, $silent = false)
     {        
         $dot_information = self::getInformation($id_dot3_information);
 
         if (empty($dot_information['information']['mapping']))
         {
-            throw new \Exception('Impossible to acess to item Mapping');
+            throw new Exception('Impossible to acess to item Mapping');
         }
 
         if (! empty($dot_information['information']['mapping'][$host])) {
             return  $dot_information['information']['mapping'][$host];
         }
-        else {
-            //Debug::debug($dot_information, "mapping");
-            // create box => autodetect
-            echo "This master was not found : ".$host."\n";
-            die();
+
+
+
+        // TO DELETE (have to test before)
+        // Fallback for ProxySQL peers discovered via admin endpoint (6032)
+        // when the inventory key is stored with another port (mysql-interfaces).
+        [$target_host, $target_port] = self::splitAddressPort((string)$host);
+
+        if (!empty($target_host) && (string)$target_port === '6032' && !empty($dot_information['information']['servers'])) {
+            foreach ($dot_information['information']['servers'] as $id_mysql_server => $server) {
+                if (empty($server['is_proxysql']) || (string)$server['is_proxysql'] !== '1') {
+                    continue;
+                }
+
+                $candidate_hosts = array(
+                    $server['hostname'] ?? '',
+                    $server['ip'] ?? '',
+                    $server['ip_real'] ?? '',
+                );
+
+                foreach ($candidate_hosts as $candidate_host) {
+                    $candidate_host = trim((string)$candidate_host);
+                    if ($candidate_host === '') {
+                        continue;
+                    }
+
+                    if (strtolower($candidate_host) === strtolower((string)$target_host)) {
+                        Debug::debug($candidate_host, "CANDIDATE");
+
+                        self::$information[$id_dot3_information]['information']['mapping'][$host] = $id_mysql_server;
+                        return $id_mysql_server;
+                    }
+                }
+            }
         }
+        //End
+
+        //Debug::debug($dot_information, "mapping");
+        // create box => autodetect
+        if (!$silent && empty(self::$missing_mapping[$host])) {
+            self::$missing_mapping[$host] = true;
+            echo "This master was not found : ".$host."\n";
+        }
+
+        return null;
     }
 
-    private static function getInformation($id_dot3_information = '')
+/**
+ * Retrieve dot3 state through `getInformation`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param int $id_dot3_information Input value for `id_dot3_information`.
+ * @phpstan-param int $id_dot3_information
+ * @psalm-param int $id_dot3_information
+ * @return mixed Returned value for getInformation.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getInformation()
+ * @example /fr/dot3/getInformation
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private static function getInformation($id_dot3_information = '', bool $skipEmpty = false)
     {
         //Debug::debug($id_dot3_information, "id_dot3_information");
-        
+
         if (! empty(self::$information[$id_dot3_information])){
             return self::$information[$id_dot3_information];
         }
-        
+
         $db = Sgbd::sql(DB_DEFAULT);
+
+        // When asked for "the latest" with skipEmpty, walk back until we find
+        // a row with non-empty information. Matches the MySQL-offline contract:
+        // a degraded snapshot shouldn't overwrite the last known good topology
+        // used as a reference. See issue #1226.
+        if (empty($id_dot3_information) && $skipEmpty) {
+            $sql = "SELECT id, information FROM `dot3_information`
+                    WHERE information IS NOT NULL AND information <> '' AND information <> 'null'
+                    ORDER BY id DESC LIMIT 50";
+            $res = $db->sql_query($sql);
+            if ($res) {
+                while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                    $decoded = json_decode($row['information'] ?? '', true);
+                    if (!is_array($decoded) || empty($decoded['servers'])) {
+                        continue;
+                    }
+                    return self::loadInformationRow((int) $row['id'], $db);
+                }
+            }
+            return array();
+        }
 
         if (empty($id_dot3_information)) {
             $id_dot3_information = "SELECT max(`id`) FROM `dot3_information`";
         }
 
         $sql = "SELECT * FROM `dot3_information` where `id` in (".$id_dot3_information.");";
-        
-        Debug::sql($sql);
+
+        //Debug::sql($sql);
         $res = $db->sql_query($sql);
         while($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
 
             $arr['information'] = json_decode($arr['information'], true);
             self::$information[$arr['id']] = $arr;
-            return $arr; 
+            return $arr;
         }
 
         return array();
     }
 
+    private static function loadInformationRow(int $id, $db): array
+    {
+        $sql = "SELECT * FROM `dot3_information` WHERE id = " . $id;
+        $res = $db->sql_query($sql);
+        if (!$res) {
+            return array();
+        }
+        while ($arr = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+            $arr['information'] = json_decode($arr['information'], true);
+            self::$information[$arr['id']] = $arr;
+            return $arr;
+        }
+        return array();
+    }
 
     /*
     TO MOVE
@@ -1018,22 +4399,36 @@ class Dot3 extends Controller
   }
 }';
 
-        //echo str_replace("\n", "<br />",htmlentities($legend));
-
-        file_put_contents(TMP . "/legend", $legend);
-
 
         $file_name = Graphviz::generateDot("legend", $legend);
         $data['legend'] = file_get_contents($file_name);
-
-
-        
 
         $this->set('data', $data);
 
         //https://dreampuf.github.io/GraphvizOnline/
     }
 
+/**
+ * Handle dot3 state through `download`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for download.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::download()
+ * @example /fr/dot3/download
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function download($param)
     {
         $info = self::getInformation();
@@ -1073,7 +4468,28 @@ class Dot3 extends Controller
     }
 
 
-    public function purgeAll($param)
+/**
+ * Handle dot3 state through `purgeAll`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for purgeAll.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::purgeAll()
+ * @example /fr/dot3/purgeAll
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public static function purgeAll($param)
     {
         Debug::parseDebug($param);
 
@@ -1110,13 +4526,57 @@ class Dot3 extends Controller
 
     // for DEBUG ONLY
 
+/**
+ * Handle dot3 state through `show`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for show.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::show()
+ * @example /fr/dot3/show
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function show($param)
     {
         $id_dot3_information = 2356819;
 
+        self::$id_dot3_information;
+
         $this->run($id_dot3_information);
     }
 
+/**
+ * Handle dot3 state through `buildGaleraCluster`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for buildGaleraCluster.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::buildGaleraCluster()
+ * @example /fr/dot3/buildGaleraCluster
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function buildGaleraCluster($param)
     {
         $id_dot3_information = $param[0];
@@ -1143,12 +4603,19 @@ class Dot3 extends Controller
                 
                 // if we have exact same clsuter with same IP / and Cluster_name we use wsrep_cluster_state_uuid if available
                 $cluster_uuid =  array(); 
+                $offline_or_unknown_nodes = array();
                 foreach($cluster as $id_mysql_server)
                 {
-                    if (isset($dot3_information['information']['servers'][$id_mysql_server]['wsrep_cluster_state_uuid']))
-                    {
-                        $server_uuid = $dot3_information['information']['servers'][$id_mysql_server]['wsrep_cluster_state_uuid'];
+                    $serverInfo = $dot3_information['information']['servers'][$id_mysql_server] ?? array();
+                    $isAvailable = isset($serverInfo['mysql_available']) && (string)$serverInfo['mysql_available'] === '1';
+                    $server_uuid = trim((string)($serverInfo['wsrep_cluster_state_uuid'] ?? ''));
+
+                    // Règle métier: pour un serveur offline, on ignore le UUID de cluster (souvent faux/stale)
+                    // et on le rattache ensuite à un cluster basé sur le nom.
+                    if ($isAvailable && $server_uuid !== '') {
                         $cluster_uuid[$server_uuid][] = $id_mysql_server;
+                    } else {
+                        $offline_or_unknown_nodes[] = $id_mysql_server;
                     }
                 }
 
@@ -1172,6 +4639,27 @@ class Dot3 extends Controller
                         foreach($cluster_uuid as $server_uuid => $sub_cluster)  {
                             $filteredClusters[$server_uuid] = $sub_cluster;
                         }
+
+                        // Les noeuds offline/uuid inconnu sont rattachés au premier sous-cluster online
+                        // pour éviter la séparation artificielle sur UUID invalide.
+                        if (!empty($offline_or_unknown_nodes)) {
+                            $target_uuid = null;
+                            foreach ($cluster_uuid as $server_uuid => $sub_cluster) {
+                                $target_uuid = $server_uuid;
+                                break;
+                            }
+
+                            if ($target_uuid !== null) {
+                                if (empty($filteredClusters[$target_uuid])) {
+                                    $filteredClusters[$target_uuid] = array();
+                                }
+
+                                $filteredClusters[$target_uuid] = array_values(array_unique(array_merge(
+                                    $filteredClusters[$target_uuid],
+                                    $offline_or_unknown_nodes
+                                )));
+                            }
+                        }
                     break;
                 }
                 //Debug::debug($filteredClusters);
@@ -1183,7 +4671,7 @@ class Dot3 extends Controller
         {
             $server = $dot3_information['information']['servers'];
 
-            self::$build_galera[$id_cluster]["name"] = $server[$cluster[0]]['wsrep_cluster_name'];;
+            self::$build_galera[$id_cluster]["name"] = $server[$cluster[0]]['wsrep_cluster_name'] ?? 'Galera';
             self::$build_galera[$id_cluster]["id_cluster"] = $id_cluster;
 
             $available = 0;
@@ -1196,31 +4684,45 @@ class Dot3 extends Controller
             foreach($cluster as $id_mysql_server)
             {
                 $elems = $server[$id_mysql_server];
-                $segment = self::extractProviderOption($elems['wsrep_provider_options'], "gmcast.segment" );
+                $providerOptions = (string)($elems['wsrep_provider_options'] ?? '');
+                $segment = self::extractProviderOption($providerOptions, "gmcast.segment");
+                $wsrepClusterStatus = (string)($elems['wsrep_cluster_status'] ?? '');
+                $wsrepLocalStateComment = (string)($elems['wsrep_local_state_comment'] ?? '');
+                $wsrepDesync = (string)($elems['wsrep_desync'] ?? '');
+                $mysqlAvailable = (string)($elems['mysql_available'] ?? '0');
+                $wsrepSstMethod = (string)($elems['wsrep_sst_method'] ?? '');
+                $wsrepProviderVersion = (string)($elems['wsrep_provider_version'] ?? '');
+                $wsrepSlaveThreads = (string)($elems['wsrep_slave_threads'] ?? '');
 
-                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['wsrep_cluster_status'] = $elems['wsrep_cluster_status'];
-                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['wsrep_local_state_comment'] = $elems['wsrep_local_state_comment'];
-                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['wsrep_desync'] = $elems['wsrep_desync'];
-                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['available'] = $elems['mysql_available'];
-                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['wsrep_sst_method'] = $elems['wsrep_sst_method'];
-                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['wsrep_provider_version'] = $elems['wsrep_provider_version'];
+                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['wsrep_cluster_status'] = $wsrepClusterStatus;
+                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['wsrep_local_state_comment'] = $wsrepLocalStateComment;
+                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['wsrep_desync'] = $wsrepDesync;
+                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['available'] = $mysqlAvailable;
+                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['wsrep_sst_method'] = $wsrepSstMethod;
+                self::$build_galera[$id_cluster]["node"][$segment][$id_mysql_server]['wsrep_provider_version'] = $wsrepProviderVersion;
                 
                 if (! isset(self::$build_galera[$id_cluster]["segment"][$segment]['nb_available'])) {
                     self::$build_galera[$id_cluster]["segment"][$segment]['nb_available'] = 0;
                 }
 
-                if ($elems['mysql_available'] == "1" && !empty($elems['wsrep_desync']) && strtolower($elems['wsrep_desync']) === "on") {
+                if ($mysqlAvailable === "1" && $wsrepDesync !== '' && strtolower($wsrepDesync) === "on") {
 
                     self::setThemeToServer('NODE_DONOR_DESYNCED', $id_mysql_server);
                 }
 
-                self::$build_galera[$id_cluster]["segment"][$segment]['nb_available'] += $elems['mysql_available'];
+                $wsrep_cluster_status = strtolower(trim($wsrepClusterStatus));
+                $wsrep_local_state_comment = strtolower(trim($wsrepLocalStateComment));
+                if ($wsrep_cluster_status === 'disconnected' && $wsrep_local_state_comment === 'inconsistent') {
+                    self::setThemeToServer('NODE_GALERA_DISCONNECTED', $id_mysql_server);
+                }
 
-                $wsrep_slave_threads[] = $elems['wsrep_slave_threads'];
-                $sst_method[] = $elems['wsrep_sst_method'];
+                self::$build_galera[$id_cluster]["segment"][$segment]['nb_available'] += (int) $mysqlAvailable;
+
+                $wsrep_slave_threads[] = $wsrepSlaveThreads;
+                $sst_method[] = $wsrepSstMethod;
 
                 $output_array = array();
-                preg_match('/\d+\.(\d+)\./', $elems['wsrep_provider_version'], $output_array);
+                preg_match('/\d+\.(\d+)\./', $wsrepProviderVersion, $output_array);
                 if (!empty($output_array[1])) {
                     $version[] = $output_array[1];
                     
@@ -1231,7 +4733,7 @@ class Dot3 extends Controller
                 }
 
                 $output_array = array();
-                preg_match('/\((\w+)\)/', $elems['wsrep_provider_version'], $output_array);
+                preg_match('/\((\w+)\)/', $wsrepProviderVersion, $output_array);
                 if (!empty($output_array[1])) {
                     
                     $build[] = $output_array[1];
@@ -1249,8 +4751,24 @@ class Dot3 extends Controller
                 
 
 
-                // test case
-                if ($elems['mysql_available'] === "1"){
+                $mysql_available = (string)($elems['mysql_available'] ?? '');
+                $cluster_status = strtolower(trim((string)($elems['wsrep_cluster_status'] ?? '')));
+                $state_comment = strtolower(trim((string)($elems['wsrep_local_state_comment'] ?? '')));
+                $wsrep_desync = strtolower(trim((string)($elems['wsrep_desync'] ?? '')));
+
+                $is_primary = ($cluster_status === 'primary');
+                $is_synced = ($state_comment === 'synced');
+                $is_donor_like = (strpos($state_comment, 'donor') !== false
+                    || strpos($state_comment, 'desync') !== false
+                    || strpos($state_comment, 'unsync') !== false);
+                $is_desync_off = in_array($wsrep_desync, array('off', '0', 'false', 'no', ''), true);
+
+                // Nodes available : Primary + Synced, ou Donor/Desynced si wsrep_desync est OFF
+                $counts_available = ($mysql_available === '1')
+                    && $is_primary
+                    && ($is_synced || ($is_donor_like && $is_desync_off));
+
+                if ($counts_available) {
                     $available++;
                 }
                 $total_node++;
@@ -1305,7 +4823,260 @@ class Dot3 extends Controller
         //Debug::debug(($dot3_information));
     }
 
+    public function buildInnoDBCluster($param)
+    {
+        $id_dot3_information = $param[0];
+        $group = $param[1];
+        $dot3_information = self::getInformation($id_dot3_information);
+
+        if (empty(self::$innodb_cluster)) {
+            return;
+        }
+
+        $clusters = $this->array_merge_group(self::$innodb_cluster);
+
+        foreach ($clusters as $cluster_members) {
+            if (empty($cluster_members) || !empty(array_diff($cluster_members, $group))) {
+                continue;
+            }
+
+            sort($cluster_members);
+            $cluster_id = 'gr_'.md5(implode('-', $cluster_members));
+            $servers = $dot3_information['information']['servers'];
+            $first = $servers[$cluster_members[0]] ?? array();
+
+            $group_name = trim((string)($first['group_replication_group_name'] ?? ''));
+            $cluster_name = 'InnoDB Cluster';
+            if ($group_name !== '') {
+                $cluster_name = preg_match('/^[a-f0-9-]{36}$/i', $group_name) ? substr($group_name, -12) : $group_name;
+            }
+
+            $single_primary_mode = strtolower((string)($first['group_replication_single_primary_mode'] ?? 'off'));
+            $is_single_primary_mode = in_array($single_primary_mode, array('on', '1', 'true'), true);
+
+            $online = 0;
+            $primary_online = 0;
+
+            self::$build_innodb_cluster[$cluster_id] = array(
+                'id_cluster' => $cluster_id,
+                'name' => $cluster_name,
+                'group_name' => $group_name,
+                'mode' => $is_single_primary_mode ? 'single-primary' : 'multi-primary',
+                'members' => count($cluster_members),
+                'node' => array(),
+            );
+
+            foreach ($cluster_members as $id_mysql_server) {
+                $row = $servers[$id_mysql_server] ?? array();
+
+                $is_online = (string)($row['mysql_available'] ?? '0') === '1';
+                if ($is_online) {
+                    $online++;
+                }
+
+                // Role detection: prefer gr_member_role from performance_schema (most reliable)
+                $gr_member_role = strtoupper(trim((string)($row['gr_member_role'] ?? '')));
+                $super_read_only = strtolower((string)($row['super_read_only'] ?? 'on'));
+                $read_only = strtolower((string)($row['read_only'] ?? 'on'));
+
+                $role = 'SECONDARY';
+                if (!$is_single_primary_mode) {
+                    $role = 'PRIMARY';
+                } elseif ($gr_member_role === 'PRIMARY') {
+                    $role = 'PRIMARY';
+                } elseif ($gr_member_role === '') {
+                    // Fallback when gr_member_role not collected: use super_read_only
+                    if ($super_read_only === 'off' || $read_only === 'off' || $read_only === '0') {
+                        $role = 'PRIMARY';
+                    }
+                }
+
+                if ($role === 'PRIMARY' && $is_online) {
+                    $primary_online++;
+                }
+
+                // State detection: prefer gr_member_state from performance_schema
+                $gr_member_state = strtoupper(trim((string)($row['gr_member_state'] ?? '')));
+                if ($gr_member_state !== '') {
+                    $state = $gr_member_state;
+                } elseif ($is_online) {
+                    $state = 'ONLINE';
+                } elseif (!empty($row['mysql_error'])) {
+                    $state = 'ERROR';
+                } else {
+                    $state = 'OFFLINE';
+                }
+
+                self::$build_innodb_cluster[$cluster_id]['node'][$id_mysql_server] = array(
+                    'member_state' => $state,
+                    'member_role' => $role,
+                );
+            }
+
+            self::$build_innodb_cluster[$cluster_id]['node_online'] = $online;
+            self::$build_innodb_cluster[$cluster_id]['primary_online'] = $primary_online;
+
+            if ($online === 0 || ($is_single_primary_mode && $primary_online === 0)) {
+                self::$build_innodb_cluster[$cluster_id]['config'] = 'INNODB_CLUSTER_CRIT';
+            } elseif ($online < count($cluster_members)) {
+                self::$build_innodb_cluster[$cluster_id]['config'] = 'INNODB_CLUSTER_WARN';
+            } else {
+                self::$build_innodb_cluster[$cluster_id]['config'] = 'INNODB_CLUSTER_OK';
+            }
+        }
+    }
+
+    /**
+     * Epic #799 / lot 5 — populate `self::$build_ndb_cluster` for the
+     * current per-group render. We accept the cluster only when ALL the
+     * SQL/API mysql_server ids it advertises are within the current group
+     * (same gating as `buildInnoDBCluster`), or when the cluster has no
+     * SQL/API node attached at all (orphan cluster — render once on the
+     * first group seen).
+     */
+    public function buildNdbCluster($param)
+    {
+        $group = $param[1];
+
+        if (empty(self::$ndb_cluster)) {
+            return;
+        }
+
+        $db = Sgbd::sql(DB_DEFAULT);
+
+        foreach (self::$ndb_cluster as $clusterKey => $cluster_members) {
+            $isOrphan = empty($cluster_members);
+
+            if (!$isOrphan && !empty(array_diff($cluster_members, $group))) {
+                // Same gating as buildInnoDBCluster: only render in groups
+                // whose mysql_server set is a superset of the cluster's
+                // SQL/API nodes.
+                continue;
+            }
+
+            if ($isOrphan && !empty(self::$build_ndb_cluster_orphan_rendered[(string) $clusterKey])) {
+                // Review #1023 P2: SQL/API-less cluster — render exactly
+                // once per Dot3 run rather than once per group page.
+                continue;
+            }
+
+            $idCluster = (int) substr((string)$clusterKey, 4); // strip 'ndb_' prefix
+
+            $sql = "SELECT id, display_name, ndb_version, no_of_replicas "
+                . "FROM `ndb_cluster` WHERE id = " . $idCluster . " AND is_deleted = 0";
+            $res = $db->sql_query($sql);
+            $clusterRow = $res ? $db->sql_fetch_array($res, MYSQLI_ASSOC) : false;
+            if (!$clusterRow) {
+                continue;
+            }
+
+            $sql = "SELECT ndb_node_id, role, hostname, ip, port, node_group, "
+                . "is_primary, status, ndb_version, uptime_sec, "
+                . "memory_used_mb, memory_total_mb, data_memory_used_mb, index_memory_used_mb "
+                . "FROM `ndb_node` WHERE id_ndb_cluster = " . $idCluster
+                . " ORDER BY FIELD(role,'mgmd','data','sql'), node_group, ndb_node_id";
+            $res = $db->sql_query($sql);
+            $nodes = array(
+                'mgmd' => array(),
+                'data' => array(),
+                'sql'  => array(),
+            );
+            $nodeGroups = array();
+            $totals = array(
+                'mgmd_up' => 0, 'mgmd' => 0,
+                'data_up' => 0, 'data' => 0,
+                'sql_up'  => 0, 'sql'  => 0,
+            );
+
+            if ($res) {
+                while ($row = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
+                    $role = (string)($row['role'] ?? '');
+                    if (!isset($nodes[$role])) {
+                        continue;
+                    }
+                    $row['_started'] = (strtoupper((string)($row['status'] ?? '')) === 'STARTED'
+                        || strtoupper((string)($row['status'] ?? '')) === 'CONNECTED');
+                    $nodes[$role][] = $row;
+                    $totals[$role]++;
+                    if (!empty($row['_started'])) {
+                        $totals[$role.'_up']++;
+                    }
+                    if ($role === 'data') {
+                        $ng = $row['node_group'] === null ? -1 : (int)$row['node_group'];
+                        if (!isset($nodeGroups[$ng])) {
+                            $nodeGroups[$ng] = array('total' => 0, 'up' => 0);
+                        }
+                        $nodeGroups[$ng]['total']++;
+                        if (!empty($row['_started'])) {
+                            $nodeGroups[$ng]['up']++;
+                        }
+                    }
+                }
+            }
+
+            // State classification mirrors the alert code mapping
+            // (see App/Service/Ndb/NdbAlertEmitter): a node group with zero
+            // started data nodes drives the cluster to CRIT.
+            $config = 'NDB_CLUSTER_OK';
+            $any_ng_lost = false;
+            foreach ($nodeGroups as $ngStats) {
+                if ($ngStats['up'] === 0 && $ngStats['total'] > 0) {
+                    $any_ng_lost = true;
+                    break;
+                }
+            }
+            if ($any_ng_lost || $totals['mgmd_up'] === 0) {
+                $config = 'NDB_CLUSTER_CRIT';
+            } elseif ($totals['data_up'] < $totals['data']
+                || $totals['sql_up']  < $totals['sql']) {
+                $config = 'NDB_CLUSTER_WARN';
+            }
+
+            self::$build_ndb_cluster[$idCluster] = array(
+                'id_cluster'     => $idCluster,
+                'name'           => (string)$clusterRow['display_name'],
+                'ndb_version'    => (string)($clusterRow['ndb_version'] ?? ''),
+                'no_of_replicas' => $clusterRow['no_of_replicas'] !== null ? (int)$clusterRow['no_of_replicas'] : null,
+                'nodes'          => $nodes,
+                'node_groups'    => $nodeGroups,
+                'totals'         => $totals,
+                'sql_members'    => $cluster_members,
+                'config'         => $config,
+            );
+
+            if ($isOrphan) {
+                // Orphan cluster successfully rendered for this run; do
+                // not re-emit on the next per-group invocation.
+                self::$build_ndb_cluster_orphan_rendered[(string) $clusterKey] = true;
+            }
+        }
+    }
+
     //move to lib/Galera.php
+/**
+ * Handle dot3 state through `extractProviderOption`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $wsrep_provider_options Input value for `wsrep_provider_options`.
+ * @phpstan-param mixed $wsrep_provider_options
+ * @psalm-param mixed $wsrep_provider_options
+ * @param mixed $variable Input value for `variable`.
+ * @phpstan-param mixed $variable
+ * @psalm-param mixed $variable
+ * @return mixed Returned value for extractProviderOption.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::extractProviderOption()
+ * @example /fr/dot3/extractProviderOption
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function extractProviderOption($wsrep_provider_options, $variable)
     {
         preg_match("/".preg_quote($variable)."\s*=[\s]+([\S]+);/", $wsrep_provider_options, $output_array);
@@ -1314,42 +5085,88 @@ class Dot3 extends Controller
             return $output_array[1];
         } else {
             // il faudrait prevoir un mode stric afin de catch tous les problemes
-            //throw new \Exception("Impossible to find : ".$variable." in (".$wsrep_provider_options.")");
+            //throw new Exception("Impossible to find : ".$variable." in (".$wsrep_provider_options.")");
             return 0;
             
         }
     }
 
+/**
+ * Handle dot3 state through `setThemeToServer`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $theme Input value for `theme`.
+ * @phpstan-param mixed $theme
+ * @psalm-param mixed $theme
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @return void Returned value for setThemeToServer.
+ * @phpstan-return void
+ * @psalm-return void
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::setThemeToServer()
+ * @example /fr/dot3/setThemeToServer
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function setThemeToServer($theme, $id_mysql_server)
     {
         if (empty(self::$config[$theme])) {
             // error
-            THROW new \Exception("Impossible to find theme : $theme");
+            THROW new Exception("Impossible to find theme : $theme");
         }
 
         if (empty(self::$build_server[$id_mysql_server])) {
-            THROW new \Exception("Impossible to find id_mysql_server : $id_mysql_server");
+            THROW new Exception("Impossible to find id_mysql_server : $id_mysql_server");
         }
-
-
-        
 
         $tmp = self::$config[$theme];
 
-        Debug::debug($tmp, "COLOR");
+       //Debug::debug($tmp, "COLOR");
 
         $tmp2 = array_merge( self::$build_server[$id_mysql_server], $tmp);
         self::$build_server[$id_mysql_server] = $tmp2;
 
-        Debug::debug($tmp2, "COLOR_GOOD");
+       //Debug::debug($tmp2, "COLOR_GOOD");
 
     }
 
+/**
+ * Handle dot3 state through `reOrderVariable`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $variables Input value for `variables`.
+ * @phpstan-param mixed $variables
+ * @psalm-param mixed $variables
+ * @param mixed $filter Input value for `filter`.
+ * @phpstan-param mixed $filter
+ * @psalm-param mixed $filter
+ * @return mixed Returned value for reOrderVariable.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::reOrderVariable()
+ * @example /fr/dot3/reOrderVariable
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function reOrderVariable($variables, $filter = true)
     {
         $var_to_keep = array("mysql-interfaces", "admin-version");
 
-        Debug::debug($variables, "VARIABLE PROXY");
+       //Debug::debug($variables, "VARIABLE PROXY");
 
         $data = array();
         foreach($variables as $variable)
@@ -1370,12 +5187,33 @@ class Dot3 extends Controller
             }
         }
 
-        Debug::debug($data, "NEW VERSION");
+       //Debug::debug($data, "NEW VERSION");
         
         return $data;
     }
 
 
+/**
+ * Retrieve dot3 state through `getHostGroup`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $hostgroups Input value for `hostgroups`.
+ * @phpstan-param mixed $hostgroups
+ * @psalm-param mixed $hostgroups
+ * @return mixed Returned value for getHostGroup.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getHostGroup()
+ * @example /fr/dot3/getHostGroup
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static public function getHostGroup($hostgroups)
     {
         $data = array();
@@ -1388,12 +5226,65 @@ class Dot3 extends Controller
             }
         }
         $data[100] = "mirroring";
-        Debug::debug($data, "HOSTGROUP FLIP");
+       //Debug::debug($data, "HOSTGROUP FLIP");
+
+        return $data;
+    }
+
+    static public function getProxySqlHostGroupMap(array $server): array
+    {
+        $data = array();
+        $keys = array(
+            'mysql_galera_hostgroups',
+            'mysql_replication_hostgroups',
+            'mysql_group_replication_hostgroups',
+        );
+
+        foreach ($keys as $key) {
+            if (empty($server[$key]) || ! is_array($server[$key])) {
+                continue;
+            }
+
+            foreach (self::getHostGroup($server[$key]) as $idHostgroup => $label) {
+                if (! isset($data[$idHostgroup])) {
+                    $data[$idHostgroup] = $label;
+                    continue;
+                }
+
+                $labels = array_map('trim', explode(' / ', $data[$idHostgroup]));
+                if (! in_array($label, $labels, true)) {
+                    $labels[] = $label;
+                }
+
+                $data[$idHostgroup] = implode(' / ', $labels);
+            }
+        }
 
         return $data;
     }
 
 
+/**
+ * Handle dot3 state through `buildLinkBetweenProxySQL`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for buildLinkBetweenProxySQL.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::buildLinkBetweenProxySQL()
+ * @example /fr/dot3/buildLinkBetweenProxySQL
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function buildLinkBetweenProxySQL($param)
     {
         $id_dot3_information = $param[0];
@@ -1405,46 +5296,691 @@ class Dot3 extends Controller
         {
             if (! empty($dot3_information['information']['servers'][$id_mysql_server]['proxysql_servers']) && !empty($dot3_information['information']['servers'][$id_mysql_server]['is_proxy']))
             {
-                $same = array();
-
                 foreach($dot3_information['information']['servers'][$id_mysql_server]['proxysql_servers'] as $proxysql_servers)
                 {
                     $host = $proxysql_servers['hostname'].':'.$proxysql_servers['port'];
-                    $id_master = self::findIdMysqlServer($host, $id_dot3_information);
+                    $id_master = self::findIdMysqlServer($host, $id_dot3_information, true);
+                    if (empty($id_master)) {
+                        $id_master = $this->getOrCreateUnknownProxySqlServer($host, $id_mysql_server);
+                    }
 
-                    $same[] = $id_master.":target";
                     if ($id_mysql_server == $id_master) {
                         continue;
                     }
+
+                    // ProxySQL cluster links are not MySQL replication —
+                    // render them red (PROXYSQL_LINK) so they don't blend
+                    // in with healthy primary→replica edges.
+                    $tmp = self::$config['PROXYSQL_LINK'];
                     
-                    $tmp = self::$config['REPLICATION_OK'];
-                    $tmp['tooltip'] = "OK--- $id_master -> $id_mysql_server";
+                    //TO DO understand why only with proySQL it's generate a warning :  'Warning: Arrow type "117 -> 116" unknown - ignoring'
+                    $tmp['tooltip'] = "$id_master -> $id_mysql_server";  
+                    // tooltip in conflict with rank same
 
                     $tmp['options']['arrowsize'] = "1.5";
                     
-                    $tmp['arrow'] = $id_master.":target -> ".$id_mysql_server.":target";
+                    $tmp['arrow'] = $id_master.":".self::TARGET." -> ".$id_mysql_server.":".self::TARGET."";
+
+                    if ($this->isMutualProxySqlReplication($dot3_information['information']['servers'], (int) $id_master, (int) $id_mysql_server, $id_dot3_information)) {
+                        $tmp['options']['constraint'] = 'false';
+                        $tmp['options']['label'] = ' ';
+                        if ((int) $id_master > (int) $id_mysql_server) {
+                            $tmp['options']['dir'] = 'back';
+                        }
+                    }
+
+                    if ($this->isUnknownProxySqlNode($id_master) || $this->isUnknownProxySqlNode($id_mysql_server)) {
+                        $tmp['color'] = '#9e9e9e';
+                        if (empty($tmp['options']) || !is_array($tmp['options'])) {
+                            $tmp['options'] = array();
+                        }
+                        $tmp['options']['color'] = '#9e9e9e';
+                    }
 
                     self::$build_ms[] = $tmp;
+                }
+            }
+        }
+    }
 
-                    //Debug::debug($id_master ,"ID PROXYSQL");
-                }
-                
-                if (count($same) >= 2){
-                    self::$rank_same[] = "{ rank=same;".implode("; ", $same).";}\n";
-                }
-                
+    private function isMutualProxySqlReplication(array $servers, int $idMaster, int $idProxy, int $idDot3Information): bool
+    {
+        if ($idMaster <= 0 || $idProxy <= 0 || empty($servers[$idMaster]['proxysql_servers'])) {
+            return false;
+        }
+
+        foreach ($servers[$idMaster]['proxysql_servers'] as $proxySqlServer) {
+            $host = ($proxySqlServer['hostname'] ?? '').':'.($proxySqlServer['port'] ?? '');
+            $reverseMasterId = (int) self::findIdMysqlServer($host, $idDot3Information, true);
+
+            if ($reverseMasterId === $idProxy) {
+                return true;
             }
         }
 
-
-
+        return false;
     }
 
-    public function testflag()
+
+
+
+/**
+ * Handle dot3 state through `resolveMaxScaleConnection`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $maxscale Input value for `maxscale`.
+ * @phpstan-param array $maxscale
+ * @psalm-param array $maxscale
+ * @param string $maxscale_ip_port Input value for `maxscale_ip_port`.
+ * @phpstan-param string $maxscale_ip_port
+ * @psalm-param string $maxscale_ip_port
+ * @return array Returned value for resolveMaxScaleConnection.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::resolveMaxScaleConnection()
+ * @example /fr/dot3/resolveMaxScaleConnection
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public static function resolveMaxScaleConnection(array $maxscale, string $maxscale_ip_port): array
     {
+        //Debug::debug(self::$id_dot3_information, "id_dot3_information");
 
-        echo Country::getFlag("FR");
+        $dot3_information = self::getInformation(self::$id_dot3_information);
+
+        $tunnel = $dot3_information['information']['tunnel'] ?? [];
+
+        //Debug::debug(maxScale::removeArraysDeeperThan($dot3_information, 3), "TUNNEL");
+
+        // Copie locale modifiable
+        $resolved = $maxscale;
+
+        //Debug::debug($resolved, "LISTENER");
+
+        [$listenerAddress, $listenerPort] = self::splitAddressPort($maxscale_ip_port);
+
+        // Si listener sur 0.0.0.0:port ou [::]:port
+        $wildcard_candidates = [];
+        if ($listenerPort !== null && $listenerPort !== '') {
+            foreach (['0.0.0.0', '::'] as $wildcard) {
+                $wildcard_candidates[] = $wildcard . ":" . trim($listenerPort);
+            }
+        }
+
+        foreach ($wildcard_candidates as $candidate) {
+            if (!empty($resolved[$candidate]['listener'])) {
+                //Debug::debug("USE " . $candidate);
+                $resolved[$maxscale_ip_port] = $resolved[$candidate];
+                return $resolved;
+            }
+        }
+
+        //Debug::debug($maxscale_ip_port, "maxscale_ip_port");
+        //Debug::debug($wildcard_candidates, "maxscale_ip_port_fallbacks");
+
+        // Si un tunnel existe pour cette IP:port
+        if (!empty($tunnel[$maxscale_ip_port])) {
+            $tunnel_ip_port = $tunnel[$maxscale_ip_port];
+            //Debug::debug($tunnel_ip_port, "TUNNEL_FOUND");
+
+            // Cas 1 : le tunnel mène directement à une entrée connue
+            if (!empty($resolved[$tunnel_ip_port]['servers'])) {
+                $resolved[$maxscale_ip_port] = $resolved[$tunnel_ip_port];
+                return $resolved;
+            }
+
+            // Cas 2 : correspondance via 0.0.0.0 + port du tunnel
+            [, $tunnelPort] = self::splitAddressPort($tunnel_ip_port);
+            if ($tunnelPort !== null && $tunnelPort !== '') {
+                foreach (['0.0.0.0', '::'] as $wildcard) {
+                    $candidate = $wildcard . ":" . trim($tunnelPort);
+                    //Debug::debug($candidate, "TEST {$wildcard} + Port originie before tunnel");
+                    if (!empty($resolved[$candidate]['servers'])) {
+                        $resolved[$maxscale_ip_port] = $resolved[$candidate];
+                        break;
+                    }
+                }
+            }
+        }
+
+        return $resolved;
+    }
+
+    private function isServerOfflineForGraph(array $server): bool
+    {
+        if (isset($server['mysql_available']) && (string)$server['mysql_available'] === '0') {
+            return true;
+        }
+
+        return self::isMysqlRouterNode($server)
+            && isset($server['mysqlrouter_available'])
+            && (string)$server['mysqlrouter_available'] === '0';
+    }
+
+    public function generateGroupMysqlRouter($information)
+    {
+        if (empty($information['servers']) || empty(self::$id_dot3_information)) {
+            return array();
+        }
+
+        self::$mysqlrouter = array();
+
+        foreach ($information['servers'] as $id_mysql_server => $server) {
+            if (!self::isMysqlRouterNode($server)) {
+                continue;
+            }
+
+            $metadataConfig = self::decodeMysqlRouterJson($server, 'mysqlrouter_metadata_config');
+            $bootstrap = $metadataConfig['bootstrap'] ?? array();
+            $clusterNodes = self::extractMysqlRouterRouteDestinations($server);
+            if (empty($clusterNodes)) {
+                $clusterNodes = self::extractMysqlRouterMetadataNodes($server);
+            }
+            if (empty($clusterNodes)) {
+                continue;
+            }
+
+            $matchedRoute = self::resolveMysqlRouterRouteForServer($server);
+            $routeKey = trim((string)($matchedRoute['route'] ?? $matchedRoute['name'] ?? $matchedRoute['routeName'] ?? ''));
+            $routePort = trim((string)($matchedRoute['bind_port'] ?? $matchedRoute['bindPort'] ?? $server['port_real'] ?? $server['port'] ?? ''));
+            $groupReplicationId = trim((string)($bootstrap['groupReplicationId'] ?? ''));
+
+            $groupKeyParts = array_filter(array(
+                $groupReplicationId !== '' ? $groupReplicationId : null,
+                $routeKey !== '' ? $routeKey : null,
+                $routePort !== '' ? $routePort : null,
+                'router-'.$id_mysql_server,
+            ));
+
+            $groupKey = implode('|', array_slice($groupKeyParts, 0, 3));
+
+            if (empty(self::$mysqlrouter[$groupKey])) {
+                self::$mysqlrouter[$groupKey] = array();
+            }
+
+            self::$mysqlrouter[$groupKey][] = (int) $id_mysql_server;
+
+            foreach ($clusterNodes as $endpoint) {
+                $id_mysql_server_target = self::findIdMysqlServer($endpoint, self::$id_dot3_information, true);
+                if (!empty($id_mysql_server_target)) {
+                    self::$mysqlrouter[$groupKey][] = (int) $id_mysql_server_target;
+                }
+            }
+
+            self::$mysqlrouter[$groupKey] = array_values(array_unique(self::$mysqlrouter[$groupKey]));
+        }
+
+        return array_values(self::$mysqlrouter);
+    }
+
+    public function buildGroupMysqlRouter($param)
+    {
+        $id_dot3_information = $param[0];
+        $group = $param[1];
+        $dot3_information = self::getInformation($id_dot3_information);
+
+        if (empty(self::$mysqlrouter) || empty($dot3_information['information']['servers'])) {
+            return;
+        }
+
+        foreach (self::$mysqlrouter as $groupKey => $routerGroup) {
+            if (empty($routerGroup) || !empty(array_diff($routerGroup, $group))) {
+                continue;
+            }
+
+            self::$build_mysqlrouter[$groupKey] = array(
+                'routers' => array(),
+                'targets' => array(),
+            );
+
+            foreach ($routerGroup as $id_mysql_server) {
+                $server = $dot3_information['information']['servers'][$id_mysql_server] ?? array();
+                if (!self::isMysqlRouterNode($server)) {
+                    self::$build_mysqlrouter[$groupKey]['targets'][] = $id_mysql_server;
+                    continue;
+                }
+
+                $role = self::resolveMysqlRouterRole($server);
+                self::$build_mysqlrouter[$groupKey]['routers'][$id_mysql_server] = $role;
+                self::applyMysqlRouterRoleTheme($id_mysql_server, $role);
+            }
+        }
+    }
+
+    public static function isMysqlRouterNode(array $server): bool
+    {
+        if (!empty($server['is_proxysql']) && (string) $server['is_proxysql'] === '1') {
+            return false;
+        }
+
+        $metadataConfig = self::decodeMysqlRouterJson($server, 'mysqlrouter_metadata_config');
+        $bootstrap = $metadataConfig['bootstrap'] ?? array();
+        $groupReplicationId = trim((string)($bootstrap['groupReplicationId'] ?? ''));
+        $nodes = $bootstrap['nodes'] ?? array();
+
+        if ($groupReplicationId === '' || !is_array($nodes) || empty($nodes)) {
+            return false;
+        }
+
+        foreach ($nodes as $node) {
+            $hostname = trim((string)($node['hostname'] ?? ''));
+            $port = trim((string)($node['port'] ?? '3306'));
+            if ($hostname !== '' && $port !== '') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static function decodeMysqlRouterJson(array $server, string $field): array
+    {
+        if (empty($server[$field])) {
+            return [];
+        }
+
+        if (is_array($server[$field])) {
+            return $server[$field];
+        }
+
+        if (!is_string($server[$field])) {
+            return [];
+        }
+
+        $decoded = json_decode($server[$field], true);
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    private static function extractMysqlRouterMetadataNodes(array $server): array
+    {
+        $metadataConfig = self::decodeMysqlRouterJson($server, 'mysqlrouter_metadata_config');
+        $bootstrap = $metadataConfig['bootstrap'] ?? array();
+        $nodes = $bootstrap['nodes'] ?? array();
+        $result = array();
+
+        if (!is_array($nodes)) {
+            return $result;
+        }
+
+        foreach ($nodes as $node) {
+            $hostname = trim((string)($node['hostname'] ?? ''));
+            $port = trim((string)($node['port'] ?? '3306'));
+            if ($hostname === '') {
+                continue;
+            }
+            if ($port === '') {
+                $port = '3306';
+            }
+            $result[] = $hostname.':'.$port;
+        }
+
+        return array_values(array_unique($result));
+    }
+
+    public static function resolveMysqlRouterRouteForServer(array $server): array
+    {
+        $routesPayload = self::decodeMysqlRouterJson($server, 'mysqlrouter_routes');
+        $items = $routesPayload['items'] ?? $routesPayload;
+        if (!is_array($items)) {
+            return array();
+        }
+
+        $targetPort = trim((string)($server['port_real'] ?? $server['port'] ?? ''));
+        $fallback = array();
+
+        foreach ($items as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $fallback = empty($fallback) ? $item : $fallback;
+            $bindPort = trim((string)($item['bind_port'] ?? $item['bindPort'] ?? ''));
+
+            if ($targetPort !== '' && $bindPort === $targetPort) {
+                return $item;
+            }
+        }
+
+        return $fallback;
+    }
+
+    private static function extractMysqlRouterRouteDestinations(array $server): array
+    {
+        $route = self::resolveMysqlRouterRouteForServer($server);
+        $destinations = $route['destinations_payload']['items'] ?? array();
+        $result = array();
+
+        if (!is_array($destinations)) {
+            return $result;
+        }
+
+        foreach ($destinations as $destination) {
+            if (!is_array($destination)) {
+                continue;
+            }
+
+            $hostname = trim((string)($destination['address'] ?? $destination['hostname'] ?? ''));
+            $port = trim((string)($destination['port'] ?? '3306'));
+            if ($hostname === '') {
+                continue;
+            }
+
+            if ($port === '') {
+                $port = '3306';
+            }
+
+            $result[] = $hostname.':'.$port;
+        }
+
+        return array_values(array_unique($result));
+    }
+
+    private static function resolveMysqlRouterRole(array $server): string
+    {
+        $route = self::resolveMysqlRouterRouteForServer($server);
+        $labels = array(
+            (string)($route['route'] ?? ''),
+            (string)($route['name'] ?? ''),
+            (string)($route['routeName'] ?? ''),
+            (string)($route['destinations'] ?? ''),
+            (string)($server['display_name'] ?? ''),
+        );
+
+        $haystack = strtolower(implode(' ', $labels));
+
+        if (str_contains($haystack, 'rw_split') || str_contains($haystack, 'rw-split')) {
+            return 'PRIMARY';
+        }
+
+        if (preg_match('/(^|[^a-z])rw([^a-z]|$)/', $haystack)) {
+            return 'PRIMARY';
+        }
+
+        if (preg_match('/(^|[^a-z])ro([^a-z]|$)/', $haystack)) {
+            return 'SECONDARY';
+        }
+
+        return 'PRIMARY';
+    }
+
+    private static function applyMysqlRouterRoleTheme(int $id_mysql_server, string $role): void
+    {
+        if (empty(self::$build_server[$id_mysql_server])) {
+            return;
+        }
+
+        if ($role === 'SECONDARY') {
+            self::$build_server[$id_mysql_server]['color'] = '#7cb342';
+            return;
+        }
+
+        self::$build_server[$id_mysql_server]['color'] = '#006400';
+    }
+
+/**
+ * Handle dot3 state through `splitAddressPort`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param string $value Input value for `value`.
+ * @phpstan-param string $value
+ * @psalm-param string $value
+ * @return array Returned value for splitAddressPort.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::splitAddressPort()
+ * @example /fr/dot3/splitAddressPort
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private static function splitAddressPort(string $value): array
+    {
+        $value = trim($value);
+
+        if ($value === '') {
+            return [null, null];
+        }
+
+        if ($value[0] === '[') {
+            $closing_bracket = strpos($value, ']');
+            if ($closing_bracket !== false) {
+                $host = substr($value, 1, $closing_bracket - 1);
+                $port = ltrim(substr($value, $closing_bracket + 1), ':');
+                return [trim($host), $port === '' ? null : trim($port)];
+            }
+        }
+
+        $last_colon = strrpos($value, ':');
+
+        if ($last_colon === false) {
+            return [trim($value, '[]'), null];
+        }
+
+        $host = substr($value, 0, $last_colon);
+        $port = substr($value, $last_colon + 1);
+
+        return [trim($host, '[]'), $port === '' ? null : trim($port)];
     }
 
 
+/**
+ * Retrieve dot3 state through `getTunnel`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getTunnel.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @see self::getTunnel()
+ * @example /fr/dot3/getTunnel
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public static function getTunnel($param)
+    {
+        // Vérifie que l’identifiant d’information Dot3 est défini
+        if (empty(self::$id_dot3_information)) {
+            throw new Exception(
+                "[PMACONTROL-1000] Missing dot3 information ID — self::\$id_dot3_information cannot be empty in dot3::getTunnel().",
+                1000 // Paramètre manquant (plage 1000–1999)
+            );
+        }
+
+        // Vérifie le type de paramètre
+        if (empty($param) || !is_array($param)) {
+            throw new Exception(
+                "[PMACONTROL-1001] Invalid parameter passed to dot3::getTunnel() — the first array key must be a string.",
+                1001
+            );
+        }
+
+        // Récupère les informations du tunnel
+        $dot3_information = self::getInformation(self::$id_dot3_information);
+        $tunnel = $dot3_information['information']['tunnel'] ?? [];
+
+        // No tunnels configured is a normal case — return early
+        if (empty($tunnel) || !is_array($tunnel)) {
+            if (!empty($param[0])) {
+                return false;
+            }
+            return [];
+        }
+
+        // Si on a un paramètre de type ip:port, on valide le format
+        if (!empty($param[0])) {
+            $ip_port = $param[0];
+
+            // Vérifie le format IPv4:port
+            if (!preg_match('/^(\d{1,3}\.){3}\d{1,3}:\d{1,5}$/', $ip_port)) {
+                throw new Exception(
+                    "[PMACONTROL-1002] Invalid ip_port format in dot3::getTunnel() — expected IPv4:port, got '{$ip_port}'.",
+                    1002
+                );
+            }
+
+            // Vérifie que ce tunnel existe dans la liste
+            return !empty($tunnel[$ip_port]) ? $tunnel[$ip_port] : false;
+        }
+
+        // Si aucun paramètre, renvoie la liste complète des tunnels
+        return $tunnel;
+    }
+
+
+/**
+ * Handle `after`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for after.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example after(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public function after($param)
+    {
+        if (!function_exists('posix_geteuid')) {
+/**
+ * Handle `posix_geteuid`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return int Returned value for posix_geteuid.
+ * @phpstan-return int
+ * @psalm-return int
+ * @example posix_geteuid(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+            function posix_geteuid(): int { return 0; }
+        }
+
+        if (posix_geteuid() === 0) {
+            usleep(5000);
+            shell_exec("chown www-data:www-data -R ".TMP."dot");
+        }
+    }
+
+/**
+ * Handle `generateGroupByServerId`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $information Input value for `information`.
+ * @phpstan-param mixed $information
+ * @psalm-param mixed $information
+ * @return mixed Returned value for generateGroupByServerId.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @example generateGroupByServerId(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public function generateGroupByServerId($information)
+    {
+        $tmp_group = array();
+        
+        foreach($information['servers'] as $id_mysql_server => $server)
+        {
+            $server['id_mysql_server'] = $id_mysql_server;
+        }
+
+
+        return $tmp_group;
+    }
+
+/**
+ * Create `createGarb`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $information Input value for `information`.
+ * @phpstan-param mixed $information
+ * @psalm-param mixed $information
+ * @param int $id_mysql_server Input value for `id_mysql_server`.
+ * @phpstan-param int $id_mysql_server
+ * @psalm-param int $id_mysql_server
+ * @return mixed Returned value for createGarb.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @throws \Throwable When the underlying operation fails.
+ * @example createGarb(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public function createGarb($information, $id_mysql_server)
+    {
+        $server = $information['servers'][$id_mysql_server] ?? null;
+        if (!$server) {
+            throw new Exception("Server not found", 404);
+        }
+
+        //generate next id in $information['servers']
+        $next_id = max(array_keys($information['servers'])) + 1;
+
+        $information['servers'][$next_id] = $information['servers'][$id_mysql_server];
+
+        $information['servers'][$next_id]['display_name'] = 'garb';
+        $information['servers'][$next_id]['hostname'] = 'garb';
+        $information['servers'][$next_id]['id_mysql_server'] = $next_id;
+        $information['servers'][$next_id]['is_garb'] = 1;
+
+        //remplace moi le dernier xxx par *
+        //$information['servers'][$next_id]['ip_real'] = preg_replace('/\d+\.\d+\.\d+\.\d+$/', '*', $server['ip_real']);
+
+        self::$information[self::$id_dot3_information]['information'] = $information;
+        
+        //Debug::debug($information, "Information after creating garb");  
+        
+        return $next_id;
+
+
+    
+        // Logique de création de l'arbitre
+    }
 }

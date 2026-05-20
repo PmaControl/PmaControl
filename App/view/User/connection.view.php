@@ -1,6 +1,9 @@
 <?php
 // <input autocomplete="off" class="textfield" type="text" name="usernameInput" id="usernameInput" size="26" onkeypress="eturn checkEnter(event);">
+use App\Library\Security\CsrfRender;
 use Glial\Html\Form\Form;
+$userConnectionCsrfField = CsrfRender::field($data, 'user_connection');
+$userConnectionCsrfToken = CsrfRender::token($data, 'user_connection');
 ?>
 
 <div class="container">
@@ -13,6 +16,7 @@ use Glial\Html\Form\Form;
                 <h3 style="margin-bottom: 20px;"><?= __("Bienvenue, veuillez vous identifier", "fr") ?></h3>
                 <form id="loginForm" name="loginForm" method="post" action="">
                     <input type="hidden" name="loginForm" value="loginForm">
+                    <input type="hidden" name="<?=$userConnectionCsrfField?>" value="<?=$userConnectionCsrfToken?>">
 
                     <div class="row">
                         <div class="col-md-6"><?= __("Login") ?></div>

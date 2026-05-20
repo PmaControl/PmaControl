@@ -1,4 +1,7 @@
 <?php
+
+use App\Library\Security\CsrfRender;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -7,9 +10,13 @@
 
 use Glial\Html\Form\Form;
 
+$databaseRenameCsrfField = CsrfRender::field($data, 'database_rename');
+$databaseRenameCsrfToken = CsrfRender::token($data, 'database_rename');
+
 ?>
 
 <form action="<?= LINK ?>database/rename" method="POST">
+    <input type="hidden" name="<?= $databaseRenameCsrfField ?>" value="<?= $databaseRenameCsrfToken ?>">
     <?= Form::input("database", "rename", array("type" => "hidden", "value"=>"1")); ?>
     <div class="panel panel-primary">
         <div class="panel-heading">

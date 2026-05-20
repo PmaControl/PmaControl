@@ -11,13 +11,76 @@ use App\Library\Extraction;
 use \App\Library\Debug;
 use \Glial\Sgbd\Sgbd;
 
+/**
+ * Trait responsible for galera workflows.
+ *
+ * This trait belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 trait Galera {
 
+/**
+ * Stores `$galera_cluster` for galera cluster.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $galera_cluster = array();
+/**
+ * Stores `$servers` for servers.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $servers = array();
+/**
+ * Stores `$graph_arbitrator` for graph arbitrator.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $graph_arbitrator = array(); // containt all id of arbitrator
+/**
+ * Stores `$maping_master` for maping master.
+ *
+ * @var array<int|string,mixed>
+ * @phpstan-var array<int|string,mixed>
+ * @psalm-var array<int|string,mixed>
+ */
     var $maping_master = array(); 
 
+/**
+ * Retrieve galera state through `getGaleraCluster`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getGaleraCluster.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getGaleraCluster()
+ * @example /fr/galera/getGaleraCluster
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getGaleraCluster($param) {
 
         foreach ($this->servers as $server) {
@@ -27,10 +90,18 @@ trait Galera {
                 $tab = explode(",", $server['wsrep_incoming_addresses']);
                 $to_match = $server['ip'] . ":" . $server['port'];
 
+                $nodeUuid = trim((string)($server['wsrep_local_state_uuid'] ?? ''));
+                if ($nodeUuid === '') {
+                    $nodeUuid = trim((string)($server['wsrep_cluster_state_uuid'] ?? ''));
+                }
+                if ($nodeUuid === '') {
+                    $nodeUuid = 'node-' . (string)($server['id_mysql_server'] ?? ($server['ip'] . ':' . $server['port']));
+                }
+
 
                 // the goal is to remove proxy
                 if (in_array($to_match, $tab)) {
-                    $this->galera_cluster[$server['wsrep_cluster_name']][$server['id_mysql_server']] = $server;
+                    $this->galera_cluster[$server['wsrep_cluster_name'] . '~' . $nodeUuid][$server['id_mysql_server']] = $server;
                 }
             }
         }
@@ -78,9 +149,123 @@ trait Galera {
             Debug::debug($group_galera);
         }
 
+        $this->galera_cluster = $this->deduplicateGaleraClustersByNodeId($this->galera_cluster);
+
 
 
         return $group_galera;
+    }
+
+/**
+ * Handle galera state through `deduplicateGaleraClustersByNodeId`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array $clusters Input value for `clusters`.
+ * @phpstan-param array $clusters
+ * @psalm-param array $clusters
+ * @return array Returned value for deduplicateGaleraClustersByNodeId.
+ * @phpstan-return array
+ * @psalm-return array
+ * @see self::deduplicateGaleraClustersByNodeId()
+ * @example /fr/galera/deduplicateGaleraClustersByNodeId
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    private function deduplicateGaleraClustersByNodeId(array $clusters): array
+    {
+        $clusterScore = [];
+        $clusterLatestDate = [];
+        $bestClusterByNodeId = [];
+
+        foreach ($clusters as $clusterName => $nodes) {
+            $score = 0;
+            $latestDate = 0;
+
+            foreach ($nodes as $node) {
+                if (!empty($node['hostname'])) {
+                    $score++;
+                }
+
+                $dateTs = 0;
+                if (!empty($node['date'])) {
+                    $tmp = strtotime((string)$node['date']);
+                    if ($tmp !== false) {
+                        $dateTs = (int)$tmp;
+                    }
+                }
+
+                if ($dateTs > $latestDate) {
+                    $latestDate = $dateTs;
+                }
+            }
+
+            $clusterScore[$clusterName] = $score;
+            $clusterLatestDate[$clusterName] = $latestDate;
+        }
+
+        foreach ($clusters as $clusterName => $nodes) {
+            foreach ($nodes as $node) {
+                if (!isset($node['id_mysql_server'])) {
+                    continue;
+                }
+
+                $nodeId = (int)$node['id_mysql_server'];
+                if ($nodeId <= 0) {
+                    continue;
+                }
+
+                if (!isset($bestClusterByNodeId[$nodeId])) {
+                    $bestClusterByNodeId[$nodeId] = $clusterName;
+                    continue;
+                }
+
+                $currentBest = $bestClusterByNodeId[$nodeId];
+                $candidateIsBetter = false;
+
+                if (($clusterScore[$clusterName] ?? 0) > ($clusterScore[$currentBest] ?? 0)) {
+                    $candidateIsBetter = true;
+                } elseif (($clusterScore[$clusterName] ?? 0) === ($clusterScore[$currentBest] ?? 0)
+                    && ($clusterLatestDate[$clusterName] ?? 0) > ($clusterLatestDate[$currentBest] ?? 0)) {
+                    $candidateIsBetter = true;
+                }
+
+                if ($candidateIsBetter) {
+                    $bestClusterByNodeId[$nodeId] = $clusterName;
+                }
+            }
+        }
+
+        $clean = [];
+        foreach ($clusters as $clusterName => $nodes) {
+            foreach ($nodes as $nodeId => $node) {
+                if (!isset($node['id_mysql_server'])) {
+                    $clean[$clusterName][$nodeId] = $node;
+                    continue;
+                }
+
+                $idMysqlServer = (int)$node['id_mysql_server'];
+                if ($idMysqlServer <= 0) {
+                    $clean[$clusterName][$nodeId] = $node;
+                    continue;
+                }
+
+                if (($bestClusterByNodeId[$idMysqlServer] ?? null) === $clusterName) {
+                    $clean[$clusterName][$nodeId] = $node;
+                }
+            }
+
+            if (empty($clean[$clusterName])) {
+                unset($clean[$clusterName]);
+            }
+        }
+
+        return $clean;
     }
 
     /*
@@ -124,11 +309,14 @@ trait Galera {
                 }
             } else {
                 //arbitre
-                $arbitres[] = $this->createArbitrator($group);
+                $arbitres[] = $this->createArbitrator();
             }
         }
 
-        $all_nodes = array_merge($group_galera, $galera_nodes, $arbitres);
+        $all_nodes = array_merge( 
+        $group_galera, 
+        $galera_nodes, 
+        $arbitres);
 
         //debug($all_nodes);
 
@@ -153,36 +341,82 @@ trait Galera {
         $temp = Extraction::display(array("variables::hostname", "variables::binlog_format", "variables::time_zone", "variables::version",
                     "variables::system_time_zone",
                     "variables::wsrep_cluster_name", "variables::wsrep_provider_options", "variables::wsrep_on", "variables::wsrep_sst_method", "variables::wsrep_desync",
-                    "status::wsrep_cluster_status", "status::wsrep_local_state_comment", "status::wsrep_incoming_addresses", "status::wsrep_cluster_size"));
+                    "status::wsrep_cluster_status", "status::wsrep_local_state_comment", "status::wsrep_incoming_addresses", "status::wsrep_cluster_size", "status::wsrep_cluster_state_uuid", "status::wsrep_local_state_uuid"));
 
         //debug($temp);
 
         foreach ($temp as $id_mysql_server => $servers) {
 
             $server = $servers[''];
-            if (!empty($this->servers[$id_mysql_server])) {
-                $this->servers[$id_mysql_server] = array_merge($server, $this->servers[$id_mysql_server]);
-            } else {
-                $this->servers[$id_mysql_server] = $server;
+            if (empty($this->servers[$id_mysql_server])) {
+                // On ne charge que les serveurs pré-filtrés par mappingMaster (proxy/vip exclus)
+                continue;
             }
+
+            $this->servers[$id_mysql_server] = array_merge($server, $this->servers[$id_mysql_server]);
         }
     }
 
+/**
+ * Handle galera state through `mappingMaster`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for mappingMaster.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::mappingMaster()
+ * @example /fr/galera/mappingMaster
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function mappingMaster() {
 
         $db = Sgbd::sql(DB_DEFAULT);
-        $sql = "SELECT id,ip,port FROM mysql_server";
 
+        // Main servers
+        $sql = "SELECT id,ip,port FROM mysql_server WHERE is_deleted=0 AND is_proxy=0 AND is_vip=0";
         $res = $db->sql_query($sql);
-
         while ($ar = $db->sql_fetch_array($res, MYSQLI_ASSOC)) {
             $this->maping_master[$ar['ip'] . ":" . $ar['port']] = $ar['id'];
             $this->servers[$ar['id']] = $ar;
         }
 
+        // Aliases from alias_dns table
+        $sql_alias = "SELECT a.id_mysql_server, a.dns, a.port FROM alias_dns PARTITION (pn) a
+                      INNER JOIN mysql_server s ON a.id_mysql_server = s.id
+                      WHERE s.is_deleted=0 AND s.is_proxy=0 AND s.is_vip=0";
+        $res_alias = $db->sql_query($sql_alias);
+        while ($ar = $db->sql_fetch_array($res_alias, MYSQLI_ASSOC)) {
+            $this->maping_master[$ar['dns'] . ":" . $ar['port']] = $ar['id_mysql_server'];
+        }
+
         return $this->maping_master;
     }
 
+/**
+ * Create galera state through `createArbitrator`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for createArbitrator.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::createArbitrator()
+ * @example /fr/galera/createArbitrator
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function createArbitrator() {
         $id_arbitrator = $this->getNewId();
 
@@ -201,6 +435,24 @@ trait Galera {
         return $id_arbitrator;
     }
 
+/**
+ * Retrieve galera state through `getNewId`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return mixed Returned value for getNewId.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getNewId()
+ * @example /fr/galera/getNewId
+ * @category PmaControl
+ * @package App
+ * @subpackage Library
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     private function getNewId() {
 
         $servers = $this->servers;

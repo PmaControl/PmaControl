@@ -4,92 +4,121 @@
 namespace App\Controller;
 
 use \Glial\Synapse\Controller;
+use App\Library\ChartPayload;
 use App\Library\Extraction;
 use App\Library\Display;
 use App\Library\Debug;
+use App\Library\Format;
+use App\Library\PostMortem\PostMortemReport;
 
+/**
+ * Class responsible for post mortem workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class PostMortem extends Controller
 {
 
+    public function index($param)
+    {
+        Debug::parseDebug($param);
+
+        $serverId = PostMortemReport::normalizeServerId((array)$param);
+        $payload = PostMortemReport::buildPayload($serverId, $_GET);
+
+        $this->title = $serverId > 0 ? 'Post-mortem server '.$serverId : 'Post-mortem';
+        $this->ariane = ' > Tools > Post-mortem';
+        $this->set('data', ['payload' => $payload]);
+    }
+
+/**
+ * Handle post mortem state through `format`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param mixed $bytes Input value for `bytes`.
+ * @phpstan-param mixed $bytes
+ * @psalm-param mixed $bytes
+ * @param mixed $decimals Input value for `decimals`.
+ * @phpstan-param mixed $decimals
+ * @psalm-param mixed $decimals
+ * @return mixed Returned value for format.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::format()
+ * @example /fr/postmortem/format
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     static function format($bytes, $decimals = 2)
     {
         // && $bytes != 0
         if (empty($bytes)) {
             return "";
         }
-        $sz = ' KMGTP';
 
-        $factor = (int) floor(log($bytes) / log(1024));
-
-        return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor))." ".@$sz[$factor]."o";
+        return Format::bytesOrEmpty($bytes, $decimals);
     }
 
+/**
+ * Handle `item`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for item.
+ * @phpstan-return void
+ * @psalm-return void
+ * @example item(...);
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function item($param)
     {
         Debug::parseDebug($param);
 
         //$db = Sgbd::sql(DB_DEFAULT);
 
-        $this->di['js']->addJavascript(array("moment.js", "chart.min.js", "chartjs-plugin-crosshair.js"));
+        $this->di['js']->addJavascript(array("moment.js", "chart.min.js", "chartjs-plugin-crosshair.js", "formatters.js"));
 
 
 
         $slaves = Extraction::extract(array("status::memory_used"), array(1), "10 minutes", true, true);
 
 
-        $color = array("orange" => "rgb(255, 159, 64)",
-            "blue" => "rgb(54, 162, 235)",
-            "red" => "rgb(255, 99, 132)",
-            "yellow" => "rgb(255, 205, 86)",
-            "green" => "rgb(75, 192, 192)",
-            "purple" => "rgb(153, 102, 255)",
-            "grey" => "rgb(201, 203, 207)"
+        $legacyChart = ChartPayload::legacyExtraction(
+            $slaves,
+            static function (array $slave): string {
+                return Display::srvjs($slave['id_mysql_server']);
+            },
+            [
+                'alpha' => 0.1,
+                'aggregate_formatter' => [self::class, 'format'],
+            ]
         );
-
-
-        $alpha = 0.1;
-        $background = array("orange" => "rgba(255, 159, 64, $alpha)",
-            "blue" => "rgba(54, 162, 235, $alpha)",
-            "red" => "rgba(255, 99, 132, $alpha)",
-            "yellow" => "rgba(255, 205, 86, $alpha)",
-            "green" => "rgba(75, 192, 192, $alpha)",
-            "purple" => "rgba(153, 102, 255, $alpha)",
-            "grey" => "rgba(201, 203, 207, $alpha)"
-        );
-
-
-
-        $graph   = array();
-        $tooltip = "var agregat = []\n";
-        $i       = 0;
-        foreach ($slaves as $slave) {
-            Debug::debug($slave);
-
-            $coul = next($color);
-            $back = next($background);
-
-            $label = 'server'.$slave['id_mysql_server'];
-
-            $graph[] = '{
-                label: "'.Display::srvjs($slave['id_mysql_server']).'",
-                data: ['.$slave['graph'].'],
-                borderColor: "'.$coul.'",
-                fill:true,
-                pointBackgroundColor: "'.$back.'",
-                borderWidth: 2,
-                pointRadius: 0,
-                lineTension: 0,
-                backgroundColor: "'.$back.'",
-                interpolate: true,
-                showLine: true,
-            }';
-
-
-            $tooltip .= 'agregat["'.$i.'"] = " -'."\t".'Min : '.self::format($slave['min']).' - Max : '.self::format($slave['max']).' - Avg : '
-                .' '.self::format($slave['avg']).' -'."\t".'Std : '.round(sqrt($slave['std']), 2).'"'."\n";
-
-            $i++;
-        }
+        $graph   = $legacyChart['datasets_js'];
+        $tooltip = $legacyChart['tooltip_js'];
 
 
 
@@ -97,15 +126,6 @@ class PostMortem extends Controller
 // //..' -  Max : '.self::format($slave['max']).' - Avg : '.self::format($slave['avg']).' - Std : '.$slave['std'].'"
         $this->di['js']->code_javascript('
 "use strict";
-
-function FileConvertSize(aSize){
-    aSize = Math.abs(parseInt(aSize, 10));
-    var def = [[1, "octets"], [1024, "ko"], [1024*1024, "Mo"], [1024*1024*1024, "Go"], [1024*1024*1024*1024, "To"]];
-    for(var i=0; i<def.length; i++){
-            if(aSize<def[i][0]) return (aSize/def[i-1][0]).toFixed(2)+" "+def[i-1][1];
-    }
-}
-
 
 '.$tooltip.'
 var ctx = document.getElementById("myChart2").getContext("2d");

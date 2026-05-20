@@ -12,8 +12,43 @@ use \App\Library\Graphviz;
 use \App\Library\Mysql;
 use \Glial\Sgbd\Sgbd;
 
+/**
+ * Class responsible for mysql table workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class MysqlTable extends Controller
 {
+/**
+ * Handle mysql table state through `menu`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for menu.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::menu()
+ * @example /fr/mysqltable/menu
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function menu($param)
     {
         $data = array();
@@ -54,6 +89,27 @@ class MysqlTable extends Controller
     }
 
 
+/**
+ * Retrieve mysql table state through `getTableByDatabase`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return mixed Returned value for getTableByDatabase.
+ * @phpstan-return mixed
+ * @psalm-return mixed
+ * @see self::getTableByDatabase()
+ * @example /fr/mysqltable/getTableByDatabase
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function getTableByDatabase($param)
     {
 
@@ -72,7 +128,7 @@ class MysqlTable extends Controller
             $db = Mysql::getDbLink($id_mysql_server);
 
             $sql2 = "SELECT table_name FROM information_schema.tables WHERE table_schema ='".$table_schema."' ORDER BY table_name";
-            $res2 = $db->sql_query($sql2);
+            $res2 = Mysql::sqlQueryWithInformationSchemaTablesTimeout($db, $sql2, $id_mysql_server, __METHOD__);
     
  
 

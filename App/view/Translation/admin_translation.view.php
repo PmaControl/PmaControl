@@ -1,6 +1,11 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 use \glial\I18n\I18n;
+
+$translationAdminCsrfField = CsrfRender::field($data, 'translation_admin');
+$translationAdminCsrfToken = CsrfRender::token($data, 'translation_admin');
 
 echo '<div id="translation">';
 
@@ -81,6 +86,7 @@ if (!empty($data['pagination']) && $data['count'][0]['cpt'] > TRANSLATION_ELEM_P
 
 
 echo '<form action="" method="post">';
+echo '<input type="hidden" name="'.$translationAdminCsrfField.'" value="'.$translationAdminCsrfToken.'" />';
 
 echo "<table>";
 

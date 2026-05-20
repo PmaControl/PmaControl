@@ -38,20 +38,7 @@ function format($bytes, $decimals = 2)
         return $bytes;
     }
 
-    if (empty($bytes)) {
-        return "";
-    }
-    $sz = ' KMGTPEZY';
-
-    $factor = (int) floor(log($bytes) / log(1024));
-
-    if ($factor === 0) {
-        $unit = '';
-    } else {
-        $unit = " ".$sz[$factor].'o';
-    }
-
-    return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)).$unit;
+    return \App\Library\Format::bytesOrEmpty($bytes, $decimals);
 }
 
 function onOff($string)
@@ -73,7 +60,7 @@ echo '<div class="well">';
 
 
 echo '<div class="row">';
-echo '<form method="POST" action="">';
+echo '<form method="get" action="">';
 echo '<div class="col-md-10">';
 echo Form::select("mysql_cluster", "id", $data['grappe'], "", array("data-live-search" => "true", "class" => "selectpicker form-control"));
 echo '</div>';
@@ -89,7 +76,7 @@ echo '<br />';
 echo '</div>';
 
 echo '<div class="row">';
-echo '<form method="POST" action="">';
+echo '<form method="get" action="">';
 echo '<div class="col-md-10">';
 \Glial\Synapse\FactoryController::addNode("Common", "getSelectServerAvailable", array("mysql_server", "id", array("multiple" => "multiple", "data-width" => "100%", "all_server"=>"true")));
 echo '</div>';

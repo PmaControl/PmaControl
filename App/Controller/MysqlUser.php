@@ -4,30 +4,207 @@ namespace App\Controller;
 
 use \Glial\Synapse\Controller;
 use App\Library\Mysql;
+use App\Library\ServerCapabilities;
 use \Glial\Sgbd\Sgbd;
 use \App\Library\Debug;
 use \App\Library\Available;
+use \App\Library\Extraction2;
 
+
+
+/**
+ * Class responsible for mysql user workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class MysqlUser extends Controller
 {
+    const USER_DIR = "/srv/www/pmacontrol/data/backup/user";
+    private const MYSQLUSER_MAX_SELECTED_SERVERS = 200;
 
+    public static function getExportAccountsSql($db): string
+    {
+        if (ServerCapabilities::supports($db, 'mysql_user_is_role_column')) {
+            return "SELECT User as `user`,`Host` as `host` FROM mysql.user WHERE BINARY is_role = BINARY 'N' ORDER by user,host";
+        }
+
+        return "SELECT User as `user`,`Host` as `host` FROM mysql.user ORDER by user,host";
+    }
+
+    public static function evaluateIndexSelectionRequest(
+        array $get,
+        array $server,
+        array $param,
+        string $baseLink,
+        string $controller
+    ): array {
+        if (($server['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+            return [
+                'allowed' => false,
+                'status' => 405,
+                'body' => 'Method not allowed',
+                'headers' => ['Allow' => 'GET'],
+                'redirect' => null,
+                'ids' => [],
+            ];
+        }
+
+        if (isset($get['mysql_server']) && is_array($get['mysql_server']) && array_key_exists('id', $get['mysql_server'])) {
+            $ids = self::normalizeSelectedServerIds($get['mysql_server']['id']);
+            return [
+                'allowed' => true,
+                'status' => empty($ids) ? 200 : 303,
+                'body' => '',
+                'headers' => [],
+                'redirect' => empty($ids) ? null : self::getIndexRedirectTarget($ids, $baseLink, $controller),
+                'ids' => [],
+            ];
+        }
+
+        $ids = [];
+        if (!empty($param[0])) {
+            $ids = self::normalizeSelectedServerIds($param[0]);
+        }
+
+        return [
+            'allowed' => true,
+            'status' => 200,
+            'body' => '',
+            'headers' => [],
+            'redirect' => null,
+            'ids' => $ids,
+        ];
+    }
+
+    public static function normalizeSelectedServerIds($selection): array
+    {
+        $values = [];
+        self::collectSelectedServerIds($selection, $values);
+
+        $ids = [];
+        foreach ($values as $value) {
+            $value = trim((string) $value);
+            if ($value === '' || !ctype_digit($value)) {
+                continue;
+            }
+
+            $id = (int) $value;
+            if ($id < 1 || in_array($id, $ids, true)) {
+                continue;
+            }
+
+            $ids[] = $id;
+            if (count($ids) >= self::MYSQLUSER_MAX_SELECTED_SERVERS) {
+                break;
+            }
+        }
+
+        return $ids;
+    }
+
+    public static function getIndexRedirectTarget(array $ids, string $baseLink, string $controller): string
+    {
+        return $baseLink.$controller.'/index/mysql_server:id:['.implode(',', $ids).']';
+    }
+
+    private static function collectSelectedServerIds($selection, array &$values): void
+    {
+        if (is_array($selection)) {
+            foreach ($selection as $value) {
+                self::collectSelectedServerIds($value, $values);
+            }
+            return;
+        }
+
+        if (!is_scalar($selection)) {
+            return;
+        }
+
+        $selection = trim((string) $selection);
+        if (strlen($selection) >= 2 && $selection[0] === '[' && substr($selection, -1) === ']') {
+            $selection = substr($selection, 1, -1);
+        }
+
+        foreach (explode(',', $selection) as $value) {
+            $values[] = $value;
+        }
+    }
+
+/**
+ * Render mysql user state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/mysqluser/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index($param)
     {
+        $selection = self::evaluateIndexSelectionRequest($_GET, $_SERVER, $param, LINK, $this->getClass());
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            if (!empty($_POST['mysql_server']['id'])) {
-                header('location: '.LINK.$this->getClass().'/'.__FUNCTION__."/mysql_server:id:[".implode(',', $_POST['mysql_server']['id'])."]");
+        if (!$selection['allowed']) {
+            http_response_code($selection['status']);
+            foreach ($selection['headers'] as $name => $value) {
+                header($name . ': ' . $value);
             }
+            echo $selection['body'];
+            return;
+        }
+
+        if ($selection['redirect'] !== null) {
+            header('location: '.$selection['redirect'], true, 303);
+            return;
         }
 
         $data = array();
 
         //debug($_GET);
 
-        if (!empty($_GET['mysql_server']['id'])) {
+        if (!empty($selection['ids'])) {
             $db  = Sgbd::sql(DB_DEFAULT);
-            $ids = substr($_GET['mysql_server']['id'], 1, -1);
+            $id_servers = $selection['ids'];
 
+            $all = Extraction2::display(array("mysql_available"), $id_servers);
+
+            foreach ($all as $server) {
+                if ($server['mysql_available'] !== "1") {
+                    $key = array_search((int) $server['id_mysql_server'], $id_servers, true);
+                    if ($key !== false) {
+                        unset($id_servers[$key]);
+                    }
+                }
+            }
+
+            $id_servers = array_values($id_servers);
+            if (empty($id_servers)) {
+                $data['error'] = "No available MySQL servers found.";
+                $this->set('data', $data);
+                return;
+            }
+
+            $ids = implode(',', $id_servers);
             $sql = "SELECT * FROM mysql_server where id in (".$ids.")";
 
             $res1 = $db->sql_query($sql);
@@ -189,11 +366,50 @@ class MysqlUser extends Controller
         $this->set('data', $data);
     }
 
+/**
+ * Handle mysql user state through `backup`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for backup.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::backup()
+ * @example /fr/mysqluser/backup
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function backup()
     {
 
     }
 
+/**
+ * Handle mysql user state through `cmpHost`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for cmpHost.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::cmpHost()
+ * @example /fr/mysqluser/cmpHost
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function cmpHost($param)
     {
         Debug::parseDebug($param);
@@ -239,10 +455,34 @@ class MysqlUser extends Controller
                 }
             }
         }
-        exit;
+
+
         print_r($data);
+        exit;
+        
     }
 
+/**
+ * Handle mysql user state through `security`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for security.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::security()
+ * @example /fr/mysqluser/security
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function security($param)
     {
         Debug::parseDebug($param);
@@ -354,6 +594,27 @@ SQL;
         $this->set('data', $data);
     }
 
+/**
+ * Handle mysql user state through `role`.
+ *
+ * This action may stream a direct HTTP or CLI response.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for role.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::role()
+ * @example /fr/mysqluser/role
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function role($param) {
 
         Debug::parseDebug($param);
@@ -367,6 +628,88 @@ SQL;
         foreach($roles as $role)
         {
             echo $role."\n";
+        }
+    }
+
+
+/**
+ * Handle mysql user state through `export`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for export.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::export()
+ * @example /fr/mysqluser/export
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
+    public function export($param)
+    {
+
+        Debug::parseDebug($param);
+
+        shell_exec("mkdir -p ".self::USER_DIR);
+
+        $all = Extraction2::display(array("mysql_available", "is_proxy"));
+
+
+        $def = Sgbd::sql(DB_DEFAULT);
+        $sql3 = "SELECT id, display_name, ip, port, hostname FROM mysql_server WHERE is_deleted=0 and is_proxy=0 and is_vip=0;";
+        $res3 = $def->sql_query($sql3);
+
+        while ($ob3 = $def->sql_fetch_object($res3)) {
+            $server[$ob3->id] = $ob3->display_name. " ($ob3->ip:$ob3->port)";
+        }
+
+        foreach($all as $mysql_server)
+        {
+            
+            if ($mysql_server['mysql_available'] == "1" && empty($mysql_server['is_proxy']))
+            {
+                Debug::debug($mysql_server, "MYSQL_SERVER");
+
+                $DIRECTORY = self::USER_DIR."/".$mysql_server['id_mysql_server'];
+                shell_exec("mkdir -p ".$DIRECTORY);
+
+                $db = Mysql::getDbLink($mysql_server['id_mysql_server']);
+
+                $sql = self::getExportAccountsSql($db);
+                $res = $db->sql_query($sql);
+
+                $display_name = "XXXXXXXXX";
+                if (! empty($server[$mysql_server['id_mysql_server']]))
+                {
+                    $display_name = $server[$mysql_server['id_mysql_server']];
+                }
+                $file_user  = "-- From $display_name".PHP_EOL;
+                while($ob = $db->sql_fetch_object($res))
+                {
+                    Debug::debug($ob, "OB");
+                    $sql2 = "SHOW GRANTS FOR `".$ob->user."`@`".$ob->host."`;";
+                    $res2 = $db->sql_query($sql2);
+
+                    
+                    while($arr = $db->sql_fetch_array($res2, MYSQLI_NUM))
+                    {
+                        //Debug::debug($arr, "USER");
+                        $file_user .=  str_replace("\n",";\n", $arr[0]).";".PHP_EOL;
+                    }
+
+                    file_put_contents($DIRECTORY."/"."users.sql", $file_user);
+                }
+
+                $db->sql_close();
+            }
         }
     }
 

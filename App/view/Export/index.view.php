@@ -1,11 +1,18 @@
 <?php
 
+use App\Library\Security\CsrfRender;
+
 use Glial\Html\Form\Form;
+$exportConfCsrfField = CsrfRender::field($data, 'export_conf');
+$exportConfCsrfToken = CsrfRender::token($data, 'export_conf');
+$exportImportConfCsrfField = CsrfRender::field($data, 'export_import_conf');
+$exportImportConfCsrfToken = CsrfRender::token($data, 'export_import_conf');
 ?>
 
 <div class="row">
     <div class="col-md-6">
         <form class="form1" action="<?= LINK ?>export/export_conf" method="post">
+            <input type="hidden" name="<?= $exportConfCsrfField ?>" value="<?= $exportConfCsrfToken ?>">
             <div class="panel panel-primary">
                 <div class="panel-heading">
                     <h3 class="panel-title"><?= __('Export configuration') ?></h3>
@@ -100,6 +107,7 @@ use Glial\Html\Form\Form;
     <div class="col-md-6">
 
         <form class="form2" action="<?= LINK ?>export/import_conf" enctype="multipart/form-data" method="post">
+            <input type="hidden" name="<?= $exportImportConfCsrfField ?>" value="<?= $exportImportConfCsrfToken ?>">
             <div class="panel panel-primary">
                 <div class="panel-heading">
                     <h3 class="panel-title"><?= __('Import configuration') ?></h3>

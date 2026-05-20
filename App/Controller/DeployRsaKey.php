@@ -11,20 +11,59 @@ namespace App\Controller;
 use phpseclib\Crypt\RSA;
 use phpseclib\Net\SSH2;
 use \Glial\Synapse\Controller;
+use App\Library\Security\CsrfGuard;
+use App\Library\Security\GroupedFormRequest;
+use App\Library\Security\IndexedRowsRequest;
 use Glial\I18n\I18n;
 use \App\Library\Debug;
 use \App\Library\Ssh;
+use App\Library\ShellCommand;
 use App\Library\Chiffrement;
+use Glial\Security\Csrf;
 use \Glial\Sgbd\Sgbd;
 
 
+/**
+ * Class responsible for deploy rsa key workflows.
+ *
+ * This class belongs to the PmaControl application layer and documents the
+ * public surface consumed by controllers, services, static analysis tools and IDEs.
+ *
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
 class DeployRsaKey extends Controller {
 
+    private const INDEX_CSRF_SCOPE = 'deploy_rsa_key.index';
+    private const INDEX_MAX_SERVER_ROWS = 2000;
     const KEY_WORKER_DEPLOY = 148759;
     const KEY_PUBLIC = "public_key";
     const KEY_PRIVATE = "private_key";
     const NB_WORKER = 10;
 
+/**
+ * Render deploy rsa key state through `index`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for index.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::index()
+ * @example /fr/deployrsakey/index
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function index() {
 
         //Debug::$debug = true;
@@ -62,13 +101,26 @@ $("#ssh_key-id").change(function() {
         $this->ariane = '> <i style="font-size: 16px" class="fa fa-puzzle-piece"></i> Plugins > '
                 . '<i style="font-size: 16px" class="fa fa-key" aria-hidden="true"></i> ' . "Deploy key RSA";
 
+        $postPayload = null;
+        if (CsrfGuard::isPost($_SERVER)) {
+            $outcome = self::evaluateIndexRequest($_POST, $_SERVER, $_SESSION);
+            if ($outcome['status'] !== 200) {
+                $this->view = false;
+                $this->layout_name = false;
+                self::sendIndexError($outcome['status'], $outcome['body'], $outcome['headers']);
+                return;
+            }
+
+            $postPayload = $outcome['payload'];
+        }
+
         $db = Sgbd::sql(DB_DEFAULT);
 
-        if ($_SERVER['REQUEST_METHOD'] == "POST") {
+        if ($postPayload !== null) {
 
-            if (!empty($_POST['settings'])) {
+            if (!empty($postPayload['settings'])) {
 
-                Debug::debug($_POST, "POST");
+                Debug::debug($postPayload, "POST");
 
                 $error_form = false;
 
@@ -76,24 +128,25 @@ $("#ssh_key-id").change(function() {
 
                 $private = '';
 
-                if (!empty($_POST['mysql_server']['login_ssh'])) {
+                if (!empty($postPayload['mysql_server']['login_ssh'])) {
 
-                    $login = $_POST['mysql_server']['login_ssh'];
+                    $login = $postPayload['mysql_server']['login_ssh'];
 
-                    if (!empty($_POST['mysql_server']['password_ssh'])) {
-                        $private = $login . "@" . $_POST['mysql_server']['password_ssh'];
+                    if (!empty($postPayload['mysql_server']['password_ssh'])) {
+                        $private = $login . "@" . $postPayload['mysql_server']['password_ssh'];
                     }
-                    if (!empty($_POST['mysql_server']['key_ssh'])) {
-                        $private = $login . "@" . $_POST['mysql_server']['key_ssh'];
+                    if (!empty($postPayload['mysql_server']['key_ssh'])) {
+                        $private = $login . "@" . $postPayload['mysql_server']['key_ssh'];
                     }
                 }
 
-                if (!empty($_POST['ssh_key_pv']['id'])) {
-                    $private = $_POST['ssh_key_pv']['id'];
+                if (!empty($postPayload['ssh_key_pv']['id'])) {
+                    $private = (string) $postPayload['ssh_key_pv']['id'];
                 }
 
-                if (!empty($_POST['ssh_key']['id'])) {
-                    $public = $_POST['ssh_key']['id'];
+                $public = '';
+                if (!empty($postPayload['ssh_key']['id'])) {
+                    $public = (string) $postPayload['ssh_key']['id'];
                 }
 
                 if (empty($public)) {
@@ -113,9 +166,9 @@ $("#ssh_key-id").change(function() {
                 }
 
                 $list_id = [];
-                foreach ($_POST['link__mysql_server__ssh_key'] as $key => $value) {
+                foreach ($postPayload['link__mysql_server__ssh_key'] as $value) {
 
-                    if (!empty($value["deploy"])) {
+                    if ($value["deploy"] === true) {
                         $list_id[] = $value['id_mysql_server'];
                     }
                 }
@@ -146,10 +199,7 @@ $("#ssh_key-id").change(function() {
                     $this->deploy(array($ob->ip, $public, $private));
 
                     if ($this->testConnection($ob->ip, $public) === true) {
-                        Debug::debug($_POST['mysql_server']['login_ssh'] . "@" . $ob->ip . " : " . 'CONNECTION OK !');
-                        //Debug::debug($path_private_key);
-
-
+                        Debug::debug($postPayload['mysql_server']['login_ssh'] . "@" . $ob->ip . " : " . 'CONNECTION OK !');
 
                         $tmp = array();
                         $tmp['link__mysql_server__ssh_key']['id_mysql_server'] = $ob->id;
@@ -231,8 +281,88 @@ $("#ssh_key-id").change(function() {
             $data['key_ssh'][] = $tmp;
         }
 
+        $data['deploy_rsa_key_index_csrf_field'] = Csrf::DEFAULT_FIELD;
+        $data['deploy_rsa_key_index_csrf_token'] = Csrf::issueToken($_SESSION, self::INDEX_CSRF_SCOPE);
 
         $this->set('data', $data);
+    }
+
+    public static function evaluateIndexRequest(array $post, array $server, array $session): array
+    {
+        if ($failure = CsrfGuard::ensureOrFail($post, $server, $session, self::INDEX_CSRF_SCOPE)) {
+            return self::buildIndexOutcome($failure['status'], $failure['body'], $failure['headers']);
+        }
+
+        $payload = self::normalizeIndexPayload($post);
+        if ($payload === null) {
+            return self::buildIndexOutcome(400, 'Invalid deploy RSA key payload');
+        }
+
+        return self::buildIndexOutcome(200, '', [], $payload);
+    }
+
+    public static function normalizeIndexPayload(array $post): ?array
+    {
+        if (!isset($post['settings']) || !is_scalar($post['settings']) || trim((string) $post['settings']) !== '1') {
+            return null;
+        }
+
+        $mysqlServer = GroupedFormRequest::normalize($post, 'mysql_server', [
+            'login_ssh' => ['type' => 'string', 'default' => '', 'max' => 128],
+            'password_ssh' => ['type' => 'string', 'default' => '', 'max' => 1024],
+            'key_ssh' => ['type' => 'string', 'default' => '', 'max' => 8192],
+        ]);
+        $privateKey = GroupedFormRequest::normalize($post, 'ssh_key_pv', [
+            'id' => ['type' => 'int', 'default' => 0, 'min' => 0],
+        ]);
+        $publicKey = GroupedFormRequest::normalize($post, 'ssh_key', [
+            'id' => ['type' => 'int', 'default' => 0, 'min' => 0],
+        ]);
+        $serverRows = IndexedRowsRequest::normalize(
+            $post,
+            'link__mysql_server__ssh_key',
+            [
+                'deploy' => ['type' => 'bool', 'default' => false],
+                'id_mysql_server' => ['type' => 'int', 'min' => 1],
+            ],
+            self::INDEX_MAX_SERVER_ROWS
+        );
+
+        if ($mysqlServer === null || $privateKey === null || $publicKey === null || $serverRows === null) {
+            return null;
+        }
+
+        return [
+            'settings' => '1',
+            'mysql_server' => $mysqlServer,
+            'ssh_key_pv' => $privateKey,
+            'ssh_key' => $publicKey,
+            'link__mysql_server__ssh_key' => $serverRows,
+        ];
+    }
+
+    private static function buildIndexOutcome(
+        int $statusCode,
+        string $message,
+        array $headers = [],
+        ?array $payload = null
+    ): array {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+            'payload' => $payload,
+        ];
+    }
+
+    private static function sendIndexError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $message;
     }
 
 //to mutualize
@@ -288,13 +418,7 @@ $("#ssh_key-id").change(function() {
         $ssh2 = new SSH2($ip);
         $rsa = new RSA();
 
-
-        Debug::debug($path_private_key);
-
         $priv_key = $this->parseUserKey($path_private_key, self::KEY_PRIVATE);
-
-
-        Debug::debug($priv_key);
 
         if ($priv_key !== false) {
 
@@ -311,11 +435,53 @@ $("#ssh_key-id").change(function() {
         return true;
     }
 
+/**
+ * Handle deploy rsa key state through `dropKeySsh`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $params Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $params
+ * @psalm-param array<int,mixed> $params
+ * @return void Returned value for dropKeySsh.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::dropKeySsh()
+ * @example /fr/deployrsakey/dropKeySsh
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function dropKeySsh($params) {
 //drop des clef ssh sur tout les serveur ou sur un
 //a coder
     }
 
+/**
+ * Handle deploy rsa key state through `testkey`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for testkey.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::testkey()
+ * @example /fr/deployrsakey/testkey
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function testkey($param) {
 
         Debug::parseDebug($param);
@@ -331,6 +497,14 @@ $("#ssh_key-id").change(function() {
      */
 
     public function workerDeploy() {
+        $outcome = self::evaluateWorkerDeployRequest(defined('IS_CLI') && IS_CLI === true);
+        if ($outcome['status'] !== 200) {
+            $this->view = false;
+            $this->layout_name = false;
+            self::sendWorkerDeployError($outcome['status'], $outcome['body'], $outcome['headers']);
+            return;
+        }
+
         $pid = getmypid();
 
         $queue = msg_get_queue(self::KEY_WORKER_DEPLOY);
@@ -347,6 +521,33 @@ $("#ssh_key-id").change(function() {
 
             $this->deploy2($data['server'], $data['key']);
         }
+    }
+
+    public static function evaluateWorkerDeployRequest(bool $isCli): array
+    {
+        if (!$isCli) {
+            return self::buildWorkerDeployOutcome(403, 'CLI only');
+        }
+
+        return self::buildWorkerDeployOutcome(200, '');
+    }
+
+    private static function buildWorkerDeployOutcome(int $statusCode, string $message, array $headers = []): array
+    {
+        return [
+            'status' => $statusCode,
+            'body' => $message,
+            'headers' => $headers,
+        ];
+    }
+
+    private static function sendWorkerDeployError(int $statusCode, string $message, array $headers = []): void
+    {
+        http_response_code($statusCode);
+        foreach ($headers as $name => $value) {
+            header($name . ': ' . $value);
+        }
+        echo $message;
     }
 
     /**
@@ -375,9 +576,6 @@ $("#ssh_key-id").change(function() {
     public function deploy($param) {
 
         Debug::parseDebug($param);
-
-
-        Debug::debug($param);
 
 
         $server = $param[0];
@@ -424,7 +622,9 @@ $("#ssh_key-id").change(function() {
 
 
         //$ip, $port = 22, $user, $password
-        if (Ssh::connect($ip, $port, $prikey['user'], $prikey['key']) !== false) {
+        $sshConnection = Ssh::connect($ip, $port, $prikey['user'], $prikey['key']);
+        if ($sshConnection !== false) {
+            Ssh::$ssh = $sshConnection;
             Debug::debug($prikey['user'] . "@" . $ip . ":" . $port . " - SSH successfull !");
         } else {
             Debug::debug($prikey['user'] . "@" . $ip . ":" . $port . " - SSH failed ! ");
@@ -432,53 +632,54 @@ $("#ssh_key-id").change(function() {
         }
 
 
-        $tmp_file = uniqid();
+        if (!ShellCommand::isSafeUnixUsername($pubkey['user'])) {
+            return "Invalid remote SSH username: " . $pubkey['user'];
+        }
+
+        $tmp_file = 'pmacontrol-' . bin2hex(random_bytes(16));
         $file_name_pub_key = "/tmp/" . $tmp_file;
         file_put_contents($file_name_pub_key, $pubkey['key'] . "\n");
 
-        if ($pubkey['user'] === "root") {
-            $dest_path = '/root/' . $tmp_file;
-        } else {
-            $dest_path = '/home/' . $pubkey['user'] . '/' . $tmp_file;
+        $dest_path = ShellCommand::remoteTempPathForUser($pubkey['user'], $tmp_file);
+        if ($dest_path === null) {
+            if (substr($file_name_pub_key, 0, 4) === "/tmp/") {
+                unlink($file_name_pub_key);
+            }
+
+            return "Invalid remote temporary path for SSH username: " . $pubkey['user'];
         }
 
 
 
-        Debug::debug(shell_exec("cat " . $file_name_pub_key));
+        if (Ssh::put($ip, $port, $prikey['user'], $prikey['key'], $file_name_pub_key, $dest_path) === false) {
+            if (substr($file_name_pub_key, 0, 4) === "/tmp/") {
+                unlink($file_name_pub_key);
+            }
 
-        Ssh::put($ip, $port, $prikey['user'], $prikey['key'], $file_name_pub_key, $dest_path);
+            return "SCP upload failed";
+        }
 
-        Debug::debug(Ssh::$ssh->exec("cat " . $dest_path));
+        $appendCommand = ShellCommand::remoteMkdirAndAppendFile('/root/.ssh', $dest_path, '/root/.ssh/authorized_keys');
+        $cleanupCommand = ShellCommand::remoteRemoveFile($dest_path);
 
 
         if ($prikey['user'] === "root") {
 
-            $cmd = "mkdir -p /root/.ssh && cat " . $dest_path . " >> /root/.ssh/authorized_keys\n";
+            $cmd = $appendCommand . "\n";
 
             Debug::debug($prikey['user'] . "@" . $ip . "> " . $cmd, "CMD");
-            $res = Ssh::$ssh->exec($cmd, "return");
+            $res = $sshConnection->exec($cmd, "return");
 
             Debug::debug($res);
+            $sshConnection->exec($cleanupCommand);
         } else {
 
 
-            // @todo  this time need to test
-            Ssh::$ssh->setTimeout(1);
-            $output = Ssh::$ssh->read('/.*@.*[$|#]/');
-            Debug::debug($output);
-
-            Ssh::$ssh->write("sudo su -\n");
-            Ssh::$ssh->setTimeout(1);
-
-            Ssh::$ssh->write($password . "\n");
-            $output = Ssh::$ssh->read('/.*@.*[$|#]/');
-            Debug::debug($output);
-
-            Ssh::$ssh->write("whoami\n");
-            Ssh::$ssh->write("mkdir -p /root/.ssh && cat /home/" . $pubkey['user'] . "/" . $tmp_file . " >> /root/.ssh/authorized_keys\n");
-
-            $output = Ssh::$ssh->read('/.*@.*[$|#]/');
-            Debug::debug($output);
+            $cmd = ShellCommand::sudoShell($appendCommand) . "\n";
+            Debug::debug($prikey['user'] . "@" . $ip . "> " . $cmd, "CMD");
+            $res = $sshConnection->exec($cmd, "return");
+            Debug::debug($res);
+            $sshConnection->exec(ShellCommand::sudoShell($cleanupCommand));
         }
 
 
@@ -563,11 +764,27 @@ $("#ssh_key-id").change(function() {
         $data['key'] = $key;
         $data['user'] = $login;
 
-        Debug::debug($data);
-
         return $data;
     }
 
+/**
+ * Handle deploy rsa key state through `testParseUserKey`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @return void Returned value for testParseUserKey.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::testParseUserKey()
+ * @example /fr/deployrsakey/testParseUserKey
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function testParseUserKey() {
         Debug::$debug = true;
 
@@ -576,6 +793,27 @@ $("#ssh_key-id").change(function() {
         Debug::debug($ret);
     }
 
+/**
+ * Handle deploy rsa key state through `queue`.
+ *
+ * This routine may read or mutate framework state, superglobals or persistence layers.
+ *
+ * @param array<int,mixed> $param Route parameters forwarded by the router.
+ * @phpstan-param array<int,mixed> $param
+ * @psalm-param array<int,mixed> $param
+ * @return void Returned value for queue.
+ * @phpstan-return void
+ * @psalm-return void
+ * @see self::queue()
+ * @example /fr/deployrsakey/queue
+ * @category PmaControl
+ * @package App
+ * @subpackage Controller
+ * @author Aurélien LEQUOY <pmacontrol@68koncept.com>
+ * @license GPL-3.0
+ * @since 5.0
+ * @version 1.0
+ */
     public function queue($param) {
 
         // system de queue

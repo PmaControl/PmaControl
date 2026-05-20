@@ -6,7 +6,7 @@ use Glial\Html\Form\Form;
     <i class="fa fa-spinner fa-5x fa-spin"></i>
 </span>
 
-<form action="" method="post">
+<form action="" method="get">
     <div class="table-responsive">
         <table class="table table-bordered table-striped">
             <?php

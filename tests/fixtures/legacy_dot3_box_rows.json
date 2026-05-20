@@ -1,0 +1,202 @@
+{
+    "id": "legacy-dot3-box-rows",
+    "date_generated": "2025-11-30 22:26:03",
+    "information": {
+        "mapping": {
+            "127.0.0.1:3306": "1",
+            "10.68.68.105:61101": "101",
+            "mariadb-11-1:3306": "101",
+            "127.0.0.1:8001": "112",
+            "10.68.68.111:6033": "144",
+            "proxysql-admin-1:6032": "144"
+        },
+        "tunnel": {
+            "127.0.0.1:8001": "192.168.114.104:3306",
+            "127.0.0.1:9001": "10.60.70.81:3306"
+        },
+        "servers": {
+            "1": {
+                "id_mysql_server": "1",
+                "display_name": "pmacontrol",
+                "hostname": "ist-pmacontrol",
+                "ip": "127.0.0.1",
+                "ip_real": "127.0.0.1",
+                "port": "3306",
+                "port_real": "3306",
+                "version": "10.11.16-MariaDB-deb12-log",
+                "version_comment": "mariadb.org binary distribution",
+                "color": "#008000",
+                "mysql_available": "1",
+                "time_zone": "SYSTEM",
+                "system_time_zone": "CET",
+                "server_id": "394663081",
+                "auto_increment_increment": "1",
+                "auto_increment_offset": "1",
+                "binlog_format": "ROW",
+                "binlog_row_image": "FULL",
+                "read_only": "OFF",
+                "log_slave_updates": "ON",
+                "mysql_ping": "0.000834",
+                "mysql_database": [
+                    "sys",
+                    "mysql",
+                    "pmacontrol"
+                ]
+            },
+            "101": {
+                "id_mysql_server": "101",
+                "display_name": "mariadb-11-1",
+                "hostname": "mariadb-11-1",
+                "ip": "10.68.68.105",
+                "ip_real": "10.68.68.105",
+                "port": "61101",
+                "port_real": "61101",
+                "version": "11.1.6-MariaDB-ubu2204-log",
+                "version_comment": "mariadb.org binary distribution",
+                "version_label_override": "MariaDB 11.1",
+                "color": "#008000",
+                "mysql_available": "1",
+                "time_zone": "SYSTEM",
+                "system_time_zone": "UTC",
+                "server_id": "61101",
+                "auto_increment_increment": "1",
+                "auto_increment_offset": "1",
+                "binlog_format": "MIXED",
+                "binlog_row_image": "FULL",
+                "read_only": "OFF",
+                "log_slave_updates": "OFF",
+                "mysql_ping": "0.001767",
+                "mysql_database": [
+                    "sys",
+                    "mysql"
+                ]
+            },
+            "112": {
+                "id_mysql_server": "112",
+                "display_name": "FRDC1-DR-DTA01L",
+                "hostname": "FRDC1-DR-DTA01L",
+                "ip": "192.168.114.104",
+                "ip_real": "127.0.0.1",
+                "port": "3306",
+                "port_real": "8001",
+                "version": "10.8.8-MariaDB-1:10.8.8+maria~deb11-log",
+                "version_comment": "mariadb.org binary distribution",
+                "version_label_override": "MariaDB DR",
+                "color": "#008000",
+                "mysql_available": "1",
+                "time_zone": "SYSTEM",
+                "system_time_zone": "CET",
+                "server_id": "1051397820",
+                "auto_increment_increment": "2",
+                "auto_increment_offset": "1",
+                "binlog_format": "ROW",
+                "binlog_row_image": "FULL",
+                "read_only": "OFF",
+                "log_slave_updates": "ON",
+                "mysql_ping": "0.093301",
+                "mysql_database": [
+                    "mysql",
+                    "sys"
+                ]
+            },
+            "144": {
+                "id_mysql_server": "144",
+                "display_name": "dc-prd-proxysql-01",
+                "hostname": "proxysql-admin-1",
+                "ip": "10.68.68.111",
+                "ip_real": "10.68.68.111",
+                "port": "6033",
+                "port_real": "6033",
+                "version": "2.7.3-12-g50b7f85",
+                "version_comment": "ProxySQL",
+                "version_label_override": "ProxySQL 2.7",
+                "color": "#008000",
+                "mysql_available": "1",
+                "is_proxysql": "1",
+                "mysql_servers": [],
+                "mysql_galera_hostgroups": []
+            },
+            "145": {
+                "id_mysql_server": "145",
+                "display_name": "percona-1",
+                "hostname": "percona-1",
+                "ip": "10.50.60.70",
+                "ip_real": "10.50.60.70",
+                "port": "3306",
+                "port_real": "3306",
+                "version": "8.0.35",
+                "version_comment": "Percona Server (GPL), Release 35",
+                "color": "#008000",
+                "mysql_available": "1"
+            },
+            "146": {
+                "id_mysql_server": "146",
+                "display_name": "gr-node-1",
+                "hostname": "gr-node-1",
+                "ip": "10.60.70.80",
+                "ip_real": "10.60.70.80",
+                "port": "3306",
+                "port_real": "3306",
+                "version": "10.6.23-MariaDB-ubu2204-log",
+                "version_comment": "mariadb.org binary distribution",
+                "color": "#008000",
+                "mysql_available": "1",
+                "group_replication_group_name": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+                "group_replication_local_address": "10.60.70.80:33061"
+            },
+            "147": {
+                "id_mysql_server": "147",
+                "display_name": "gr-node-2",
+                "hostname": "gr-node-2",
+                "ip": "10.60.70.81",
+                "ip_real": "127.0.0.1",
+                "port": "3306",
+                "port_real": "9001",
+                "version": "10.6.23-MariaDB-ubu2204-log",
+                "version_comment": "mariadb.org binary distribution",
+                "color": "#008000",
+                "mysql_available": "1",
+                "group_replication_group_name": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+                "group_replication_local_address": "10.60.70.81:33061"
+            },
+            "148": {
+                "id_mysql_server": "148",
+                "display_name": "prod-router-rw",
+                "hostname": "prod-router-rw",
+                "ip": "10.20.30.40",
+                "ip_real": "10.20.30.40",
+                "port": "6446",
+                "port_real": "6446",
+                "version": "8.4.3",
+                "version_comment": "MySQL Community Server - GPL",
+                "color": "#008000",
+                "mysql_available": "1",
+                "mysqlrouter_metadata_config": {
+                    "bootstrap": {
+                        "groupReplicationId": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+                        "nodes": [
+                            {
+                                "hostname": "10.20.30.50",
+                                "port": 3306
+                            }
+                        ]
+                    }
+                }
+            },
+            "149": {
+                "id_mysql_server": "149",
+                "display_name": "single-store-1",
+                "hostname": "single-store-1",
+                "ip": "10.30.40.50",
+                "ip_real": "10.30.40.50",
+                "port": "3306",
+                "port_real": "3306",
+                "version": "9.0.1",
+                "version_comment": "SingleStoreDB",
+                "color": "#008000",
+                "mysql_available": "1",
+                "is_single_store": "1"
+            }
+        }
+    }
+}
