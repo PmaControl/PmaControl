@@ -221,3 +221,39 @@ canonical checkout, against the same database.
   from the branch checkout — no symlinks needed.
 - Apache reload after editing `000-default.conf`:
   `apache2ctl configtest && systemctl reload apache2`.
+- **Do not pre-create symlinks under `configuration/` before running
+  `dev/worktree-install.php`.** The script writes the generated
+  `webroot.config.php` to `<worktree>/configuration/webroot.config.php`
+  with `file_put_contents()`. If that path is already a symlink pointing
+  back at `/srv/www/pmacontrol/configuration/webroot.config.php`, the
+  write *follows* the symlink and silently overwrites master's
+  `webroot.config.php` with a `WWW_ROOT` pointing at the worktree, which
+  breaks master's URL space until restored. The script now unlinks any
+  stray symlink at that path before writing, but the safest workflow
+  remains: let `dev/worktree-install.php` create both the directory and
+  every symlink itself, from a `git worktree add` that produced an empty
+  `configuration/`. If you need to restore master after this accident,
+  the canonical value is `define('WWW_ROOT', '/pmacontrol/');`.
+- **Worktrees created by the Claude Code `EnterWorktree` tool land
+  under `<repo>/.claude/worktrees/<branch>/`, not under
+  `/srv/www/pmacontrol-worktrees/<branch>/`.** They are real `git
+  worktree` checkouts but they sit inside the master tree, which means
+  the Apache `AliasMatch` for `/pmacontrol-worktrees/` does not see them
+  and `dev/worktree-install.php` cannot bootstrap them in place. To get
+  Apache and the bootstrap script working, migrate the worktree to the
+  canonical path:
+
+  ```bash
+  # from anywhere outside the worktree
+  git -C /srv/www/pmacontrol worktree remove \
+      /srv/www/pmacontrol/.claude/worktrees/<branch>
+  git -C /srv/www/pmacontrol worktree add \
+      /srv/www/pmacontrol-worktrees/<branch> <branch>
+  cd /srv/www/pmacontrol-worktrees/<branch>
+  sudo php dev/worktree-install.php
+  ```
+
+  After the install the directory is owned by `www-data`. If your shell
+  runs as `root`, add
+  `git config --global --add safe.directory /srv/www/pmacontrol-worktrees/<branch>`
+  before further `git` commands work.
