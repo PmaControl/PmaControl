@@ -4,8 +4,9 @@
 declare(strict_types=1);
 
 /**
- * Bench the version-resolution block of Server::main() before and after
- * the switch to App\Library\GlobalVariable. Average of N runs (default 10).
+ * Bench the version-resolution block of Server::main(): Extraction2-only
+ * path (master pre-#1321) vs Variable::last + Extraction2 (current).
+ * Average of N runs (default 10).
  *
  * Both paths return the same shape ([id => [name => value]]) and operate
  * on the same monitored-server set, so timings are directly comparable.
@@ -15,7 +16,7 @@ declare(strict_types=1);
  */
 
 use App\Library\Extraction2;
-use App\Library\GlobalVariable;
+use App\Library\Variable;
 use Glial\Sgbd\Sgbd;
 use Glial\Synapse\Config;
 
@@ -43,10 +44,10 @@ require_once ROOT . DS . 'vendor/autoload.php';
 require_once ROOT . DS . 'App' . DS . 'Webroot' . DS . 'Basic.php';
 require_once CONFIG . 'db.config.php';
 
-// vendor/autoload.php points at master's checkout, so the new GlobalVariable
+// vendor/autoload.php points at master's checkout, so the new Variable
 // class on this worktree branch must be required explicitly until the PR lands.
-if (!class_exists(GlobalVariable::class)) {
-    require_once ROOT . DS . 'App' . DS . 'Library' . DS . 'GlobalVariable.php';
+if (!class_exists(Variable::class)) {
+    require_once ROOT . DS . 'App' . DS . 'Library' . DS . 'Variable.php';
 }
 
 $config = new Config();
@@ -97,7 +98,7 @@ printf("Iterations: %d.\n\n", $iterations);
 
 // Warmup (one of each) so OS page cache / mysql query plan cache don't bias the first sample.
 Extraction2::display($allKeys);
-GlobalVariable::display($globalVarKeys, $servers);
+Variable::last($globalVarKeys, $servers);
 
 // --- Path A: master — Extraction2::display([all 17 vars])
 $timesA = [];
@@ -108,12 +109,12 @@ for ($i = 0; $i < $iterations; $i++) {
     unset($extra);
 }
 
-// --- Path B: new — GlobalVariable(9) + Extraction2(8)
+// --- Path B: new — Variable(9) + Extraction2(8)
 $timesB = [];
 for ($i = 0; $i < $iterations; $i++) {
     $t0 = microtime(true);
 
-    $fromGlobal = GlobalVariable::display($globalVarKeys, $servers);
+    $fromGlobal = Variable::last($globalVarKeys, $servers);
     $fromExtraction2 = Extraction2::display($computedKeys);
 
     $extra = [];
@@ -141,11 +142,11 @@ function stats(array $samples): array
 $a = stats($timesA);
 $b = stats($timesB);
 
-printf("Path A — Extraction2::display(all 17 vars)         [master]\n");
+printf("Path A — Extraction2::display(all 17 vars)         [pre-#1321]\n");
 printf("    min %.2f ms | mean %.2f ms | median %.2f ms | max %.2f ms\n",
     $a['min'], $a['mean'], $a['median'], $a['max']);
 
-printf("\nPath B — GlobalVariable(9) + Extraction2(8) + fb  [#1321]\n");
+printf("\nPath B — Variable::last(9) + Extraction2(8)      [#1330]\n");
 printf("    min %.2f ms | mean %.2f ms | median %.2f ms | max %.2f ms\n",
     $b['min'], $b['mean'], $b['median'], $b['max']);
 
@@ -155,7 +156,7 @@ printf("\nMean speedup: %+.2f ms saved (B is %.2fx of A).\n", $delta, $ratio);
 
 // Sanity check: values must agree on shared keys per server.
 $extraA = Extraction2::display($allKeys);
-$fromGlobal = GlobalVariable::display($globalVarKeys, $servers);
+$fromGlobal = Variable::last($globalVarKeys, $servers);
 $fromExtraction2 = Extraction2::display($computedKeys);
 $extraB = [];
 foreach (array_unique(array_merge(array_keys($fromExtraction2), array_keys($fromGlobal))) as $id) {

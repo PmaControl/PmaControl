@@ -2,8 +2,8 @@
 # Bench the full /Server/main page (HTTP, authenticated) on the same
 # worktree URL with two code variants:
 #
-#   - "master"   : Server.php reverted to origin/master (Extraction2 only)
-#   - "worktree" : current branch HEAD              (GlobalVariable + Extraction2)
+#   - "master"   : Server.php reverted to origin/master (GlobalVariable::display)
+#   - "worktree" : current branch HEAD              (Variable::last)
 #
 # Average of N runs (default 10), curl time_total.
 #
@@ -31,11 +31,19 @@ if ! git diff --quiet HEAD --; then
 fi
 
 CONTROLLER="App/Controller/Server.php"
+OLD_HELPER="App/Library/GlobalVariable.php"
 
-restore_controller() {
+restore_state() {
     git checkout HEAD -- "$CONTROLLER" >/dev/null 2>&1 || true
+    # Branch HEAD removed the old helper; checkout origin/master may have
+    # re-added it. Drop it again so the working tree matches HEAD.
+    if git ls-files --error-unmatch "$OLD_HELPER" >/dev/null 2>&1; then
+        :
+    else
+        rm -f "$OLD_HELPER"
+    fi
 }
-trap restore_controller EXIT INT TERM
+trap restore_state EXIT INT TERM
 
 login_jar() {
     local jar="$1"
@@ -101,10 +109,11 @@ echo "Iterations per side: $ITER"
 echo "URL: $URL"
 echo
 
-# Side A: master code on Server.php (Extraction2 only)
-git checkout origin/master -- "$CONTROLLER" >/dev/null 2>&1
-run_bench "master code      (Extraction2(17))"
+# Side A: master code on Server.php + GlobalVariable.php (state of #1327)
+git checkout origin/master -- "$CONTROLLER" "$OLD_HELPER" >/dev/null 2>&1
+run_bench "master code      (GlobalVariable::display)"
 
-# Side B: branch HEAD code (GlobalVariable + Extraction2)
+# Side B: branch HEAD code (Variable::last + Extraction2)
 git checkout HEAD -- "$CONTROLLER" >/dev/null 2>&1
-run_bench "worktree code    (GlobalVariable(9)+Extraction2(8))"
+rm -f "$OLD_HELPER"
+run_bench "worktree code    (Variable::last(9)+Extraction2(8))"

@@ -7,7 +7,7 @@ use \Glial\Synapse\Controller;
 use \Glial\Security\Crypt\Crypt;
 use App\Library\Extraction;
 use App\Library\Extraction2;
-use App\Library\GlobalVariable;
+use App\Library\Variable;
 
 use \App\Library\Debug;
 use \App\Library\Mysql;
@@ -450,7 +450,7 @@ class Server extends Controller
             "mysql_available", "mysql_server::mysql_error", "avg_latency",
             "delta_sum_timer_wait", "delta_sum_lock_time"];
 
-        $fromGlobal = GlobalVariable::display($globalVarKeys, $servers);
+        $fromGlobal = Variable::last($globalVarKeys, $servers);
         $fromExtraction2 = Extraction2::display($computedKeys);
 
         $data['extra'] = [];
